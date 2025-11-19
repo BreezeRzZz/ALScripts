@@ -1,64 +1,92 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleConst.EquipmentType
+-- var_0_0 -> ys
+-- var_0_1 -> BattleConfig
+-- var_0_2 -> EquipmentType
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local EquipmentType = ys.Battle.BattleConst.EquipmentType
 
-var_0_0.Battle.BattleChargeWeaponVO = class("BattleChargeWeaponVO", var_0_0.Battle.BattlePlayerWeaponVO)
-var_0_0.Battle.BattleChargeWeaponVO.__name = "BattleChargeWeaponVO"
+-- BattleChargeWeaponVO 继承自 BattlePlayerWeaponVO
+ys.Battle.BattleChargeWeaponVO = class("BattleChargeWeaponVO", ys.Battle.BattlePlayerWeaponVO)
+ys.Battle.BattleChargeWeaponVO.__name = "BattleChargeWeaponVO"
 
-local var_0_3 = var_0_0.Battle.BattleChargeWeaponVO
+-- var_0_3 = BattleChargeWeaponVO
+local BattleChargeWeaponVO = ys.Battle.BattleChargeWeaponVO
 
-var_0_3.GCD = var_0_1.ChargeWeaponConfig.GCD
+-- BattleConfig.ChargeWeaponConfig.GCD = 1
+-- 表示ChargeWeapon（跨射武器）的GCD为1s
+BattleChargeWeaponVO.GCD = BattleConfig.ChargeWeaponConfig.GCD
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0, var_0_3.GCD)
+-- arg_1_0 -> self
+function BattleChargeWeaponVO.Ctor(self)
+	BattleChargeWeaponVO.super.Ctor(self, BattleChargeWeaponVO.GCD)
 end
 
-function var_0_3.AppendWeapon(arg_2_0, arg_2_1)
-	var_0_3.super.AppendWeapon(arg_2_0, arg_2_1)
-	arg_2_1:SetPlayerChargeWeaponVO(arg_2_0)
+-- arg_2_0 -> self
+-- arg_2_1 -> weapon
+	-- note: weapon的类型是BattlePointHitWeaponUnit
+function BattleChargeWeaponVO.AppendWeapon(self, weapon)
+	BattleChargeWeaponVO.super.AppendWeapon(self, weapon)
+	weapon:SetPlayerChargeWeaponVO(self)
 end
 
-function var_0_3.GetCurrentWeaponIconIndex(arg_3_0)
-	local var_3_0 = arg_3_0:GetHeadWeapon()
+-- arg_3_0 -> self
+function BattleChargeWeaponVO.GetCurrentWeaponIconIndex(self)
+	-- var_3_0 -> currentWeapon
+	local currentWeapon = self:GetHeadWeapon()
 
-	if var_3_0 == nil then
+	if currentWeapon == nil then
 		return 1
 	else
-		local var_3_1 = var_3_0:GetType()
+		local var_3_1 = currentWeapon:GetType()
 
-		if var_3_1 == var_0_2.POINT_HIT_AND_LOCK then
+		if var_3_1 == EquipmentType.POINT_HIT_AND_LOCK then
 			return 1
-		elseif var_3_1 == var_0_2.MANUAL_MISSILE then
+		elseif var_3_1 == EquipmentType.MANUAL_MISSILE then
 			return 10
-		elseif var_3_1 == var_0_2.MANUAL_METEOR then
+		elseif var_3_1 == EquipmentType.MANUAL_METEOR then
 			return 11
-		elseif var_3_1 == var_0_2.POINT_AIR_STRIKE then
+		elseif var_3_1 == EquipmentType.POINT_AIR_STRIKE then
 			return 12
 		end
 	end
 end
 
-function var_0_3.Deduct(arg_4_0, arg_4_1)
-	var_0_3.super.Deduct(arg_4_0, arg_4_1)
-	arg_4_0:ResetFocus()
+-- arg_4_0 -> self
+-- arg_4_1 -> weapon
+function BattleChargeWeaponVO.Deduct(self, weapon)
+	BattleChargeWeaponVO.super.Deduct(self, weapon)
+	self:ResetFocus()
 end
 
-function var_0_3.ResetFocus(arg_5_0)
-	if arg_5_0._focus then
-		local var_5_0 = var_0_0.Battle.BattleCameraUtil.GetInstance()
+-- arg_5_0 -> self
+function BattleChargeWeaponVO.ResetFocus(self)
+	if self._focus then
+		-- var_5_0 -> battleCameraUtilInstance
+		local battleCameraUtilInstance = ys.Battle.BattleCameraUtil.GetInstance()
 
-		var_5_0:FocusCharacter(nil, var_0_1.CAST_CAM_ZOOM_OUT_DURATION_CANNON, var_0_1.CAST_CAM_ZOOM_OUT_EXTRA_DELAY_CANNON)
-		var_5_0:ZoomCamara(var_0_1.CAST_CAM_ZOOM_SIZE, var_0_1.CAST_CAM_OVERLOOK_SIZE, var_0_1.CAST_CAM_ZOOM_OUT_DURATION_CANNON)
+		-- 此处的参数是(nil, 0.1, 0.04)
+			-- FocusCharacter函数
+			-- 在unit参数为nil的情况下，转回默认镜头位置
+		battleCameraUtilInstance:FocusCharacter(nil, BattleConfig.CAST_CAM_ZOOM_OUT_DURATION_CANNON, BattleConfig.CAST_CAM_ZOOM_OUT_EXTRA_DELAY_CANNON)
+		-- 此处的参数是(14, 24, 0.1)
+		battleCameraUtilInstance:ZoomCamara(BattleConfig.CAST_CAM_ZOOM_SIZE, BattleConfig.CAST_CAM_OVERLOOK_SIZE, BattleConfig.CAST_CAM_ZOOM_OUT_DURATION_CANNON)
 
-		local var_5_1 = var_0_1.CAST_CAM_ZOOM_OUT_DURATION_CANNON + var_0_1.CAST_CAM_ZOOM_OUT_EXTRA_DELAY_CANNON
+		-- var_5_1 -> castCamZoomOutTime
+			-- CAST_CAM_ZOOM_OUT_DURATION_CANNON = 0.1
+			-- CAST_CAM_ZOOM_OUT_EXTRA_DELAY_CANNON = 0.04
+			-- 因此 castCamZoomOutTime = 0.14(秒)
+		local castCamZoomOutTime = BattleConfig.CAST_CAM_ZOOM_OUT_DURATION_CANNON + BattleConfig.CAST_CAM_ZOOM_OUT_EXTRA_DELAY_CANNON
 
-		LeanTween.delayedCall(go(var_5_0:GetCamera()), var_5_1, System.Action(function()
-			arg_5_0._focus = false
+		LeanTween.delayedCall(go(battleCameraUtilInstance:GetCamera()), castCamZoomOutTime, System.Action(function()
+			self._focus = false
 
-			var_5_0:BulletTime(var_0_1.SPEED_FACTOR_FOCUS_CHARACTER, nil)
-			var_5_0:ZoomCamara(nil, nil, var_0_1.CAST_CAM_OVERLOOK_REVERT_DURATION)
+			-- 此处的参数是("focusCharacter", nil)
+			battleCameraUtilInstance:BulletTime(BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER, nil)
+			-- 此处的参数是(nil, nil, 1.5)
+				-- CAST_CAM_OVERLOOK_REVERT_DURATION = 1.5
+			battleCameraUtilInstance:ZoomCamara(nil, nil, BattleConfig.CAST_CAM_OVERLOOK_REVERT_DURATION)
 		end))
 	end
 end

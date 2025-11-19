@@ -1,6 +1,7 @@
-local var_0_0 = class("FleetAIAction")
+-- var_0_0 -> FleetAIAction
+local FleetAIAction = class("FleetAIAction")
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
+function FleetAIAction.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.actType = arg_1_1.act_type
 	arg_1_0.line = {
 		row = arg_1_1.ai_pos.row,
@@ -33,7 +34,7 @@ function var_0_0.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.commanderSkillEffectId = arg_1_1.commander_skill_effect_id
 end
 
-function var_0_0.applyTo(arg_4_0, arg_4_1, arg_4_2)
+function FleetAIAction.applyTo(arg_4_0, arg_4_1, arg_4_2)
 	local var_4_0 = arg_4_1:getFleet(FleetType.Normal, arg_4_0.line.row, arg_4_0.line.column)
 
 	if var_4_0 then
@@ -43,7 +44,7 @@ function var_0_0.applyTo(arg_4_0, arg_4_1, arg_4_2)
 	return false, "can not find any fleet at: [" .. arg_4_0.line.row .. ", " .. arg_4_0.line.column .. "]"
 end
 
-function var_0_0.applyToFleet(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
+function FleetAIAction.applyToFleet(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
 	if not arg_5_2:isValid() then
 		return false, "fleet " .. arg_5_2.id .. " is invalid."
 	end
@@ -101,31 +102,42 @@ function var_0_0.applyToFleet(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
 	return true, var_5_0
 end
 
-function var_0_0.PlayAIAction(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
-	local var_9_0 = arg_9_1:getFleetIndex(FleetType.Normal, arg_9_0.line.row, arg_9_0.line.column)
+-- arg_9_0 -> self
+-- arg_9_1 -> chapterVO(ChapterLevelData类)
+-- arg_9_2 -> levelMediator(LevelMediator2类)
+-- arg_9_3 -> callback
+function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
+	-- var_9_0 -> fleetIndex
+	local fleetIndex = chapterVO:getFleetIndex(FleetType.Normal, self.line.row, self.line.column)
 
-	assert(var_9_0)
+	assert(fleetIndex)
 
-	if arg_9_1:isPlayingWithBombEnemy() then
-		local var_9_1 = arg_9_1.fleets[var_9_0]
-		local var_9_2 = arg_9_1:getMapShip(var_9_1)
+	if chapterVO:isPlayingWithBombEnemy() then
+		-- var_9_1 -> fleet
+		-- var_9_2 -> mapShip
+		local fleet = chapterVO.fleets[fleetIndex]
+		local mapShip = chapterVO:getMapShip(fleet)
 
-		arg_9_2.viewComponent:doPlayStrikeAnim(var_9_2, var_9_2:GetMapStrikeAnim(), arg_9_3)
-	elseif arg_9_0.actType == ChapterConst.ActType_Poison then
-		arg_9_3()
-	elseif arg_9_0.target then
-		local var_9_3 = arg_9_1.fleets[var_9_0]
-		local var_9_4 = _.detect(arg_9_0.cellUpdates, function(arg_10_0)
-			return arg_10_0.row == arg_9_0.target.row and arg_10_0.column == arg_9_0.target.column
+		levelMediator.viewComponent:doPlayStrikeAnim(mapShip, mapShip:GetMapStrikeAnim(), callback)
+	elseif self.actType == ChapterConst.ActType_Poison then
+		callback()
+	elseif self.target then
+		-- var_9_3 -> fleet
+		local fleet = chapterVO.fleets[fleetIndex]
+		-- var_9_4 -> targetCell
+		-- arg_10_0 -> cellUpdate
+		local targetCell = _.detect(self.cellUpdates, function(cellUpdate)
+			return cellUpdate.row == self.target.row and cellUpdate.column == self.target.column
 		end)
 
-		assert(var_9_4, "can not find cell")
+		assert(targetCell, "can not find cell")
 
-		if var_9_4.attachment == ChapterConst.AttachLandbase then
-			if pg.land_based_template[var_9_4.attachmentId].type == ChapterConst.LBCoastalGun then
-				local var_9_5 = arg_9_1:getMapShip(var_9_3)
+		if targetCell.attachment == ChapterConst.AttachLandbase then
+			if pg.land_based_template[targetCell.attachmentId].type == ChapterConst.LBCoastalGun then
+				-- var_9_5 -> mapShip
+				local mapShip = chapterVO:getMapShip(fleet)
 
-				arg_9_2.viewComponent:doPlayStrikeAnim(var_9_5, var_9_5:GetMapStrikeAnim(), arg_9_3)
+				levelMediator.viewComponent:doPlayStrikeAnim(mapShip, mapShip:GetMapStrikeAnim(), callback)
 			else
 				assert(false)
 			end
@@ -133,38 +145,44 @@ function var_0_0.PlayAIAction(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
 			return
 		end
 
-		local var_9_6 = "-" .. var_9_4.data / 100 .. "%"
-		local var_9_7 = arg_9_0.commanderSkillEffectId
-		local var_9_8 = var_9_3:getSkill(var_9_7)
+		-- var_9_6 -> damagePercent
+		-- var_9_7 -> skillId
+		-- var_9_8 -> skill
+		local damagePercent = "-" .. targetCell.data / 100 .. "%"
+		local skillId = self.commanderSkillEffectId
+		local skill = fleet:getSkill(skillId)
 
-		assert(var_9_8, "can not find skill: " .. var_9_7)
+		assert(skill, "can not find skill: " .. skillId)
 
-		local var_9_9 = var_9_3:findCommanderBySkillId(var_9_7)
+		-- var_9_9 -> commander
+		local commander = fleet:findCommanderBySkillId(skillId)
 
-		assert(var_9_9, "command can not find by skill id: " .. var_9_7)
-		arg_9_2.viewComponent:doPlayCommander(var_9_9, function()
-			if var_9_8:GetType() == FleetSkill.TypeAirStrikeDodge then
-				arg_9_2.viewComponent:easeAvoid(arg_9_2.viewComponent.grid.cellFleets[var_9_3.id].tf.position, arg_9_3)
+		assert(commander, "command can not find by skill id: " .. skillId)
+		levelMediator.viewComponent:doPlayCommander(commander, function()
+			if skill:GetType() == FleetSkill.TypeAirStrikeDodge then
+				levelMediator.viewComponent:easeAvoid(levelMediator.viewComponent.grid.cellFleets[fleet.id].tf.position, callback)
 
 				return
-			elseif var_9_8:GetType() == FleetSkill.TypeAttack then
-				local var_11_0 = var_9_8:GetArgs()
-				local var_11_1
+			elseif skill:GetType() == FleetSkill.TypeAttack then
+				-- var_11_0 -> skillArgs
+				-- var_11_1 -> strikeUI
+				local skillArgs = skill:GetArgs()
+				local strikeUI
 
-				switch(var_11_0[1], {
+				switch(skillArgs[1], {
 					airfight = function()
-						var_11_1 = "AirStrikeUI"
+						strikeUI = "AirStrikeUI"
 					end,
 					torpedo = function()
-						var_11_1 = "SubTorpedoUI"
+						strikeUI = "SubTorpedoUI"
 					end,
 					cannon = function()
-						var_11_1 = "CannonUI"
+						strikeUI = "CannonUI"
 					end
 				})
-				assert(var_11_1)
-				arg_9_2.viewComponent:doPlayStrikeAnim(arg_9_1:getStrikeAnimShip(var_9_3, var_11_1), var_11_1, function()
-					arg_9_2.viewComponent:strikeEnemy(arg_9_0.target, var_9_6, arg_9_3)
+				assert(strikeUI)
+				levelMediator.viewComponent:doPlayStrikeAnim(chapterVO:getStrikeAnimShip(fleet, strikeUI), strikeUI, function()
+					levelMediator.viewComponent:strikeEnemy(self.target, damagePercent, callback)
 				end)
 
 				return
@@ -173,8 +191,8 @@ function var_0_0.PlayAIAction(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
 			end
 		end)
 	else
-		arg_9_3()
+		callback()
 	end
 end
 
-return var_0_0
+return FleetAIAction

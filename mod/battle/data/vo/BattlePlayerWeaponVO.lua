@@ -1,23 +1,27 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+-- var_0_0 -> ys
+-- var_0_1 -> BattleConfig
+-- var_0_2 -> BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattlePlayerWeaponVO = class("BattlePlayerWeaponVO")
-var_0_0.Battle.BattlePlayerWeaponVO.__name = "BattlePlayerWeaponVO"
+ys.Battle.BattlePlayerWeaponVO = class("BattlePlayerWeaponVO")
+ys.Battle.BattlePlayerWeaponVO.__name = "BattlePlayerWeaponVO"
 
-local var_0_3 = var_0_0.Battle.BattlePlayerWeaponVO
+-- var_0_3 -> BattlePlayerWeaponVO
+local BattlePlayerWeaponVO = ys.Battle.BattlePlayerWeaponVO
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+function BattlePlayerWeaponVO.Ctor(arg_1_0, arg_1_1)
+	ys.EventDispatcher.AttachEventDispatcher(arg_1_0)
 
 	arg_1_0._GCD = arg_1_1
 
 	arg_1_0:Reset()
 end
 
-function var_0_3.Reset(arg_2_0)
+function BattlePlayerWeaponVO.Reset(arg_2_0)
 	arg_2_0._isOverLoad = false
 	arg_2_0._current = arg_2_0._GCD
 	arg_2_0._max = arg_2_0._GCD
@@ -29,7 +33,7 @@ function var_0_3.Reset(arg_2_0)
 	arg_2_0._chargingList = {}
 end
 
-function var_0_3.Update(arg_3_0, arg_3_1)
+function BattlePlayerWeaponVO.Update(arg_3_0, arg_3_1)
 	if arg_3_0._current < arg_3_0._max then
 		local var_3_0 = arg_3_1 - arg_3_0._reloadStartTime
 
@@ -48,47 +52,51 @@ function var_0_3.Update(arg_3_0, arg_3_1)
 	end
 end
 
-function var_0_3.PlayFocus(arg_4_0, arg_4_1, arg_4_2)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():FocusCharacter(arg_4_1, var_0_1.CAST_CAM_ZOOM_IN_DURATION)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():ZoomCamara(nil, var_0_1.CAST_CAM_ZOOM_SIZE, var_0_1.CAST_CAM_ZOOM_IN_DURATION, true)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():BulletTime(var_0_1.SPEED_FACTOR_FOCUS_CHARACTER, var_0_1.FOCUS_MAP_RATE, arg_4_1)
+-- arg_4_0 -> self
+-- arg_4_1 -> character
+-- arg_4_2 -> afterFocusFunc
+function BattlePlayerWeaponVO.PlayFocus(self, character, afterFocusFunc)
+	ys.Battle.BattleCameraUtil.GetInstance():FocusCharacter(character, BattleConfig.CAST_CAM_ZOOM_IN_DURATION)
+	ys.Battle.BattleCameraUtil.GetInstance():ZoomCamara(nil, BattleConfig.CAST_CAM_ZOOM_SIZE, BattleConfig.CAST_CAM_ZOOM_IN_DURATION, true)
+	ys.Battle.BattleCameraUtil.GetInstance():BulletTime(BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER, BattleConfig.FOCUS_MAP_RATE, character)
 
-	arg_4_0._focus = true
+	self._focus = true
 
-	if arg_4_0._focusTimer then
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_4_0._focusTimer)
+	if self._focusTimer then
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 	end
 
-	local function var_4_0()
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_4_0._focusTimer)
+	-- var_4_0 -> onFocusCompleteFunc
+	local function onFocusCompleteFunc()
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 
-		arg_4_0._focusTimer = nil
+		self._focusTimer = nil
 
-		arg_4_2()
+		afterFocusFunc()
 	end
 
-	arg_4_0._focusTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, var_0_1.CAST_CAM_ZOOM_IN_DURATION, var_4_0, true)
+	self._focusTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, BattleConfig.CAST_CAM_ZOOM_IN_DURATION, onFocusCompleteFunc, true)
 end
 
-function var_0_3.PlayCutIn(arg_6_0, arg_6_1, arg_6_2)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():CutInPainting(arg_6_1, arg_6_2)
+function BattlePlayerWeaponVO.PlayCutIn(arg_6_0, arg_6_1, arg_6_2)
+	ys.Battle.BattleCameraUtil.GetInstance():CutInPainting(arg_6_1, arg_6_2)
 end
 
-function var_0_3.ResetFocus(arg_7_0)
+function BattlePlayerWeaponVO.ResetFocus(arg_7_0)
 	return
 end
 
-function var_0_3.CancelFocus(arg_8_0)
+function BattlePlayerWeaponVO.CancelFocus(arg_8_0)
 	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_8_0._focusTimer)
 
 	arg_8_0._focusTimer = nil
 end
 
-function var_0_3.GetWeaponList(arg_9_0)
+function BattlePlayerWeaponVO.GetWeaponList(arg_9_0)
 	return arg_9_0._weaponList
 end
 
-function var_0_3.AppendWeapon(arg_10_0, arg_10_1)
+function BattlePlayerWeaponVO.AppendWeapon(arg_10_0, arg_10_1)
 	arg_10_0._weaponList[#arg_10_0._weaponList + 1] = arg_10_1
 
 	if arg_10_1:GetCurrentState() == arg_10_1.STATE_READY then
@@ -106,7 +114,7 @@ function var_0_3.AppendWeapon(arg_10_0, arg_10_1)
 	arg_10_0._readyList[#arg_10_0._readyList + 1] = arg_10_1
 end
 
-function var_0_3.AppendFreezeWeapon(arg_11_0, arg_11_1)
+function BattlePlayerWeaponVO.AppendFreezeWeapon(arg_11_0, arg_11_1)
 	arg_11_0._weaponList[#arg_11_0._weaponList + 1] = arg_11_1
 	arg_11_0._total = arg_11_0._total + 1
 
@@ -128,7 +136,7 @@ function var_0_3.AppendFreezeWeapon(arg_11_0, arg_11_1)
 	arg_11_0:DispatchOverLoadChange()
 end
 
-function var_0_3.RemoveWeapon(arg_12_0, arg_12_1)
+function BattlePlayerWeaponVO.RemoveWeapon(arg_12_0, arg_12_1)
 	local var_12_0 = arg_12_0.deleteElementFromArray(arg_12_1, arg_12_0._weaponList)
 
 	arg_12_0._total = arg_12_0._total - 1
@@ -158,7 +166,7 @@ function var_0_3.RemoveWeapon(arg_12_0, arg_12_1)
 	return var_12_0
 end
 
-function var_0_3.refreshCD(arg_13_0)
+function BattlePlayerWeaponVO.refreshCD(arg_13_0)
 	local var_13_0 = #arg_13_0._readyList
 	local var_13_1 = #arg_13_0._chargingList
 
@@ -183,7 +191,7 @@ function var_0_3.refreshCD(arg_13_0)
 	end
 end
 
-function var_0_3.RefreshReloadingBar(arg_14_0)
+function BattlePlayerWeaponVO.RefreshReloadingBar(arg_14_0)
 	if not arg_14_0._reloadStartTime or #arg_14_0._readyList ~= 0 or arg_14_0._max == arg_14_0._GCD then
 		return
 	end
@@ -195,44 +203,44 @@ function var_0_3.RefreshReloadingBar(arg_14_0)
 	arg_14_0._current = var_14_1 * arg_14_0._max
 end
 
-function var_0_3.resetCurrent(arg_15_0)
+function BattlePlayerWeaponVO.resetCurrent(arg_15_0)
 	arg_15_0._current = 0
 	arg_15_0._reloadStartTime = arg_15_0._jammingStarTime or pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function var_0_3.SetMax(arg_16_0, arg_16_1)
+function BattlePlayerWeaponVO.SetMax(arg_16_0, arg_16_1)
 	arg_16_0._max = arg_16_1
 end
 
-function var_0_3.GetMax(arg_17_0)
+function BattlePlayerWeaponVO.GetMax(arg_17_0)
 	return arg_17_0._max
 end
 
-function var_0_3.GetCurrent(arg_18_0)
+function BattlePlayerWeaponVO.GetCurrent(arg_18_0)
 	return arg_18_0._current
 end
 
-function var_0_3.IsOverLoad(arg_19_0)
+function BattlePlayerWeaponVO.IsOverLoad(arg_19_0)
 	return arg_19_0._current < arg_19_0._max or arg_19_0._count < 1
 end
 
-function var_0_3.SetTotal(arg_20_0, arg_20_1)
+function BattlePlayerWeaponVO.SetTotal(arg_20_0, arg_20_1)
 	arg_20_0._total = arg_20_1
 end
 
-function var_0_3.GetTotal(arg_21_0)
+function BattlePlayerWeaponVO.GetTotal(arg_21_0)
 	return arg_21_0._total
 end
 
-function var_0_3.SetCount(arg_22_0, arg_22_1)
+function BattlePlayerWeaponVO.SetCount(arg_22_0, arg_22_1)
 	arg_22_0._count = arg_22_1
 end
 
-function var_0_3.GetCount(arg_23_0)
+function BattlePlayerWeaponVO.GetCount(arg_23_0)
 	return arg_23_0._count
 end
 
-function var_0_3.GetNextTimeStamp(arg_24_0)
+function BattlePlayerWeaponVO.GetNextTimeStamp(arg_24_0)
 	local var_24_0
 
 	if #arg_24_0._chargingList > 0 then
@@ -254,19 +262,19 @@ function var_0_3.GetNextTimeStamp(arg_24_0)
 	return tiemStampB, var_24_0
 end
 
-function var_0_3.GetCurrentWeapon(arg_25_0)
+function BattlePlayerWeaponVO.GetCurrentWeapon(arg_25_0)
 	return arg_25_0._readyList[1]
 end
 
-function var_0_3.GetHeadWeapon(arg_26_0)
+function BattlePlayerWeaponVO.GetHeadWeapon(arg_26_0)
 	return arg_26_0:GetCurrentWeapon() or arg_26_0._chargingList[1] or arg_26_0._overHeatList[1]
 end
 
-function var_0_3.GetCurrentWeaponIconIndex(arg_27_0)
+function BattlePlayerWeaponVO.GetCurrentWeaponIconIndex(arg_27_0)
 	return 0
 end
 
-function var_0_3.Plus(arg_28_0, arg_28_1)
+function BattlePlayerWeaponVO.Plus(arg_28_0, arg_28_1)
 	local var_28_0 = arg_28_0._count
 
 	arg_28_0._count = arg_28_0._count + 1
@@ -276,13 +284,13 @@ function var_0_3.Plus(arg_28_0, arg_28_1)
 
 	arg_28_0._readyList[#arg_28_0._readyList + 1] = arg_28_1
 
-	local var_28_1 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.WEAPON_COUNT_PLUS)
+	local var_28_1 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
 
 	arg_28_0:DispatchEvent(var_28_1)
 	arg_28_0:DispatchOverLoadChange(var_28_0)
 end
 
-function var_0_3.Deduct(arg_29_0, arg_29_1)
+function BattlePlayerWeaponVO.Deduct(arg_29_0, arg_29_1)
 	arg_29_0:readyToOverheat(arg_29_1)
 
 	if #arg_29_0._readyList ~= 0 then
@@ -295,7 +303,7 @@ function var_0_3.Deduct(arg_29_0, arg_29_1)
 		arg_29_0._max = math.max(arg_29_0._GCD, var_29_0 - pg.TimeMgr.GetInstance():GetCombatTime())
 
 		arg_29_0:resetCurrent()
-	elseif arg_29_1:GetType() == var_0_0.Battle.BattleConst.EquipmentType.DISPOSABLE_TORPEDO then
+	elseif arg_29_1:GetType() == ys.Battle.BattleConst.EquipmentType.DISPOSABLE_TORPEDO then
 		-- block empty
 	else
 		arg_29_0._current = 0
@@ -304,12 +312,12 @@ function var_0_3.Deduct(arg_29_0, arg_29_1)
 	arg_29_0:DispatchOverLoadChange(nil, true)
 end
 
-function var_0_3.InitialDeduct(arg_30_0, arg_30_1)
+function BattlePlayerWeaponVO.InitialDeduct(arg_30_0, arg_30_1)
 	arg_30_0:readyToOverheat(arg_30_1)
 	arg_30_0:DispatchOverLoadChange()
 end
 
-function var_0_3.Charge(arg_31_0, arg_31_1)
+function BattlePlayerWeaponVO.Charge(arg_31_0, arg_31_1)
 	arg_31_0.deleteElementFromArray(arg_31_1, arg_31_0._overHeatList)
 
 	arg_31_0._chargingList[#arg_31_0._chargingList + 1] = arg_31_1
@@ -329,7 +337,7 @@ function var_0_3.Charge(arg_31_0, arg_31_1)
 	arg_31_0:DispatchCountChange()
 end
 
-function var_0_3.ReloadBoost(arg_33_0, arg_33_1, arg_33_2)
+function BattlePlayerWeaponVO.ReloadBoost(arg_33_0, arg_33_1, arg_33_2)
 	local var_33_0, var_33_1 = arg_33_0:GetNextTimeStamp()
 
 	arg_33_1:ReloadBoost(arg_33_2)
@@ -345,7 +353,7 @@ function var_0_3.ReloadBoost(arg_33_0, arg_33_1, arg_33_2)
 	end
 end
 
-function var_0_3.InstantCoolDown(arg_34_0, arg_34_1)
+function BattlePlayerWeaponVO.InstantCoolDown(arg_34_0, arg_34_1)
 	arg_34_0.deleteElementFromArray(arg_34_1, arg_34_0._overHeatList)
 
 	if arg_34_0._current >= arg_34_0._GCD then
@@ -360,25 +368,25 @@ function var_0_3.InstantCoolDown(arg_34_0, arg_34_1)
 	arg_34_0:Plus(arg_34_1)
 end
 
-function var_0_3.DispatchBlink(arg_35_0, arg_35_1)
+function BattlePlayerWeaponVO.DispatchBlink(arg_35_0, arg_35_1)
 	local var_35_0 = {
 		value = arg_35_1
 	}
-	local var_35_1 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.WEAPON_BUTTON_BLINK, var_35_0)
+	local var_35_1 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_BUTTON_BLINK, var_35_0)
 
 	arg_35_0:DispatchEvent(var_35_1)
 end
 
-function var_0_3.DispatchTotalChange(arg_36_0, arg_36_1)
-	local var_36_0 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, {
+function BattlePlayerWeaponVO.DispatchTotalChange(arg_36_0, arg_36_1)
+	local var_36_0 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, {
 		index = arg_36_1
 	})
 
 	arg_36_0:DispatchEvent(var_36_0)
 end
 
-function var_0_3.DispatchOverLoadChange(arg_37_0, arg_37_1, arg_37_2)
-	local var_37_0 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE, {
+function BattlePlayerWeaponVO.DispatchOverLoadChange(arg_37_0, arg_37_1, arg_37_2)
+	local var_37_0 = ys.Event.New(ys.Battle.BattleEvent.OVER_LOAD_CHANGE, {
 		preCast = arg_37_1,
 		postCast = arg_37_2
 	})
@@ -386,19 +394,19 @@ function var_0_3.DispatchOverLoadChange(arg_37_0, arg_37_1, arg_37_2)
 	arg_37_0:DispatchEvent(var_37_0)
 end
 
-function var_0_3.DispatchCountChange(arg_38_0)
-	local var_38_0 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.COUNT_CHANGE)
+function BattlePlayerWeaponVO.DispatchCountChange(arg_38_0)
+	local var_38_0 = ys.Event.New(ys.Battle.BattleEvent.COUNT_CHANGE)
 
 	arg_38_0:DispatchEvent(var_38_0)
 end
 
-function var_0_3.DispatchInitSubIcon(arg_39_0)
-	local var_39_0 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.INIT_SUB_ICON)
+function BattlePlayerWeaponVO.DispatchInitSubIcon(arg_39_0)
+	local var_39_0 = ys.Event.New(ys.Battle.BattleEvent.INIT_SUB_ICON)
 
 	arg_39_0:DispatchEvent(var_39_0)
 end
 
-function var_0_3.StartJamming(arg_40_0)
+function BattlePlayerWeaponVO.StartJamming(arg_40_0)
 	arg_40_0._jammingStarTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
 	for iter_40_0, iter_40_1 in ipairs(arg_40_0._chargingList) do
@@ -406,7 +414,7 @@ function var_0_3.StartJamming(arg_40_0)
 	end
 end
 
-function var_0_3.JammingEliminate(arg_41_0)
+function BattlePlayerWeaponVO.JammingEliminate(arg_41_0)
 	for iter_41_0, iter_41_1 in ipairs(arg_41_0._chargingList) do
 		iter_41_1:JammingEliminate()
 	end
@@ -426,15 +434,15 @@ function var_0_3.JammingEliminate(arg_41_0)
 	arg_41_0._jammingStarTime = nil
 end
 
-function var_0_3.Dispose(arg_42_0)
+function BattlePlayerWeaponVO.Dispose(arg_42_0)
 	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_42_0._focusTimer)
 
 	arg_42_0._focusTimer = nil
 
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_42_0)
+	ys.EventDispatcher.DetachEventDispatcher(arg_42_0)
 end
 
-function var_0_3.readyToOverheat(arg_43_0, arg_43_1)
+function BattlePlayerWeaponVO.readyToOverheat(arg_43_0, arg_43_1)
 	arg_43_0.deleteElementFromArray(arg_43_1, arg_43_0._readyList)
 
 	arg_43_0._overHeatList[#arg_43_0._overHeatList + 1] = arg_43_1
@@ -447,7 +455,7 @@ function var_0_3.readyToOverheat(arg_43_0, arg_43_1)
 	arg_43_0:DispatchCountChange()
 end
 
-function var_0_3.deleteElementFromArray(arg_44_0, arg_44_1)
+function BattlePlayerWeaponVO.deleteElementFromArray(arg_44_0, arg_44_1)
 	local var_44_0
 
 	for iter_44_0, iter_44_1 in ipairs(arg_44_1) do

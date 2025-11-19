@@ -1,8 +1,10 @@
-local var_0_0 = class("OrientedWeightPathFinding", OrientedPathFinding)
+local OrientedWeightPathFinding = class("OrientedWeightPathFinding", OrientedPathFinding)
 
-OrientedWeightPathFinding = var_0_0
+-- var_0_0 -> OrientedWeightPathFinding
+OrientedWeightPathFinding = OrientedWeightPathFinding
 
-local var_0_1 = {
+-- var_0_1 -> directions
+local directions = {
 	{
 		1,
 		0
@@ -21,16 +23,28 @@ local var_0_1 = {
 	}
 }
 
-local function var_0_2(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
-	local var_1_0 = var_0_0.PrioForbidden
-	local var_1_1 = {}
-	local var_1_2 = {
-		arg_1_3
+-- var_0_2 -> _Find
+-- arg_1_0 -> pathCells
+-- arg_1_1 -> maxRow
+-- arg_1_2 -> maxColumn
+-- arg_1_3 -> startCell
+-- arg_1_4 -> targetCell
+local function _Find(pathCells, maxRow, maxColumn, startCell, targetCell)
+	-- var_1_0 -> priority
+	-- var_1_1 -> path
+	-- var_1_2 -> openList(尚未考察的节点)
+	-- var_1_3 -> closedList(已考察的节点)
+	-- var_1_4 -> pathTable
+	local priority = OrientedWeightPathFinding.PrioForbidden
+	local path = {}
+	local openList = {
+		startCell
 	}
-	local var_1_3 = {}
-	local var_1_4 = {
-		[arg_1_3.row] = {
-			[arg_1_3.column] = {
+	local closedList = {}
+	-- OrientedWeightPathFinding的pathTable比OrientedPathFinding多了enemyCount字段
+	local pathTable = {
+		[startCell.row] = {
+			[startCell.column] = {
 				enemyCount = 0,
 				priority = 0,
 				path = {}
@@ -38,117 +52,161 @@ local function var_0_2(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
 		}
 	}
 
-	while #var_1_2 > 0 do
-		local var_1_5 = table.remove(var_1_2, 1)
+	while #openList > 0 do
+		-- var_1_5 -> currentCell
+		local currentCell = table.remove(openList, 1)
 
-		if var_1_5.row == arg_1_4.row and var_1_5.column == arg_1_4.column then
-			local var_1_6 = var_1_4[var_1_5.row][var_1_5.column]
+		if currentCell.row == targetCell.row and currentCell.column == targetCell.column then
+			-- var_1_6 -> currentPath
+			local currentPath = pathTable[currentCell.row][currentCell.column]
 
-			var_1_0 = var_1_6.priority
-			var_1_1 = var_1_6.path
+			priority = currentPath.priority
+			path = currentPath.path
 
 			break
 		end
 
-		table.insert(var_1_3, var_1_5)
-		_.each(var_0_1, function(arg_2_0)
-			local var_2_0 = {
-				row = var_1_5.row + arg_2_0[1],
-				column = var_1_5.column + arg_2_0[2]
+		table.insert(closedList, currentCell)
+		-- arg_2_0 -> direction
+		_.each(directions, function(direction)
+			-- var_2_0 -> newCell
+			local newCell = {
+				row = currentCell.row + direction[1],
+				column = currentCell.column + direction[2]
 			}
 
-			if not _.any(var_1_3, function(arg_3_0)
-				return arg_3_0.row == var_2_0.row and arg_3_0.column == var_2_0.column
-			end) and var_2_0.row >= 0 and var_2_0.row < arg_1_1 and var_2_0.column >= 0 and var_2_0.column < arg_1_2 and not var_0_0.IsDirectionForbidden(arg_1_0[var_1_5.row][var_1_5.column], arg_2_0[1], arg_2_0[2]) then
-				local var_2_1 = var_1_4[var_1_5.row][var_1_5.column]
-				local var_2_2 = arg_1_0[var_2_0.row][var_2_0.column]
-				local var_2_3 = var_2_1.priority + var_2_2.priority
-				local var_2_4 = var_2_1.enemyCount + (var_2_2.isEnemy and 1 or 0)
+			-- arg_3_0 -> cell
+			if not _.any(closedList, function(cell)
+				return cell.row == newCell.row and cell.column == newCell.column
+			end) and newCell.row >= 0 and newCell.row < maxRow and newCell.column >= 0 and newCell.column < maxColumn and not OrientedWeightPathFinding.IsDirectionForbidden(pathCells[currentCell.row][currentCell.column], direction[1], direction[2]) then
+				-- var_2_1 -> currentPath
+				-- var_2_2 -> pathCell
+				-- var_2_3 -> newPriority
+				-- var_2_4 -> newEnemyCount
+				local currentPath = pathTable[currentCell.row][currentCell.column]
+				local pathCell = pathCells[newCell.row][newCell.column]
+				local newPriority = currentPath.priority + pathCell.priority
+				local newEnemyCount = currentPath.enemyCount + (pathCell.isEnemy and 1 or 0)
 
-				if var_2_3 < var_0_0.PrioObstacle then
-					local var_2_5 = Clone(var_2_1)
+				if newPriority < OrientedWeightPathFinding.PrioObstacle then
+					-- var_2_5 -> currentNewPath
+					local currentNewPath = Clone(currentPath)
 
-					table.insert(var_2_5.path, var_2_0)
+					table.insert(currentNewPath.path, newCell)
 
-					var_2_5.priority = var_2_3
-					var_2_5.enemyCount = var_2_1.enemyCount + var_2_4
+					currentNewPath.priority = newPriority
+					-- 注意：此处为逻辑错误，重复计算了两次currentPath.enemyCount
+					currentNewPath.enemyCount = currentPath.enemyCount + newEnemyCount
 
-					local var_2_6 = _.detect(var_1_2, function(arg_4_0)
-						return arg_4_0.row == var_2_0.row and arg_4_0.column == var_2_0.column
+					-- underscore.detect(items, func): 返回第一个能让func(item)返回true的item，否则返回nil
+
+					-- var_2_6 -> newCellAlreadyExists
+					-- arg_4_0 -> cell
+					local newCellAlreadyExists = _.detect(openList, function(cell)
+						return cell.row == newCell.row and cell.column == newCell.column
 					end)
-					local var_2_7 = not var_2_6
+					-- var_2_7 -> isNewPathBetter
+					local isNewPathBetter = not newCellAlreadyExists
 
-					if var_2_6 then
-						local var_2_8 = var_1_4[var_2_0.row][var_2_0.column]
+					if newCellAlreadyExists then
+						-- var_2_8 -> originalNewPath
+						local originalNewPath = pathTable[newCell.row][newCell.column]
 
-						var_2_7 = var_2_8.enemyCount > var_2_5.enemyCount or var_2_8.enemyCount == var_2_5.enemyCount and var_2_8.priority > var_2_5.priority
+						isNewPathBetter = originalNewPath.enemyCount > currentNewPath.enemyCount or originalNewPath.enemyCount == currentNewPath.enemyCount and originalNewPath.priority > currentNewPath.priority
 
-						if var_2_7 then
-							table.removebyvalue(var_1_2, var_2_6)
+						-- 此处如果确定了新路径更优，则将openList中的旧节点移除，后续会重新插入
+						-- 这样能确保之后从这个节点扩散时，使用的是更优的路径信息
+						-- 额外说明：为什么普通的OrientedPathFinding不需要这样做？因为只有priority一个维度，根据Dijkstra算法的性质，后续扩展时不会出现更优路径的可能
+						if isNewPathBetter then
+							table.removebyvalue(openList, newCellAlreadyExists)
 						end
 					end
 
-					if var_2_7 then
-						var_1_4[var_2_0.row] = var_1_4[var_2_0.row] or {}
-						var_1_4[var_2_0.row][var_2_0.column] = var_2_5
+					if isNewPathBetter then
+						pathTable[newCell.row] = pathTable[newCell.row] or {}
+						pathTable[newCell.row][newCell.column] = currentNewPath
 
-						local var_2_9 = 0
+						-- var_2_9 -> insertPos
+						local insertPos = 0
 
-						for iter_2_0 = #var_1_2, 1, -1 do
-							local var_2_10 = var_1_2[iter_2_0]
-							local var_2_11 = var_1_4[var_2_10.row][var_2_10.column]
+						-- iter_2_0 -> i
+							-- 此处是一个倒序遍历，用于找到插入newCell的位置，维护openList作为优先队列从而BFS
+							-- openList按enemyCount升序排列，enemyCount相同时按priority升序排列
+							-- 每次扩展时，取出的队头是enemyCount最少且priority最小的节点
+						for i = #openList, 1, -1 do
+							-- var_2_10 -> cell
+							-- var_2_11 -> path
+							local cell = openList[i]
+							local path = pathTable[cell.row][cell.column]
 
-							if var_2_5.enemyCount > var_2_11.enemyCount or var_2_5.enemyCount == var_2_11.enemyCount and var_2_5.priority >= var_2_11.priority then
-								var_2_9 = iter_2_0
+							if currentNewPath.enemyCount > path.enemyCount or currentNewPath.enemyCount == path.enemyCount and currentNewPath.priority >= path.priority then
+								insertPos = i
 
 								break
 							end
 						end
 
-						table.insert(var_1_2, var_2_9 + 1, var_2_0)
+						table.insert(openList, insertPos + 1, newCell)
 					end
 				else
-					var_1_0 = math.min(var_1_0, var_2_3)
+					priority = math.min(priority, newPriority)
 				end
 			end
 		end)
 	end
 
-	if var_1_0 >= var_0_0.PrioObstacle then
-		local var_1_7 = 1000000
-		local var_1_8 = var_0_0.PrioForbidden
+	-- 这一段目的是当无法到达目标节点时，选择一个离目标节点最近的节点作为替代路径
+	if priority >= OrientedWeightPathFinding.PrioObstacle then
+		-- var_1_7 -> minDistance
+		-- var_1_8 -> minPriority
+		local minDistance = 1000000
+		local minPriority = OrientedWeightPathFinding.PrioForbidden
 
-		for iter_1_0, iter_1_1 in pairs(var_1_4) do
-			for iter_1_2, iter_1_3 in pairs(iter_1_1) do
-				local var_1_9 = math.abs(arg_1_4.row - iter_1_0) + math.abs(arg_1_4.column - iter_1_2)
+		-- iter_1_0 -> row
+		-- iter_1_1 -> columnTable
+		for row, columnTable in pairs(pathTable) do
+			-- iter_1_2 -> column
+			-- iter_1_3 -> path(字段：enemyCount、priority和path)
+			for column, path in pairs(columnTable) do
+				-- var_1_9 -> distance
+					-- distance: path所在节点到目标节点的曼哈顿距离
+				local distance = math.abs(targetCell.row - row) + math.abs(targetCell.column - column)
 
-				if var_1_9 < var_1_7 or var_1_9 == var_1_7 and var_1_8 > iter_1_3.priority then
-					var_1_7 = var_1_9
-					var_1_8 = iter_1_3.priority
-					var_1_1 = iter_1_3.path
+				-- 优先距离最短
+				-- 如果距离相同，则选择priority更小的路径
+					--(这逻辑是否有点问题？minPriority应该是对每个distance更新时要重置的吧？否则priority只会越来越小，可能选不到distance更小的路径)
+				if distance < minDistance or distance == minDistance and minPriority > path.priority then
+					minDistance = distance
+					minPriority = path.priority
+					path = path.path
 				end
 			end
 		end
 	end
 
-	return var_1_0, var_1_1
+	return priority, path
 end
 
-function var_0_0.StaticFind(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
-	arg_5_3 = {
-		row = arg_5_3.row,
-		column = arg_5_3.column
+-- arg_5_0 -> pathCells
+-- arg_5_1 -> maxRow
+-- arg_5_2 -> maxColumn
+-- arg_5_3 -> startCell
+-- arg_5_4 -> targetCell
+function OrientedWeightPathFinding.StaticFind(pathCells, maxRow, maxColumn, startCell, targetCell)
+	startCell = {
+		row = startCell.row,
+		column = startCell.column
 	}
-	arg_5_4 = {
-		row = arg_5_4.row,
-		column = arg_5_4.column
+	targetCell = {
+		row = targetCell.row,
+		column = targetCell.column
 	}
 
-	if arg_5_0[arg_5_3.row][arg_5_3.column].priority < 0 or arg_5_0[arg_5_4.row][arg_5_4.column].priority < 0 then
+	if pathCells[startCell.row][startCell.column].priority < 0 or pathCells[targetCell.row][targetCell.column].priority < 0 then
 		return 0, {}
 	else
-		return var_0_2(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
+		return _Find(pathCells, maxRow, maxColumn, startCell, targetCell)
 	end
 end
 
-return var_0_0
+return OrientedWeightPathFinding

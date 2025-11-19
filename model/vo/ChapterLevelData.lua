@@ -1,6 +1,6 @@
-local var_0_0 = import(".Chapter")
+local ChapterLevelData = import(".Chapter")
 
-function var_0_0.update(arg_1_0, arg_1_1)
+function ChapterLevelData.update(arg_1_0, arg_1_1)
 	assert(arg_1_1.id == arg_1_0.id, "章节ID不一致, 无法更新数据")
 
 	arg_1_0.active = true
@@ -231,7 +231,7 @@ function var_0_0.update(arg_1_0, arg_1_1)
 	arg_1_0.activateAmbush = not arg_1_0:isLoop() and arg_1_0:GetWillActiveAmbush()
 end
 
-function var_0_0.retreat(arg_10_0, arg_10_1)
+function ChapterLevelData.retreat(arg_10_0, arg_10_1)
 	if arg_10_1 then
 		arg_10_0.todayDefeatCount = arg_10_0.todayDefeatCount + 1
 
@@ -239,7 +239,7 @@ function var_0_0.retreat(arg_10_0, arg_10_1)
 	end
 end
 
-function var_0_0.CleanLevelData(arg_11_0)
+function ChapterLevelData.CleanLevelData(arg_11_0)
 	arg_11_0.active = false
 	arg_11_0.loopFlag = 0
 	arg_11_0.dueTime = nil
@@ -271,7 +271,7 @@ function var_0_0.CleanLevelData(arg_11_0)
 	arg_11_0.scoreHistory = nil
 end
 
-function var_0_0.__index(arg_12_0, arg_12_1)
+function ChapterLevelData.__index(arg_12_0, arg_12_1)
 	if arg_12_1 == "fleet" then
 		local var_12_0 = rawget(arg_12_0, "fleets")
 
@@ -282,10 +282,10 @@ function var_0_0.__index(arg_12_0, arg_12_1)
 		return var_12_0[rawget(arg_12_0, "findex")]
 	end
 
-	return rawget(arg_12_0, arg_12_1) or var_0_0[arg_12_1]
+	return rawget(arg_12_0, arg_12_1) or ChapterLevelData[arg_12_1]
 end
 
-function var_0_0.GetActiveFleet(arg_13_0)
+function ChapterLevelData.GetActiveFleet(arg_13_0)
 	if not arg_13_0.fleets then
 		return nil
 	end
@@ -293,19 +293,19 @@ function var_0_0.GetActiveFleet(arg_13_0)
 	return arg_13_0.fleets[arg_13_0.findex]
 end
 
-function var_0_0.getFleetById(arg_14_0, arg_14_1)
+function ChapterLevelData.getFleetById(arg_14_0, arg_14_1)
 	return _.detect(arg_14_0.fleets, function(arg_15_0)
 		return arg_15_0.id == arg_14_1
 	end)
 end
 
-function var_0_0.getChapterSupportFleet(arg_16_0)
+function ChapterLevelData.getChapterSupportFleet(arg_16_0)
 	return table.Find(arg_16_0.fleets, function(arg_17_0, arg_17_1)
 		return arg_17_1:getFleetType() == FleetType.Support
 	end)
 end
 
-function var_0_0.getFleetByShipVO(arg_18_0, arg_18_1)
+function ChapterLevelData.getFleetByShipVO(arg_18_0, arg_18_1)
 	local var_18_0 = arg_18_1.id
 	local var_18_1
 
@@ -320,67 +320,78 @@ function var_0_0.getFleetByShipVO(arg_18_0, arg_18_1)
 	return var_18_1
 end
 
-function var_0_0.getRound(arg_19_0)
+function ChapterLevelData.getRound(arg_19_0)
 	return arg_19_0.roundIndex % 2
 end
 
-function var_0_0.getRoundNum(arg_20_0)
+function ChapterLevelData.getRoundNum(arg_20_0)
 	return math.floor(arg_20_0.roundIndex / 2)
 end
 
-function var_0_0.IncreaseRound(arg_21_0)
+function ChapterLevelData.IncreaseRound(arg_21_0)
 	arg_21_0.roundIndex = arg_21_0.roundIndex + 1
 end
 
-function var_0_0.existMoveLimit(arg_22_0)
+function ChapterLevelData.existMoveLimit(arg_22_0)
 	return arg_22_0:getConfig("is_limit_move") == 1 or arg_22_0:existOni() or arg_22_0:isPlayingWithBombEnemy()
 end
 
-function var_0_0.getChapterCell(arg_23_0, arg_23_1, arg_23_2)
+function ChapterLevelData.getChapterCell(arg_23_0, arg_23_1, arg_23_2)
 	local var_23_0 = ChapterCell.Line2Name(arg_23_1, arg_23_2)
 
 	return Clone(arg_23_0.cells[var_23_0])
 end
 
-function var_0_0.GetRawChapterCell(arg_24_0, arg_24_1, arg_24_2)
+function ChapterLevelData.GetRawChapterCell(arg_24_0, arg_24_1, arg_24_2)
 	local var_24_0 = ChapterCell.Line2Name(arg_24_1, arg_24_2)
 
 	return arg_24_0.cells[var_24_0]
 end
 
-function var_0_0.FilterCell(arg_25_0, arg_25_1)
+function ChapterLevelData.FilterCell(arg_25_0, arg_25_1)
 	return table.Checkout(arg_25_0.cells, arg_25_1)
 end
 
-function var_0_0.findChapterCell(arg_26_0, arg_26_1, arg_26_2)
-	for iter_26_0, iter_26_1 in pairs(arg_26_0.cells) do
-		if iter_26_1.attachment == arg_26_1 and (not arg_26_2 or iter_26_1.attachmentId == arg_26_2) then
-			return iter_26_1
+-- arg_26_0 -> self
+-- arg_26_1 -> attachType
+-- arg_26_2 -> attachId
+function ChapterLevelData.findChapterCell(self, attachType, attachId)
+	-- iter_26_0 -> _
+	-- iter_26_1 -> cell
+	for _, cell in pairs(self.cells) do
+		if cell.attachment == attachType and (not attachId or cell.attachmentId == attachId) then
+			return cell
 		end
 	end
 
 	return nil
 end
 
-function var_0_0.findChapterCells(arg_27_0, arg_27_1, arg_27_2)
-	local var_27_0 = {}
+-- arg_27_0 -> self
+-- arg_27_1 -> attachType
+-- arg_27_2 -> attachId
+function ChapterLevelData.findChapterCells(self, attachType, attachId)
+	-- var_27_0 -> resultCells
+	local resultCells = {}
 
-	for iter_27_0, iter_27_1 in pairs(arg_27_0.cells) do
-		if iter_27_1.attachment == arg_27_1 and (not arg_27_2 or iter_27_1.attachmentId == arg_27_2) then
-			table.insert(var_27_0, iter_27_1)
+	-- iter_27_0 -> _
+	-- iter_27_1 -> cell
+	for _, cell in pairs(self.cells) do
+		if cell.attachment == attachType and (not attachId or cell.attachmentId == attachId) then
+			table.insert(resultCells, cell)
 		end
 	end
 
-	return var_27_0
+	return resultCells
 end
 
-function var_0_0.GetBossCell(arg_28_0)
+function ChapterLevelData.GetBossCell(arg_28_0)
 	return table.Find(arg_28_0.cells, function(arg_29_0, arg_29_1)
 		return ChapterConst.IsBossCell(arg_29_1)
 	end)
 end
 
-function var_0_0.mergeChapterCell(arg_30_0, arg_30_1, arg_30_2)
+function ChapterLevelData.mergeChapterCell(arg_30_0, arg_30_1, arg_30_2)
 	local var_30_0 = ChapterCell.Line2Name(arg_30_1.row, arg_30_1.column)
 	local var_30_1 = arg_30_0.cells[var_30_0]
 	local var_30_2 = var_30_1 == nil or var_30_1.attachment ~= arg_30_1.attachment or var_30_1.attachmentId ~= arg_30_1.attachmentId
@@ -408,13 +419,13 @@ function var_0_0.mergeChapterCell(arg_30_0, arg_30_1, arg_30_2)
 	arg_30_0:updateChapterCell(arg_30_1)
 end
 
-function var_0_0.updateChapterCell(arg_31_0, arg_31_1)
+function ChapterLevelData.updateChapterCell(arg_31_0, arg_31_1)
 	local var_31_0 = ChapterCell.Line2Name(arg_31_1.row, arg_31_1.column)
 
 	arg_31_0.cells[var_31_0] = Clone(arg_31_1)
 end
 
-function var_0_0.clearChapterCell(arg_32_0, arg_32_1, arg_32_2)
+function ChapterLevelData.clearChapterCell(arg_32_0, arg_32_1, arg_32_2)
 	local var_32_0 = ChapterCell.Line2Name(arg_32_1, arg_32_2)
 	local var_32_1 = arg_32_0.cells[var_32_0]
 
@@ -425,17 +436,17 @@ function var_0_0.clearChapterCell(arg_32_0, arg_32_1, arg_32_2)
 	var_32_1.trait = ChapterConst.TraitNone
 end
 
-function var_0_0.GetChapterCellAttachemnts(arg_33_0)
+function ChapterLevelData.GetChapterCellAttachemnts(arg_33_0)
 	return arg_33_0.cellAttachments
 end
 
-function var_0_0.GetRawChapterAttachemnt(arg_34_0, arg_34_1, arg_34_2)
+function ChapterLevelData.GetRawChapterAttachemnt(arg_34_0, arg_34_1, arg_34_2)
 	local var_34_0 = ChapterCell.Line2Name(arg_34_1, arg_34_2)
 
 	return arg_34_0.cellAttachments[var_34_0]
 end
 
-function var_0_0.getShips(arg_35_0)
+function ChapterLevelData.getShips(arg_35_0)
 	local var_35_0 = {}
 
 	_.each(arg_35_0.fleets, function(arg_36_0)
@@ -449,7 +460,7 @@ function var_0_0.getShips(arg_35_0)
 	return var_35_0
 end
 
-function var_0_0.getNextValidIndex(arg_38_0)
+function ChapterLevelData.getNextValidIndex(arg_38_0)
 	for iter_38_0 = arg_38_0.findex + 1, #arg_38_0.fleets do
 		if arg_38_0.fleets[iter_38_0]:getFleetType() == FleetType.Normal and arg_38_0.fleets[iter_38_0]:isValid() then
 			return iter_38_0
@@ -465,7 +476,7 @@ function var_0_0.getNextValidIndex(arg_38_0)
 	return 0
 end
 
-function var_0_0.getAmbushRate(arg_39_0, arg_39_1, arg_39_2)
+function ChapterLevelData.getAmbushRate(arg_39_0, arg_39_1, arg_39_2)
 	local var_39_0 = arg_39_1:getInvestSums()
 	local var_39_1 = arg_39_0:getConfig("investigation_ratio")
 	local var_39_2 = var_39_1 / (var_39_1 + var_39_0) / 4
@@ -489,7 +500,7 @@ function var_0_0.getAmbushRate(arg_39_0, arg_39_1, arg_39_2)
 	return (math.clamp(var_39_7, 0, 1))
 end
 
-function var_0_0.getAmbushDodge(arg_42_0, arg_42_1)
+function ChapterLevelData.getAmbushDodge(arg_42_0, arg_42_1)
 	local var_42_0 = arg_42_1.line
 	local var_42_1 = arg_42_1:getDodgeSums()
 	local var_42_2 = var_42_1 / (var_42_1 + arg_42_0:getConfig("avoid_ratio"))
@@ -507,11 +518,11 @@ function var_0_0.getAmbushDodge(arg_42_0, arg_42_1)
 	return (math.clamp(var_42_2, 0, 1))
 end
 
-function var_0_0.inWartime(arg_44_0)
+function ChapterLevelData.inWartime(arg_44_0)
 	return arg_44_0.dueTime and pg.TimeMgr.GetInstance():GetServerTime() < arg_44_0.dueTime
 end
 
-function var_0_0.inActTime(arg_45_0)
+function ChapterLevelData.inActTime(arg_45_0)
 	local var_45_0 = arg_45_0:GetBindActID()
 
 	if var_45_0 == 0 then
@@ -523,15 +534,15 @@ function var_0_0.inActTime(arg_45_0)
 	return var_45_1 and not var_45_1:isEnd()
 end
 
-function var_0_0.getRemainTime(arg_46_0)
+function ChapterLevelData.getRemainTime(arg_46_0)
 	return arg_46_0.dueTime and math.max(arg_46_0.dueTime - pg.TimeMgr.GetInstance():GetServerTime() - 1, 0) or 0
 end
 
-function var_0_0.getStartTime(arg_47_0)
+function ChapterLevelData.getStartTime(arg_47_0)
 	return math.max(arg_47_0.dueTime - arg_47_0:getConfig("time"), 0)
 end
 
-function var_0_0.GetWillActiveAmbush(arg_48_0)
+function ChapterLevelData.GetWillActiveAmbush(arg_48_0)
 	if not arg_48_0:existAmbush() then
 		return false
 	end
@@ -543,160 +554,215 @@ function var_0_0.GetWillActiveAmbush(arg_48_0)
 	end)
 end
 
-function var_0_0.findPath(arg_50_0, arg_50_1, arg_50_2, arg_50_3)
-	local var_50_0 = {}
+-- arg_50_0 -> self
+-- arg_50_1 -> subject(分为玩家移动/敌人移动)
+-- arg_50_2 -> startCell
+-- arg_50_3 -> targetCell
+function ChapterLevelData.findPath(self, subject, startCell, targetCell)
+	-- var_50_0 -> pathCells
+		-- 该表结构为二维数组，行列对应章节格子坐标，内容为表，包含priority和forbiddens字段
+		-- 该函数将表初始化
+	local pathCells = {}
 
-	for iter_50_0 = 0, ChapterConst.MaxRow - 1 do
-		var_50_0[iter_50_0] = var_50_0[iter_50_0] or {}
+	-- iter_50_0 -> row
+	for row = 0, ChapterConst.MaxRow - 1 do
+		pathCells[row] = pathCells[row] or {}
 
-		for iter_50_1 = 0, ChapterConst.MaxColumn - 1 do
-			var_50_0[iter_50_0][iter_50_1] = var_50_0[iter_50_0][iter_50_1] or {}
+		-- iter_50_1 -> column
+		for column = 0, ChapterConst.MaxColumn - 1 do
+			pathCells[row][column] = pathCells[row][column] or {}
 
-			local var_50_1 = PathFinding.PrioForbidden
-			local var_50_2 = ChapterConst.ForbiddenAll
-			local var_50_3 = ChapterCell.Line2Name(iter_50_0, iter_50_1)
-			local var_50_4 = arg_50_0.cells[var_50_3]
+			-- var_50_1 -> priority(初始化为PrioForbidden=1000000)
+			-- var_50_2 -> forbiddens(初始化为ForbiddenAll=15)
+			-- var_50_3 -> cellName(format: "chapter_cell_{row}_{column}")
+			-- var_50_4 -> cell(model/vo/ChapterCell.lua)
+			local priority = PathFinding.PrioForbidden
+			local forbiddens = ChapterConst.ForbiddenAll
+			local cellName = ChapterCell.Line2Name(row, column)
+			local cell = self.cells[cellName]
 
-			if var_50_4 and var_50_4:IsWalkable() then
-				var_50_1 = PathFinding.PrioNormal
+			if cell and cell:IsWalkable() then
+				priority = PathFinding.PrioNormal
 
-				if arg_50_0:considerAsObstacle(arg_50_1, var_50_4.row, var_50_4.column) then
-					var_50_1 = PathFinding.PrioObstacle
+				if self:considerAsObstacle(subject, cell.row, cell.column) then
+					priority = PathFinding.PrioObstacle
 				end
 
-				if arg_50_1 == ChapterConst.SubjectPlayer then
-					var_50_2 = var_50_4.forbiddenDirections
+				if subject == ChapterConst.SubjectPlayer then
+					forbiddens = cell.forbiddenDirections
 				else
-					var_50_2 = ChapterConst.ForbiddenNone
+					forbiddens = ChapterConst.ForbiddenNone
 				end
 			end
 
-			var_50_0[iter_50_0][iter_50_1].forbiddens = var_50_2
-			var_50_0[iter_50_0][iter_50_1].priority = var_50_1
+			pathCells[row][column].forbiddens = forbiddens
+			pathCells[row][column].priority = priority
 		end
 	end
 
-	if arg_50_1 == ChapterConst.SubjectPlayer then
-		local var_50_5 = arg_50_0:getCoastalGunArea()
+	if subject == ChapterConst.SubjectPlayer then
+		-- var_50_5 -> costalGunArea
+		local costalGunArea = self:getCoastalGunArea()
 
-		for iter_50_2, iter_50_3 in ipairs(var_50_5) do
-			var_50_0[iter_50_3.row][iter_50_3.column].priority = math.max(var_50_0[iter_50_3.row][iter_50_3.column].priority, PathFinding.PrioObstacle)
+		-- iter_50_2 -> _
+		-- iter_50_3 -> coastalGunCell
+		for _, coastalGunCell in ipairs(costalGunArea) do
+			pathCells[coastalGunCell.row][coastalGunCell.column].priority = math.max(pathCells[coastalGunCell.row][coastalGunCell.column].priority, PathFinding.PrioObstacle)
 		end
 	end
 
-	local var_50_6 = var_50_0[arg_50_3.row] and var_50_0[arg_50_3.row][arg_50_3.column]
+	-- var_50_6 -> pathTargetCell
+	local pathTargetCell = pathCells[targetCell.row] and pathCells[targetCell.row][targetCell.column]
 
-	if var_50_6 then
-		var_50_6.priority = arg_50_0:considerAsStayPoint(arg_50_1, arg_50_3.row, arg_50_3.column) and PathFinding.PrioNormal or PathFinding.PrioObstacle
+	if pathTargetCell then
+		pathTargetCell.priority = self:considerAsStayPoint(subject, targetCell.row, targetCell.column) and PathFinding.PrioNormal or PathFinding.PrioObstacle
 	end
 
-	arg_50_0.pathFinder.cells = var_50_0
+	self.pathFinder.cells = pathCells
 
-	return arg_50_0.pathFinder:Find(arg_50_2, arg_50_3)
+	-- pathFinder = OrientedPathFinding.New({}, ChapterConst.MaxRow, ChapterConst.MaxColumn)
+		-- pathFinder.cells = pathCells，将上面初始化的表赋值给pathFinder的cells字段
+		-- OrientedPathFinding: support/utils/OrientedPathFinding.lua
+	return self.pathFinder:Find(startCell, targetCell)
 end
 
-function var_0_0.FindBossPath(arg_51_0, arg_51_1, arg_51_2)
-	local var_51_0 = ChapterConst.SubjectPlayer
-	local var_51_1 = {}
+-- arg_51_0 -> self
+-- arg_51_1 -> startCell
+-- arg_51_2 -> targetCell
+function ChapterLevelData.FindBossPath(self, startCell, targetCell)
+	-- var_51_0 -> subject(固定为SubjectPlayer=1)
+	-- var_51_1 -> pathCells
+		-- 用途参照findPath函数中的pathCells
+	local subject = ChapterConst.SubjectPlayer
+	local pathCells = {}
 
-	for iter_51_0 = 0, ChapterConst.MaxRow - 1 do
-		var_51_1[iter_51_0] = var_51_1[iter_51_0] or {}
+	-- iter_51_0 -> row
+	for row = 0, ChapterConst.MaxRow - 1 do
+		pathCells[row] = pathCells[row] or {}
 
-		for iter_51_1 = 0, ChapterConst.MaxColumn - 1 do
-			var_51_1[iter_51_0][iter_51_1] = var_51_1[iter_51_0][iter_51_1] or {}
+		-- iter_51_1 -> column
+		for column = 0, ChapterConst.MaxColumn - 1 do
+			pathCells[row][column] = pathCells[row][column] or {}
 
-			local var_51_2 = PathFinding.PrioForbidden
-			local var_51_3 = ChapterConst.ForbiddenAll
-			local var_51_4
-			local var_51_5 = ChapterCell.Line2Name(iter_51_0, iter_51_1)
-			local var_51_6 = arg_51_0.cells[var_51_5]
+			-- var_51_2 -> priority(初始化为PrioForbidden=1000000)
+			-- var_51_3 -> forbiddens(初始化为ForbiddenAll=15)
+			-- var_51_4 -> isEnemy(普通敌人为true，Boss敌人为false，默认nil)
+			-- var_51_5 -> cellName(format: "chapter_cell_{row}_{column}")
+			-- var_51_6 -> cell
+			local priority = PathFinding.PrioForbidden
+			local forbiddens = ChapterConst.ForbiddenAll
+			local isEnemy
+			local cellName = ChapterCell.Line2Name(row, column)
+			local cell = self.cells[cellName]
 
-			if var_51_6 and var_51_6:IsWalkable() then
-				var_51_2 = PathFinding.PrioNormal
+			if cell and cell:IsWalkable() then
+				priority = PathFinding.PrioNormal
 
-				if arg_51_0:considerAsObstacle(var_51_0, var_51_6.row, var_51_6.column) then
-					var_51_2 = PathFinding.PrioObstacle
+				if self:considerAsObstacle(subject, cell.row, cell.column) then
+					priority = PathFinding.PrioObstacle
 				end
 
-				local var_51_7 = arg_51_0:GetEnemy(var_51_6.row, var_51_6.column)
+				-- var_51_7 -> enemyCell
+					-- 如果这个cell有敌人，priority = 1，isEnemy = true(普通敌人)/false(Boss敌人)
+				local enemyCell = self:GetEnemy(cell.row, cell.column)
 
-				if var_51_7 then
-					var_51_2 = PathFinding.PrioNormal
-					var_51_4 = not ChapterConst.IsBossCell(var_51_7)
+				if enemyCell then
+					priority = PathFinding.PrioNormal
+					isEnemy = not ChapterConst.IsBossCell(enemyCell)
 				end
 
-				var_51_3 = var_51_6.forbiddenDirections
+				forbiddens = cell.forbiddenDirections
 			end
 
-			var_51_1[iter_51_0][iter_51_1].forbiddens = var_51_3
-			var_51_1[iter_51_0][iter_51_1].priority = var_51_2
-			var_51_1[iter_51_0][iter_51_1].isEnemy = var_51_4
+			pathCells[row][column].forbiddens = forbiddens
+			pathCells[row][column].priority = priority
+			pathCells[row][column].isEnemy = isEnemy
 		end
 	end
 
-	local var_51_8 = arg_51_0:getCoastalGunArea()
+	-- var_51_8 -> coastalGunArea
+	local coastalGunArea = self:getCoastalGunArea()
 
-	for iter_51_2, iter_51_3 in ipairs(var_51_8) do
-		var_51_1[iter_51_3.row][iter_51_3.column].priority = math.max(var_51_1[iter_51_3.row][iter_51_3.column].priority, PathFinding.PrioObstacle)
+	-- iter_51_2 -> _
+	-- iter_51_3 -> coastalGunCell
+	for _, coastalGunCell in ipairs(coastalGunArea) do
+		pathCells[coastalGunCell.row][coastalGunCell.column].priority = math.max(pathCells[coastalGunCell.row][coastalGunCell.column].priority, PathFinding.PrioObstacle)
 	end
 
-	local var_51_9 = var_51_1[arg_51_2.row] and var_51_1[arg_51_2.row][arg_51_2.column]
+	-- var_51_9 -> pathTargetCell
+	local pathTargetCell = pathCells[targetCell.row] and pathCells[targetCell.row][targetCell.column]
 
-	if var_51_9 then
-		var_51_9.priority = arg_51_0:considerAsStayPoint(var_51_0, arg_51_2.row, arg_51_2.column) and PathFinding.PrioNormal or PathFinding.PrioObstacle
+	if pathTargetCell then
+		pathTargetCell.priority = self:considerAsStayPoint(subject, targetCell.row, targetCell.column) and PathFinding.PrioNormal or PathFinding.PrioObstacle
 	end
 
-	return OrientedWeightPathFinding.StaticFind(var_51_1, ChapterConst.MaxRow, ChapterConst.MaxColumn, arg_51_1, arg_51_2)
+	return OrientedWeightPathFinding.StaticFind(pathCells, ChapterConst.MaxRow, ChapterConst.MaxColumn, startCell, targetCell)
 end
 
-function var_0_0.getWaveCount(arg_52_0)
-	local var_52_0 = 0
+-- arg_52_0 -> self
+function ChapterLevelData.getWaveCount(self)
+	-- var_52_0 -> enemyCount
+	local enemyCount = 0
 
-	for iter_52_0, iter_52_1 in pairs(arg_52_0.cells) do
-		if iter_52_1.attachment == ChapterConst.AttachEnemy and underscore.detect(arg_52_0:getConfig("grids"), function(arg_53_0)
-			if arg_53_0[1] == iter_52_1.row and arg_53_0[2] == iter_52_1.column and (arg_53_0[4] == ChapterConst.AttachElite or arg_53_0[4] == ChapterConst.AttachEnemy) then
+	-- iter_52_0 -> _
+	-- iter_52_1 -> cell
+	for _, cell in pairs(self.cells) do
+		-- underscore.detect(items, func): 找到第一个满足条件的元素并返回该元素，否则返回nil
+		-- arg_53_0 -> grid
+		if cell.attachment == ChapterConst.AttachEnemy and underscore.detect(self:getConfig("grids"), function(grid)
+			if grid[1] == cell.row and grid[2] == cell.column and (grid[4] == ChapterConst.AttachElite or grid[4] == ChapterConst.AttachEnemy) then
 				return true
 			end
 
 			return false
 		end) then
-			var_52_0 = var_52_0 + 1
+			enemyCount = enemyCount + 1
 		end
 	end
 
-	local var_52_1 = 0
-	local var_52_2 = pg.chapter_group_refresh[arg_52_0.id]
+	-- var_52_1 -> totalEnemyCount
+	-- var_52_2 -> groupRefreshConfig
+	local totalEnemyCount = 0
+	local groupRefreshConfig = pg.chapter_group_refresh[self.id]
 
-	if var_52_2 then
-		local var_52_3 = 1
+	if groupRefreshConfig then
+		-- var_52_3 -> waveIndex
+		local waveIndex = 1
 
 		repeat
-			local var_52_4 = false
+			-- var_52_4 -> waveHasEnemies
+			local waveHasEnemies = false
 
-			for iter_52_2, iter_52_3 in ipairs(var_52_2.enemy_refresh) do
-				var_52_1 = var_52_1 + (iter_52_3[var_52_3] or 0)
-				var_52_4 = var_52_4 or tobool(iter_52_3[var_52_3])
+			-- iter_52_2 -> _
+			-- iter_52_3 -> refreshConfig
+			for _, refreshConfig in ipairs(groupRefreshConfig.enemy_refresh) do
+				totalEnemyCount = totalEnemyCount + (refreshConfig[waveIndex] or 0)
+				waveHasEnemies = waveHasEnemies or tobool(refreshConfig[waveIndex])
 			end
 
-			if var_52_0 <= var_52_1 then
-				return var_52_3
+			if enemyCount <= totalEnemyCount then
+				return waveIndex
 			end
 
-			var_52_3 = var_52_3 + 1
-		until not var_52_4
+			waveIndex = waveIndex + 1
+		until not waveHasEnemies
 	else
-		local var_52_5 = arg_52_0:getConfig("enemy_refresh")
-		local var_52_6 = arg_52_0:getConfig("elite_refresh")
+		-- var_52_5 -> enemyRefreshConfig
+		-- var_52_6  -> eliteRefreshConfig
+		local enemyRefreshConfig = self:getConfig("enemy_refresh")
+		local eliteRefreshConfig = self:getConfig("elite_refresh")
 
-		for iter_52_4, iter_52_5 in pairs(var_52_5) do
-			var_52_1 = var_52_1 + iter_52_5
+		-- iter_52_4 -> waveIndex
+		-- iter_52_5 -> refreshCount
+		for waveIndex, refreshCount in pairs(enemyRefreshConfig) do
+			totalEnemyCount = totalEnemyCount + refreshCount
 
-			if iter_52_4 <= #var_52_6 then
-				var_52_1 = var_52_1 + var_52_6[iter_52_4]
+			if waveIndex <= #eliteRefreshConfig then
+				totalEnemyCount = totalEnemyCount + eliteRefreshConfig[waveIndex]
 			end
 
-			if var_52_0 <= var_52_1 then
-				return iter_52_4
+			if enemyCount <= totalEnemyCount then
+				return waveIndex
 			end
 		end
 	end
@@ -704,11 +770,11 @@ function var_0_0.getWaveCount(arg_52_0)
 	return 1
 end
 
-function var_0_0.IsFinalBossRefreshed(arg_54_0)
+function ChapterLevelData.IsFinalBossRefreshed(arg_54_0)
 	return tobool(arg_54_0:findChapterCell(ChapterConst.AttachBoss))
 end
 
-function var_0_0.getFleetAmmo(arg_55_0, arg_55_1)
+function ChapterLevelData.getFleetAmmo(arg_55_0, arg_55_1)
 	local var_55_0 = arg_55_1:getShipAmmo()
 	local var_55_1 = arg_55_1:getFleetType()
 
@@ -725,7 +791,7 @@ function var_0_0.getFleetAmmo(arg_55_0, arg_55_1)
 	return var_55_0, var_55_2
 end
 
-function var_0_0.GetInteractableStrategies(arg_56_0)
+function ChapterLevelData.GetInteractableStrategies(arg_56_0)
 	local var_56_0 = arg_56_0.fleet:getStrategies()
 	local var_56_1 = _.filter(var_56_0, function(arg_57_0)
 		local var_57_0 = pg.strategy_data_template[arg_57_0.id]
@@ -772,7 +838,7 @@ function var_0_0.GetInteractableStrategies(arg_56_0)
 	return var_56_1
 end
 
-function var_0_0.getFleetStates(arg_59_0, arg_59_1)
+function ChapterLevelData.getFleetStates(arg_59_0, arg_59_1)
 	local var_59_0 = {}
 	local var_59_1, var_59_2 = arg_59_0:getFleetAmmo(arg_59_1)
 
@@ -848,7 +914,7 @@ function var_0_0.getFleetStates(arg_59_0, arg_59_1)
 	return var_59_0
 end
 
-function var_0_0.GetShowingStrategies(arg_66_0)
+function ChapterLevelData.GetShowingStrategies(arg_66_0)
 	local var_66_0 = arg_66_0.fleet
 	local var_66_1 = arg_66_0:getFleetStates(var_66_0)
 
@@ -859,13 +925,13 @@ function var_0_0.GetShowingStrategies(arg_66_0)
 	end))
 end
 
-function var_0_0.getAirDominanceStg(arg_68_0)
+function ChapterLevelData.getAirDominanceStg(arg_68_0)
 	local var_68_0, var_68_1 = arg_68_0:getAirDominanceValue()
 
 	return ChapterConst.AirDominance[var_68_1].StgId
 end
 
-function var_0_0.getAirDominanceValue(arg_69_0)
+function ChapterLevelData.getAirDominanceValue(arg_69_0)
 	local var_69_0 = 0
 	local var_69_1 = 0
 
@@ -879,11 +945,11 @@ function var_0_0.getAirDominanceValue(arg_69_0)
 	return var_69_0, calcAirDominanceStatus(var_69_0, arg_69_0:getConfig("air_dominance"), var_69_1), arg_69_0.airDominanceStatus
 end
 
-function var_0_0.setAirDominanceStatus(arg_70_0, arg_70_1)
+function ChapterLevelData.setAirDominanceStatus(arg_70_0, arg_70_1)
 	arg_70_0.airDominanceStatus = arg_70_1
 end
 
-function var_0_0.updateExtraFlags(arg_71_0, arg_71_1, arg_71_2)
+function ChapterLevelData.updateExtraFlags(arg_71_0, arg_71_1, arg_71_2)
 	local var_71_0 = false
 
 	for iter_71_0, iter_71_1 in ipairs(arg_71_2) do
@@ -909,7 +975,7 @@ function var_0_0.updateExtraFlags(arg_71_0, arg_71_1, arg_71_2)
 	return var_71_0
 end
 
-function var_0_0.getExtraFlags(arg_72_0)
+function ChapterLevelData.getExtraFlags(arg_72_0)
 	local var_72_0 = arg_72_0.extraFlagList
 
 	if #var_72_0 == 0 then
@@ -919,7 +985,7 @@ function var_0_0.getExtraFlags(arg_72_0)
 	return var_72_0
 end
 
-function var_0_0.UpdateBuffList(arg_73_0, arg_73_1)
+function ChapterLevelData.UpdateBuffList(arg_73_0, arg_73_1)
 	if not arg_73_1 then
 		return
 	end
@@ -931,7 +997,7 @@ function var_0_0.UpdateBuffList(arg_73_0, arg_73_1)
 	end
 end
 
-function var_0_0.getFleetBattleBuffs(arg_74_0, arg_74_1)
+function ChapterLevelData.getFleetBattleBuffs(arg_74_0, arg_74_1)
 	local var_74_0 = table.shallowCopy(arg_74_0.buff_list)
 
 	_.each(arg_74_0:getFleetStates(arg_74_1), function(arg_75_0)
@@ -966,14 +1032,14 @@ function var_0_0.getFleetBattleBuffs(arg_74_0, arg_74_1)
 	return var_74_0, var_74_1
 end
 
-function var_0_0.GetStageFlags(arg_77_0)
+function ChapterLevelData.GetStageFlags(arg_77_0)
 	local var_77_0 = arg_77_0.fleet.line.row
 	local var_77_1 = arg_77_0.fleet.line.column
 
 	return arg_77_0:GetCellEventByKey("stage_flags", var_77_0, var_77_1) or {}
 end
 
-function var_0_0.GetCellEventByKey(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
+function ChapterLevelData.GetCellEventByKey(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
 	arg_78_2 = arg_78_2 or arg_78_0.fleet.line.row
 	arg_78_3 = arg_78_3 or arg_78_0.fleet.line.column
 
@@ -984,10 +1050,10 @@ function var_0_0.GetCellEventByKey(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
 		return
 	end
 
-	return var_0_0.GetEventTemplateByKey(arg_78_1, var_78_1.attachmentId)
+	return ChapterLevelData.GetEventTemplateByKey(arg_78_1, var_78_1.attachmentId)
 end
 
-function var_0_0.GetEventTemplateByKey(arg_79_0, arg_79_1)
+function ChapterLevelData.GetEventTemplateByKey(arg_79_0, arg_79_1)
 	local var_79_0 = pg.map_event_template[arg_79_1]
 
 	if not var_79_0 then
@@ -1009,7 +1075,7 @@ function var_0_0.GetEventTemplateByKey(arg_79_0, arg_79_1)
 	return var_79_1
 end
 
-function var_0_0.buildBattleBuffList(arg_80_0, arg_80_1)
+function ChapterLevelData.buildBattleBuffList(arg_80_0, arg_80_1)
 	local var_80_0 = {}
 	local var_80_1, var_80_2 = arg_80_0:triggerSkill(arg_80_1, FleetSkill.TypeBattleBuff)
 
@@ -1071,7 +1137,7 @@ function var_0_0.buildBattleBuffList(arg_80_0, arg_80_1)
 	return var_80_0
 end
 
-function var_0_0.updateFleetShipHp(arg_81_0, arg_81_1, arg_81_2)
+function ChapterLevelData.updateFleetShipHp(arg_81_0, arg_81_1, arg_81_2)
 	for iter_81_0, iter_81_1 in ipairs(arg_81_0.fleets) do
 		iter_81_1:updateShipHp(arg_81_1, arg_81_2)
 
@@ -1081,7 +1147,7 @@ function var_0_0.updateFleetShipHp(arg_81_0, arg_81_1, arg_81_2)
 	end
 end
 
-function var_0_0.getDragExtend(arg_82_0)
+function ChapterLevelData.getDragExtend(arg_82_0)
 	local var_82_0 = arg_82_0.theme
 	local var_82_1 = 99999999
 	local var_82_2 = 99999999
@@ -1117,7 +1183,7 @@ function var_0_0.getDragExtend(arg_82_0)
 	return var_82_9, var_82_8, var_82_10, var_82_11
 end
 
-function var_0_0.getPoisonArea(arg_83_0, arg_83_1)
+function ChapterLevelData.getPoisonArea(arg_83_0, arg_83_1)
 	local var_83_0 = {}
 	local var_83_1 = arg_83_0.theme.cellSize + arg_83_0.theme.cellSpace
 
@@ -1142,7 +1208,7 @@ function var_0_0.getPoisonArea(arg_83_0, arg_83_1)
 	return var_83_0
 end
 
-function var_0_0.selectFleets(arg_84_0, arg_84_1)
+function ChapterLevelData.selectFleets(arg_84_0, arg_84_1)
 	local var_84_0 = Clone(arg_84_1) or {}
 	local var_84_1 = getProxy(FleetProxy):GetRegularFleets()
 
@@ -1206,13 +1272,13 @@ function var_0_0.selectFleets(arg_84_0, arg_84_1)
 	return var_84_7
 end
 
-function var_0_0.GetDefaultFleetIndex(arg_87_0)
+function ChapterLevelData.GetDefaultFleetIndex(arg_87_0)
 	local var_87_0 = getProxy(ChapterProxy):GetLastFleetIndex()
 
 	return arg_87_0:selectFleets(var_87_0)
 end
 
-function var_0_0.getMaxColumnByRow(arg_88_0, arg_88_1)
+function ChapterLevelData.getMaxColumnByRow(arg_88_0, arg_88_1)
 	local var_88_0 = -1
 
 	for iter_88_0, iter_88_1 in pairs(arg_88_0.cells) do
@@ -1224,7 +1290,7 @@ function var_0_0.getMaxColumnByRow(arg_88_0, arg_88_1)
 	return var_88_0
 end
 
-function var_0_0.getFleet(arg_89_0, arg_89_1, arg_89_2, arg_89_3)
+function ChapterLevelData.getFleet(arg_89_0, arg_89_1, arg_89_2, arg_89_3)
 	return _.detect(arg_89_0.fleets, function(arg_90_0)
 		return arg_90_0.line.row == arg_89_2 and arg_90_0.line.column == arg_89_3 and (not arg_89_1 or arg_90_0:getFleetType() == arg_89_1) and arg_90_0:isValid()
 	end) or _.detect(arg_89_0.fleets, function(arg_91_0)
@@ -1232,7 +1298,7 @@ function var_0_0.getFleet(arg_89_0, arg_89_1, arg_89_2, arg_89_3)
 	end)
 end
 
-function var_0_0.getFleetIndex(arg_92_0, arg_92_1, arg_92_2, arg_92_3)
+function ChapterLevelData.getFleetIndex(arg_92_0, arg_92_1, arg_92_2, arg_92_3)
 	local var_92_0 = arg_92_0:getFleet(arg_92_1, arg_92_2, arg_92_3)
 
 	if var_92_0 then
@@ -1240,19 +1306,19 @@ function var_0_0.getFleetIndex(arg_92_0, arg_92_1, arg_92_2, arg_92_3)
 	end
 end
 
-function var_0_0.getOni(arg_93_0)
+function ChapterLevelData.getOni(arg_93_0)
 	return _.detect(arg_93_0.champions, function(arg_94_0)
 		return arg_94_0.attachment == ChapterConst.AttachOni
 	end)
 end
 
-function var_0_0.getChampion(arg_95_0, arg_95_1, arg_95_2)
+function ChapterLevelData.getChampion(arg_95_0, arg_95_1, arg_95_2)
 	return (_.detect(arg_95_0.champions, function(arg_96_0)
 		return arg_96_0.row == arg_95_1 and arg_96_0.column == arg_95_2
 	end))
 end
 
-function var_0_0.getChampionIndex(arg_97_0, arg_97_1, arg_97_2)
+function ChapterLevelData.getChampionIndex(arg_97_0, arg_97_1, arg_97_2)
 	local var_97_0 = arg_97_0:getChampion(arg_97_1, arg_97_2)
 
 	if not var_97_0 then
@@ -1262,13 +1328,13 @@ function var_0_0.getChampionIndex(arg_97_0, arg_97_1, arg_97_2)
 	return table.indexof(arg_97_0.champions, var_97_0)
 end
 
-function var_0_0.getChampionVisibility(arg_98_0, arg_98_1, arg_98_2, arg_98_3)
+function ChapterLevelData.getChampionVisibility(arg_98_0, arg_98_1, arg_98_2, arg_98_3)
 	assert(arg_98_1, "chapter champion not exist.")
 
 	return arg_98_1.flag == ChapterConst.CellFlagActive
 end
 
-function var_0_0.mergeChampion(arg_99_0, arg_99_1, arg_99_2)
+function ChapterLevelData.mergeChampion(arg_99_0, arg_99_1, arg_99_2)
 	local var_99_0 = arg_99_0:getChampionIndex(arg_99_1.row, arg_99_1.column)
 
 	if var_99_0 then
@@ -1286,7 +1352,7 @@ function var_0_0.mergeChampion(arg_99_0, arg_99_1, arg_99_2)
 	end
 end
 
-function var_0_0.RemoveChampion(arg_100_0, arg_100_1)
+function ChapterLevelData.RemoveChampion(arg_100_0, arg_100_1)
 	local var_100_0 = table.indexof(arg_100_0.champions, arg_100_1)
 
 	if var_100_0 then
@@ -1294,87 +1360,98 @@ function var_0_0.RemoveChampion(arg_100_0, arg_100_1)
 	end
 end
 
-function var_0_0.considerAsObstacle(arg_101_0, arg_101_1, arg_101_2, arg_101_3)
-	local var_101_0 = arg_101_0:getChapterCell(arg_101_2, arg_101_3)
+-- arg_101_0 -> self
+-- arg_101_1 -> subject
+-- arg_101_2 -> row
+-- arg_101_3 -> column
+function ChapterLevelData.considerAsObstacle(self, subject, row, column)
+	-- var_101_0 -> cell
+	local cell = self:getChapterCell(row, column)
 
-	if not var_101_0 or not var_101_0:IsWalkable() then
+	if not cell or not cell:IsWalkable() then
 		return true
 	end
 
-	if arg_101_0:existBarrier(arg_101_2, arg_101_3) then
+	if self:existBarrier(row, column) then
 		return true
 	end
 
-	if arg_101_1 == ChapterConst.SubjectPlayer then
-		if var_101_0.flag == ChapterConst.CellFlagActive then
-			if ChapterConst.IsEnemyAttach(var_101_0.attachment) then
+	if subject == ChapterConst.SubjectPlayer then
+		if cell.flag == ChapterConst.CellFlagActive then
+			if ChapterConst.IsEnemyAttach(cell.attachment) then
 				return true
 			end
 
-			if var_101_0.attachment == ChapterConst.AttachBox then
-				local var_101_1 = pg.box_data_template[var_101_0.attachmentId]
+			if cell.attachment == ChapterConst.AttachBox then
+				local var_101_1 = pg.box_data_template[cell.attachmentId]
 
-				assert(var_101_1, "box_data_template not exist: " .. var_101_0.attachmentId)
+				assert(var_101_1, "box_data_template not exist: " .. cell.attachmentId)
 
 				if var_101_1.type == ChapterConst.BoxTorpedo then
 					return true
 				end
 			end
 
-			if var_101_0.attachment == ChapterConst.AttachStory then
+			if cell.attachment == ChapterConst.AttachStory then
 				return true
 			end
 		end
 
-		if arg_101_0:existVisibleChampion(arg_101_2, arg_101_3) then
+		if self:existVisibleChampion(row, column) then
 			return true
 		end
-	elseif arg_101_1 == ChapterConst.SubjectChampion and arg_101_0:existFleet(FleetType.Normal, arg_101_2, arg_101_3) then
+	elseif subject == ChapterConst.SubjectChampion and self:existFleet(FleetType.Normal, row, column) then
 		return true
 	end
 
 	return false
 end
 
-function var_0_0.considerAsStayPoint(arg_102_0, arg_102_1, arg_102_2, arg_102_3)
-	local var_102_0 = arg_102_0:getChapterCell(arg_102_2, arg_102_3)
+-- arg_102_0 -> self
+-- arg_102_1 -> subject
+-- arg_102_2 -> row
+-- arg_102_3 -> column
+function ChapterLevelData.considerAsStayPoint(self, subject, row, column)
+	-- var_102_0 -> cell
+	local cell = self:getChapterCell(row, column)
 
-	if not var_102_0 or not var_102_0:IsWalkable() then
+	if not cell or not cell:IsWalkable() then
 		return false
 	end
 
-	if arg_102_0:existBarrier(arg_102_2, arg_102_3) then
+	if self:existBarrier(row, column) then
 		return false
 	end
 
-	if arg_102_1 == ChapterConst.SubjectPlayer then
-		if var_102_0.flag == ChapterConst.CellFlagActive and var_102_0.attachment == ChapterConst.AttachStory then
+	if subject == ChapterConst.SubjectPlayer then
+		if cell.flag == ChapterConst.CellFlagActive and cell.attachment == ChapterConst.AttachStory then
 			return true
 		end
 
-		if var_102_0.attachment == ChapterConst.AttachLandbase and pg.land_based_template[var_102_0.attachmentId] and pg.land_based_template[var_102_0.attachmentId].type == ChapterConst.LBHarbor then
+		if cell.attachment == ChapterConst.AttachLandbase and pg.land_based_template[cell.attachmentId] and pg.land_based_template[cell.attachmentId].type == ChapterConst.LBHarbor then
 			return false
 		end
 
-		if arg_102_0:existFleet(FleetType.Normal, arg_102_2, arg_102_3) then
+		if self:existFleet(FleetType.Normal, row, column) then
 			return false
 		end
 
-		if arg_102_0:existOni(arg_102_2, arg_102_3) then
+		if self:existOni(row, column) then
 			return false
 		end
 
-		if arg_102_0:existBombEnemy(arg_102_2, arg_102_3) then
+		if self:existBombEnemy(row, column) then
 			return false
 		end
-	elseif arg_102_1 == ChapterConst.SubjectChampion then
-		if var_102_0.flag ~= ChapterConst.CellFlagDisabled and var_102_0.attachment ~= ChapterConst.AttachNone then
+	elseif subject == ChapterConst.SubjectChampion then
+		if cell.flag ~= ChapterConst.CellFlagDisabled and cell.attachment ~= ChapterConst.AttachNone then
 			return false
 		end
 
-		local var_102_1 = arg_102_0:getChampion(arg_102_2, arg_102_3)
+		-- var_102_1 -> champion
+		local champion = self:getChampion(row, column)
 
-		if var_102_1 and var_102_1.flag ~= ChapterConst.CellFlagDisabled then
+		if champion and champion.flag ~= ChapterConst.CellFlagDisabled then
 			return false
 		end
 	end
@@ -1382,7 +1459,7 @@ function var_0_0.considerAsStayPoint(arg_102_0, arg_102_1, arg_102_2, arg_102_3)
 	return true
 end
 
-function var_0_0.existAny(arg_103_0, arg_103_1, arg_103_2)
+function ChapterLevelData.existAny(arg_103_0, arg_103_1, arg_103_2)
 	local var_103_0 = arg_103_0:getChapterCell(arg_103_1, arg_103_2)
 
 	if var_103_0.attachment ~= ChapterConst.AttachNone and var_103_0.flag == ChapterConst.CellFlagActive then
@@ -1400,7 +1477,7 @@ function var_0_0.existAny(arg_103_0, arg_103_1, arg_103_2)
 	end
 end
 
-function var_0_0.existBarrier(arg_104_0, arg_104_1, arg_104_2)
+function ChapterLevelData.existBarrier(arg_104_0, arg_104_1, arg_104_2)
 	local var_104_0 = arg_104_0:getChapterCell(arg_104_1, arg_104_2)
 
 	if var_104_0.attachment == ChapterConst.AttachBox and var_104_0.flag == ChapterConst.CellFlagActive and pg.box_data_template[var_104_0.attachmentId].type == ChapterConst.BoxBarrier then
@@ -1424,7 +1501,7 @@ function var_0_0.existBarrier(arg_104_0, arg_104_1, arg_104_2)
 	return false
 end
 
-function var_0_0.GetEnemy(arg_105_0, arg_105_1, arg_105_2)
+function ChapterLevelData.GetEnemy(arg_105_0, arg_105_1, arg_105_2)
 	local var_105_0 = arg_105_0:getChapterCell(arg_105_1, arg_105_2)
 
 	if var_105_0 and var_105_0.flag == ChapterConst.CellFlagActive and ChapterConst.IsEnemyAttach(var_105_0.attachment) then
@@ -1438,7 +1515,7 @@ function var_0_0.GetEnemy(arg_105_0, arg_105_1, arg_105_2)
 	end
 end
 
-function var_0_0.existEnemy(arg_106_0, arg_106_1, arg_106_2, arg_106_3)
+function ChapterLevelData.existEnemy(arg_106_0, arg_106_1, arg_106_2, arg_106_3)
 	if arg_106_1 == ChapterConst.SubjectPlayer then
 		local var_106_0 = arg_106_0:GetEnemy(arg_106_2, arg_106_3)
 
@@ -1458,7 +1535,7 @@ function var_0_0.existEnemy(arg_106_0, arg_106_1, arg_106_2, arg_106_3)
 	end
 end
 
-function var_0_0.existFleet(arg_107_0, arg_107_1, arg_107_2, arg_107_3)
+function ChapterLevelData.existFleet(arg_107_0, arg_107_1, arg_107_2, arg_107_3)
 	if _.any(arg_107_0.fleets, function(arg_108_0)
 		return arg_108_0.line.row == arg_107_2 and arg_108_0.line.column == arg_107_3 and (not arg_107_1 or arg_108_0:getFleetType() == arg_107_1) and arg_108_0:isValid()
 	end) then
@@ -1466,25 +1543,25 @@ function var_0_0.existFleet(arg_107_0, arg_107_1, arg_107_2, arg_107_3)
 	end
 end
 
-function var_0_0.existVisibleChampion(arg_109_0, arg_109_1, arg_109_2)
+function ChapterLevelData.existVisibleChampion(arg_109_0, arg_109_1, arg_109_2)
 	local var_109_0 = arg_109_0:getChampion(arg_109_1, arg_109_2)
 
 	return var_109_0 and arg_109_0:getChampionVisibility(var_109_0)
 end
 
-function var_0_0.existAlly(arg_110_0, arg_110_1)
+function ChapterLevelData.existAlly(arg_110_0, arg_110_1)
 	return _.any(arg_110_0.fleets, function(arg_111_0)
 		return arg_111_0.id ~= arg_110_1.id and arg_111_0.line.row == arg_110_1.line.row and arg_111_0.line.column == arg_110_1.line.column and arg_111_0:isValid()
 	end)
 end
 
-function var_0_0.existOni(arg_112_0, arg_112_1, arg_112_2)
+function ChapterLevelData.existOni(arg_112_0, arg_112_1, arg_112_2)
 	return _.any(arg_112_0.champions, function(arg_113_0)
 		return arg_113_0.attachment == ChapterConst.AttachOni and arg_113_0.flag == ChapterConst.CellFlagActive and (not arg_112_1 or arg_112_1 == arg_113_0.row) and (not arg_112_2 or arg_112_2 == arg_113_0.column)
 	end)
 end
 
-function var_0_0.existBombEnemy(arg_114_0, arg_114_1, arg_114_2)
+function ChapterLevelData.existBombEnemy(arg_114_0, arg_114_1, arg_114_2)
 	if arg_114_1 and arg_114_2 then
 		local var_114_0 = arg_114_0:getChapterCell(arg_114_1, arg_114_2)
 
@@ -1500,7 +1577,7 @@ function var_0_0.existBombEnemy(arg_114_0, arg_114_1, arg_114_2)
 	return false
 end
 
-function var_0_0.isPlayingWithBombEnemy(arg_115_0)
+function ChapterLevelData.isPlayingWithBombEnemy(arg_115_0)
 	for iter_115_0, iter_115_1 in pairs(arg_115_0.cells) do
 		if iter_115_1.attachment == ChapterConst.AttachBomb_Enemy then
 			return true
@@ -1510,7 +1587,7 @@ function var_0_0.isPlayingWithBombEnemy(arg_115_0)
 	return false
 end
 
-function var_0_0.existCoastalGunNoMatterLiveOrDead(arg_116_0)
+function ChapterLevelData.existCoastalGunNoMatterLiveOrDead(arg_116_0)
 	for iter_116_0, iter_116_1 in pairs(arg_116_0.cells) do
 		if iter_116_1.attachment == ChapterConst.AttachLandbase then
 			local var_116_0 = pg.land_based_template[iter_116_1.attachmentId]
@@ -1545,7 +1622,7 @@ local var_0_1 = {
 	}
 }
 
-function var_0_0.calcWalkableCells(arg_117_0, arg_117_1, arg_117_2, arg_117_3, arg_117_4)
+function ChapterLevelData.calcWalkableCells(arg_117_0, arg_117_1, arg_117_2, arg_117_3, arg_117_4)
 	local var_117_0 = {}
 
 	for iter_117_0 = 0, ChapterConst.MaxRow - 1 do
@@ -1627,7 +1704,7 @@ function var_0_0.calcWalkableCells(arg_117_0, arg_117_1, arg_117_2, arg_117_3, a
 	return var_117_5
 end
 
-function var_0_0.calcAreaCells(arg_122_0, arg_122_1, arg_122_2, arg_122_3, arg_122_4)
+function ChapterLevelData.calcAreaCells(arg_122_0, arg_122_1, arg_122_2, arg_122_3, arg_122_4)
 	local var_122_0 = {}
 
 	for iter_122_0 = 0, ChapterConst.MaxRow - 1 do
@@ -1681,7 +1758,7 @@ function var_0_0.calcAreaCells(arg_122_0, arg_122_1, arg_122_2, arg_122_3, arg_1
 	return var_122_3
 end
 
-function var_0_0.calcSquareBarrierCells(arg_126_0, arg_126_1, arg_126_2, arg_126_3)
+function ChapterLevelData.calcSquareBarrierCells(arg_126_0, arg_126_1, arg_126_2, arg_126_3)
 	local var_126_0 = {}
 
 	for iter_126_0 = -arg_126_3, arg_126_3 do
@@ -1702,7 +1779,7 @@ function var_0_0.calcSquareBarrierCells(arg_126_0, arg_126_1, arg_126_2, arg_126
 	return var_126_0
 end
 
-function var_0_0.checkAnyInteractive(arg_127_0)
+function ChapterLevelData.checkAnyInteractive(arg_127_0)
 	local var_127_0 = arg_127_0.fleet.line
 	local var_127_1 = arg_127_0:getChapterCell(var_127_0.row, var_127_0.column)
 	local var_127_2 = false
@@ -1732,7 +1809,7 @@ function var_0_0.checkAnyInteractive(arg_127_0)
 	return var_127_2
 end
 
-function var_0_0.getQuadCellPic(arg_128_0, arg_128_1)
+function ChapterLevelData.getQuadCellPic(arg_128_0, arg_128_1)
 	local var_128_0
 
 	if arg_128_1.trait == ChapterConst.TraitLurk then
@@ -1772,7 +1849,7 @@ function var_0_0.getQuadCellPic(arg_128_0, arg_128_1)
 	return var_128_0
 end
 
-function var_0_0.getMapShip(arg_129_0, arg_129_1)
+function ChapterLevelData.getMapShip(arg_129_0, arg_129_1)
 	local var_129_0
 
 	if arg_129_1:isValid() then
@@ -1794,19 +1871,19 @@ function var_0_0.getMapShip(arg_129_0, arg_129_1)
 	return var_129_0
 end
 
-function var_0_0.getStrikeAnimShip(arg_131_0, arg_131_1, arg_131_2)
+function ChapterLevelData.getStrikeAnimShip(arg_131_0, arg_131_1, arg_131_2)
 	return underscore.detect(arg_131_1:getShips(false), function(arg_132_0)
 		return arg_132_0:GetMapStrikeAnim() == arg_131_2
 	end)
 end
 
-function var_0_0.GetSubmarineFleet(arg_133_0)
+function ChapterLevelData.GetSubmarineFleet(arg_133_0)
 	return table.Find(arg_133_0.fleets, function(arg_134_0, arg_134_1)
 		return arg_134_1:getFleetType() == FleetType.Submarine and arg_134_1:isValid()
 	end)
 end
 
-function var_0_0.getStageCell(arg_135_0, arg_135_1, arg_135_2)
+function ChapterLevelData.getStageCell(arg_135_0, arg_135_1, arg_135_2)
 	local var_135_0 = arg_135_0:getChampion(arg_135_1, arg_135_2)
 
 	if var_135_0 and var_135_0.flag ~= ChapterConst.CellFlagDisabled then
@@ -1820,7 +1897,7 @@ function var_0_0.getStageCell(arg_135_0, arg_135_1, arg_135_2)
 	end
 end
 
-function var_0_0.getStageId(arg_136_0, arg_136_1, arg_136_2)
+function ChapterLevelData.getStageId(arg_136_0, arg_136_1, arg_136_2)
 	local var_136_0 = arg_136_0:getChampion(arg_136_1, arg_136_2)
 
 	if var_136_0 and var_136_0.flag ~= ChapterConst.CellFlagDisabled then
@@ -1834,11 +1911,11 @@ function var_0_0.getStageId(arg_136_0, arg_136_1, arg_136_2)
 	end
 end
 
-function var_0_0.getStageExtraAwards(arg_137_0)
+function ChapterLevelData.getStageExtraAwards(arg_137_0)
 	return
 end
 
-function var_0_0.GetExtraCostRate(arg_138_0)
+function ChapterLevelData.GetExtraCostRate(arg_138_0)
 	local var_138_0 = 1
 	local var_138_1 = {}
 
@@ -1847,7 +1924,7 @@ function var_0_0.GetExtraCostRate(arg_138_0)
 
 		var_138_1[#var_138_1 + 1] = var_138_2
 
-		if var_138_2.benefit_type == var_0_0.OPERATION_BUFF_TYPE_COST then
+		if var_138_2.benefit_type == ChapterLevelData.OPERATION_BUFF_TYPE_COST then
 			var_138_0 = var_138_0 + var_138_2.benefit_effect * 0.01
 		end
 	end
@@ -1855,7 +1932,7 @@ function var_0_0.GetExtraCostRate(arg_138_0)
 	return math.max(1, var_138_0), var_138_1
 end
 
-function var_0_0.getFleetCost(arg_139_0, arg_139_1, arg_139_2)
+function ChapterLevelData.getFleetCost(arg_139_0, arg_139_1, arg_139_2)
 	if arg_139_0:getPlayType() == ChapterConst.TypeExtra then
 		return {
 			gold = 0,
@@ -1885,7 +1962,7 @@ function var_0_0.getFleetCost(arg_139_0, arg_139_1, arg_139_2)
 	return var_139_0, var_139_1
 end
 
-function var_0_0.isOverFleetCost(arg_140_0, arg_140_1, arg_140_2)
+function ChapterLevelData.isOverFleetCost(arg_140_0, arg_140_1, arg_140_2)
 	local var_140_0 = arg_140_0:GetLimitOilCost(arg_140_1:getFleetType() == FleetType.Submarine, arg_140_2)
 	local var_140_1 = 0
 
@@ -1900,7 +1977,7 @@ function var_0_0.isOverFleetCost(arg_140_0, arg_140_1, arg_140_2)
 	return var_140_0 < var_140_1, var_140_0 * var_140_2, var_140_1 * var_140_2
 end
 
-function var_0_0.writeBack(arg_141_0, arg_141_1, arg_141_2)
+function ChapterLevelData.writeBack(arg_141_0, arg_141_1, arg_141_2)
 	local var_141_0 = arg_141_0.fleet
 
 	local function var_141_1(arg_142_0)
@@ -2046,7 +2123,7 @@ function var_0_0.writeBack(arg_141_0, arg_141_1, arg_141_2)
 	end
 end
 
-function var_0_0.CleanCurrentEnemy(arg_149_0)
+function ChapterLevelData.CleanCurrentEnemy(arg_149_0)
 	local var_149_0 = arg_149_0.fleet.line
 	local var_149_1
 	local var_149_2 = arg_149_0:getChampion(var_149_0.row, var_149_0.column)
@@ -2068,7 +2145,7 @@ function var_0_0.CleanCurrentEnemy(arg_149_0)
 	end
 end
 
-function var_0_0.UpdateProgressAfterSkipBattle(arg_150_0)
+function ChapterLevelData.UpdateProgressAfterSkipBattle(arg_150_0)
 	arg_150_0:writeBack(true, {
 		skipAmmo = true,
 		statistics = {
@@ -2077,7 +2154,7 @@ function var_0_0.UpdateProgressAfterSkipBattle(arg_150_0)
 	})
 end
 
-function var_0_0.UpdateProgressOnRetreat(arg_151_0)
+function ChapterLevelData.UpdateProgressOnRetreat(arg_151_0)
 	_.each(arg_151_0.achieves, function(arg_152_0)
 		if arg_152_0.type == ChapterConst.AchieveType3 then
 			if _.all(_.values(arg_151_0.cells), function(arg_153_0)
@@ -2156,7 +2233,7 @@ function var_0_0.UpdateProgressOnRetreat(arg_151_0)
 	end
 end
 
-function var_0_0.UpdateComboHistory(arg_156_0, arg_156_1)
+function ChapterLevelData.UpdateComboHistory(arg_156_0, arg_156_1)
 	getProxy(ChapterProxy):RecordComboHistory(arg_156_0.id, {
 		scoreHistory = Clone(arg_156_0.scoreHistory),
 		combo = Clone(arg_156_0.combo)
@@ -2172,15 +2249,15 @@ function var_0_0.UpdateComboHistory(arg_156_0, arg_156_1)
 	end
 end
 
-function var_0_0.GetWinConditions(arg_157_0)
+function ChapterLevelData.GetWinConditions(arg_157_0)
 	return arg_157_0.winConditions
 end
 
-function var_0_0.GetLoseConditions(arg_158_0)
+function ChapterLevelData.GetLoseConditions(arg_158_0)
 	return arg_158_0.loseConditions
 end
 
-function var_0_0.CheckChapterWin(arg_159_0)
+function ChapterLevelData.CheckChapterWin(arg_159_0)
 	local var_159_0 = arg_159_0:GetWinConditions()
 	local var_159_1 = false
 	local var_159_2 = ChapterConst.ReasonVictory
@@ -2237,7 +2314,7 @@ function var_0_0.CheckChapterWin(arg_159_0)
 	return var_159_1, var_159_2
 end
 
-function var_0_0.CheckChapterLose(arg_164_0)
+function ChapterLevelData.CheckChapterLose(arg_164_0)
 	local var_164_0 = arg_164_0:GetLoseConditions()
 	local var_164_1 = false
 	local var_164_2 = ChapterConst.ReasonDefeat
@@ -2268,7 +2345,7 @@ function var_0_0.CheckChapterLose(arg_164_0)
 	return var_164_1, var_164_2
 end
 
-function var_0_0.CheckChapterWillWin(arg_166_0)
+function ChapterLevelData.CheckChapterWillWin(arg_166_0)
 	if arg_166_0:existOni() or arg_166_0:isPlayingWithBombEnemy() then
 		return true
 	end
@@ -2278,120 +2355,156 @@ function var_0_0.CheckChapterWillWin(arg_166_0)
 	end
 end
 
-function var_0_0.triggerSkill(arg_167_0, arg_167_1, arg_167_2)
-	local var_167_0 = _.filter(arg_167_1:findSkills(arg_167_2), function(arg_168_0)
-		local var_168_0 = arg_168_0:GetTriggers()
+-- arg_167_0 -> self
+-- arg_167_1 -> fleet(Fleet类)
+-- arg_167_2 -> skillType
+function ChapterLevelData.triggerSkill(self, fleet, skillType)
+	-- var_167_0 -> skills
+		-- underscore.filter: 返回通过函数测试的所有元素组成的表
+	-- arg_168_0 -> skill(FleetSkill类)
+	local skills = _.filter(fleet:findSkills(skillType), function(skill)
+		-- var_168_0 -> triggers
+		local triggers = skill:GetTriggers()
 
-		return _.any(var_168_0, function(arg_169_0)
-			return arg_169_0[1] == FleetSkill.TriggerInSubTeam and arg_169_0[2] == 1
-		end) == (arg_167_1:getFleetType() == FleetType.Submarine) and _.all(arg_168_0:GetTriggers(), function(arg_170_0)
-			return arg_167_0:triggerCheck(arg_167_1, arg_168_0, arg_170_0)
+		-- underscore.any: 如果有任意一个元素通过函数测试则返回true，否则返回false\
+		-- arg_169_0 -> trigger
+		-- arg_170_0 -> trigger
+		return _.any(triggers, function(trigger)
+			return trigger[1] == FleetSkill.TriggerInSubTeam and trigger[2] == 1
+		end) == (fleet:getFleetType() == FleetType.Submarine) and _.all(skill:GetTriggers(), function(trigger)
+			return self:triggerCheck(fleet, skill, trigger)
 		end)
 	end)
 
-	return _.reduce(var_167_0, nil, function(arg_171_0, arg_171_1)
-		local var_171_0 = arg_171_1:GetType()
-		local var_171_1 = arg_171_1:GetArgs()
+	-- underscore.reduce(items, memo, func): 对items中的每个元素调用func函数，并将结果累积到memo中返回
+	-- arg_171_0 -> memo
+	-- arg_171_1 -> skill
+	return _.reduce(skills, nil, function(memo, skill)
+		-- var_171_0 -> skillType
+		-- var_171_1 -> skillArgs
+		local skillType = skill:GetType()
+		local skillArgs = skill:GetArgs()
 
-		if var_171_0 == FleetSkill.TypeMoveSpeed or var_171_0 == FleetSkill.TypeHuntingLv or var_171_0 == FleetSkill.TypeTorpedoPowerUp then
-			return (arg_171_0 or 0) + var_171_1[1]
-		elseif var_171_0 == FleetSkill.TypeAmbushDodge or var_171_0 == FleetSkill.TypeAirStrikeDodge then
-			return math.max(arg_171_0 or 0, var_171_1[1])
-		elseif var_171_0 == FleetSkill.TypeAttack or var_171_0 == FleetSkill.TypeStrategy then
-			arg_171_0 = arg_171_0 or {}
+		if skillType == FleetSkill.TypeMoveSpeed or skillType == FleetSkill.TypeHuntingLv or skillType == FleetSkill.TypeTorpedoPowerUp then
+			return (memo or 0) + skillArgs[1]
+		elseif skillType == FleetSkill.TypeAmbushDodge or skillType == FleetSkill.TypeAirStrikeDodge then
+			return math.max(memo or 0, skillArgs[1])
+		elseif skillType == FleetSkill.TypeAttack or skillType == FleetSkill.TypeStrategy then
+			memo = memo or {}
 
-			table.insert(arg_171_0, var_171_1)
+			table.insert(memo, skillArgs)
 
-			return arg_171_0
-		elseif var_171_0 == FleetSkill.TypeBattleBuff then
-			arg_171_0 = arg_171_0 or {}
+			return memo
+		elseif skillType == FleetSkill.TypeBattleBuff then
+			memo = memo or {}
 
-			table.insert(arg_171_0, var_171_1[1])
+			table.insert(memo, skillArgs[1])
 
-			return arg_171_0
+			return memo
 		end
-	end), var_167_0
+	end), skills
 end
 
-function var_0_0.triggerCheck(arg_172_0, arg_172_1, arg_172_2, arg_172_3)
-	local var_172_0 = arg_172_3[1]
+-- arg_172_0 -> self
+-- arg_172_1 -> fleet(Fleet类)
+-- arg_172_2 -> skill(FleetSkill类)
+-- arg_172_3 -> trigger
+function ChapterLevelData.triggerCheck(self, fleet, skill, trigger)
+	-- var_172_0 -> triggerType
+	local triggerType = trigger[1]
 
-	if var_172_0 == FleetSkill.TriggerDDHead then
-		local var_172_1 = arg_172_1:getShipsByTeam(TeamType.Vanguard, false)
+	if triggerType == FleetSkill.TriggerDDHead then
+		-- var_172_1 -> vanguardShips
+		local vanguardShips = fleet:getShipsByTeam(TeamType.Vanguard, false)
 
-		return #var_172_1 > 0 and ShipType.IsTypeQuZhu(var_172_1[1]:getShipType())
-	elseif var_172_0 == FleetSkill.TriggerVanCount then
-		local var_172_2 = arg_172_1:getShipsByTeam(TeamType.Vanguard, false)
+		return #vanguardShips > 0 and ShipType.IsTypeQuZhu(vanguardShips[1]:getShipType())
+	elseif triggerType == FleetSkill.TriggerVanCount then
+		-- var_172_2 -> vanguardShips
+		local vanguardShips = fleet:getShipsByTeam(TeamType.Vanguard, false)
 
-		return #var_172_2 >= arg_172_3[2] and #var_172_2 <= arg_172_3[3]
-	elseif var_172_0 == FleetSkill.TriggerShipCount then
-		local var_172_3 = _.filter(arg_172_1:getShips(false), function(arg_173_0)
-			return table.contains(arg_172_3[2], arg_173_0:getShipType())
+		return #vanguardShips >= trigger[2] and #vanguardShips <= trigger[3]
+	elseif triggerType == FleetSkill.TriggerShipCount then
+		-- var_172_3 -> ships
+		-- arg_173_0 -> ship
+		local ships = _.filter(fleet:getShips(false), function(ship)
+			return table.contains(trigger[2], ship:getShipType())
 		end)
 
-		return #var_172_3 >= arg_172_3[3] and #var_172_3 <= arg_172_3[4]
-	elseif var_172_0 == FleetSkill.TriggerAroundEnemy then
-		local var_172_4 = {
-			row = arg_172_1.line.row,
-			column = arg_172_1.line.column
+		return #ships >= trigger[3] and #ships <= trigger[4]
+	elseif triggerType == FleetSkill.TriggerAroundEnemy then
+		-- var_172_4 -> fleetCell
+		local cells = {
+			row = fleet.line.row,
+			column = fleet.line.column
 		}
 
-		return _.any(_.values(arg_172_0.cells), function(arg_174_0)
-			local var_174_0 = arg_172_0:GetEnemy(arg_174_0.row, arg_174_0.column)
+		-- arg_174_0 -> cell
+		return _.any(_.values(self.cells), function(cell)
+			-- var_174_0 -> enemy
+			local enemy = self:GetEnemy(cell.row, cell.column)
 
-			if not var_174_0 then
+			if not enemy then
 				return
 			end
 
-			local var_174_1 = pg.expedition_data_template[var_174_0.attachmentId]
+			-- var_174_1 -> enemyAttachment
+			local enemyAttachment = pg.expedition_data_template[enemy.attachmentId]
 
-			if not var_174_1 then
+			if not enemyAttachment then
 				return
 			end
 
-			local var_174_2 = var_174_1.type
+			-- var_174_2 -> enemyType
+			local enemyType = enemyAttachment.type
 
-			return ManhattonDist(var_172_4, {
-				row = arg_174_0.row,
-				column = arg_174_0.column
-			}) <= arg_172_3[2] and (type(arg_172_3[3]) == "number" and arg_172_3[3] == var_174_2 or type(arg_172_3[3]) == "table" and table.contains(arg_172_3[3], var_174_2))
+			return ManhattonDist(cells, {
+				row = cell.row,
+				column = cell.column
+			}) <= trigger[2] and (type(trigger[3]) == "number" and trigger[3] == enemyType or type(trigger[3]) == "table" and table.contains(trigger[3], enemyType))
 		end)
-	elseif var_172_0 == FleetSkill.TriggerNekoPos then
-		local var_172_5 = arg_172_1:findCommanderBySkillId(arg_172_2.id)
+	elseif triggerType == FleetSkill.TriggerNekoPos then
+		-- var_172_5 -> skill
+		local skill = fleet:findCommanderBySkillId(skill.id)
 
-		for iter_172_0, iter_172_1 in pairs(arg_172_1:getCommanders()) do
-			if var_172_5.id == iter_172_1.id and iter_172_0 == arg_172_3[2] then
+		-- iter_172_0 -> pos
+		-- iter_172_1 -> commander
+		for pos, commander in pairs(fleet:getCommanders()) do
+			if skill.id == commander.id and pos == trigger[2] then
 				return true
 			end
 		end
-	elseif var_172_0 == FleetSkill.TriggerAroundLand then
-		local var_172_6 = {
-			row = arg_172_1.line.row,
-			column = arg_172_1.line.column
+	elseif triggerType == FleetSkill.TriggerAroundLand then
+		-- var_172_6 -> fleetCell
+		local fleetCell = {
+			row = fleet.line.row,
+			column = fleet.line.column
 		}
 
-		return _.any(_.values(arg_172_0.cells), function(arg_175_0)
-			return not arg_175_0:IsWalkable() and ManhattonDist(var_172_6, {
-				row = arg_175_0.row,
-				column = arg_175_0.column
-			}) <= arg_172_3[2]
+		-- arg_175_0 -> cell
+		return _.any(_.values(self.cells), function(cell)
+			return not cell:IsWalkable() and ManhattonDist(fleetCell, {
+				row = cell.row,
+				column = cell.column
+			}) <= trigger[2]
 		end)
-	elseif var_172_0 == FleetSkill.TriggerAroundCombatAlly then
-		local var_172_7 = {
-			row = arg_172_1.line.row,
-			column = arg_172_1.line.column
+	elseif triggerType == FleetSkill.TriggerAroundCombatAlly then
+		-- var_172_7 -> fleetCell
+		local fleetCell = {
+			row = fleet.line.row,
+			column = fleet.line.column
 		}
 
-		return _.any(arg_172_0.fleets, function(arg_176_0)
-			return arg_172_1.id ~= arg_176_0.id and arg_176_0:getFleetType() == FleetType.Normal and arg_172_0:existEnemy(ChapterConst.SubjectPlayer, arg_176_0.line.row, arg_176_0.line.column) and ManhattonDist(var_172_7, {
-				row = arg_176_0.line.row,
-				column = arg_176_0.line.column
-			}) <= arg_172_3[2]
+		-- arg_176_0 -> ally
+		return _.any(self.fleets, function(ally)
+			return fleet.id ~= ally.id and ally:getFleetType() == FleetType.Normal and self:existEnemy(ChapterConst.SubjectPlayer, ally.line.row, ally.line.column) and ManhattonDist(fleetCell, {
+				row = ally.line.row,
+				column = ally.line.column
+			}) <= trigger[2]
 		end)
-	elseif var_172_0 == FleetSkill.TriggerInSubTeam then
+	elseif triggerType == FleetSkill.TriggerInSubTeam then
 		return true
 	else
-		assert(false, "invalid trigger type: " .. var_172_0)
+		assert(false, "invalid trigger type: " .. triggerType)
 	end
 end
 
@@ -2414,7 +2527,7 @@ local var_0_2 = {
 	}
 }
 
-function var_0_0.checkOniState(arg_177_0)
+function ChapterLevelData.checkOniState(arg_177_0)
 	local var_177_0 = arg_177_0:getOni()
 
 	assert(var_177_0, "oni not exist.")
@@ -2451,7 +2564,7 @@ function var_0_0.checkOniState(arg_177_0)
 	end
 end
 
-function var_0_0.onOniEnter(arg_180_0)
+function ChapterLevelData.onOniEnter(arg_180_0)
 	for iter_180_0, iter_180_1 in pairs(arg_180_0.cells) do
 		iter_180_1.attachment = ChapterConst.AttachNone
 		iter_180_1.attachmentId = nil
@@ -2464,7 +2577,7 @@ function var_0_0.onOniEnter(arg_180_0)
 	arg_180_0.roundIndex = 0
 end
 
-function var_0_0.onBombEnemyEnter(arg_181_0)
+function ChapterLevelData.onBombEnemyEnter(arg_181_0)
 	for iter_181_0, iter_181_1 in pairs(arg_181_0.cells) do
 		iter_181_1.attachment = ChapterConst.AttachNone
 		iter_181_1.attachmentId = nil
@@ -2477,7 +2590,7 @@ function var_0_0.onBombEnemyEnter(arg_181_0)
 	arg_181_0.roundIndex = 0
 end
 
-function var_0_0.clearSubmarineFleet(arg_182_0)
+function ChapterLevelData.clearSubmarineFleet(arg_182_0)
 	for iter_182_0 = #arg_182_0.fleets, 1, -1 do
 		if arg_182_0.fleets[iter_182_0]:getFleetType() == FleetType.Submarine then
 			table.remove(arg_182_0.fleets, iter_182_0)
@@ -2485,7 +2598,7 @@ function var_0_0.clearSubmarineFleet(arg_182_0)
 	end
 end
 
-function var_0_0.getSpAppearStory(arg_183_0)
+function ChapterLevelData.getSpAppearStory(arg_183_0)
 	if arg_183_0:existOni() then
 		for iter_183_0, iter_183_1 in ipairs(arg_183_0.champions) do
 			if iter_183_1.trait == ChapterConst.TraitLurk and iter_183_1.attachment == ChapterConst.AttachOni then
@@ -2509,7 +2622,7 @@ function var_0_0.getSpAppearStory(arg_183_0)
 	end
 end
 
-function var_0_0.getSpAppearGuide(arg_184_0)
+function ChapterLevelData.getSpAppearGuide(arg_184_0)
 	if arg_184_0:existOni() then
 		for iter_184_0, iter_184_1 in ipairs(arg_184_0.champions) do
 			if iter_184_1.trait == ChapterConst.TraitLurk and iter_184_1.attachment == ChapterConst.AttachOni then
@@ -2533,7 +2646,7 @@ function var_0_0.getSpAppearGuide(arg_184_0)
 	end
 end
 
-function var_0_0.CheckTransportState(arg_185_0)
+function ChapterLevelData.CheckTransportState(arg_185_0)
 	local var_185_0 = _.detect(arg_185_0.fleets, function(arg_186_0)
 		return arg_186_0:getFleetType() == FleetType.Transport
 	end)
@@ -2556,7 +2669,7 @@ function var_0_0.CheckTransportState(arg_185_0)
 	end
 end
 
-function var_0_0.getCoastalGunArea(arg_187_0)
+function ChapterLevelData.getCoastalGunArea(arg_187_0)
 	local var_187_0 = {}
 
 	for iter_187_0, iter_187_1 in pairs(arg_187_0.cells) do
@@ -2588,7 +2701,7 @@ function var_0_0.getCoastalGunArea(arg_187_0)
 	return var_187_0
 end
 
-function var_0_0.GetAntiAirGunArea(arg_188_0)
+function ChapterLevelData.GetAntiAirGunArea(arg_188_0)
 	local var_188_0 = {}
 	local var_188_1 = {}
 
@@ -2649,31 +2762,31 @@ function var_0_0.GetAntiAirGunArea(arg_188_0)
 	return var_188_0
 end
 
-function var_0_0.GetDefeatCount(arg_190_0)
+function ChapterLevelData.GetDefeatCount(arg_190_0)
 	return arg_190_0.defeatEnemies
 end
 
-function var_0_0.ExistDivingChampion(arg_191_0)
+function ChapterLevelData.ExistDivingChampion(arg_191_0)
 	return _.any(arg_191_0.champions, function(arg_192_0)
 		return arg_192_0.flag == ChapterConst.CellFlagDiving
 	end)
 end
 
-function var_0_0.IsSkipPrecombat(arg_193_0)
+function ChapterLevelData.IsSkipPrecombat(arg_193_0)
 	return arg_193_0:isLoop() and getProxy(ChapterProxy):GetSkipPrecombat()
 end
 
-function var_0_0.CanActivateAutoFight(arg_194_0)
+function ChapterLevelData.CanActivateAutoFight(arg_194_0)
 	local var_194_0 = pg.chapter_template_loop[arg_194_0.id]
 
 	return var_194_0 and var_194_0.fightauto == 1 and arg_194_0:isLoop() and AutoBotCommand.autoBotSatisfied() and not arg_194_0:existOni() and not arg_194_0:existBombEnemy()
 end
 
-function var_0_0.IsAutoFight(arg_195_0)
+function ChapterLevelData.IsAutoFight(arg_195_0)
 	return arg_195_0:CanActivateAutoFight() and getProxy(ChapterProxy):GetChapterAutoFlag(arg_195_0.id) == 1
 end
 
-function var_0_0.getOperationBuffDescStg(arg_196_0)
+function ChapterLevelData.getOperationBuffDescStg(arg_196_0)
 	for iter_196_0, iter_196_1 in ipairs(arg_196_0.operationBuffList) do
 		if pg.benefit_buff_template[iter_196_1].benefit_type == Chapter.OPERATION_BUFF_TYPE_DESC then
 			return iter_196_1
@@ -2681,13 +2794,13 @@ function var_0_0.getOperationBuffDescStg(arg_196_0)
 	end
 end
 
-function var_0_0.GetOperationDesc(arg_197_0)
+function ChapterLevelData.GetOperationDesc(arg_197_0)
 	local var_197_0 = ""
 
 	for iter_197_0, iter_197_1 in ipairs(arg_197_0.operationBuffList) do
 		local var_197_1 = pg.benefit_buff_template[iter_197_1]
 
-		if var_197_1.benefit_type == var_0_0.OPERATION_BUFF_TYPE_DESC then
+		if var_197_1.benefit_type == ChapterLevelData.OPERATION_BUFF_TYPE_DESC then
 			var_197_0 = var_197_1.desc
 
 			break
@@ -2697,47 +2810,62 @@ function var_0_0.GetOperationDesc(arg_197_0)
 	return var_197_0
 end
 
-function var_0_0.GetOperationBuffList(arg_198_0)
+function ChapterLevelData.GetOperationBuffList(arg_198_0)
 	return arg_198_0.operationBuffList
 end
 
-function var_0_0.GetAllEnemies(arg_199_0, arg_199_1)
-	local var_199_0 = {}
+-- var_0_0 -> ChapterLevelData
+-- arg_199_0 -> self
+-- arg_199_1 -> includeDisabled
+function ChapterLevelData.GetAllEnemies(self, includeDisabled)
+	-- var_199_0 -> enemyList
+	local enemyList = {}
 
-	for iter_199_0, iter_199_1 in pairs(arg_199_0.cells) do
-		if ChapterConst.IsEnemyAttach(iter_199_1.attachment) and (arg_199_1 or iter_199_1.flag ~= ChapterConst.CellFlagDisabled) then
-			table.insert(var_199_0, iter_199_1)
+	-- iter_199_0 -> _
+	-- iter_199_1 -> cell
+		-- self.cells的key为cellName, value为ChapterCell对象
+	for _, cell in pairs(self.cells) do
+		if ChapterConst.IsEnemyAttach(cell.attachment) and (includeDisabled or cell.flag ~= ChapterConst.CellFlagDisabled) then
+			table.insert(enemyList, cell)
 		end
 	end
 
-	for iter_199_2, iter_199_3 in pairs(arg_199_0.champions) do
-		if arg_199_1 or iter_199_3.flag ~= ChapterConst.CellFlagDisabled then
-			table.insert(var_199_0, iter_199_3)
+	-- iter_199_2 -> _
+	-- iter_199_3 -> champion
+	for _, champion in pairs(self.champions) do
+		if includeDisabled or champion.flag ~= ChapterConst.CellFlagDisabled then
+			table.insert(enemyList, champion)
 		end
 	end
 
-	return var_199_0
+	return enemyList
 end
 
-function var_0_0.GetFleetOfDuty(arg_200_0, arg_200_1)
-	local var_200_0
+-- arg_200_0 -> self
+-- arg_200_1 -> hasBoss
+function ChapterLevelData.GetFleetOfDuty(self, hasBoss)
+	-- var_200_0 -> fleetOfDuty
+	local fleetOfDuty
 
-	for iter_200_0, iter_200_1 in ipairs(arg_200_0.fleets) do
-		if iter_200_1:isValid() and iter_200_1:getFleetType() == FleetType.Normal then
-			local var_200_1 = arg_200_0.duties[iter_200_1.id] or 0
+	-- iter_200_0 -> _
+	-- iter_200_1 -> fleet
+	for _, fleet in ipairs(self.fleets) do
+		if fleet:isValid() and fleet:getFleetType() == FleetType.Normal then
+			-- var_200_1 -> fleetDuty
+			local fleetDuty = self.duties[fleet.id] or 0
 
-			if var_200_1 == ChapterFleet.DUTY_KILLALL or var_200_1 == ChapterFleet.DUTY_KILLBOSS and tobool(arg_200_1) or var_200_1 == ChapterFleet.DUTY_CLEANPATH and not tobool(arg_200_1) then
-				return iter_200_1
+			if fleetDuty == ChapterFleet.DUTY_KILLALL or fleetDuty == ChapterFleet.DUTY_KILLBOSS and tobool(hasBoss) or fleetDuty == ChapterFleet.DUTY_CLEANPATH and not tobool(hasBoss) then
+				return fleet
 			end
 
-			var_200_0 = iter_200_1
+			fleetOfDuty = fleet
 		end
 	end
 
-	return var_200_0
+	return fleetOfDuty
 end
 
-function var_0_0.GetBuffOfLinkAct(arg_201_0)
+function ChapterLevelData.GetBuffOfLinkAct(arg_201_0)
 	if arg_201_0:getPlayType() == ChapterConst.TypeDOALink then
 		local var_201_0 = pg.gameset.doa_fever_buff.description
 
@@ -2747,13 +2875,13 @@ function var_0_0.GetBuffOfLinkAct(arg_201_0)
 	end
 end
 
-function var_0_0.GetAttachmentStories(arg_203_0)
+function ChapterLevelData.GetAttachmentStories(arg_203_0)
 	local var_203_0 = arg_203_0.cellAttachments
 	local var_203_1 = 0
 	local var_203_2
 
 	for iter_203_0, iter_203_1 in pairs(var_203_0) do
-		local var_203_3 = var_0_0.GetEventTemplateByKey("mult_story", iter_203_1.attachmentId)
+		local var_203_3 = ChapterLevelData.GetEventTemplateByKey("mult_story", iter_203_1.attachmentId)
 
 		if var_203_3 then
 			assert(not var_203_2 or table.equal(var_203_2, var_203_3[1]), "Not the same Config of Mult_story ID: " .. iter_203_1.attachmentId)
@@ -2771,7 +2899,7 @@ function var_0_0.GetAttachmentStories(arg_203_0)
 	return var_203_2, var_203_1
 end
 
-function var_0_0.GetWeather(arg_204_0, arg_204_1, arg_204_2)
+function ChapterLevelData.GetWeather(arg_204_0, arg_204_1, arg_204_2)
 	arg_204_1 = arg_204_1 or arg_204_0.fleet.line.row
 	arg_204_2 = arg_204_2 or arg_204_0.fleet.line.column
 
@@ -2781,7 +2909,7 @@ function var_0_0.GetWeather(arg_204_0, arg_204_1, arg_204_2)
 	return var_204_1 and var_204_1:GetWeatherFlagList() or {}
 end
 
-function var_0_0.getDisplayEnemyCount(arg_205_0)
+function ChapterLevelData.getDisplayEnemyCount(arg_205_0)
 	local var_205_0 = 0
 
 	local function var_205_1(arg_206_0)
@@ -2811,7 +2939,7 @@ function var_0_0.getDisplayEnemyCount(arg_205_0)
 	return var_205_0
 end
 
-function var_0_0.getNearestEnemyCell(arg_208_0)
+function ChapterLevelData.getNearestEnemyCell(arg_208_0)
 	local function var_208_0(arg_209_0, arg_209_1)
 		return (arg_209_0.row - arg_209_1.row) * (arg_209_0.row - arg_209_1.row) + (arg_209_0.column - arg_209_1.column) * (arg_209_0.column - arg_209_1.column)
 	end
@@ -2845,7 +2973,7 @@ function var_0_0.getNearestEnemyCell(arg_208_0)
 	return var_208_1
 end
 
-function var_0_0.GetRegularFleetIds(arg_212_0)
+function ChapterLevelData.GetRegularFleetIds(arg_212_0)
 	return (_.map(_.filter(arg_212_0.fleets, function(arg_213_0)
 		local var_213_0 = arg_213_0:getFleetType()
 
@@ -2855,4 +2983,4 @@ function var_0_0.GetRegularFleetIds(arg_212_0)
 	end))
 end
 
-return var_0_0
+return ChapterLevelData
