@@ -1054,9 +1054,12 @@ function BattleFormulas.WorldEnemyAttrEnhance(enemyEnhancement, enemyLevel)
 	return 1 + enemyEnhancement / (1 + BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_C^(BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_B - enemyLevel))
 end
 
--- var_0_15 -> 
-local var_0_15 = setmetatable({}, {
-	__index = function(arg_45_0, arg_45_1)
+-- var_0_15 -> cachedMapRewards
+	-- 应该是一个缓存
+local cachedMapRewards = setmetatable({}, {
+	-- arg_45_0 -> table
+	-- arg_45_1 -> key
+	__index = function(table, key)
 		return 0
 	end
 })
@@ -1066,12 +1069,10 @@ local var_0_15 = setmetatable({}, {
 	-- 计算适应性Buff的属性增强倍率
 	-- 适应性似乎使用mapRewards来指代的...
 function BattleFormulas.WorldMapRewardAttrEnhance(enemyMapRewards, fleetMapRewards)
-	enemyMapRewards = enemyMapRewards or var_0_15
-	fleetMapRewards = fleetMapRewards or var_0_15
+	enemyMapRewards = enemyMapRewards or cachedMapRewards
+	fleetMapRewards = fleetMapRewards or cachedMapRewards
 
-	local var_46_0
-	local var_46_1
-	local var_46_2
+	-- var_46_0 ~ var_46_2 这三个变量定义了都没用过，我直接删掉了
 	-- var_46_3 -> worldValueRanges(适应性Buff区间)
 		-- X: 敌方属性倍率，Y: 敌方耐久倍率, Z: 不太清楚, worldBuffResistance?
 		-- attr_world_value_X1 = 7000
@@ -1128,26 +1129,34 @@ function BattleFormulas.WorldMapRewardAttrEnhance(enemyMapRewards, fleetMapRewar
 	return finalWorldAttrEnhanceX, finalWorldAttrEnhanceY, finalWorldAttrEnhanceZ
 end
 
-function BattleFormulas.WorldMapRewardHealingRate(arg_47_0, arg_47_1)
-	local var_47_0 = {
+-- arg_47_0 -> enemyMapRewards
+-- arg_47_1 -> fleetMapRewards
+	-- 计算适应性Buff的治疗倍率
+function BattleFormulas.WorldMapRewardHealingRate(enemyMapRewards, fleetMapRewards)
+	-- var_47_0 -> worldHealingRateRange(治疗倍率区间)
+		-- attr_world_value_H1 = 7000
+		-- attr_world_value_H2 = 10000
+	local worldHealingRateRange = {
 		gameset.attr_world_value_H1.key_value / 10000,
 		gameset.attr_world_value_H2.key_value / 10000
 	}
 
-	arg_47_0 = arg_47_0 or var_0_15
-	arg_47_1 = arg_47_1 or var_0_15
+	enemyMapRewards = enemyMapRewards or cachedMapRewards
+	fleetMapRewards = fleetMapRewards or cachedMapRewards
 
-	local var_47_1
+	-- var_47_1 -> tempWorldHealingRate
+	local tempWorldHealingRate
 
-	if arg_47_0[3] == 0 then
-		var_47_1 = var_47_0[2]
+	if enemyMapRewards[3] == 0 then
+		tempWorldHealingRate = worldHealingRateRange[2]
 	else
-		var_47_1 = arg_47_1[3] / arg_47_0[3]
+		tempWorldHealingRate = fleetMapRewards[3] / enemyMapRewards[3]
 	end
 
-	return math.clamp(var_47_1, var_47_0[1], var_47_0[2])
+	return math.clamp(tempWorldHealingRate, worldHealingRateRange[1], worldHealingRateRange[2])
 end
 
+-- 这个函数仅用于Debug，见BattleDebugConsole.lua
 function BattleFormulas.CalcDamageLock()
 	return 0, {
 		false,
@@ -1156,97 +1165,144 @@ function BattleFormulas.CalcDamageLock()
 	}
 end
 
+-- 这个函数仅用于Debug，见BattleDebugConsole.lua
 function BattleFormulas.CalcDamageLockA2M()
 	return 0
 end
 
+-- 这个函数仅用于Debug，见BattleDebugConsole.lua
 function BattleFormulas.CalcDamageLockS2M()
 	return 0
 end
 
+-- 这个函数仅用于Debug，见BattleDebugConsole.lua
 function BattleFormulas.CalcDamageLockCrush()
 	return 0, 0
 end
 
+-- 用于BattleDodgemCommand，用途暂不明
 function BattleFormulas.UnilateralCrush()
 	return 0, 100000
 end
 
-function BattleFormulas.ChapterRepressReduce(arg_53_0)
-	return 1 - arg_53_0 * 0.01
+-- arg_53_0 -> repressReduce
+	-- 计算普通图章节的压制减伤倍率
+function BattleFormulas.ChapterRepressReduce(repressReduce)
+	return 1 - repressReduce * 0.01
 end
 
-function BattleFormulas.IsHappen(arg_54_0)
-	if arg_54_0 <= 0 then
+-- arg_54_0 -> rant
+	-- 判定概率是否发生，常用
+	-- 等价于rant%的概率发生，并向下取整到0.01%
+function BattleFormulas.IsHappen(rant)
+	if rant <= 0 then
 		return false
-	elseif arg_54_0 >= 10000 then
+	elseif rant >= 10000 then
 		return true
 	else
-		return arg_54_0 >= math.random(10000)
+		return rant >= math.random(10000)
 	end
 end
 
-function BattleFormulas.WeightRandom(arg_55_0)
-	local var_55_0, var_55_1 = BattleFormulas.GenerateWeightList(arg_55_0)
+-- arg_55_0 -> weightRstList
+	-- 根据权重，随机选择一个结果
+function BattleFormulas.WeightRandom(weightRstList)
+	-- var_55_0 -> weightList
+	-- var_55_1 -> totalWeight
+	local weightList, totalWeight = BattleFormulas.GenerateWeightList(weightRstList)
 
-	return (BattleFormulas.WeightListRandom(var_55_0, var_55_1))
+	return (BattleFormulas.WeightListRandom(weightList, totalWeight))
 end
 
-function BattleFormulas.WeightListRandom(arg_56_0, arg_56_1)
-	local var_56_0 = math.random(0, arg_56_1)
+-- arg_56_0 -> weightList
+-- arg_56_1 -> totalWeight
+	-- 根据权重区间列表和总权重，随机选择一个结果
+function BattleFormulas.WeightListRandom(weightList, totalWeight)
+	-- var_56_0 -> randomWeight
+	local randomWeight = math.random(0, totalWeight)
 
-	for iter_56_0, iter_56_1 in pairs(arg_56_0) do
-		local var_56_1 = iter_56_0.min
-		local var_56_2 = iter_56_0.max
+	-- iter_56_0 -> weightRange
+	-- iter_56_1 -> rst
+	for weightRange, rst in pairs(weightList) do
+		-- var_56_1 -> minWeight
+		-- var_56_2 -> maxWeight
+		local minWeight = weightRange.min
+		local maxWeight = weightRange.max
 
-		if var_56_1 <= var_56_0 and var_56_0 <= var_56_2 then
-			return iter_56_1
+		if minWeight <= randomWeight and randomWeight <= maxWeight then
+			return rst
 		end
 	end
 end
 
-function BattleFormulas.GenerateWeightList(arg_57_0)
-	local var_57_0 = {}
-	local var_57_1 = -1
+-- arg_57_0 -> weightRstList
+	-- 生成权重区间列表和总权重，用于权重随机选择
+function BattleFormulas.GenerateWeightList(weightRstList)
+	-- var_57_0 -> weightList(实际是weightRangeList, 为了一致性我没改变量名)
+	-- var_57_1 -> totalWeight
+	local weightList = {}
+	local totalWeight = -1
 
-	for iter_57_0, iter_57_1 in ipairs(arg_57_0) do
-		local var_57_2 = iter_57_1.weight
-		local var_57_3 = iter_57_1.rst
-		local var_57_4 = var_57_1 + 1
-		local var_57_5
+	-- iter_57_0 -> _
+	-- iter_57_1 -> weightRstPair
+	for _, weightRstPair in ipairs(weightRstList) do
+		-- var_57_2 -> weight
+		-- var_57_3 -> rst(可能表示result?)
+			-- 从后续调用看出，对应的是那个对象本身
+		local weight = weightRstPair.weight
+		local rst = weightRstPair.rst
+		-- var_57_4 -> minWeight
+		-- var_57_5 未使用，我删掉了
+		local minWeight = totalWeight + 1
 
-		var_57_1 = var_57_1 + var_57_2
+		totalWeight = totalWeight + weight
 
-		local var_57_6 = var_57_1
+		-- var_57_6 -> maxWeight
+		local maxWeight = totalWeight
 
-		var_57_0[{
-			min = var_57_4,
-			max = var_57_6
-		}] = var_57_3
+		weightList[{
+			min = minWeight,
+			max = maxWeight
+		}] = rst
 	end
 
-	return var_57_0, var_57_1
+	return weightList, totalWeight
 end
 
-function BattleFormulas.IsListHappen(arg_58_0)
-	for iter_58_0, iter_58_1 in ipairs(arg_58_0) do
-		if BattleFormulas.IsHappen(iter_58_1[1]) then
-			return true, iter_58_1[2]
+-- arg_58_0 -> list
+	-- 检查一组概率列表，判断是否有事件发生
+	-- 返回第一个发生的事件及其结果，否则返回false和nil、
+	-- 这个函数没有被用过。
+function BattleFormulas.IsListHappen(list)
+	-- iter_58_0 -> _
+	-- iter_58_1 -> rantPair({rant, rst})
+	for _, rantPair in ipairs(list) do
+		if BattleFormulas.IsHappen(rantPair[1]) then
+			return true, rantPair[2]
 		end
 	end
 
 	return false, nil
 end
 
-function BattleFormulas.BulletYAngle(arg_59_0, arg_59_1)
-	return math.rad2Deg * math.atan2(arg_59_1.z - arg_59_0.z, arg_59_1.x - arg_59_0.x)
+-- arg_59_0 -> targetPos
+-- arg_59_1 -> sourcePos
+	-- 计算子弹发射的XZ平面角度
+	-- = 180 / pi * arctan(dz/dx)，得到的是度数
+	-- 这个函数没有被用过。
+function BattleFormulas.BulletYAngle(targetPos, sourcePos)
+	return math.rad2Deg * math.atan2(sourcePos.z - targetPos.z, sourcePos.x - targetPos.x)
 end
+
 
 function BattleFormulas.RandomPosNull(arg_60_0, arg_60_1)
 	arg_60_1 = arg_60_1 or 10
 
+	-- var_60_0 -> distance
+	-- var_60_0 -> distanceSqr
 	local var_60_0 = arg_60_0.distance or 10
 	local var_60_1 = var_60_0 * var_60_0
+	-- var_60_2 -> allTargets
 	local var_60_2 = ys.Battle.BattleTargetChoise.TargetAll()
 	local var_60_3
 	local var_60_4
@@ -1273,160 +1329,255 @@ function BattleFormulas.RandomPosNull(arg_60_0, arg_60_1)
 	return nil
 end
 
-function BattleFormulas.RandomPos(arg_61_0)
-	local var_61_0 = arg_61_0[1] or 0
-	local var_61_1 = arg_61_0[2] or 0
-	local var_61_2 = arg_61_0[3] or 0
+-- arg_61_0 -> point
+function BattleFormulas.RandomPos(point)
+	-- var_61_0 -> x
+	-- var_61_1 -> y
+	-- var_61_2 -> z
+	local x = point[1] or 0
+	local y = point[2] or 0
+	local z = point[3] or 0
 
-	if arg_61_0.rangeX or arg_61_0.rangeY or arg_61_0.rangeZ then
-		local var_61_3 = BattleFormulas.RandomDelta(arg_61_0.rangeX)
-		local var_61_4 = BattleFormulas.RandomDelta(arg_61_0.rangeY)
-		local var_61_5 = BattleFormulas.RandomDelta(arg_61_0.rangeZ)
+	if point.rangeX or point.rangeY or point.rangeZ then
+		-- var_61_3 -> deltaX
+		-- var_61_4 -> deltaY
+		-- var_61_5 -> deltaZ
+		local deltaX = BattleFormulas.RandomDelta(point.rangeX)
+		local deltaY = BattleFormulas.RandomDelta(point.rangeY)
+		local deltaZ = BattleFormulas.RandomDelta(point.rangeZ)
 
-		return Vector3(var_61_0 + var_61_3, var_61_1 + var_61_4, var_61_2 + var_61_5)
+		return Vector3(x + deltaX, y + deltaY, z + deltaZ)
 	else
-		local var_61_6 = BattleFormulas.RandomPosXYZ(arg_61_0, "X1", "X2")
-		local var_61_7 = BattleFormulas.RandomPosXYZ(arg_61_0, "Y1", "Y2")
-		local var_61_8 = BattleFormulas.RandomPosXYZ(arg_61_0, "Z1", "Z2")
+		-- var_61_6 -> deltaX
+		-- var_61_7 -> deltaY
+		-- var_61_8 -> deltaZ
+		local deltaX = BattleFormulas.RandomPosXYZ(point, "X1", "X2")
+		local deltaY = BattleFormulas.RandomPosXYZ(point, "Y1", "Y2")
+		local deltaZ = BattleFormulas.RandomPosXYZ(point, "Z1", "Z2")
 
-		return Vector3(var_61_0 + var_61_6, var_61_1 + var_61_7, var_61_2 + var_61_8)
+		return Vector3(x + deltaX, y + deltaY, z + deltaZ)
 	end
 end
 
-function BattleFormulas.RandomPosXYZ(arg_62_0, arg_62_1, arg_62_2)
-	arg_62_1 = arg_62_0[arg_62_1]
-	arg_62_2 = arg_62_0[arg_62_2]
+-- arg_62_0 -> point
+-- arg_62_1 -> coordLeft
+-- arg_62_2 -> coordRight
+	-- 计算在指定坐标区间内的随机坐标值
+function BattleFormulas.RandomPosXYZ(point, coordLeft, coordRight)
+	coordLeft = point[coordLeft]
+	coordRight = point[coordRight]
 
-	if arg_62_1 and arg_62_2 then
-		return math.random(arg_62_1, arg_62_2)
-	else
-		return 0
-	end
-end
-
-function BattleFormulas.RandomPosCenterRange(arg_63_0)
-	local var_63_0 = BattleFormulas.RandomDelta(arg_63_0.rangeX)
-	local var_63_1 = BattleFormulas.RandomDelta(arg_63_0.rangeY)
-	local var_63_2 = BattleFormulas.RandomDelta(arg_63_0.rangeZ)
-
-	return Vector3(var_63_0, var_63_1, var_63_2)
-end
-
-function BattleFormulas.RandomDelta(arg_64_0)
-	if arg_64_0 and arg_64_0 > 0 then
-		return math.random(arg_64_0 + arg_64_0) - arg_64_0
+	if coordLeft and coordRight then
+		return math.random(coordLeft, coordRight)
 	else
 		return 0
 	end
 end
 
-function BattleFormulas.simpleCompare(arg_65_0, arg_65_1)
-	local var_65_0, var_65_1 = string.find(arg_65_0, "%p+")
-	local var_65_2 = string.sub(arg_65_0, var_65_0, var_65_1)
-	local var_65_3 = string.sub(arg_65_0, var_65_1 + 1, #arg_65_0)
-	local var_65_4 = getCompareFuncByPunctuation(var_65_2)
-	local var_65_5 = tonumber(var_65_3)
+-- arg_63_0 -> point
+	-- 这个函数没有被用过。
+function BattleFormulas.RandomPosCenterRange(point)
+	-- var_63_0 -> deltaX
+	-- var_63_1 -> deltaY
+	-- var_63_2 -> deltaZ
+	local deltaX = BattleFormulas.RandomDelta(point.rangeX)
+	local deltaY = BattleFormulas.RandomDelta(point.rangeY)
+	local deltaZ = BattleFormulas.RandomDelta(point.rangeZ)
 
-	return var_65_4(arg_65_1, var_65_5)
+	return Vector3(deltaX, deltaY, deltaZ)
 end
 
-function BattleFormulas.parseCompareUnitAttr(arg_66_0, arg_66_1, arg_66_2)
-	local var_66_0, var_66_1 = string.find(arg_66_0, "%p+")
-	local var_66_2 = string.sub(arg_66_0, var_66_0, var_66_1)
-	local var_66_3 = string.sub(arg_66_0, 1, var_66_0 - 1)
-	local var_66_4 = string.sub(arg_66_0, var_66_1 + 1, #arg_66_0)
-	local var_66_5 = getCompareFuncByPunctuation(var_66_2)
-	local var_66_6 = tonumber(var_66_3) or arg_66_1:GetAttrByName(var_66_3)
-	local var_66_7 = tonumber(var_66_4) or arg_66_2:GetAttrByName(var_66_4)
-
-	return var_66_5(var_66_6, var_66_7)
+-- arg_64_0 -> deltaRange
+	-- 计算一个在[-deltaRange, +deltaRange]范围内的随机整数
+function BattleFormulas.RandomDelta(deltaRange)
+	if deltaRange and deltaRange > 0 then
+		return math.random(deltaRange + deltaRange) - deltaRange
+	else
+		return 0
+	end
 end
 
-function BattleFormulas.parseCompareUnitTemplate(arg_67_0, arg_67_1, arg_67_2)
-	local var_67_0, var_67_1 = string.find(arg_67_0, "%p+")
-	local var_67_2 = string.sub(arg_67_0, var_67_0, var_67_1)
-	local var_67_3 = string.sub(arg_67_0, 1, var_67_0 - 1)
-	local var_67_4 = string.sub(arg_67_0, var_67_1 + 1, #arg_67_0)
-	local var_67_5 = getCompareFuncByPunctuation(var_67_2)
-	local var_67_6 = tonumber(var_67_3) or arg_67_1:GetTemplateValue(var_67_3)
-	local var_67_7 = tonumber(var_67_4) or arg_67_2:GetTemplateValue(var_67_4)
+-- arg_65_0 -> argString
+-- arg_65_1 -> compareValue
+function BattleFormulas.simpleCompare(argString, compareValue)
+	-- var_65_0 -> punctuationStringStart
+	-- var_65_1 -> punctuationStringEnd
+		-- "%p+" 表示匹配一个或多个标点符号
+	-- 这里的标点符号实际上是比较运算符，例如">=", "<"
+	local punctuationStringStart, punctuationStringEnd = string.find(argString, "%p+")
+	-- var_65_2 -> punctuationString
+	local punctuationString = string.sub(argString, punctuationStringStart, punctuationStringEnd)
+	-- var_65_3 -> valueString
+	local valueString = string.sub(argString, punctuationStringEnd + 1, #argString)
+	-- var_65_4 -> compareFunc
+	local compareFunc = getCompareFuncByPunctuation(punctuationString)
+	-- var_65_5 -> value
+	local value = tonumber(valueString)
 
-	return var_67_5(var_67_6, var_67_7)
+	return compareFunc(compareValue, value)
 end
 
-function BattleFormulas.parseCompareBuffAttachData(arg_68_0, arg_68_1)
-	local var_68_0, var_68_1 = string.find(arg_68_0, "%p+")
-	local var_68_2 = string.sub(arg_68_0, var_68_0, var_68_1)
-	local var_68_3 = string.sub(arg_68_0, 1, var_68_0 - 1)
+-- arg_66_0 -> argString
+-- arg_66_1 -> leftUnit
+-- arg_66_2 -> rightUnit
+function BattleFormulas.parseCompareUnitAttr(argString, leftUnit, rightUnit)
+	-- var_66_0 -> punctuationStringStart
+	-- var_66_1 -> punctuationStringEnd
+	local punctuationStringStart, punctuationStringEnd = string.find(argString, "%p+")
+	-- var_66_2 -> punctuationString
+	-- var_66_3 -> leftValueString
+	-- var_66_4 -> rightValueString
+	local punctuationString = string.sub(argString, punctuationStringStart, punctuationStringEnd)
+	local leftValueString = string.sub(argString, 1, punctuationStringStart - 1)
+	local rightValueString = string.sub(argString, punctuationStringEnd + 1, #argString)
+	-- var_66_5 -> compareFunc
+	-- var_66_6 -> leftValue
+	-- var_66_7 -> rightValue
+	local compareFunc = getCompareFuncByPunctuation(punctuationString)
+	local leftValue = tonumber(leftValueString) or leftUnit:GetAttrByName(leftValueString)
+	local rightValue = tonumber(rightValueString) or rightUnit:GetAttrByName(rightValueString)
 
-	if arg_68_1.__name ~= var_68_3 then
+	return compareFunc(leftValue, rightValue)
+end
+
+-- arg_67_0 -> argString
+-- arg_67_1 -> leftUnit
+-- arg_67_2 -> rightUnit
+function BattleFormulas.parseCompareUnitTemplate(argString, leftUnit, rightUnit)
+	-- var_67_0 -> punctuationStringStart
+	-- var_67_1 -> punctuationStringEnd
+	local punctuationStringStart, punctuationStringEnd = string.find(argString, "%p+")
+	-- var_67_2 -> punctuationString
+	-- var_67_3 -> leftValueString
+	-- var_67_4 -> rightValueString
+	local punctuationString = string.sub(argString, punctuationStringStart, punctuationStringEnd)
+	local leftValueString = string.sub(argString, 1, punctuationStringStart - 1)
+	local rightValueString = string.sub(argString, punctuationStringEnd + 1, #argString)
+	-- var_67_5 -> compareFunc
+	-- var_67_6 -> leftValue
+	-- var_67_7 -> rightValue
+	local compareFunc = getCompareFuncByPunctuation(punctuationString)
+	local leftValue = tonumber(leftValueString) or leftUnit:GetTemplateValue(leftValueString)
+	local rightValue = tonumber(rightValueString) or rightUnit:GetTemplateValue(rightValueString)
+
+	return compareFunc(leftValue, rightValue)
+end
+
+-- arg_68_0 -> argString
+-- arg_68_1 -> effect(BattleBuffEffect)
+function BattleFormulas.parseCompareBuffAttachData(argString, effect)
+	-- var_68_0 -> punctuationStringStart
+	-- var_68_1 -> punctuationStringEnd
+	local punctuationStringStart, punctuationStringEnd = string.find(argString, "%p+")
+	-- var_68_2 -> punctuationString
+	-- var_68_3 -> effectName
+	local punctuationString = string.sub(argString, punctuationStringStart, punctuationStringEnd)
+	local effectName = string.sub(argString, 1, punctuationStringStart - 1)
+
+	if effect.__name ~= effectName then
 		return true
 	end
 
-	local var_68_4 = tonumber(string.sub(arg_68_0, var_68_1 + 1, #arg_68_0))
-	local var_68_5 = arg_68_1:GetEffectAttachData()
+	-- var_68_4 -> value
+	-- var_68_5 -> attachValue
+	local value = tonumber(string.sub(argString, punctuationStringEnd + 1, #argString))
+	local attachValue = effect:GetEffectAttachData()
 
-	return getCompareFuncByPunctuation(var_68_2)(var_68_5, var_68_4)
+	return getCompareFuncByPunctuation(punctuationString)(attachValue, value)
 end
 
-function BattleFormulas.parseCompare(arg_69_0, arg_69_1)
-	local var_69_0, var_69_1 = string.find(arg_69_0, "%p+")
-	local var_69_2 = string.sub(arg_69_0, var_69_0, var_69_1)
-	local var_69_3 = string.sub(arg_69_0, 1, var_69_0 - 1)
-	local var_69_4 = string.sub(arg_69_0, var_69_1 + 1, #arg_69_0)
-	local var_69_5 = getCompareFuncByPunctuation(var_69_2)
-	local var_69_6 = tonumber(var_69_3) or arg_69_1:GetCurrent(var_69_3)
-	local var_69_7 = tonumber(var_69_4) or arg_69_1:GetCurrent(var_69_4)
+-- arg_69_0 -> argString
+-- arg_69_1 -> attrs
+function BattleFormulas.parseCompare(argString, attrs)
+	-- var_69_0 -> punctuationStringStart
+	-- var_69_1 -> punctuationStringEnd
+	local punctuationStringStart, punctuationStringEnd = string.find(argString, "%p+")
+	-- var_69_2 -> punctuationString
+	-- var_69_3 -> leftValueString
+	-- var_69_4 -> rightValueString
+	local punctuationString = string.sub(argString, punctuationStringStart, punctuationStringEnd)
+	local leftValueString = string.sub(argString, 1, punctuationStringStart - 1)
+	local rightValueString = string.sub(argString, punctuationStringEnd + 1, #argString)
+	-- var_69_5 -> compareFunc
+	-- var_69_6 -> leftValue
+	-- var_69_7 -> rightValue
+	local compareFunc = getCompareFuncByPunctuation(punctuationString)
+	local leftValue = tonumber(leftValueString) or attrs:GetCurrent(leftValueString)
+	local rightValue = tonumber(rightValueString) or attrs:GetCurrent(rightValueString)
 
-	return var_69_5(var_69_6, var_69_7)
+	return compareFunc(leftValue, rightValue)
 end
 
-function BattleFormulas.parseFormula(arg_70_0, arg_70_1)
-	local var_70_0 = {}
-	local var_70_1 = {}
+-- arg_70_0 -> formulaString
+-- arg_70_1 -> attrs(BattleAttr)
+	-- 这个函数解析一个计算公式字符串，并计算出结果
+	-- 但我看了一眼，这个函数只在CardPuzzle中使用，这是一个废弃的模式
+function BattleFormulas.parseFormula(formulaString, attrs)
+	-- var_70_0 -> variableTable
+	-- var_70_1 -> operatorTable
+	local variableTable = {}
+	local operatorTable = {}
 
-	for iter_70_0 in string.gmatch(arg_70_0, "%w+%.?%w*") do
-		table.insert(var_70_0, iter_70_0)
+	-- iter_70_0 -> variable
+		-- "%w+%.?%w*" 表示匹配一个或多个字母数字字符，后面可选跟一个点号和一个或多个字母数字字符
+		-- 这表示匹配变量名或数字
+	for variable in string.gmatch(formulaString, "%w+%.?%w*") do
+		table.insert(variableTable, variable)
 	end
 
-	for iter_70_1 in string.gmatch(arg_70_0, "[^%w%.]") do
-		table.insert(var_70_1, iter_70_1)
+	-- iter_70_1 -> operator
+		-- "[^%w%.]" 表示匹配一个非字母数字且非点号的字符
+		-- 这表示匹配运算符
+	for operator in string.gmatch(formulaString, "[^%w%.]") do
+		table.insert(operatorTable, operator)
 	end
 
-	local var_70_2 = {}
-	local var_70_3 = {}
-	local var_70_4 = 1
-	local var_70_5 = var_70_0[1]
+	-- 似乎是在构建一个中缀表达式的计算?
+	-- var_70_2 -> operatorsLeft
+	-- var_70_3 -> valuesForCalc
+	local operatorsLeft = {}
+	local valuesForCalc = {}
+	local varIndex = 1
+	-- var_70_5 -> currentValue?
+	local currentValue = variableTable[1]
 
-	var_70_5 = tonumber(var_70_5) or arg_70_1:GetCurrent(var_70_5)
+	currentValue = tonumber(currentValue) or attrs:GetCurrent(currentValue)
 
-	for iter_70_2, iter_70_3 in ipairs(var_70_1) do
-		var_70_4 = var_70_4 + 1
+	-- iter_70_2 -> _
+	-- iter_70_3 -> operator
+	for _, operator in ipairs(operatorTable) do
+		-- var_70_4 -> varIndex
+		varIndex = varIndex + 1
 
-		local var_70_6 = tonumber(var_70_0[var_70_4]) or arg_70_1:GetCurrent(var_70_0[var_70_4])
+		-- var_70_6 -> varValue
+		local varValue = tonumber(variableTable[varIndex]) or attrs:GetCurrent(variableTable[varIndex])
 
-		if iter_70_3 == "+" or iter_70_3 == "-" then
-			table.insert(var_70_3, var_70_5)
+		-- 下面的逻辑是处理运算符优先级的，如果是加减法就先把当前值存下来，乘除法就直接计算
+		if operator == "+" or operator == "-" then
+			table.insert(valuesForCalc, currentValue)
 
-			var_70_5 = var_70_6
+			currentValue = varValue
 
-			table.insert(var_70_2, iter_70_3)
-		elseif iter_70_3 == "*" or iter_70_3 == "/" then
-			var_70_5 = getArithmeticFuncByOperator(iter_70_3)(var_70_5, var_70_6)
+			table.insert(operatorsLeft, operator)
+		elseif operator == "*" or operator == "/" then
+			currentValue = getArithmeticFuncByOperator(operator)(currentValue, varValue)
 		end
 	end
 
-	table.insert(var_70_3, var_70_5)
+	table.insert(valuesForCalc, currentValue)
 
-	local var_70_7 = 1
-	local var_70_8 = var_70_3[var_70_7]
+	-- var_70_7 -> i
+	-- var_70_8 -> resultValue
+	local i = 1
+	local resultValue = valuesForCalc[i]
 
-	while var_70_7 < #var_70_3 do
-		local var_70_9 = getArithmeticFuncByOperator(var_70_2[var_70_7])
+	while i < #valuesForCalc do
+		-- var_70_9 -> operatorFunc
+		local operatorFunc = getArithmeticFuncByOperator(operatorsLeft[i])
 
-		var_70_7 = var_70_7 + 1
-		var_70_8 = var_70_9(var_70_8, var_70_3[var_70_7])
+		i = i + 1
+		resultValue = operatorFunc(resultValue, valuesForCalc[i])
 	end
 
-	return var_70_8
+	return resultValue
 end
