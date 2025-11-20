@@ -28,7 +28,7 @@ local shipSpeedConvertRatio = bfConsts.SECONDs / BattleConfig.calcFPS * BattleCo
 local aircraftSpeedConvertRatio = bfConsts.SECONDs / BattleConfig.viewFPS * BattleConfig.AircraftSpeedConvertConst
 	-- BattleConfig.AIR_ASSIST_RELOAD_RATIO = 220
 	-- bfConst.PERCENT = 0.01
--- var_0_10 -> airAssistReloadFactor
+-- var_0_10 -> airAssistReloadFactor(=2.2)
 -- var_0_11 -> damageEnhanceFromShipType
 -- var_0_12 -> ammoDamageEnhance
 -- var_0_13 -> ammoDamageReduce
@@ -111,537 +111,976 @@ function BattleFormulas.GetFleetReload(fleet)
 	return totalReload
 end
 
-function BattleFormulas.GetFleetTorpedoPower(arg_4_0)
-	local var_4_0 = bfConsts.NUM0
+-- arg_4_0 -> fleet
+function BattleFormulas.GetFleetTorpedoPower(fleet)
+	-- var_4_0 -> totalTorpedoPower
+	local totalTorpedoPower = bfConsts.NUM0
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-		var_4_0 = var_4_0 + iter_4_1:GetTorpedoPower()
+	-- iter_4_0 -> _
+	-- iter_4_1 -> ship(BattleUnit)
+	for _, ship in ipairs(fleet) do
+		totalTorpedoPower = totalTorpedoPower + ship:GetTorpedoPower()
 	end
 
-	return var_4_0
+	return totalTorpedoPower
 end
 
-function BattleFormulas.AttrFixer(arg_5_0, arg_5_1)
-	if arg_5_0 == SYSTEM_DUEL then
-		local var_5_0 = arg_5_1.level
-		local var_5_1 = arg_5_1.durability
-		local var_5_2, var_5_3 = ys.Battle.BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(arg_5_0, var_5_0)
+-- arg_5_0 -> battleType
+-- arg_5_1 -> unit(BattleUnit)
+function BattleFormulas.AttrFixer(battleType, unit)
+	-- 相关定义在const.lua中
+	-- SYSTEM_DUEL对应演习模式
+	if battleType == SYSTEM_DUEL then
+		-- var_5_0 -> level
+		-- var_5_1 -> durability
+		-- var_5_2 -> durabilityRatio
+		-- var_5_3 -> durabilityAdd
+		local level = unit.level
+		local durability = unit.durability
+		local durabilityRatio, durabilityAdd = ys.Battle.BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(battleType, level)
 
-		arg_5_1.durability = var_5_1 * var_5_2 + var_5_3
+		unit.durability = durability * durabilityRatio + durabilityAdd
 	end
 end
 
-function BattleFormulas.HealFixer(arg_6_0, arg_6_1)
-	local var_6_0 = 1
+-- arg_6_0 -> battleType
+-- arg_6_1 -> unit(BattleUnit)
+function BattleFormulas.HealFixer(battleType, unit)
+	-- var_6_0 -> healRatio
+	local healRatio = 1
 
-	if arg_6_0 == SYSTEM_DUEL then
-		local var_6_1 = arg_6_1.level
+	if battleType == SYSTEM_DUEL then
+		-- var_6_1 -> level
+		local level = unit.level
 
-		var_6_0 = ys.Battle.BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(arg_6_0, var_6_1)
+		-- 如果是演习模式，回血倍率跟耐久度倍率一致
+		healRatio = ys.Battle.BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(battleType, level)
 	end
 
-	return var_6_0
+	return healRatio
 end
 
-function BattleFormulas.ConvertShipSpeed(arg_7_0)
-	return arg_7_0 * shipSpeedConvertRatio
+-- arg_7_0 -> shipSpeed
+-- 原始航速 × 0.02，得到的是每帧移动的距离
+-- 区别两个术语：原始航速为Speed，转换后叫做Velocity
+function BattleFormulas.ConvertShipSpeed(shipSpeed)
+	return shipSpeed * shipSpeedConvertRatio
 end
 
-function BattleFormulas.ConvertAircraftSpeed(arg_8_0)
-	if arg_8_0 then
-		return arg_8_0 * aircraftSpeedConvertRatio
+-- arg_8_0 -> aircraftSpeed
+-- 原始飞机速度 × 0.02，得到的是每帧移动的距离
+function BattleFormulas.ConvertAircraftSpeed(aircraftSpeed)
+	if aircraftSpeed then
+		return aircraftSpeed * aircraftSpeedConvertRatio
 	else
 		return nil
 	end
 end
 
-function BattleFormulas.ConvertBulletSpeed(arg_9_0)
-	return arg_9_0 * bulletSpeedConvertRatio
+-- arg_9_0 -> bulletSpeed
+-- 原始子弹速度 × 0.2，得到的是每帧移动的距离
+function BattleFormulas.ConvertBulletSpeed(bulletSpeed)
+	return bulletSpeed * bulletSpeedConvertRatio
 end
 
-function BattleFormulas.ConvertBulletDataSpeed(arg_10_0)
-	return arg_10_0 / bulletSpeedConvertRatio
+-- arg_10_0 -> bulletVelocity
+-- 将每帧移动的距离转换回原始子弹速度
+function BattleFormulas.ConvertBulletDataSpeed(bulletVelocity)
+	return bulletVelocity / bulletSpeedConvertRatio
 end
 
-function BattleFormulas.CreateContextCalculateDamage(arg_11_0)
-	return function(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
-		local var_12_0 = bfConsts.NUM1
-		local var_12_1 = bfConsts.NUM0
-		local var_12_2 = bfConsts.NUM10000
-		local var_12_3 = bfConsts.DRATE
-		local var_12_4 = bfConsts.ACCURACY
-		local var_12_5 = arg_12_0:GetWeaponHostAttr()
-		local var_12_6 = arg_12_0:GetWeapon()
-		local var_12_7 = arg_12_0:GetWeaponTempData()
-		local var_12_8 = var_12_7.type
-		local var_12_9 = var_12_7.attack_attribute
-		local var_12_10 = var_12_6:GetConvertedAtkAttr()
-		local var_12_11 = arg_12_0:GetTemplate()
-		local var_12_12 = var_12_11.damage_type
-		local var_12_13 = var_12_11.random_damage_rate
-		local var_12_14 = arg_12_1._attr
-		local var_12_15 = arg_12_3 or var_12_0
+-- arg_11_0 -> isWorld
+	-- 是否在大世界
+function BattleFormulas.CreateContextCalculateDamage(isWorld)
+	-- arg_12_0 -> bullet(BattleBulletUnit)
+	-- arg_12_1 -> target(BattleUnit)
+	-- arg_12_2 -> damageReduceDistance
+	-- arg_12_3 -> meteoDamageRatio
+	return function(bullet, target, damageReduceDistance, meteoDamageRatio)
+		-- var_12_0 -> num1
+		local num1 = bfConsts.NUM1
+		-- var_12_1 -> num0
+		local num0 = bfConsts.NUM0
+		-- var_12_2 -> num10000
+		local num10000 = bfConsts.NUM10000
+		-- var_12_3 -> dRate
+		local dRate = bfConsts.DRATE
+		-- var_12_4 -> accuracyConst
+		local accuracyConst = bfConsts.ACCURACY
+		-- var_12_5 -> weaponHostAttr
+		local weaponHostAttr = bullet:GetWeaponHostAttr()
+		-- var_12_6 -> weapon(BattleWeaponUnit)
+		local weapon = bullet:GetWeapon()
+		-- var_12_7 -> weaponTemplate
+		local weaponTemplate = bullet:GetWeaponTempData()
+		-- var_12_8 -> weaponType
+		local weaponType = weaponTemplate.type
+		-- var_12_9 -> attackAttribute
+		local attackAttribute = weaponTemplate.attack_attribute
+		-- var_12_10 -> weaponConvertedAtkAttr
+			-- 来自BattleFormulas.WeaponAtkAttrPreRatio(), 为属性效率(attackAttributeRatio)/10000
+			-- 属性效率一般是三位数，如100，因此最后会变成0.01
+			-- 为了方便，一般就简单记为属性效率/100，这样属性效率就是以1为基准的了
+		local weaponConvertedAtkAttr = weapon:GetConvertedAtkAttr()
+		-- var_12_11 -> bulletTemplate
+		local bulletTemplate = bullet:GetTemplate()
+		-- var_12_12 -> bulletDamageType(对甲比例)
+		local bulletDamageType = bulletTemplate.damage_type
+		-- var_12_13 -> bulletRandomDamageRate
+		local bulletRandomDamageRate = bulletTemplate.random_damage_rate
+		-- var_12_14 -> targetAttr
+		local targetAttr = target._attr
+		-- var_12_15 -> damageRatioByAttr
+		local damageRatioByAttr = meteoDamageRatio or num1
 
-		arg_12_2 = arg_12_2 or var_12_1
+		damageReduceDistance = damageReduceDistance or num0
 
-		local var_12_16 = var_12_14.armorType
-		local var_12_17 = var_12_5.formulaLevel - var_12_14.formulaLevel
-		local var_12_18 = var_12_0
+		-- var_12_16 -> targetArmorType
+		local targetArmorType = targetAttr.armorType
+		-- var_12_17 -> levelDiff
+		local levelDiff = weaponHostAttr.formulaLevel - targetAttr.formulaLevel
+		-- var_12_18 -> critDamage
+		local critDamage = num1
 		local var_12_19 = false
-		local var_12_20 = false
-		local var_12_21 = var_12_0
-		local var_12_22 = arg_12_0:GetCorrectedDMG()
-		local var_12_23 = (var_12_0 + arg_12_0:GetWeaponAtkAttr() * var_12_10) * var_12_22
+		-- var_12_20 -> isCri
+		local isCri = false
+		-- var_12_21 -> baseDamage
+		local baseDamage = num1
+		-- var_12_22 -> bulletCorrectedDMG
+			-- 子弹的correctedDMG来自武器的correctedDMG
+			-- 来自BattleFormulas.WeaponDamagePreCorrection()
+			-- 武器标伤(damage) * 修正系数(corrected) * 武器效率(potential) / 100
+			-- 因为武器效率一般也是三位数，为了方便，也是变成以1为基准的，所以除以100就消掉了
+		local bulletCorrectedDMG = bullet:GetCorrectedDMG()
+		-- var_12_23 -> bulletBaseDamage
+			-- (1 + 攻击属性 * 属性效率 / 100) * 武器标伤 * 修正系数 * 武器效率
+		local bulletBaseDamage = (num1 + bullet:GetWeaponAtkAttr() * weaponConvertedAtkAttr) * bulletCorrectedDMG
 
-		if var_12_9 == BattleConst.WeaponDamageAttr.CANNON then
-			var_12_15 = var_12_0 + BattleAttr.GetCurrent(arg_12_1, "injureRatioByCannon") + BattleAttr.GetCurrent(arg_12_0, "damageRatioByCannon")
-		elseif var_12_9 == BattleConst.WeaponDamageAttr.TORPEDO then
-			var_12_15 = var_12_0 + BattleAttr.GetCurrent(arg_12_1, "injureRatioByBulletTorpedo") + BattleAttr.GetCurrent(arg_12_0, "damageRatioByBulletTorpedo")
-		elseif var_12_9 == BattleConst.WeaponDamageAttr.AIR then
-			local var_12_24 = BattleAttr.GetCurrent(arg_12_0, "airResistPierceActive") == 1 and BattleAttr.GetCurrent(arg_12_0, "airResistPierce") or 0
+		if attackAttribute == BattleConst.WeaponDamageAttr.CANNON then
+			damageRatioByAttr = num1 + BattleAttr.GetCurrent(target, "injureRatioByCannon") + BattleAttr.GetCurrent(bullet, "damageRatioByCannon")
+		elseif attackAttribute == BattleConst.WeaponDamageAttr.TORPEDO then
+			damageRatioByAttr = num1 + BattleAttr.GetCurrent(target, "injureRatioByBulletTorpedo") + BattleAttr.GetCurrent(bullet, "damageRatioByBulletTorpedo")
+		elseif attackAttribute == BattleConst.WeaponDamageAttr.AIR then
+			-- var_12_24 -> airResistPierce(防空减伤穿透，前提：airResistPierceActive为1，即处于隐匿状态下)
+			local airResistPierce = BattleAttr.GetCurrent(bullet, "airResistPierceActive") == 1 and BattleAttr.GetCurrent(bullet, "airResistPierce") or 0
 
-			var_12_15 = var_12_15 * math.min(var_12_3[7] / (var_12_14.antiAirPower + var_12_3[7]) + var_12_24, 1) * (var_12_0 + BattleAttr.GetCurrent(arg_12_1, "injureRatioByAir") + BattleAttr.GetCurrent(arg_12_0, "damageRatioByAir"))
-		elseif var_12_9 == BattleConst.WeaponDamageAttr.ANTI_AIR then
+			-- dRate[7] = 150
+			damageRatioByAttr = damageRatioByAttr * math.min(dRate[7] / (targetAttr.antiAirPower + dRate[7]) + airResistPierce, 1) * (num1 + BattleAttr.GetCurrent(target, "injureRatioByAir") + BattleAttr.GetCurrent(bullet, "damageRatioByAir"))
+		elseif attackAttribute == BattleConst.WeaponDamageAttr.ANTI_AIR then
 			-- block empty
-		elseif var_12_9 == BattleConst.WeaponDamageAttr.ANIT_SUB then
+		elseif attackAttribute == BattleConst.WeaponDamageAttr.ANIT_SUB then
 			-- block empty
 		end
 
-		local var_12_25 = var_12_5.luck - var_12_14.luck
-		local var_12_26 = BattleAttr.GetCurrent(arg_12_1, "perfectDodge")
-		local var_12_27 = math.max(var_12_5.attackRating, 0)
-		local var_12_28
+		-- var_12_25 -> luckDiff
+		local luckDiff = weaponHostAttr.luck - targetAttr.luck
+		-- var_12_26 -> perfectDodge(该属性为1时，表示必定闪避，不进行命中判定)
+		local perfectDodge = BattleAttr.GetCurrent(target, "perfectDodge")
+		-- var_12_27 -> attackRating(命中值，最小为0)
+		local attackRating = math.max(weaponHostAttr.attackRating, 0)
+		-- var_12_28 -> isMiss
+		local isMiss
 
-		if var_12_26 >= 1 then
-			var_12_28 = true
+		if perfectDodge >= 1 then
+			isMiss = true
 		else
-			local var_12_29 = var_12_4[1] + var_12_27 / (var_12_27 + var_12_14.dodgeRate + var_12_4[2]) + (var_12_25 + var_12_17) * bfConsts.PERCENT1
-			local var_12_30 = BattleAttr.GetCurrent(arg_12_0, "accuracyRateExtra")
-			local var_12_31 = BattleAttr.GetCurrent(arg_12_0, shipTypeAccuracyEnhance[arg_12_1:GetTemplate().type])
-			local var_12_32 = BattleAttr.GetCurrent(arg_12_1, "dodgeRateExtra")
-			local var_12_33 = math.max(var_12_3[5], math.min(var_12_0, var_12_29 + var_12_30 + var_12_31 - var_12_32))
+			-- var_12_29 -> baseAccuracyRate(基础命中率)
+				-- accuracyConst[1] = 0.1, accuracyConst[2] = 2
+			local baseAccuracyRate = accuracyConst[1] + attackRating / (attackRating + targetAttr.dodgeRate + accuracyConst[2]) + (luckDiff + levelDiff) * bfConsts.PERCENT1
+			-- var_12_30 -> accuracyRateExtra
+			local accuracyRateExtra = BattleAttr.GetCurrent(bullet, "accuracyRateExtra")
+			-- var_12_31 -> shipTypeAccuracyEnhance
+			local shipTypeAccuracyEnhance = BattleAttr.GetCurrent(bullet, shipTypeAccuracyEnhance[target:GetTemplate().type])
+			-- var_12_32 -> dodgeRateExtra
+			local dodgeRateExtra = BattleAttr.GetCurrent(target, "dodgeRateExtra")
+			-- var_12_33 -> finalAccuracyRate
+				-- dRate[5] = 0.1
+				-- 说明命中率最小为10%，最大为100%
+			local finalAccuracyRate = math.max(dRate[5], math.min(num1, baseAccuracyRate + accuracyRateExtra + shipTypeAccuracyEnhance - dodgeRateExtra))
 
-			var_12_28 = not BattleFormulas.IsHappen(var_12_33 * var_12_2)
+			isMiss = not BattleFormulas.IsHappen(finalAccuracyRate * num10000)
 		end
 
-		if not var_12_28 then
-			local var_12_34
-			local var_12_35 = BattleAttr.GetCurrent(arg_12_0, "GCT") == 1 and 1 or bfConsts.DFT_CRIT_RATE + var_12_27 / (var_12_27 + var_12_14.dodgeRate + var_12_3[4]) + (var_12_25 + var_12_17) * var_12_3[3] + BattleAttr.GetCurrent(arg_12_0, "cri") + BattleAttr.GetTagAttrCri(arg_12_0, arg_12_1)
+		-- 若命中
+		if not isMiss then
+			-- var_12_34这个值没用过，可能程序员忘记删掉了
+			-- 这里我们直接删掉这个变量的定义
+			-- var_12_35 -> critRate
+				-- GCT表示必定暴击(Guaranteed Crit)字段，如果为1则表示必定暴击, 不用进行后续暴击率计算
+				-- bfConst.DFT_CRIT_RATE = 0.05
+				-- dRate[4] = 2000
+				-- dRate[3] = 0.0002
+			local critRate = BattleAttr.GetCurrent(bullet, "GCT") == 1 and 1 or bfConsts.DFT_CRIT_RATE + attackRating / (attackRating + targetAttr.dodgeRate + dRate[4]) + (luckDiff + levelDiff) * dRate[3] + BattleAttr.GetCurrent(bullet, "cri") + BattleAttr.GetTagAttrCri(bullet, target)
 
-			var_12_21 = math.random(BattleConfig.RANDOM_DAMAGE_MIN, BattleConfig.RANDOM_DAMAGE_MAX) + var_12_23
+			-- RANDOM_DAMAGE_MIN = 0, RANDOM_DAMAGE_MAX = 2
+			baseDamage = math.random(BattleConfig.RANDOM_DAMAGE_MIN, BattleConfig.RANDOM_DAMAGE_MAX) + bulletBaseDamage
 
-			if BattleFormulas.IsHappen(var_12_35 * var_12_2) then
-				var_12_20 = true
+			if BattleFormulas.IsHappen(critRate * num10000) then
+				isCri = true
 
-				local var_12_36 = bfConsts.DFT_CRIT_EFFECT + BattleAttr.GetTagAttrCriDmg(arg_12_0, arg_12_1) + BattleAttr.GetCurrent(arg_12_0, "criDamage") - BattleAttr.GetCurrent(arg_12_1, "criDamageResist")
+				-- var_12_36 -> baseCritDamage
+					-- bfConsts.DFT_CRIT_EFFECT = 1.5
+				local baseCritDamage = bfConsts.DFT_CRIT_EFFECT + BattleAttr.GetTagAttrCriDmg(bullet, target) + BattleAttr.GetCurrent(bullet, "criDamage") - BattleAttr.GetCurrent(target, "criDamageResist")
 
-				var_12_18 = math.max(1, var_12_36)
+				critDamage = math.max(1, baseCritDamage)
 			else
-				var_12_20 = false
+				isCri = false
 			end
 		else
-			var_12_21 = var_12_1
+			-- 如果未命中，直接结算
+			baseDamage = num0
 
-			local var_12_37 = {
+			-- var_12_37 -> extraInfo
+			local extraInfo = {
 				isMiss = true,
 				isDamagePrevent = false,
-				isCri = var_12_20
+				isCri = isCri
 			}
 
-			return var_12_21, var_12_37
+			return baseDamage, extraInfo
 		end
 
-		local var_12_38 = bfConsts.NUM1
-		local var_12_39 = BattleAttr.GetCurrent(arg_12_0, "damageRatioBullet")
-		local var_12_40 = BattleAttr.GetTagAttr(arg_12_0, arg_12_1, arg_11_0)
-		local var_12_41 = BattleAttr.GetCurrent(arg_12_1, "injureRatio")
-		local var_12_42 = (var_12_6:GetFixAmmo() or var_12_12[var_12_16] or var_12_38) + BattleAttr.GetCurrent(arg_12_0, BattleConfig.DAMAGE_AMMO_TO_ARMOR_RATE_ENHANCE[var_12_16])
-		local var_12_43 = BattleAttr.GetCurrent(arg_12_0, BattleConfig.DAMAGE_TO_ARMOR_RATE_ENHANCE[var_12_16])
-		local var_12_44 = BattleAttr.GetCurrent(arg_12_0, ammoDamageEnhance[var_12_11.ammo_type])
-		local var_12_45 = BattleAttr.GetCurrent(arg_12_1, ammoDamageReduce[var_12_11.ammo_type])
-		local var_12_46 = BattleAttr.GetCurrent(arg_12_0, "comboTag")
-		local var_12_47 = BattleAttr.GetCurrent(arg_12_1, var_12_46)
-		local var_12_48 = math.max(var_12_38, math.floor(var_12_21 * var_12_15 * (var_12_38 - arg_12_2) * var_12_42 * (var_12_38 + var_12_43) * var_12_18 * (var_12_38 + var_12_39) * var_12_40 * (var_12_38 + var_12_41) * (var_12_38 + var_12_44 - var_12_45) * (var_12_38 + var_12_47) * (var_12_38 + math.min(var_12_3[1], math.max(-var_12_3[1], var_12_17)) * var_12_3[2])))
+		-- var_12_38 -> baseRatio(=1)
+		local baseRatio = bfConsts.NUM1
+		-- var_12_39 -> damageRatioBullet(子弹伤害倍率)
+		local damageRatioBullet = BattleAttr.GetCurrent(bullet, "damageRatioBullet")
+		-- var_12_40 -> damageRatioTag(标签伤害倍率)
+		local damageRatioTag = BattleAttr.GetTagAttr(bullet, target, isWorld)
+		-- var_12_41 -> injureRatio(目标受伤倍率)
+		local injureRatio = BattleAttr.GetCurrent(target, "injureRatio")
+		-- var_12_42 -> damageAmmoToArmorRate(弹药对甲倍率)
+			-- 这里是子弹的基础对甲效率 + (子弹)获得的对甲效率加成
+		local damageAmmoToArmorRate = (weapon:GetFixAmmo() or bulletDamageType[targetArmorType] or baseRatio) + BattleAttr.GetCurrent(bullet, BattleConfig.DAMAGE_AMMO_TO_ARMOR_RATE_ENHANCE[targetArmorType])
+		-- var_12_43 -> damageToArmorRateEnhance(子弹对甲倍率增加)
+			-- 注意子弹对甲倍率与弹药对甲倍率区别。子弹(Bullet)和弹药(Ammo)是两个不同的概念，一般来说，Ammo是Bullet的一个属性
+		local damageToArmorRateEnhance = BattleAttr.GetCurrent(bullet, BattleConfig.DAMAGE_TO_ARMOR_RATE_ENHANCE[targetArmorType])
+		-- var_12_44 -> ammoDamageEnhance(弹药伤害倍率增加)
+			-- 判定依据是子弹的弹药类型(ammo_type)
+		local ammoDamageEnhance = BattleAttr.GetCurrent(bullet, ammoDamageEnhance[bulletTemplate.ammo_type])
+		-- var_12_45 -> targetAmmoDamageReduce(目标弹药伤害减免)
+		local targetAmmoDamageReduce = BattleAttr.GetCurrent(target, ammoDamageReduce[bulletTemplate.ammo_type])
+		-- var_12_46 -> comboTag(连击标签)
+			-- 表示的是子弹连续命中了某个目标后，所触发的连击标签
+		local comboTag = BattleAttr.GetCurrent(bullet, "comboTag")
+		-- var_12_47 -> damageRatioComboTag(连击标签伤害倍率)
+		local damageRatioComboTag = BattleAttr.GetCurrent(target, comboTag)
+		-- var_12_48 -> finalDamageBase
+			-- dRate[1] = 25, dRate[2] = 0.02
+		local finalDamageBase = math.max(baseRatio, math.floor(baseDamage * damageRatioByAttr * (baseRatio - damageReduceDistance) * damageAmmoToArmorRate * (baseRatio + damageToArmorRateEnhance) * critDamage * (baseRatio + damageRatioBullet) * damageRatioTag * (baseRatio + injureRatio) * (baseRatio + ammoDamageEnhance - targetAmmoDamageReduce) * (baseRatio + damageRatioComboTag) * (baseRatio + math.min(dRate[1], math.max(-dRate[1], levelDiff)) * dRate[2])))
 
-		if arg_12_1:GetCurrentOxyState() == BattleConst.OXY_STATE.DIVE then
-			var_12_48 = math.floor(var_12_48 * var_12_11.antisub_enhancement)
+		if target:GetCurrentOxyState() == BattleConst.OXY_STATE.DIVE then
+			finalDamageBase = math.floor(finalDamageBase * bulletTemplate.antisub_enhancement)
 		end
 
-		local var_12_49 = {
-			isMiss = var_12_28,
-			isCri = var_12_20,
-			damageAttr = var_12_9
+		-- var_12_49 -> extraInfo
+		local extraInfo = {
+			isMiss = isMiss,
+			isCri = isCri,
+			damageAttr = attackAttribute
 		}
-		local var_12_50 = arg_12_0:GetDamageEnhance()
 
-		if var_12_50 ~= 1 then
-			var_12_48 = math.floor(var_12_48 * var_12_50)
+		-- var_12_50 -> damageEnhance
+			-- 包括手动开炮时的第一底座增伤和首轮增伤等
+		local damageEnhance = bullet:GetDamageEnhance()
+
+		if damageEnhance ~= 1 then
+			finalDamageBase = math.floor(finalDamageBase * damageEnhance)
 		end
 
-		local var_12_51 = var_12_48 * var_12_14.repressReduce
+		-- var_12_51 -> finalDamageAfterRepress
+			-- targetAttr.repressReduce表示海域压制减伤
+		local finalDamageAfterRepress = finalDamageBase * targetAttr.repressReduce
 
-		if var_12_13 ~= 0 then
-			var_12_51 = var_12_51 * (Mathf.RandomFloat(var_12_13) + 1)
+		if bulletRandomDamageRate ~= 0 then
+			finalDamageAfterRepress = finalDamageAfterRepress * (Mathf.RandomFloat(bulletRandomDamageRate) + 1)
 		end
 
-		local var_12_52 = BattleAttr.GetCurrent(arg_12_0, "damageEnhanceProjectile")
-		local var_12_53 = math.max(0, var_12_51 + var_12_52)
+		-- var_12_52 -> damageEnhanceProjectile
+		local damageEnhanceProjectile = BattleAttr.GetCurrent(bullet, "damageEnhanceProjectile")
+		-- var_12_53 -> finalDamageBeforeFloor
+		local finalDamageBeforeFloor = math.max(0, finalDamageAfterRepress + damageEnhanceProjectile)
 
-		if arg_11_0 then
-			var_12_53 = var_12_53 * (bfConsts.NUM1 + BattleAttr.GetCurrent(arg_12_0, "worldBuffResistance"))
+		if isWorld then
+			finalDamageBeforeFloor = finalDamageBeforeFloor * (bfConsts.NUM1 + BattleAttr.GetCurrent(bullet, "worldBuffResistance"))
 		end
 
-		local var_12_54 = math.floor(var_12_53)
-		local var_12_55 = var_12_11.DMG_font[var_12_16]
+		-- var_12_54 -> finalDamage
+		local finalDamage = math.floor(finalDamageBeforeFloor)
+		-- var_12_55 -> damageFont
+		local damageFont = bulletTemplate.DMG_font[targetArmorType]
 
-		if var_12_52 < 0 then
-			var_12_55 = BattleConfig.BULLET_DECREASE_DMG_FONT
+		if damageEnhanceProjectile < 0 then
+			damageFont = BattleConfig.BULLET_DECREASE_DMG_FONT
 		end
 
-		return var_12_54, var_12_49, var_12_55
+		return finalDamage, extraInfo, damageFont
 	end
 end
 
-function BattleFormulas.CalculateIgniteDamage(arg_13_0, arg_13_1, arg_13_2)
-	local var_13_0 = arg_13_0._attr
+-- arg_13_0 -> bullet? caster? orb?
+	-- 从调用来看传入的是_orb
+	-- BattleBulletUnit有GetWeapon()方法，但没有_attr
+	-- 一般来说BattleUnit有_attr
+	-- 待后续研究
+-- arg_13_1 -> igniteAttribute
+-- arg_13_2 -> igniteCoefficient
+function BattleFormulas.CalculateIgniteDamage(orb, igniteAttribute, igniteCoefficient)
+	-- var_13_0 -> attrs
+	local attrs = orb._attr
 
-	return arg_13_0:GetWeapon():GetCorrectedDMG() * (1 + var_13_0[arg_13_1] * bfConsts.PERCENT) * arg_13_2
+	return orb:GetWeapon():GetCorrectedDMG() * (1 + attrs[igniteAttribute] * bfConsts.PERCENT) * igniteCoefficient
 end
 
-function BattleFormulas.WeaponDamagePreCorrection(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_0:GetTemplateData()
-	local var_14_1 = arg_14_1 or var_14_0.damage
-	local var_14_2 = var_14_0.corrected
+-- arg_14_0 -> weapon(BattleWeaponUnit)
+-- arg_14_1 -> overrideDamage
+function BattleFormulas.WeaponDamagePreCorrection(weapon, overrideDamage)
+	-- var_14_0 -> weaponTemplate
+	-- var_14_1 -> baseDamage
+	-- var_14_2 -> corrected
+	local weaponTemplate = weapon:GetTemplateData()
+	local baseDamage = overrideDamage or weaponTemplate.damage
+	local corrected = weaponTemplate.corrected
 
-	return var_14_1 * arg_14_0:GetPotential() * var_14_2 * bfConsts.PERCENT
+	return baseDamage * weapon:GetPotential() * corrected * bfConsts.PERCENT
 end
 
-function BattleFormulas.WeaponAtkAttrPreRatio(arg_15_0)
-	return arg_15_0:GetTemplateData().attack_attribute_ratio * bfConsts.PERCENT2
+-- arg_15_0 -> weapon(BattleWeaponUnit)
+function BattleFormulas.WeaponAtkAttrPreRatio(weapon)
+	return weapon:GetTemplateData().attack_attribute_ratio * bfConsts.PERCENT2
 end
 
-function BattleFormulas.GetMeteoDamageRatio(arg_16_0)
-	local var_16_0 = {}
-	local var_16_1 = bfConsts.METEO_RATE
-	local var_16_2 = var_16_1[1]
+-- arg_16_0 -> numMeteos
+function BattleFormulas.GetMeteoDamageRatio(numMeteos)
+	-- var_16_0 -> meteoDamageRatios
+	local meteoDamageRatios = {}
+	-- var_16_1 -> meteoRate
+	local meteoRate = bfConsts.METEO_RATE
+	-- var_16_2 -> baseMeteoRatio(=0.05)
+		-- 表示每架飞机受到的基础伤害分配比例
+	local baseMeteoRatio = meteoRate[1]
 
-	if arg_16_0 >= var_16_1[2] then
-		for iter_16_0 = 1, arg_16_0 + 1 do
-			var_16_0[iter_16_0] = var_16_2
+	-- meteoRate[2] = 20
+	if numMeteos >= meteoRate[2] then
+		-- iter_16_0 -> i
+		for i = 1, numMeteos + 1 do
+			meteoDamageRatios[i] = baseMeteoRatio
 		end
 
-		return var_16_0
+		return meteoDamageRatios
 	else
-		local var_16_3 = 1 - var_16_2 * arg_16_0
+		-- var_16_3 -> restMeteoRatio
+			-- 剩余的可分配伤害比例
+		local restMeteoRatio = 1 - baseMeteoRatio * numMeteos
 
-		for iter_16_1 = 1, arg_16_0 do
-			local var_16_4 = math.random() * var_16_3 * (var_16_1[3] + var_16_1[4] * (iter_16_1 - 1) / arg_16_0)
+		-- iter_16_1 -> i
+		for i = 1, numMeteos do
+			-- var_16_4 -> randomMeteoRatio
+			-- meteoRate[3] = 0.6
+			-- meteoRate[4] = 0.4
+			local randomMeteoRatio = math.random() * restMeteoRatio * (meteoRate[3] + meteoRate[4] * (i - 1) / numMeteos)
 
-			var_16_0[iter_16_1] = var_16_4 + var_16_2
-			var_16_3 = math.max(0, var_16_3 - var_16_4)
+			meteoDamageRatios[i] = randomMeteoRatio + baseMeteoRatio
+			restMeteoRatio = math.max(0, restMeteoRatio - randomMeteoRatio)
 		end
 
-		var_16_0[arg_16_0 + 1] = var_16_3
+		meteoDamageRatios[numMeteos + 1] = restMeteoRatio
 
-		return var_16_0
+		return meteoDamageRatios
 	end
 end
 
-function BattleFormulas.CalculateFleetAntiAirTotalDamage(arg_17_0)
-	local var_17_0 = arg_17_0:GetCrewUnitList()
-	local var_17_1 = 0
+-- arg_17_0 -> fleetAntiAirUnit(BattleFleetAntiAirUnit)
+-- 计算防空炮伤害
+function BattleFormulas.CalculateFleetAntiAirTotalDamage(fleetAntiAirUnit)
+	-- var_17_0 -> crewUnitList
+	-- var_17_1 -> totalDamage
+	local crewUnitList = fleetAntiAirUnit:GetCrewUnitList()
+	local totalDamage = 0
 
-	for iter_17_0, iter_17_1 in pairs(var_17_0) do
-		local var_17_2 = BattleAttr.GetCurrent(iter_17_0, "antiAirPower")
+	-- iter_17_0 -> crewUnit
+	-- iter_17_1 -> weaponList
+	for crewUnit, weaponList in pairs(crewUnitList) do
+		-- var_17_2 -> antiAirPower
+		local antiAirPower = BattleAttr.GetCurrent(crewUnit, "antiAirPower")
 
-		for iter_17_2, iter_17_3 in ipairs(iter_17_1) do
-			local var_17_3 = iter_17_3:GetConvertedAtkAttr()
-			local var_17_4 = iter_17_3:GetCorrectedDMG()
+		-- iter_17_2 -> _
+		-- iter_17_3 -> weapon
+		for _, weapon in ipairs(weaponList) do
+			-- var_17_3 -> weaponConvertedAtkAttr
+			-- var_17_4 -> weaponCorrectedDMG
+			local weaponConvertedAtkAttr = weapon:GetConvertedAtkAttr()
+			local weaponCorrectedDMG = weapon:GetCorrectedDMG()
 
-			var_17_1 = var_17_1 + math.max(1, (var_17_2 * var_17_3 + 1) * var_17_4)
+			totalDamage = totalDamage + math.max(1, (antiAirPower * weaponConvertedAtkAttr + 1) * weaponCorrectedDMG)
 		end
 	end
 
-	return var_17_1
+	return totalDamage
 end
 
-function BattleFormulas.CalculateRepaterAnitiAirTotalDamage(arg_18_0)
-	local var_18_0 = arg_18_0:GetHost()
-	local var_18_1 = arg_18_0:GetConvertedAtkAttr()
-	local var_18_2 = arg_18_0:GetCorrectedDMG()
-	local var_18_3 = BattleAttr.GetCurrent(var_18_0, "antiAirPower")
+-- arg_18_0 -> repeater(BattleRepeaterAntiAirUnit)
+	-- BattleRepeaterAntiAirUnit继承自BattleWeaponUnit
+	-- 计算敌方防空舰放出的飞机的伤害
+function BattleFormulas.CalculateRepaterAnitiAirTotalDamage(repeater)
+	-- var_18_0 -> host(BattleUnit)
+	-- var_18_1 -> repeaterConvertedAtkAttr
+	-- var_18_2 -> repeaterCorrectedDMG
+	-- var_18_3 -> hostAntiAirPower
+	local host = repeater:GetHost()
+	local repeaterConvertedAtkAttr = repeater:GetConvertedAtkAttr()
+	local repeaterCorrectedDMG = repeater:GetCorrectedDMG()
+	local hostAntiAirPower = BattleAttr.GetCurrent(host, "antiAirPower")
 
-	return (math.max(1, (var_18_3 * var_18_1 + 1) * var_18_2))
+	return (math.max(1, (hostAntiAirPower * repeaterConvertedAtkAttr + 1) * repeaterCorrectedDMG))
 end
 
-function BattleFormulas.RollRepeaterHitDice(arg_19_0, arg_19_1)
-	local var_19_0 = arg_19_0:GetHost()
-	local var_19_1 = BattleAttr.GetCurrent(var_19_0, "antiAirPower")
-	local var_19_2 = math.max(BattleAttr.GetCurrent(var_19_0, "attackRating"), 0)
-	local var_19_3 = BattleAttr.GetCurrent(arg_19_1, "airPower")
-	local var_19_4 = BattleAttr.GetCurrent(arg_19_1, "dodgeLimit")
-	local var_19_5 = BattleAttr.GetCurrent(arg_19_1, "dodge")
-	local var_19_6 = var_19_3 / AnitAirRepeaterConfig.const_A + AnitAirRepeaterConfig.const_B
-	local var_19_7 = var_19_6 / (var_19_1 * var_19_5 + var_19_6 + AnitAirRepeaterConfig.const_C)
-	local var_19_8 = math.min(var_19_4, var_19_7)
+-- arg_19_0 -> repeater(BattleRepeaterAntiAirUnit)
+-- arg_19_1 -> target(大概是BattleAircraftUnit?)
+	-- 计算己方舰载机的回避情况
+function BattleFormulas.RollRepeaterHitDice(repeater, target)
+	-- var_19_0 -> host
+	-- var_19_1 -> hostAntiAirPower
+	-- var_19_2 -> hostAttackRating
+	-- var_19_3 -> targetAirPower
+	-- var_19_4 -> targetDodgeLimit
+	-- var_19_5 -> targetDodge
+	local host = repeater:GetHost()
+	local hostAntiAirPower = BattleAttr.GetCurrent(host, "antiAirPower")
+	local hostAttackRating = math.max(BattleAttr.GetCurrent(host, "attackRating"), 0)
+	local targetAirPower = BattleAttr.GetCurrent(target, "airPower")
+	local targetDodgeLimit = BattleAttr.GetCurrent(target, "dodgeLimit")
+	local targetDodge = BattleAttr.GetCurrent(target, "dodge")
+	-- var_19_6 -> airPowerFactor
+		-- AnitAirRepeaterConfig.const_A = 32
+		-- AnitAirRepeaterConfig.const_B = 12
+	-- var_19_7 -> aircraftDodgeRateBeforeLimit
+		-- AnitAirRepeaterConfig.const_C = 220
+	local airPowerFactor = targetAirPower / AnitAirRepeaterConfig.const_A + AnitAirRepeaterConfig.const_B
+	local aircraftDodgeRateBeforeLimit = airPowerFactor / (hostAntiAirPower * targetDodge + airPowerFactor + AnitAirRepeaterConfig.const_C)
+	-- var_19_8 -> aircraftDodgeRate
+	local aircraftDodgeRate = math.min(targetDodgeLimit, aircraftDodgeRateBeforeLimit)
 
-	return BattleFormulas.IsHappen(var_19_8 * bfConsts.NUM10000)
+	return BattleFormulas.IsHappen(aircraftDodgeRate * bfConsts.NUM10000)
 end
 
-function BattleFormulas.AntiAirPowerWeight(arg_20_0)
-	return arg_20_0 * arg_20_0
+-- arg_20_0 -> antiAirPower
+	-- = 防空值的平方
+	-- 不太清楚这个防空权重的用处...
+function BattleFormulas.AntiAirPowerWeight(antiAirPower)
+	return antiAirPower * antiAirPower
 end
 
-function BattleFormulas.CalculateDamageFromAircraftToMainShip(arg_21_0, arg_21_1)
-	local var_21_0 = BattleAttr.GetCurrent(arg_21_0, "airPower")
-	local var_21_1 = BattleAttr.GetCurrent(arg_21_1, "antiAirPower")
-	local var_21_2 = BattleAttr.GetCurrent(arg_21_0, "crashDMG")
-	local var_21_3 = arg_21_0:GetHPRate()
-	local var_21_4 = BattleAttr.GetCurrent(arg_21_0, "formulaLevel")
-	local var_21_5 = BattleAttr.GetCurrent(arg_21_1, "formulaLevel")
-	local var_21_6 = BattleAttr.GetCurrent(arg_21_1, "injureRatio")
-	local var_21_7 = BattleAttr.GetCurrent(arg_21_1, "injureRatioByAir")
-	local var_21_8 = bfConsts.PLANE_LEAK_RATE
-	local var_21_9 = math.max(var_21_8[1], math.floor((var_21_2 * (var_21_8[2] + var_21_0 * var_21_8[3]) + var_21_4 * var_21_8[4]) * (var_21_3 * var_21_8[5] + var_21_8[6]) * (var_21_8[7] + (var_21_4 - var_21_5) * var_21_8[8]) * (var_21_8[9] / (var_21_1 + var_21_8[10])) * (var_21_8[11] + var_21_6) * (var_21_8[12] + var_21_7)))
+-- arg_21_0 -> attacker(BattleAircraftUnit)
+-- arg_21_1 -> target(BattleUnit)
+	-- 用于计算敌方飞机触底时对我方主力舰的伤害
+function BattleFormulas.CalculateDamageFromAircraftToMainShip(attacker, target)
+	-- var_21_0 -> attackerAirPower
+	-- var_21_1 -> targetAntiAirPower
+	-- var_21_2 -> attackerCrashDMG
+	-- var_21_3 -> attackerHPRate
+	-- var_21_4 -> attackerFormulaLevel
+	-- var_21_5 -> targetFormulaLevel
+	-- var_21_6 -> targetInjureRatio
+	-- var_21_7 -> targetInjureRatioByAir
+	-- var_21_8 -> planeLeakRate
+	local attackerAirPower = BattleAttr.GetCurrent(attacker, "airPower")
+	local targetAntiAirPower = BattleAttr.GetCurrent(target, "antiAirPower")
+	local attackerCrashDMG = BattleAttr.GetCurrent(attacker, "crashDMG")
+	local attackerHPRate = attacker:GetHPRate()
+	local attackerFormulaLevel = BattleAttr.GetCurrent(attacker, "formulaLevel")
+	local targetFormulaLevel = BattleAttr.GetCurrent(target, "formulaLevel")
+	local targetInjureRatio = BattleAttr.GetCurrent(target, "injureRatio")
+	local targetInjureRatioByAir = BattleAttr.GetCurrent(target, "injureRatioByAir")
+	local planeLeakRate = bfConsts.PLANE_LEAK_RATE
+	-- var_21_9 -> damage
+		-- planeLeakRate[1] = 1
+		-- planeLeakRate[2] = 1
+		-- planeLeakRate[3] = 0.01
+		-- planeLeakRate[4] = 0.5
+		-- planeLeakRate[5] = 0.7
+		-- planeLeakRate[6] = 0.3
+		-- planeLeakRate[7] = 1
+		-- planeLeakRate[8] = 0.005
+		-- planeLeakRate[9] = 150
+		-- planeLeakRate[10] = 150
+		-- planeLeakRate[11] = 1
+		-- planeLeakRate[12] = 1
+	local damage = math.max(planeLeakRate[1], math.floor((attackerCrashDMG * (planeLeakRate[2] + attackerAirPower * planeLeakRate[3]) + attackerFormulaLevel * planeLeakRate[4]) * (attackerHPRate * planeLeakRate[5] + planeLeakRate[6]) * (planeLeakRate[7] + (attackerFormulaLevel - targetFormulaLevel) * planeLeakRate[8]) * (planeLeakRate[9] / (targetAntiAirPower + planeLeakRate[10])) * (planeLeakRate[11] + targetInjureRatio) * (planeLeakRate[12] + targetInjureRatioByAir)))
 
-	return (math.floor(var_21_9 * BattleAttr.GetCurrent(arg_21_1, "repressReduce")))
+	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce")))
 end
 
-function BattleFormulas.CalculateDamageFromShipToMainShip(arg_22_0, arg_22_1)
-	local var_22_0 = BattleAttr.GetCurrent(arg_22_0, "cannonPower")
-	local var_22_1 = BattleAttr.GetCurrent(arg_22_0, "torpedoPower")
-	local var_22_2 = arg_22_0:GetHPRate()
-	local var_22_3 = BattleAttr.GetCurrent(arg_22_0, "formulaLevel")
-	local var_22_4 = BattleAttr.GetCurrent(arg_22_1, "formulaLevel")
-	local var_22_5 = BattleAttr.GetCurrent(arg_22_1, "injureRatio")
-	local var_22_6 = bfConsts.LEAK_RATE
-	local var_22_7 = math.max(var_22_6[1], math.floor(((var_22_0 + var_22_1) * var_22_6[2] + var_22_3 * var_22_6[7]) * (var_22_6[5] + var_22_5) * (var_22_2 * var_22_6[3] + var_22_6[4]) * (var_22_6[5] + (var_22_3 - var_22_4) * var_22_6[6])))
 
-	return (math.floor(var_22_7 * BattleAttr.GetCurrent(arg_22_1, "repressReduce")))
+-- arg_22_0 -> attacker(BattleUnit)
+-- arg_22_1 -> target(BattleUnit)
+	-- 用于计算敌方自爆船触底时对我方主力舰的伤害
+function BattleFormulas.CalculateDamageFromShipToMainShip(attacker, target)
+	-- var_22_0 -> attackerCannonPower
+	-- var_22_1 -> attackerTorpedoPower
+	-- var_22_2 -> attackerHPRate
+	-- var_22_3 -> attackerFormulaLevel
+	-- var_22_4 -> targetFormulaLevel
+	-- var_22_5 -> targetInjureRatio
+	-- var_22_6 -> leakRate
+	-- var_22_7 -> damage
+	local attackerCannonPower = BattleAttr.GetCurrent(attacker, "cannonPower")
+	local attackerTorpedoPower = BattleAttr.GetCurrent(attacker, "torpedoPower")
+	local attackerHPRate = attacker:GetHPRate()
+	local attackerFormulaLevel = BattleAttr.GetCurrent(attacker, "formulaLevel")
+	local targetFormulaLevel = BattleAttr.GetCurrent(target, "formulaLevel")
+	local targetInjureRatio = BattleAttr.GetCurrent(target, "injureRatio")
+	local leakRate = bfConsts.LEAK_RATE
+	-- leakRate[1] = 10
+	-- leakRate[2] = 2.2
+	-- leakRate[3] = 0.7
+	-- leakRate[4] = 0.3
+	-- leakRate[5] = 1
+	-- leakRate[6] = 0.005
+	-- leakRate[7] = 0.5
+	local damage = math.max(leakRate[1], math.floor(((attackerCannonPower + attackerTorpedoPower) * leakRate[2] + attackerFormulaLevel * leakRate[7]) * (leakRate[5] + targetInjureRatio) * (attackerHPRate * leakRate[3] + leakRate[4]) * (leakRate[5] + (attackerFormulaLevel - targetFormulaLevel) * leakRate[6])))
+
+	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce")))
 end
 
-function BattleFormulas.CalculateDamageFromSubmarinToMainShip(arg_23_0, arg_23_1)
-	local var_23_0 = BattleAttr.GetCurrent(arg_23_0, "torpedoPower")
-	local var_23_1 = arg_23_0:GetHPRate()
-	local var_23_2 = BattleAttr.GetCurrent(arg_23_0, "formulaLevel")
-	local var_23_3 = BattleAttr.GetCurrent(arg_23_1, "formulaLevel")
-	local var_23_4 = BattleAttr.GetCurrent(arg_23_1, "injureRatio")
-	local var_23_5 = bfConsts.SUBMARINE_KAMIKAZE
+-- arg_23_0 -> attacker(BattleUnit)
+-- arg_23_1 -> target(BattleUnit)
+	-- 用于计算敌方潜艇触底时对我方主力舰的伤害
+function BattleFormulas.CalculateDamageFromSubmarinToMainShip(attacker, target)
+	-- var_23_0 -> attackerTorpedoPower
+	-- var_23_1 -> attackerHPRate
+	-- var_23_2 -> attackerFormulaLevel
+	-- var_23_3 -> targetFormulaLevel
+	-- var_23_4 -> targetInjureRatio
+	-- var_23_5 -> submarineKamikazeParams
+	local attackerTorpedoPower = BattleAttr.GetCurrent(attacker, "torpedoPower")
+	local attackerHPRate = attacker:GetHPRate()
+	local attackerFormulaLevel = BattleAttr.GetCurrent(attacker, "formulaLevel")
+	local targetFormulaLevel = BattleAttr.GetCurrent(target, "formulaLevel")
+	local targetInjureRatio = BattleAttr.GetCurrent(target, "injureRatio")
+	local submarineKamikazeParams = bfConsts.SUBMARINE_KAMIKAZE
 
-	return (math.max(var_23_5[1], math.floor((var_23_0 * var_23_5[2] + var_23_2 * var_23_5[3]) * (var_23_5[4] + var_23_4) * (var_23_1 * var_23_5[5] + var_23_5[6]) * (var_23_5[7] + (var_23_2 - var_23_3) * var_23_5[8]))))
+	-- submarineKamikazeParams[1] = 80
+	-- submarineKamikazeParams[2] = 3.5
+	-- submarineKamikazeParams[3] = 1.5
+	-- submarineKamikazeParams[4] = 1
+	-- submarineKamikazeParams[5] = 0.5
+	-- submarineKamikazeParams[6] = 0.5
+	-- submarineKamikazeParams[7] = 1
+	-- submarineKamikazeParams[8] = 0.005
+	return (math.max(submarineKamikazeParams[1], math.floor((attackerTorpedoPower * submarineKamikazeParams[2] + attackerFormulaLevel * submarineKamikazeParams[3]) * (submarineKamikazeParams[4] + targetInjureRatio) * (attackerHPRate * submarineKamikazeParams[5] + submarineKamikazeParams[6]) * (submarineKamikazeParams[7] + (attackerFormulaLevel - targetFormulaLevel) * submarineKamikazeParams[8]))))
 end
 
-function BattleFormulas.RollSubmarineDualDice(arg_24_0)
-	local var_24_0 = BattleAttr.GetCurrent(arg_24_0, "dodgeRate")
-	local var_24_1 = var_24_0 / (var_24_0 + BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_K) * BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_P
+-- arg_24_0 -> target(BattleUnit)
+	-- 用于判定敌方潜艇自爆时我方主力舰是否闪避伤害
+function BattleFormulas.RollSubmarineDualDice(target)
+	-- var_24_0 -> targetDodgeRate
+	-- var_24_1 -> targetDodgeProbability
+		-- MONSTER_SUB_KAMIKAZE_DUAL_K = 50
+		-- MONSTER_SUB_KAMIKAZE_DUAL_P = 0.15
+	local targetDodgeRate = BattleAttr.GetCurrent(target, "dodgeRate")
+	local targetDodgeProbability = targetDodgeRate / (targetDodgeRate + BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_K) * BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_P
 
-	return BattleFormulas.IsHappen(var_24_1 * bfConsts.NUM10000)
+	return BattleFormulas.IsHappen(targetDodgeProbability * bfConsts.NUM10000)
 end
 
-function BattleFormulas.CalculateCrashDamage(arg_25_0, arg_25_1)
-	local var_25_0 = BattleAttr.GetCurrent(arg_25_0, "maxHP")
-	local var_25_1 = BattleAttr.GetCurrent(arg_25_1, "maxHP")
-	local var_25_2 = var_25_0 * bfConsts.CRASH_RATE[1]
-	local var_25_3 = var_25_1 * bfConsts.CRASH_RATE[1]
-	local var_25_4 = BattleAttr.GetCurrent(arg_25_0, "hammerDamageRatio")
-	local var_25_5 = BattleAttr.GetCurrent(arg_25_1, "hammerDamageRatio")
-	local var_25_6 = BattleAttr.GetCurrent(arg_25_0, "hammerDamagePrevent")
-	local var_25_7 = BattleAttr.GetCurrent(arg_25_1, "hammerDamagePrevent")
-	local var_25_8 = math.min(var_25_6, BattleConfig.HammerCFG.PreventUpperBound)
-	local var_25_9 = math.min(var_25_7, BattleConfig.HammerCFG.PreventUpperBound)
-	local var_25_10 = math.sqrt(var_25_0 * var_25_1) * bfConsts.CRASH_RATE[2]
-	local var_25_11 = math.min(var_25_2, var_25_10)
-	local var_25_12 = math.min(var_25_3, var_25_10)
-	local var_25_13 = math.floor(var_25_11 * (1 + var_25_5) * (1 - var_25_8))
-	local var_25_14 = math.floor(var_25_13 * BattleAttr.GetCurrent(arg_25_0, "repressReduce"))
-	local var_25_15 = math.floor(var_25_12 * (1 + var_25_4) * (1 - var_25_9))
-	local var_25_16 = math.floor(var_25_15 * BattleAttr.GetCurrent(arg_25_1, "repressReduce"))
+-- arg_25_0 -> ship1
+-- arg_25_1 -> ship2
+	-- 计算碰撞伤害，敌我双方受到同样的伤害
+function BattleFormulas.CalculateCrashDamage(ship1, ship2)
+	-- var_25_0 -> ship1MaxHP
+	-- var_25_1 -> ship2MaxHP
+	local ship1MaxHP = BattleAttr.GetCurrent(ship1, "maxHP")
+	local ship2MaxHP = BattleAttr.GetCurrent(ship2, "maxHP")
+	-- var_25_2 -> ship1CrashBaseDMG(CRASH_RATE[1] = 0.05)
+	-- var_25_3 -> ship2CrashBaseDMG
+	local ship1CrashBaseDMG = ship1MaxHP * bfConsts.CRASH_RATE[1]
+	local ship2CrashBaseDMG = ship2MaxHP * bfConsts.CRASH_RATE[1]
+	-- var_25_4 -> ship1HammerDamageRatio
+	-- var_25_5 -> ship2HammerDamageRatio
+	local ship1HammerDamageRatio = BattleAttr.GetCurrent(ship1, "hammerDamageRatio")
+	local ship2HammerDamageRatio = BattleAttr.GetCurrent(ship2, "hammerDamageRatio")
+	-- var_25_6 -> ship1HammerDamagePrevent
+	-- var_25_7 -> ship2HammerDamagePrevent
+	local ship1HammerDamagePrevent = BattleAttr.GetCurrent(ship1, "hammerDamagePrevent")
+	local ship2HammerDamagePrevent = BattleAttr.GetCurrent(ship2, "hammerDamagePrevent")
+	-- var_25_8 -> ship1FinalHammerDamagePrevent(PreventUpperBound = 0.8)
+	-- var_25_9 -> ship2FinalHammerDamagePrevent
+	local ship1FinalHammerDamagePrevent = math.min(ship1HammerDamagePrevent, BattleConfig.HammerCFG.PreventUpperBound)
+	local ship2FinalHammerDamagePrevent = math.min(ship2HammerDamagePrevent, BattleConfig.HammerCFG.PreventUpperBound)
+	-- var_25_10 -> crashDMGUpperBound(CRASH_RATE[2] = 0.025)
+	local crashDMGUpperBound = math.sqrt(ship1MaxHP * ship2MaxHP) * bfConsts.CRASH_RATE[2]
+	-- var_25_11 -> ship1FinalCrashBaseDMG
+	-- var_25_12 -> ship2FinalCrashBaseDMG
+	local ship1FinalCrashBaseDMG = math.min(ship1CrashBaseDMG, crashDMGUpperBound)
+	local ship2FinalCrashBaseDMG = math.min(ship2CrashBaseDMG, crashDMGUpperBound)
+	-- var_25_13 -> ship1FinalCrashDMGBeforeRepress
+	-- var_25_14 -> ship1FinalCrashDMG
+	local ship1FinalCrashDMGBeforeRepress = math.floor(ship1FinalCrashBaseDMG * (1 + ship2HammerDamageRatio) * (1 - ship1FinalHammerDamagePrevent))
+	local ship1FinalCrashDMG = math.floor(ship1FinalCrashDMGBeforeRepress * BattleAttr.GetCurrent(ship1, "repressReduce"))
+	-- var_25_15 -> ship2FinalCrashDMGBeforeRepress
+	-- var_25_16 -> ship2FinalCrashDMG
+	local ship2FinalCrashDMGBeforeRepress = math.floor(ship2FinalCrashBaseDMG * (1 + ship1HammerDamageRatio) * (1 - ship2FinalHammerDamagePrevent))
+	local ship2FinalCrashDMG = math.floor(ship2FinalCrashDMGBeforeRepress * BattleAttr.GetCurrent(ship2, "repressReduce"))
 
-	return var_25_14, var_25_16
+	return ship1FinalCrashDMG, ship2FinalCrashDMG
 end
 
-function BattleFormulas.CalculateFleetDamage(arg_26_0)
-	return arg_26_0 * bfConsts.SCORE_RATE[1]
+-- arg_26_0 -> damage
+	-- 暂时不知道拿来干什么
+function BattleFormulas.CalculateFleetDamage(damage)
+	-- SCORE_RATE[1] = 0.7
+	return damage * bfConsts.SCORE_RATE[1]
 end
 
-function BattleFormulas.CalculateFleetOverDamage(arg_27_0, arg_27_1)
-	if arg_27_1 == arg_27_0:GetFlagShip() then
-		return BattleAttr.GetCurrent(arg_27_1, "maxHP") * bfConsts.SCORE_RATE[2]
+-- arg_27_0 -> fleet(BattleFleetVO)
+-- arg_27_1 -> ship(BattleUnit)
+	-- 暂时不知道拿来干什么
+function BattleFormulas.CalculateFleetOverDamage(fleet, ship)
+	if ship == fleet:GetFlagShip() then
+		-- SCORE_RATE[2] = 0.8(加上SCORE_RATE[1]一共是1.5. 这个数值可以对应到GetFleetTotalHP中的1.5倍旗舰血量?)
+		return BattleAttr.GetCurrent(ship, "maxHP") * bfConsts.SCORE_RATE[2]
 	else
-		return BattleAttr.GetCurrent(arg_27_1, "maxHP") * bfConsts.SCORE_RATE[3]
+		-- SCORE_RATE[3] = 0.3(加上SCORE_RATE[1]一共是1.0)
+		return BattleAttr.GetCurrent(ship, "maxHP") * bfConsts.SCORE_RATE[3]
 	end
 end
 
-function BattleFormulas.CalculateReloadTime(arg_28_0, arg_28_1)
-	return arg_28_0 / BattleConfig.K1 / math.sqrt((arg_28_1 + BattleConfig.K2) * BattleConfig.K3)
+-- arg_28_0 -> reloadMax
+-- arg_28_1 -> loadSpeed
+	-- 根据Weapon的reloadMax和单位的loadSpeed计算实际的装填时间(单位:秒)
+function BattleFormulas.CalculateReloadTime(reloadMax, loadSpeed)
+	-- BattleConfig.K1 = 6
+	-- BattleConfig.K2 = 100
+	-- BattleConfig.K3 = 3.14
+	-- 装填时间 = reloadMax / (6 * sqrt((loadSpeed + 100) * 3.14))
+		-- 因此可以定义为装填速度 = 6 * sqrt((loadSpeed + 100) * 3.14)
+		-- 容易看出装填速度与根号下(loadSpeed+100)成正比, 与reloadMax成反比
+	return reloadMax / BattleConfig.K1 / math.sqrt((loadSpeed + BattleConfig.K2) * BattleConfig.K3)
 end
 
-function BattleFormulas.CaclulateReloaded(arg_29_0, arg_29_1)
-	return math.sqrt((arg_29_1 + BattleConfig.K2) * BattleConfig.K3) * arg_29_0 * BattleConfig.K1
+-- arg_29_0 -> reloadedTime
+-- arg_29_1 -> loadSpeed
+	-- 根据实际的装填时间和单位的loadSpeed计算已经装填的进度
+function BattleFormulas.CaclulateReloaded(reloadedTime, loadSpeed)
+	return math.sqrt((loadSpeed + BattleConfig.K2) * BattleConfig.K3) * reloadedTime * BattleConfig.K1
 end
 
-function BattleFormulas.CaclulateReloadAttr(arg_30_0, arg_30_1)
-	local var_30_0 = arg_30_0 / BattleConfig.K1 / arg_30_1
+-- arg_30_0 -> reloadMax
+-- arg_30_1 -> reloadRequire(目标装填时间)
+	-- 根据Weapon的reloadMax和目标装填时间计算需要的loadSpeed
+function BattleFormulas.CaclulateReloadAttr(reloadMax, reloadRequire)
+	-- var_30_0 -> requireReloadSpeed
+		-- 因为游戏中loadSpeed用来指的是装填值，为了避免混淆，这里就另用reloadSpeed表示"装填速度"
+	local reloadSpeed = reloadMax / BattleConfig.K1 / reloadRequire
 
-	return math.max(var_30_0 * var_30_0 / BattleConfig.K3 - BattleConfig.K2, 0)
+	return math.max(reloadSpeed * reloadSpeed / BattleConfig.K3 - BattleConfig.K2, 0)
 end
 
-function BattleFormulas.CaclulateAirAssistReloadMax(arg_31_0)
-	local var_31_0 = 0
+-- arg_31_0 -> hiveList
+	-- 计算一组空袭支援飞机的"平均"装填时间
+	-- 算法是计算所有飞机的reloadMax的平均值，然后乘以一个系数(2.2)
+function BattleFormulas.CaclulateAirAssistReloadMax(hiveList)
+	-- var_31_0 -> totalReloadMax
+	local totalReloadMax = 0
 
-	for iter_31_0, iter_31_1 in ipairs(arg_31_0) do
-		var_31_0 = var_31_0 + iter_31_1:GetTemplateData().reload_max
+	-- iter_31_0 -> _
+	-- iter_31_1 -> hive(BattleHiveUnit?)
+	for _, hive in ipairs(hiveList) do
+		totalReloadMax = totalReloadMax + hive:GetTemplateData().reload_max
 	end
 
-	return var_31_0 / #arg_31_0 * airAssistReloadFactor
+	return totalReloadMax / #hiveList * airAssistReloadFactor
 end
 
-function BattleFormulas.CaclulateDOTPlace(arg_32_0, arg_32_1, arg_32_2, arg_32_3)
-	local var_32_0 = arg_32_1.arg_list
+-- arg_32_0 -> rant
+-- arg_32_1 -> buffDOTeffect
+-- arg_32_2 -> orb
+-- arg_32_3 -> target
+	-- 计算DOT效果是否命中/触发
+function BattleFormulas.CaclulateDOTPlace(rant, buffDOTeffect, orb, target)
+	-- var_32_0 -> buffDOTargList
+	local buffDOTargList = buffDOTeffect.arg_list
 
-	if var_32_0.tagOnly and not arg_32_3:ContainsLabelTag(var_32_0.tagOnly) then
+	-- 是否是只能在带有特定标签的目标身上触发?
+	if buffDOTargList.tagOnly and not target:ContainsLabelTag(buffDOTargList.tagOnly) then
 		return false
 	end
 
-	local var_32_1 = BattleConfig.DOT_CONFIG[var_32_0.dotType]
-	local var_32_2 = arg_32_2 and arg_32_2:GetAttrByName(var_32_1.hit) or bfConsts.NUM0
-	local var_32_3 = arg_32_3 and arg_32_3:GetAttrByName(var_32_1.resist) or bfConsts.NUM0
+	-- var_32_1 -> dotConfigOfType
+	local dotConfigOfType = BattleConfig.DOT_CONFIG[buffDOTargList.dotType]
+	-- var_32_2 -> dotAccuracy
+	local dotAccuracy = orb and orb:GetAttrByName(dotConfigOfType.hit) or bfConsts.NUM0
+	-- var_32_3 -> targetDotResist
+	local targetDotResist = target and target:GetAttrByName(dotConfigOfType.resist) or bfConsts.NUM0
 
-	return BattleFormulas.IsHappen(arg_32_0 * (bfConsts.NUM1 + var_32_2) * (bfConsts.NUM1 - var_32_3))
+	return BattleFormulas.IsHappen(rant * (bfConsts.NUM1 + dotAccuracy) * (bfConsts.NUM1 - targetDotResist))
 end
 
-function BattleFormulas.CaclulateDOTDuration(arg_33_0, arg_33_1, arg_33_2)
-	local var_33_0 = arg_33_0.arg_list
-	local var_33_1 = BattleConfig.DOT_CONFIG[var_33_0.dotType]
+-- arg_33_0 -> buffDOTeffect
+-- arg_33_1 -> orb
+-- arg_33_2 -> target
+	-- 计算DOT效果的持续时间
+function BattleFormulas.CaclulateDOTDuration(buffDOTeffect, orb, target)
+	-- var_33_0 -> buffDOTargList
+	-- var_33_1 -> dotConfigOfType
+	local buffDOTargList = buffDOTeffect.arg_list
+	local otConfigOfType = BattleConfig.DOT_CONFIG[buffDOTargList.dotType]
 
-	return (arg_33_1 and arg_33_1:GetAttrByName(var_33_1.prolong) or bfConsts.NUM0) - (arg_33_2 and arg_33_2:GetAttrByName(var_33_1.shorten) or bfConsts.NUM0)
+	return (orb and orb:GetAttrByName(otConfigOfType.prolong) or bfConsts.NUM0) - (target and target:GetAttrByName(otConfigOfType.shorten) or bfConsts.NUM0)
 end
 
-function BattleFormulas.CaclulateDOTDamageEnhanceRate(arg_34_0, arg_34_1, arg_34_2)
-	local var_34_0 = arg_34_0.arg_list
-	local var_34_1 = BattleConfig.DOT_CONFIG[var_34_0.dotType]
+-- arg_34_0 -> buffDOTeffect
+-- arg_34_1 -> orb
+-- arg_34_2 -> target
+	-- 计算DOT效果的伤害增加(或减少)倍率
+function BattleFormulas.CaclulateDOTDamageEnhanceRate(buffDOTeffect, orb, target)
+	-- var_34_0 -> buffDOTargList
+	-- var_34_1 -> dotConfigOfType
+	local buffDOTargList = buffDOTeffect.arg_list
+	local dotConfigOfType = BattleConfig.DOT_CONFIG[buffDOTargList.dotType]
 
-	return ((arg_34_1 and arg_34_1:GetAttrByName(var_34_1.enhance) or bfConsts.NUM0) - (arg_34_2 and arg_34_2:GetAttrByName(var_34_1.reduce) or bfConsts.NUM0)) * bfConsts.PERCENT2
+	return ((orb and orb:GetAttrByName(dotConfigOfType.enhance) or bfConsts.NUM0) - (target and target:GetAttrByName(dotConfigOfType.reduce) or bfConsts.NUM0)) * bfConsts.PERCENT2
 end
 
-function BattleFormulas.CaclulateMetaDotaDamage(arg_35_0, arg_35_1)
-	local var_35_0 = ys.Battle.BattleDataFunction.GetMetaBossTemplate(arg_35_0)
+-- arg_35_0 -> bossConfigId
+-- arg_35_1 -> bossLevel
+	-- 计算META作战时，支援攻击的伤害值
+function BattleFormulas.CaclulateMetaDotaDamage(bossConfigId, bossLevel)
+	-- var_35_0 -> metaBossTemplate(参考world_joint_boss_template.lua)
+	local metaBossTemplate = ys.Battle.BattleDataFunction.GetMetaBossTemplate(bossConfigId)
 
-	if type(var_35_0.state) == "string" then
+	-- 表示这个META BOSS过期或常驻了
+	if type(metaBossTemplate.state) == "string" then
 		return 0
 	end
 
-	local var_35_1 = var_35_0.state
-	local var_35_2 = os.time({
-		year = var_35_1[1][1][1],
-		month = var_35_1[1][1][2],
-		day = var_35_1[1][1][3],
-		hour = var_35_1[1][2][1],
-		minute = var_35_1[1][2][2],
-		second = var_35_1[1][2][3]
+	-- var_35_1 -> metaBossState
+	local metaBossState = metaBossTemplate.state
+	-- var_35_2 -> startTime
+	local startTime = os.time({
+		year = metaBossState[1][1][1],
+		month = metaBossState[1][1][2],
+		day = metaBossState[1][1][3],
+		hour = metaBossState[1][2][1],
+		minute = metaBossState[1][2][2],
+		second = metaBossState[1][2][3]
 	})
-	local var_35_3 = os.time({
-		year = var_35_1[2][1][1],
-		month = var_35_1[2][1][2],
-		day = var_35_1[2][1][3],
-		hour = var_35_1[2][2][1],
-		minute = var_35_1[2][2][2],
-		second = var_35_1[2][2][3]
+	-- var_35_3 -> endTime
+	local endTime = os.time({
+		year = metaBossState[2][1][1],
+		month = metaBossState[2][1][2],
+		day = metaBossState[2][1][3],
+		hour = metaBossState[2][2][1],
+		minute = metaBossState[2][2][2],
+		second = metaBossState[2][2][3]
 	})
-	local var_35_4 = os.difftime(var_35_3, var_35_2)
-	local var_35_5 = math.floor(var_35_4 / 86400)
-	local var_35_6 = math.floor(os.difftime(pg.TimeMgr.GetInstance():GetServerTime(), var_35_2) / 86400)
-	local var_35_7 = pg.gameset.world_metaboss_supportattack.description
-	local var_35_8 = var_35_7[1]
-	local var_35_9 = var_35_5 - var_35_7[2]
-	local var_35_10 = var_35_7[3]
-	local var_35_11 = var_35_7[4]
-	local var_35_12 = var_35_7[5]
-	local var_35_13 = ys.Battle.BattleDataFunction.GetMetaBossLevelTemplate(arg_35_0, arg_35_1).hp
-	local var_35_14 = math.floor(var_35_13 * var_35_10 / var_35_12 / (1 + 0.5 * var_35_11) / (var_35_9 - var_35_8) * math.min(var_35_6 - var_35_8 + 1, var_35_9 - var_35_8))
+	-- var_35_4 -> totalDurationSeconds
+	-- var_35_5 -> totalDurationDays
+		-- 这个天数是向下取整的，因此即使23小时59分钟59秒也算作0天
+		-- 例如，夕立META从2025年9月4日0.0.0开始，到2025年12月11日23.59.59结束
+		-- 总时长为98天23小时59分钟59秒，但totalDurationDays为98天
+	-- var_35_6 -> elapsedDays
+		-- 同理向下取整
+	local totalDurationSeconds = os.difftime(endTime, startTime)
+	local totalDurationDays = math.floor(totalDurationSeconds / 86400)
+	local elapsedDays = math.floor(os.difftime(pg.TimeMgr.GetInstance():GetServerTime(), startTime) / 86400)
+	-- var_35_7 -> metaSupportAttackArgs
+	local metaSupportAttackArgs = pg.gameset.world_metaboss_supportattack.description
+	-- var_35_8 -> daysSupportStarts (= 31)
+	-- var_35_9 -> daysSupportDamageMax( = totalDurationDays - 15)
+		-- 这两个参数的意义是从计算公式推出来的
+		-- 也即META支援在作战开启31天后开始生效，到离结束前16天支援伤害达到最大值
+	local daysSupportStarts = metaSupportAttackArgs[1]
+	local daysSupportDamageMax = totalDurationDays - metaSupportAttackArgs[2]
+	-- var_35_10 -> expectDamageRatio( = 0.15)
+		-- 表示支援攻击的期望总伤害占BOSS总血量的比例，这个参数的意义也是从计算公式推出来的
+	-- var_35_11 -> randDamageRatio( = 0.04)
+	-- var_35_12 -> dotHits( = 15)
+	local expectDamageRatio = metaSupportAttackArgs[3]
+	local randDamageRatio = metaSupportAttackArgs[4]
+		-- 从后面看出来，这个值表示随机伤害的浮动范围为4%
+	local dotHits = metaSupportAttackArgs[5]
+	-- var_35_13 -> bossHP
+	local bossHP = ys.Battle.BattleDataFunction.GetMetaBossLevelTemplate(bossConfigId, bossLevel).hp
+	-- var_35_14 -> metaDOTdamageBase
+		-- = floor(bossHP * 0.15 / 15 / (1 + 0.5 * 0.04) / (daysSupportDamageMax - 31) * min(elapsedDays - 31 + 1, daysSupportDamageMax - 31))
+		-- 化简一下，为floor(bossHP * 0.01 / 1.02 / (totalDurationDays - 46) * min(elapsedDays - 30, totalDurationDays - 46))
+		-- 我们取totalDurationDays = 98天, bossHP = 1540000为例（夕立META）
+		-- 在第31天开始有伤害，伤害比例为 0.01 / 1.02 / 52 = 0.0189%，伤害值为290
+		-- 在第82天伤害达到最大值，伤害比例为 0.01 / 1.02 / 52 * 52 = 0.980% ，伤害值为15098
+	local metaDOTdamageBase = math.floor(bossHP * expectDamageRatio / dotHits / (1 + 0.5 * randDamageRatio) / (daysSupportDamageMax - daysSupportStarts) * math.min(elapsedDays - daysSupportStarts + 1, daysSupportDamageMax - daysSupportStarts))
 
-	return var_35_14 + math.random(math.floor(var_35_11 * var_35_14))
+	-- 这里随机值为[0, floor(0.04 * metaDOTdamageBase)]
+	-- 也即最终伤害在[metaDOTdamageBase, metaDOTdamageBase * 1.04]之间浮动
+	-- 承接上面那个例子：
+		-- 第31天伤害在290~301之间浮动
+		-- 第82天及之后伤害在15098~15701之间浮动
+	-- 上面的1.02对应的是期望值，因此计算期望的话：
+		-- 第31天的伤害比例为0.01 / 1.02 / 52 * 1.02 = 0.0192%, 伤害值为296; 
+		-- 第82天及之后伤害比例为0.01 / 1.02 / 52 * 52 * 1.02 = 1.0%, 伤害值为15400(因取整有偏差)
+
+	-- 以上计算的均为单次DOT伤害，查看Buff 8832就能了解到:
+		-- 在计时器经过16s后触发，经过1.3s延迟后：
+		-- Buff 8834: 持续1.7s, 每0.16s造成一次伤害, 共10次
+		-- Buff 8835: 持续16s，每3s造成一次伤害, 共5次
+		-- 因此总伤害需要乘以15，承接上述例子则第31天总伤害在4350~4515之间浮动，期望4440，第82天及之后总伤害在226470~235515之间浮动，期望231000
+			-- 如果换算成BOSS总血量的百分比，则分别是0.282%~0.293%，期望0.288%和14.71%~15.29%，期望15.0%(从这里就能看出是特意设计的)
+			-- 注意随机数是每次DOT单独计算的
+	return metaDOTdamageBase + math.random(math.floor(randDamageRatio * metaDOTdamageBase))
 end
 
-function BattleFormulas.CalculateMaxAimBiasRange(arg_36_0)
-	local var_36_0 = BattleConfig.AIM_BIAS_FLEET_RANGE_MOD
-	local var_36_1
+-- arg_36_0 -> crewList
+	-- 计算前排的夜战隐蔽强度上限
+		-- 前排被视为一个整体
+		-- 夜战隐蔽表现为瞄准偏移(AimBias)，后续均使用该术语，与航母的隐匿值/被侦测计量条区分
+function BattleFormulas.CalculateMaxAimBiasRange(crewList)
+	-- var_36_0 -> aimBiasFleetRangeMod(=0.18)
+	local aimBiasFleetRangeMod = BattleConfig.AIM_BIAS_FLEET_RANGE_MOD
+	local maxAimBiasRange
 
-	if #arg_36_0 == 1 then
-		local var_36_2 = arg_36_0[1]
-
-		var_36_1 = BattleAttr.GetCurrent(arg_36_0[1], "dodgeRate") * var_36_0
+	if #crewList == 1 then
+		-- var_36_2 -> crew
+		-- 这个变量定义了又不用，程序员又忘了
+		local crew = crewList[1]
+		-- var_36_1 -> maxAimBiasRange
+			-- ! 这里的机动值似乎是初始机动，后续考虑验证逻辑链
+		maxAimBiasRange = BattleAttr.GetCurrent(crewList[1], "dodgeRate") * aimBiasFleetRangeMod
 	else
-		local var_36_3 = {}
+		-- var_36_3 -> dodgeRates
+		local dodgeRates = {}
 
-		for iter_36_0, iter_36_1 in ipairs(arg_36_0) do
-			table.insert(var_36_3, BattleAttr.GetCurrent(iter_36_1, "dodgeRate"))
+		-- iter_36_0 -> _
+		-- iter_36_1 -> crew(BattleUnit)
+		for _, crew in ipairs(crewList) do
+			table.insert(dodgeRates, BattleAttr.GetCurrent(crew, "dodgeRate"))
 		end
 
-		table.sort(var_36_3, function(arg_37_0, arg_37_1)
-			return arg_37_1 < arg_37_0
+		-- arg_37_0 -> A
+		-- arg_37_1 -> B
+		-- 对机动值按降序排列
+			-- 如果机动值一样，不交换，即保持原有顺序(稳定排序)
+		table.sort(dodgeRates, function(A, B)
+			return B < A
 		end)
 
-		var_36_1 = (var_36_3[1] + var_36_3[2] * 0.6 + (var_36_3[3] or 0) * 0.3) / #var_36_3 * var_36_0
+		maxAimBiasRange = (dodgeRates[1] + dodgeRates[2] * 0.6 + (dodgeRates[3] or 0) * 0.3) / #dodgeRates * aimBiasFleetRangeMod
 	end
 
-	return (math.min(var_36_1, BattleConfig.AIM_BIAS_MAX_RANGE_SCOUT))
+	-- AIM_BIAS_MAX_RANGE_SCOUT = 25
+	return (math.min(maxAimBiasRange, BattleConfig.AIM_BIAS_MAX_RANGE_SCOUT))
 end
 
-function BattleFormulas.CalculateMaxAimBiasRangeSub(arg_38_0)
-	local var_38_0 = BattleAttr.GetCurrent(arg_38_0[1], "dodgeRate") * BattleConfig.AIM_BIAS_SUB_RANGE_MOD
+-- arg_38_0 -> crewList
+	-- 计算潜艇的夜战隐蔽强度上限
+		-- 与前排不同，潜艇的夜战隐蔽强度是单独计算的
+function BattleFormulas.CalculateMaxAimBiasRangeSub(crewList)
+	-- var_38_0 -> maxAimBiasRange
+		-- AIM_BIAS_SUB_RANGE_MOD = 0.18
+	local maxAimBiasRange = BattleAttr.GetCurrent(crewList[1], "dodgeRate") * BattleConfig.AIM_BIAS_SUB_RANGE_MOD
 
-	return (math.min(var_38_0, BattleConfig.AIM_BIAS_MAX_RANGE_SUB))
+	-- AIM_BIAS_MAX_RANGE_SUB = 25
+	return (math.min(maxAimBiasRange, BattleConfig.AIM_BIAS_MAX_RANGE_SUB))
 end
 
-function BattleFormulas.CalculateMaxAimBiasRangeMonster(arg_39_0)
-	local var_39_0 = BattleAttr.GetCurrent(arg_39_0[1], "dodgeRate") * BattleConfig.AIM_BIAS_MONSTER_RANGE_MOD
+-- arg_39_0 -> crewList
+	-- 计算敌方单位的夜战隐蔽强度上限
+		-- 敌方单位也是单独计算的
+function BattleFormulas.CalculateMaxAimBiasRangeMonster(crewList)
+	-- var_39_0 -> maxAimBiasRange
+		-- AIM_BIAS_MONSTER_RANGE_MOD = 0.4
+	local maxAimBiasRange = BattleAttr.GetCurrent(crewList[1], "dodgeRate") * BattleConfig.AIM_BIAS_MONSTER_RANGE_MOD
 
-	return (math.min(var_39_0, BattleConfig.AIM_BIAS_MAX_RANGE_MONSTER))
+	-- AIM_BIAS_MAX_RANGE_MONSTER = 60
+	return (math.min(maxAimBiasRange, BattleConfig.AIM_BIAS_MAX_RANGE_MONSTER))
 end
 
-function BattleFormulas.CalculateBiasDecay(arg_40_0)
-	local var_40_0 = arg_40_0 * BattleConfig.AIM_BIAS_DECAY_MOD_MONSTER
-
-	return (math.min(var_40_0, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_SCOUT))
+-- arg_40_0 -> attackRating
+	-- 计算我方前排(和水面潜艇)的夜战隐蔽基础衰减速度
+	-- 参考调用链路：BattleBuffSmokeAimBias -> SetDecayFactor -> CalculateBiasDecay
+function BattleFormulas.CalculateBiasDecay(attackRating)
+	-- var_40_0 -> biasDecay
+		-- AIM_BIAS_DECAY_MOD_MONSTER = 0.01
+		-- 从上层调用看到，这里的attackRating实际上是敌方全场的最高命中值
+	local biasDecay = attackRating * BattleConfig.AIM_BIAS_DECAY_MOD_MONSTER
+	-- AIM_BIAS_DECAY_SPEED_MAX_SCOUT = 3
+	return (math.min(biasDecay, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_SCOUT))
 end
 
-function BattleFormulas.CalculateBiasDecayMonster(arg_41_0)
-	local var_41_0 = arg_41_0 * BattleConfig.AIM_BIAS_DECAY_MOD
+-- arg_41_0 -> attackRating
+	-- 计算敌方单位的夜战隐蔽基础衰减速度
+function BattleFormulas.CalculateBiasDecayMonster(attackRating)
+	-- var_41_0 -> biasDecay
+		-- AIM_BIAS_DECAY_MOD = 0.01
+		-- 从上层调用看到，这里的attackRating实际上是我方全场的最高命中值
+	local biasDecay = attackRating * BattleConfig.AIM_BIAS_DECAY_MOD
 
-	return (math.min(var_41_0, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_MONSTER))
+	-- AIM_BIAS_DECAY_SPEED_MAX_MONSTER = 3
+	return (math.min(biasDecay, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_MONSTER))
 end
 
-function BattleFormulas.CalculateBiasDecayMonsterInSmoke(arg_42_0)
-	local var_42_0 = arg_42_0 * BattleConfig.AIM_BIAS_DECAY_MOD * BattleConfig.AIM_BIAS_DECAY_SMOKE
+-- arg_42_0 -> attackRating
+	-- 计算敌方单位在烟雾中时的夜战隐蔽衰减速度
+function BattleFormulas.CalculateBiasDecayMonsterInSmoke(attackRating)
+	-- var_42_0 -> biasDecay
+		-- AIM_BIAS_DECAY_MOD = 0.01
+		-- AIM_BIAS_DECAY_SMOKE = 1
+			-- 实际上是没有变化的，可能是为了代码可读性，区分了不同场景
+		-- 从上层调用看到，这里的attackRating实际上是我方全场的最高命中值
+	local biasDecay = attackRating * BattleConfig.AIM_BIAS_DECAY_MOD * BattleConfig.AIM_BIAS_DECAY_SMOKE
 
-	return (math.min(var_42_0, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_MONSTER))
+	-- AIM_BIAS_DECAY_SPEED_MAX_MONSTER = 3
+	return (math.min(biasDecay, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_MONSTER))
 end
 
-function BattleFormulas.CalculateBiasDecayDiving(arg_43_0)
-	local var_43_0 = math.max(0, arg_43_0 - BattleConfig.AIM_BIAS_DECAY_SUB_CONST) * BattleConfig.AIM_BIAS_DECAY_MOD
+-- arg_43_0 -> attackRating
+	-- 计算我方潜艇的夜战隐蔽基础衰减速度
+function BattleFormulas.CalculateBiasDecayDiving(attackRating)
+	-- var_43_0 -> biasDecay
+		-- AIM_BIAS_DECAY_SUB_CONST = 50
+		-- AIM_BIAS_DECAY_MOD = 0.01
+		-- 从上层调用看到，这里的attackRating实际上是敌方全场的最高命中值
+	local biasDecay = math.max(0, attackRating - BattleConfig.AIM_BIAS_DECAY_SUB_CONST) * BattleConfig.AIM_BIAS_DECAY_MOD
 
-	return (math.min(var_43_0, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_SUB))
+	-- AIM_BIAS_DECAY_SPEED_MAX_SUB = 100
+	return (math.min(biasDecay, BattleConfig.AIM_BIAS_DECAY_SPEED_MAX_SUB))
 end
 
-function BattleFormulas.WorldEnemyAttrEnhance(arg_44_0, arg_44_1)
-	return 1 + arg_44_0 / (1 + BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_C^(BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_B - arg_44_1))
+-- arg_44_0 -> enemyEnhancement
+-- arg_44_1 -> enemyLevel
+	-- 计算大世界敌人属性提高倍率
+function BattleFormulas.WorldEnemyAttrEnhance(enemyEnhancement, enemyLevel)
+	-- WORLD_ENEMY_ENHANCEMENT_CONST_C = 1.1
+	-- WORLD_ENEMY_ENHANCEMENT_CONST_B = 80
+	return 1 + enemyEnhancement / (1 + BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_C^(BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_B - enemyLevel))
 end
 
+-- var_0_15 -> 
 local var_0_15 = setmetatable({}, {
 	__index = function(arg_45_0, arg_45_1)
 		return 0
 	end
 })
 
-function BattleFormulas.WorldMapRewardAttrEnhance(arg_46_0, arg_46_1)
-	arg_46_0 = arg_46_0 or var_0_15
-	arg_46_1 = arg_46_1 or var_0_15
+-- arg_46_0 -> enemyMapRewards
+-- arg_46_1 -> fleetMapRewards
+	-- 计算适应性Buff的属性增强倍率
+	-- 适应性似乎使用mapRewards来指代的...
+function BattleFormulas.WorldMapRewardAttrEnhance(enemyMapRewards, fleetMapRewards)
+	enemyMapRewards = enemyMapRewards or var_0_15
+	fleetMapRewards = fleetMapRewards or var_0_15
 
 	local var_46_0
 	local var_46_1
 	local var_46_2
-	local var_46_3 = {
+	-- var_46_3 -> worldValueRanges(适应性Buff区间)
+		-- X: 敌方属性倍率，Y: 敌方耐久倍率, Z: 不太清楚, worldBuffResistance?
+		-- attr_world_value_X1 = 7000
+		-- attr_world_value_X2 = 13000
+		-- attr_world_value_Y1 = 7000
+		-- attr_world_value_Y2 = 13000
+		-- attr_world_value_Z1 = 10000
+		-- attr_world_value_Z2 = 10000
+	local worldValueRanges = {
 		{
 			gameset.attr_world_value_X1.key_value / 10000,
 			gameset.attr_world_value_X2.key_value / 10000
@@ -655,34 +1094,38 @@ function BattleFormulas.WorldMapRewardAttrEnhance(arg_46_0, arg_46_1)
 			gameset.attr_world_value_Z2.key_value / 10000
 		}
 	}
-	local var_46_4 = gameset.attr_world_damage_fix.key_value / 10000
-	local var_46_5
+	-- var_46_4 -> worldDamageFix(= 0.1)
+		-- attr_world_damage_fix = 1000
+	local worldDamageFix = gameset.attr_world_damage_fix.key_value / 10000
+	-- var_46_5 -> tempWorldAttrEnhance
+	local tempWorldAttrEnhance
 
-	if arg_46_0[1] == 0 then
-		var_46_5 = var_46_3[1][2]
+	if enemyMapRewards[1] == 0 then
+		tempWorldAttrEnhance = worldValueRanges[1][2]
 	else
-		var_46_5 = arg_46_1[1] / arg_46_0[1]
+		tempWorldAttrEnhance = fleetMapRewards[1] / enemyMapRewards[1]
 	end
 
-	local var_46_6 = 1 - math.clamp(var_46_5, var_46_3[1][1], var_46_3[1][2])
+	-- var_46_6 -> finalWorldAttrEnhanceX
+	local finalWorldAttrEnhanceX = 1 - math.clamp(tempWorldAttrEnhance, worldValueRanges[1][1], worldValueRanges[1][2])
 
-	if arg_46_0[2] == 0 then
-		var_46_5 = var_46_3[2][2]
+	if enemyMapRewards[2] == 0 then
+		tempWorldAttrEnhance = worldValueRanges[2][2]
 	else
-		var_46_5 = arg_46_1[2] / arg_46_0[2]
+		tempWorldAttrEnhance = fleetMapRewards[2] / enemyMapRewards[2]
 	end
+	-- var_46_7 -> finalWorldAttrEnhanceY
+	local finalWorldAttrEnhanceY = 1 - math.clamp(tempWorldAttrEnhance, worldValueRanges[2][1], worldValueRanges[2][2])
 
-	local var_46_7 = 1 - math.clamp(var_46_5, var_46_3[2][1], var_46_3[2][2])
-
-	if arg_46_0[3] == 0 then
-		var_46_5 = var_46_3[3][2]
+	if enemyMapRewards[3] == 0 then
+		tempWorldAttrEnhance = worldValueRanges[3][2]
 	else
-		var_46_5 = arg_46_1[3] / arg_46_0[3]
+		tempWorldAttrEnhance = fleetMapRewards[3] / enemyMapRewards[3]
 	end
+	-- var_46_8 -> finalWorldAttrEnhanceZ
+	local finalWorldAttrEnhanceZ = math.max(1 - math.clamp(tempWorldAttrEnhance, worldValueRanges[3][1], worldValueRanges[3][2]), -worldDamageFix)
 
-	local var_46_8 = math.max(1 - math.clamp(var_46_5, var_46_3[3][1], var_46_3[3][2]), -var_46_4)
-
-	return var_46_6, var_46_7, var_46_8
+	return finalWorldAttrEnhanceX, finalWorldAttrEnhanceY, finalWorldAttrEnhanceZ
 end
 
 function BattleFormulas.WorldMapRewardHealingRate(arg_47_0, arg_47_1)

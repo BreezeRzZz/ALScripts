@@ -407,12 +407,13 @@ BattleConfig.AIM_BIAS_MAX_RANGE_SUB = 25
 BattleConfig.AIM_BIAS_ENEMY_INIT_TIME = 1.5
 BattleConfig.FLEET_ATTR_CAP = {
 	shenpanzhijian = 6,
+	yuanchou = 9,
+	Judgement = 12,
 	YumiaManaFlow = 10,
+	kuangsanshijian = 50,
 	ReisalinAP = 99,
 	KansasSP = 3,
-	Judgement = 12,
 	YumiaMANA = 100,
-	yuanchou = 9,
 	huohun = 5
 }
 BattleConfig.TARGET_SELECT_PRIORITY = {
@@ -456,3 +457,7 @@ BattleConfig.YUMIA_MANA_UI = {
 	113
 }
 BattleConfig.YUMIA_MANA_NAME = "YumiaMANA"
+BattleConfig.MIRROR_QICON_KEY = "_turn"
+BattleConfig.MIRROR_QICON_SHIP_GROUP = {
+	1150005
+}
