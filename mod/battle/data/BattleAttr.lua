@@ -261,40 +261,42 @@ function BattleAttr.UnitCldEnable(host)
 end
 -- arg_28_0 -> host
 function BattleAttr.GetCurrentTargetSelect(host)
-	-- var_28_0 -> selectedTarget
+	-- var_28_0 -> targetTag
 	-- var_28_1 -> targetChoise
+		-- targetChoise是目标身上具有的targetTag列表
+		-- targetTag用于确定索敌方式
 	-- var_28_2 -> targetSelectPriority
-	local selectedTarget
+	local targetTag
 	local targetChoise = BattleAttr.GetCurrent(host, "TargetChoise")
 	local targetSelectPriority = ys.Battle.BattleConfig.TARGET_SELECT_PRIORITY
 
 	-- iter_28_0 -> _
-	-- iter_28_1 -> targetCandidate
-		-- 选出SelectPriority最高的目标
+	-- iter_28_1 -> tag
+		-- 选出SelectPriority最高的tag
 		-- 多个最高，则选第一个，因为后续不会更新
-	for _, targetCandidate in ipairs(targetChoise) do
-		if not selectedTarget or targetSelectPriority[targetCandidate] > targetSelectPriority[selectedTarget] then
-			selectedTarget = targetCandidate
+	for _, tag in ipairs(targetChoise) do
+		if not targetTag or targetSelectPriority[tag] > targetSelectPriority[targetTag] then
+			targetTag = tag
 		end
 	end
 
-	return selectedTarget
+	return targetTag
 end
 -- arg_29_0 -> host
--- arg_29_1 -> target
-function BattleAttr.AddTargetSelect(host, target)
-	table.insert(BattleAttr.GetCurrent(host, "TargetChoise"), target)
+-- arg_29_1 -> targetTag
+function BattleAttr.AddTargetSelect(host, targetTag)
+	table.insert(BattleAttr.GetCurrent(host, "TargetChoise"), targetTag)
 end
 -- arg_30_0 -> host
--- arg_30_1 -> target
-function BattleAttr.RemoveTargetSelect(host, target)
+-- arg_30_1 -> targetTag
+function BattleAttr.RemoveTargetSelect(host, targetTag)
 	-- var_30_0 -> targetChoise
 	local targetChoise = BattleAttr.GetCurrent(host, "TargetChoise")
 
 	-- iter_30_0 -> i
-	-- iter_30_1 -> targetCandidate
-	for i, targetCandidate in ipairs(targetChoise) do
-		if targetCandidate == target then
+	-- iter_30_1 -> tag
+	for i, tag in ipairs(targetChoise) do
+		if tag == targetTag then
 			table.remove(targetChoise, i)
 
 			break
