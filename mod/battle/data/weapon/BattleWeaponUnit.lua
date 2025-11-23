@@ -1049,509 +1049,590 @@ function BattleWeaponUnit.SingleFire(self, target, emitterType, extraStopFunc, u
 	self._host:CloakExpose(self._tmpData.expose)
 	self:CheckAndShake()
 end
-
-function BattleWeaponUnit.SetModifyInitialCD(arg_70_0)
-	arg_70_0._modInitCD = true
+-- arg_70_0 -> self
+function BattleWeaponUnit.SetModifyInitialCD(self)
+	self._modInitCD = true
 end
-
-function BattleWeaponUnit.GetModifyInitialCD(arg_71_0)
-	return arg_71_0._modInitCD
+-- arg_71_0 -> self
+function BattleWeaponUnit.GetModifyInitialCD(self)
+	return self._modInitCD
 end
-
-function BattleWeaponUnit.InitialCD(arg_72_0)
-	if arg_72_0._tmpData.initial_over_heat == 1 then
-		arg_72_0:AddCDTimer(arg_72_0:GetReloadTime())
+-- arg_72_0 -> self
+function BattleWeaponUnit.InitialCD(self)
+	if self._tmpData.initial_over_heat == 1 then
+		self:AddCDTimer(self:GetReloadTime())
 	end
 end
+-- arg_73_0 -> self
+function BattleWeaponUnit.EnterCoolDown(self)
+	self._fireFXFlag = self._tmpData.fire_fx_loop_type
 
-function BattleWeaponUnit.EnterCoolDown(arg_73_0)
-	arg_73_0._fireFXFlag = arg_73_0._tmpData.fire_fx_loop_type
-
-	arg_73_0:AddCDTimer(arg_73_0:GetReloadTime())
+	self:AddCDTimer(self:GetReloadTime())
 end
-
-function BattleWeaponUnit.UpdatePrecastArmor(arg_74_0, arg_74_1)
-	if arg_74_0._currentState ~= BattleWeaponUnit.STATE_PRECAST or not arg_74_0._precastArmor then
+-- arg_74_0 -> self
+-- arg_74_1 -> deduction
+	-- 这是个负数，armor逐渐减少，到0就进入打断状态
+function BattleWeaponUnit.UpdatePrecastArmor(self, deduction)
+	if self._currentState ~= BattleWeaponUnit.STATE_PRECAST or not self._precastArmor then
 		return
 	end
 
-	arg_74_0._precastArmor = arg_74_0._precastArmor + arg_74_1
+	self._precastArmor = self._precastArmor + deduction
 
-	if arg_74_0._precastArmor <= 0 then
-		arg_74_0:Interrupt()
+	if self._precastArmor <= 0 then
+		self:Interrupt()
 	end
 end
+-- arg_75_0 -> self
+function BattleWeaponUnit.Interrupt(self)
+	-- var_75_0 -> preCastInfo
+	-- var_75_1 -> preCastFinishEvent
+	local preCastInfo = self._preCastInfo
+	local preCastFinishEvent = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, preCastInfo)
 
-function BattleWeaponUnit.Interrupt(arg_75_0)
-	local var_75_0 = arg_75_0._preCastInfo
-	local var_75_1 = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, var_75_0)
+	self:DispatchEvent(preCastFinishEvent)
+	-- var_75_2 -> interruptEvent
+	local interruptEvent = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_INTERRUPT, preCastInfo)
 
-	arg_75_0:DispatchEvent(var_75_1)
-
-	local var_75_2 = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_INTERRUPT, var_75_0)
-
-	arg_75_0:DispatchEvent(var_75_2)
-	arg_75_0:TriggerBuffWhenPrecastFinish(BattleConst.BuffEffectType.ON_WEAPON_INTERRUPT)
-	arg_75_0:RemovePrecastTimer()
-	arg_75_0:EnterCoolDown()
+	self:DispatchEvent(interruptEvent)
+	self:TriggerBuffWhenPrecastFinish(BattleConst.BuffEffectType.ON_WEAPON_INTERRUPT)
+	self:RemovePrecastTimer()
+	self:EnterCoolDown()
 end
-
-function BattleWeaponUnit.Cease(arg_76_0)
-	if arg_76_0._currentState == BattleWeaponUnit.STATE_ATTACK or arg_76_0._currentState == BattleWeaponUnit.STATE_PRECAST or arg_76_0._currentState == BattleWeaponUnit.STATE_PRECAST_FINISH then
-		arg_76_0:interruptAllEmitter()
-		arg_76_0:EnterCoolDown()
+-- arg_76_0 -> self
+function BattleWeaponUnit.Cease(self)
+	if self._currentState == BattleWeaponUnit.STATE_ATTACK or self._currentState == BattleWeaponUnit.STATE_PRECAST or self._currentState == BattleWeaponUnit.STATE_PRECAST_FINISH then
+		self:interruptAllEmitter()
+		self:EnterCoolDown()
 	end
 end
-
-function BattleWeaponUnit.AppendReloadBoost(arg_77_0)
+-- arg_77_0 -> self
+function BattleWeaponUnit.AppendReloadBoost(self)
 	return
 end
-
-function BattleWeaponUnit.DispatchGCD(arg_78_0)
-	if arg_78_0._GCD > 0 then
-		arg_78_0._host:EnterGCD(arg_78_0._GCD, arg_78_0._tmpData.queue)
+-- arg_78_0 -> self
+function BattleWeaponUnit.DispatchGCD(self)
+	if self._GCD > 0 then
+		self._host:EnterGCD(self._GCD, self._tmpData.queue)
 	end
 end
+-- arg_79_0 -> self
+function BattleWeaponUnit.Clear(self)
+	self:RemovePrecastTimer()
 
-function BattleWeaponUnit.Clear(arg_79_0)
-	arg_79_0:RemovePrecastTimer()
-
-	if arg_79_0._majorEmitterList then
-		for iter_79_0, iter_79_1 in ipairs(arg_79_0._majorEmitterList) do
-			iter_79_1:Destroy()
+	if self._majorEmitterList then
+		-- iter_79_0 -> _
+		-- iter_79_1 -> emitter
+		for _, emitter in ipairs(self._majorEmitterList) do
+			emitter:Destroy()
+		end
+	end
+	-- iter_79_2 -> _
+	-- iter_79_3 -> emitterList
+	for _, emitterList in ipairs(self._tempEmittersList) do
+		-- iter_79_4 -> _
+		-- iter_79_5 -> emitter
+		for _, emitter in ipairs(emitterList) do
+			emitter:Destroy()
+		end
+	end
+	-- iter_79_6 -> _
+	-- iter_79_7 -> emitterList
+	for _, emitterList in ipairs(self._dumpedEmittersList) do
+		-- iter_79_8 -> _
+		-- iter_79_9 -> emitter
+		for _, emitter in ipairs(emitterList) do
+			emitter:Destroy()
 		end
 	end
 
-	for iter_79_2, iter_79_3 in ipairs(arg_79_0._tempEmittersList) do
-		for iter_79_4, iter_79_5 in ipairs(iter_79_3) do
-			iter_79_5:Destroy()
-		end
-	end
-
-	for iter_79_6, iter_79_7 in ipairs(arg_79_0._dumpedEmittersList) do
-		for iter_79_8, iter_79_9 in ipairs(iter_79_7) do
-			iter_79_9:Destroy()
-		end
-	end
-
-	if arg_79_0._currentState ~= arg_79_0.STATE_OVER_HEAT then
-		arg_79_0._currentState = arg_79_0.STATE_DISABLE
+	if self._currentState ~= self.STATE_OVER_HEAT then
+		self._currentState = self.STATE_DISABLE
 	end
 end
+-- arg_80_0 -> self
+function BattleWeaponUnit.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
+	self:RemovePrecastTimer()
 
-function BattleWeaponUnit.Dispose(arg_80_0)
-	ys.EventDispatcher.DetachEventDispatcher(arg_80_0)
-	arg_80_0:RemovePrecastTimer()
-
-	arg_80_0._dataProxy = nil
+	self._dataProxy = nil
 end
-
-function BattleWeaponUnit.AddCDTimer(arg_81_0, arg_81_1)
-	arg_81_0._currentState = arg_81_0.STATE_OVER_HEAT
-	arg_81_0._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_81_0._reloadRequire = arg_81_1
+-- arg_81_0 -> self
+-- arg_81_1 -> time
+function BattleWeaponUnit.AddCDTimer(self, time)
+	self._currentState = self.STATE_OVER_HEAT
+	self._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._reloadRequire = time
 end
-
-function BattleWeaponUnit.GetCDStartTimeStamp(arg_82_0)
-	return arg_82_0._CDstartTime
+-- arg_82_0 -> self
+function BattleWeaponUnit.GetCDStartTimeStamp(self)
+	return self._CDstartTime
 end
-
-function BattleWeaponUnit.handleCoolDown(arg_83_0)
-	arg_83_0._currentState = arg_83_0.STATE_READY
-	arg_83_0._CDstartTime = nil
-	arg_83_0._jammingTime = 0
+-- arg_83_0 -> self
+	-- CD完成时调用
+function BattleWeaponUnit.handleCoolDown(self)
+	self._currentState = self.STATE_READY
+	self._CDstartTime = nil
+	self._jammingTime = 0
 end
-
-function BattleWeaponUnit.OverHeat(arg_84_0)
-	arg_84_0._currentState = arg_84_0.STATE_OVER_HEAT
+-- arg_84_0 -> self
+function BattleWeaponUnit.OverHeat(self)
+	self._currentState = self.STATE_OVER_HEAT
 end
+-- arg_85_0 -> self
+function BattleWeaponUnit.RemovePrecastTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._precastTimer)
+	self._host:SetWeaponPreCastBound(false)
 
-function BattleWeaponUnit.RemovePrecastTimer(arg_85_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_85_0._precastTimer)
-	arg_85_0._host:SetWeaponPreCastBound(false)
-
-	arg_85_0._precastArmor = nil
-	arg_85_0._precastTimer = nil
+	self._precastArmor = nil
+	self._precastTimer = nil
 end
+-- arg_86_0 -> self
+function BattleWeaponUnit.AddPreCastTimer(self)
+	-- var_86_0 -> onTimerFinish
+	local function onTimerFinish()
+		self._currentState = self.STATE_PRECAST_FINISH
 
-function BattleWeaponUnit.AddPreCastTimer(arg_86_0)
-	local function var_86_0()
-		arg_86_0._currentState = arg_86_0.STATE_PRECAST_FINISH
+		self:RemovePrecastTimer()
+		-- var_87_0 -> preCastInfo
+		-- var_87_1 -> preCastFinishEvent
+		local preCastInfo = self._preCastInfo
+		local preCastFinishEvent = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, preCastInfo)
 
-		arg_86_0:RemovePrecastTimer()
-
-		local var_87_0 = arg_86_0._preCastInfo
-		local var_87_1 = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, var_87_0)
-
-		arg_86_0:DispatchEvent(var_87_1)
-		arg_86_0:TriggerBuffWhenPrecastFinish(BattleConst.BuffEffectType.ON_WEAPON_SUCCESS)
-		arg_86_0:Tracking()
+		self:DispatchEvent(preCastFinishEvent)
+		self:TriggerBuffWhenPrecastFinish(BattleConst.BuffEffectType.ON_WEAPON_SUCCESS)
+		self:Tracking()
 	end
 
-	arg_86_0._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponPrecastTimer", 0, arg_86_0._preCastInfo.time, var_86_0, true)
+	self._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponPrecastTimer", 0, self._preCastInfo.time, onTimerFinish, true)
 end
+-- arg_88_0 -> self
+-- arg_88_1 -> bulletID
+-- arg_88_2 -> target
+	-- 调用的时候用到了三个参数，不知道还有一个在哪，可能是可变参数...
+function BattleWeaponUnit.Spawn(self, bulletID, target)
+	-- var_88_0 -> targetPos
+	local targetPos
 
-function BattleWeaponUnit.Spawn(arg_88_0, arg_88_1, arg_88_2)
-	local var_88_0
-
-	if arg_88_0._tmpData.search_type == WeaponSearchType.STRIKE then
-		var_88_0 = arg_88_0._host:GetStrikePoint()
-	elseif arg_88_2 == nil then
-		var_88_0 = Vector3.zero
+	if self._tmpData.search_type == WeaponSearchType.STRIKE then
+		targetPos = self._host:GetStrikePoint()
+	elseif target == nil then
+		targetPos = Vector3.zero
 	else
-		var_88_0 = arg_88_2:GetBeenAimedPosition() or arg_88_2:GetPosition()
+		targetPos = target:GetBeenAimedPosition() or target:GetPosition()
+	end
+	-- var_88_1 -> bullet
+	local bullet = self._dataProxy:CreateBulletUnit(bulletID, self._host, self, targetPos)
+
+	self:setBulletSkin(bullet, bulletID)
+	self:setBulletOrb(bullet)
+	self:TriggerBuffWhenSpawn(bullet)
+
+	return bullet
+end
+-- arg_89_0 -> self
+-- arg_89_1 -> ammo
+function BattleWeaponUnit.FixAmmo(self, ammo)
+	self._fixedAmmo = ammo
+end
+-- arg_90_0 -> self
+function BattleWeaponUnit.GetFixAmmo(self)
+	return self._fixedAmmo
+end
+-- arg_91_0 -> self
+-- arg_91_1 -> bulletID
+function BattleWeaponUnit.ShiftBullet(self, bulletID)
+	-- var_91_0 -> shiftedBulletList
+	local shiftedBulletList = {}
+	-- iter_91_0 -> i
+	for i = 1, #self._bulletList do
+		shiftedBulletList[i] = bulletID
 	end
 
-	local var_88_1 = arg_88_0._dataProxy:CreateBulletUnit(arg_88_1, arg_88_0._host, arg_88_0, var_88_0)
-
-	arg_88_0:setBulletSkin(var_88_1, arg_88_1)
-	arg_88_0:setBulletOrb(var_88_1)
-	arg_88_0:TriggerBuffWhenSpawn(var_88_1)
-
-	return var_88_1
+	self._bulletList = shiftedBulletList
 end
-
-function BattleWeaponUnit.FixAmmo(arg_89_0, arg_89_1)
-	arg_89_0._fixedAmmo = arg_89_1
+-- arg_92_0 -> self
+function BattleWeaponUnit.RevertBullet(self)
+	self._bulletList = self._tmpData.bullet_ID
 end
-
-function BattleWeaponUnit.GetFixAmmo(arg_90_0)
-	return arg_90_0._fixedAmmo
+-- arg_93_0 -> self
+function BattleWeaponUnit.cacheBulletID(self)
+	self._emitBulletIDList = self._bulletList
 end
-
-function BattleWeaponUnit.ShiftBullet(arg_91_0, arg_91_1)
-	local var_91_0 = {}
-
-	for iter_91_0 = 1, #arg_91_0._bulletList do
-		var_91_0[iter_91_0] = arg_91_1
-	end
-
-	arg_91_0._bulletList = var_91_0
-end
-
-function BattleWeaponUnit.RevertBullet(arg_92_0)
-	arg_92_0._bulletList = arg_92_0._tmpData.bullet_ID
-end
-
-function BattleWeaponUnit.cacheBulletID(arg_93_0)
-	arg_93_0._emitBulletIDList = arg_93_0._bulletList
-end
-
-function BattleWeaponUnit.setBulletOrb(arg_94_0, arg_94_1)
-	if not arg_94_0._orbID then
+-- arg_94_0 -> self
+-- arg_94_1 -> bullet
+function BattleWeaponUnit.setBulletOrb(self, bullet)
+	if not self._orbID then
 		return
 	end
-
-	local var_94_0 = {
-		buff_id = arg_94_0._orbID,
-		rant = arg_94_0._orbRant,
-		level = arg_94_0._orbLevel
+	-- var_94_0 -> buff
+	local buff = {
+		buff_id = self._orbID,
+		rant = self._orbRant,
+		level = self._orbLevel
 	}
 
-	arg_94_1:AppendAttachBuff(var_94_0)
+	bullet:AppendAttachBuff(buff)
 end
-
-function BattleWeaponUnit.SetBulletOrbData(arg_95_0, arg_95_1)
-	arg_95_0._orbID = arg_95_1.buffID
-	arg_95_0._orbRant = arg_95_1.rant
-	arg_95_0._orbLevel = arg_95_1.level
+-- arg_95_0 -> self
+-- arg_95_1 -> buff
+function BattleWeaponUnit.SetBulletOrbData(self, buff)
+	self._orbID = buff.buffID
+	self._orbRant = buff.rant
+	self._orbLevel = buff.level
 end
-
-function BattleWeaponUnit.ShiftBarrage(arg_96_0, arg_96_1)
-	for iter_96_0, iter_96_1 in ipairs(arg_96_0._majorEmitterList) do
-		table.insert(arg_96_0._dumpedEmittersList, iter_96_1)
+-- arg_96_0 -> self
+-- arg_96_1 -> barrageID
+	-- 可能是一个数字表示单个ID，也可能是一个表，表示多个ID
+function BattleWeaponUnit.ShiftBarrage(self, barrageID)
+	-- iter_96_0 -> _
+	-- iter_96_1 -> emitter
+	for _, emitter in ipairs(self._majorEmitterList) do
+		table.insert(self._dumpedEmittersList, emitter)
 	end
 
-	arg_96_0._majorEmitterList = {}
+	self._majorEmitterList = {}
 
-	if type(arg_96_1) == "number" then
-		local var_96_0 = {}
-
-		for iter_96_2 = 1, #arg_96_0._barrageList do
-			var_96_0[iter_96_2] = arg_96_1
+	if type(barrageID) == "number" then
+		-- var_96_0 -> barrageList
+		local barrageList = {}
+		-- iter_96_2 -> i
+		for i = 1, #self._barrageList do
+			barrageList[i] = barrageID
 		end
 
-		arg_96_0._barrageList = var_96_0
-	elseif type(arg_96_1) == "table" then
-		arg_96_0._barrageList = arg_96_1
+		self._barrageList = barrageList
+	elseif type(barrageID) == "table" then
+		self._barrageList = barrageID
 	end
-
-	for iter_96_3, iter_96_4 in ipairs(arg_96_0._barrageList) do
-		arg_96_0:createMajorEmitter(iter_96_4, iter_96_3)
+	-- iter_96_3 -> i
+	-- iter_96_4 -> barrageID
+		-- 这里是单个ID了
+	for i, barrageID in ipairs(self._barrageList) do
+		self:createMajorEmitter(barrageID, i)
 	end
 end
-
-function BattleWeaponUnit.RevertBarrage(arg_97_0)
-	arg_97_0:ShiftBarrage(arg_97_0._tmpData.barrage_ID)
+-- arg_97_0 -> self
+function BattleWeaponUnit.RevertBarrage(self)
+	self:ShiftBarrage(self._tmpData.barrage_ID)
 end
-
-function BattleWeaponUnit.GetPrimalAmmoType(arg_98_0)
-	return BattleDataFunction.GetBulletTmpDataFromID(arg_98_0._tmpData.bullet_ID[1]).ammo_type
+-- arg_98_0 -> self
+function BattleWeaponUnit.GetPrimalAmmoType(self)
+	-- 这里是BattleBulletDataFunction的GetBulletTmpDataFromID函数
+	return BattleDataFunction.GetBulletTmpDataFromID(self._tmpData.bullet_ID[1]).ammo_type
 end
-
-function BattleWeaponUnit.TriggerBuffWhenSpawn(arg_99_0, arg_99_1, arg_99_2)
-	local var_99_0 = arg_99_2 or BattleConst.BuffEffectType.ON_BULLET_CREATE
-	local var_99_1 = {
-		_bullet = arg_99_1,
-		equipIndex = arg_99_0._equipmentIndex,
-		bulletTag = arg_99_1:GetExtraTag()
+-- arg_99_0 -> self
+-- arg_99_1 -> bullet
+-- arg_99_2 -> trigger
+function BattleWeaponUnit.TriggerBuffWhenSpawn(self, bullet, trigger)
+	-- var_99_0 -> trigger
+	local trigger = trigger or BattleConst.BuffEffectType.ON_BULLET_CREATE
+	-- var_99_1 -> extraArgs
+	local extraArgs = {
+		_bullet = bullet,
+		equipIndex = self._equipmentIndex,
+		bulletTag = bullet:GetExtraTag()
 	}
 
-	arg_99_0._host:TriggerBuff(var_99_0, var_99_1)
+	self._host:TriggerBuff(trigger, extraArgs)
 end
-
-function BattleWeaponUnit.TriggerBuffWhenPrecastFinish(arg_100_0, arg_100_1)
-	if arg_100_0._preCastInfo.armor then
-		local var_100_0 = {
-			weaponID = arg_100_0._tmpData.id
+-- arg_100_0 -> self
+-- arg_100_1 -> trigger
+function BattleWeaponUnit.TriggerBuffWhenPrecastFinish(self, trigger)
+	if self._preCastInfo.armor then
+		-- var_100_0 -> extraArgs
+		local extraArgs = {
+			weaponID = self._tmpData.id
 		}
 
-		arg_100_0._host:TriggerBuff(arg_100_1, var_100_0)
+		self._host:TriggerBuff(trigger, extraArgs)
 	end
 end
+-- arg_101_0 -> self
+-- arg_101_1 -> bullet
+-- arg_101_2 -> position
+function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
+	-- var_101_0 -> position
+	-- var_101_1 -> template
+	-- var_101_2 -> fireFXID
+	local position = position
+	local template = self._tmpData
+	local fireFXID
 
-function BattleWeaponUnit.DispatchBulletEvent(arg_101_0, arg_101_1, arg_101_2)
-	local var_101_0 = arg_101_2
-	local var_101_1 = arg_101_0._tmpData
-	local var_101_2
+	if self._fireFXFlag ~= 0 then
+		fireFXID = self._skinFireFX or template.fire_fx
 
-	if arg_101_0._fireFXFlag ~= 0 then
-		var_101_2 = arg_101_0._skinFireFX or var_101_1.fire_fx
-
-		if arg_101_0._fireFXFlag ~= -1 then
-			arg_101_0._fireFXFlag = arg_101_0._fireFXFlag - 1
+		if self._fireFXFlag ~= -1 then
+			self._fireFXFlag = self._fireFXFlag - 1
 		end
 	end
+	-- spawn_bound是一个table的情况
+	if type(template.spawn_bound) == "table" and not position then
+		-- var_101_3 -> mainUnitPosition
+		local mainUnitPosition = self._dataProxy:GetStageInfo().mainUnitPosition
 
-	if type(var_101_1.spawn_bound) == "table" and not var_101_0 then
-		local var_101_3 = arg_101_0._dataProxy:GetStageInfo().mainUnitPosition
-
-		if var_101_3 and var_101_3[arg_101_0._hostIFF] then
-			var_101_0 = Clone(var_101_3[arg_101_0._hostIFF][var_101_1.spawn_bound[1]])
+		if mainUnitPosition and mainUnitPosition[self._hostIFF] then
+			position = Clone(mainUnitPosition[self._hostIFF][template.spawn_bound[1]])
 		else
-			var_101_0 = Clone(BattleConfig.MAIN_UNIT_POS[arg_101_0._hostIFF][var_101_1.spawn_bound[1]])
+			position = Clone(BattleConfig.MAIN_UNIT_POS[self._hostIFF][template.spawn_bound[1]])
 		end
 	end
-
-	local var_101_4 = {
-		spawnBound = var_101_1.spawn_bound,
-		bullet = arg_101_1,
-		fireFxID = var_101_2,
-		position = var_101_0
+	-- var_101_4 -> eventArgs
+	local eventArgs = {
+		spawnBound = template.spawn_bound,
+		bullet = bullet,
+		fireFxID = fireFXID,
+		position = position
 	}
-	local var_101_5 = ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_BULLET, var_101_4)
+	-- var_101_5 -> createBulletEvent
+	local createBulletEvent = ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_BULLET, eventArgs)
 
-	arg_101_0:DispatchEvent(var_101_5)
+	self:DispatchEvent(createBulletEvent)
 end
-
-function BattleWeaponUnit.DispatchFireEvent(arg_102_0, arg_102_1, arg_102_2)
-	local var_102_0 = {
-		target = arg_102_1,
-		actionIndex = arg_102_2
+-- arg_102_0 -> self
+-- arg_102_1 -> target
+-- arg_102_2 -> actionIndex
+function BattleWeaponUnit.DispatchFireEvent(self, target, actionIndex)
+	-- var_102_0 -> eventArgs
+	local eventArgs = {
+		target = target,
+		actionIndex = actionIndex
 	}
-	local var_102_1 = ys.Event.New(ys.Battle.BattleUnitEvent.FIRE, var_102_0)
+	-- var_102_1 -> fireEvent
+	local fireEvent = ys.Event.New(ys.Battle.BattleUnitEvent.FIRE, eventArgs)
 
-	arg_102_0:DispatchEvent(var_102_1)
+	self:DispatchEvent(fireEvent)
 end
-
-function BattleWeaponUnit.CheckAndShake(arg_103_0)
-	if arg_103_0._tmpData.shakescreen ~= 0 then
-		ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[arg_103_0._tmpData.shakescreen])
+-- arg_103_0 -> self
+function BattleWeaponUnit.CheckAndShake(self)
+	if self._tmpData.shakescreen ~= 0 then
+		ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[self._tmpData.shakescreen])
 	end
 end
-
-function BattleWeaponUnit.GetBaseAngle(arg_104_0)
-	return arg_104_0._baseAngle
+-- arg_104_0 -> self
+function BattleWeaponUnit.GetBaseAngle(self)
+	return self._baseAngle
 end
-
-function BattleWeaponUnit.GetHost(arg_105_0)
-	return arg_105_0._host
+-- arg_105_0 -> self
+function BattleWeaponUnit.GetHost(self)
+	return self._host
 end
-
-function BattleWeaponUnit.GetStandHost(arg_106_0)
-	return arg_106_0._standHost
+-- arg_106_0 -> self
+function BattleWeaponUnit.GetStandHost(self)
+	return self._standHost
 end
-
-function BattleWeaponUnit.GetPosition(arg_107_0)
-	return arg_107_0._hostPos
+-- arg_107_0 -> self
+function BattleWeaponUnit.GetPosition(self)
+	return self._hostPos
 end
-
-function BattleWeaponUnit.GetDirection(arg_108_0)
-	return arg_108_0._host:GetDirection()
+-- arg_108_0 -> self
+function BattleWeaponUnit.GetDirection(self)
+	return self._host:GetDirection()
 end
-
-function BattleWeaponUnit.GetCurrentState(arg_109_0)
-	return arg_109_0._currentState
+-- arg_109_0 -> self
+function BattleWeaponUnit.GetCurrentState(self)
+	return self._currentState
 end
+-- arg_110_0 -> self
+function BattleWeaponUnit.GetReloadTime(self)
+	-- var_110_0 -> loadSpeed
+		-- 指的是装填属性值
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
 
-function BattleWeaponUnit.GetReloadTime(arg_110_0)
-	local var_110_0 = BattleAttr.GetCurrent(arg_110_0._host, "loadSpeed")
-
-	if arg_110_0._reloadMax ~= arg_110_0._cacheReloadMax or var_110_0 ~= arg_110_0._cacheHostReload then
-		arg_110_0._cacheReloadMax = arg_110_0._reloadMax
-		arg_110_0._cacheHostReload = var_110_0
-		arg_110_0._cacheReloadTime = BattleFormulas.CalculateReloadTime(arg_110_0._reloadMax, BattleAttr.GetCurrent(arg_110_0._host, "loadSpeed"))
+	if self._reloadMax ~= self._cacheReloadMax or loadSpeed ~= self._cacheHostReload then
+		self._cacheReloadMax = self._reloadMax
+		self._cacheHostReload = loadSpeed
+		self._cacheReloadTime = BattleFormulas.CalculateReloadTime(self._reloadMax, loadSpeed)
 	end
 
-	return arg_110_0._cacheReloadTime
+	return self._cacheReloadTime
 end
+-- arg_111_0 -> self
+-- arg_111_1 -> rate
+function BattleWeaponUnit.GetReloadTimeByRate(self, rate)
+	-- var_111_0 -> loadSpeed
+	-- var_111_1 -> newReloadMax
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
+	local newReloadMax = self._cacheReloadMax * rate
 
-function BattleWeaponUnit.GetReloadTimeByRate(arg_111_0, arg_111_1)
-	local var_111_0 = BattleAttr.GetCurrent(arg_111_0._host, "loadSpeed")
-	local var_111_1 = arg_111_0._cacheReloadMax * arg_111_1
-
-	return (BattleFormulas.CalculateReloadTime(var_111_1, var_111_0))
+	return (BattleFormulas.CalculateReloadTime(newReloadMax, loadSpeed))
 end
-
-function BattleWeaponUnit.GetReloadFinishTimeStamp(arg_112_0)
-	local var_112_0 = 0
-
-	for iter_112_0, iter_112_1 in ipairs(arg_112_0._reloadBoostList) do
-		var_112_0 = var_112_0 + iter_112_1
+-- arg_112_0 -> self
+function BattleWeaponUnit.GetReloadFinishTimeStamp(self)
+	-- var_112_0 -> totalReloadBoost
+	local totalReloadBoost = 0
+	-- iter_112_0 -> _
+	-- iter_112_1 -> reloadBoost
+		-- reloadBoost有可能是负数, 表示装填加快...
+	for _, reloadBoost in ipairs(self._reloadBoostList) do
+		totalReloadBoost = totalReloadBoost + reloadBoost
 	end
 
-	return arg_112_0._reloadRequire + arg_112_0._CDstartTime + arg_112_0._jammingTime + var_112_0
+	return self._reloadRequire + self._CDstartTime + self._jammingTime + totalReloadBoost
 end
-
-function BattleWeaponUnit.AppendFactor(arg_113_0, arg_113_1)
+-- arg_113_0 -> self
+-- arg_113_1 -> factor
+	-- 这个函数没有被使用过，也没有被重载
+function BattleWeaponUnit.AppendFactor(self, factor)
 	return
 end
-
-function BattleWeaponUnit.StartJamming(arg_114_0)
-	if arg_114_0._currentState ~= BattleWeaponUnit.STATE_READY then
-		arg_114_0._jammingStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+-- arg_114_0 -> self
+function BattleWeaponUnit.StartJamming(self)
+	if self._currentState ~= BattleWeaponUnit.STATE_READY then
+		self._jammingStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 end
-
-function BattleWeaponUnit.JammingEliminate(arg_115_0)
-	if not arg_115_0._jammingStartTime then
+-- arg_115_0 -> self
+function BattleWeaponUnit.JammingEliminate(self)
+	if not self._jammingStartTime then
 		return
 	end
 
-	arg_115_0._jammingTime = pg.TimeMgr.GetInstance():GetCombatTime() - arg_115_0._jammingStartTime
-	arg_115_0._jammingStartTime = nil
+	self._jammingTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._jammingStartTime
+	self._jammingStartTime = nil
 end
+-- arg_116_0 -> self
+-- arg_116_1 -> reloadFactor
+function BattleWeaponUnit.FlushReloadMax(self, reloadFactor)
+	-- var_116_0 -> reloadMax
+	local reloadMax = self._tmpData.reload_max
 
-function BattleWeaponUnit.FlushReloadMax(arg_116_0, arg_116_1)
-	local var_116_0 = arg_116_0._tmpData.reload_max
+	reloadFactor = reloadFactor or 1
+	self._reloadMax = reloadMax * reloadFactor
 
-	arg_116_1 = arg_116_1 or 1
-	arg_116_0._reloadMax = var_116_0 * arg_116_1
-
-	if not arg_116_0._CDstartTime or arg_116_0._reloadRequire == 0 then
+	if not self._CDstartTime or self._reloadRequire == 0 then
 		return true
 	end
+	-- var_116_1 -> loadSpeed
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
 
-	local var_116_1 = BattleAttr.GetCurrent(arg_116_0._host, "loadSpeed")
-
-	arg_116_0._reloadRequire = BattleWeaponUnit.FlushRequireByInverse(arg_116_0, var_116_1)
+	self._reloadRequire = BattleWeaponUnit.FlushRequireByInverse(self, loadSpeed)
 end
-
-function BattleWeaponUnit.AppendReloadFactor(arg_117_0, arg_117_1, arg_117_2)
-	arg_117_0._reloadFacotrList[arg_117_1] = arg_117_2
+-- arg_117_0 -> self
+-- arg_117_1 -> buff
+-- arg_117_2 -> reloadFactor
+function BattleWeaponUnit.AppendReloadFactor(self, buff, reloadFactor)
+	-- 这变量名难绷
+	self._reloadFacotrList[buff] = reloadFactor
 end
-
-function BattleWeaponUnit.RemoveReloadFactor(arg_118_0, arg_118_1)
-	if arg_118_0._reloadFacotrList[arg_118_1] then
-		arg_118_0._reloadFacotrList[arg_118_1] = nil
+-- arg_118_0 -> self
+-- arg_118_1 -> buff
+function BattleWeaponUnit.RemoveReloadFactor(self, buff)
+	if self._reloadFacotrList[buff] then
+		self._reloadFacotrList[buff] = nil
 	end
 end
-
-function BattleWeaponUnit.GetReloadFactorList(arg_119_0)
-	return arg_119_0._reloadFacotrList
+-- arg_119_0 -> self
+function BattleWeaponUnit.GetReloadFactorList(self)
+	return self._reloadFacotrList
 end
-
-function BattleWeaponUnit.FlushReloadRequire(arg_120_0)
-	if not arg_120_0._CDstartTime or arg_120_0._reloadRequire == 0 then
+-- arg_120_0 -> self
+function BattleWeaponUnit.FlushReloadRequire(self)
+	if not self._CDstartTime or self._reloadRequire == 0 then
 		return true
 	end
+	-- var_120_0 -> requireLoadSpeed
+	local requireLoadSpeed = BattleFormulas.CaclulateReloadAttr(self._reloadMax, self._reloadRequire)
 
-	local var_120_0 = BattleFormulas.CaclulateReloadAttr(arg_120_0._reloadMax, arg_120_0._reloadRequire)
-
-	arg_120_0._reloadRequire = BattleWeaponUnit.FlushRequireByInverse(arg_120_0, var_120_0)
+	self._reloadRequire = BattleWeaponUnit.FlushRequireByInverse(self, requireLoadSpeed)
 end
-
-function BattleWeaponUnit.GetMinimumRange(arg_121_0)
-	return arg_121_0._minRangeSqr
+-- arg_121_0 -> self
+function BattleWeaponUnit.GetMinimumRange(self)
+	return self._minRangeSqr
 end
-
-function BattleWeaponUnit.GetCorrectedDMG(arg_122_0)
-	return arg_122_0._correctedDMG
+-- arg_122_0 -> self
+function BattleWeaponUnit.GetCorrectedDMG(self)
+	return self._correctedDMG
 end
-
-function BattleWeaponUnit.GetConvertedAtkAttr(arg_123_0)
-	return arg_123_0._convertedAtkAttr
+-- arg_123_0 -> self
+function BattleWeaponUnit.GetConvertedAtkAttr(self)
+	return self._convertedAtkAttr
 end
-
-function BattleWeaponUnit.SetAtkAttrTrasnform(arg_124_0, arg_124_1, arg_124_2, arg_124_3)
-	arg_124_0._atkAttrTrans = arg_124_1
-	arg_124_0._atkAttrTransA = arg_124_2
-	arg_124_0._atkAttrTransB = arg_124_3
+-- arg_124_0 -> self
+-- arg_124_1 -> atkAttrTrans
+-- arg_124_2 -> atkAttrTransA
+-- arg_124_3 -> atkAttrTransB
+function BattleWeaponUnit.SetAtkAttrTrasnform(self, atkAttrTrans, atkAttrTransA, atkAttrTransB)
+	self._atkAttrTrans = atkAttrTrans
+	self._atkAttrTransA = atkAttrTransA
+	self._atkAttrTransB = atkAttrTransB
 end
+-- arg_125_0 -> self
+-- arg_125_1 -> attrs
+function BattleWeaponUnit.GetAtkAttrTrasnform(self, attrs)
+	-- var_125_0 -> atkAttrTransform
+	local atkAttrTransform
 
-function BattleWeaponUnit.GetAtkAttrTrasnform(arg_125_0, arg_125_1)
-	local var_125_0
+	if self._atkAttrTrans then
+		-- var_125_1 -> atkAttrValue
+		local atkAttrValue = attrs[self._atkAttrTrans] or 0
 
-	if arg_125_0._atkAttrTrans then
-		local var_125_1 = arg_125_1[arg_125_0._atkAttrTrans] or 0
-
-		var_125_0 = math.min(var_125_1 / arg_125_0._atkAttrTransA, arg_125_0._atkAttrTransB)
+		atkAttrTransform = math.min(atkAttrValue / self._atkAttrTransA, self._atkAttrTransB)
 	end
 
-	return var_125_0
+	return atkAttrTransform
 end
-
-function BattleWeaponUnit.IsReady(arg_126_0)
-	return arg_126_0._currentState == arg_126_0.STATE_READY
+-- arg_126_0 -> self
+function BattleWeaponUnit.IsReady(self)
+	return self._currentState == self.STATE_READY
 end
+-- arg_127_0 -> self
+-- arg_127_1 -> loadSpeed
+function BattleWeaponUnit.FlushRequireByInverse(self, loadSpeed)
+	-- var_127_0 -> elapsedTime
+	-- var_127_1 -> reloadedAmount
+	-- var_127_2 -> remainingReload
+	local elapsedTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._CDstartTime
+	local reloadedAmount = BattleFormulas.CaclulateReloaded(elapsedTime, loadSpeed)
+	local remainingReload = self._reloadMax - reloadedAmount
 
-function BattleWeaponUnit.FlushRequireByInverse(arg_127_0, arg_127_1)
-	local var_127_0 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_127_0._CDstartTime
-	local var_127_1 = BattleFormulas.CaclulateReloaded(var_127_0, arg_127_1)
-	local var_127_2 = arg_127_0._reloadMax - var_127_1
-
-	return var_127_0 + BattleFormulas.CalculateReloadTime(var_127_2, BattleAttr.GetCurrent(arg_127_0._host, "loadSpeed"))
+	return elapsedTime + BattleFormulas.CalculateReloadTime(remainingReload, BattleAttr.GetCurrent(self._host, "loadSpeed"))
 end
-
-function BattleWeaponUnit.SetCardPuzzleDamageEnhance(arg_128_0, arg_128_1)
-	arg_128_0._cardPuzzleEnhance = arg_128_1
+-- arg_128_0 -> self
+-- arg_128_1 -> enhance
+	-- CardPuzzle相关都是废案，不用管
+function BattleWeaponUnit.SetCardPuzzleDamageEnhance(self, enhance)
+	self._cardPuzzleEnhance = enhance
 end
-
-function BattleWeaponUnit.GetCardPuzzleDamageEnhance(arg_129_0)
-	return arg_129_0._cardPuzzleEnhance or 1
+-- arg_129_0 -> self
+function BattleWeaponUnit.GetCardPuzzleDamageEnhance(self)
+	return self._cardPuzzleEnhance or 1
 end
-
-function BattleWeaponUnit.GetReloadRate(arg_130_0)
-	if arg_130_0._currentState == arg_130_0.STATE_READY then
+-- arg_130_0 -> self
+function BattleWeaponUnit.GetReloadRate(self)
+	if self._currentState == self.STATE_READY then
 		return 0
-	elseif arg_130_0._CDstartTime then
-		return (arg_130_0:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / arg_130_0._reloadRequire
+	elseif self._CDstartTime then
+		return (self:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / self._reloadRequire
 	else
 		return 1
 	end
 end
+-- arg_131_0 -> self
+-- arg_131_1 -> damage
+-- arg_131_2 -> isCri
+-- arg_131_3 -> isMiss
+function BattleWeaponUnit.WeaponStatistics(self, damage, isCri, isMiss)
+	self._CLDCount = self._CLDCount + 1
+	self._damageSum = damage + self._damageSum
 
-function BattleWeaponUnit.WeaponStatistics(arg_131_0, arg_131_1, arg_131_2, arg_131_3)
-	arg_131_0._CLDCount = arg_131_0._CLDCount + 1
-	arg_131_0._damageSum = arg_131_1 + arg_131_0._damageSum
-
-	if arg_131_2 then
-		arg_131_0._CTSum = arg_131_0._CTSum + 1
+	if isCri then
+		self._CTSum = self._CTSum + 1
 	end
 
-	if not arg_131_3 then
-		arg_131_0._ACCSum = arg_131_0._ACCSum + 1
+	if not isMiss then
+		self._ACCSum = self._ACCSum + 1
 	end
 end
-
-function BattleWeaponUnit.GetDamageSUM(arg_132_0)
-	return arg_132_0._damageSum
+-- arg_132_0 -> self
+function BattleWeaponUnit.GetDamageSUM(self)
+	return self._damageSum
 end
-
-function BattleWeaponUnit.GetCTRate(arg_133_0)
-	return arg_133_0._CTSum / arg_133_0._CLDCount
+-- arg_133_0 -> self
+function BattleWeaponUnit.GetCTRate(self)
+	return self._CTSum / self._CLDCount
 end
-
-function BattleWeaponUnit.GetACCRate(arg_134_0)
-	return arg_134_0._ACCSum / arg_134_0._CLDCount
+-- arg_134_0 -> self
+function BattleWeaponUnit.GetACCRate(self)
+	return self._ACCSum / self._CLDCount
 end
