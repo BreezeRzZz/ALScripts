@@ -1,30 +1,33 @@
-local var_0_0 = {}
+local cachedBuffIDs = {}
 
 pg.buffCfg = setmetatable({}, {
-	__index = function(arg_1_0, arg_1_1)
-		if var_0_0[arg_1_1] then
+	__index = function(buffTable, buffIDString)
+		-- __index表示的是访问不存在的键时触发的行为
+		if cachedBuffIDs[buffIDString] then
+			-- 这个return true是什么意思？
 			return true
 		else
-			var_0_0[arg_1_1] = true
+			cachedBuffIDs[buffIDString] = true
 
-			local var_1_0 = {
-				"GameCfg.buff." .. arg_1_1
+			local configPaths = {
+				"GameCfg.buff." .. buffIDString
 			}
-
+			-- 没找到这个路径...
 			if LUA_CONFIG_EXTRA then
-				table.insert(var_1_0, "GameCfg.battle_lua.buff_extra." .. arg_1_1)
+				table.insert(configPaths, "GameCfg.battle_lua.buff_extra." .. buffIDString)
 			end
 
-			for iter_1_0, iter_1_1 in ipairs(var_1_0) do
+			for _, configPath in ipairs(configPaths) do
+				-- pcall表示"保护模式调用"，即使require报错也不会中断程序
 				if pcall(function()
-					arg_1_0[arg_1_1] = require(iter_1_1)
+					buffTable[buffIDString] = require(configPath)
 				end) then
-					return arg_1_0[arg_1_1]
+					return buffTable[buffIDString]
 				end
 			end
 
 			if IsUnityEditor then
-				warning("找不到技能配置: " .. "GameCfg.buff." .. arg_1_1)
+				warning("找不到技能配置: " .. "GameCfg.buff." .. buffIDString)
 			end
 
 			return nil

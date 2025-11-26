@@ -68,46 +68,47 @@ function var_0_3.ConvertSkillTemplate()
 	})
 end
 
-function var_0_3.GetBuffTemplate(arg_6_0, arg_6_1)
-	arg_6_1 = arg_6_1 or 1
+function var_0_3.GetBuffTemplate(buffID, buffLevel)
+	buffLevel = buffLevel or 1
 
-	local var_6_0 = "buff_" .. arg_6_0
-	local var_6_1 = pg.ConvertedBuff[var_6_0]
+	local buffIDString = "buff_" .. buffID
+	local levelDataTable = pg.ConvertedBuff[buffIDString]
 
-	return var_6_1[arg_6_1] or var_6_1[0]
+	return levelDataTable[buffLevel] or levelDataTable[0]
 end
 
 function var_0_3.ConvertBuffTemplate()
 	pg.ConvertedBuff = {}
 
 	setmetatable(pg.ConvertedBuff, {
-		__index = function(arg_8_0, arg_8_1)
-			local var_8_0 = arg_8_1
-			local var_8_1 = pg.buffCfg[arg_8_1]
+		__index = function(convertedBuffTable, buffIDString)
+			local buffIDKey = buffIDString
+			local rawBuffConfig = pg.buffCfg[buffIDString]
 
-			if var_8_1 then
-				local var_8_2 = {}
-				local var_8_3 = {}
+			if rawBuffConfig then
+				local levelDataTable = {}
+				local baseTemplate = {}
 
-				for iter_8_0, iter_8_1 in pairs(var_8_1) do
-					var_8_3[iter_8_0] = Clone(iter_8_1)
+				for key, value in pairs(rawBuffConfig) do
+					baseTemplate[key] = Clone(value)
 				end
 
-				var_8_2[0] = var_8_3
+				levelDataTable[0] = baseTemplate
 
-				for iter_8_2, iter_8_3 in ipairs(var_8_1) do
-					local var_8_4 = Clone(var_8_3)
-
-					for iter_8_4, iter_8_5 in pairs(iter_8_3) do
-						var_8_4[iter_8_4] = iter_8_5
+				for levelIndex, levelOverrideData in ipairs(rawBuffConfig) do
+					local levelFullData = Clone(baseTemplate)
+					-- 这里一般来说，overrideKey只有"effect_list"一个键
+					-- overrideValue则是这个等级的effect_list表
+					for overrideKey, overrideValue in pairs(levelOverrideData) do
+						levelFullData[overrideKey] = overrideValue
 					end
 
-					var_8_2[iter_8_2] = var_8_4
+					levelDataTable[levelIndex] = levelFullData
 				end
 
-				pg.ConvertedBuff[var_8_0] = var_8_2
+				pg.ConvertedBuff[buffIDKey] = levelDataTable
 
-				return var_8_2
+				return levelDataTable
 			end
 		end
 	})

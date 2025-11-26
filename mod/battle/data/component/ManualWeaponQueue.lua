@@ -1,179 +1,271 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.ManualWeaponQueue = class("ManualWeaponQueue")
-var_0_0.Battle.ManualWeaponQueue.__name = "ManualWeaponQueue"
+ys.Battle.ManualWeaponQueue = class("ManualWeaponQueue")
+ys.Battle.ManualWeaponQueue.__name = "ManualWeaponQueue"
+local ManualWeaponQueue = ys.Battle.ManualWeaponQueue
 
-local var_0_3 = var_0_0.Battle.ManualWeaponQueue
+--- @class ManualWeaponQueue
+--- @param maxCount number: 手动武器队列的最大容量。从下面来看，实际是指冷却队列的最大容量。
+--- @return nil
+--- ManualWeaponQueue类的构造函数。
+function ManualWeaponQueue.Ctor(self, maxCount)
+	self:init()
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0:init()
-
-	arg_1_0._maxCount = arg_1_1 or 1
+	self._maxCount = maxCount or 1
 end
 
-function var_0_3.init(arg_2_0)
-	var_0_0.EventListener.AttachEventListener(arg_2_0)
+--- @class ManualWeaponQueue
+--- @return nil
+--- ManualWeaponQueue的初始化函数。
+--- - weaponList: [BattleWeaponUnit, boolean]的table, 表示武器是否存在
+--- - overheatQueue: [number, BattleWeaponUnit]的table, 表示过热的武器队列，等待冷却
+--- - cooldownList: [number, BattleWeaponUnit]的table, 表示正在冷却中的武器队列
+function ManualWeaponQueue.init(self)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_2_0._weaponList = {}
-	arg_2_0._overheatQueue = {}
-	arg_2_0._cooldownList = {}
+	self._weaponList = {}
+	self._overheatQueue = {}
+	self._cooldownList = {}
 end
 
-function var_0_3.AppendWeapon(arg_3_0, arg_3_1)
-	arg_3_0._weaponList[arg_3_1] = true
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit: 要添加的武器
+--- @return nil
+--- 将武器添加到手动武器队列中。
+--- - 将weaponList对应weapon置true
+--- - 注册相关事件, 详见addWeaponEvent函数
+--- - 如果武器处于过热状态，则将其添加到过热队列的末尾
+function ManualWeaponQueue.AppendWeapon(self, weapon)
+	self._weaponList[weapon] = true
 
-	arg_3_0:addWeaponEvent(arg_3_1)
+	self:addWeaponEvent(weapon)
 
-	if arg_3_1:GetCurrentState() == arg_3_1.STATE_OVER_HEAT then
-		arg_3_0._overheatQueue[#arg_3_0._overheatQueue + 1] = arg_3_1
+	if weapon:GetCurrentState() == weapon.STATE_OVER_HEAT then
+		self._overheatQueue[#self._overheatQueue + 1] = weapon
 	end
 end
 
-function var_0_3.RemoveWeapon(arg_4_0, arg_4_1)
-	arg_4_0._weaponList[arg_4_1] = nil
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit: 要移除的武器
+--- @return nil
+--- 将武器从手动武器队列中移除。
+--- - 将weaponList对应weapon置false
+--- - 注销相关事件, 详见removeWeaponEvent函数
+--- - 从过热队列和冷却队列中移除该武器
+function ManualWeaponQueue.RemoveWeapon(self, weapon)
+	self._weaponList[weapon] = nil
 
-	arg_4_0:removeWeaponEvent(arg_4_1)
+	self:removeWeaponEvent(weapon)
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._overheatQueue) do
-		if iter_4_1 == arg_4_1 then
-			table.remove(arg_4_0._overheatQueue, iter_4_0)
+	for i, overheatWeapon in ipairs(self._overheatQueue) do
+		if overheatWeapon == weapon then
+			table.remove(self._overheatQueue, i)
 
 			break
 		end
 	end
 
-	for iter_4_2, iter_4_3 in ipairs(arg_4_0._cooldownList) do
-		if iter_4_3 == arg_4_1 then
-			table.remove(arg_4_0._cooldownList, iter_4_2)
+	for j, cooldownWeapon in ipairs(self._cooldownList) do
+		if cooldownWeapon == weapon then
+			table.remove(self._cooldownList, j)
 		end
 	end
 end
-
-function var_0_3.Containers(arg_5_0, arg_5_1)
-	return arg_5_0._weaponList[arg_5_1]
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit
+--- @return boolean
+--- 判断手动武器队列中是否包含指定武器。
+--- - 吐槽:函数名应为Contains才合理...
+function ManualWeaponQueue.Containers(self, weapon)
+	return self._weaponList[weapon]
 end
 
-function var_0_3.GetCoolDownList(arg_6_0)
-	return arg_6_0._cooldownList
+--- @class ManualWeaponQueue
+--- @return table<BattleWeaponUnit, boolean>
+--- 获取当前冷却中的武器列表。
+function ManualWeaponQueue.GetCoolDownList(self)
+	return self._cooldownList
 end
 
-function var_0_3.GetQueueHead(arg_7_0)
-	return arg_7_0._overheatQueue[#arg_7_0._overheatQueue] or arg_7_0._cooldownList[1]
+--- @class ManualWeaponQueue
+--- @return BattleWeaponUnit
+--- 获取当前队列头部的武器。
+--- - 返回过热队列的队尾武器
+--- - 如果过热队列为空，返回冷却队列的头部武器
+function ManualWeaponQueue.GetQueueHead(self)
+	return self._overheatQueue[#self._overheatQueue] or self._cooldownList[1]
 end
 
-function var_0_3.CheckWeaponInitalCD(arg_8_0)
-	for iter_8_0, iter_8_1 in pairs(arg_8_0._weaponList) do
-		if not iter_8_0:GetModifyInitialCD() then
-			arg_8_0._overheatQueue[#arg_8_0._overheatQueue + 1] = iter_8_0
+--- @class ManualWeaponQueue
+--- @return nil
+--- 处理初始冷却。
+--- - 将未修改初始冷却的武器添加到过热队列
+--- - 从过热队列中持续取出武器，放到冷却队列中开始冷却，直到冷却队列满或过热队列空
+--- - 对于剩下在过热队列中的武器，调用其OverHeat方法进入过热状态(STATE_OVER_HEAT)
+function ManualWeaponQueue.CheckWeaponInitalCD(self)
+	for weapon, _ in pairs(self._weaponList) do
+		if not weapon:GetModifyInitialCD() then
+			self._overheatQueue[#self._overheatQueue + 1] = weapon
 		end
 	end
 
-	local var_8_0 = #arg_8_0._cooldownList
+	local cooldownListLength = #self._cooldownList
 
-	while var_8_0 < arg_8_0._maxCount and #arg_8_0._overheatQueue > 0 do
-		local var_8_1 = table.remove(arg_8_0._overheatQueue, 1)
+	while cooldownListLength < self._maxCount and #self._overheatQueue > 0 do
+		local overheatWeapon = table.remove(self._overheatQueue, 1)
 
-		var_8_1:InitialCD()
+		overheatWeapon:InitialCD()
 
-		arg_8_0._cooldownList[#arg_8_0._cooldownList + 1] = var_8_1
-		var_8_0 = #arg_8_0._cooldownList
+		self._cooldownList[#self._cooldownList + 1] = overheatWeapon
+		cooldownListLength = #self._cooldownList
 	end
 
-	for iter_8_2, iter_8_3 in ipairs(arg_8_0._overheatQueue) do
-		iter_8_3:OverHeat()
-	end
-end
-
-function var_0_3.FlushWeaponReloadRequire(arg_9_0)
-	for iter_9_0, iter_9_1 in pairs(arg_9_0._weaponList) do
-		iter_9_0:FlushReloadRequire()
+	for _, weapon in ipairs(self._overheatQueue) do
+		weapon:OverHeat()
 	end
 end
 
-function var_0_3.Clear(arg_10_0)
-	for iter_10_0, iter_10_1 in pairs(arg_10_0._weaponList) do
-		arg_10_0:removeWeaponEvent(iter_10_0)
+--- @class ManualWeaponQueue
+--- @return nil
+--- 刷新所有武器的重新装填需求。
+function ManualWeaponQueue.FlushWeaponReloadRequire(self)
+	for weapon, _ in pairs(self._weaponList) do
+		weapon:FlushReloadRequire()
+	end
+end
+
+--- @class ManualWeaponQueue
+--- @return nil
+--- 清理手动武器队列
+--- - 注销所有武器事件
+--- - 置空weaponList和overheatQueue
+--- - 注销手动武器队列相关事件
+function ManualWeaponQueue.Clear(self)
+	for weapon, _ in pairs(self._weaponList) do
+		self:removeWeaponEvent(weapon)
 	end
 
-	arg_10_0._weaponList = nil
-	arg_10_0._overheatQueue = nil
+	self._weaponList = nil
+	self._overheatQueue = nil
 
-	var_0_0.EventListener.DetachEventListener(arg_10_0)
+	ys.EventListener.DetachEventListener(self)
 end
 
-function var_0_3.addWeaponEvent(arg_11_0, arg_11_1)
-	arg_11_1:RegisterEventListener(arg_11_0, var_0_2.MANUAL_WEAPON_FIRE, arg_11_0.onManualWeaponFire)
-	arg_11_1:RegisterEventListener(arg_11_0, var_0_2.MANUAL_WEAPON_READY, arg_11_0.onManualWeaponReady)
-	arg_11_1:RegisterEventListener(arg_11_0, var_0_2.MANUAL_WEAPON_INSTANT_READY, arg_11_0.onManualInstantReady)
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit
+--- @return nil
+--- 注册手动武器相关事件。
+--- - 手动武器的开火事件，并关联到回调函数onManualWeaponFire
+--- - 手动武器的准备完毕事件，并关联到回调函数onManualWeaponReady
+--- - 手动武器的立刻准备完毕事件，并关联到回调函数onManualInstantReady
+function ManualWeaponQueue.addWeaponEvent(self, weapon)
+	weapon:RegisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_FIRE, self.onManualWeaponFire)
+	weapon:RegisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_READY, self.onManualWeaponReady)
+	weapon:RegisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, self.onManualInstantReady)
 end
 
-function var_0_3.removeWeaponEvent(arg_12_0, arg_12_1)
-	arg_12_1:UnregisterEventListener(arg_12_0, var_0_2.MANUAL_WEAPON_READY)
-	arg_12_1:UnregisterEventListener(arg_12_0, var_0_2.MANUAL_WEAPON_FIRE)
-	arg_12_1:UnregisterEventListener(arg_12_0, var_0_2.MANUAL_WEAPON_INSTANT_READY)
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit
+--- @return nil
+--- 注销手动武器相关事件。
+--- - 手动武器的开火事件
+--- - 手动武器的准备完毕事件
+--- - 手动武器的立刻准备完毕事件
+function ManualWeaponQueue.removeWeaponEvent(self, weapon)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_READY)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_FIRE)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY)
 end
 
-function var_0_3.onManualWeaponFire(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1.Dispatcher
+--- @class ManualWeaponQueue
+--- @param event Event
+--- @return nil
+--- 手动武器的开火事件回调函数。
+--- - 该手动武器进入过热状态
+--- - 将该手动武器添加到过热队列的队尾
+--- - 重新计算冷却队列
+function ManualWeaponQueue.onManualWeaponFire(self, event)
+	local weapon = event.Dispatcher
 
-	var_13_0:OverHeat()
+	weapon:OverHeat()
 
-	arg_13_0._overheatQueue[#arg_13_0._overheatQueue + 1] = var_13_0
-
-	arg_13_0:fillCooldownList()
+	self._overheatQueue[#self._overheatQueue + 1] = weapon
+	self:fillCooldownList()
 end
 
-function var_0_3.onManualWeaponReady(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_1.Dispatcher
+--- @class ManualWeaponQueue
+--- @param event Event
+--- @return nil
+--- 手动武器的准备完毕事件回调函数。
+--- - 将该手动武器从冷却队列中移除
+--- - 重新计算冷却队列
+function ManualWeaponQueue.onManualWeaponReady(self, event)
+	local weapon = event.Dispatcher
 
-	arg_14_0:removeFromCDList(var_14_0)
-	arg_14_0:fillCooldownList()
+	self:removeFromCDList(weapon)
+	self:fillCooldownList()
 end
 
-function var_0_3.onManualInstantReady(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_1.Dispatcher
-	local var_15_1
+--- @class ManualWeaponQueue
+--- @param event Event
+--- @return nil
+--- 手动武器的立刻准备完毕事件回调函数。
+--- - 如果该武器在过热队列中，将该手动武器从过热队列中移除
+--- - 否则，将该手动武器从冷却队列中移除
+--- - 重新计算冷却队列
+function ManualWeaponQueue.onManualInstantReady(self, event)
+	local weapon = event.Dispatcher
+	local isOverheat
 
-	for iter_15_0, iter_15_1 in ipairs(arg_15_0._overheatQueue) do
-		if var_15_0 == iter_15_1 then
-			table.remove(arg_15_0._overheatQueue, iter_15_0)
+	for i, overheatWeapon in ipairs(self._overheatQueue) do
+		if weapon == overheatWeapon then
+			table.remove(self._overheatQueue, i)
 
-			var_15_1 = true
+			isOverheat = true
 
 			break
 		end
 	end
 
-	if not var_15_1 then
-		arg_15_0:removeFromCDList(var_15_0)
+	if not isOverheat then
+		self:removeFromCDList(weapon)
 	end
 
-	arg_15_0:fillCooldownList()
+	self:fillCooldownList()
 end
 
-function var_0_3.removeFromCDList(arg_16_0, arg_16_1)
-	for iter_16_0, iter_16_1 in ipairs(arg_16_0._cooldownList) do
-		if arg_16_1 == iter_16_1 then
-			table.remove(arg_16_0._cooldownList, iter_16_0)
+--- @class ManualWeaponQueue
+--- @param weapon BattleWeaponUnit
+--- @return nil
+--- 从冷却队列中移除指定的手动武器。
+function ManualWeaponQueue.removeFromCDList(self, weapon)
+	for i, cooldownWeapon in ipairs(self._cooldownList) do
+		if weapon == cooldownWeapon then
+			table.remove(self._cooldownList, i)
 
 			break
 		end
 	end
 end
 
-function var_0_3.fillCooldownList(arg_17_0)
-	local var_17_0 = #arg_17_0._cooldownList
+--- @class ManualWeaponQueue
+--- @return nil
+--- 重新计算冷却队列。
+--- - 将过热队列中的手动武器依次移入冷却队列，直到冷却队列达到最大容量
+--- - 让这些手动武器进入冷却状态，调用它们的EnterCoolDown方法
+function ManualWeaponQueue.fillCooldownList(self)
+	local cooldownListLength = #self._cooldownList
 
-	while var_17_0 < arg_17_0._maxCount and #arg_17_0._overheatQueue > 0 do
-		local var_17_1 = table.remove(arg_17_0._overheatQueue, 1)
+	while cooldownListLength < self._maxCount and #self._overheatQueue > 0 do
+		local overheatWeapon = table.remove(self._overheatQueue, 1)
 
-		var_17_1:EnterCoolDown()
+		overheatWeapon:EnterCoolDown()
 
-		arg_17_0._cooldownList[#arg_17_0._cooldownList + 1] = var_17_1
-		var_17_0 = #arg_17_0._cooldownList
+		self._cooldownList[#self._cooldownList + 1] = overheatWeapon
+		cooldownListLength = #self._cooldownList
 	end
 end

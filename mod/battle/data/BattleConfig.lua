@@ -1,6 +1,5 @@
 ys.Battle.BattleConfig = ys.Battle.BattleConfig or {}
 
--- var_0_0 -> BattleConfig
 local BattleConfig = ys.Battle.BattleConfig
 
 BattleConfig.COMBAT_DELAY_ACTIVE = 0.6

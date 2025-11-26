@@ -1,6 +1,5 @@
 ys.Battle.BattleConst = ys.Battle.BattleConst or {}
 
--- var_0_0 -> BattleConst
 local BattleConst = ys.Battle.BattleConst
 
 BattleConst.BATTLE_GLOBAL_BUFF = "battle_buff"
