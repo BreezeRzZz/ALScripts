@@ -433,7 +433,6 @@ function BattleCameraUtil.GetCharacterArrowBarPosition(self, referenceVector, ar
 			deltaX = arrowCenterPos.x - referenceVector.x
 		end
 
-		-- arrowY -> arrowY
 		local arrowY = deltaY / deltaX * self._arrowFieldHalfWidth_notch
 
 		if arrowY > arrowRightTopPos_notch.y then
