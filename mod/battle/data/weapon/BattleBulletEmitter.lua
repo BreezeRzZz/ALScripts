@@ -1,12 +1,5 @@
 ys = ys or {}
 
--- this is the artificial recovery of variable names of decompiled code.
--- var_0_0 -> ys
--- var_0_1 -> pg
--- var_0_2 -> BattleConst
--- var_0_3 -> BattleDataFunction
--- var_0_4 -> math
--- var_0_5 -> BattleBulletEmitter
 local ys = ys
 local pg = pg
 local BattleConst = ys.Battle.BattleConst
@@ -19,13 +12,12 @@ BattleBulletEmitter.__name = "BattleBulletEmitter"
 BattleBulletEmitter.STATE_ACTIVE = "ACTIVE"
 BattleBulletEmitter.STATE_STOP = "STOP"
 
--- for function args:
-	-- the first arg usually represents 'self' (the instance obj of the class)
-	-- other args can only be inferred from the logic of the function
--- arg_1_0 -> self
--- arg_1_1 -> spawnFunc
--- arg_1_2 -> stopFunc
--- arg_1_3 -> barrageID
+--- @class BattleBulletEmitter
+--- @param spawnFunc function: 用于生成子弹
+--- @param stopFunc function: 停止时的回调函数
+--- @param barrageID number: 弹幕ID，到barrage_template中获取数据
+--- @return nil
+--- BattleBulletEmitter的构造函数
 function BattleBulletEmitter.Ctor(self, spawnFunc, stopFunc, barrageID)
 	self._spawnFunc = spawnFunc
 	self._stopFunc = stopFunc
@@ -33,6 +25,8 @@ function BattleBulletEmitter.Ctor(self, spawnFunc, stopFunc, barrageID)
 	self._barrageTemp = BattleDataFunction.GetBarrageTmpDataFromID(barrageID)
 	self._offsetPriority = self._barrageTemp.offset_prioritise
 	self._isRandomAngle = self._barrageTemp.random_angle
+	--- @type table<Timer, function>
+	--- Timer结构见Timer.lua，对应的value是相应的iteration函数
 	self._timerList = {}
 
 	if self._barrageTemp.delta_delay ~= 0 then
@@ -45,13 +39,16 @@ function BattleBulletEmitter.Ctor(self, spawnFunc, stopFunc, barrageID)
 
 	self._primalMax = self._barrageTemp.primal_repeat + 1
 
-	-- arg_2_0 -> timerID
-	function self.timerCb(timerID)
-		self._timerList[timerID](self, timerID)
+	function self.timerCb(timer)
+		self._timerList[timer](self, timer)
 	end
 end
 
--- arg_3_0 -> self
+--- @return nil
+--- 初始化
+--- - 设置状态为ACTIVE
+--- - 重置计数器
+--- - 清除所有Timer
 function BattleBulletEmitter.Ready(self)
 	self._state = self.STATE_ACTIVE
 	self._seniorCounter = -1
@@ -59,9 +56,10 @@ function BattleBulletEmitter.Ready(self)
 	self:ClearAllTimer()
 end
 
--- arg_4_0 -> self
--- arg_4_1 -> target
--- arg_4_2 -> dir
+--- @param target BattleUnit
+--- @param dir number
+--- @return nil
+--- Fire函数
 function BattleBulletEmitter.Fire(self, target, dir)
 	self._target = target
 	self._dir = dir or BattleConst.UnitDir.RIGHT
@@ -73,7 +71,8 @@ function BattleBulletEmitter.Fire(self, target, dir)
 	self:SeniorIteration()
 end
 
--- arg_5_0 -> self
+--- @return nil
+--- 停止发射子弹
 function BattleBulletEmitter.Stop(self)
 	self._state = self.STATE_STOP
 	self._target = nil
@@ -82,7 +81,9 @@ function BattleBulletEmitter.Stop(self)
 	self._stopFunc(self)
 end
 
--- arg_6_0 -> self
+--- @return nil
+--- 被打断时，中断发射子弹
+--- 不会调用停止回调函数
 function BattleBulletEmitter.Interrupt(self)
 	self._state = self.STATE_STOP
 	self._target = nil
@@ -90,7 +91,8 @@ function BattleBulletEmitter.Interrupt(self)
 	self:ClearAllTimer()
 end
 
--- arg_7_0 -> self
+--- @return nil
+--- 销毁
 function BattleBulletEmitter.Destroy(self)
 	self._spawnFunc = nil
 	self._stopFunc = nil
@@ -101,32 +103,30 @@ function BattleBulletEmitter.Destroy(self)
 	end
 end
 
--- arg_8_0 -> self
+--- @return string
+--- 获取当前状态
 function BattleBulletEmitter.GetState(self)
 	return self._state
 end
 
--- arg_9_0 -> self
+--- @return nil
+--- 清除所有Timer
 function BattleBulletEmitter.ClearAllTimer(self)
-	-- iter_9_0 -> timerID
-	-- iter_9_1 -> callbackFunc(not used, here -> _)
-	for timerID, _ in pairs(self._timerList) do
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(timerID)
+	for timer, _ in pairs(self._timerList) do
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 	end
 
 	self._timerList = {}
 end
 
--- arg_10_0 -> self
+--- @return nil
+--- 生成子弹
 function BattleBulletEmitter.GenerateBullet(self)
-	-- var_10_0 -> barrageData
-	-- var_10_1 -> offsetX
 	local barrageData = self._convertedDirBarrage[self._primalCounter]
 	local offsetX = barrageData.OffsetX
 
 	self._delay = barrageData.Delay
 
-	-- var_10_2 -> angle
 	local angle
 
 	if self._isRandomAngle then
@@ -135,11 +135,10 @@ function BattleBulletEmitter.GenerateBullet(self)
 		angle = barrageData.Angle
 	end
 
-	-- var_10_3 -> bullet
+	--- @type BattleBulletUnit
 	local bullet = self._spawnFunc(offsetX, barrageData.OffsetZ, angle, self._offsetPriority, self._target, self._primalCounter)
 
 	if bullet then
-		-- var_10_4 -> transBarrage
 		local transBarrage = BattleDataFunction.GenerateTransBarrage(self._barrageID, self._dir, self._primalCounter)
 
 		bullet:SetBarrageTransformTempate(transBarrage)
@@ -148,17 +147,21 @@ function BattleBulletEmitter.GenerateBullet(self)
 	self:Interation()
 end
 
--- arg_11_0 -> self
--- arg_11_1 -> timerID
-function BattleBulletEmitter.DelaySeniorFunc(self, timerID)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(timerID)
+--- @param timer Timer
+--- @return nil
+--- Senior Iteration与之后的Primal Iteration之间的衔接
+--- - Senior Iteration内部有一个或多个Primal Iteration
+--- - 时间轴示例：Senior 1 -> (first_delay) -> Primal 1 -> (delay) -> Primal 2 -> (delay + delta_delay * 1) -> Primal 3 -> ... -> Senior 2 -> (senior_delay) -> ...
+function BattleBulletEmitter.DelaySeniorFunc(self, timer)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 
-	self._timerList[timerID] = nil
+	self._timerList[timer] = nil
 
 	self:PrimalIteration()
 end
 
--- arg_12_0 -> self
+--- @return nil
+--- 执行Senior Iteration
 function BattleBulletEmitter.SeniorIteration(self)
 	if self._state ~= self.STATE_ACTIVE then
 		return
@@ -171,7 +174,6 @@ function BattleBulletEmitter.SeniorIteration(self)
 	else
 		self:InitParam()
 
-		-- var_12_0 -> delay
 		local delay
 
 		if self._seniorCounter == 0 then
@@ -181,71 +183,78 @@ function BattleBulletEmitter.SeniorIteration(self)
 		end
 
 		if delay > 0 then
-			-- var_12_1 -> timerID
-			local timerID = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, delay, self.timerCb, true)
+			--- 这里是经过delay后，执行DelaySeniorFunc
+			local timer = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, delay, self.timerCb, true)
 
-			self._timerList[timerID] = self.DelaySeniorFunc
+			self._timerList[timer] = self.DelaySeniorFunc
 		else
 			self:PrimalIteration()
 		end
 	end
 end
 
--- arg_13_0 -> self
+--- @return nil
+--- 初始化delay和primalCounter
 function BattleBulletEmitter.InitParam(self)
 	self._delay = self._barrageTemp.delay
 	self._primalCounter = 1
 end
 
--- arg_14_0 -> self
+--- @return nil
+--- primalCounter的计数方法
 function BattleBulletEmitter.Interation(self)
 	self._primalCounter = self._primalCounter + 1
 end
 
--- arg_15_0 -> self
--- arg_15_1 -> timeScale
+--- @param timeScale number: Unity的时间缩放比例
+--- @return nil
+--- 设置Timer的时间缩放比例
 function BattleBulletEmitter.SetTimeScale(self, timeScale)
 	if self._timerList then
-		-- iter_15_0 -> timerID
-		-- iter_15_1 -> callbackFunc(not used, here -> _)
-		for timerID, _ in pairs(self._timerList) do
-			timerID:SetScale(timeScale)
+		for timer, _ in pairs(self._timerList) do
+			-- 这里只修改了这个Timer的Scale
+			timer:SetScale(timeScale)
 		end
 	end
 end
 
--- arg_16_0 -> self
--- arg_16_1 -> timerID
-function BattleBulletEmitter.DelayPrimalConst(self, timerID)
+--- @param timer Timer
+--- @return nil
+--- 每个Primal Iteration之间的延迟处理
+--- - 每个primal对应到一次实际生成子弹
+--- - 如果primalCounter满足计数，到下一个Senior Iteration
+function BattleBulletEmitter.DelayPrimalConst(self, timer)
 	self:GenerateBullet()
 
 	if self._primalCounter > self._primalMax then
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(timerID)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 
-		self._timerList[timerID] = nil
+		self._timerList[timer] = nil
 
 		self:SeniorIteration()
 	end
 end
 
--- arg_17_0 -> self
+--- @return nil
+--- 普通的Primal Iteration
+--- - 对应delay非0，且没有delta_delay的情况
 function BattleBulletEmitter._averagePrimalIteration(self)
 	if self._state ~= self.STATE_ACTIVE then
 		return
 	end
+	-- 每两次primal之间经过delay
+	local timer = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, self._delay, self.timerCb, true)
 
-	-- var_17_0 -> timerID
-	local timerID = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, self._delay, self.timerCb, true)
-
-	self._timerList[timerID] = self.DelayPrimalConst
+	self._timerList[timer] = self.DelayPrimalConst
 end
 
--- arg_18_0 -> self
--- arg_18_1 -> timerID
-function BattleBulletEmitter.DelayPrimalAdvance(self, timerID)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(timerID)
+--- @param timer Timer
+--- @return nil
+--- 每个Primal Iteration之间的延迟处理，用于delta_delay非0的情况
+function BattleBulletEmitter.DelayPrimalAdvance(self, timer)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 
-	self._timerList[timerID] = nil
+	self._timerList[timer] = nil
 
 	self:GenerateBullet()
 
@@ -256,7 +265,10 @@ function BattleBulletEmitter.DelayPrimalAdvance(self, timerID)
 	end
 end
 
--- arg_19_0 -> self
+--- @return nil
+--- 变延迟的Primal Iteration
+--- - 对应delta_delay非0的情况 
+--- - delta_delay的使用似乎是在BattleBulletDataFunction中
 function BattleBulletEmitter._advancePrimalIteration(self)
 	if self._state ~= self.STATE_ACTIVE then
 		return
@@ -271,14 +283,15 @@ function BattleBulletEmitter._advancePrimalIteration(self)
 			self:PrimalIteration()
 		end
 	else
-		-- var_19_0 -> timerID
-		local timerID = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, self._delay, self.timerCb, true)
+		local timer = pg.TimeMgr.GetInstance():AddBattleTimer("spawnBullet", -1, self._delay, self.timerCb, true)
 
-		self._timerList[timerID] = self.DelayPrimalAdvance
+		self._timerList[timer] = self.DelayPrimalAdvance
 	end
 end
 
--- arg_20_0 -> self
+--- @return nil
+--- 没有延迟的PrimalIteration
+--- 对应delay=0且delta_delay=0的情况
 function BattleBulletEmitter._nonDelayPrimalIteration(self)
 	if self._state ~= self.STATE_ACTIVE then
 		return

@@ -1,8 +1,5 @@
 ys = ys or {}
 
--- var_0_0 -> ys
--- var_0_1 -> BattleConfig
--- var_0_2 -> BattleVariable
 local ys = ys
 local BattleConfig = ys.Battle.BattleConfig
 local BattleVariable = ys.Battle.BattleVariable
@@ -10,7 +7,6 @@ local BattleVariable = ys.Battle.BattleVariable
 ys.Battle.BattlePlayerWeaponVO = class("BattlePlayerWeaponVO")
 ys.Battle.BattlePlayerWeaponVO.__name = "BattlePlayerWeaponVO"
 
--- var_0_3 -> BattlePlayerWeaponVO
 local BattlePlayerWeaponVO = ys.Battle.BattlePlayerWeaponVO
 
 function BattlePlayerWeaponVO.Ctor(arg_1_0, arg_1_1)
@@ -52,9 +48,13 @@ function BattlePlayerWeaponVO.Update(arg_3_0, arg_3_1)
 	end
 end
 
--- arg_4_0 -> self
--- arg_4_1 -> character
--- arg_4_2 -> afterFocusFunc
+--- @param character BattleUnit
+--- @param afterFocusFunc function
+--- @return nil
+--- 将镜头聚焦到指定角色的相关函数
+--- - FocusCharacter: 镜头聚焦
+--- - ZoomCamara: 镜头缩放
+--- - BulletTime: 子弹时间
 function BattlePlayerWeaponVO.PlayFocus(self, character, afterFocusFunc)
 	ys.Battle.BattleCameraUtil.GetInstance():FocusCharacter(character, BattleConfig.CAST_CAM_ZOOM_IN_DURATION)
 	ys.Battle.BattleCameraUtil.GetInstance():ZoomCamara(nil, BattleConfig.CAST_CAM_ZOOM_SIZE, BattleConfig.CAST_CAM_ZOOM_IN_DURATION, true)
@@ -66,7 +66,6 @@ function BattlePlayerWeaponVO.PlayFocus(self, character, afterFocusFunc)
 		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 	end
 
-	-- var_4_0 -> onFocusCompleteFunc
 	local function onFocusCompleteFunc()
 		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 

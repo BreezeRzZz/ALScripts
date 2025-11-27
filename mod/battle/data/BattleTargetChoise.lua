@@ -1,8 +1,4 @@
 ys = ys or {}
--- var_0_0 -> BattleConfig
--- var_0_1 -> BattleAttr
--- var_0_2 -> BattleFormulas
--- var_0_3 -> BattleTargetChoise
 local BattleConfig = ys.Battle.BattleConfig
 local BattleAttr = ys.Battle.BattleAttr
 local BattleFormulas = ys.Battle.BattleFormulas
@@ -684,31 +680,26 @@ function BattleTargetChoise.TargetRandom(arg_38_0, arg_38_1, arg_38_2)
 
 	return (Mathf.MultiRandom(var_38_0, var_38_1))
 end
--- arg_39_0 -> host
--- arg_39_1 -> areaArgs
--- arg_39_2 -> list
+
+--- @param host any
+--- @param areaArgs table<string, any>
+--- @param list table<number, BattleUnit>
+--- @return table<number, BattleUnit>
+--- 选出在指定区域内的单位
 function BattleTargetChoise.TargetInsideArea(host, areaArgs, list)
-	-- var_39_0 -> candidateList
-	-- var_39_1 -> dir
-	-- var_39_2 -> lineX
-	-- var_39_3 -> resultList
 	local candidateList = list or BattleTargetChoise.TargetAllHarm(host)
 	local dir = areaArgs.dir or ys.Battle.BattleConst.UnitDir.RIGHT
 	local lineX = areaArgs.lineX
 	local resultList = {}
 	-- 友方
 	if dir == ys.Battle.BattleConst.UnitDir.RIGHT then
-		-- iter_39_0 -> _
-		-- iter_39_1 -> candidate
-		for iter_39_0, candidate in ipairs(candidateList) do
+		for _, candidate in ipairs(candidateList) do
 			if lineX <= candidate:GetPosition().x then
 				table.insert(resultList, candidate)
 			end
 		end
 	-- 敌方
 	elseif dir == ys.Battle.BattleConst.UnitDir.LEFT then
-		-- iter_39_2 -> _
-		-- iter_39_3 -> candidate
 		for _, candidate in ipairs(candidateList) do
 			if lineX >= candidate:GetPosition().x then
 				table.insert(resultList, candidate)
@@ -1092,17 +1083,16 @@ function BattleTargetChoise.LegalTarget(arg_62_0)
 
 	return var_62_0
 end
--- arg_63_0 -> host
+
+--- @param host any
+--- @return table<number, BattleUnit>
+--- 获取合法的武器攻击目标列表
+--- - 找出IFF相反的目标，且不是Spectre
 function BattleTargetChoise.LegalWeaponTarget(host)
-	-- var_63_0 -> enemyList
-	-- var_63_1 -> 未使用，删除
-	-- var_63_2 -> unitList
-	-- var_63_3 -> hostIFF
 	local enemyList = {}
 	local unitList = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
 	local hostIFF = host:GetIFF()
-	-- iter_63_0 -> _
-	-- iter_63_1 -> unit
+
 	for _, unit in pairs(unitList) do
 		if unit:GetIFF() ~= hostIFF and not unit:IsSpectre() then
 			enemyList[#enemyList + 1] = unit

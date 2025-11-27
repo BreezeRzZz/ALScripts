@@ -2223,11 +2223,9 @@ function LevelStageView.SafeCheck(arg_164_0)
 	return false
 end
 
--- var_0_0 -> LevelStageView
--- arg_165_0 -> self
+--- @return nil
+--- 自律寻敌逻辑
 function LevelStageView.TryAutoFight(self)
-	-- var_165_0 -> chapterVO
-	-- var_165_1 -> map
 	local chapterVO = self.contextData.chapterVO
 	local map = self.contextData.map
 
@@ -2235,21 +2233,19 @@ function LevelStageView.TryAutoFight(self)
 		return
 	end
 	
-	-- var_165_2 -> enemyList(每个元素为cell)
-	-- var_165_3 -> bossCell
-	-- var_165_4 -> fleetOfDuty(参考ChapterFleet的结构定义)
-	
+	--- @type table<number, ChapterCell>
 	-- 获取场上的所有敌人列表(包括BOSS)
 	local enemyList = chapterVO:GetAllEnemies()
-	-- arg_166_0 -> enemyCell
 	-- underscore.detect: 找到第一个满足条件的元素并返回
 		-- 这里找到第一个是Boss的敌人Cell
+	--- @param enemyCell ChapterCell
 	local bossCell = _.detect(enemyList, function(enemyCell)
 		return ChapterConst.IsBossCell(enemyCell)
 	end)
 	-- tobool: support/helpers/LuaSupport.lua, 参数非空时返回true，否则返回false
 		-- 这里只要获取到了bossCell就返回true，否则返回false
 	-- 返回符合职责的舰队
+	--- @type ChapterFleet
 	local fleetOfDuty = chapterVO:GetFleetOfDuty(tobool(bossCell))
 
 	-- 如果需要的舰队不是当前舰队，自动切换
@@ -2269,13 +2265,11 @@ function LevelStageView.TryAutoFight(self)
 		return
 	end
 
-	-- var_165_5 -> candidateTable
+	--- @type table<number, table>
+	--- 每个table元素一般包含target、priority、path
 	local candidateTable
 
-	-- iter_165_0 -> _
-	-- iter_165_1 -> attachType
 	for _, attachType in ipairs(chapterVO:getConfig("box_auto_pick")) do
-		-- var_165_6 -> attachList
 		-- underscore.filter(items, func): 移除不符合条件(func(item)返回false)的item，返回符合条件的元素列表
 			-- switch: support/helpers/M02.lua, 这里根据attachType选择不同的函数进行调用
 			-- 总体来说，这里通过switch获取符合attachType的Cell列表，然后通过匿名函数过滤掉被禁用的Cell
@@ -2285,34 +2279,24 @@ function LevelStageView.TryAutoFight(self)
 				return chapterVO:findChapterCells(attachType)
 			end,
 			[ChapterConst.AttachSupply] = function()
-				-- var_168_0 -> fleetAmmo
-				-- var_168_1 -> restAmmo
 				local fleetAmmo, restAmmo = chapterVO:getFleetAmmo(fleetOfDuty)
 
 				if fleetAmmo - restAmmo < 3 then
 					return {}
 				else
-					-- arg_169_0 -> cell
 					-- 当舰队弹药使用3次及以上时，检查attachmentId大于0的补给点
 					return underscore.filter(chapterVO:findChapterCells(attachType), function(cell)
 						return cell.attachmentId > 0
 					end)
 				end
 			end
-			-- arg_170_0 -> cell
 			-- 对上面获取到的Cell列表进行过滤，移除flag为CellFlagDisabled的Cell
 		}), function(cell)
 			return cell.flag ~= ChapterConst.CellFlagDisabled
 		end)
 
-		-- iter_165_2 -> _
-		-- iter_165_3 -> cell
-
 		-- 下面，对上面的attachList进行路径查找，存入candidateTable
 		for _, cell in ipairs(attachList) do
-			-- var_165_7 -> priority
-			-- var_165_8 -> path
-
 			-- 查找当前舰队到cell的路径和priority值
 				-- priorty值实际更类似cost，例如空格子是1，障碍物是1000
 				-- findPath会基于prioirty做BFS
@@ -2333,7 +2317,6 @@ function LevelStageView.TryAutoFight(self)
 		-- 选择priority最小的一个
 		if candidateTable then
 			table.sort(candidateTable, CompareFuncs({
-				-- arg_171_0 -> candidate
 				function(candidate)
 					return candidate.priority
 				end
@@ -2345,16 +2328,11 @@ function LevelStageView.TryAutoFight(self)
 
 	if not candidateTable then
 		if bossCell then
-			-- var_165_9 -> priority
-			-- var_165_10 -> path
-			-- var_165_11 -> targetPath
-			-- var_165_12 -> targetCell
 			local priority, path = chapterVO:FindBossPath(fleetOfDuty.line, bossCell)
 			local targetPath = {}
 			local targetCell
 
-			-- iter_165_4 -> pathIndex,表示这条路上的cell序号
-			-- iter_165_5 -> pathCell
+			-- pathIndex表示这条路上的cell序号
 			for pathIndex, pathCell in ipairs(path) do
 				table.insert(targetPath, pathCell)
 
@@ -2378,12 +2356,10 @@ function LevelStageView.TryAutoFight(self)
 				}
 			}
 		else
-			-- arg_172_0 -> enemyCell
+			--- @param enemyCell ChapterCell
 			-- underscore.map(items, func): 对items中的每个元素调用func，并将结果组成一个新表返回
 				-- 这里对每个敌人Cell进行路径查找，存入candidateTable
 			candidateTable = underscore.map(enemyList, function(enemyCell)
-				-- var_172_0 -> priority
-				-- var_172_1 -> path
 				local priority, path = chapterVO:findPath(ChapterConst.SubjectPlayer, fleetOfDuty.line, enemyCell)
 
 				return {
@@ -2393,11 +2369,11 @@ function LevelStageView.TryAutoFight(self)
 				}
 			end)
 
-			-- var_165_13 -> getEnemyPreference
-			local function getEnemyPreference(arg_173_0)
-				-- var_173_0 -> target
-				-- var_173_1 -> expeditionData
-				local target = arg_173_0.target
+			--- @param candidate table<number, table>
+			--- @return number
+			--- 获取敌人的Preference
+			local function getEnemyPreference(candidate)
+				local target = candidate.target
 				local expeditionData = pg.expedition_data_template[target.attachmentId]
 
 				assert(expeditionData, "expedition_data_template not exist: " .. target.attachmentId)
@@ -2432,19 +2408,17 @@ function LevelStageView.TryAutoFight(self)
 			-- CompareFuncs: support/helpers/M02.lua, 多个比较函数组合成一个比较函数
 				-- 多个比较函数存在优先级，按顺序优先级从高到低
 			table.sort(candidateTable, CompareFuncs({
-				-- arg_174_0 -> candidate
-				-- 需要避开障碍物
+				-- 优先级1：需要避开障碍物
 				function(candidate)
 					return candidate.priority < PathFinding.PrioObstacle and 0 or 1
 				end,
-				-- arg_175_0 -> candidate
+				-- 优先级2：Preference
 				-- 因为是升序排列，所以这里取负数，表示preference高的排前面
 				-- 例如，-99 < -1，所以preference = 99的敌人排在前面
 				function(candidate)
 					return -getEnemyPreference(candidate)
 				end,
-				-- arg_176_0 -> candidate
-				-- priority更低的排前面
+				-- 优先级3：priority更低的排前面
 				function(candidate)
 					return candidate.priority
 				end
@@ -2453,8 +2427,7 @@ function LevelStageView.TryAutoFight(self)
 	end
 
 	if candidateTable and #candidateTable > 0 and candidateTable[1].priority < PathFinding.PrioObstacle then
-		-- var_165_14 -> target
-		-- 选择candidateTable中的第一个目标进行移动
+		-- 选择candidateTable中的第一个目标进行移动(即最高优先级)
 		local target = candidateTable[1].target
 
 		-- 发送移动指令，可进一步参考command/stage/ChapterOpCommand.lua中的实现

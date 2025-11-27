@@ -352,12 +352,12 @@ function ChapterLevelData.FilterCell(arg_25_0, arg_25_1)
 	return table.Checkout(arg_25_0.cells, arg_25_1)
 end
 
--- arg_26_0 -> self
--- arg_26_1 -> attachType
--- arg_26_2 -> attachId
+--- @param attachType number: 参考ChapterConst中的定义
+--- @param attachId number: 暂时不确定
+--- @return ChapterCell|nil
+--- 根据条件，找到满足条件的第一个cell
+--- - 这里是pairs遍历，因此顺序是不确定的
 function ChapterLevelData.findChapterCell(self, attachType, attachId)
-	-- iter_26_0 -> _
-	-- iter_26_1 -> cell
 	for _, cell in pairs(self.cells) do
 		if cell.attachment == attachType and (not attachId or cell.attachmentId == attachId) then
 			return cell
@@ -367,15 +367,14 @@ function ChapterLevelData.findChapterCell(self, attachType, attachId)
 	return nil
 end
 
--- arg_27_0 -> self
--- arg_27_1 -> attachType
--- arg_27_2 -> attachId
+--- @param attachType number
+--- @param attachId number
+--- @return table<number, ChapterCell>
+--- 根据条件，找到满足条件的所有cell
+--- - 这里是pairs遍历，因此顺序是不确定的
 function ChapterLevelData.findChapterCells(self, attachType, attachId)
-	-- var_27_0 -> resultCells
 	local resultCells = {}
 
-	-- iter_27_0 -> _
-	-- iter_27_1 -> cell
 	for _, cell in pairs(self.cells) do
 		if cell.attachment == attachType and (not attachId or cell.attachmentId == attachId) then
 			table.insert(resultCells, cell)
@@ -554,28 +553,28 @@ function ChapterLevelData.GetWillActiveAmbush(arg_48_0)
 	end)
 end
 
--- arg_50_0 -> self
--- arg_50_1 -> subject(分为玩家移动/敌人移动)
--- arg_50_2 -> startCell
--- arg_50_3 -> targetCell
+--- @param subject number: 分为玩家移动/敌人移动，参考ChapterConst中的定义
+--- @param startCell ChapterCell: 出发点
+--- @param targetCell ChapterCell: 目标点
+--- @return number, table<number, ChapterCell>: 分别返回最优路径的priority和路径本身(<index, cell>的形式)
+--- 根据OrientedPathFinding的寻路算法，找到最优路径
+--- - 这个函数主要负责一些初始化工作
 function ChapterLevelData.findPath(self, subject, startCell, targetCell)
-	-- var_50_0 -> pathCells
+	-- pathCells
 		-- 该表结构为二维数组，行列对应章节格子坐标，内容为表，包含priority和forbiddens字段
 		-- 该函数将表初始化
 	local pathCells = {}
 
-	-- iter_50_0 -> row
 	for row = 0, ChapterConst.MaxRow - 1 do
 		pathCells[row] = pathCells[row] or {}
 
-		-- iter_50_1 -> column
 		for column = 0, ChapterConst.MaxColumn - 1 do
 			pathCells[row][column] = pathCells[row][column] or {}
 
-			-- var_50_1 -> priority(初始化为PrioForbidden=1000000)
-			-- var_50_2 -> forbiddens(初始化为ForbiddenAll=15)
-			-- var_50_3 -> cellName(format: "chapter_cell_{row}_{column}")
-			-- var_50_4 -> cell(model/vo/ChapterCell.lua)
+			-- priority(初始化为PrioForbidden=1000000)
+			-- forbiddens(初始化为ForbiddenAll=15)
+			-- cellName(format: "chapter_cell_{row}_{column}")
+			-- cell(model/vo/ChapterCell.lua)
 			local priority = PathFinding.PrioForbidden
 			local forbiddens = ChapterConst.ForbiddenAll
 			local cellName = ChapterCell.Line2Name(row, column)
@@ -583,7 +582,7 @@ function ChapterLevelData.findPath(self, subject, startCell, targetCell)
 
 			if cell and cell:IsWalkable() then
 				priority = PathFinding.PrioNormal
-
+				-- 敌人也会被当作obstacle
 				if self:considerAsObstacle(subject, cell.row, cell.column) then
 					priority = PathFinding.PrioObstacle
 				end
@@ -601,17 +600,13 @@ function ChapterLevelData.findPath(self, subject, startCell, targetCell)
 	end
 
 	if subject == ChapterConst.SubjectPlayer then
-		-- var_50_5 -> costalGunArea
 		local costalGunArea = self:getCoastalGunArea()
 
-		-- iter_50_2 -> _
-		-- iter_50_3 -> coastalGunCell
 		for _, coastalGunCell in ipairs(costalGunArea) do
 			pathCells[coastalGunCell.row][coastalGunCell.column].priority = math.max(pathCells[coastalGunCell.row][coastalGunCell.column].priority, PathFinding.PrioObstacle)
 		end
 	end
 
-	-- var_50_6 -> pathTargetCell
 	local pathTargetCell = pathCells[targetCell.row] and pathCells[targetCell.row][targetCell.column]
 
 	if pathTargetCell then
@@ -626,29 +621,27 @@ function ChapterLevelData.findPath(self, subject, startCell, targetCell)
 	return self.pathFinder:Find(startCell, targetCell)
 end
 
--- arg_51_0 -> self
--- arg_51_1 -> startCell
--- arg_51_2 -> targetCell
+--- @param startCell ChapterCell: 起始点
+--- @param targetCell ChapterCell: 目标点
+--- @return number, table<number, ChapterCell>: 分别返回最优路径的priority和路径本身(<index, cell>的形式)
+--- 根据OrientedWeightPathFinding的寻路算法，找到最优路径
+--- - 这个函数主要负责一些初始化工作
 function ChapterLevelData.FindBossPath(self, startCell, targetCell)
-	-- var_51_0 -> subject(固定为SubjectPlayer=1)
-	-- var_51_1 -> pathCells
-		-- 用途参照findPath函数中的pathCells
+	-- subject(固定为SubjectPlayer=1)
+	-- pathCells的用途参照findPath函数中的pathCells
 	local subject = ChapterConst.SubjectPlayer
 	local pathCells = {}
 
-	-- iter_51_0 -> row
 	for row = 0, ChapterConst.MaxRow - 1 do
 		pathCells[row] = pathCells[row] or {}
 
-		-- iter_51_1 -> column
 		for column = 0, ChapterConst.MaxColumn - 1 do
 			pathCells[row][column] = pathCells[row][column] or {}
 
-			-- var_51_2 -> priority(初始化为PrioForbidden=1000000)
-			-- var_51_3 -> forbiddens(初始化为ForbiddenAll=15)
-			-- var_51_4 -> isEnemy(普通敌人为true，Boss敌人为false，默认nil)
-			-- var_51_5 -> cellName(format: "chapter_cell_{row}_{column}")
-			-- var_51_6 -> cell
+			-- priority(初始化为PrioForbidden=1000000)
+			-- forbiddens(初始化为ForbiddenAll=15)
+			-- isEnemy(普通敌人为true，Boss敌人为false，默认nil)
+			-- cellName(format: "chapter_cell_{row}_{column}")
 			local priority = PathFinding.PrioForbidden
 			local forbiddens = ChapterConst.ForbiddenAll
 			local isEnemy
@@ -662,10 +655,9 @@ function ChapterLevelData.FindBossPath(self, startCell, targetCell)
 					priority = PathFinding.PrioObstacle
 				end
 
-				-- var_51_7 -> enemyCell
-					-- 如果这个cell有敌人，priority = 1，isEnemy = true(普通敌人)/false(Boss敌人)
+				-- enemyCell(如果这个cell有敌人，priority = 1，isEnemy = true(普通敌人)/false(Boss敌人))
 				local enemyCell = self:GetEnemy(cell.row, cell.column)
-
+				-- findBossPath时，敌人格子的priority不是1000而是1
 				if enemyCell then
 					priority = PathFinding.PrioNormal
 					isEnemy = not ChapterConst.IsBossCell(enemyCell)
@@ -680,16 +672,12 @@ function ChapterLevelData.FindBossPath(self, startCell, targetCell)
 		end
 	end
 
-	-- var_51_8 -> coastalGunArea
 	local coastalGunArea = self:getCoastalGunArea()
 
-	-- iter_51_2 -> _
-	-- iter_51_3 -> coastalGunCell
 	for _, coastalGunCell in ipairs(coastalGunArea) do
 		pathCells[coastalGunCell.row][coastalGunCell.column].priority = math.max(pathCells[coastalGunCell.row][coastalGunCell.column].priority, PathFinding.PrioObstacle)
 	end
 
-	-- var_51_9 -> pathTargetCell
 	local pathTargetCell = pathCells[targetCell.row] and pathCells[targetCell.row][targetCell.column]
 
 	if pathTargetCell then
@@ -699,16 +687,13 @@ function ChapterLevelData.FindBossPath(self, startCell, targetCell)
 	return OrientedWeightPathFinding.StaticFind(pathCells, ChapterConst.MaxRow, ChapterConst.MaxColumn, startCell, targetCell)
 end
 
--- arg_52_0 -> self
+--- @return number
+--- 计算敌人的波数
 function ChapterLevelData.getWaveCount(self)
-	-- var_52_0 -> enemyCount
 	local enemyCount = 0
 
-	-- iter_52_0 -> _
-	-- iter_52_1 -> cell
 	for _, cell in pairs(self.cells) do
 		-- underscore.detect(items, func): 找到第一个满足条件的元素并返回该元素，否则返回nil
-		-- arg_53_0 -> grid
 		if cell.attachment == ChapterConst.AttachEnemy and underscore.detect(self:getConfig("grids"), function(grid)
 			if grid[1] == cell.row and grid[2] == cell.column and (grid[4] == ChapterConst.AttachElite or grid[4] == ChapterConst.AttachEnemy) then
 				return true
@@ -720,21 +705,15 @@ function ChapterLevelData.getWaveCount(self)
 		end
 	end
 
-	-- var_52_1 -> totalEnemyCount
-	-- var_52_2 -> groupRefreshConfig
 	local totalEnemyCount = 0
 	local groupRefreshConfig = pg.chapter_group_refresh[self.id]
 
 	if groupRefreshConfig then
-		-- var_52_3 -> waveIndex
 		local waveIndex = 1
 
 		repeat
-			-- var_52_4 -> waveHasEnemies
 			local waveHasEnemies = false
 
-			-- iter_52_2 -> _
-			-- iter_52_3 -> refreshConfig
 			for _, refreshConfig in ipairs(groupRefreshConfig.enemy_refresh) do
 				totalEnemyCount = totalEnemyCount + (refreshConfig[waveIndex] or 0)
 				waveHasEnemies = waveHasEnemies or tobool(refreshConfig[waveIndex])
@@ -747,13 +726,9 @@ function ChapterLevelData.getWaveCount(self)
 			waveIndex = waveIndex + 1
 		until not waveHasEnemies
 	else
-		-- var_52_5 -> enemyRefreshConfig
-		-- var_52_6  -> eliteRefreshConfig
 		local enemyRefreshConfig = self:getConfig("enemy_refresh")
 		local eliteRefreshConfig = self:getConfig("elite_refresh")
 
-		-- iter_52_4 -> waveIndex
-		-- iter_52_5 -> refreshCount
 		for waveIndex, refreshCount in pairs(enemyRefreshConfig) do
 			totalEnemyCount = totalEnemyCount + refreshCount
 
@@ -1360,12 +1335,13 @@ function ChapterLevelData.RemoveChampion(arg_100_0, arg_100_1)
 	end
 end
 
--- arg_101_0 -> self
--- arg_101_1 -> subject
--- arg_101_2 -> row
--- arg_101_3 -> column
+--- @param subject number
+--- @param row number
+--- @param column number
+--- @return boolean
+--- 判定某个格子是否为障碍物
+--- - 帮助决定格子的priority
 function ChapterLevelData.considerAsObstacle(self, subject, row, column)
-	-- var_101_0 -> cell
 	local cell = self:getChapterCell(row, column)
 
 	if not cell or not cell:IsWalkable() then
@@ -1383,11 +1359,11 @@ function ChapterLevelData.considerAsObstacle(self, subject, row, column)
 			end
 
 			if cell.attachment == ChapterConst.AttachBox then
-				local var_101_1 = pg.box_data_template[cell.attachmentId]
+				local boxTemplate = pg.box_data_template[cell.attachmentId]
 
-				assert(var_101_1, "box_data_template not exist: " .. cell.attachmentId)
+				assert(boxTemplate, "box_data_template not exist: " .. cell.attachmentId)
 
-				if var_101_1.type == ChapterConst.BoxTorpedo then
+				if boxTemplate.type == ChapterConst.BoxTorpedo then
 					return true
 				end
 			end
@@ -1407,12 +1383,12 @@ function ChapterLevelData.considerAsObstacle(self, subject, row, column)
 	return false
 end
 
--- arg_102_0 -> self
--- arg_102_1 -> subject
--- arg_102_2 -> row
--- arg_102_3 -> column
+--- @param subject number
+--- @param row number
+--- @param column number
+--- @return boolean
+--- 判定某个格子能不能停留
 function ChapterLevelData.considerAsStayPoint(self, subject, row, column)
-	-- var_102_0 -> cell
 	local cell = self:getChapterCell(row, column)
 
 	if not cell or not cell:IsWalkable() then
@@ -1431,7 +1407,7 @@ function ChapterLevelData.considerAsStayPoint(self, subject, row, column)
 		if cell.attachment == ChapterConst.AttachLandbase and pg.land_based_template[cell.attachmentId] and pg.land_based_template[cell.attachmentId].type == ChapterConst.LBHarbor then
 			return false
 		end
-
+		-- 如果格子上有舰队也不能停留
 		if self:existFleet(FleetType.Normal, row, column) then
 			return false
 		end
@@ -1448,7 +1424,6 @@ function ChapterLevelData.considerAsStayPoint(self, subject, row, column)
 			return false
 		end
 
-		-- var_102_1 -> champion
 		local champion = self:getChampion(row, column)
 
 		if champion and champion.flag ~= ChapterConst.CellFlagDisabled then
@@ -2355,20 +2330,17 @@ function ChapterLevelData.CheckChapterWillWin(arg_166_0)
 	end
 end
 
--- arg_167_0 -> self
--- arg_167_1 -> fleet(Fleet类)
--- arg_167_2 -> skillType
+--- @param fleet ChapterFleet
+--- @param skillType number
+--- @return any, table<number, FleetSkill>
+--- 触发舰队的场外技能
 function ChapterLevelData.triggerSkill(self, fleet, skillType)
-	-- var_167_0 -> skills
-		-- underscore.filter: 返回通过函数测试的所有元素组成的表
-	-- arg_168_0 -> skill(FleetSkill类)
+	-- underscore.filter: 返回通过函数测试的所有元素组成的表
+	--- @param skill FleetSkill
 	local skills = _.filter(fleet:findSkills(skillType), function(skill)
-		-- var_168_0 -> triggers
 		local triggers = skill:GetTriggers()
 
-		-- underscore.any: 如果有任意一个元素通过函数测试则返回true，否则返回false\
-		-- arg_169_0 -> trigger
-		-- arg_170_0 -> trigger
+		-- underscore.any: 如果有任意一个元素通过函数测试则返回true，否则返回false
 		return _.any(triggers, function(trigger)
 			return trigger[1] == FleetSkill.TriggerInSubTeam and trigger[2] == 1
 		end) == (fleet:getFleetType() == FleetType.Submarine) and _.all(skill:GetTriggers(), function(trigger)
@@ -2377,12 +2349,13 @@ function ChapterLevelData.triggerSkill(self, fleet, skillType)
 	end)
 
 	-- underscore.reduce(items, memo, func): 对items中的每个元素调用func函数，并将结果累积到memo中返回
-	-- arg_171_0 -> memo
-	-- arg_171_1 -> skill
+	--- @param memo any
+	--- @param skill FleetSkill
+	--- @return any
 	return _.reduce(skills, nil, function(memo, skill)
-		-- var_171_0 -> skillType
-		-- var_171_1 -> skillArgs
+		--- @type string
 		local skillType = skill:GetType()
+		--- @type table<number, any>
 		local skillArgs = skill:GetArgs()
 
 		if skillType == FleetSkill.TypeMoveSpeed or skillType == FleetSkill.TypeHuntingLv or skillType == FleetSkill.TypeTorpedoPowerUp then
@@ -2405,56 +2378,47 @@ function ChapterLevelData.triggerSkill(self, fleet, skillType)
 	end), skills
 end
 
--- arg_172_0 -> self
--- arg_172_1 -> fleet(Fleet类)
--- arg_172_2 -> skill(FleetSkill类)
--- arg_172_3 -> trigger
+--- @param fleet ChapterFleet
+--- @param skill FleetSkill
+--- @param trigger table<number, any>: 即触发条件
+--- @return boolean
+--- 检查场外技能的触发条件是否满足
 function ChapterLevelData.triggerCheck(self, fleet, skill, trigger)
-	-- var_172_0 -> triggerType
 	local triggerType = trigger[1]
 
 	if triggerType == FleetSkill.TriggerDDHead then
-		-- var_172_1 -> vanguardShips
 		local vanguardShips = fleet:getShipsByTeam(TeamType.Vanguard, false)
 
 		return #vanguardShips > 0 and ShipType.IsTypeQuZhu(vanguardShips[1]:getShipType())
 	elseif triggerType == FleetSkill.TriggerVanCount then
-		-- var_172_2 -> vanguardShips
 		local vanguardShips = fleet:getShipsByTeam(TeamType.Vanguard, false)
 
 		return #vanguardShips >= trigger[2] and #vanguardShips <= trigger[3]
 	elseif triggerType == FleetSkill.TriggerShipCount then
-		-- var_172_3 -> ships
-		-- arg_173_0 -> ship
 		local ships = _.filter(fleet:getShips(false), function(ship)
 			return table.contains(trigger[2], ship:getShipType())
 		end)
 
 		return #ships >= trigger[3] and #ships <= trigger[4]
 	elseif triggerType == FleetSkill.TriggerAroundEnemy then
-		-- var_172_4 -> fleetCell
 		local cells = {
 			row = fleet.line.row,
 			column = fleet.line.column
 		}
 
-		-- arg_174_0 -> cell
 		return _.any(_.values(self.cells), function(cell)
-			-- var_174_0 -> enemy
 			local enemy = self:GetEnemy(cell.row, cell.column)
 
 			if not enemy then
 				return
 			end
 
-			-- var_174_1 -> enemyAttachment
 			local enemyAttachment = pg.expedition_data_template[enemy.attachmentId]
 
 			if not enemyAttachment then
 				return
 			end
 
-			-- var_174_2 -> enemyType
 			local enemyType = enemyAttachment.type
 
 			return ManhattonDist(cells, {
@@ -2463,24 +2427,19 @@ function ChapterLevelData.triggerCheck(self, fleet, skill, trigger)
 			}) <= trigger[2] and (type(trigger[3]) == "number" and trigger[3] == enemyType or type(trigger[3]) == "table" and table.contains(trigger[3], enemyType))
 		end)
 	elseif triggerType == FleetSkill.TriggerNekoPos then
-		-- var_172_5 -> skill
 		local skill = fleet:findCommanderBySkillId(skill.id)
 
-		-- iter_172_0 -> pos
-		-- iter_172_1 -> commander
 		for pos, commander in pairs(fleet:getCommanders()) do
 			if skill.id == commander.id and pos == trigger[2] then
 				return true
 			end
 		end
 	elseif triggerType == FleetSkill.TriggerAroundLand then
-		-- var_172_6 -> fleetCell
 		local fleetCell = {
 			row = fleet.line.row,
 			column = fleet.line.column
 		}
 
-		-- arg_175_0 -> cell
 		return _.any(_.values(self.cells), function(cell)
 			return not cell:IsWalkable() and ManhattonDist(fleetCell, {
 				row = cell.row,
@@ -2488,13 +2447,11 @@ function ChapterLevelData.triggerCheck(self, fleet, skill, trigger)
 			}) <= trigger[2]
 		end)
 	elseif triggerType == FleetSkill.TriggerAroundCombatAlly then
-		-- var_172_7 -> fleetCell
 		local fleetCell = {
 			row = fleet.line.row,
 			column = fleet.line.column
 		}
 
-		-- arg_176_0 -> ally
 		return _.any(self.fleets, function(ally)
 			return fleet.id ~= ally.id and ally:getFleetType() == FleetType.Normal and self:existEnemy(ChapterConst.SubjectPlayer, ally.line.row, ally.line.column) and ManhattonDist(fleetCell, {
 				row = ally.line.row,
@@ -2814,24 +2771,19 @@ function ChapterLevelData.GetOperationBuffList(arg_198_0)
 	return arg_198_0.operationBuffList
 end
 
--- var_0_0 -> ChapterLevelData
--- arg_199_0 -> self
--- arg_199_1 -> includeDisabled
+--- @param includeDisabled boolean
+--- @return table<number, ChapterCell>: 敌人列表
+--- 获取场上的所有敌人的列表
 function ChapterLevelData.GetAllEnemies(self, includeDisabled)
-	-- var_199_0 -> enemyList
 	local enemyList = {}
 
-	-- iter_199_0 -> _
-	-- iter_199_1 -> cell
-		-- self.cells的key为cellName, value为ChapterCell对象
+	-- cells的key为cellName, value为ChapterCell对象
 	for _, cell in pairs(self.cells) do
 		if ChapterConst.IsEnemyAttach(cell.attachment) and (includeDisabled or cell.flag ~= ChapterConst.CellFlagDisabled) then
 			table.insert(enemyList, cell)
 		end
 	end
 
-	-- iter_199_2 -> _
-	-- iter_199_3 -> champion
 	for _, champion in pairs(self.champions) do
 		if includeDisabled or champion.flag ~= ChapterConst.CellFlagDisabled then
 			table.insert(enemyList, champion)
@@ -2841,17 +2793,14 @@ function ChapterLevelData.GetAllEnemies(self, includeDisabled)
 	return enemyList
 end
 
--- arg_200_0 -> self
--- arg_200_1 -> hasBoss
+--- @param hasBoss boolean: 场上是否出现了Boss
+--- @return ChapterFleet
+--- 根据设置，返回符合职责的舰队
 function ChapterLevelData.GetFleetOfDuty(self, hasBoss)
-	-- var_200_0 -> fleetOfDuty
 	local fleetOfDuty
 
-	-- iter_200_0 -> _
-	-- iter_200_1 -> fleet
 	for _, fleet in ipairs(self.fleets) do
 		if fleet:isValid() and fleet:getFleetType() == FleetType.Normal then
-			-- var_200_1 -> fleetDuty
 			local fleetDuty = self.duties[fleet.id] or 0
 
 			if fleetDuty == ChapterFleet.DUTY_KILLALL or fleetDuty == ChapterFleet.DUTY_KILLBOSS and tobool(hasBoss) or fleetDuty == ChapterFleet.DUTY_CLEANPATH and not tobool(hasBoss) then

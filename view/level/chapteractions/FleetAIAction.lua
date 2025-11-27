@@ -1,4 +1,3 @@
--- var_0_0 -> FleetAIAction
 local FleetAIAction = class("FleetAIAction")
 
 function FleetAIAction.Ctor(arg_1_0, arg_1_1)
@@ -102,19 +101,17 @@ function FleetAIAction.applyToFleet(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
 	return true, var_5_0
 end
 
--- arg_9_0 -> self
--- arg_9_1 -> chapterVO(ChapterLevelData类)
--- arg_9_2 -> levelMediator(LevelMediator2类)
--- arg_9_3 -> callback
+--- @param ChapterVO ChapterLevelData
+--- @param LevelMediator LevelMediator2
+--- @param callback function
+--- @return nil
+--- 播放对应的AI动画
 function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
-	-- var_9_0 -> fleetIndex
 	local fleetIndex = chapterVO:getFleetIndex(FleetType.Normal, self.line.row, self.line.column)
 
 	assert(fleetIndex)
 
 	if chapterVO:isPlayingWithBombEnemy() then
-		-- var_9_1 -> fleet
-		-- var_9_2 -> mapShip
 		local fleet = chapterVO.fleets[fleetIndex]
 		local mapShip = chapterVO:getMapShip(fleet)
 
@@ -122,10 +119,7 @@ function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
 	elseif self.actType == ChapterConst.ActType_Poison then
 		callback()
 	elseif self.target then
-		-- var_9_3 -> fleet
 		local fleet = chapterVO.fleets[fleetIndex]
-		-- var_9_4 -> targetCell
-		-- arg_10_0 -> cellUpdate
 		local targetCell = _.detect(self.cellUpdates, function(cellUpdate)
 			return cellUpdate.row == self.target.row and cellUpdate.column == self.target.column
 		end)
@@ -134,7 +128,6 @@ function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
 
 		if targetCell.attachment == ChapterConst.AttachLandbase then
 			if pg.land_based_template[targetCell.attachmentId].type == ChapterConst.LBCoastalGun then
-				-- var_9_5 -> mapShip
 				local mapShip = chapterVO:getMapShip(fleet)
 
 				levelMediator.viewComponent:doPlayStrikeAnim(mapShip, mapShip:GetMapStrikeAnim(), callback)
@@ -145,16 +138,12 @@ function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
 			return
 		end
 
-		-- var_9_6 -> damagePercent
-		-- var_9_7 -> skillId
-		-- var_9_8 -> skill
 		local damagePercent = "-" .. targetCell.data / 100 .. "%"
 		local skillId = self.commanderSkillEffectId
 		local skill = fleet:getSkill(skillId)
 
 		assert(skill, "can not find skill: " .. skillId)
 
-		-- var_9_9 -> commander
 		local commander = fleet:findCommanderBySkillId(skillId)
 
 		assert(commander, "command can not find by skill id: " .. skillId)
@@ -164,8 +153,6 @@ function FleetAIAction.PlayAIAction(self, chapterVO, levelMediator, callback)
 
 				return
 			elseif skill:GetType() == FleetSkill.TypeAttack then
-				-- var_11_0 -> skillArgs
-				-- var_11_1 -> strikeUI
 				local skillArgs = skill:GetArgs()
 				local strikeUI
 

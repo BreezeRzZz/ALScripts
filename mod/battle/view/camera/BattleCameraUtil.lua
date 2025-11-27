@@ -1,10 +1,5 @@
 ys = ys or {}
 
--- var_0_0 -> ys
--- var_0_1-> BattleVariable
--- var_0_2 -> BattleEvent
--- var_0_3 -> BattleConfig
--- var_0_4 -> BattleCameraUtil
 local ys = ys
 local BattleVariable = ys.Battle.BattleVariable
 local BattleEvent = ys.Battle.BattleEvent
@@ -17,7 +12,8 @@ BattleCameraUtil.FOCUS_PILOT = "FOCUS_PILOT"
 BattleCameraUtil.TWEEN_TO_CHARACTER = "TWEEN_TO_CHARACTER"
 BattleCameraUtil.FOLLOW_GESTURE = "FOLLOW_GESTURE"
 
--- arg_1_0 -> self
+--- @return nil
+--- 构造函数
 function BattleCameraUtil.Ctor(self)
 	ys.EventDispatcher.AttachEventDispatcher(self)
 
@@ -27,12 +23,14 @@ function BattleCameraUtil.Ctor(self)
 	self._cameraFixMgr = pg.CameraFixMgr.GetInstance()
 end
 
--- arg_2_0 -> self
+--- @return nil
+--- 激活主摄像机
 function BattleCameraUtil.ActiveMainCamera(self)
 	CameraMgr.instance:SetActiveMainCamera(self)
 end
 
--- arg_3_0 -> self
+--- @return nil
+--- 初始化函数
 function BattleCameraUtil.Initialize(self)
 	self._cameraTF.localPosition = BattleConfig.CAMERA_INIT_POS
 
@@ -53,7 +51,8 @@ function BattleCameraUtil.Initialize(self)
 	self._uiMediator = ys.Battle.BattleState.GetInstance():GetMediatorByName(ys.Battle.BattleUIMediator.__name)
 end
 
--- arg_4_0 -> self
+--- @return nil
+--- 清理函数
 function BattleCameraUtil.Clear(self)
 	self.ActiveMainCamera(false)
 	LeanTween.cancel(go(self._camera))
@@ -72,18 +71,14 @@ function BattleCameraUtil.Clear(self)
 	self._uiMediator = nil
 end
 
--- arg_5_0 -> self
--- arg_5_1 -> upperBound
--- arg_5_2 -> lowerBound
--- arg_5_3 -> leftBound
--- arg_5_4 -> rightBound
+--- @param upperBound number
+--- @param lowerBound number
+--- @param leftBound number
+--- @param rightBound number
+--- @return number, number, number, number
+--- 根据地图边界设置摄像机边界
 function BattleCameraUtil.SetMapData(self, upperBound, lowerBound, leftBound, rightBound)
-	-- var_5_0 -> cameraTop
-	-- var_5_1 -> cameraBottom
-	-- var_5_2 -> cameraLeft
-	-- var_5_3 -> cameraRight
 	local cameraTop, cameraBottom, cameraLeft, cameraRight = self._boundFix:SetMapData(upperBound, lowerBound, leftBound, rightBound)
-	-- var_5_4 -> actualWidth
 	local actualWidth = pg.CameraFixMgr.GetInstance().actualWidth
 
 	-- CAMERA_GOLDEN_RATE = 0.618
@@ -92,8 +87,9 @@ function BattleCameraUtil.SetMapData(self, upperBound, lowerBound, leftBound, ri
 	return cameraTop, cameraBottom, cameraLeft, cameraRight
 end
 
--- arg_6_0 -> self
--- arg_6_1 -> fleetVO
+--- @param fleetVO BattleFleetVO
+--- @return nil
+--- 设置焦点舰队
 function BattleCameraUtil.SetFocusFleet(self, fleetVO)
 	self._followPilot:SetFleetVO(fleetVO)
 
@@ -102,14 +98,16 @@ function BattleCameraUtil.SetFocusFleet(self, fleetVO)
 	BattleVariable.UpdateCameraPositionArgs()
 end
 
--- arg_7_0 -> self
--- arg_7_1 -> slider
+--- @param slider BattleCameraSlider
+--- @return nil
+--- 设置摄像机滑块
 function BattleCameraUtil.SetCameraSilder(self, slider)
 	self._gesture:SetGestureComponent(slider)
 end
 
--- arg_8_0 -> self
--- arg_8_1 -> phase
+--- @param phase string
+--- @return table|nil
+--- 切换摄像机位置模式
 function BattleCameraUtil.SwitchCameraPos(self, phase)
 	if phase == "TWEEN_TO_CHARACTER" then
 		function self._currentCameraPos()
@@ -126,17 +124,16 @@ function BattleCameraUtil.SwitchCameraPos(self, phase)
 	end
 end
 
--- arg_12_0 -> self
--- arg_12_1 -> screenPoint
+--- @param screenPoint Vector3
+--- @return Vector3
+--- 将屏幕坐标转换为世界坐标
 function BattleCameraUtil.GetS2WPoint(self, screenPoint)
 	return self._camera:ScreenToWorldPoint(screenPoint)
 end
 
--- arg_13_0 -> self
+--- @return nil
+--- 设置箭头指示点
 function BattleCameraUtil.setArrowPoint(self)
-	-- var_13_0 -> offset
-	-- var_13_1 -> leftBottomWorldPoint
-	-- var_13_2 -> rightTopWorldPoint
 	local offset = 1
 	local leftBottomWorldPoint = self._uiCamera:ScreenToWorldPoint(self._cameraFixMgr.leftBottomVector) + Vector3(offset, offset, 0)
 	local rightTopWorldPoint = self._uiCamera:ScreenToWorldPoint(self._cameraFixMgr.rightTopVector) - Vector3(offset, offset, 0)
@@ -151,14 +148,13 @@ function BattleCameraUtil.setArrowPoint(self)
 	self._arrowFieldHalfWidth_notch = self._arrowRightTopPos_notch.x - self._arrowCenterPos.x
 end
 
--- arg_14_0 -> self
+--- @return nil
+--- 摄像机的Update函数
 function BattleCameraUtil.Update(self)
-	-- var_14_0 -> newPosition
-	-- var_14_1 -> originalPosition
 	local newPosition = self:GetCameraPoint()
 	local originalPosition = self._cameraTF.position
 
-	-- 此处第二个比较疑似少写了 .z
+	-- ? 此处第二个比较疑似少写了 .z
 	if originalPosition.x ~= newPosition.x or originalPosition.z ~= newPosition then
 		self._cameraTF.position = newPosition
 
@@ -170,9 +166,10 @@ function BattleCameraUtil.Update(self)
 	end
 end
 
--- arg_15_0 -> self
--- arg_15_1 -> shakeTemplate
-	-- shakeTemplate的内容参考sharecfg/shake_template.lua
+--- @param shakeTemplate table<number, table<string, any>>
+--- @return nil
+--- 根据shakeTemplate设置晃动信息
+--- shakeTemplate的内容参考sharecfg/shake_template.lua
 function BattleCameraUtil.StartShake(self, shakeTemplate)
 	if self._shakeInfo and (self._shakeInfo._priority > shakeTemplate.priority or shakeTemplate.priority == 0) then
 		return
@@ -200,19 +197,18 @@ function BattleCameraUtil.StartShake(self, shakeTemplate)
 	self._shakeInfo._priority = shakeTemplate.priority
 end
 
--- arg_16_0 -> self
+--- @return nil
+--- 停止晃动
 function BattleCameraUtil.StopShake(self)
 	self._shakeInfo = nil
 end
 
--- arg_17_0 -> self
+--- @return nil
+--- 执行晃动
 function BattleCameraUtil.DoShake(self)
 	self._shakeInfo._count = self._shakeInfo._count + 1
 	self._shakeInfo._elapsed = self._shakeInfo._elapsed + Time.deltaTime
 
-	-- var_17_0 -> offsetX
-	-- var_17_1 -> offsetY
-	-- var_17_2 -> offsetVector
 	local offsetX = self._shakeInfo._vibrationH * (math.random() * 0.5 + 0.5) * self._shakeInfo._count
 	local offsetY = self._shakeInfo._vibrationV * (math.random() * 0.5 + 0.5) * self._shakeInfo._count
 	local offsetVector = Vector3(offsetX, offsetY, 0):Mul(self._shakeInfo._direction)
@@ -240,7 +236,9 @@ function BattleCameraUtil.DoShake(self)
 	end
 end
 
--- arg_18_0 -> shakeInfo
+--- @param shakeInfo table<string, any>
+--- @return nil
+--- 反转弹跳效果的摩擦系数和常数
 function BattleCameraUtil.bounceReverse(shakeInfo)
 	if shakeInfo._fricCoefH ~= 0 then
 		shakeInfo._fricCoefH = 1 / shakeInfo._fricCoefH
@@ -254,29 +252,34 @@ function BattleCameraUtil.bounceReverse(shakeInfo)
 	shakeInfo._fricConstV = shakeInfo._fricConstV * -1
 end
 
--- arg_19_0 -> self
+--- @return nil
+--- 暂停晃动
 function BattleCameraUtil.PauseShake(self)
 	self._shakeEnabled = false
 end
 
--- arg_20_0 -> self
+--- @return nil
+--- 恢复晃动
 function BattleCameraUtil.ResumeShake(self)
 	self._shakeEnabled = true
 end
 
--- arg_21_0 -> self
+--- @return nil
+--- 激活摄像机工具（开始监听更新）
 function BattleCameraUtil.active(self)
 	UpdateBeat:Add(self.Update, self)
 end
 
--- arg_22_0 -> self
+--- @return nil
+--- 停用摄像机工具（停止监听更新）
 function BattleCameraUtil.Deactive(self)
 	UpdateBeat:Remove(self.Update, self)
 end
 
--- arg_23_0 -> self
--- arg_23_1 -> caster
--- arg_23_2 -> speed
+--- @param caster BattleUnit
+--- @param speed number
+--- @return nil
+--- 插入角色立绘
 function BattleCameraUtil.CutInPainting(self, caster, speed)
 	self:DispatchEvent(ys.Event.New(BattleEvent.SHOW_PAINTING, {
 		caster = caster,
@@ -284,12 +287,10 @@ function BattleCameraUtil.CutInPainting(self, caster, speed)
 	}))
 end
 
--- arg_24_0 -> self
--- arg_24_1 -> key
--- arg_24_2 -> speed
--- arg_24_3 -> exemptUnit
+--- @param key string
+--- @param speed number
+--- @param exemptUnit BattleUnit: 不被影响的单位(动画速度匹配时间流速)
 function BattleCameraUtil.BulletTime(self, key, speed, exemptUnit)
-	-- var_24_0 -> bulletTimeArgs
 	local bulletTimeArgs = {
 		key = key,
 		speed = speed,
@@ -300,7 +301,7 @@ function BattleCameraUtil.BulletTime(self, key, speed, exemptUnit)
 	ys.Battle.BattleState.GetInstance():ScaleTimer(speed)
 
 	if self._uiMediator then
-		-- var_24_1 -> uiSpeed
+		-- 调整UI速度，匹配时间流速
 		local uiSpeed = 1 / (speed or 1)
 
 		self._uiMediator:ScaleUISpeed(uiSpeed)
@@ -311,20 +312,20 @@ function BattleCameraUtil.BulletTime(self, key, speed, exemptUnit)
 	end
 end
 
--- arg_25_0 -> self
--- arg_25_1 -> currentSize
--- arg_25_2 -> targetSize
--- arg_25_3 -> duration
--- arg_25_4 -> ease
+--- @param currentSize number
+--- @param targetSize number
+--- @param duration number
+--- @param ease boolean
+--- @return nil
+--- 缩放摄像机视野大小
 function BattleCameraUtil.ZoomCamara(self, currentSize, targetSize, duration, ease)
 	duration = duration or 1.6
 	-- CAMERA_SIZE = 20
 	targetSize = targetSize or BattleConfig.CAMERA_SIZE
 	currentSize = currentSize or CameraMgr.instance:GetCameraOrthographicSize(self._camera)
 
-	-- var_25_0 -> tween
-		-- LeenTween是一个Unity插件，用于实现各种缓动动画
-		-- 这里创建了一个从currentSize到targetSize的缓动动画，持续时间为duration
+	-- LeenTween是一个Unity插件，用于实现各种缓动动画
+	-- 这里创建了一个从currentSize到targetSize的缓动动画，持续时间为duration
 	local tween = LeanTween.value(go(self._camera), currentSize, targetSize, duration):setOnUpdate(System.Action_float(function(arg_26_0)
 		CameraMgr.instance:SetCameraOrthographicSize(self._camera, arg_26_0)
 	end))
@@ -335,19 +336,19 @@ function BattleCameraUtil.ZoomCamara(self, currentSize, targetSize, duration, ea
 	end
 end
 
--- arg_27_0 -> self
--- arg_27_1 -> unit
--- arg_27_2 -> duration
--- arg_27_3 -> extraBulletTime
--- arg_27_4 -> skill
--- arg_27_5 -> ease
+--- @param unit BattleUnit
+--- @param duration number
+--- @param extraBulletTime number
+--- @param skill boolean
+--- @param ease boolean
+--- @return nil
+--- 聚焦角色
 function BattleCameraUtil.FocusCharacter(self, unit, duration, extraBulletTime, skill, ease)
 	self:StopShake()
 
 	-- 此处的delay不知道从何而来，猜测是想要一个默认值为0的参数
 	delay = delay or 0
 
-	-- var_27_0 -> focusCharacterArgs
 	local focusCharacterArgs = {
 		unit = unit,
 		duration = duration,
@@ -357,13 +358,11 @@ function BattleCameraUtil.FocusCharacter(self, unit, duration, extraBulletTime, 
 
 	LeanTween.cancel(go(self._camera))
 
-	-- var_27_1 -> originalCameraPosition
 	local originalCameraPosition = self._cameraTF.position
 
 	if unit ~= nil then
 		self._focusCharacter:SetUnit(unit)
 
-		-- var_27_2 -> characterCameraPosition
 		local characterCameraPosition = self._focusCharacter:GetCameraPos()
 
 		if ease == nil then
@@ -376,10 +375,9 @@ function BattleCameraUtil.FocusCharacter(self, unit, duration, extraBulletTime, 
 		self._fromTo:SetFromTo(self._camera, originalCameraPosition, characterCameraPosition, duration, delay, ease)
 		self:SwitchCameraPos(BattleCameraUtil.TWEEN_TO_CHARACTER)
 	else
-		-- var_27_3 -> pilotCameraPosition
+		-- pilot大致指的是默认的摄像头位置
 		local pilotCameraPosition = self._boundFix:GetCameraPos(self._followPilot:GetCameraPos())
 
-		-- var_27_4 -> onCompleteFunc
 		local function onCompleteFunc()
 			self:SwitchCameraPos()
 		end
@@ -396,29 +394,26 @@ function BattleCameraUtil.FocusCharacter(self, unit, duration, extraBulletTime, 
 	self:DispatchEvent(ys.Event.New(BattleEvent.CAMERA_FOCUS, focusCharacterArgs))
 end
 
--- arg_29_0 -> self
+--- @return nil
+--- 重置摄像机焦点
 function BattleCameraUtil.ResetFocus(self)
 	self:StopShake()
 	LeanTween.cancel(go(self._camera))
 	LeanTween.cancel(go(self._uiCamera))
 
-	-- var_29_0 -> pilotCameraPosition
 	local pilotCameraPosition = self._boundFix:GetCameraPos(self._followPilot:GetCameraPos())
 
-	-- arg_30_0 -> arg(here unused)
 	LeanTween.move(go(self._camera), pilotCameraPosition, BattleConfig.CAM_RESET_DURATION):setOnUpdate(System.Action_float(function(arg)
 		BattleVariable.UpdateCameraPositionArgs()
 	end))
 	self:DispatchEvent(ys.Event.New(BattleEvent.CAMERA_FOCUS_RESET, {}))
 end
 
--- arg_31_0 -> self
--- arg_31_1 -> referenceVector
--- arg_31_2 -> arrowVector
+--- @param referenceVector Vector3
+--- @param arrowVector Vector3
+--- @return Vector3|nil
+--- 获取箭头的位置?
 function BattleCameraUtil.GetCharacterArrowBarPosition(self, referenceVector, arrowVector)
-	-- var_31_0 -> arrowLeftBottomPos_notch
-	-- var_31_1 -> arrowRightTopPos_notch
-	-- var_31_2 -> arrowCenterPos
 	local arrowLeftBottomPos_notch = self._arrowLeftBottomPos_notch
 	local arrowRightTopPos_notch = self._arrowRightTopPos_notch
 	local arrowCenterPos = self._arrowCenterPos
@@ -426,11 +421,6 @@ function BattleCameraUtil.GetCharacterArrowBarPosition(self, referenceVector, ar
 	if referenceVector.x >= self._arrowLeftHorizon and referenceVector.x < self._arrowRightHorizon and referenceVector.y >= self._arrowBottomHorizon and referenceVector.y <= self._arrowTopHorizon then
 		return nil
 	else
-		-- var_31_3 -> deltaY
-		-- var_31_4 -> (unused, hence we delete it)
-		-- var_31_5 -> (unused, hence we delete it)
-		-- var_31_6 -> arrowX
-		-- var_31_7 -> deltaX
 		local deltaY = referenceVector.y - arrowCenterPos.y
 		local arrowX
 		local deltaX
@@ -464,25 +454,26 @@ function BattleCameraUtil.GetCharacterArrowBarPosition(self, referenceVector, ar
 	end
 end
 
--- arg_32_0 -> self
+--- @return Vector3
+--- 获取摄像机当前的位置
 function BattleCameraUtil.GetCameraPoint(self)
 	return self._currentCameraPos()
 end
 
--- arg_33_0 -> self
+--- @return Vector3
+--- 获取箭头中心的位置
 function BattleCameraUtil.GetArrowCenterPos(self)
 	return self._arrowCenterPos
 end
 
--- arg_34_0 -> self
+--- @return Camera
+--- 获取摄像机
 function BattleCameraUtil.GetCamera(self)
 	return self._camera
 end
 
--- arg_35_0 -> self
--- arg_35_1 -> fx
-	-- fx指的是特效对象
--- arg_35_2 -> orderDiff
+--- @param fx Object
+--- @param orderDiff number
 function BattleCameraUtil.Add2Camera(self, fx, orderDiff)
 	orderDiff = orderDiff or 0
 	fx = tf(fx)
@@ -493,13 +484,15 @@ function BattleCameraUtil.Add2Camera(self, fx, orderDiff)
 	return self._cameraTF.localScale
 end
 
--- arg_36_0 -> self
+--- @return nil
+--- 暂停摄像机的缓动动画
 function BattleCameraUtil.PauseCameraTween(self)
 	LeanTween.pause(go(self._camera))
 	LeanTween.pause(go(self._uiCamera))
 end
 
--- arg_37_0 -> self
+--- @return nil
+--- 恢复摄像机的缓动动画
 function BattleCameraUtil.ResumeCameraTween(self)
 	LeanTween.resume(go(self._camera))
 	LeanTween.resume(go(self._uiCamera))

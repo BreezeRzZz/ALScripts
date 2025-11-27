@@ -1,9 +1,7 @@
 ys = ys or {}
--- var_0_0 -> BattleAttr
 local BattleAttr = {}
 
 ys.Battle.BattleAttr = BattleAttr
--- var_0_1 -> BattleConst
 local BattleConst = ys.Battle.BattleConst
 
 BattleAttr.AttrListInheritance = {
@@ -53,10 +51,10 @@ BattleAttr.AttrListInheritance = {
 	"airResistPierce"
 }
 
--- arg_1_0 -> attrs
+--- @param attrs table<any, string|nil>
+--- @return nil
+--- 将属性添加到可继承属性中
 function BattleAttr.InsertInheritedAttr(attrs)
-	-- iter_1_0 -> _
-	-- iter_1_1 -> attr
 	for _, attr in pairs(attrs) do
 		BattleAttr.AttrListInheritance[#BattleAttr.AttrListInheritance + 1] = attr
 	end
@@ -79,201 +77,255 @@ BattleAttr.ATTACK_ATTR_TYPE = {
 	[BattleConst.WeaponDamageAttr.AIR] = "airPower",
 	[BattleConst.WeaponDamageAttr.ANIT_SUB] = "antiSubPower"
 }
--- arg_2_0 -> attr
--- arg_2_1 -> attrType
+
+--- @param attr table<string, number>: 属性表
+--- @param attrType number: 参考BattleConst.WeaponDamageAttr
+--- @return number
+--- 获取对应的攻击属性的数值
 function BattleAttr.GetAtkAttrByType(attr, attrType)
-	-- var_2_0 -> attackAttrString
 	local attackAttrString = BattleAttr.ATTACK_ATTR_TYPE[attrType]
 
 	return math.max(attr[attackAttrString], 0)
 end
--- arg_3_0 -> host
--- arg_3_1 -> attr
+
+--- @param host any: 可以是例如BattleUnit或BattleBulletUnit等
+--- @param attr table<string, number>: 属性表
+--- @return nil
+--- 设置属性到host
 function BattleAttr.SetAttr(host, attr)
 	host._attr = setmetatable({}, {
 		__index = attr
 	})
 end
--- arg_4_0 -> host
+
+--- @param host any: 可以是例如BattleUnit或BattleBulletUnit等
+--- @return table<string, number>: 属性表
+--- 获取host的属性表
 function BattleAttr.GetAttr(host)
 	return host._attr
 end
--- arg_5_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置host的基础属性，通过克隆当前属性实现
+--- - 当前属性之后的变化不会影响基础属性
 function BattleAttr.SetBaseAttr(host)
 	host._baseAttr = Clone(host._attr)
 end
--- arg_6_0 -> host
+
+--- @param host any
+--- @return boolean
+--- 判定是否无敌
+--- - 通过isInvincible属性判定
 function BattleAttr.IsInvincible(host)
-	-- var_6_0 -> isInvincible
 	local isInvincible = host._attr.isInvincible
 
 	return isInvincible and isInvincible > 0
 end
 
--- arg_7_0 -> host
-	-- 施加无敌效果
+--- @param host any
+--- @return nil
+--- 施加无敌效果
+--- - 增加isInvincible属性的值
 function BattleAttr.AppendInvincible(host)
-	-- var_7_0 -> isInvincible
 	local isInvincible = host._attr.isInvincible or 0
 
 	host._attr.isInvincible = isInvincible + 1
 end
--- arg_8_0 -> host
--- arg_8_1 -> value
-	-- 这个函数没有被用过。
+
+--- @param host any
+--- @param value number
+--- @return nil
+--- 这个函数没有被用过。
 function BattleAttr.AddImmuneAreaLimit(host, value)
-	-- var_8_0 -> newImmuneAreaLimit
 	local newImmuneAreaLimit = (host._attr.immuneAreaLimit or 0) + value
 
 	host._attr.immuneAreaLimit = newImmuneAreaLimit
 
 	host._move:ImmuneAreaLimit(newImmuneAreaLimit > 0)
 end
--- arg_9_0 -> host
--- arg_9_1 -> value
-	-- 这个函数没有被用过。
+
+--- @param host any
+--- @param value number
+--- @return nil
+--- 这个函数没有被用过。
 function BattleAttr.AddImmuneMaxAreaLimit(host, value)
-	-- var_9_0 -> newImmuneMaxAreaLimit
 	local newImmuneMaxAreaLimit = (host._attr.immuneMaxAreaLimit or 0) + value
 
 	host._attr.immuneMaxAreaLimit = newImmuneMaxAreaLimit
 
 	host._move:ImmuneMaxAreaLimit(newImmuneMaxAreaLimit > 0)
 end
--- arg_10_0 -> host
+
+--- @param host any
+--- @return boolean
+--- 判定是否免疫区域限制
 function BattleAttr.IsImmuneAreaLimit(host)
-	-- var_10_0 -> immuneAreaLimit
 	local immuneAreaLimit = host._attr.immuneAreaLimit
 
 	return immuneAreaLimit and immuneAreaLimit > 0
 end
--- arg_11_0 -> host
+
+--- @param host any
+--- @return boolean
+--- 判定是否免疫最大区域限制
 function BattleAttr.IsImmuneMaxAreaLimit(host)
-	-- var_11_0 -> immuneMaxAreaLimit
 	local immuneMaxAreaLimit = host._attr.immuneMaxAreaLimit
 
 	return immuneMaxAreaLimit and immuneMaxAreaLimit > 0
 end
--- arg_12_0 -> host
-	-- 应该是用来判定是否可见(Visible)的？
+
+--- @param host any
+--- @return boolean
+--- 判定是否可见（用于索敌）
 function BattleAttr.IsVisitable(host)
-	-- var_12_0 -> isUnVisitable
 	local isUnVisitable = host._attr.isUnVisitable
 
 	return not isUnVisitable or isUnVisitable <= 0
 end
--- arg_13_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置不可见
 function BattleAttr.UnVisitable(host)
-	-- var_13_0 -> isUnVisitable
 	local isUnVisitable = host._attr.isUnVisitable or 0
 
 	host._attr.isUnVisitable = isUnVisitable + 1
 end
--- arg_14_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置可见
 function BattleAttr.Visitable(host)
-	-- var_14_0 -> isUnVisitable
 	local isUnVisitable = host._attr.isUnVisitable or 0
 
 	host._attr.isUnVisitable = isUnVisitable - 1
 end
--- arg_15_0 -> host
-	-- 判定是否是灵体状态(死亡状态？)
+
+--- @param host any
+--- @return boolean
+--- 判定是否灵体状态(与死亡有关?)
 function BattleAttr.IsSpirit(host)
-	-- var_15_0 -> isSpirit
 	local isSpirit = host._attr.isSpirit
 
 	return isSpirit and isSpirit > 0
 end
--- arg_16_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置灵体状态
 function BattleAttr.Spirit(host)
-	-- var_16_0 -> isSpirit
 	local isSpirit = host._attr.isSpirit or 0
 
 	host._attr.isSpirit = isSpirit + 1
 end
--- arg_17_0 -> host
+
+--- @param host any
+--- @return nil
+--- 取消灵体状态，变为实体
 function BattleAttr.Entity(host)
-	-- var_17_0 -> isSpirit
 	local isSpirit = host._attr.isSpirit or 0
 
 	host._attr.isSpirit = isSpirit - 1
 end
--- arg_18_0 -> host
-	-- 判定是否被眩晕/停滞
+
+--- @param host any
+--- @return boolean
+--- 判定是否被眩晕/停滞
 function BattleAttr.IsStun(host)
-	-- var_18_0 -> isStun
 	local isStun = host._attr.isStun
 
 	return isStun and isStun > 0
 end
--- arg_19_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置眩晕/停滞状态
 function BattleAttr.Stun(host)
-	-- var_19_0 -> isStun
 	local isStun = host._attr.isStun or 0
 
 	host._attr.isStun = isStun + 1
 end
--- arg_20_0 -> host
+
+--- @param host any
+--- @return nil
+--- 取消眩晕/停滞状态
 function BattleAttr.CancelStun(host)
-	-- var_20_0 -> isStun
 	local isStun = host._attr.isStun or 0
 
 	host._attr.isStun = isStun - 1
 end
--- arg_21_0 -> host
-	-- 判定是否处于隐匿状态
+
+--- @param host any
+--- @return boolean
+--- 判定是否处于隐匿状态
 function BattleAttr.IsCloak(host)
 	return (host._attr.isCloak or 0) == 1
 end
--- arg_22_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置为隐匿状态
 function BattleAttr.Cloak(host)
 	host._attr.isCloak = 1
 	host._attr.airResistPierceActive = 1
 end
--- arg_23_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置为非隐匿状态(破隐)
 function BattleAttr.Uncloak(host)
 	host._attr.isCloak = 0
 	host._attr.airResistPierceActive = 0
 end
--- arg_24_0 -> host
-	-- 判定是否处于夜战隐蔽状态(这里是反过来的，返回true表示不在隐蔽状态)
+
+--- @param host any
+--- @return boolean
+--- 判定是否处于夜战隐蔽状态(这里是反过来的，返回true表示不在隐蔽状态)
 function BattleAttr.IsLockAimBias(host)
 	return (host._attr.lockAimBias or 0) >= 1
 end
--- arg_25_0 -> host
-	-- 判定是否免疫碰撞(不参与碰撞检测)
+
+--- @param host any
+--- @return boolean
+--- 判定是否免疫碰撞(不参与碰撞检测)
 function BattleAttr.IsUnitCldImmune(host)
 	return (host._attr.unitCldImmune or 0) >= 1
 end
--- arg_26_0 -> host
+
+--- @param host any
+--- @return nil
+--- 设置免疫碰撞状态
 function BattleAttr.UnitCldImmune(host)
-	-- var_26_0 -> unitCldImmune
 	local unitCldImmune = host._attr.unitCldImmune or 0
 
 	host._attr.unitCldImmune = unitCldImmune + 1
 end
--- arg_27_0 -> host
+
+--- @param host any
+--- @return nil
+--- 启用碰撞
 function BattleAttr.UnitCldEnable(host)
-	-- var_27_0 -> unitCldImmune
 	local unitCldImmune = host._attr.unitCldImmune or 0
 
 	host._attr.unitCldImmune = unitCldImmune - 1
 end
--- arg_28_0 -> host
+
+--- @param host any
+--- @return string
+--- 获取当前目标最高优先级的标签
 function BattleAttr.GetCurrentTargetSelect(host)
-	-- var_28_0 -> targetTag
-	-- var_28_1 -> targetChoise
+	-- targetChoise
 		-- targetChoise是目标身上具有的targetTag列表
 		-- targetTag用于确定索敌方式
-	-- var_28_2 -> targetSelectPriority
 	local targetTag
+	--- @type table<number, string>
 	local targetChoise = BattleAttr.GetCurrent(host, "TargetChoise")
+	--- @type table<string, number>
 	local targetSelectPriority = ys.Battle.BattleConfig.TARGET_SELECT_PRIORITY
 
-	-- iter_28_0 -> _
-	-- iter_28_1 -> tag
-		-- 选出SelectPriority最高的tag
-		-- 多个最高，则选第一个，因为后续不会更新
+	-- 选出SelectPriority最高的tag
+	-- 多个最高，则选第一个，因为后续不会更新
 	for _, tag in ipairs(targetChoise) do
 		if not targetTag or targetSelectPriority[tag] > targetSelectPriority[targetTag] then
 			targetTag = tag
@@ -282,19 +334,22 @@ function BattleAttr.GetCurrentTargetSelect(host)
 
 	return targetTag
 end
--- arg_29_0 -> host
--- arg_29_1 -> targetTag
+
+--- @param host any
+--- @param targetTag string
+--- @return nil
+--- 将tag添加到host的targetTag列表中
 function BattleAttr.AddTargetSelect(host, targetTag)
 	table.insert(BattleAttr.GetCurrent(host, "TargetChoise"), targetTag)
 end
--- arg_30_0 -> host
--- arg_30_1 -> targetTag
+
+--- @param host any
+--- @param targetTag string
+--- @return nil
+--- 移除tag从host的targetTag列表中
 function BattleAttr.RemoveTargetSelect(host, targetTag)
-	-- var_30_0 -> targetChoise
 	local targetChoise = BattleAttr.GetCurrent(host, "TargetChoise")
 
-	-- iter_30_0 -> i
-	-- iter_30_1 -> tag
 	for i, tag in ipairs(targetChoise) do
 		if tag == targetTag then
 			table.remove(targetChoise, i)
@@ -303,12 +358,11 @@ function BattleAttr.RemoveTargetSelect(host, targetTag)
 		end
 	end
 end
--- arg_31_0 -> host
-	-- 获取当前对象的守护者ID(守护者机制指的是: 原本选择对象的攻击，会转而攻击守护者)
-	-- 会返回守护者ID列表中的最后一个ID
+--- @param host any
+--- @return number|nil: 对应的是GetUniqueID,我猜是number,当然也可能string之类的，先按number处理
+--- 获取当前对象的守护者ID(守护者机制指的是: 原本选择对象的攻击，会转而攻击守护者)
+--- - 会返回守护者ID列表中的最后一个ID
 function BattleAttr.GetCurrentGuardianID(host)
-	-- var_31_0 -> guardianList
-	-- var_31_1 -> guardianCount
 	local guardianList = BattleAttr.GetCurrent(host, "guardian")
 	local guardianCount = #guardianList
 
@@ -318,24 +372,26 @@ function BattleAttr.GetCurrentGuardianID(host)
 		return guardianList[guardianCount]
 	end
 end
--- arg_32_0 -> host
--- arg_32_1 -> newGuardian
+
+--- @param host any
+--- @param newGuardian number
+--- @return nil
+--- 将新守护者的ID添加到守护者列表中
 function BattleAttr.AddGuardianID(host, newGuardian)
-	-- var_32_0 -> guardianList
 	local guardianList = BattleAttr.GetCurrent(host, "guardian")
 
 	if not table.contains(guardianList, newGuardian) then
 		table.insert(guardianList, newGuardian)
 	end
 end
--- arg_33_0 -> host
--- arg_33_1 -> removeGuardian
+
+--- @param host any
+--- @param removeGuardian number
+--- @return nil
+--- 移除守护者ID从守护者列表中
 function BattleAttr.RemoveGuardianID(host, removeGuardian)
-	-- var_33_0 -> guardianList
 	local guardianList = BattleAttr.GetCurrent(host, "guardian")
 
-	-- iter_33_0 -> i
-	-- iter_33_1 -> guardian
 	for i, guardian in ipairs(guardianList) do
 		if guardian == removeGuardian then
 			table.remove(guardianList, i)
@@ -344,15 +400,16 @@ function BattleAttr.RemoveGuardianID(host, removeGuardian)
 		end
 	end
 end
--- arg_34_0 -> playerUnit
--- arg_34_1 -> templateData?
--- arg_34_2 -> extraInfo?
-	-- 从上层调用看不出这两个参数具体是什么，先这样猜
+--- @param playerUnit BattlePlayerUnit
+--- @param templateData table
+--- @param extraInfo table
+--- @return nil
+--- 设置战斗外属性
 function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraInfo)
-	-- var_34_0 -> attr
 	local attr = playerUnit._attr or {}
 
 	playerUnit._attr = attr
+	-- 以下是所有战斗外属性
 	attr.id = templateData.id
 	attr.battleUID = playerUnit:GetUniqueID()
 	attr.level = templateData.level
@@ -805,22 +862,29 @@ end
 function BattleAttr.SetCurrent(arg_51_0, arg_51_1, arg_51_2)
 	arg_51_0._attr[arg_51_1] = arg_51_2
 end
--- arg_52_0 -> host
--- arg_52_1 -> attrType
+
+--- @param host any
+--- @param attrType string
+--- @return any
+--- 获取当前的属性值
 function BattleAttr.GetCurrent(host, attrType)
-	-- var_52_0 -> isPrimalBattleAttr
 	local isPrimalBattleAttr = AttributeType.IsPrimalBattleAttr(attrType) or false
 
 	return BattleAttr._attrFunc[isPrimalBattleAttr](host, attrType)
 end
--- arg_53_0 -> host
--- arg_53_1 -> attrType
-	-- 区别是主要属性最小值为0
+
+--- @param host any
+--- @param attrType string
+--- @return number
+--- 区别是主要属性最小值为0，且一定是数值
 function BattleAttr._getPrimalAttr(host, attrType)
 	return math.max(host._attr[attrType], 0)
 end
--- arg_54_0 -> host
--- arg_54_1 -> attrType
+
+--- @param host any
+--- @param attrType string
+--- @return any
+--- 次要属性可能不是数值，如table
 function BattleAttr._getSecondaryAttr(host, attrType)
 	return host._attr[attrType] or 0
 end

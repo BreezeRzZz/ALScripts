@@ -611,38 +611,29 @@ end
 --- @return number, number
 --- 计算碰撞伤害，敌我双方受到同样的伤害
 function BattleFormulas.CalculateCrashDamage(ship1, ship2)
-	-- var_25_0 -> ship1MaxHP
-	-- var_25_1 -> ship2MaxHP
 	local ship1MaxHP = BattleAttr.GetCurrent(ship1, "maxHP")
 	local ship2MaxHP = BattleAttr.GetCurrent(ship2, "maxHP")
-	-- var_25_2 -> ship1CrashBaseDMG(CRASH_RATE[1] = 0.05)
-	-- var_25_3 -> ship2CrashBaseDMG
+	-- CRASH_RATE[1] = 0.05
 	local ship1CrashBaseDMG = ship1MaxHP * bfConsts.CRASH_RATE[1]
 	local ship2CrashBaseDMG = ship2MaxHP * bfConsts.CRASH_RATE[1]
-	-- var_25_4 -> ship1HammerDamageRatio
-	-- var_25_5 -> ship2HammerDamageRatio
+
 	local ship1HammerDamageRatio = BattleAttr.GetCurrent(ship1, "hammerDamageRatio")
 	local ship2HammerDamageRatio = BattleAttr.GetCurrent(ship2, "hammerDamageRatio")
-	-- var_25_6 -> ship1HammerDamagePrevent
-	-- var_25_7 -> ship2HammerDamagePrevent
+
 	local ship1HammerDamagePrevent = BattleAttr.GetCurrent(ship1, "hammerDamagePrevent")
 	local ship2HammerDamagePrevent = BattleAttr.GetCurrent(ship2, "hammerDamagePrevent")
-	-- var_25_8 -> ship1FinalHammerDamagePrevent(PreventUpperBound = 0.8)
-	-- var_25_9 -> ship2FinalHammerDamagePrevent
+	-- PreventUpperBound = 0.8
 	local ship1FinalHammerDamagePrevent = math.min(ship1HammerDamagePrevent, BattleConfig.HammerCFG.PreventUpperBound)
 	local ship2FinalHammerDamagePrevent = math.min(ship2HammerDamagePrevent, BattleConfig.HammerCFG.PreventUpperBound)
-	-- var_25_10 -> crashDMGUpperBound(CRASH_RATE[2] = 0.025)
+	-- CRASH_RATE[2] = 0.025
 	local crashDMGUpperBound = math.sqrt(ship1MaxHP * ship2MaxHP) * bfConsts.CRASH_RATE[2]
-	-- var_25_11 -> ship1FinalCrashBaseDMG
-	-- var_25_12 -> ship2FinalCrashBaseDMG
+
 	local ship1FinalCrashBaseDMG = math.min(ship1CrashBaseDMG, crashDMGUpperBound)
 	local ship2FinalCrashBaseDMG = math.min(ship2CrashBaseDMG, crashDMGUpperBound)
-	-- var_25_13 -> ship1FinalCrashDMGBeforeRepress
-	-- var_25_14 -> ship1FinalCrashDMG
+
 	local ship1FinalCrashDMGBeforeRepress = math.floor(ship1FinalCrashBaseDMG * (1 + ship2HammerDamageRatio) * (1 - ship1FinalHammerDamagePrevent))
 	local ship1FinalCrashDMG = math.floor(ship1FinalCrashDMGBeforeRepress * BattleAttr.GetCurrent(ship1, "repressReduce"))
-	-- var_25_15 -> ship2FinalCrashDMGBeforeRepress
-	-- var_25_16 -> ship2FinalCrashDMG
+
 	local ship2FinalCrashDMGBeforeRepress = math.floor(ship2FinalCrashBaseDMG * (1 + ship1HammerDamageRatio) * (1 - ship2FinalHammerDamagePrevent))
 	local ship2FinalCrashDMG = math.floor(ship2FinalCrashDMGBeforeRepress * BattleAttr.GetCurrent(ship2, "repressReduce"))
 
@@ -698,7 +689,7 @@ end
 --- @return number: 需要的装填值
 --- 根据Weapon的reloadMax和目标装填时间计算需要的loadSpeed
 function BattleFormulas.CaclulateReloadAttr(reloadMax, reloadRequire)
-	-- var_30_0 -> requireReloadSpeed
+	-- requireReloadSpeed
 		-- 因为游戏中loadSpeed用来指的是装填值，为了避免混淆，这里就另用reloadSpeed表示"装填速度"
 	local reloadSpeed = reloadMax / BattleConfig.K1 / reloadRequire
 
