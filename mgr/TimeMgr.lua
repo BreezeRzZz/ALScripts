@@ -88,20 +88,20 @@ function var_0_1.ResumeBattleTimer(arg_11_0)
 	end
 end
 
-function var_0_1.AddBattleTimer(arg_12_0, arg_12_1, arg_12_2, arg_12_3, arg_12_4, arg_12_5, arg_12_6)
-	arg_12_2 = arg_12_2 or -1
-	arg_12_5 = arg_12_5 or false
+function var_0_1.AddBattleTimer(self, name, loop, duration, func, scale, arg_12_6)
+	loop = loop or -1
+	scale = scale or false
 	arg_12_6 = arg_12_6 or false
 
-	local var_12_0 = Timer.New(arg_12_4, arg_12_3, arg_12_2, arg_12_5)
+	local var_12_0 = Timer.New(func, duration, loop, scale)
 
-	arg_12_0._battleTimerList[var_12_0] = true
+	self._battleTimerList[var_12_0] = true
 
 	if not arg_12_6 then
 		var_12_0:Start()
 	end
 
-	if arg_12_0._stopCombatTime ~= 0 then
+	if self._stopCombatTime ~= 0 then
 		var_12_0:Pause()
 	end
 
