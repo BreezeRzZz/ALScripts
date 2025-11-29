@@ -14,320 +14,411 @@ local BattleUnit = class("BattleUnit")
 ys.Battle.BattleUnit = BattleUnit
 BattleUnit.__name = "BattleUnit"
 
-function BattleUnit.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	ys.EventDispatcher.AttachEventDispatcher(arg_1_0)
+--- @class BattleUnit的
+--- @param uid number: Unit的唯一ID
+--- @param iff number: 友方(1)/敌方(-1)
+--- @return nil
+--- 构造函数
+function BattleUnit.Ctor(self, uid, iff)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0._uniqueID = arg_1_1
-	arg_1_0._speedExemptKey = "unit_" .. arg_1_1
-	arg_1_0._unitState = ys.Battle.UnitState.New(arg_1_0)
-	arg_1_0._move = ys.Battle.MoveComponent.New()
-	arg_1_0._weaponQueue = ys.Battle.WeaponQueue.New()
+	self._uniqueID = uid
+	-- speedExemptKey用于子弹时间时，让开火的单位不受子弹时间影响
+	self._speedExemptKey = "unit_" .. uid
+	-- ? UnitState: TODO
+	self._unitState = ys.Battle.UnitState.New(self)
+	-- move: TODO, 大致是与移动相关的组件
+	self._move = ys.Battle.MoveComponent.New()
+	-- weaponQueue: 该单位的武器队列
+	self._weaponQueue = ys.Battle.WeaponQueue.New()
 
-	arg_1_0:Init()
-	arg_1_0:SetIFF(arg_1_2)
+	self:Init()
+	self:SetIFF(iff)
 
-	arg_1_0._distanceBackup = {}
-	arg_1_0._battleProxy = ys.Battle.BattleDataProxy.GetInstance()
-	arg_1_0._frame = 0
+	self._distanceBackup = {}
+	self._battleProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._frame = 0
 end
 
-function BattleUnit.Retreat(arg_2_0)
-	arg_2_0:TriggerBuff(BattleConst.BuffEffectType.ON_RETREAT, {})
+--- @class BattleUnit
+--- @return nil
+--- 撤退：触发ON_RETREAT类型的Buff效果
+function BattleUnit.Retreat(self)
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_RETREAT, {})
 end
 
-function BattleUnit.SetMotion(arg_3_0, arg_3_1)
-	arg_3_0._move:SetMotionVO(arg_3_1)
+--- @class BattleUnit
+--- @param motionVO BattleFleetMotionVO
+--- @return nil
+function BattleUnit.SetMotion(self, motionVO)
+	self._move:SetMotionVO(motionVO)
 end
 
-function BattleUnit.SetBound(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4, arg_4_5, arg_4_6)
-	arg_4_0._move:SetCorpsArea(arg_4_5, arg_4_6)
-	arg_4_0._move:SetBorder(arg_4_3, arg_4_4, arg_4_1, arg_4_2)
+--- @class BattleUnit
+--- @param upBorder number: 可活动区域上边界
+--- @param downBorder number: 可活动区域下边界
+--- @param leftBorder number: 可活动区域左边界
+--- @param rightBorder number: 可活动区域右边界
+--- @param leftCorpsBound number: 销毁左边界（超过该边界即销毁）
+--- @param rightCorpsBound number: 销毁右边界（超过该边界即销毁）
+--- @return nil
+function BattleUnit.SetBound(self, upBorder, downBorder, leftBorder, rightBorder, leftCorpsBound, rightCorpsBound)
+	self._move:SetCorpsArea(leftCorpsBound, rightCorpsBound)
+	self._move:SetBorder(leftBorder, rightBorder, upBorder, downBorder)
 end
 
-function BattleUnit.ActiveCldBox(arg_5_0)
-	arg_5_0._cldComponent:SetActive(true)
+--- @class BattleUnit
+--- @return nil
+--- 激活碰撞盒
+function BattleUnit.ActiveCldBox(self)
+	self._cldComponent:SetActive(true)
 end
 
-function BattleUnit.DeactiveCldBox(arg_6_0)
-	arg_6_0._cldComponent:SetActive(false)
+--- @class BattleUnit
+--- @return nil
+--- 取消碰撞盒
+function BattleUnit.DeactiveCldBox(self)
+	self._cldComponent:SetActive(false)
 end
 
-function BattleUnit.SetCldBoxImmune(arg_7_0, arg_7_1)
-	arg_7_0._cldComponent:SetImmuneCLD(arg_7_1)
+--- @class BattleUnit
+--- @param bool boolean: 是否免疫碰撞
+--- @return nil
+--- 设置碰撞盒免疫状态
+function BattleUnit.SetCldBoxImmune(self, bool)
+	self._cldComponent:SetImmuneCLD(bool)
 end
 
-function BattleUnit.Init(arg_8_0)
-	arg_8_0._hostileCldList = {}
-	arg_8_0._currentHPRate = 1
-	arg_8_0._currentDMGRate = 0
-	arg_8_0._tagCount = 0
-	arg_8_0._tagIndex = 0
-	arg_8_0._tagList = {}
-	arg_8_0._aliveState = true
-	arg_8_0._isMainFleetUnit = false
-	arg_8_0._bulletCache = {}
-	arg_8_0._speed = Vector3.zero
-	arg_8_0._dir = BattleConst.UnitDir.RIGHT
-	arg_8_0._extraInfo = {}
-	arg_8_0._GCDTimerList = {}
-	arg_8_0._buffList = {}
-	arg_8_0._buffStockList = {}
-	arg_8_0._labelTagList = {}
-	arg_8_0._exposedToSnoar = false
-	arg_8_0._moveCast = true
-	arg_8_0._remoteBoundBone = {}
+--- @class BattleUnit
+--- @return nil
+--- 初始化函数，设置各种字段的初始值
+function BattleUnit.Init(self)
+	self._hostileCldList = {}
+	self._currentHPRate = 1
+	self._currentDMGRate = 0
+	self._tagCount = 0
+	self._tagIndex = 0
+	self._tagList = {}
+	self._aliveState = true
+	self._isMainFleetUnit = false
+	self._bulletCache = {}
+	self._speed = Vector3.zero
+	self._dir = BattleConst.UnitDir.RIGHT
+	self._extraInfo = {}
+	self._GCDTimerList = {}
+	self._buffList = {}
+	self._buffStockList = {}
+	self._labelTagList = {}
+	self._exposedToSnoar = false
+	self._moveCast = true
+	self._remoteBoundBone = {}
 end
 
-function BattleUnit.Update(arg_9_0, arg_9_1)
-	if arg_9_0:IsAlive() and not arg_9_0._isSickness then
-		arg_9_0._move:Update()
-		arg_9_0._move:FixSpeed(arg_9_0._cldComponent)
-		arg_9_0._move:Move(arg_9_0:GetSpeedRatio())
+--- @class BattleUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- BattleUnit的Update函数
+--- - 该函数主要更新运动和AI Action
+function BattleUnit.Update(self, timeStamp)
+	if self:IsAlive() and not self._isSickness then
+		self._move:Update()
+		self._move:FixSpeed(self._cldComponent)
+		self._move:Move(self:GetSpeedRatio())
 	end
 
-	arg_9_0:UpdateAction()
+	self:UpdateAction()
 end
 
-function BattleUnit.UpdateWeapon(arg_10_0, arg_10_1)
-	if not arg_10_0:IsAlive() or arg_10_0._isSickness then
+--- @class BattleUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 更新武器(和Buff)
+function BattleUnit.UpdateWeapon(self, timeStamp)
+	if not self:IsAlive() or self._isSickness then
 		return
 	end
 
-	if not arg_10_0._antiSubVigilanceState or arg_10_0._antiSubVigilanceState:IsWeaponUseable() then
-		local var_10_0 = arg_10_0._move:GetPos()
-		local var_10_1 = arg_10_0._weaponRightBound
-		local var_10_2 = arg_10_0._weaponLowerBound
+	if not self._antiSubVigilanceState or self._antiSubVigilanceState:IsWeaponUseable() then
+		local currentPos = self._move:GetPos()
+		local weaponRightBound = self._weaponRightBound
+		local weaponLowerBound = self._weaponLowerBound
 
-		if (var_10_1 == nil or var_10_1 > var_10_0.x) and (var_10_2 == nil or var_10_2 < var_10_0.z) then
-			arg_10_0._weaponQueue:Update(arg_10_1)
+		-- 这是个什么鬼判断？
+		-- 用这个来判断武器用了吗？然后更新武器队列？
+		if (weaponRightBound == nil or weaponRightBound > currentPos.x) and (weaponLowerBound == nil or weaponLowerBound < currentPos.z) then
+			self._weaponQueue:Update(timeStamp)
 		end
 	end
 
-	if not arg_10_0:IsAlive() then
+	if not self:IsAlive() then
 		return
 	end
-
-	arg_10_0:UpdateBuff(arg_10_1)
+	-- UpdateWeapon方法内部调用UpdateBuff
+	self:UpdateBuff(timeStamp)
 end
 
-function BattleUnit.UpdateAirAssist(arg_11_0)
-	if arg_11_0._airAssistList then
-		for iter_11_0, iter_11_1 in ipairs(arg_11_0._airAssistList) do
-			iter_11_1:Update()
+--- @class BattleUnit
+--- @return nil
+--- 更新支援编队
+function BattleUnit.UpdateAirAssist(self)
+	if self._airAssistList then
+		for _, airAssist in ipairs(self._airAssistList) do
+			airAssist:Update()
 		end
 	end
 end
 
-function BattleUnit.UpdatePhaseSwitcher(arg_12_0)
-	if arg_12_0._phaseSwitcher then
-		arg_12_0._phaseSwitcher:Update()
+--- @class BattleUnit
+--- @return nil
+--- 更新阶段切换器
+--- - 也就是说，dungeon中如果设定了生成的单位有switch参数，是由这个函数来更新的？
+function BattleUnit.UpdatePhaseSwitcher(self)
+	if self._phaseSwitcher then
+		self._phaseSwitcher:Update()
 	end
 end
 
-function BattleUnit.SetInterruptSickness(arg_13_0, arg_13_1)
-	arg_13_0._isSickness = arg_13_1
+--- @class BattleUnit
+--- @param bool boolean: 是否sickness(什么都不能做的状态)
+--- @return nil
+--- (打断情况下)设置sickness状态
+function BattleUnit.SetInterruptSickness(self, bool)
+	self._isSickness = bool
 end
 
-function BattleUnit.SummonSickness(arg_14_0, arg_14_1)
-	if arg_14_0._isSickness == true then
+--- @class BattleUnit
+--- @param duration number: (summonSickness)持续时间
+--- @return nil
+--- 当单位被召唤出来时的sickness状态，对应的处理函数
+function BattleUnit.SummonSickness(self, duration)
+	if self._isSickness == true then
 		return
 	end
 
-	local function var_14_0()
-		arg_14_0:RemoveSummonSickness()
+	local function onSicknessEnd()
+		self:RemoveSummonSickness()
 	end
 
-	arg_14_0._isSickness = true
-	arg_14_0._sicknessTimer = pg.TimeMgr.GetInstance():AddBattleTimer("summonSickness", 0, arg_14_1, var_14_0, true)
+	self._isSickness = true
+	self._sicknessTimer = pg.TimeMgr.GetInstance():AddBattleTimer("summonSickness", 0, duration, onSicknessEnd, true)
 end
 
-function BattleUnit.RemoveSummonSickness(arg_16_0)
-	arg_16_0._isSickness = false
+--- @class BattleUnit
+--- @return nil
+--- 移除summonSickness状态和sicknessTimer
+function BattleUnit.RemoveSummonSickness(self)
+	self._isSickness = false
 
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_16_0._sicknessTimer)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._sicknessTimer)
 
-	arg_16_0._sicknessTimer = nil
+	self._sicknessTimer = nil
 end
 
-function BattleUnit.GetTargetedPriority(arg_17_0)
-	local var_17_0
+--- @class BattleUnit
+--- @return number
+--- 获取自己被作为目标的优先级
+function BattleUnit.GetTargetedPriority(self)
+	local targetedPriority
 
-	if arg_17_0._aimBias then
-		local var_17_1 = arg_17_0._aimBias:GetCurrentState()
+	if self._aimBias then
+		local var_17_1 = self._aimBias:GetCurrentState()
 
-		if var_17_1 == arg_17_0._aimBias.STATE_SKILL_EXPOSE or var_17_1 == arg_17_0._aimBias.STATE_TOTAL_EXPOSE then
-			var_17_0 = arg_17_0:GetTemplate().battle_unit_type
+		if var_17_1 == self._aimBias.STATE_SKILL_EXPOSE or var_17_1 == self._aimBias.STATE_TOTAL_EXPOSE then
+			targetedPriority = self:GetTemplate().battle_unit_type
 		else
-			var_17_0 = -200
+			targetedPriority = -200
 		end
 	else
-		var_17_0 = arg_17_0:GetTemplate().battle_unit_type
+		targetedPriority = self:GetTemplate().battle_unit_type
 	end
 
-	return var_17_0
+	return targetedPriority
 end
 
-function BattleUnit.PlayFX(arg_18_0, arg_18_1, arg_18_2)
-	arg_18_0:DispatchEvent(ys.Event.New(BattleUnitEvent.PLAY_FX, {
-		fxName = arg_18_1,
-		notAttach = not arg_18_2
+--- @class BattleUnit
+--- @param fxName string
+--- @param ifAttach boolean
+--- @return nil
+--- 发送对应的特效动画播事件
+function BattleUnit.PlayFX(self, fxName, ifAttach)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.PLAY_FX, {
+		fxName = fxName,
+		notAttach = not ifAttach
 	}))
 end
 
-function BattleUnit.SwitchShader(arg_19_0, arg_19_1, arg_19_2, arg_19_3)
-	arg_19_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SWITCH_SHADER, {
-		shader = arg_19_1,
-		color = arg_19_2,
-		args = arg_19_3
+--- @class BattleUnit
+--- @param shader string
+--- @param color Color: UnityEngine.Color(见tolua.lua)
+--- @param args table<string, number>: 一般只有一个参数invisible，表示可见度
+--- @return nil
+--- 发送切换shader事件
+--- - BattleBuffSwitchShader会用到，例如可以将单位变透明...
+function BattleUnit.SwitchShader(self, shader, color, args)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SWITCH_SHADER, {
+		shader = shader,
+		color = color,
+		args = args
 	}))
 end
 
-function BattleUnit.SendAttackTrigger(arg_20_0)
-	arg_20_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SPAWN_CACHE_BULLET, {}))
+--- @class BattleUnit
+--- @return nil
+--- 发送生成缓存子弹事件?
+function BattleUnit.SendAttackTrigger(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SPAWN_CACHE_BULLET, {}))
 end
 
-function BattleUnit.HandleDamageToDeath(arg_21_0)
-	local var_21_0 = {
+--- @class BattleUnit
+--- @return nil
+--- 当受到的伤害足以致死时的Handler
+function BattleUnit.HandleDamageToDeath(self)
+	local extraInfo = {
 		isMiss = false,
 		isCri = true,
 		isHeal = false,
 		damageReason = BattleConst.UnitDeathReason.DESTRUCT
 	}
 
-	arg_21_0:UpdateHP(math.floor(-arg_21_0._currentHP), var_21_0)
+	self:UpdateHP(math.floor(-self._currentHP), extraInfo)
 end
 
-function BattleUnit.UpdateHP(arg_22_0, arg_22_1, arg_22_2)
-	local var_22_0 = arg_22_0:IsAlive()
-
-	if not var_22_0 then
+--- @class BattleUnit
+--- @param dHP number: 血量的变化值
+--- @param extraInfo table<string, any>
+--- @return number: 血量的理论变化值（包含溢出伤害和溢出治疗）
+--- 单位的更新生命值主逻辑
+function BattleUnit.UpdateHP(self, dHP, extraInfo)
+	local isAliveBeforeUpdate = self:IsAlive()
+	-- 若更新前就已死亡，返回0
+	if not isAliveBeforeUpdate then
 		return 0
 	end
 
-	local var_22_1 = arg_22_2.isMiss
-	local var_22_2 = arg_22_2.isCri
-	local var_22_3 = arg_22_2.isHeal
-	local var_22_4 = arg_22_2.isShare
-	local var_22_5 = arg_22_2.attr
-	local var_22_6 = arg_22_2.damageReason
-	local var_22_7 = arg_22_2.font
-	local var_22_8 = arg_22_2.cldPos
-	local var_22_9 = arg_22_2.incorrupt
-	local var_22_10 = arg_22_2.isReflect
-	local var_22_11
-	local var_22_12
-
-	if not var_22_3 then
-		var_22_12 = {
-			damage = -arg_22_1,
-			isShare = var_22_4,
-			miss = var_22_1,
-			cri = var_22_2,
-			damageSrc = arg_22_2.srcID,
-			damageAttr = var_22_5,
-			damageReason = var_22_6,
-			isReflect = var_22_10
+	local isMiss = extraInfo.isMiss
+	local isCri = extraInfo.isCri
+	local isHeal = extraInfo.isHeal
+	local isShare = extraInfo.isShare
+	local attr = extraInfo.attr
+	local damageReason = extraInfo.damageReason
+	local font = extraInfo.font
+	local cldPos = extraInfo.cldPos
+	local incorrupt = extraInfo.incorrupt
+	local isReflect = extraInfo.isReflect
+	local preShieldHP
+	local damageInfo
+	-- 表示这次更新是来自于受到了伤害
+	if not isHeal then
+		damageInfo = {
+			damage = -dHP,
+			isShare = isShare,
+			miss = isMiss,
+			cri = isCri,
+			damageSrc = extraInfo.srcID,
+			damageAttr = attr,
+			damageReason = damageReason,
+			isReflect = isReflect
 		}
 
-		if not var_22_4 then
-			arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_BEFORE_TAKE_DAMAGE, var_22_12)
+		if not isShare then
+			self:TriggerBuff(BattleConst.BuffEffectType.ON_BEFORE_TAKE_DAMAGE, damageInfo)
 
-			if var_22_12.capFlag then
-				arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_DAMAGE_FIX, var_22_12)
+			if damageInfo.capFlag then
+				self:TriggerBuff(BattleConst.BuffEffectType.ON_DAMAGE_FIX, damageInfo)
 			end
 		end
 
-		var_22_11 = -var_22_12.damage
+		preShieldHP = -damageInfo.damage
 
-		arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_DAMAGE, var_22_12)
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_DAMAGE, damageInfo)
 
-		if arg_22_0._currentHP <= var_22_12.damage then
-			arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_BEFORE_FATAL_DAMAGE, {})
+		if self._currentHP <= damageInfo.damage then
+			self:TriggerBuff(BattleConst.BuffEffectType.ON_BEFORE_FATAL_DAMAGE, {})
 		end
 
-		arg_22_1 = -var_22_12.damage
+		dHP = -damageInfo.damage
 
-		if var_22_11 ~= arg_22_1 then
-			({}).absorb = var_22_11 - arg_22_1
+		if preShieldHP ~= dHP then
+			({}).absorb = preShieldHP - dHP
 
-			arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_SHIELD_ABSORB, var_22_12)
+			self:TriggerBuff(BattleConst.BuffEffectType.ON_SHIELD_ABSORB, damageInfo)
 		end
 
-		if BattleAttr.IsInvincible(arg_22_0) then
+		if BattleAttr.IsInvincible(self) then
 			return 0
 		end
 	else
-		var_22_11 = arg_22_1
+		preShieldHP = dHP
 
-		local var_22_13 = {
-			damage = arg_22_1,
-			isHeal = var_22_3,
-			incorrupt = var_22_9
+		local damageInfo = {
+			damage = dHP,
+			isHeal = isHeal,
+			incorrupt = incorrupt
 		}
 
-		arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_HEALING, var_22_13)
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_HEALING, damageInfo)
 
-		var_22_3 = var_22_13.isHeal
-		arg_22_1 = var_22_13.damage
+		isHeal = damageInfo.isHeal
+		dHP = damageInfo.damage
 
-		local var_22_14 = math.max(0, arg_22_0._currentHP + arg_22_1 - arg_22_0:GetMaxHP())
+		local overHealing = math.max(0, self._currentHP + dHP - self:GetMaxHP())
 
-		if var_22_14 > 0 then
-			arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_OVER_HEALING, {
-				overHealing = var_22_14
+		if overHealing > 0 then
+			self:TriggerBuff(BattleConst.BuffEffectType.ON_OVER_HEALING, {
+				overHealing = overHealing
 			})
 		end
 	end
 
-	local var_22_15 = math.min(arg_22_0:GetMaxHP(), math.max(0, arg_22_0._currentHP + arg_22_1))
-	local var_22_16 = var_22_15 - arg_22_0._currentHP
+	local finalCurrentHP = math.min(self:GetMaxHP(), math.max(0, self._currentHP + dHP))
+	local validDHP = finalCurrentHP - self._currentHP
 
-	arg_22_0:SetCurrentHP(var_22_15)
+	self:SetCurrentHP(finalCurrentHP)
 
-	local var_22_17 = {
-		preShieldHP = var_22_11,
-		dHP = arg_22_1,
-		validDHP = var_22_16,
-		isMiss = var_22_1,
-		isCri = var_22_2,
-		isHeal = var_22_3,
-		font = var_22_7
+	local updateHPargs = {
+		preShieldHP = preShieldHP,
+		dHP = dHP,
+		validDHP = validDHP,
+		isMiss = isMiss,
+		isCri = isCri,
+		isHeal = isHeal,
+		font = font
 	}
 
-	if not var_22_3 then
-		var_22_12.validDHP = var_22_16
+	if not isHeal then
+		damageInfo.validDHP = validDHP
 
-		arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_DAMAGE_CONCLUDE, var_22_12)
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_DAMAGE_CONCLUDE, damageInfo)
 	end
 
-	if var_22_8 and not var_22_8:EqualZero() then
-		local var_22_18 = arg_22_0:GetPosition()
-		local var_22_19 = arg_22_0:GetBoxSize().x
-		local var_22_20 = var_22_18.x - var_22_19
-		local var_22_21 = var_22_18.x + var_22_19
-		local var_22_22 = var_22_8:Clone()
+	if cldPos and not cldPos:EqualZero() then
+		local position = self:GetPosition()
+		local boxSizeX = self:GetBoxSize().x
+		local cldBoxLeft = position.x - boxSizeX
+		local cldBoxRight = position.x + boxSizeX
+		local actualCldPos = cldPos:Clone()
 
-		var_22_22.x = Mathf.Clamp(var_22_22.x, var_22_20, var_22_21)
-		var_22_17.posOffset = var_22_18 - var_22_22
+		actualCldPos.x = Mathf.Clamp(actualCldPos.x, cldBoxLeft, cldBoxRight)
+		updateHPargs.posOffset = position - actualCldPos
 	end
 
-	arg_22_0:UpdateHPAction(var_22_17)
+	self:UpdateHPAction(updateHPargs)
 
-	if not arg_22_0:IsAlive() and var_22_0 then
-		arg_22_0:SetDeathReason(arg_22_2.damageReason)
-		arg_22_0:SetDeathSrcID(arg_22_2.srcID)
-		arg_22_0:DeadAction()
+	if not self:IsAlive() and isAliveBeforeUpdate then
+		self:SetDeathReason(extraInfo.damageReason)
+		self:SetDeathSrcID(extraInfo.srcID)
+		self:DeadAction()
 	end
 
-	if arg_22_0:IsAlive() then
-		arg_22_0:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {
-			dHP = arg_22_1,
-			unit = arg_22_0,
-			validDHP = var_22_16
+	if self:IsAlive() then
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {
+			dHP = dHP,
+			unit = self,
+			validDHP = validDHP
 		})
 	end
 
-	return arg_22_1
+	return dHP
 end
 
 function BattleUnit.UpdateHPAction(arg_23_0, arg_23_1)
