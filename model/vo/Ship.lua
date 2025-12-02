@@ -293,319 +293,386 @@ function Ship.getEnergyPrint(self)
 	return energyTemplate.icon, energyTemplate.desc
 end
 
-function Ship.getIntimacy(arg_24_0)
-	return arg_24_0.intimacy
+--- @class Ship
+--- @return number
+--- 获取舰船的好感度
+--- - 注意这个数值是原始数值，范围为0～20000
+--- - 但实际的好感度表现是0～200（除以100），且誓约后上限为200
+--- - 这样是为了保留更高的精度(0.01)，因为单次获得的好感度基本都是小于1的
+function Ship.getIntimacy(self)
+	return self.intimacy
 end
 
-function Ship.getCVIntimacy(arg_25_0)
-	return arg_25_0:getIntimacy() / 100 + (arg_25_0.propose and 1000 or 0)
+--- @class Ship
+--- @return number
+--- 获取舰船的UI好感度
+--- - 如果誓约，则在原有好感度基础上+1000？
+function Ship.getCVIntimacy(self)
+	return self:getIntimacy() / 100 + (self.propose and 1000 or 0)
 end
 
-function Ship.getIntimacyMax(arg_26_0)
-	if arg_26_0.propose then
+--- @class Ship
+--- @return number
+--- 获取舰船的好感度上限
+function Ship.getIntimacyMax(self)
+	if self.propose then
 		return 200
 	else
-		return arg_26_0:GetNoProposeIntimacyMax()
+		return self:GetNoProposeIntimacyMax()
 	end
 end
 
-function Ship.GetNoProposeIntimacyMax(arg_27_0)
+--- @class Ship
+--- @return number
+--- 获取未誓约时的好感度上限
+function Ship.GetNoProposeIntimacyMax(self)
 	return 100
 end
 
-function Ship.getIntimacyIcon(arg_28_0)
-	local var_28_0 = pg.intimacy_template[arg_28_0:getIntimacyLevel()]
-	local var_28_1 = ""
+--- @class Ship
+--- @return string, string|nil
+--- 获取好感度图标
+function Ship.getIntimacyIcon(self)
+	local template = pg.intimacy_template[self:getIntimacyLevel()]
+	local suffix = ""
 
-	if arg_28_0:isMetaShip() then
-		var_28_1 = "_meta"
-	elseif arg_28_0:IsXIdol() then
-		var_28_1 = "_imas"
+	if self:isMetaShip() then
+		suffix = "_meta"
+	elseif self:IsXIdol() then
+		suffix = "_imas"
 	end
 
-	if not arg_28_0.propose and math.floor(arg_28_0:getIntimacy() / 100) >= arg_28_0:getIntimacyMax() then
-		return var_28_0.icon .. var_28_1, "heart" .. var_28_1
+	-- 100好感度且未誓约，显示爱心图标
+	if not self.propose and math.floor(self:getIntimacy() / 100) >= self:getIntimacyMax() then
+		return template.icon .. suffix, "heart" .. suffix
 	else
-		return var_28_0.icon .. var_28_1
+		return template.icon .. suffix
 	end
 end
 
-function Ship.getIntimacyDetail(arg_29_0)
-	return arg_29_0:getIntimacyMax(), math.floor(arg_29_0:getIntimacy() / 100)
+--- @class Ship
+--- @return number, number
+--- 获取好感度详情
+--- - 返回值1：好感度上限
+--- - 返回值2：当前UI好感度值
+function Ship.getIntimacyDetail(self)
+	return self:getIntimacyMax(), math.floor(self:getIntimacy() / 100)
 end
 
-function Ship.getIntimacyInfo(arg_30_0)
-	local var_30_0 = pg.intimacy_template[arg_30_0:getIntimacyLevel()]
+--- @class Ship
+--- @return string, string
+--- 获取好感度图标和描述
+function Ship.getIntimacyInfo(self)
+	local template = pg.intimacy_template[self:getIntimacyLevel()]
 
-	return var_30_0.icon, var_30_0.desc
+	return template.icon, template.desc
 end
 
-function Ship.getIntimacyLevel(arg_31_0)
-	local var_31_0 = 0
-	local var_31_1 = pg.intimacy_template
+--- @class Ship
+--- @return number
+--- 获取好感度等级
+function Ship.getIntimacyLevel(self)
+	local intimacyLevel = 0
+	local intimacy_template = pg.intimacy_template
 
-	for iter_31_0, iter_31_1 in pairs(var_31_1) do
-		if type(iter_31_0) == "number" and arg_31_0:getIntimacy() >= iter_31_1.lower_bound and arg_31_0:getIntimacy() <= iter_31_1.upper_bound then
-			var_31_0 = iter_31_0
+	for index, template in pairs(intimacy_template) do
+		-- 判定：在[lower_bound, upper_bound]范围内
+		if type(index) == "number" and self:getIntimacy() >= template.lower_bound and self:getIntimacy() <= template.upper_bound then
+			intimacyLevel = index
 
 			break
 		end
 	end
 
-	if var_31_0 < arg_31_0.INTIMACY_PROPOSE and arg_31_0.propose then
-		var_31_0 = arg_31_0.INTIMACY_PROPOSE
+	if intimacyLevel < self.INTIMACY_PROPOSE and self.propose then
+		intimacyLevel = self.INTIMACY_PROPOSE
 	end
 
-	return var_31_0
+	return intimacyLevel
 end
 
-function Ship.getBluePrint(arg_32_0)
-	local var_32_0 = ShipBluePrint.New({
-		id = arg_32_0.groupId
+--- @class Ship
+--- @return ShipBluePrint
+--- 获取科研舰船对象
+function Ship.getBluePrint(self)
+	local shipBluePrint = ShipBluePrint.New({
+		id = self.groupId
 	})
-	local var_32_1 = arg_32_0.strengthList[1] or {
+	local strengthInfo = self.strengthList[1] or {
 		exp = 0,
 		level = 0
 	}
 
-	var_32_0:updateInfo({
-		blue_print_level = var_32_1.level,
-		exp = var_32_1.exp
+	shipBluePrint:updateInfo({
+		blue_print_level = strengthInfo.level,
+		exp = strengthInfo.exp
 	})
 
-	return var_32_0
+	return shipBluePrint
 end
 
-function Ship.getBaseList(arg_33_0)
-	if arg_33_0:isBluePrintShip() then
-		local var_33_0 = arg_33_0:getBluePrint()
+--- @class Ship
+--- @return table<number, number>
+--- 获取舰船底座列表
+--- - 对于普通舰船，直接返回ship_data_statistics表中的base_list字段
+--- - 对于科研舰船，则通过科研舰船对象获取底座列表，具体逻辑要看ShipBluePrint:getBaseList方法
+function Ship.getBaseList(self)
+	if self:isBluePrintShip() then
+		local bluePrint = self:getBluePrint()
 
-		assert(var_33_0, "blueprint can not be nil" .. arg_33_0.configId)
+		assert(bluePrint, "blueprint can not be nil" .. self.configId)
 
-		return var_33_0:getBaseList(arg_33_0)
+		return bluePrint:getBaseList(self)
 	else
-		return arg_33_0:getConfig("base_list")
+		return self:getConfig("base_list")
 	end
 end
 
-function Ship.getPreLoadCount(arg_34_0)
-	if arg_34_0:isBluePrintShip() then
-		return arg_34_0:getBluePrint():getPreLoadCount(arg_34_0)
+--- @class Ship
+--- @return table<number, number>
+--- 获取舰船(各武器槽)的预装填数量
+function Ship.getPreLoadCount(self)
+	if self:isBluePrintShip() then
+		return self:getBluePrint():getPreLoadCount(self)
 	else
-		return arg_34_0:getConfig("preload_count")
+		return self:getConfig("preload_count")
 	end
 end
 
-function Ship.getNation(arg_35_0)
-	return arg_35_0:getConfig("nationality")
+--- @class Ship
+--- @return number
+--- 获取舰船所属阵营
+function Ship.getNation(self)
+	return self:getConfig("nationality")
 end
 
-function Ship.getPaintingName(arg_36_0)
-	local var_36_0 = pg.ship_data_statistics[arg_36_0].skin_id
-	local var_36_1 = pg.ship_skin_template[var_36_0]
+--- @class Ship
+--- @return string
+--- 获取舰船皮肤的立绘名称
+function Ship.getPaintingName(self)
+	local skin_id = pg.ship_data_statistics[self].skin_id
+	local skin_template = pg.ship_skin_template[skin_id]
 
-	assert(var_36_1, "ship_skin_template not exist: " .. arg_36_0 .. " " .. var_36_0)
+	assert(skin_template, "ship_skin_template not exist: " .. self .. " " .. skin_id)
 
-	return var_36_1.painting
+	return skin_template.painting
 end
 
-function Ship.getName(arg_37_0)
-	if arg_37_0.propose and pg.PushNotificationMgr.GetInstance():isEnableShipName() then
-		return arg_37_0.name
+--- @class Ship
+--- @return string
+--- 获取舰船名称
+function Ship.getName(self)
+	-- 如果已誓约，且允许自定义名称，则返回自定义名称
+	if self.propose and pg.PushNotificationMgr.GetInstance():isEnableShipName() then
+		return self.name
 	end
 
-	if arg_37_0:isRemoulded() then
-		return pg.ship_skin_template[arg_37_0:getRemouldSkinId()].name
+	--- 如果改造过，返回改造后的名称
+	if self:isRemoulded() then
+		return pg.ship_skin_template[self:getRemouldSkinId()].name
 	end
-
-	return pg.ship_data_statistics[arg_37_0.configId].name
+	-- 返回默认名称
+	return pg.ship_data_statistics[self.configId].name
 end
 
-function Ship.GetDefaultName(arg_38_0)
-	if arg_38_0:isRemoulded() then
-		return pg.ship_skin_template[arg_38_0:getRemouldSkinId()].name
+--- @class Ship
+--- @return string
+--- 获取舰船默认名称
+--- - 和上面的getName方法有很多重叠
+function Ship.GetDefaultName(self)
+	if self:isRemoulded() then
+		return pg.ship_skin_template[self:getRemouldSkinId()].name
 	else
-		return pg.ship_data_statistics[arg_38_0.configId].name
+		return pg.ship_data_statistics[self.configId].name
 	end
 end
 
-function Ship.getShipName(arg_39_0)
-	return pg.ship_data_statistics[arg_39_0].name
+--- @class Ship
+--- @param configId number
+--- @return string
+--- 获取舰船的最基础名称
+function Ship.getShipName(configId)
+	return pg.ship_data_statistics[configId].name
 end
 
-function Ship.getBreakOutLevel(arg_40_0)
-	assert(arg_40_0, "必须存在配置id")
-	assert(pg.ship_data_statistics[arg_40_0], "必须存在配置" .. arg_40_0)
+--- @class Ship
+--- @param configId number
+--- @return number
+--- 获取舰船突破等级
+--- - 等价获取星数
+function Ship.getBreakOutLevel(configId)
+	assert(configId, "必须存在配置id")
+	assert(pg.ship_data_statistics[configId], "必须存在配置" .. configId)
 
-	return pg.ship_data_statistics[arg_40_0].star
+	return pg.ship_data_statistics[configId].star
 end
 
-function Ship.Ctor(arg_41_0, arg_41_1)
-	arg_41_0.id = arg_41_1.id
-	arg_41_0.configId = arg_41_1.template_id or arg_41_1.configId
-	arg_41_0.level = arg_41_1.level
-	arg_41_0.exp = arg_41_1.exp
-	arg_41_0.energy = arg_41_1.energy
-	arg_41_0.lockState = arg_41_1.is_locked
-	arg_41_0.intimacy = arg_41_1.intimacy
-	arg_41_0.propose = arg_41_1.propose and arg_41_1.propose > 0
-	arg_41_0.proposeTime = arg_41_1.propose
-
-	if arg_41_0.intimacy and arg_41_0.intimacy > 10000 and not arg_41_0.propose then
-		arg_41_0.intimacy = 10000
+function Ship.Ctor(self, args)
+	self.id = args.id
+	self.configId = args.template_id or args.configId
+	self.level = args.level
+	self.exp = args.exp
+	self.energy = args.energy
+	self.lockState = args.is_locked
+	self.intimacy = args.intimacy
+	self.propose = args.propose and args.propose > 0
+	self.proposeTime = args.propose
+	-- 强制上限
+	if self.intimacy and self.intimacy > 10000 and not self.propose then
+		self.intimacy = 10000
 	end
 
-	arg_41_0.renameTime = arg_41_1.change_name_timestamp
+	self.renameTime = args.change_name_timestamp
 
-	if arg_41_1.name and arg_41_1.name ~= "" then
-		arg_41_0.name = arg_41_1.name
+	if args.name and args.name ~= "" then
+		self.name = args.name
 	else
-		assert(pg.ship_data_statistics[arg_41_0.configId], "必须存在配置" .. arg_41_0.configId)
-
-		arg_41_0.name = pg.ship_data_statistics[arg_41_0.configId].name
+		assert(pg.ship_data_statistics[self.configId], "必须存在配置" .. self.configId)
+		-- 默认名称
+		self.name = pg.ship_data_statistics[self.configId].name
 	end
 
-	arg_41_0.bluePrintFlag = arg_41_1.blue_print_flag or 0
-	arg_41_0.strengthList = {}
+	self.bluePrintFlag = args.blue_print_flag or 0
+	self.strengthList = {}
 
-	for iter_41_0, iter_41_1 in ipairs(arg_41_1.strength_list or {}) do
-		if not arg_41_0:isBluePrintShip() then
+	for _, iter_41_1 in ipairs(args.strength_list or {}) do
+		if not self:isBluePrintShip() then
 			local var_41_0 = ShipModAttr.ID_TO_ATTR[iter_41_1.id]
 
-			arg_41_0.strengthList[var_41_0] = iter_41_1.exp
+			self.strengthList[var_41_0] = iter_41_1.exp
 		else
-			table.insert(arg_41_0.strengthList, {
+			table.insert(self.strengthList, {
 				level = iter_41_1.id,
 				exp = iter_41_1.exp
 			})
 		end
 	end
 
-	local var_41_1 = arg_41_1.state or {}
+	local var_41_1 = args.state or {}
 
-	arg_41_0.state = var_41_1.state or 0
-	arg_41_0.state_info_1 = var_41_1.state_info_1 or 0
-	arg_41_0.state_info_2 = var_41_1.state_info_2 or 0
-	arg_41_0.state_info_3 = var_41_1.state_info_3 or 0
-	arg_41_0.state_info_4 = var_41_1.state_info_4 or 0
-	arg_41_0.equipmentSkins = {}
-	arg_41_0.equipments = {}
+	self.state = var_41_1.state or 0
+	self.state_info_1 = var_41_1.state_info_1 or 0
+	self.state_info_2 = var_41_1.state_info_2 or 0
+	self.state_info_3 = var_41_1.state_info_3 or 0
+	self.state_info_4 = var_41_1.state_info_4 or 0
+	self.equipmentSkins = {}
+	self.equipments = {}
 
-	if arg_41_1.equip_info_list then
-		for iter_41_2, iter_41_3 in ipairs(arg_41_1.equip_info_list or {}) do
-			arg_41_0.equipments[iter_41_2] = iter_41_3.id > 0 and Equipment.New({
+	if args.equip_info_list then
+		for iter_41_2, iter_41_3 in ipairs(args.equip_info_list or {}) do
+			self.equipments[iter_41_2] = iter_41_3.id > 0 and Equipment.New({
 				count = 1,
 				id = iter_41_3.id,
 				config_id = iter_41_3.id,
 				skinId = iter_41_3.skinId
 			}) or false
-			arg_41_0.equipmentSkins[iter_41_2] = iter_41_3.skinId > 0 and iter_41_3.skinId or 0
+			self.equipmentSkins[iter_41_2] = iter_41_3.skinId > 0 and iter_41_3.skinId or 0
 
-			arg_41_0:reletiveEquipSkin(iter_41_2)
+			self:reletiveEquipSkin(iter_41_2)
 		end
 	end
 
-	arg_41_0.spWeapon = nil
+	self.spWeapon = nil
 
-	if arg_41_1.spweapon then
-		arg_41_0:UpdateSpWeapon(SpWeapon.CreateByNet(arg_41_1.spweapon))
+	if args.spweapon then
+		self:UpdateSpWeapon(SpWeapon.CreateByNet(args.spweapon))
 	end
 
-	arg_41_0.skills = {}
+	self.skills = {}
 
-	for iter_41_4, iter_41_5 in ipairs(arg_41_1.skill_id_list or {}) do
-		arg_41_0:updateSkill(iter_41_5)
+	for iter_41_4, iter_41_5 in ipairs(args.skill_id_list or {}) do
+		self:updateSkill(iter_41_5)
 	end
 
-	arg_41_0.star = arg_41_0:getConfig("rarity")
-	arg_41_0.transforms = {}
+	self.star = self:getConfig("rarity")
+	self.transforms = {}
 
-	for iter_41_6, iter_41_7 in ipairs(arg_41_1.transform_list or {}) do
-		arg_41_0.transforms[iter_41_7.id] = {
+	for iter_41_6, iter_41_7 in ipairs(args.transform_list or {}) do
+		self.transforms[iter_41_7.id] = {
 			id = iter_41_7.id,
 			level = iter_41_7.level
 		}
 	end
 
-	arg_41_0.groupId = pg.ship_data_template[arg_41_0.configId].group_type
-	arg_41_0.createTime = arg_41_1.create_time or 0
+	self.groupId = pg.ship_data_template[self.configId].group_type
+	self.createTime = args.create_time or 0
 
 	local var_41_2 = getProxy(CollectionProxy)
 
-	arg_41_0.virgin = var_41_2 and var_41_2.shipGroups[arg_41_0.groupId] == nil
+	self.virgin = var_41_2 and var_41_2.shipGroups[self.groupId] == nil
 
 	local var_41_3 = {
 		pg.gameset.test_ship_config_1.key_value,
 		pg.gameset.test_ship_config_2.key_value,
 		pg.gameset.test_ship_config_3.key_value
 	}
-	local var_41_4 = table.indexof(var_41_3, arg_41_0.configId)
+	local var_41_4 = table.indexof(var_41_3, self.configId)
 
 	if var_41_4 == 1 then
-		arg_41_0.testShip = {
+		self.testShip = {
 			2,
 			3,
 			4
 		}
 	elseif var_41_4 == 2 then
-		arg_41_0.testShip = {
+		self.testShip = {
 			5
 		}
 	elseif var_41_4 == 3 then
-		arg_41_0.testShip = {
+		self.testShip = {
 			6
 		}
 	else
-		arg_41_0.testShip = nil
+		self.testShip = nil
 	end
 
-	arg_41_0.maxIntimacy = pg.intimacy_template[#pg.intimacy_template.all].upper_bound
+	self.maxIntimacy = pg.intimacy_template[#pg.intimacy_template.all].upper_bound
 
 	local var_41_5 = 0
 
 	if not HXSet.isHxSkin() then
-		var_41_5 = arg_41_1.skin_id or 0
+		var_41_5 = args.skin_id or 0
 	end
 
-	arg_41_0.phantomDic = {}
+	self.phantomDic = {}
 
-	arg_41_0:updateSkinId(var_41_5, 0)
+	self:updateSkinId(var_41_5, 0)
 
-	for iter_41_8, iter_41_9 in ipairs(arg_41_1.skin_shadow_list or {}) do
-		arg_41_0:updateSkinId(iter_41_9.value, iter_41_9.key)
+	for iter_41_8, iter_41_9 in ipairs(args.skin_shadow_list or {}) do
+		self:updateSkinId(iter_41_9.value, iter_41_9.key)
 	end
 
-	arg_41_0.noChangeSkin = arg_41_1.noChangeSkin or false
-	arg_41_0.phantomRandomFlag = {}
+	self.noChangeSkin = args.noChangeSkin or false
+	self.phantomRandomFlag = {}
 
-	for iter_41_10, iter_41_11 in ipairs(arg_41_1.char_random_flag or {}) do
-		arg_41_0:updateRandomFlag(1, iter_41_11)
+	for iter_41_10, iter_41_11 in ipairs(args.char_random_flag or {}) do
+		self:updateRandomFlag(1, iter_41_11)
 	end
 
-	if arg_41_1.name and arg_41_1.name ~= "" then
-		arg_41_0.name = arg_41_1.name
-	elseif arg_41_0:isRemoulded() then
-		arg_41_0.name = pg.ship_skin_template[arg_41_0:getRemouldSkinId()].name
+	if args.name and args.name ~= "" then
+		self.name = args.name
+	elseif self:isRemoulded() then
+		self.name = pg.ship_skin_template[self:getRemouldSkinId()].name
 	else
-		arg_41_0.name = pg.ship_data_statistics[arg_41_0.configId].name
+		self.name = pg.ship_data_statistics[self.configId].name
 	end
 
-	arg_41_0.maxLevel = arg_41_1.max_level
-	arg_41_0.proficiency = arg_41_1.proficiency or 0
-	arg_41_0.preferenceTag = arg_41_1.common_flag
-	arg_41_0.hpRant = 10000
-	arg_41_0.strategies = {}
-	arg_41_0.triggers = {}
-	arg_41_0.commanderId = arg_41_1.commanderid or 0
-	arg_41_0.activityNpc = arg_41_1.activity_npc or 0
+	self.maxLevel = args.max_level
+	self.proficiency = args.proficiency or 0
+	self.preferenceTag = args.common_flag
+	self.hpRant = 10000
+	self.strategies = {}
+	self.triggers = {}
+	self.commanderId = args.commanderid or 0
+	self.activityNpc = args.activity_npc or 0
 
-	if Ship.isMetaShipByConfigID(arg_41_0.configId) then
-		local var_41_6 = MetaCharacterConst.GetMetaShipGroupIDByConfigID(arg_41_0.configId)
+	if Ship.isMetaShipByConfigID(self.configId) then
+		local var_41_6 = MetaCharacterConst.GetMetaShipGroupIDByConfigID(self.configId)
 
-		arg_41_0.metaCharacter = MetaCharacter.New({
+		self.metaCharacter = MetaCharacter.New({
 			id = var_41_6,
-			repair_attr_info = arg_41_1.meta_repair_list
-		}, arg_41_0)
+			repair_attr_info = args.meta_repair_list
+		}, self)
 	end
 end
 

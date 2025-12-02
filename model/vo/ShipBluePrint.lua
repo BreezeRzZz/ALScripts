@@ -657,11 +657,11 @@ function var_0_0.getUnlockLevel(arg_52_0, arg_52_1)
 	return 0
 end
 
-function var_0_0.getBaseList(arg_53_0, arg_53_1)
-	assert(arg_53_1, "shipVO can not be nil" .. arg_53_0.shipId)
+function var_0_0.getBaseList(self, ship)
+	assert(ship, "shipVO can not be nil" .. self.shipId)
 
-	for iter_53_0 = arg_53_0.level, 1, -1 do
-		local var_53_0 = arg_53_0:getStrengthenConfig(iter_53_0)
+	for iter_53_0 = self.level, 1, -1 do
+		local var_53_0 = self:getStrengthenConfig(iter_53_0)
 
 		if var_53_0.special == 1 then
 			local var_53_1 = var_53_0.special_effect
@@ -674,7 +674,7 @@ function var_0_0.getBaseList(arg_53_0, arg_53_1)
 		end
 	end
 
-	return arg_53_1:getConfig("base_list")
+	return ship:getConfig("base_list")
 end
 
 function var_0_0.getPreLoadCount(arg_54_0, arg_54_1)
