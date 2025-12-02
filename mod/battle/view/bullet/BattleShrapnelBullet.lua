@@ -1,26 +1,44 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBulletEvent
-local var_0_2 = class("BattleShrapnelBullet", var_0_0.Battle.BattleBullet)
+local ys = ys
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleShrapnelBullet = class("BattleShrapnelBullet", ys.Battle.BattleBullet)
 
-var_0_0.Battle.BattleShrapnelBullet = var_0_2
-var_0_2.__name = "BattleShrapnelBullet"
+ys.Battle.BattleShrapnelBullet = BattleShrapnelBullet
+BattleShrapnelBullet.__name = "BattleShrapnelBullet"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleShrapnelBullet
+--- @return nil
+--- 构造函数
+--- - 原本提供了另外2个参数，但基类构造函数只有一个参数，因此去除
+function BattleShrapnelBullet.Ctor(self)
+	BattleShrapnelBullet.super.Ctor(self)
 end
 
-function var_0_2.AddBulletEvent(arg_2_0)
-	var_0_2.super.AddBulletEvent(arg_2_0)
-	arg_2_0._bulletData:RegisterEventListener(arg_2_0, var_0_1.SPLIT, arg_2_0.onBulletSplit)
+--- @class BattleShrapnelBullet
+--- @return nil
+--- 添加子弹事件
+--- - 基础类会监听：HIT、INTERCEPTED、OUT_RANGE
+--- - 这里增加监听：SPLIT，即母弹分裂事件
+function BattleShrapnelBullet.AddBulletEvent(self)
+	BattleShrapnelBullet.super.AddBulletEvent(self)
+	self._bulletData:RegisterEventListener(self, BattleBulletEvent.SPLIT, self.onBulletSplit)
 end
 
-function var_0_2.RemoveBulletEvent(arg_3_0)
-	var_0_2.super.RemoveBulletEvent(arg_3_0)
-	arg_3_0._bulletData:UnregisterEventListener(arg_3_0, var_0_1.SPLIT)
+--- @class BattleShrapnelBullet
+--- @return nil
+--- 移除子弹事件
+--- - 移除所有监听
+function BattleShrapnelBullet.RemoveBulletEvent(self)
+	BattleShrapnelBullet.super.RemoveBulletEvent(self)
+	self._bulletData:UnregisterEventListener(self, BattleBulletEvent.SPLIT)
 end
 
-function var_0_2.onBulletSplit(arg_4_0, arg_4_1)
-	arg_4_0._bulletHitFunc(arg_4_0)
+--- @class BattleShrapnelBullet
+--- @return nil
+--- 母弹分裂时的回调
+--- - 本来还有一个参数，但未使用，因此去除
+--- - _bulletHitFunc在基类中由SetFxFunc设置，而这个函数在对应的工厂类中调用
+function BattleShrapnelBullet.onBulletSplit(self)
+	self._bulletHitFunc(self)
 end

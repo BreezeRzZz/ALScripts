@@ -1,65 +1,91 @@
-local var_0_0 = class("BaseVO")
+local BaseVO = class("BaseVO")
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
-	for iter_1_0, iter_1_1 in pairs(arg_1_1) do
-		arg_1_0[iter_1_0] = iter_1_1
+--- @class BaseVO
+--- @param args table<string, any>
+--- @return nil
+--- 构造函数
+function BaseVO.Ctor(self, args)
+	for key, value in pairs(args) do
+		self[key] = value
 	end
 end
 
-function var_0_0.display(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_1 == "loaded" or not arg_2_2 then
+--- @class BaseVO
+--- @param log string
+--- @param flag boolean
+--- 打印对象信息
+function BaseVO.display(self, log, flag)
+	if log == "loaded" or not flag then
 		return
 	end
 
-	local var_2_0 = arg_2_0.__cname .. " id: " .. tostring(arg_2_0.id) .. " " .. (arg_2_1 or ".")
+	local logString = self.__cname .. " id: " .. tostring(self.id) .. " " .. (log or ".")
 
-	for iter_2_0, iter_2_1 in pairs(arg_2_0) do
-		if iter_2_0 ~= "class" then
-			local var_2_1 = type(iter_2_1)
+	for key, value in pairs(self) do
+		if key ~= "class" then
+			local valueType = type(value)
 
-			var_2_0 = var_2_0 .. "\n" .. iter_2_0 .. ":" .. tostring(iter_2_1)
+			logString = logString .. "\n" .. key .. ":" .. tostring(value)
 
-			if var_2_1 == "table" then
-				var_2_0 = var_2_0 .. " ["
+			if valueType == "table" then
+				logString = logString .. " ["
 
-				for iter_2_2, iter_2_3 in pairs(iter_2_1) do
-					var_2_0 = var_2_0 .. tostring(iter_2_3) .. ", "
+				for _, member in pairs(value) do
+					logString = logString .. tostring(member) .. ", "
 				end
 
-				var_2_0 = var_2_0 .. "]"
+				logString = logString .. "]"
 			end
 		end
 	end
 
-	print(var_2_0)
+	print(logString)
 end
 
-function var_0_0.clone(arg_3_0)
-	return Clone(arg_3_0)
+--- @class BaseVO
+--- @return BaseVO
+--- 克隆对象
+function BaseVO.clone(self)
+	return Clone(self)
 end
 
-function var_0_0.bindConfigTable(arg_4_0)
+--- @class BaseVO
+--- @return any
+--- 绑定配置表
+--- - 需要在子类中重写此方法
+function BaseVO.bindConfigTable(self)
 	return
 end
 
-function var_0_0.GetConfigID(arg_5_0)
-	return arg_5_0.configId
+--- @class BaseVO
+--- @return number
+--- 获取配置ID
+function BaseVO.GetConfigID(self)
+	return self.configId
 end
 
-function var_0_0.getConfigTable(arg_6_0)
-	local var_6_0 = arg_6_0:bindConfigTable()
+--- @class BaseVO
+--- @return table
+--- 获取配置表
+function BaseVO.getConfigTable(self)
+	--- @type table<number, table>
+	local configTableList = self:bindConfigTable()
 
-	assert(var_6_0, "should bindConfigTable() first: " .. arg_6_0.__cname)
+	assert(configTableList, "should bindConfigTable() first: " .. self.__cname)
 
-	return var_6_0[arg_6_0.configId]
+	return configTableList[self.configId]
 end
 
-function var_0_0.getConfig(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_0:getConfigTable()
+--- @class BaseVO
+--- @param key string
+--- @return any
+--- 获取配置表中的字段值
+function BaseVO.getConfig(self, key)
+	local configTable = self:getConfigTable()
 
-	assert(var_7_0 ~= nil, "Config missed, type -" .. arg_7_0.__cname .. " configId: " .. tostring(arg_7_0.configId))
+	assert(configTable ~= nil, "Config missed, type -" .. self.__cname .. " configId: " .. tostring(self.configId))
 
-	return var_7_0[arg_7_1]
+	return configTable[key]
 end
 
-return var_0_0
+return BaseVO

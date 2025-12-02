@@ -1,197 +1,295 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleBulletEvent
-local var_0_4 = var_0_0.Battle.BattleFormulas
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleConst = ys.Battle.BattleConst
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleFormulas = ys.Battle.BattleFormulas
 
-var_0_0.Battle.BattleShrapnelBulletUnit = class("BattleShrapnelBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleShrapnelBulletUnit.__name = "BattleShrapnelBulletUnit"
+ys.Battle.BattleShrapnelBulletUnit = class("BattleShrapnelBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleShrapnelBulletUnit.__name = "BattleShrapnelBulletUnit"
 
-local var_0_5 = var_0_0.Battle.BattleShrapnelBulletUnit
+local BattleShrapnelBulletUnit = ys.Battle.BattleShrapnelBulletUnit
 
-var_0_5.STATE_NORMAL = "normal"
-var_0_5.STATE_SPLIT = "split"
-var_0_5.STATE_SPIN = "spin"
-var_0_5.STATE_FINAL_SPLIT = "final_split"
-var_0_5.STATE_EXPIRE = "expire"
-var_0_5.STATE_PRIORITY = {
-	[var_0_5.STATE_EXPIRE] = 5,
-	[var_0_5.STATE_FINAL_SPLIT] = 4,
-	[var_0_5.STATE_SPLIT] = 3,
-	[var_0_5.STATE_SPIN] = 2,
-	[var_0_5.STATE_NORMAL] = 1
+BattleShrapnelBulletUnit.STATE_NORMAL = "normal"
+BattleShrapnelBulletUnit.STATE_SPLIT = "split"
+BattleShrapnelBulletUnit.STATE_SPIN = "spin"
+BattleShrapnelBulletUnit.STATE_FINAL_SPLIT = "final_split"
+BattleShrapnelBulletUnit.STATE_EXPIRE = "expire"
+BattleShrapnelBulletUnit.STATE_PRIORITY = {
+	[BattleShrapnelBulletUnit.STATE_EXPIRE] = 5,
+	[BattleShrapnelBulletUnit.STATE_FINAL_SPLIT] = 4,
+	[BattleShrapnelBulletUnit.STATE_SPLIT] = 3,
+	[BattleShrapnelBulletUnit.STATE_SPIN] = 2,
+	[BattleShrapnelBulletUnit.STATE_NORMAL] = 1
 }
 
-function var_0_5.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_5.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleShrapnelBulletUnit
+--- @param uniqueID number
+--- @param IFF number
+--- @return nil
+--- 构造函数
+function BattleShrapnelBulletUnit.Ctor(self, uniqueID, IFF)
+	BattleShrapnelBulletUnit.super.Ctor(self, uniqueID, IFF)
 
-	arg_1_0._splitCount = 0
-	arg_1_0._cacheEmitter = {}
+	self._splitCount = 0
+	self._cacheEmitter = {}
 
-	arg_1_0:ChangeShrapnelState(arg_1_0.STATE_NORMAL)
+	self:ChangeShrapnelState(self.STATE_NORMAL)
 end
 
-function var_0_5.Hit(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_0:GetTemplate().extra_param.rangeAA then
+--- @class BattleShrapnelBulletUnit
+--- @param uniqueID number
+--- @param unitType number
+--- @return nil
+--- 命中处理
+function BattleShrapnelBulletUnit.Hit(self, uniqueID, unitType)
+	if self:GetTemplate().extra_param.rangeAA then
 		return
 	end
 
-	var_0_5.super.Hit(arg_2_0, arg_2_1, arg_2_2)
+	BattleShrapnelBulletUnit.super.Hit(self, uniqueID, unitType)
 
-	arg_2_0._pierceCount = arg_2_0._pierceCount - 1
+	self._pierceCount = self._pierceCount - 1
 end
 
-function var_0_5.SplitFinishCount(arg_3_0)
-	arg_3_0._splitCount = arg_3_0._splitCount + 1
+--- @class BattleShrapnelBulletUnit
+--- @return nil
+--- 分裂计数加一
+function BattleShrapnelBulletUnit.SplitFinishCount(self)
+	self._splitCount = self._splitCount + 1
 end
 
-function var_0_5.IsAllSplitFinish(arg_4_0)
-	return arg_4_0._splitCount >= #arg_4_0._tempData.extra_param.shrapnel
+--- @class BattleShrapnelBulletUnit
+--- @return boolean
+--- 判断是否全部分裂完成
+function BattleShrapnelBulletUnit.IsAllSplitFinish(self)
+	return self._splitCount >= #self._tempData.extra_param.shrapnel
 end
 
-function var_0_5.SetTemplateData(arg_5_0, arg_5_1)
-	var_0_5.super.SetTemplateData(arg_5_0, arg_5_1)
+--- @class BattleShrapnelBulletUnit
+--- @param template table
+--- @return nil
+--- 设置模板数据
+function BattleShrapnelBulletUnit.SetTemplateData(self, template)
+	BattleShrapnelBulletUnit.super.SetTemplateData(self, template)
 
-	arg_5_0._outbound = arg_5_0._tempData.out_bound
+	self._outbound = self._tempData.out_bound
 end
 
-function var_0_5.GetOutBound(arg_6_0)
-	return arg_6_0._outbound
+--- @class BattleShrapnelBulletUnit
+--- @return number
+--- 获取出界处理方式(参考BattleConst.BulletOutBound)
+--- - COMMON = 0
+--- - EXIST = 1
+--- - RANDOM = 2
+--- - VISION = 3
+--- - SPLIT = 4
+--- - SHIFT_SPLIT = 5
+function BattleShrapnelBulletUnit.GetOutBound(self)
+	return self._outbound
 end
 
-function var_0_5.Update(arg_7_0, arg_7_1)
-	if arg_7_0._startCount == nil and arg_7_0._outbound == var_0_2.BulletOutBound.SHIFT_SPLIT then
-		arg_7_0._startCount = arg_7_1
+--- @class BattleShrapnelBulletUnit
+--- @param timeStamp number
+--- @return nil
+--- BattleShrapnelBulletUnit的Update函数
+function BattleShrapnelBulletUnit.Update(self, timeStamp)
+	-- 以下都是针对SHIFT_SPLIT类型的处理
+	if self._startCount == nil and self._outbound == BattleConst.BulletOutBound.SHIFT_SPLIT then
+		self._startCount = timeStamp
 	end
 
-	if arg_7_0._outbound == var_0_2.BulletOutBound.SHIFT_SPLIT then
-		if arg_7_0._startCount == nil then
-			arg_7_0._startCount = arg_7_1
-		elseif arg_7_1 - arg_7_0._startCount > var_0_1.BULLET_SPLIT_SHIFT_DELAY then
-			arg_7_0._outbound = var_0_2.BulletOutBound.SPLIT
+	if self._outbound == BattleConst.BulletOutBound.SHIFT_SPLIT then
+		if self._startCount == nil then
+			self._startCount = timeStamp
+		-- BULLET_SPLIT_SHIFT_DELAY = 0.2
+		-- 0.2s后，切换到SPLIT出界处理方式
+		elseif timeStamp - self._startCount > BattleConfig.BULLET_SPLIT_SHIFT_DELAY then
+			self._outbound = BattleConst.BulletOutBound.SPLIT
 		end
 	end
 
-	if arg_7_0._currentState == var_0_5.STATE_NORMAL then
-		local var_7_0 = arg_7_0._verticalSpeed
+	if self._currentState == BattleShrapnelBulletUnit.STATE_NORMAL then
+		local verticalSpeed = self._verticalSpeed
 
-		var_0_5.super.Update(arg_7_0, arg_7_1)
-
-		if var_7_0 ~= 0 and var_7_0 * arg_7_0._verticalSpeed < 0 then
-			arg_7_0:ChangeShrapnelState(var_0_5.STATE_SPLIT)
+		BattleShrapnelBulletUnit.super.Update(self, timeStamp)
+		-- 意思是上一帧的垂直速度和当前帧的垂直速度符号不同，表示开始下落
+		-- 切换到SPLIT状态
+		if verticalSpeed ~= 0 and verticalSpeed * self._verticalSpeed < 0 then
+			self:ChangeShrapnelState(BattleShrapnelBulletUnit.STATE_SPLIT)
 		end
-	elseif arg_7_0._currentState == var_0_5.STATE_SPIN and (not arg_7_0._tempData.extra_param.lastTime or arg_7_1 - arg_7_0._spinStartTime > arg_7_0._tempData.extra_param.lastTime) then
-		arg_7_0:ChangeShrapnelState(var_0_5.STATE_SPLIT)
+	-- 如果已经是SPIN状态，并且持续时间超过lastTime参数，切换到SPLIT状态
+	elseif self._currentState == BattleShrapnelBulletUnit.STATE_SPIN and (not self._tempData.extra_param.lastTime or timeStamp - self._spinStartTime > self._tempData.extra_param.lastTime) then
+		self:ChangeShrapnelState(BattleShrapnelBulletUnit.STATE_SPLIT)
 	end
 end
 
-function var_0_5.ChangeShrapnelState(arg_8_0, arg_8_1)
-	local var_8_0 = var_0_5.STATE_PRIORITY[arg_8_0._currentState]
-
-	if var_8_0 and var_8_0 >= var_0_5.STATE_PRIORITY[arg_8_1] then
+--- @class BattleShrapnelBulletUnit
+--- @param state string
+--- @return nil
+--- 切换Shrapnel状态
+function BattleShrapnelBulletUnit.ChangeShrapnelState(self, state)
+	local priority = BattleShrapnelBulletUnit.STATE_PRIORITY[self._currentState]
+	-- 只允许切换到更高优先级的状态
+	-- 也即NORMAL -> SPIN -> SPLIT -> FINAL_SPLIT -> EXPIRE(中间可以跳过某些状态)
+	if priority and priority >= BattleShrapnelBulletUnit.STATE_PRIORITY[state] then
 		return
 	end
 
-	arg_8_0._currentState = arg_8_1
-
-	if arg_8_0._currentState == var_0_5.STATE_SPIN then
-		arg_8_0._spinStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	elseif arg_8_0._currentState == var_0_5.STATE_SPLIT then
-		arg_8_0:DispatchEvent(var_0_0.Event.New(var_0_3.SPLIT, {}))
+	self._currentState = state
+	-- 记录spin开始的时间戳
+	if self._currentState == BattleShrapnelBulletUnit.STATE_SPIN then
+		self._spinStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	-- 如果切换到SPLIT状态，派发SPLIT事件
+	-- Listener: BattleShrapnelBullet.onBulletSplit
+	elseif self._currentState == BattleShrapnelBulletUnit.STATE_SPLIT then
+		self:DispatchEvent(ys.Event.New(BattleBulletEvent.SPLIT, {}))
 	end
 end
 
-function var_0_5.IsOutRange(arg_9_0, arg_9_1)
-	if arg_9_0._currentState == var_0_5.STATE_NORMAL then
-		return var_0_5.super.IsOutRange(arg_9_0, arg_9_1)
+--- @class BattleShrapnelBulletUnit
+--- @return boolean
+--- 判断是否出界
+--- - 原本有一个参数，但父类的IsOutRange没有参数，所以这里也去掉参数
+function BattleShrapnelBulletUnit.IsOutRange(self)
+	if self._currentState == BattleShrapnelBulletUnit.STATE_NORMAL then
+		return BattleShrapnelBulletUnit.super.IsOutRange(self)
 	else
 		return false
 	end
 end
 
-function var_0_5.SetSrcHost(arg_10_0, arg_10_1)
-	arg_10_0._srcHost = arg_10_1
+--- @class BattleShrapnelBulletUnit
+--- @param host BattleUnit
+--- @return nil
+--- 设置子弹的来源单位
+function BattleShrapnelBulletUnit.SetSrcHost(self, host)
+	self._srcHost = host
 end
 
-function var_0_5.GetSrcHost(arg_11_0)
-	return arg_11_0._srcHost
+--- @class BattleShrapnelBulletUnit
+--- @return BattleUnit
+--- 获取子弹的来源单位
+function BattleShrapnelBulletUnit.GetSrcHost(self)
+	return self._srcHost
 end
 
-function var_0_5.GetShrapnelParam(arg_12_0)
-	return arg_12_0._tempData.extra_param
+--- @class BattleShrapnelBulletUnit
+--- @return table
+--- 获取子母弹相关参数
+function BattleShrapnelBulletUnit.GetShrapnelParam(self)
+	return self._tempData.extra_param
 end
 
-function var_0_5.GetCurrentState(arg_13_0)
-	return arg_13_0._currentState
+--- @class BattleShrapnelBulletUnit
+--- @return string
+--- 获取当前状态
+function BattleShrapnelBulletUnit.GetCurrentState(self)
+	return self._currentState
 end
 
-function var_0_5.SetSpawnPosition(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_0:GetTemplate().extra_param
-	local var_14_1 = arg_14_1
+--- @class BattleShrapnelBulletUnit
+--- @param position Vector3
+--- @return nil
+--- 设置子弹生成位置
+--- ! 这个函数目前还有许多不明确的地方，待补充
+function BattleShrapnelBulletUnit.SetSpawnPosition(self, position)
+	local extra_param = self:GetTemplate().extra_param
+	local _position = position
 
-	if var_14_0.directHit then
-		var_14_1 = Clone(arg_14_0._explodePos)
+	if extra_param.directHit then
+		_position = Clone(self._explodePos)
 	end
 
-	var_0_5.super.SetSpawnPosition(arg_14_0, var_14_1)
+	BattleShrapnelBulletUnit.super.SetSpawnPosition(self, _position)
+	-- 计算时，不考虑y轴
+	local spawnPos = pg.Tool.FilterY(self._spawnPos)
+	local distance = Vector3.Distance(spawnPos, pg.Tool.FilterY(self._explodePos))
 
-	local var_14_2 = pg.Tool.FilterY(arg_14_0._spawnPos)
-	local var_14_3 = Vector3.Distance(var_14_2, pg.Tool.FilterY(arg_14_0._explodePos))
+	if extra_param.flare then
+		local childBulletID = extra_param.shrapnel[1].bullet_ID
+		local childBulletTemplate = ys.Battle.BattleDataFunction.GetBulletTmpDataFromID(childBulletID)
+		local childDropTime = childBulletTemplate.hit_type.childDropTime
+		-- 减号左边: 孩子在这段时间内的高度变化，是负数
+			-- h = 0.5gt^2
+		-- 减号右边：母弹此刻的高度
+		-- 因此这个值表示的是???为什么是减?确定没写错?
+		local childFallHeight = 0.5 * math.abs(childBulletTemplate.extra_param.gravity or -0.0005) * (childDropTime * BattleConfig.calcFPS)^2 - self._spawnPos.y
+		-- 计算母弹的水平速度，为了方便，下面对childFallHeight的符号取了反
+		-- v_x = sqrt(gd^2 / 2h)
+		-- 也即(v_x)^2 = gd^2 / 2h
+		-- -> 2h(v_x)^2 = gd^2
+		-- -> (d/v_x)^2 = 2h/g -> d/vx = sqrt(2h/g)
+		-- 表示水平时间 = 下落时间. 
+		-- 因此这里计算的v_x的意义是：让母弹飞行的时间等于孩子下落的时间
+		self._convertedVelocity = math.sqrt(-0.5 * self._gravity * distance * distance / childFallHeight)
+		-- 这个值表示母弹飞行的时间，理论上实际应该与childDropTime相等
+		-- t = d/v_x
+		local flightTime = distance / self._convertedVelocity
+		-- 计算母弹的垂直速度, 为了方便，下面对g的符号取了反
+		-- v_y = h/t + 0.5gt
+		-- 对应h = v_yt - 0.5gt^2
+		self._verticalSpeed = childFallHeight / flightTime - 0.5 * self._gravity * flightTime
+	elseif extra_param.rangeAA then
+		-- AircraftHeight = 10
+		local targetHeightChange = BattleConfig.AircraftHeight - self._spawnPos.y
+		local halfGravity = 0.5 * self._gravity
 
-	if var_14_0.flare then
-		local var_14_4 = var_14_0.shrapnel[1].bullet_ID
-		local var_14_5 = var_0_0.Battle.BattleDataFunction.GetBulletTmpDataFromID(var_14_4)
-		local var_14_6 = var_14_5.hit_type.time
-		local var_14_7 = 0.5 * math.abs(var_14_5.extra_param.gravity or -0.0005) * (var_14_6 * var_0_1.calcFPS)^2 - arg_14_0._spawnPos.y
+		self._velocity = math.sqrt(-halfGravity * distance * distance / targetHeightChange)
 
-		arg_14_0._convertedVelocity = math.sqrt(-0.5 * arg_14_0._gravity * var_14_3 * var_14_3 / var_14_7)
+		local flightTime = distance / self._velocity
 
-		local var_14_8 = var_14_3 / arg_14_0._convertedVelocity
-
-		arg_14_0._verticalSpeed = var_14_7 / var_14_8 - 0.5 * arg_14_0._gravity * var_14_8
-	elseif var_14_0.rangeAA then
-		local var_14_9 = var_0_1.AircraftHeight - arg_14_0._spawnPos.y
-		local var_14_10 = 0.5 * arg_14_0._gravity
-
-		arg_14_0._velocity = math.sqrt(-var_14_10 * var_14_3 * var_14_3 / var_14_9)
-
-		local var_14_11 = var_14_3 / arg_14_0._velocity
-
-		arg_14_0._verticalSpeed = var_14_9 / var_14_11 - var_14_10 * var_14_11
-		arg_14_0._velocity = var_0_4.ConvertBulletDataSpeed(arg_14_0._velocity)
-	elseif arg_14_0._convertedVelocity ~= 0 and arg_14_0._explodePos.y ~= arg_14_0._spawnPos.y then
-		local var_14_12 = var_14_3 / arg_14_0._convertedVelocity
-		local var_14_13 = arg_14_0._explodePos.y - arg_14_0._spawnPos.y
-
-		arg_14_0._verticalSpeed = var_14_0.launchVrtSpeed or var_14_13 / var_14_12 - 0.5 * arg_14_0._gravity * var_14_12
+		self._verticalSpeed = targetHeightChange / flightTime - halfGravity * flightTime
+		self._velocity = BattleFormulas.ConvertBulletDataSpeed(self._velocity)
+	elseif self._convertedVelocity ~= 0 and self._explodePos.y ~= self._spawnPos.y then
+		local flightTime = distance / self._convertedVelocity
+		local heightChange = self._explodePos.y - self._spawnPos.y
+		-- 这个比较好理解，就是用水平飞行的时间反推初始垂直速度
+		self._verticalSpeed = extra_param.launchVrtSpeed or heightChange / flightTime - 0.5 * self._gravity * flightTime
 	end
 end
 
-function var_0_5.GetExplodePostion(arg_15_0)
-	return arg_15_0._explodePos
+--- @class BattleShrapnelBulletUnit
+--- @return Vector3
+--- 获取指定爆炸位置
+function BattleShrapnelBulletUnit.GetExplodePostion(self)
+	return self._explodePos
 end
 
-function var_0_5.SetExplodePosition(arg_16_0, arg_16_1)
-	arg_16_0._explodePos = Clone(arg_16_1)
-	arg_16_0._explodePos.y = var_0_1.BombDetonateHeight
+--- @class BattleShrapnelBulletUnit
+--- @param position Vector3
+--- @return nil
+--- 设置指定爆炸位置
+function BattleShrapnelBulletUnit.SetExplodePosition(self, position)
+	self._explodePos = Clone(position)
+	self._explodePos.y = BattleConfig.BombDetonateHeight
 end
 
-function var_0_5.CacheChildEimtter(arg_17_0, arg_17_1)
-	table.insert(arg_17_0._cacheEmitter, arg_17_1)
+--- @class BattleShrapnelBulletUnit
+--- @param emitter BattleBulletEmitter
+--- @return nil
+--- 缓存孩子子弹的emitter
+function BattleShrapnelBulletUnit.CacheChildEimtter(self, emitter)
+	table.insert(self._cacheEmitter, emitter)
 end
 
-function var_0_5.interruptChildEmitter(arg_18_0)
-	for iter_18_0, iter_18_1 in ipairs(arg_18_0._cacheEmitter) do
-		iter_18_1:Destroy()
+--- @class BattleShrapnelBulletUnit
+--- @return nil
+--- 中断所有孩子子弹的emitter
+function BattleShrapnelBulletUnit.interruptChildEmitter(self)
+	for _, emitter in ipairs(self._cacheEmitter) do
+		emitter:Destroy()
 	end
 end
 
-function var_0_5.Dispose(arg_19_0)
-	arg_19_0:interruptChildEmitter()
+--- @class BattleShrapnelBulletUnit
+--- @return nil
+--- 销毁函数
+function BattleShrapnelBulletUnit.Dispose(self)
+	self:interruptChildEmitter()
 
-	arg_19_0._cacheEmitter = nil
+	self._cacheEmitter = nil
 
-	var_0_5.super.Dispose(arg_19_0)
+	BattleShrapnelBulletUnit.super.Dispose(self)
 end

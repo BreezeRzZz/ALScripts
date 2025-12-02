@@ -1,54 +1,61 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst.AircraftUnitType
-local var_0_4 = var_0_0.Battle.BattleConst.CharacterUnitType
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local AircraftUnitType = ys.Battle.BattleConst.AircraftUnitType
+local CharacterUnitType = ys.Battle.BattleConst.CharacterUnitType
 
-var_0_0.Battle.BattleShrapnelBulletFactory = singletonClass("BattleShrapnelBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleShrapnelBulletFactory.__name = "BattleShrapnelBulletFactory"
+ys.Battle.BattleShrapnelBulletFactory = singletonClass("BattleShrapnelBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleShrapnelBulletFactory.__name = "BattleShrapnelBulletFactory"
 
-local var_0_5 = var_0_0.Battle.BattleShrapnelBulletFactory
+local BattleShrapnelBulletFactory = ys.Battle.BattleShrapnelBulletFactory
 
-var_0_5.INHERIT_NONE = 0
-var_0_5.INHERIT_ANGLE = 1
-var_0_5.INHERIT_SPEED_NORMALIZE = 2
-var_0_5.INHERIT_VELOCITY_TEMPLATE = 1
-var_0_5.INHERIT_VELOCITY_CURRENT = 2
-var_0_5.FRAGILE_DAMAGE_NOT_SPLIT = 1
-var_0_5.FRAGILE_NOT_DAMAGE_NOT_SPLIT = 2
+BattleShrapnelBulletFactory.INHERIT_NONE = 0
+BattleShrapnelBulletFactory.INHERIT_ANGLE = 1
+BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE = 2
+BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE = 1
+BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT = 2
+BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT = 1
+BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT = 2
 
-function var_0_5.Ctor(arg_1_0)
-	var_0_5.super.Ctor(arg_1_0)
+--- @class BattleShrapnelBulletFactory
+--- @return nil
+--- 构造函数
+function BattleShrapnelBulletFactory.Ctor(self)
+	BattleShrapnelBulletFactory.super.Ctor(self)
 end
 
-function var_0_5.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleShrapnelBullet.New()
+--- @class BattleShrapnelBulletFactory
+--- @return BattleShrapnelBullet
+--- 生成Shrapnel子弹
+function BattleShrapnelBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleShrapnelBullet.New()
 end
 
-function var_0_5.CreateBullet(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4, arg_3_5)
-	arg_3_2:SetOutRangeCallback(arg_3_0.OutRangeFunc)
+function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, arg_3_3, arg_3_4, direction)
+	bullet:SetOutRangeCallback(self.OutRangeFunc)
 
-	local var_3_0 = arg_3_0:MakeBullet()
+	--- @type BattleShrapnelBullet
+	local bulletView = self:MakeBullet()
 
-	var_3_0:SetFactory(arg_3_0)
-	var_3_0:SetBulletData(arg_3_2)
-	arg_3_0:MakeModel(var_3_0, arg_3_3, arg_3_4, arg_3_5)
+	bulletView:SetFactory(self)
+	bulletView:SetBulletData(bullet)
+	self:MakeModel(bulletView, arg_3_3, arg_3_4, direction)
 
 	if arg_3_4 and arg_3_4 ~= "" then
-		arg_3_0:PlayFireFX(arg_3_1, arg_3_2, arg_3_3, arg_3_4, arg_3_5, nil)
+		self:PlayFireFX(tf, bullet, arg_3_3, arg_3_4, direction, nil)
 	end
 
-	if not arg_3_2:GetTemplate().extra_param.rangeAA then
-		var_0_5.bulletSplit(var_3_0)
+	if not bullet:GetTemplate().extra_param.rangeAA then
+		BattleShrapnelBulletFactory.bulletSplit(bulletView)
 	end
 
-	return var_3_0
+	return bulletView
 end
 
-function var_0_5.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = var_0_5.GetDataProxy()
+function BattleShrapnelBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
+	local var_4_0 = BattleShrapnelBulletFactory.GetDataProxy()
 	local var_4_1 = arg_4_0:GetBulletData()
 	local var_4_2 = var_4_1:GetCurrentState()
 	local var_4_3 = var_4_1:GetTemplate()
@@ -63,9 +70,9 @@ function var_0_5.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
 	end
 
 	if var_4_5 and arg_4_1 then
-		if var_4_5 == var_0_5.FRAGILE_DAMAGE_NOT_SPLIT then
-			var_0_0.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
-		elseif var_4_5 == var_0_5.FRAGILE_NOT_DAMAGE_NOT_SPLIT then
+		if var_4_5 == BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT then
+			ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
+		elseif var_4_5 == BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT then
 			var_4_0:RemoveBulletUnit(var_4_1:GetUniqueID())
 		end
 
@@ -77,7 +84,7 @@ function var_0_5.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
 	elseif var_4_2 == var_4_1.STATE_FINAL_SPLIT then
 		return
 	elseif var_4_1:GetPierceCount() > 0 then
-		var_0_0.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
+		ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
 
 		return
 	end
@@ -85,10 +92,10 @@ function var_0_5.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
 	if arg_4_1 ~= nil and arg_4_2 ~= nil then
 		local var_4_7
 
-		if table.contains(var_0_3, arg_4_2) then
-			var_4_7 = var_0_5.GetSceneMediator():GetAircraft(arg_4_1)
-		elseif table.contains(var_0_4, arg_4_2) then
-			var_4_7 = var_0_5.GetSceneMediator():GetCharacter(arg_4_1)
+		if table.contains(AircraftUnitType, arg_4_2) then
+			var_4_7 = BattleShrapnelBulletFactory.GetSceneMediator():GetAircraft(arg_4_1)
+		elseif table.contains(CharacterUnitType, arg_4_2) then
+			var_4_7 = BattleShrapnelBulletFactory.GetSceneMediator():GetCharacter(arg_4_1)
 		end
 
 		local var_4_8 = var_4_7:GetUnitData()
@@ -102,33 +109,33 @@ function var_0_5.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
 		end
 	end
 
-	var_0_0.Battle.PlayBattleSFX(var_4_1:GetHitSFX())
+	ys.Battle.PlayBattleSFX(var_4_1:GetHitSFX())
 
 	if var_4_3.extra_param.rangeAA then
-		var_0_5.areaSplit(arg_4_0)
+		BattleShrapnelBulletFactory.areaSplit(arg_4_0)
 	else
-		var_0_5.bulletSplit(arg_4_0, true)
+		BattleShrapnelBulletFactory.bulletSplit(arg_4_0, true)
 	end
 end
 
-function var_0_5.areaSplit(arg_5_0)
-	local var_5_0 = var_0_5.GetDataProxy()
+function BattleShrapnelBulletFactory.areaSplit(arg_5_0)
+	local var_5_0 = BattleShrapnelBulletFactory.GetDataProxy()
 	local var_5_1 = arg_5_0:GetBulletData()
 
 	var_5_1:GetWeapon():DoAreaSplit(var_5_1)
 	var_5_0:RemoveBulletUnit(var_5_1:GetUniqueID())
 end
 
-function var_0_5.bulletSplit(arg_6_0, arg_6_1)
+function BattleShrapnelBulletFactory.bulletSplit(arg_6_0, arg_6_1)
 	local var_6_0 = arg_6_0:GetBulletData()
-	local var_6_1 = var_0_5.GetDataProxy()
+	local var_6_1 = BattleShrapnelBulletFactory.GetDataProxy()
 	local var_6_2 = var_6_0:GetTemplate()
 	local var_6_3 = var_6_2.extra_param.shrapnel
 	local var_6_4 = var_6_0:GetSrcHost()
 	local var_6_5 = var_6_0:GetWeapon()
 
 	if var_6_2.extra_param.FXID ~= nil then
-		local var_6_6, var_6_7 = var_0_5.GetFXPool():GetFX(var_6_2.extra_param.FXID)
+		local var_6_6, var_6_7 = BattleShrapnelBulletFactory.GetFXPool():GetFX(var_6_2.extra_param.FXID)
 
 		pg.EffectMgr.GetInstance():PlayBattleEffect(var_6_6, var_6_7:Add(arg_6_0:GetPosition()), true)
 	end
@@ -140,7 +147,7 @@ function var_0_5.bulletSplit(arg_6_0, arg_6_1)
 		if arg_6_1 ~= iter_6_1.initialSplit then
 			local var_6_10 = iter_6_1.barrage_ID
 			local var_6_11 = iter_6_1.bullet_ID
-			local var_6_12 = iter_6_1.emitterType or var_0_0.Battle.BattleWeaponUnit.EMITTER_SHOTGUN
+			local var_6_12 = iter_6_1.emitterType or ys.Battle.BattleWeaponUnit.EMITTER_SHOTGUN
 			local var_6_13 = iter_6_1.inheritAngle
 			local var_6_14 = iter_6_1.inheritSpeed
 			local var_6_15 = iter_6_1.reaim
@@ -167,9 +174,9 @@ function var_0_5.bulletSplit(arg_6_0, arg_6_1)
 
 				local var_7_6 = var_6_9
 
-				if var_6_13 == var_0_5.INHERIT_ANGLE then
+				if var_6_13 == BattleShrapnelBulletFactory.INHERIT_ANGLE then
 					var_7_6 = var_6_0:GetYAngle()
-				elseif var_6_13 == var_0_5.INHERIT_SPEED_NORMALIZE then
+				elseif var_6_13 == BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE then
 					var_7_6 = var_6_0:GetCurrentYAngle()
 				end
 
@@ -182,12 +189,12 @@ function var_0_5.bulletSplit(arg_6_0, arg_6_1)
 						local var_7_10
 
 						for iter_7_0, iter_7_1 in ipairs(var_6_15) do
-							var_7_10 = var_0_0.Battle.BattleTargetChoise[iter_7_1](var_7_8, var_7_9, var_7_10)
+							var_7_10 = ys.Battle.BattleTargetChoise[iter_7_1](var_7_8, var_7_9, var_7_10)
 						end
 
 						var_7_7 = var_7_10[1]
 					else
-						var_7_7 = var_0_0.Battle.BattleTargetChoise.TargetHarmNearest(var_6_0)[1]
+						var_7_7 = ys.Battle.BattleTargetChoise.TargetHarmNearest(var_6_0)[1]
 					end
 
 					if var_7_7 == nil then
@@ -199,13 +206,13 @@ function var_0_5.bulletSplit(arg_6_0, arg_6_1)
 					var_7_0:SetRotateInfo(nil, var_7_6, arg_7_2)
 				end
 
-				if var_6_14 == var_0_5.INHERIT_VELOCITY_TEMPLATE then
+				if var_6_14 == BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE then
 					var_7_0:ResetVelocity(var_6_0:GetVelocity())
-				elseif var_6_14 == var_0_5.INHERIT_VELOCITY_CURRENT then
+				elseif var_6_14 == BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT then
 					var_7_0:InheritSpeed(var_6_0:GetSpeed())
 				end
 
-				var_0_5.GetFactoryList()[var_7_0:GetTemplate().type]:CreateBullet(arg_6_0:GetTf(), var_7_0, arg_6_0:GetPosition())
+				BattleShrapnelBulletFactory.GetFactoryList()[var_7_0:GetTemplate().type]:CreateBullet(arg_6_0:GetTf(), var_7_0, arg_6_0:GetPosition())
 			end
 
 			local var_6_18
@@ -219,41 +226,41 @@ function var_0_5.bulletSplit(arg_6_0, arg_6_1)
 				end
 			end
 
-			var_6_18 = var_0_0.Battle[var_6_12].New(var_6_17, var_6_19, var_6_10)
+			var_6_18 = ys.Battle[var_6_12].New(var_6_17, var_6_19, var_6_10)
 
 			var_6_0:CacheChildEimtter(var_6_18)
 			var_6_18:Ready()
-			var_6_18:Fire(nil, var_6_5:GetDirection(), var_0_0.Battle.BattleDataFunction.GetBarrageTmpDataFromID(var_6_10).angle)
+			var_6_18:Fire(nil, var_6_5:GetDirection(), ys.Battle.BattleDataFunction.GetBarrageTmpDataFromID(var_6_10).angle)
 		end
 	end
 
 	if arg_6_1 then
-		var_6_0:ChangeShrapnelState(var_0_0.Battle.BattleShrapnelBulletUnit.STATE_FINAL_SPLIT)
+		var_6_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_FINAL_SPLIT)
 	end
 end
 
-function var_0_5.onBulletMissFunc(arg_9_0)
+function BattleShrapnelBulletFactory.onBulletMissFunc(arg_9_0)
 	return
 end
 
-function var_0_5.MakeModel(arg_10_0, arg_10_1, arg_10_2, arg_10_3, arg_10_4)
-	local var_10_0 = arg_10_1:GetBulletData()
+function BattleShrapnelBulletFactory.MakeModel(self, bulletView, arg_10_2, arg_10_3, arg_10_4)
+	local var_10_0 = bulletView:GetBulletData()
 
-	if not arg_10_0:GetBulletPool():InstBullet(arg_10_1:GetModleID(), function(arg_11_0)
-		arg_10_1:AddModel(arg_11_0)
+	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(arg_11_0)
+		bulletView:AddModel(arg_11_0)
 	end) then
-		arg_10_1:AddTempModel(arg_10_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_10_1:SetSpawn(arg_10_2)
-	arg_10_1:SetFXFunc(arg_10_0.onBulletHitFunc, arg_10_0.onBulletMissFunc)
-	arg_10_0:GetSceneMediator():AddBullet(arg_10_1)
+	bulletView:SetSpawn(arg_10_2)
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 end
 
-function var_0_5.OutRangeFunc(arg_12_0)
+function BattleShrapnelBulletFactory.OutRangeFunc(arg_12_0)
 	if arg_12_0:IsOutRange() then
-		arg_12_0:ChangeShrapnelState(var_0_0.Battle.BattleShrapnelBulletUnit.STATE_SPIN)
+		arg_12_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPIN)
 	else
-		arg_12_0:ChangeShrapnelState(var_0_0.Battle.BattleShrapnelBulletUnit.STATE_SPLIT)
+		arg_12_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPLIT)
 	end
 end

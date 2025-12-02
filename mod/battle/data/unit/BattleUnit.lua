@@ -327,9 +327,9 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 				self:TriggerBuff(BattleConst.BuffEffectType.ON_DAMAGE_FIX, damageInfo)
 			end
 		end
-
+		-- 被护盾抵消前的伤害值
 		preShieldHP = -damageInfo.damage
-
+		-- 触发onTakeDamage的BuffEffect，因此可能会修改damageInfo.damage
 		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_DAMAGE, damageInfo)
 
 		if self._currentHP <= damageInfo.damage then
@@ -337,7 +337,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 		end
 
 		dHP = -damageInfo.damage
-
+		-- 计算护盾吸收的伤害，以及触发ON_SHIELD_ABSORB效果
 		if preShieldHP ~= dHP then
 			({}).absorb = preShieldHP - dHP
 
@@ -347,6 +347,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 		if BattleAttr.IsInvincible(self) then
 			return 0
 		end
+	-- 表示这次更新是来自于治疗
 	else
 		preShieldHP = dHP
 
@@ -355,21 +356,21 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 			isHeal = isHeal,
 			incorrupt = incorrupt
 		}
-
+		-- 触发治疗效果，可能会修改damageInfo.damage
 		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_HEALING, damageInfo)
 
 		isHeal = damageInfo.isHeal
 		dHP = damageInfo.damage
 
 		local overHealing = math.max(0, self._currentHP + dHP - self:GetMaxHP())
-
+		-- 触发溢出治疗效果
 		if overHealing > 0 then
 			self:TriggerBuff(BattleConst.BuffEffectType.ON_OVER_HEALING, {
 				overHealing = overHealing
 			})
 		end
 	end
-
+	-- validDHP表示实际生效的血量变化值（不包含溢出伤害和溢出治疗）
 	local finalCurrentHP = math.min(self:GetMaxHP(), math.max(0, self._currentHP + dHP))
 	local validDHP = finalCurrentHP - self._currentHP
 
@@ -397,7 +398,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 		local cldBoxLeft = position.x - boxSizeX
 		local cldBoxRight = position.x + boxSizeX
 		local actualCldPos = cldPos:Clone()
-
+		-- 调整碰撞位置到碰撞盒范围内
 		actualCldPos.x = Mathf.Clamp(actualCldPos.x, cldBoxLeft, cldBoxRight)
 		updateHPargs.posOffset = position - actualCldPos
 	end
@@ -421,56 +422,94 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 	return dHP
 end
 
-function BattleUnit.UpdateHPAction(arg_23_0, arg_23_1)
-	arg_23_0:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_HP, arg_23_1))
+--- @class BattleUnit
+--- @param args table<string, any>
+--- @return nil
+--- 发送更新血量的事件
+--- 对应的Event: BattleUnitEvent.UPDATE_HP
+--- 对应的Listener: 较多，举其中一个例子: BattleFleeVO.onUnitUpdateHP
+function BattleUnit.UpdateHPAction(self, args)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_HP, args))
 end
 
-function BattleUnit.DeadAction(arg_24_0)
-	arg_24_0:TriggerBuff(BattleConst.BuffEffectType.ON_SINK, {})
-	arg_24_0:DeacActionClear()
+--- @class BattleUnit
+--- @return nil
+--- 单位死亡时的处理函数
+function BattleUnit.DeadAction(self)
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_SINK, {})
+	self:DeacActionClear()
 end
 
-function BattleUnit.DeacActionClear(arg_25_0)
-	arg_25_0._aliveState = false
+--- @class BattleUnit
+--- @return nil
+--- 单位死亡时清理状态的处理函数
+function BattleUnit.DeacActionClear(self)
+	self._aliveState = false
 
-	BattleAttr.Spirit(arg_25_0)
-	BattleAttr.AppendInvincible(arg_25_0)
-	arg_25_0:DeadActionEvent()
+	BattleAttr.Spirit(self)
+	BattleAttr.AppendInvincible(self)
+	self:DeadActionEvent()
 end
 
-function BattleUnit.DeadActionEvent(arg_26_0)
-	arg_26_0:DispatchEvent(ys.Event.New(BattleUnitEvent.WILL_DIE, {}))
-	arg_26_0:DispatchEvent(ys.Event.New(BattleUnitEvent.DYING, {}))
+--- @class BattleUnit
+--- @return nil
+--- 发送将要死亡和正在死亡的事件
+--- willDie的Listener举例: BattleSingleDungeonCommand.onWillDie
+--- dying的Listener举例: BattleSingleDungeonCommand.onUnitDying
+function BattleUnit.DeadActionEvent(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.WILL_DIE, {}))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.DYING, {}))
+end
+	
+--- @class BattleUnit
+--- @return nil
+--- 发送正在死亡的事件
+function BattleUnit.SendDeadEvent(self)
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.DYING, {}))
 end
 
-function BattleUnit.SendDeadEvent(arg_27_0)
-	arg_27_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.DYING, {}))
+--- @class BattleUnit
+--- @param reason number: 参考BattleConst.UnitDeathReason
+--- @return nil
+--- 设置死亡原因
+function BattleUnit.SetDeathReason(self, reason)
+	self._deathReason = reason
 end
 
-function BattleUnit.SetDeathReason(arg_28_0, arg_28_1)
-	arg_28_0._deathReason = arg_28_1
+--- @class BattleUnit
+--- @return number: 参考BattleConst.UnitDeathReason
+--- 获取死亡原因，默认是KILLED
+function BattleUnit.GetDeathReason(self)
+	return self._deathReason or BattleConst.UnitDeathReason.KILLED
 end
 
-function BattleUnit.GetDeathReason(arg_29_0)
-	return arg_29_0._deathReason or BattleConst.UnitDeathReason.KILLED
+--- @class BattleUnit
+--- @param srcID number: 伤害来源的Unit ID
+--- @return nil
+--- 设置死亡来源ID
+function BattleUnit.SetDeathSrcID(self, srcID)
+	self._deathSrcID = srcID
 end
 
-function BattleUnit.SetDeathSrcID(arg_30_0, arg_30_1)
-	arg_30_0._deathSrcID = arg_30_1
+--- @class BattleUnit
+--- @return number
+--- 获取死亡来源ID
+function BattleUnit.GetDeathSrcID(self)
+	return self._deathSrcID
 end
 
-function BattleUnit.GetDeathSrcID(arg_31_0)
-	return arg_31_0._deathSrcID
-end
-
-function BattleUnit.DispatchScorePoint(arg_32_0, arg_32_1)
-	arg_32_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.UPDATE_SCORE, {
-		score = arg_32_1
+--- @class BattleUnit
+--- @param score number: 得分
+--- @return nil
+--- 发送更新得分事件
+function BattleUnit.DispatchScorePoint(self, score)
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.UPDATE_SCORE, {
+		score = score
 	}))
 end
 
-function BattleUnit.SetTemplate(arg_33_0, arg_33_1, arg_33_2)
-	arg_33_0._tmpID = arg_33_1
+function BattleUnit.SetTemplate(self, templateID, arg_33_2)
+	self._tmpID = templateID
 end
 
 function BattleUnit.GetTemplateID(arg_34_0)
@@ -951,52 +990,53 @@ function BattleUnit.GetBornPosition(arg_106_0)
 	return arg_106_0._bornPos
 end
 
-function BattleUnit.GetCLDZCenterPosition(arg_107_0)
-	local var_107_0 = arg_107_0._battleProxy.FrameIndex
+function BattleUnit.GetCLDZCenterPosition(self)
+	local currentFrame = self._battleProxy.FrameIndex
 
-	if arg_107_0._zCenterFrame ~= var_107_0 then
-		arg_107_0._zCenterFrame = var_107_0
+	if self._zCenterFrame ~= currentFrame then
+		self._zCenterFrame = currentFrame
 
-		local var_107_1 = arg_107_0:GetCldBox()
+		local cldBox = self:GetCldBox()
 
-		arg_107_0._cldZCenterCache = (var_107_1.min + var_107_1.max) * 0.5
+		self._cldZCenterCache = (cldBox.min + cldBox.max) * 0.5
 	end
 
-	return arg_107_0._cldZCenterCache
+	return self._cldZCenterCache
 end
 
-function BattleUnit.GetBeenAimedPosition(arg_108_0)
-	local var_108_0 = arg_108_0:GetCLDZCenterPosition()
 
-	if not var_108_0 then
-		return var_108_0
+function BattleUnit.GetBeenAimedPosition(self)
+	local zCenter = self:GetCLDZCenterPosition()
+
+	if not zCenter then
+		return zCenter
 	end
 
-	local var_108_1 = arg_108_0:GetTemplate() and arg_108_0:GetTemplate().aim_offset
+	local aimOffset = self:GetTemplate() and self:GetTemplate().aim_offset
 
-	if not var_108_1 then
-		return var_108_0
+	if not aimOffset then
+		return zCenter
 	end
 
-	local var_108_2 = Vector3(var_108_0.x + var_108_1[1], var_108_0.y + var_108_1[2], var_108_0.z + var_108_1[3])
+	local aimPosition = Vector3(zCenter.x + aimOffset[1], zCenter.y + aimOffset[2], zCenter.z + aimOffset[3])
 
-	arg_108_0:biasAimPosition(var_108_2)
+	self:biasAimPosition(aimPosition)
 
-	return var_108_2
+	return aimPosition
 end
 
-function BattleUnit.biasAimPosition(arg_109_0, arg_109_1)
-	local var_109_0 = BattleAttr.GetCurrent(arg_109_0, "aimBias")
+function BattleUnit.biasAimPosition(self, aimPosition)
+	local aimBias = BattleAttr.GetCurrent(self, "aimBias")
 
-	if var_109_0 > 0 then
-		local var_109_1 = var_109_0 * 2
-		local var_109_2 = math.random() * var_109_1 - var_109_0
-		local var_109_3 = math.random() * var_109_1 - var_109_0
+	if aimBias > 0 then
+		local aimBias2 = aimBias * 2
+		local aimBiasX = math.random() * aimBias2 - aimBias
+		local aimBiasZ = math.random() * aimBias2 - aimBias
 
-		arg_109_1:Set(arg_109_1.x + var_109_2, arg_109_1.y, arg_109_1.z + var_109_3)
+		aimPosition:Set(aimPosition.x + aimBiasX, aimPosition.y, aimPosition.z + aimBiasZ)
 	end
 
-	return arg_109_1
+	return aimPosition
 end
 
 function BattleUnit.CancelFollowTeam(arg_110_0)
