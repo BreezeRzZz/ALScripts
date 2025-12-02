@@ -33,7 +33,15 @@ function BattleShrapnelBulletFactory.MakeBullet(self)
 	return ys.Battle.BattleShrapnelBullet.New()
 end
 
-function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, arg_3_3, arg_3_4, direction)
+--- @class BattleShrapnelBulletFactory
+--- @param tf Transform
+--- @param bullet BattleShrapnelBulletUnit
+--- @param position Vector3
+--- @param fxID string
+--- @param direction number
+--- @return BattleShrapnelBullet
+--- 创建Shaprnel子弹视图(视觉效果)
+function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, position, fxID, direction)
 	bullet:SetOutRangeCallback(self.OutRangeFunc)
 
 	--- @type BattleShrapnelBullet
@@ -41,12 +49,12 @@ function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, arg_3_3, arg
 
 	bulletView:SetFactory(self)
 	bulletView:SetBulletData(bullet)
-	self:MakeModel(bulletView, arg_3_3, arg_3_4, direction)
+	self:MakeModel(bulletView, position, fxID, direction)
 
-	if arg_3_4 and arg_3_4 ~= "" then
-		self:PlayFireFX(tf, bullet, arg_3_3, arg_3_4, direction, nil)
+	if fxID and fxID ~= "" then
+		self:PlayFireFX(tf, bullet, position, fxID, direction, nil)
 	end
-
+	-- 不是rangeAA的情况
 	if not bullet:GetTemplate().extra_param.rangeAA then
 		BattleShrapnelBulletFactory.bulletSplit(bulletView)
 	end
@@ -54,197 +62,236 @@ function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, arg_3_3, arg
 	return bulletView
 end
 
-function BattleShrapnelBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = BattleShrapnelBulletFactory.GetDataProxy()
-	local var_4_1 = arg_4_0:GetBulletData()
-	local var_4_2 = var_4_1:GetCurrentState()
-	local var_4_3 = var_4_1:GetTemplate()
-	local var_4_4 = var_4_3.extra_param.shrapnel
-	local var_4_5 = var_4_3.extra_param.fragile
-	local var_4_6 = var_4_3.extra_param.hitSplitOnly
+function BattleShrapnelBulletFactory.onBulletHitFunc(self, uid, unitType)
+	--- @type BattleDataProxy
+	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
+	--- @type BattleShrapnelBulletUnit
+	local bullet = self:GetBulletData()
+	--- @type string
+	--- 参考BattleShrapnelBulletUnit.lua中的STATE定义
+	local currentState = bullet:GetCurrentState()
+	local bulletTemplate = bullet:GetTemplate()
+	local shrapnel = bulletTemplate.extra_param.shrapnel
+	local fragile = bulletTemplate.extra_param.fragile
+	local hitSplitOnly = bulletTemplate.extra_param.hitSplitOnly
 
-	if not arg_4_1 and var_4_6 then
-		var_4_0:RemoveBulletUnit(var_4_1:GetUniqueID())
+	if not uid and hitSplitOnly then
+		battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 
 		return
 	end
-
-	if var_4_5 and arg_4_1 then
-		if var_4_5 == BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT then
-			ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
-		elseif var_4_5 == BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT then
-			var_4_0:RemoveBulletUnit(var_4_1:GetUniqueID())
+	-- fragile应该是决定命中时的表现
+	if fragile and uid then
+		if fragile == BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT then
+			-- 普通子弹的命中处理，造成伤害，不分裂
+			ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(self, uid, unitType)
+		elseif fragile == BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT then
+			-- 命中直接消失，没有伤害，也不分裂
+			battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 		end
 
 		return
 	end
-
-	if var_4_2 == var_4_1.STATE_SPLIT or var_4_2 == var_4_1.STATE_SPIN then
+	-- 检查BattleShrapnelBulletUnit的状态
+	-- Spin/Split状态下的子弹，没有伤害判定
+	if currentState == bullet.STATE_SPLIT or currentState == bullet.STATE_SPIN then
 		-- block empty
-	elseif var_4_2 == var_4_1.STATE_FINAL_SPLIT then
+	-- final_split同样没有伤害判定，且直接返回
+	elseif currentState == bullet.STATE_FINAL_SPLIT then
 		return
-	elseif var_4_1:GetPierceCount() > 0 then
-		ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
+	-- 剩下的是normal状态，还存在穿透次数的情况，进行普通命中处理
+	--
+	elseif bullet:GetPierceCount() > 0 then
+		ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(self, uid, unitType)
 
 		return
 	end
 
-	if arg_4_1 ~= nil and arg_4_2 ~= nil then
-		local var_4_7
-
-		if table.contains(AircraftUnitType, arg_4_2) then
-			var_4_7 = BattleShrapnelBulletFactory.GetSceneMediator():GetAircraft(arg_4_1)
-		elseif table.contains(CharacterUnitType, arg_4_2) then
-			var_4_7 = BattleShrapnelBulletFactory.GetSceneMediator():GetCharacter(arg_4_1)
+	if uid ~= nil and unitType ~= nil then
+		--- @type BattleCharacter
+		local character
+		-- 如果命中的是飞机或角色
+		if table.contains(AircraftUnitType, unitType) then
+			character = BattleShrapnelBulletFactory.GetSceneMediator():GetAircraft(uid)
+		elseif table.contains(CharacterUnitType, unitType) then
+			character = BattleShrapnelBulletFactory.GetSceneMediator():GetCharacter(uid)
 		end
+		--- unit是指命中的单位
+		--- @type BattleUnit
+		local unit = character:GetUnitData()
+		local fx = character:AddFX(self:GetFXID())
+		-- 命中的是敌人则调整特效朝向
+		if unit:GetIFF() == battleDataProxy:GetFoeCode() then
+			local tf = fx.transform
+			local localRotation = tf.localRotation
 
-		local var_4_8 = var_4_7:GetUnitData()
-		local var_4_9 = var_4_7:AddFX(arg_4_0:GetFXID())
-
-		if var_4_8:GetIFF() == var_4_0:GetFoeCode() then
-			local var_4_10 = var_4_9.transform
-			local var_4_11 = var_4_10.localRotation
-
-			var_4_10.localRotation = Vector3(var_4_11.x, 180, var_4_11.z)
+			tf.localRotation = Vector3(localRotation.x, 180, localRotation.z)
 		end
 	end
 
-	ys.Battle.PlayBattleSFX(var_4_1:GetHitSFX())
-
-	if var_4_3.extra_param.rangeAA then
-		BattleShrapnelBulletFactory.areaSplit(arg_4_0)
+	ys.Battle.PlayBattleSFX(bullet:GetHitSFX())
+	-- 如果rangeAA为true，则进行范围分裂
+	-- 否则进行普通子弹分裂
+	-- 一般来讲，只有防空弹会进行范围分裂
+	if bulletTemplate.extra_param.rangeAA then
+		BattleShrapnelBulletFactory.areaSplit(self)
 	else
-		BattleShrapnelBulletFactory.bulletSplit(arg_4_0, true)
+		BattleShrapnelBulletFactory.bulletSplit(self, true)
 	end
 end
 
-function BattleShrapnelBulletFactory.areaSplit(arg_5_0)
-	local var_5_0 = BattleShrapnelBulletFactory.GetDataProxy()
-	local var_5_1 = arg_5_0:GetBulletData()
-
-	var_5_1:GetWeapon():DoAreaSplit(var_5_1)
-	var_5_0:RemoveBulletUnit(var_5_1:GetUniqueID())
+function BattleShrapnelBulletFactory.areaSplit(self)
+	--- @type BattleDataProxy
+	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
+	--- @type BattleShrapnelBulletUnit
+	local bullet = self:GetBulletData()
+	-- 对应的WeaponUnit执行DoAreaSplit方法
+	-- 看了一下，只有BattleFleetRangeAntiAirUnit才有这个方法
+	bullet:GetWeapon():DoAreaSplit(bullet)
+	battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 end
 
-function BattleShrapnelBulletFactory.bulletSplit(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_0:GetBulletData()
-	local var_6_1 = BattleShrapnelBulletFactory.GetDataProxy()
-	local var_6_2 = var_6_0:GetTemplate()
-	local var_6_3 = var_6_2.extra_param.shrapnel
-	local var_6_4 = var_6_0:GetSrcHost()
-	local var_6_5 = var_6_0:GetWeapon()
+function BattleShrapnelBulletFactory.bulletSplit(self, hitSplit)
+	--- @type BattleShrapnelBulletUnit
+	local bullet = self:GetBulletData()
+	--- @type BattleDataProxy
+	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
+	local bulletTemplate = bullet:GetTemplate()
+	local shrapnel = bulletTemplate.extra_param.shrapnel
+	--- @type BattleUnit
+	local srcHost = bullet:GetSrcHost()
+	--- @type BattleWeaponUnit
+	local weapon = bullet:GetWeapon()
 
-	if var_6_2.extra_param.FXID ~= nil then
-		local var_6_6, var_6_7 = BattleShrapnelBulletFactory.GetFXPool():GetFX(var_6_2.extra_param.FXID)
-
-		pg.EffectMgr.GetInstance():PlayBattleEffect(var_6_6, var_6_7:Add(arg_6_0:GetPosition()), true)
+	if bulletTemplate.extra_param.FXID ~= nil then
+		local fx, fxPosition = BattleShrapnelBulletFactory.GetFXPool():GetFX(bulletTemplate.extra_param.FXID)
+		-- 在对应的位置播放特效
+		pg.EffectMgr.GetInstance():PlayBattleEffect(fx, fxPosition:Add(self:GetPosition()), true)
 	end
 
-	local var_6_8
-	local var_6_9 = var_6_0:GetSpeed().x > 0 and 0 or 180
+	local axisAngle = bullet:GetSpeed().x > 0 and 0 or 180
 
-	for iter_6_0, iter_6_1 in ipairs(var_6_3) do
-		if arg_6_1 ~= iter_6_1.initialSplit then
-			local var_6_10 = iter_6_1.barrage_ID
-			local var_6_11 = iter_6_1.bullet_ID
-			local var_6_12 = iter_6_1.emitterType or ys.Battle.BattleWeaponUnit.EMITTER_SHOTGUN
-			local var_6_13 = iter_6_1.inheritAngle
-			local var_6_14 = iter_6_1.inheritSpeed
-			local var_6_15 = iter_6_1.reaim
-			local var_6_16 = iter_6_1.rotateOffset
+	for _, shrapnelItem in ipairs(shrapnel) do
+		if hitSplit ~= shrapnelItem.initialSplit then
+			local barrageID = shrapnelItem.barrage_ID
+			local bulletID = shrapnelItem.bullet_ID
+			-- 此处默认用SHOTGUN emitter
+			local emitterType = shrapnelItem.emitterType or ys.Battle.BattleWeaponUnit.EMITTER_SHOTGUN
+			local inheritAngle = shrapnelItem.inheritAngle
+			local inheritSpeed = shrapnelItem.inheritSpeed
+			local reaim = shrapnelItem.reaim
+			local rotateOffset = shrapnelItem.rotateOffset
 
-			local function var_6_17(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-				local var_7_0 = var_6_1:CreateBulletUnit(var_6_11, var_6_4, var_6_5, Vector3.zero)
+			local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority)
+				-- 创建的是孩子子弹
+				local _bullet = battleDataProxy:CreateBulletUnit(bulletID, srcHost, weapon, Vector3.zero)
+				-- 重载标伤
+				_bullet:OverrideCorrectedDMG(shrapnelItem.damage)
+				_bullet:SetOffsetPriority(isOffsetPriority)
 
-				var_7_0:OverrideCorrectedDMG(iter_6_1.damage)
-				var_7_0:SetOffsetPriority(arg_7_3)
+				if rotateOffset then
+					local distance = math.sqrt(offsetX * offsetX + offsetZ * offsetZ)
+					local angle = math.atan2(offsetZ, offsetX)
+					local yAngle = math.rad(bullet:GetYAngle())
+					local resAngle = angle + yAngle
+					local cosAngle = math.abs(math.cos(yAngle))
 
-				if var_6_16 then
-					local var_7_1 = math.sqrt(arg_7_0 * arg_7_0 + arg_7_1 * arg_7_1)
-					local var_7_2 = math.atan2(arg_7_1, arg_7_0)
-					local var_7_3 = math.rad(var_6_0:GetYAngle())
-					local var_7_4 = var_7_2 + var_7_3
-					local var_7_5 = math.abs(math.cos(var_7_3))
-
-					arg_7_0 = var_7_1 * math.cos(var_7_4) * (0.5 + 0.5 * var_7_5)
-					arg_7_1 = var_7_1 * math.sin(var_7_4) * (2 - var_7_5)
+					offsetX = distance * math.cos(resAngle) * (0.5 + 0.5 * cosAngle)
+					offsetZ = distance * math.sin(resAngle) * (2 - cosAngle)
 				end
 
-				var_7_0:SetShiftInfo(arg_7_0, arg_7_1)
+				_bullet:SetShiftInfo(offsetX, offsetZ)
 
-				local var_7_6 = var_6_9
+				local baseAngle = axisAngle
 
-				if var_6_13 == BattleShrapnelBulletFactory.INHERIT_ANGLE then
-					var_7_6 = var_6_0:GetYAngle()
-				elseif var_6_13 == BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE then
-					var_7_6 = var_6_0:GetCurrentYAngle()
+				-- inheritAngle的类型
+				-- nil/0: 不继承
+				-- 1: 继承母弹发射角度
+				-- 2: 继承母弹当前运动方向
+				if inheritAngle == BattleShrapnelBulletFactory.INHERIT_ANGLE then
+					baseAngle = bullet:GetYAngle()
+				elseif inheritAngle == BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE then
+					baseAngle = bullet:GetCurrentYAngle()
 				end
 
-				if var_6_15 then
-					local var_7_7
-					local var_7_8 = var_6_0:GetWeapon():GetHost()
+				if reaim then
+					local target
+					local host = bullet:GetWeapon():GetHost()
 
-					if type(var_6_15) == "table" and var_7_8 then
-						local var_7_9 = iter_6_1.reaimParam
-						local var_7_10
+					if type(reaim) == "table" and host then
+						local reaimParam = shrapnelItem.reaimParam
+						local candidateList
 
-						for iter_7_0, iter_7_1 in ipairs(var_6_15) do
-							var_7_10 = ys.Battle.BattleTargetChoise[iter_7_1](var_7_8, var_7_9, var_7_10)
+						for _, targetType in ipairs(reaim) do
+							candidateList = ys.Battle.BattleTargetChoise[targetType](host, reaimParam, candidateList)
 						end
-
-						var_7_7 = var_7_10[1]
+						-- 选满足tag的第一个目标
+						target = candidateList[1]
 					else
-						var_7_7 = ys.Battle.BattleTargetChoise.TargetHarmNearest(var_6_0)[1]
+						-- 选最近的目标
+						target = ys.Battle.BattleTargetChoise.TargetHarmNearest(bullet)[1]
 					end
 
-					if var_7_7 == nil then
-						var_7_0:SetRotateInfo(nil, var_7_6, arg_7_2)
+					if target == nil then
+						_bullet:SetRotateInfo(nil, baseAngle, barrageAngle)
 					else
-						var_7_0:SetRotateInfo(var_7_7:GetBeenAimedPosition(), var_7_6, arg_7_2)
+						_bullet:SetRotateInfo(target:GetBeenAimedPosition(), baseAngle, barrageAngle)
 					end
 				else
-					var_7_0:SetRotateInfo(nil, var_7_6, arg_7_2)
+					_bullet:SetRotateInfo(nil, baseAngle, barrageAngle)
 				end
 
-				if var_6_14 == BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE then
-					var_7_0:ResetVelocity(var_6_0:GetVelocity())
-				elseif var_6_14 == BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT then
-					var_7_0:InheritSpeed(var_6_0:GetSpeed())
+				-- inheritSpeed的类型
+				-- 1: 重设速度为模板速度
+				-- 2: 继承母弹当前速度大小
+				if inheritSpeed == BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE then
+					_bullet:ResetVelocity(bullet:GetVelocity())
+				elseif inheritSpeed == BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT then
+					_bullet:InheritSpeed(bullet:GetSpeed())
 				end
 
-				BattleShrapnelBulletFactory.GetFactoryList()[var_7_0:GetTemplate().type]:CreateBullet(arg_6_0:GetTf(), var_7_0, arg_6_0:GetPosition())
+				BattleShrapnelBulletFactory.GetFactoryList()[_bullet:GetTemplate().type]:CreateBullet(self:GetTf(), _bullet, self:GetPosition())
 			end
 
-			local var_6_18
+			local emitter
 
-			local function var_6_19()
-				var_6_18:Destroy()
-				var_6_0:SplitFinishCount()
-
-				if var_6_0:IsAllSplitFinish() then
-					var_6_1:RemoveBulletUnit(var_6_0:GetUniqueID())
+			local function stopFunc()
+				emitter:Destroy()
+				bullet:SplitFinishCount()
+				-- 完成分裂后，母弹销毁
+				if bullet:IsAllSplitFinish() then
+					battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 				end
 			end
 
-			var_6_18 = ys.Battle[var_6_12].New(var_6_17, var_6_19, var_6_10)
+			emitter = ys.Battle[emitterType].New(spawnFunc, stopFunc, barrageID)
 
-			var_6_0:CacheChildEimtter(var_6_18)
-			var_6_18:Ready()
-			var_6_18:Fire(nil, var_6_5:GetDirection(), ys.Battle.BattleDataFunction.GetBarrageTmpDataFromID(var_6_10).angle)
+			bullet:CacheChildEimtter(emitter)
+			emitter:Ready()
+			emitter:Fire(nil, weapon:GetDirection(), ys.Battle.BattleDataFunction.GetBarrageTmpDataFromID(barrageID).angle)
 		end
 	end
 
-	if arg_6_1 then
-		var_6_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_FINAL_SPLIT)
+	if hitSplit then
+		-- 直接切换到final_split状态
+		bullet:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_FINAL_SPLIT)
 	end
 end
 
-function BattleShrapnelBulletFactory.onBulletMissFunc(arg_9_0)
+function BattleShrapnelBulletFactory.onBulletMissFunc(self)
 	return
 end
 
-function BattleShrapnelBulletFactory.MakeModel(self, bulletView, arg_10_2, arg_10_3, arg_10_4)
-	local var_10_0 = bulletView:GetBulletData()
+--- @class BattleShrapnelBulletFactory
+--- @param bulletView BattleShrapnelBullet
+--- @param position Vector3
+--- @param fxID string
+--- @param direction number
+--- @return nil
+--- 创建子弹模型(视觉效果)
+function BattleShrapnelBulletFactory.MakeModel(self, bulletView, position, fxID, direction)
+	--- @type BattleShrapnelBulletUnit
+	local bullet = bulletView:GetBulletData()
 
 	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(arg_11_0)
 		bulletView:AddModel(arg_11_0)
@@ -252,15 +299,20 @@ function BattleShrapnelBulletFactory.MakeModel(self, bulletView, arg_10_2, arg_1
 		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	bulletView:SetSpawn(arg_10_2)
+	bulletView:SetSpawn(position)
 	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
 	self:GetSceneMediator():AddBullet(bulletView)
 end
 
-function BattleShrapnelBulletFactory.OutRangeFunc(arg_12_0)
-	if arg_12_0:IsOutRange() then
-		arg_12_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPIN)
+--- @class BattleShrapnelBulletFactory
+--- @return nil
+--- 子弹出界回调
+--- - 如果是在出界时分裂，则切换到spin状态
+--- - 否则切换到split状态
+function BattleShrapnelBulletFactory.OutRangeFunc(self)
+	if self:IsOutRange() then
+		self:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPIN)
 	else
-		arg_12_0:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPLIT)
+		self:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPLIT)
 	end
 end
