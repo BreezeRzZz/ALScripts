@@ -1,13 +1,13 @@
-local var_0_0 = class("Equipment", import(".BaseVO"))
+local Equipment = class("Equipment", import(".BaseVO"))
 
-var_0_0.EQUIPMENT_STATE_LOCK = 1
-var_0_0.EQUIPMENT_STATE_EMPTY = 0
-var_0_0.EQUIPMENT_NORMAL = 1
-var_0_0.EQUIPMENT_IMPORTANCE = 2
+Equipment.EQUIPMENT_STATE_LOCK = 1
+Equipment.EQUIPMENT_STATE_EMPTY = 0
+Equipment.EQUIPMENT_NORMAL = 1
+Equipment.EQUIPMENT_IMPORTANCE = 2
 
-local var_0_1 = pg.equip_skin_template
+local equip_skin_template = pg.equip_skin_template
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
+function Equipment.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.id = arg_1_1.id
 	arg_1_0.configId = arg_1_1.config_id or arg_1_0.id
 
@@ -19,7 +19,7 @@ function var_0_0.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.skinId = arg_1_1.skinId or 0
 end
 
-function var_0_0.getConfigData(arg_2_0)
+function Equipment.getConfigData(arg_2_0)
 	local var_2_0 = {
 		pg.equip_data_statistics,
 		pg.equip_data_template
@@ -53,8 +53,8 @@ function var_0_0.getConfigData(arg_2_0)
 	return var_2_1
 end
 
-function var_0_0.InitConfig(arg_5_0)
-	arg_5_0.cfg = var_0_0.getConfigData(arg_5_0.configId)
+function Equipment.InitConfig(arg_5_0)
+	arg_5_0.cfg = Equipment.getConfigData(arg_5_0.configId)
 
 	if not IsUnityEditor then
 		arg_5_0.config = arg_5_0.cfg
@@ -63,11 +63,11 @@ function var_0_0.InitConfig(arg_5_0)
 	assert(arg_5_0.cfg, string.format("without equip config from id_%d", arg_5_0.id))
 end
 
-function var_0_0.getConfigTable(arg_6_0)
+function Equipment.getConfigTable(arg_6_0)
 	return arg_6_0.cfg
 end
 
-function var_0_0.GetAttributes(arg_7_0)
+function Equipment.GetAttributes(arg_7_0)
 	local var_7_0 = {}
 
 	for iter_7_0 = 1, 3 do
@@ -84,15 +84,15 @@ function var_0_0.GetAttributes(arg_7_0)
 	return var_7_0
 end
 
-function var_0_0.GetPropertyRate(arg_8_0)
+function Equipment.GetPropertyRate(arg_8_0)
 	return arg_8_0:getConfig("property_rate")
 end
 
-function var_0_0.CanInBag(arg_9_0)
+function Equipment.CanInBag(arg_9_0)
 	return tobool(pg.equip_data_template[arg_9_0])
 end
 
-function var_0_0.vertify(arg_10_0)
+function Equipment.vertify(arg_10_0)
 	local var_10_0 = pg.equip_data_statistics[arg_10_0.configId]
 	local var_10_1 = pg.equip_data_template[arg_10_0.configId]
 
@@ -103,7 +103,7 @@ function var_0_0.vertify(arg_10_0)
 	return true
 end
 
-function var_0_0.CalcWeanponCD(arg_11_0, arg_11_1)
+function Equipment.CalcWeanponCD(arg_11_0, arg_11_1)
 	local var_11_0 = arg_11_0 or 0
 	local var_11_1 = arg_11_1 and arg_11_1:getProperties().reload or 100
 
@@ -128,13 +128,13 @@ local function var_0_4(arg_12_0)
 	return var_0_3[arg_12_0]
 end
 
-function var_0_0.GetInfoTrans(arg_13_0, arg_13_1)
+function Equipment.GetInfoTrans(arg_13_0, arg_13_1)
 	local var_13_0 = arg_13_0.name
 	local var_13_1 = arg_13_0.value
 	local var_13_2 = arg_13_0.auxBoost
 
 	if arg_13_0.type == AttributeType.CD then
-		var_13_1 = var_0_0.CalcWeanponCD(var_13_1, arg_13_1) .. "s" .. pg.equip_data_code.WAVE.text
+		var_13_1 = Equipment.CalcWeanponCD(var_13_1, arg_13_1) .. "s" .. pg.equip_data_code.WAVE.text
 	elseif arg_13_0.type == AttributeType.AirDurability then
 		local var_13_3 = arg_13_1 and arg_13_1.level or 100
 
@@ -190,7 +190,7 @@ local function var_0_5(arg_14_0)
 	return tonumber(arg_14_0)
 end
 
-function var_0_0.AlignAttrs(arg_15_0, arg_15_1)
+function Equipment.AlignAttrs(arg_15_0, arg_15_1)
 	for iter_15_0 = 1, #arg_15_0 do
 		if not arg_15_1[iter_15_0] or arg_15_0[iter_15_0].type ~= arg_15_1[iter_15_0].type then
 			table.insert(arg_15_1, iter_15_0, Clone(arg_15_0[iter_15_0]))
@@ -216,22 +216,22 @@ function var_0_0.AlignAttrs(arg_15_0, arg_15_1)
 	end
 end
 
-function var_0_0.CompareInfo(arg_16_0, arg_16_1, arg_16_2)
+function Equipment.CompareInfo(arg_16_0, arg_16_1, arg_16_2)
 	if arg_16_0.type == AttributeType.Damage then
 		local var_16_0 = var_0_5(arg_16_0.value)
 
 		arg_16_1.compare = var_0_5(arg_16_1.value) - var_16_0
 	elseif arg_16_0.type == AttributeType.CD then
-		local var_16_1 = var_0_0.CalcWeanponCD(arg_16_0.value, arg_16_2)
+		local var_16_1 = Equipment.CalcWeanponCD(arg_16_0.value, arg_16_2)
 
-		arg_16_1.compare = -(var_0_0.CalcWeanponCD(arg_16_1.value, arg_16_2) - var_16_1)
+		arg_16_1.compare = -(Equipment.CalcWeanponCD(arg_16_1.value, arg_16_2) - var_16_1)
 	else
 		arg_16_1.compare = arg_16_1.value - arg_16_0.value
 	end
 end
 
-function var_0_0.InsertAttrsUpgrade(arg_17_0, arg_17_1, arg_17_2)
-	var_0_0.AlignAttrs(arg_17_0, arg_17_1)
+function Equipment.InsertAttrsUpgrade(arg_17_0, arg_17_1, arg_17_2)
+	Equipment.AlignAttrs(arg_17_0, arg_17_1)
 
 	for iter_17_0 = #arg_17_0, 1, -1 do
 		if arg_17_0[iter_17_0].value == arg_17_1[iter_17_0].value then
@@ -245,15 +245,15 @@ function var_0_0.InsertAttrsUpgrade(arg_17_0, arg_17_1, arg_17_2)
 	end
 end
 
-function var_0_0.InsertAttrsCompare(arg_18_0, arg_18_1, arg_18_2)
-	var_0_0.AlignAttrs(arg_18_0, arg_18_1)
+function Equipment.InsertAttrsCompare(arg_18_0, arg_18_1, arg_18_2)
+	Equipment.AlignAttrs(arg_18_0, arg_18_1)
 
 	for iter_18_0 = 1, #arg_18_0 do
-		var_0_0.CompareInfo(arg_18_0[iter_18_0], arg_18_1[iter_18_0], arg_18_2)
+		Equipment.CompareInfo(arg_18_0[iter_18_0], arg_18_1[iter_18_0], arg_18_2)
 	end
 end
 
-function var_0_0.GetPropertiesInfo(arg_19_0)
+function Equipment.GetPropertiesInfo(arg_19_0)
 	local var_19_0 = {
 		attrs = {}
 	}
@@ -338,7 +338,7 @@ function var_0_0.GetPropertiesInfo(arg_19_0)
 	return var_19_0
 end
 
-function var_0_0.GetWeaponPageInfo(arg_20_0, arg_20_1, arg_20_2)
+function Equipment.GetWeaponPageInfo(arg_20_0, arg_20_1, arg_20_2)
 	local var_20_0
 	local var_20_1 = pg.equip_bullet_type[arg_20_1]
 	local var_20_2 = var_20_1.exhibition_type == 2
@@ -355,7 +355,7 @@ function var_0_0.GetWeaponPageInfo(arg_20_0, arg_20_1, arg_20_2)
 	return var_20_0
 end
 
-function var_0_0.GetWeaponInfo(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
+function Equipment.GetWeaponInfo(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
 	local var_21_0 = arg_21_3 and pg.weapon_property[arg_21_2].bullet_ID[1] or arg_21_2
 
 	return switch(arg_21_1, {
@@ -449,7 +449,7 @@ local var_0_6 = {
 	[13] = true
 }
 
-function var_0_0.GetEquipAttrPageInfo(arg_35_0, arg_35_1)
+function Equipment.GetEquipAttrPageInfo(arg_35_0, arg_35_1)
 	local var_35_0
 	local var_35_1
 
@@ -464,7 +464,7 @@ function var_0_0.GetEquipAttrPageInfo(arg_35_0, arg_35_1)
 	return arg_35_0:GetEquipAttrInfo(var_35_0, var_35_1)
 end
 
-function var_0_0.GetEquipAttrInfo(arg_36_0, arg_36_1, arg_36_2)
+function Equipment.GetEquipAttrInfo(arg_36_0, arg_36_1, arg_36_2)
 	return switch(arg_36_1, {
 		function()
 			local var_37_0 = pg.weapon_property[arg_36_2]
@@ -590,18 +590,21 @@ function var_0_0.GetEquipAttrInfo(arg_36_0, arg_36_1, arg_36_2)
 	})
 end
 
-function var_0_0.GetGearScore(arg_50_0)
-	local var_50_0 = arg_50_0:getConfig("rarity")
-	local var_50_1 = arg_50_0:getConfig("level")
+--- @class Equipment
+--- @return number
+--- 计算装备的战力
+function Equipment.GetGearScore(self)
+	local rarity = self:getConfig("rarity")
+	local level = self:getConfig("level")
 
-	assert(pg.equip_data_by_quality[var_50_0], "equip_data_by_quality not exist: " .. var_50_0)
+	assert(pg.equip_data_by_quality[rarity], "equip_data_by_quality not exist: " .. rarity)
 
-	local var_50_2 = pg.equip_data_by_quality[var_50_0]
+	local rarityData = pg.equip_data_by_quality[rarity]
 
-	return var_50_2.gear_score + var_50_1 * var_50_2.gear_score_addition
+	return rarityData.gear_score + level * rarityData.gear_score_addition
 end
 
-function var_0_0.GetSkill(arg_51_0)
+function Equipment.GetSkill(arg_51_0)
 	local var_51_0
 	local var_51_1 = arg_51_0:getConfig("skill_id")[1] and arg_51_0:getConfig("skill_id")[1][1]
 
@@ -612,11 +615,11 @@ function var_0_0.GetSkill(arg_51_0)
 	return var_51_0
 end
 
-function var_0_0.GetWeaponID(arg_52_0)
+function Equipment.GetWeaponID(arg_52_0)
 	return arg_52_0:getConfig("weapon_id")
 end
 
-function var_0_0.GetSonarProperty(arg_53_0)
+function Equipment.GetSonarProperty(arg_53_0)
 	local var_53_0 = arg_53_0:getConfig("equip_parameters").range
 
 	if var_53_0 then
@@ -628,19 +631,19 @@ function var_0_0.GetSonarProperty(arg_53_0)
 	end
 end
 
-function var_0_0.GetAntiSirenPower(arg_54_0)
+function Equipment.GetAntiSirenPower(arg_54_0)
 	return arg_54_0:getConfig("anti_siren")
 end
 
-function var_0_0.canUpgrade(arg_55_0)
-	return var_0_0.getConfigData(arg_55_0).next ~= 0
+function Equipment.canUpgrade(arg_55_0)
+	return Equipment.getConfigData(arg_55_0).next ~= 0
 end
 
-function var_0_0.hasPrevLevel(arg_56_0)
+function Equipment.hasPrevLevel(arg_56_0)
 	return arg_56_0:getConfig("prev") ~= 0
 end
 
-function var_0_0.getRevertAwards(arg_57_0)
+function Equipment.getRevertAwards(arg_57_0)
 	local var_57_0 = {}
 	local var_57_1 = 0
 	local var_57_2 = arg_57_0
@@ -674,38 +677,38 @@ function var_0_0.getRevertAwards(arg_57_0)
 	return var_57_3
 end
 
-function var_0_0.canEquipSkin(arg_58_0)
+function Equipment.canEquipSkin(arg_58_0)
 	local var_58_0 = arg_58_0:getConfig("type")
 
 	return pg.equip_data_by_type[var_58_0].equip_skin == 1
 end
 
-function var_0_0.getType(arg_59_0)
+function Equipment.getType(arg_59_0)
 	return arg_59_0:getConfig("type")
 end
 
-function var_0_0.hasSkin(arg_60_0)
+function Equipment.hasSkin(arg_60_0)
 	return arg_60_0.skinId and arg_60_0.skinId ~= 0
 end
 
-function var_0_0.setSkinId(arg_61_0, arg_61_1)
+function Equipment.setSkinId(arg_61_0, arg_61_1)
 	arg_61_0.skinId = arg_61_1
 end
 
-function var_0_0.getSkinId(arg_62_0)
+function Equipment.getSkinId(arg_62_0)
 	return arg_62_0.skinId
 end
 
-function var_0_0.hasSkinOrbit(arg_63_0)
+function Equipment.hasSkinOrbit(arg_63_0)
 	if not arg_63_0:hasSkin() then
 		return false
 	end
 
-	return var_0_0.IsOrbitSkin(arg_63_0.skinId)
+	return Equipment.IsOrbitSkin(arg_63_0.skinId)
 end
 
-function var_0_0.IsOrbitSkin(arg_64_0)
-	local var_64_0 = var_0_1[arg_64_0]
+function Equipment.IsOrbitSkin(arg_64_0)
+	local var_64_0 = equip_skin_template[arg_64_0]
 
 	if var_64_0.orbit_combat ~= "" or var_64_0.orbit_ui ~= "" then
 		return true
@@ -714,15 +717,15 @@ function var_0_0.IsOrbitSkin(arg_64_0)
 	end
 end
 
-function var_0_0.isImportance(arg_65_0)
-	return arg_65_0:getConfig("important") == var_0_0.EQUIPMENT_IMPORTANCE
+function Equipment.isImportance(arg_65_0)
+	return arg_65_0:getConfig("important") == Equipment.EQUIPMENT_IMPORTANCE
 end
 
-function var_0_0.isUnique(arg_66_0)
+function Equipment.isUnique(arg_66_0)
 	return arg_66_0:getConfig("equip_limit") ~= 0
 end
 
-function var_0_0.isDevice(arg_67_0)
+function Equipment.isDevice(arg_67_0)
 	local var_67_0 = arg_67_0:getConfig("type")
 
 	return underscore.any(EquipType.DeviceEquipTypes, function(arg_68_0)
@@ -730,7 +733,7 @@ function var_0_0.isDevice(arg_67_0)
 	end)
 end
 
-function var_0_0.isAircraft(arg_69_0)
+function Equipment.isAircraft(arg_69_0)
 	local var_69_0 = arg_69_0:getConfig("type")
 
 	return underscore.any(EquipType.AirEquipTypes, function(arg_70_0)
@@ -738,7 +741,7 @@ function var_0_0.isAircraft(arg_69_0)
 	end)
 end
 
-function var_0_0.isAircraftExtend(arg_71_0)
+function Equipment.isAircraftExtend(arg_71_0)
 	local var_71_0 = arg_71_0:getConfig("type")
 
 	return underscore.any(EquipType.AirExtendEquipTypes, function(arg_72_0)
@@ -746,7 +749,7 @@ function var_0_0.isAircraftExtend(arg_71_0)
 	end)
 end
 
-function var_0_0.MigrateTo(arg_73_0, arg_73_1)
+function Equipment.MigrateTo(arg_73_0, arg_73_1)
 	assert(not arg_73_0.isSkin)
 
 	return Equipment.New({
@@ -756,11 +759,11 @@ function var_0_0.MigrateTo(arg_73_0, arg_73_1)
 	})
 end
 
-function var_0_0.GetRootEquipment(arg_74_0)
-	local var_74_0 = var_0_0.getConfigData(arg_74_0.configId)
+function Equipment.GetRootEquipment(arg_74_0)
+	local var_74_0 = Equipment.getConfigData(arg_74_0.configId)
 
 	while var_74_0.prev > 0 do
-		var_74_0 = var_0_0.getConfigData(var_74_0.prev)
+		var_74_0 = Equipment.getConfigData(var_74_0.prev)
 	end
 
 	local var_74_1 = arg_74_0:MigrateTo(var_74_0.id)
@@ -770,26 +773,26 @@ function var_0_0.GetRootEquipment(arg_74_0)
 	return var_74_1
 end
 
-function var_0_0.getNation(arg_75_0)
+function Equipment.getNation(arg_75_0)
 	return arg_75_0:getConfig("nationality")
 end
 
-function var_0_0.GetEquipRootStatic(arg_76_0)
-	local var_76_0 = var_0_0.getConfigData(arg_76_0)
+function Equipment.GetEquipRootStatic(arg_76_0)
+	local var_76_0 = Equipment.getConfigData(arg_76_0)
 
 	while var_76_0.prev > 0 do
-		var_76_0 = var_0_0.getConfigData(var_76_0.prev)
+		var_76_0 = Equipment.getConfigData(var_76_0.prev)
 	end
 
 	return var_76_0.id
 end
 
-function var_0_0.GetRevertRewardsStatic(arg_77_0)
+function Equipment.GetRevertRewardsStatic(arg_77_0)
 	local var_77_0 = {}
-	local var_77_1 = var_0_0.getConfigData(arg_77_0)
+	local var_77_1 = Equipment.getConfigData(arg_77_0)
 
 	while var_77_1.prev > 0 do
-		var_77_1 = var_0_0.getConfigData(var_77_1.prev)
+		var_77_1 = Equipment.getConfigData(var_77_1.prev)
 
 		for iter_77_0, iter_77_1 in ipairs(var_77_1.trans_use_item) do
 			var_77_0[iter_77_1[1]] = (var_77_0[iter_77_1[1]] or 0) + iter_77_1[2]
@@ -801,8 +804,8 @@ function var_0_0.GetRevertRewardsStatic(arg_77_0)
 	return var_77_0
 end
 
-function var_0_0.GetEquipReloadStatic(arg_78_0)
-	local var_78_0 = var_0_0.getConfigData(arg_78_0).weapon_id
+function Equipment.GetEquipReloadStatic(arg_78_0)
+	local var_78_0 = Equipment.getConfigData(arg_78_0).weapon_id
 
 	if var_78_0 and #var_78_0 > 0 then
 		local var_78_1 = pg.weapon_property[var_78_0[1]]
@@ -813,7 +816,7 @@ function var_0_0.GetEquipReloadStatic(arg_78_0)
 	end
 end
 
-function var_0_0.GetEquipComposeCfgStatic(arg_79_0)
+function Equipment.GetEquipComposeCfgStatic(arg_79_0)
 	local var_79_0 = pg.compose_data_template
 
 	for iter_79_0, iter_79_1 in ipairs(var_79_0.all) do
@@ -830,7 +833,7 @@ function var_0_0.GetEquipComposeCfgStatic(arg_79_0)
 	end
 end
 
-function var_0_0.IsMatchKey(arg_80_0, arg_80_1)
+function Equipment.IsMatchKey(arg_80_0, arg_80_1)
 	local var_80_0 = {
 		arg_80_0:getConfig("name")
 	}
@@ -838,4 +841,4 @@ function var_0_0.IsMatchKey(arg_80_0, arg_80_1)
 	return EquipmentTools.IsMatchKey(var_80_0, arg_80_1)
 end
 
-return var_0_0
+return Equipment

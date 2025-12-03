@@ -1582,84 +1582,89 @@ function Ship.attrVertify(arg_105_0)
 	return true
 end
 
+--- @class Ship
+--- @return table<string, number>, table<string, number>
+--- 计算舰船装备的属性加成，包括值和百分比属性加成
 function Ship.getEquipmentProperties(self)
-	local var_106_0 = {}
-	local var_106_1 = {}
+	local equipProperties = {}
+	local equipRates = {}
 
 	for _, property in ipairs(Ship.PROPERTIES) do
-		var_106_0[property] = 0
+		equipProperties[property] = 0
 	end
 
 	for _, diveProperty in ipairs(Ship.DIVE_PROPERTIES) do
-		var_106_0[diveProperty] = 0
+		equipProperties[diveProperty] = 0
 	end
 
 	for _, sonarProperty in ipairs(Ship.SONAR_PROPERTIES) do
-		var_106_0[sonarProperty] = 0
+		equipProperties[sonarProperty] = 0
 	end
 
 	for _, propertyEnhancement in ipairs(Ship.PROPERTIES_ENHANCEMENT) do
-		var_106_1[propertyEnhancement] = 0
+		equipRates[propertyEnhancement] = 0
 	end
 
-	var_106_0[AttributeType.AirDominate] = 0
-	var_106_0[AttributeType.AntiSiren] = 0
+	equipProperties[AttributeType.AirDominate] = 0
+	equipProperties[AttributeType.AntiSiren] = 0
 
 	local equipments = self:getActiveEquipments()
 
 	for _, equipment in ipairs(equipments) do
 		if equipment then
+			--- @type table<number, table<string, number>>
 			local equipmentAttrs = equipment:GetAttributes()
 
 			for _, attr in ipairs(equipmentAttrs) do
-				if attr and var_106_0[attr.type] then
-					var_106_0[attr.type] = var_106_0[attr.type] + attr.value
+				if attr and equipProperties[attr.type] then
+					equipProperties[attr.type] = equipProperties[attr.type] + attr.value
 				end
 			end
+			-- 目前看下来全是0...
+			local propertyRate = equipment:GetPropertyRate()
 
-			local var_106_4 = equipment:GetPropertyRate()
-
-			for property2, property3 in pairs(var_106_4) do
-				var_106_1[property2] = math.max(var_106_1[property2], property3)
+			for property, rate in pairs(propertyRate) do
+				equipRates[property] = math.max(equipRates[property], rate)
 			end
 
-			local var_106_5 = equipment:GetSonarProperty()
+			local sonarProperty = equipment:GetSonarProperty()
 
-			if var_106_5 then
-				for property4, property5 in pairs(var_106_5) do
-					var_106_0[property4] = var_106_0[property4] + property5
+			-- 声呐装备的额外范围加成
+			if sonarProperty then
+				for property, range in pairs(sonarProperty) do
+					equipProperties[property] = equipProperties[property] + range
 				end
 			end
+			-- 对塞壬增伤，本质DMG_TAG_EHC_N_99
+			local antiSirenPower = equipment:GetAntiSirenPower()
 
-			local var_106_6 = equipment:GetAntiSirenPower()
-
-			if var_106_6 then
-				var_106_0[AttributeType.AntiSiren] = var_106_0[AttributeType.AntiSiren] + var_106_6 / 10000
+			if antiSirenPower then
+				equipProperties[AttributeType.AntiSiren] = equipProperties[AttributeType.AntiSiren] + antiSirenPower / 10000
 			end
 		end
 	end
 
 	;(function()
-		local var_107_0 = self:GetSpWeapon()
+		local spWeapon = self:GetSpWeapon()
 
-		if not var_107_0 then
+		if not spWeapon then
 			return
 		end
+		--- @type table<number, table<string, number>>
+		local spWeaponAttrs = spWeapon:GetPropertiesInfo().attrs
 
-		local var_107_1 = var_107_0:GetPropertiesInfo().attrs
-
-		for iter_107_0, iter_107_1 in ipairs(var_107_1) do
-			if iter_107_1 and var_106_0[iter_107_1.type] then
-				var_106_0[iter_107_1.type] = var_106_0[iter_107_1.type] + iter_107_1.value
+		for _, attr in ipairs(spWeaponAttrs) do
+			if attr and equipProperties[attr.type] then
+				equipProperties[attr.type] = equipProperties[attr.type] + attr.value
 			end
 		end
 	end)()
-
-	for property6, property7 in pairs(var_106_1) do
-		var_106_1[property6] = property7 + 1
+	-- Equip属性加成是百分比，因此这里要+1
+	for property, rate in pairs(equipRates) do
+		equipRates[property] = rate + 1
 	end
 
-	return var_106_0, var_106_1
+	return equipProperties, equipRates
 end
 
 function Ship.getSkillEffects(arg_108_0)
@@ -1758,109 +1763,126 @@ function Ship.FilterActiveSkill(arg_113_0, arg_113_1, arg_113_2, arg_113_3)
 	end
 end
 
-function Ship.getEquipmentGearScore(arg_114_0)
-	local var_114_0 = 0
-	local var_114_1 = arg_114_0:getActiveEquipments()
+function Ship.getEquipmentGearScore(self)
+	local gearScore = 0
+	local equipments = self:getActiveEquipments()
 
-	for iter_114_0, iter_114_1 in ipairs(var_114_1) do
-		if iter_114_1 then
-			var_114_0 = var_114_0 + iter_114_1:GetGearScore()
+	for _, equipment in ipairs(equipments) do
+		if equipment then
+			gearScore = gearScore + equipment:GetGearScore()
 		end
 	end
 
-	return var_114_0
+	return gearScore
 end
 
-function Ship.getProperties(arg_115_0, arg_115_1, arg_115_2, arg_115_3, arg_115_4)
-	local var_115_0 = arg_115_1 or {}
-	local var_115_1 = arg_115_0:getConfig("nationality")
-	local var_115_2 = arg_115_0:getConfig("type")
-	local var_115_3 = arg_115_0:getShipProperties()
-	local var_115_4, var_115_5 = arg_115_0:getEquipmentProperties()
-	local var_115_6
-	local var_115_7
-	local var_115_8
+--- @class Ship
+--- @param commanders table<number, Commander>
+--- @param inDuel boolean
+--- @param inWorld boolean
+--- @param techNotAdjusted boolean
+--- @return table<string, number>
+--- 计算舰船的战斗外属性
+function Ship.getProperties(self, commanders, inDuel, inWorld, techNotAdjusted)
+	local commanders = commanders or {}
+	local nationality = self:getConfig("nationality")
+	local type = self:getConfig("type")
+	local shipProperties = self:getShipProperties()
+	local equipProperties, equipRates = self:getEquipmentProperties()
+	local worldFleetBuffAttrValues
+	local worldFleetBuffAttrRatios
+	local worldShipBuffAttrRatios
 
-	if arg_115_3 and arg_115_0:getFlag("inWorld") then
-		local var_115_9 = WorldConst.FetchWorldShip(arg_115_0.id)
+	if inWorld and self:getFlag("inWorld") then
+		--- @type WorldMapShip
+		local worldShip = WorldConst.FetchWorldShip(self.id)
 
-		var_115_6, var_115_7 = var_115_9:GetShipBuffProperties()
-		var_115_8 = var_115_9:GetShipPowerBuffProperties()
+		worldFleetBuffAttrValues, worldFleetBuffAttrRatios = worldShip:GetShipBuffProperties()
+		worldShipBuffAttrRatios = worldShip:GetShipPowerBuffProperties()
 	end
 
-	for iter_115_0, iter_115_1 in ipairs(Ship.PROPERTIES) do
-		local var_115_10 = 0
-		local var_115_11 = 0
+	for _, property in ipairs(Ship.PROPERTIES) do
+		local commanderAttrRatio = 0
+		local commanderAttrValue = 0
 
-		for iter_115_2, iter_115_3 in pairs(var_115_0) do
-			var_115_10 = var_115_10 + iter_115_3:getAttrRatioAddition(iter_115_1, var_115_1, var_115_2) / 100
-			var_115_11 = var_115_11 + iter_115_3:getAttrValueAddition(iter_115_1, var_115_1, var_115_2)
+		for _, commander in pairs(commanders) do
+			commanderAttrRatio = commanderAttrRatio + commander:getAttrRatioAddition(property, nationality, type) / 100
+			commanderAttrValue = commanderAttrValue + commander:getAttrValueAddition(property, nationality, type)
 		end
-
-		local var_115_12 = var_115_10 + (var_115_5[iter_115_1] or 1)
-		local var_115_13 = var_115_7 and var_115_7[iter_115_1] or 1
-		local var_115_14 = var_115_6 and var_115_6[iter_115_1] or 0
-
-		if iter_115_1 == AttributeType.Speed then
-			var_115_3[iter_115_1] = var_115_3[iter_115_1] * var_115_12 * var_115_13 + var_115_11 + var_115_4[iter_115_1] + var_115_14
+		-- 如上所述，此处equipRates基本全0，因此可忽略
+		-- 可能是给以后装备属性百分比加成预留的接口
+		local totalRatio = commanderAttrRatio + (equipRates[property] or 1)
+		local worldFleetBuffRatio = worldFleetBuffAttrRatios and worldFleetBuffAttrRatios[property] or 1
+		local worldFleetBuffValue = worldFleetBuffAttrValues and worldFleetBuffAttrValues[property] or 0
+		-- 航速属性不取整
+		if property == AttributeType.Speed then
+			shipProperties[property] = shipProperties[property] * totalRatio * worldFleetBuffRatio + commanderAttrValue + equipProperties[property] + worldFleetBuffValue
 		else
-			var_115_3[iter_115_1] = calcFloor(calcFloor(var_115_3[iter_115_1]) * var_115_12 * var_115_13) + var_115_11 + var_115_4[iter_115_1] + var_115_14
+			shipProperties[property] = calcFloor(calcFloor(shipProperties[property]) * totalRatio * worldFleetBuffRatio) + commanderAttrValue + equipProperties[property] + worldFleetBuffValue
 		end
 	end
 
-	if not arg_115_2 and arg_115_0:isMaxStar() then
-		for iter_115_4, iter_115_5 in pairs(var_115_3) do
-			local var_115_15 = arg_115_4 and arg_115_0:getTechNationMaxAddition(iter_115_4) or arg_115_0:getTechNationAddition(iter_115_4)
+	if not inDuel and self:isMaxStar() then
+		for property, _ in pairs(shipProperties) do
+			local techAddition = techNotAdjusted and self:getTechNationMaxAddition(property) or self:getTechNationAddition(property)
 
-			var_115_3[iter_115_4] = var_115_3[iter_115_4] + var_115_15
+			shipProperties[property] = shipProperties[property] + techAddition
 		end
 	end
 
-	for iter_115_6, iter_115_7 in ipairs(Ship.DIVE_PROPERTIES) do
-		var_115_3[iter_115_7] = var_115_3[iter_115_7] + var_115_4[iter_115_7]
+	for _, diveProperty in ipairs(Ship.DIVE_PROPERTIES) do
+		shipProperties[diveProperty] = shipProperties[diveProperty] + equipProperties[diveProperty]
 	end
 
-	for iter_115_8, iter_115_9 in ipairs(Ship.SONAR_PROPERTIES) do
-		var_115_3[iter_115_9] = var_115_3[iter_115_9] + var_115_4[iter_115_9]
+	for _, sonarProperty in ipairs(Ship.SONAR_PROPERTIES) do
+		shipProperties[sonarProperty] = shipProperties[sonarProperty] + equipProperties[sonarProperty]
 	end
 
-	if arg_115_3 then
-		var_115_3[AttributeType.AntiSiren] = (var_115_3[AttributeType.AntiSiren] or 0) + var_115_4[AttributeType.AntiSiren]
+	if inWorld then
+		shipProperties[AttributeType.AntiSiren] = (shipProperties[AttributeType.AntiSiren] or 0) + equipProperties[AttributeType.AntiSiren]
 	end
 
-	if var_115_8 then
-		for iter_115_10, iter_115_11 in pairs(var_115_8) do
-			if var_115_3[iter_115_10] then
-				if iter_115_10 == AttributeType.Speed then
-					var_115_3[iter_115_10] = var_115_3[iter_115_10] * iter_115_11
+	if worldShipBuffAttrRatios then
+		for attr, ratio in pairs(worldShipBuffAttrRatios) do
+			if shipProperties[attr] then
+				if attr == AttributeType.Speed then
+					shipProperties[attr] = shipProperties[attr] * ratio
 				else
-					var_115_3[iter_115_10] = math.floor(var_115_3[iter_115_10] * iter_115_11)
+					shipProperties[attr] = math.floor(shipProperties[attr] * ratio)
 				end
 			end
 		end
 	end
 
-	return var_115_3
+	return shipProperties
 end
 
-function Ship.getTransGearScore(arg_116_0)
-	local var_116_0 = 0
-	local var_116_1 = pg.transform_data_template
+--- @class Ship
+--- @return number
+--- 计算改造的额外战力加成
+function Ship.getTransGearScore(self)
+	local gearScore = 0
+	local transform_data_template = pg.transform_data_template
 
-	for iter_116_0, iter_116_1 in pairs(arg_116_0.transforms) do
-		for iter_116_2 = 1, iter_116_1.level do
-			var_116_0 = var_116_0 + (var_116_1[iter_116_1.id].gear_score[iter_116_2] or 0)
+	for _, transform in pairs(self.transforms) do
+		for i = 1, transform.level do
+			gearScore = gearScore + (transform_data_template[transform.id].gear_score[i] or 0)
 		end
 	end
 
-	return var_116_0
+	return gearScore
 end
 
-function Ship.getShipCombatPower(arg_117_0, arg_117_1)
-	local var_117_0 = arg_117_0:getProperties(arg_117_1, nil, nil, true)
-	local var_117_1 = var_117_0[AttributeType.Durability] / 5 + var_117_0[AttributeType.Cannon] + var_117_0[AttributeType.Torpedo] + var_117_0[AttributeType.AntiAircraft] + var_117_0[AttributeType.Air] + var_117_0[AttributeType.AntiSub] + var_117_0[AttributeType.Reload] + var_117_0[AttributeType.Hit] * 2 + var_117_0[AttributeType.Dodge] * 2 + var_117_0[AttributeType.Speed] + arg_117_0:getEquipmentGearScore() + arg_117_0:getTransGearScore()
-
-	return math.floor(var_117_1)
+--- @class Ship
+--- @param commanders table<number, Commander>
+--- @return number
+--- 计算舰船的战力(综合性能)
+function Ship.getShipCombatPower(self, commanders)
+	-- 计算战力用的基础属性：不考虑演习和大世界加成，考虑指挥喵加成和科技加成
+	local properties = self:getProperties(commanders, nil, nil, true)
+	local combatPower = properties[AttributeType.Durability] / 5 + properties[AttributeType.Cannon] + properties[AttributeType.Torpedo] + properties[AttributeType.AntiAircraft] + properties[AttributeType.Air] + properties[AttributeType.AntiSub] + properties[AttributeType.Reload] + properties[AttributeType.Hit] * 2 + properties[AttributeType.Dodge] * 2 + properties[AttributeType.Speed] + self:getEquipmentGearScore() + self:getTransGearScore()
+	-- 向下取整
+	return math.floor(combatPower)
 end
 
 function Ship.cosumeEnergy(arg_118_0, arg_118_1)

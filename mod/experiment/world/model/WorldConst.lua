@@ -1,15 +1,15 @@
-local var_0_0 = class("WorldConst")
+local WorldConst = class("WorldConst")
 
-var_0_0.Debug = false
+WorldConst.Debug = false
 
-function var_0_0.Print(...)
-	if var_0_0.Debug then
+function WorldConst.Print(...)
+	if WorldConst.Debug then
 		warning(...)
 	end
 end
 
-function var_0_0.DebugPrintAttachmentCell(arg_2_0, arg_2_1)
-	if not var_0_0.Debug then
+function WorldConst.DebugPrintAttachmentCell(arg_2_0, arg_2_1)
+	if not WorldConst.Debug then
 		return
 	end
 
@@ -24,23 +24,23 @@ function var_0_0.DebugPrintAttachmentCell(arg_2_0, arg_2_1)
 	end
 end
 
-var_0_0.DefaultAtlas = 1
+WorldConst.DefaultAtlas = 1
 
-function var_0_0.GetProgressAtlas(arg_3_0)
-	return var_0_0.DefaultAtlas
+function WorldConst.GetProgressAtlas(arg_3_0)
+	return WorldConst.DefaultAtlas
 end
 
-var_0_0.MaxRow = 30
-var_0_0.MaxColumn = 30
-var_0_0.LineCross = 2
-var_0_0.ActionIdle = "normal"
-var_0_0.ActionMove = "move"
-var_0_0.ActionDrag = "tuozhuai"
-var_0_0.ActionYun = "yun"
-var_0_0.ActionVanish = "vanish"
-var_0_0.ActionAppear = "appear"
-var_0_0.AutoFightLoopCountLimit = 25
-var_0_0.EnemySize = {
+WorldConst.MaxRow = 30
+WorldConst.MaxColumn = 30
+WorldConst.LineCross = 2
+WorldConst.ActionIdle = "normal"
+WorldConst.ActionMove = "move"
+WorldConst.ActionDrag = "tuozhuai"
+WorldConst.ActionYun = "yun"
+WorldConst.ActionVanish = "vanish"
+WorldConst.ActionAppear = "appear"
+WorldConst.AutoFightLoopCountLimit = 25
+WorldConst.EnemySize = {
 	1,
 	2,
 	3,
@@ -56,9 +56,9 @@ var_0_0.EnemySize = {
 	3,
 	[99] = 99
 }
-var_0_0.ResourceID = 3002
-var_0_0.SwitchPlainingItemId = 120
-var_0_0.ReqName = {
+WorldConst.ResourceID = 3002
+WorldConst.SwitchPlainingItemId = 120
+WorldConst.ReqName = {
 	"OpReqMoveFleet",
 	"OpReqBox",
 	nil,
@@ -91,52 +91,52 @@ var_0_0.ReqName = {
 	[99] = "OpReqSkipBattle"
 }
 
-for iter_0_0, iter_0_1 in pairs(var_0_0.ReqName) do
-	var_0_0[iter_0_1] = iter_0_0
+for iter_0_0, iter_0_1 in pairs(WorldConst.ReqName) do
+	WorldConst[iter_0_1] = iter_0_0
 end
 
-var_0_0.OpActionFleetMove = -100
-var_0_0.OpActionAttachmentMove = -101
-var_0_0.OpActionAttachmentAnim = -102
-var_0_0.OpActionNextRound = -103
-var_0_0.OpActionEventOp = -104
-var_0_0.OpActionMoveStep = -105
-var_0_0.OpActionUpdate = -106
-var_0_0.OpActionFleetAnim = -107
-var_0_0.OpActionEventEffect = -108
-var_0_0.OpActionTaskGoto = -109
-var_0_0.OpActionCameraMove = -110
-var_0_0.OpActionTrapGravityAnim = -111
-var_0_0.RoundPlayer = 0
-var_0_0.RoundElse = 1
-var_0_0.DirNone = 0
-var_0_0.DirUp = 1
-var_0_0.DirRight = 2
-var_0_0.DirDown = 3
-var_0_0.DirLeft = 4
+WorldConst.OpActionFleetMove = -100
+WorldConst.OpActionAttachmentMove = -101
+WorldConst.OpActionAttachmentAnim = -102
+WorldConst.OpActionNextRound = -103
+WorldConst.OpActionEventOp = -104
+WorldConst.OpActionMoveStep = -105
+WorldConst.OpActionUpdate = -106
+WorldConst.OpActionFleetAnim = -107
+WorldConst.OpActionEventEffect = -108
+WorldConst.OpActionTaskGoto = -109
+WorldConst.OpActionCameraMove = -110
+WorldConst.OpActionTrapGravityAnim = -111
+WorldConst.RoundPlayer = 0
+WorldConst.RoundElse = 1
+WorldConst.DirNone = 0
+WorldConst.DirUp = 1
+WorldConst.DirRight = 2
+WorldConst.DirDown = 3
+WorldConst.DirLeft = 4
 
-function var_0_0.DirToLine(arg_4_0)
-	if arg_4_0 == var_0_0.DirNone then
+function WorldConst.DirToLine(arg_4_0)
+	if arg_4_0 == WorldConst.DirNone then
 		return {
 			row = 0,
 			column = 0
 		}
-	elseif arg_4_0 == var_0_0.DirUp then
+	elseif arg_4_0 == WorldConst.DirUp then
 		return {
 			row = -1,
 			column = 0
 		}
-	elseif arg_4_0 == var_0_0.DirRight then
+	elseif arg_4_0 == WorldConst.DirRight then
 		return {
 			row = 0,
 			column = 1
 		}
-	elseif arg_4_0 == var_0_0.DirDown then
+	elseif arg_4_0 == WorldConst.DirDown then
 		return {
 			row = 1,
 			column = 0
 		}
-	elseif arg_4_0 == var_0_0.DirLeft then
+	elseif arg_4_0 == WorldConst.DirLeft then
 		return {
 			row = 0,
 			column = -1
@@ -146,31 +146,31 @@ function var_0_0.DirToLine(arg_4_0)
 	end
 end
 
-var_0_0.DefaultMapOffset = Vector3(0, -1000, -1000)
+WorldConst.DefaultMapOffset = Vector3(0, -1000, -1000)
 
-function var_0_0.InFOVRange(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
-	arg_5_4 = arg_5_4 or var_0_0.GetFOVRadius()
+function WorldConst.InFOVRange(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
+	arg_5_4 = arg_5_4 or WorldConst.GetFOVRadius()
 
 	return (arg_5_0 - arg_5_2) * (arg_5_0 - arg_5_2) + (arg_5_1 - arg_5_3) * (arg_5_1 - arg_5_3) <= arg_5_4 * arg_5_4
 end
 
-function var_0_0.GetFOVRadius()
+function WorldConst.GetFOVRadius()
 	return pg.gameset.world_move_initial_view.key_value
 end
 
-function var_0_0.IsRookieMap(arg_7_0)
+function WorldConst.IsRookieMap(arg_7_0)
 	return _.any(pg.gameset.world_guide_map_list.description, function(arg_8_0)
 		return arg_7_0 == arg_8_0
 	end)
 end
 
-function var_0_0.GetRealmRookieId(arg_9_0)
+function WorldConst.GetRealmRookieId(arg_9_0)
 	assert(arg_9_0 and arg_9_0 > 0)
 
 	return unpack(pg.gameset.world_default_entrance.description[arg_9_0])
 end
 
-function var_0_0.ParseConfigDir(arg_10_0, arg_10_1)
+function WorldConst.ParseConfigDir(arg_10_0, arg_10_1)
 	if arg_10_0 == -1 then
 		return WorldConst.DirUp
 	elseif arg_10_0 == 1 then
@@ -184,43 +184,43 @@ function var_0_0.ParseConfigDir(arg_10_0, arg_10_1)
 	assert(false)
 end
 
-function var_0_0.Pos2FogRes(arg_11_0, arg_11_1)
+function WorldConst.Pos2FogRes(arg_11_0, arg_11_1)
 	arg_11_0 = arg_11_0 % 3
 	arg_11_1 = arg_11_1 % 3
 
 	return "miwu0" .. arg_11_0 * 3 + arg_11_1 + 1
 end
 
-var_0_0.TerrainStreamRes = {
+WorldConst.TerrainStreamRes = {
 	"yangliu_shang",
 	"yangliu_you",
 	"yangliu_xia",
 	"yangliu_zuo"
 }
-var_0_0.TerrainWindRes = {
+WorldConst.TerrainWindRes = {
 	"longjuanfeng_shang",
 	"longjuanfeng_you",
 	"longjuanfeng_xia",
 	"longjuanfeng_zuo"
 }
-var_0_0.TerrainPoisonRes = {
+WorldConst.TerrainPoisonRes = {
 	"poison01",
 	"poison02"
 }
 
-function var_0_0.GetTerrainEffectRes(arg_12_0, arg_12_1, arg_12_2)
+function WorldConst.GetTerrainEffectRes(arg_12_0, arg_12_1, arg_12_2)
 	if arg_12_0 == WorldMapCell.TerrainStream then
-		local var_12_0 = var_0_0.TerrainStreamRes[arg_12_1]
+		local var_12_0 = WorldConst.TerrainStreamRes[arg_12_1]
 
 		return "world/object/" .. var_12_0, var_12_0
 	elseif arg_12_0 == WorldMapCell.TerrainWind then
-		local var_12_1 = var_0_0.TerrainWindRes[arg_12_1]
+		local var_12_1 = WorldConst.TerrainWindRes[arg_12_1]
 
 		return "world/object/" .. var_12_1, var_12_1
 	elseif arg_12_0 == WorldMapCell.TerrainIce then
 		return "world/object/ice", "ice"
 	elseif arg_12_0 == WorldMapCell.TerrainPoison then
-		local var_12_2 = var_0_0.TerrainPoisonRes[arg_12_2]
+		local var_12_2 = WorldConst.TerrainPoisonRes[arg_12_2]
 
 		return "world/object/" .. var_12_2, var_12_2
 	end
@@ -228,17 +228,17 @@ function var_0_0.GetTerrainEffectRes(arg_12_0, arg_12_1, arg_12_2)
 	assert(false)
 end
 
-function var_0_0.GetWindEffect()
+function WorldConst.GetWindEffect()
 	return "world/object/longjuanfeng", "longjuanfeng"
 end
 
-function var_0_0.GetBuffEffect(arg_14_0)
+function WorldConst.GetBuffEffect(arg_14_0)
 	return "ui/" .. arg_14_0, arg_14_0
 end
 
-var_0_0.PoisonEffect = "san_low"
+WorldConst.PoisonEffect = "san_low"
 
-function var_0_0.ArrayEffectOrder(arg_15_0, arg_15_1)
+function WorldConst.ArrayEffectOrder(arg_15_0, arg_15_1)
 	local var_15_0 = {}
 	local var_15_1 = arg_15_0:GetComponentsInChildren(typeof(Renderer), true):ToTable()
 
@@ -253,16 +253,16 @@ function var_0_0.ArrayEffectOrder(arg_15_0, arg_15_1)
 	end
 end
 
-var_0_0.Flag16Max = 65535
-var_0_0.LOEffectA = 1
-var_0_0.LOQuad = 1000
-var_0_0.LOEffectB = 1001
-var_0_0.LOItem = 2000
-var_0_0.LOEffectC = 2001
-var_0_0.LOCell = 3000
-var_0_0.LOFleet = 3001
-var_0_0.LOTop = 4000
-var_0_0.WindScale = {
+WorldConst.Flag16Max = 65535
+WorldConst.LOEffectA = 1
+WorldConst.LOQuad = 1000
+WorldConst.LOEffectB = 1001
+WorldConst.LOItem = 2000
+WorldConst.LOEffectC = 2001
+WorldConst.LOCell = 3000
+WorldConst.LOFleet = 3001
+WorldConst.LOTop = 4000
+WorldConst.WindScale = {
 	0.5,
 	0.5,
 	0.75,
@@ -270,94 +270,94 @@ var_0_0.WindScale = {
 	1
 }
 
-function var_0_0.GetWindScale(arg_16_0)
-	local var_16_0 = arg_16_0 and var_0_0.WindScale[arg_16_0] or 1
+function WorldConst.GetWindScale(arg_16_0)
+	local var_16_0 = arg_16_0 and WorldConst.WindScale[arg_16_0] or 1
 
 	return Vector3(var_16_0, var_16_0, var_16_0)
 end
 
-var_0_0.BaseMoveDuration = 0.35
+WorldConst.BaseMoveDuration = 0.35
 
-function var_0_0.GetTerrainMoveStepDuration(arg_17_0)
-	var_0_0.MoveStepDuration = var_0_0.MoveStepDuration or {
-		[WorldMapCell.TerrainNone] = var_0_0.BaseMoveDuration,
-		[WorldMapCell.TerrainWind] = var_0_0.BaseMoveDuration / 2,
-		[WorldMapCell.TerrainStream] = var_0_0.BaseMoveDuration / 2,
-		[WorldMapCell.TerrainIce] = var_0_0.BaseMoveDuration / 2,
-		[WorldMapCell.TerrainFog] = var_0_0.BaseMoveDuration,
-		[WorldMapCell.TerrainFire] = var_0_0.BaseMoveDuration,
-		[WorldMapCell.TerrainPoison] = var_0_0.BaseMoveDuration
+function WorldConst.GetTerrainMoveStepDuration(arg_17_0)
+	WorldConst.MoveStepDuration = WorldConst.MoveStepDuration or {
+		[WorldMapCell.TerrainNone] = WorldConst.BaseMoveDuration,
+		[WorldMapCell.TerrainWind] = WorldConst.BaseMoveDuration / 2,
+		[WorldMapCell.TerrainStream] = WorldConst.BaseMoveDuration / 2,
+		[WorldMapCell.TerrainIce] = WorldConst.BaseMoveDuration / 2,
+		[WorldMapCell.TerrainFog] = WorldConst.BaseMoveDuration,
+		[WorldMapCell.TerrainFire] = WorldConst.BaseMoveDuration,
+		[WorldMapCell.TerrainPoison] = WorldConst.BaseMoveDuration
 	}
 
-	return var_0_0.MoveStepDuration[arg_17_0]
+	return WorldConst.MoveStepDuration[arg_17_0]
 end
 
-var_0_0.UIEaseDuration = 0.5
-var_0_0.UIEaseFasterDuration = 0.3
-var_0_0.ModelSpine = 1
-var_0_0.ModelPrefab = 2
-var_0_0.ResBoxPrefab = "boxprefab/"
-var_0_0.ResChapterPrefab = "chapter/"
-var_0_0.DirType1 = 1
-var_0_0.DirType2 = 2
-var_0_0.DirType4 = 4
+WorldConst.UIEaseDuration = 0.5
+WorldConst.UIEaseFasterDuration = 0.3
+WorldConst.ModelSpine = 1
+WorldConst.ModelPrefab = 2
+WorldConst.ResBoxPrefab = "boxprefab/"
+WorldConst.ResChapterPrefab = "chapter/"
+WorldConst.DirType1 = 1
+WorldConst.DirType2 = 2
+WorldConst.DirType4 = 4
 
-function var_0_0.CalcModelPosition(arg_18_0, arg_18_1)
+function WorldConst.CalcModelPosition(arg_18_0, arg_18_1)
 	return Vector3((arg_18_0.config.area_pos[1] - arg_18_1.x / 2) / PIXEL_PER_UNIT, 0, (arg_18_0.config.area_pos[2] - arg_18_1.y / 2) / PIXEL_PER_UNIT)
 end
 
-var_0_0.BrokenBuffId = pg.gameset.world_death_buff.key_value
-var_0_0.MoveLimitBuffId = pg.gameset.world_move_buff_desc.key_value
-var_0_0.DamageBuffList = pg.gameset.world_buff_morale.description
+WorldConst.BrokenBuffId = pg.gameset.world_death_buff.key_value
+WorldConst.MoveLimitBuffId = pg.gameset.world_move_buff_desc.key_value
+WorldConst.DamageBuffList = pg.gameset.world_buff_morale.description
 
-function var_0_0.ExtendPropertiesRatesFromBuffList(arg_19_0, arg_19_1)
-	for iter_19_0, iter_19_1 in ipairs(arg_19_1) do
-		assert(iter_19_1.class == WorldBuff)
+function WorldConst.ExtendPropertiesRatesFromBuffList(attrRates, buffList)
+	for _, buff in ipairs(buffList) do
+		assert(buff.class == WorldBuff)
 
-		if iter_19_1:IsValid() then
-			for iter_19_2, iter_19_3 in ipairs(iter_19_1.config.buff_attr) do
-				assert(iter_19_1.config.percent[iter_19_2] == 1)
+		if buff:IsValid() then
+			for index, attr in ipairs(buff.config.buff_attr) do
+				assert(buff.config.percent[index] == 1)
 
-				arg_19_0[iter_19_3] = defaultValue(arg_19_0[iter_19_3], 1) * (10000 + iter_19_1.config.buff_effect[iter_19_2] * iter_19_1:GetFloor()) / 10000
+				attrRates[attr] = defaultValue(attrRates[attr], 1) * (10000 + buff.config.buff_effect[index] * buff:GetFloor()) / 10000
 			end
 		end
 	end
 end
 
-function var_0_0.AppendPropertiesFromBuffList(arg_20_0, arg_20_1, arg_20_2)
-	for iter_20_0, iter_20_1 in ipairs(arg_20_2) do
-		assert(iter_20_1.class == WorldBuff)
+function WorldConst.AppendPropertiesFromBuffList(attrValues, attrRatios, buffList)
+	for _, buff in ipairs(buffList) do
+		assert(buff.class == WorldBuff)
 
-		if iter_20_1:IsValid() then
-			for iter_20_2, iter_20_3 in ipairs(iter_20_1.config.buff_attr) do
-				if iter_20_1.config.percent[iter_20_2] == 1 then
-					arg_20_1[iter_20_3] = defaultValue(arg_20_1[iter_20_3], 0) + iter_20_1.config.buff_effect[iter_20_2] * iter_20_1:GetFloor()
+		if buff:IsValid() then
+			for index, attr in ipairs(buff.config.buff_attr) do
+				if buff.config.percent[index] == 1 then
+					attrRatios[attr] = defaultValue(attrRatios[attr], 0) + buff.config.buff_effect[index] * buff:GetFloor()
 				else
-					arg_20_0[iter_20_3] = defaultValue(arg_20_0[iter_20_3], 0) + iter_20_1.config.buff_effect[iter_20_2] * iter_20_1:GetFloor()
+					attrValues[attr] = defaultValue(attrValues[attr], 0) + buff.config.buff_effect[index] * buff:GetFloor()
 				end
 			end
 		end
 	end
 
-	for iter_20_4, iter_20_5 in pairs(arg_20_1) do
-		arg_20_1[iter_20_4] = 1 + iter_20_5 / 10000
+	for attr, ratio in pairs(attrRatios) do
+		attrRatios[attr] = 1 + ratio / 10000
 	end
 end
 
-var_0_0.TaskTypeSubmitItem = 2
-var_0_0.TaskTypeArrivePort = 6
-var_0_0.TaskTypeFleetExpansion = 7
-var_0_0.TaskTypePressingMap = 12
-var_0_0.FleetRedeploy = 1
-var_0_0.FleetExpansion = 2
-var_0_0.QuadBlinkDuration = 1
-var_0_0.QuadSpriteWhite = "cell_white"
-var_0_0.TransportDisplayNormal = 0
-var_0_0.TransportDisplayGuideEnable = 1
-var_0_0.TransportDisplayGuideDanger = 2
-var_0_0.TransportDisplayGuideForbid = 3
+WorldConst.TaskTypeSubmitItem = 2
+WorldConst.TaskTypeArrivePort = 6
+WorldConst.TaskTypeFleetExpansion = 7
+WorldConst.TaskTypePressingMap = 12
+WorldConst.FleetRedeploy = 1
+WorldConst.FleetExpansion = 2
+WorldConst.QuadBlinkDuration = 1
+WorldConst.QuadSpriteWhite = "cell_white"
+WorldConst.TransportDisplayNormal = 0
+WorldConst.TransportDisplayGuideEnable = 1
+WorldConst.TransportDisplayGuideDanger = 2
+WorldConst.TransportDisplayGuideForbid = 3
 
-function var_0_0.CalcRelativeRectPos(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
+function WorldConst.CalcRelativeRectPos(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
 	local var_21_0 = arg_21_2.x + arg_21_1.width / 2
 	local var_21_1 = arg_21_2.x + arg_21_2.width - arg_21_1.width / 2
 	local var_21_2 = arg_21_2.y + arg_21_1.height / 2
@@ -392,7 +392,7 @@ function var_0_0.CalcRelativeRectPos(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
 	end)
 end
 
-function var_0_0.GetMapIconState(arg_24_0)
+function WorldConst.GetMapIconState(arg_24_0)
 	if arg_24_0 == 1 then
 		return "normal"
 	elseif arg_24_0 == 2 then
@@ -404,7 +404,7 @@ function var_0_0.GetMapIconState(arg_24_0)
 	end
 end
 
-function var_0_0.HasDangerConfirm(arg_25_0)
+function WorldConst.HasDangerConfirm(arg_25_0)
 	if arg_25_0 == 1 then
 		return false
 	elseif arg_25_0 == 2 then
@@ -416,31 +416,31 @@ function var_0_0.HasDangerConfirm(arg_25_0)
 	end
 end
 
-var_0_0.SystemCompass = 1
-var_0_0.SystemMemo = 2
-var_0_0.SystemInventory = 3
-var_0_0.SystemWorldBoss = 4
-var_0_0.SystemCollection = 5
-var_0_0.SystemSubmarine = 6
-var_0_0.SystemFleetDetail = 7
-var_0_0.SystemWorldInfo = 8
-var_0_0.SystemRedeploy = 9
-var_0_0.SystemScanner = 10
-var_0_0.SystemResource = 11
-var_0_0.SystemOutMap = 12
-var_0_0.SystemOrderRedeploy = var_0_0.SystemRedeploy
-var_0_0.SystemOrderMaintenance = 13
-var_0_0.SystemOrderFOV = 15
-var_0_0.SystemOrderSubmarine = var_0_0.SystemSubmarine
-var_0_0.SystemResetCountDown = 16
-var_0_0.SystemResetExchange = 17
-var_0_0.SystemResetShop = 18
-var_0_0.SystemAutoFight_1 = 19
-var_0_0.SystemAutoFight_2 = 20
-var_0_0.SystemAutoSwitch = 21
-var_0_0.SystemDailyTask = 22
+WorldConst.SystemCompass = 1
+WorldConst.SystemMemo = 2
+WorldConst.SystemInventory = 3
+WorldConst.SystemWorldBoss = 4
+WorldConst.SystemCollection = 5
+WorldConst.SystemSubmarine = 6
+WorldConst.SystemFleetDetail = 7
+WorldConst.SystemWorldInfo = 8
+WorldConst.SystemRedeploy = 9
+WorldConst.SystemScanner = 10
+WorldConst.SystemResource = 11
+WorldConst.SystemOutMap = 12
+WorldConst.SystemOrderRedeploy = WorldConst.SystemRedeploy
+WorldConst.SystemOrderMaintenance = 13
+WorldConst.SystemOrderFOV = 15
+WorldConst.SystemOrderSubmarine = WorldConst.SystemSubmarine
+WorldConst.SystemResetCountDown = 16
+WorldConst.SystemResetExchange = 17
+WorldConst.SystemResetShop = 18
+WorldConst.SystemAutoFight_1 = 19
+WorldConst.SystemAutoFight_2 = 20
+WorldConst.SystemAutoSwitch = 21
+WorldConst.SystemDailyTask = 22
 
-function var_0_0.BuildHelpTips(arg_26_0)
+function WorldConst.BuildHelpTips(arg_26_0)
 	local var_26_0 = i18n("world_stage_help")
 	local var_26_1 = pg.gameset.world_stage_help.description
 	local var_26_2 = 1
@@ -461,9 +461,9 @@ function var_0_0.BuildHelpTips(arg_26_0)
 	return var_26_0
 end
 
-var_0_0.AnimRadar = "RadarEffectUI"
+WorldConst.AnimRadar = "RadarEffectUI"
 
-function var_0_0.FindStageTemplates(arg_27_0)
+function WorldConst.FindStageTemplates(arg_27_0)
 	local var_27_0 = {}
 
 	for iter_27_0, iter_27_1 in ipairs(pg.world_stage_template.all) do
@@ -477,16 +477,16 @@ function var_0_0.FindStageTemplates(arg_27_0)
 	return var_27_0
 end
 
-function var_0_0.GetRookieBattleLoseStory()
+function WorldConst.GetRookieBattleLoseStory()
 	return pg.gameset.world_story_special_2.description[1]
 end
 
-var_0_0.FOVMapSight = 1
-var_0_0.FOVEventEffect = 2
-var_0_0.GuideEnemyEnd = false
+WorldConst.FOVMapSight = 1
+WorldConst.FOVEventEffect = 2
+WorldConst.GuideEnemyEnd = false
 
-function var_0_0.IsWorldGuideEnemyId(arg_29_0)
-	if var_0_0.GuideEnemyEnd then
+function WorldConst.IsWorldGuideEnemyId(arg_29_0)
+	if WorldConst.GuideEnemyEnd then
 		return false
 	end
 
@@ -495,7 +495,7 @@ function var_0_0.IsWorldGuideEnemyId(arg_29_0)
 	return table.contains(var_29_0, arg_29_0)
 end
 
-function var_0_0.WorldLevelCorrect(arg_30_0, arg_30_1)
+function WorldConst.WorldLevelCorrect(arg_30_0, arg_30_1)
 	for iter_30_0, iter_30_1 in ipairs(pg.gameset.world_expedition_level.description) do
 		for iter_30_2, iter_30_3 in ipairs(iter_30_1[1]) do
 			if arg_30_1 == iter_30_3 then
@@ -507,37 +507,37 @@ function var_0_0.WorldLevelCorrect(arg_30_0, arg_30_1)
 	return math.max(arg_30_0, 1)
 end
 
-function var_0_0.GetAreaFocusPos(arg_31_0)
+function WorldConst.GetAreaFocusPos(arg_31_0)
 	local var_31_0 = pg.world_regions_data[arg_31_0].regions_pos
 
 	return Vector2(var_31_0[1], var_31_0[2])
 end
 
-function var_0_0.GetTransportBlockEvent()
-	if not var_0_0.blockEventDic then
-		var_0_0.blockEventDic = {}
+function WorldConst.GetTransportBlockEvent()
+	if not WorldConst.blockEventDic then
+		WorldConst.blockEventDic = {}
 
 		for iter_32_0, iter_32_1 in ipairs(pg.gameset.world_movelimit_event.description) do
-			var_0_0.blockEventDic[iter_32_1] = true
+			WorldConst.blockEventDic[iter_32_1] = true
 		end
 	end
 
-	return var_0_0.blockEventDic
+	return WorldConst.blockEventDic
 end
 
-function var_0_0.GetTransportStoryEvent()
-	if not var_0_0.blockStoryDic then
-		var_0_0.blockStoryDic = {}
+function WorldConst.GetTransportStoryEvent()
+	if not WorldConst.blockStoryDic then
+		WorldConst.blockStoryDic = {}
 
 		for iter_33_0, iter_33_1 in ipairs(pg.gameset.world_transfer_eventlist.description) do
-			var_0_0.blockStoryDic[iter_33_1] = true
+			WorldConst.blockStoryDic[iter_33_1] = true
 		end
 	end
 
-	return var_0_0.blockStoryDic
+	return WorldConst.blockStoryDic
 end
 
-function var_0_0.IsWorldHelpNew(arg_34_0, arg_34_1)
+function WorldConst.IsWorldHelpNew(arg_34_0, arg_34_1)
 	if arg_34_1 then
 		PlayerPrefs.SetInt("world_help_progress", arg_34_0)
 		PlayerPrefs.Save()
@@ -568,7 +568,7 @@ function var_0_0.IsWorldHelpNew(arg_34_0, arg_34_1)
 	end
 end
 
-function var_0_0.ParsingBuffs(arg_35_0)
+function WorldConst.ParsingBuffs(arg_35_0)
 	local var_35_0 = {}
 
 	_.each(arg_35_0, function(arg_36_0)
@@ -587,7 +587,7 @@ function var_0_0.ParsingBuffs(arg_35_0)
 	return var_35_0
 end
 
-function var_0_0.CompareBuffs(arg_37_0, arg_37_1)
+function WorldConst.CompareBuffs(arg_37_0, arg_37_1)
 	local var_37_0 = _.extend({}, arg_37_0)
 	local var_37_1 = {}
 	local var_37_2 = _.extend({}, arg_37_1)
@@ -607,7 +607,7 @@ function var_0_0.CompareBuffs(arg_37_0, arg_37_1)
 	}
 end
 
-function var_0_0.FetchWorldShip(arg_38_0)
+function WorldConst.FetchWorldShip(arg_38_0)
 	local var_38_0 = nowWorld():GetShip(arg_38_0)
 
 	assert(var_38_0, "world ship not exist: " .. arg_38_0)
@@ -615,7 +615,7 @@ function var_0_0.FetchWorldShip(arg_38_0)
 	return var_38_0
 end
 
-function var_0_0.FetchShipVO(arg_39_0)
+function WorldConst.FetchShipVO(arg_39_0)
 	local var_39_0 = getProxy(BayProxy):getShipById(arg_39_0)
 
 	assert(var_39_0, "ship not exist: " .. arg_39_0)
@@ -623,7 +623,7 @@ function var_0_0.FetchShipVO(arg_39_0)
 	return var_39_0
 end
 
-function var_0_0.FetchRawShipVO(arg_40_0)
+function WorldConst.FetchRawShipVO(arg_40_0)
 	local var_40_0 = getProxy(BayProxy):getRawData()[arg_40_0]
 
 	assert(var_40_0, "ship not exist: " .. arg_40_0)
@@ -631,7 +631,7 @@ function var_0_0.FetchRawShipVO(arg_40_0)
 	return var_40_0
 end
 
-function var_0_0.ReqWorldCheck(arg_41_0)
+function WorldConst.ReqWorldCheck(arg_41_0)
 	local var_41_0 = {}
 
 	if nowWorld().type == World.TypeBase then
@@ -651,7 +651,7 @@ function var_0_0.ReqWorldCheck(arg_41_0)
 	seriesAsync(var_41_0, arg_41_0)
 end
 
-function var_0_0.ReqWorldForServer()
+function WorldConst.ReqWorldForServer()
 	pg.ConnectionMgr.GetInstance():Send(33000, {
 		type = 1
 	}, 33001, function(arg_45_0)
@@ -659,7 +659,7 @@ function var_0_0.ReqWorldForServer()
 	end)
 end
 
-var_0_0.ObstacleConfig = {
+WorldConst.ObstacleConfig = {
 	[0] = 2,
 	3,
 	7,
@@ -669,46 +669,46 @@ var_0_0.ObstacleConfig = {
 	4,
 	5
 }
-var_0_0.ObstacleType = {
+WorldConst.ObstacleType = {
 	"leave",
 	"arrive",
 	"pass"
 }
 
-function var_0_0.GetObstacleKey(arg_46_0)
-	return bit.lshift(1, #var_0_0.ObstacleType - table.indexof(var_0_0.ObstacleType, arg_46_0))
+function WorldConst.GetObstacleKey(arg_46_0)
+	return bit.lshift(1, #WorldConst.ObstacleType - table.indexof(WorldConst.ObstacleType, arg_46_0))
 end
 
-function var_0_0.GetObstacleConfig(arg_47_0, arg_47_1)
-	local var_47_0 = var_0_0.GetObstacleKey(arg_47_1)
+function WorldConst.GetObstacleConfig(arg_47_0, arg_47_1)
+	local var_47_0 = WorldConst.GetObstacleKey(arg_47_1)
 
-	return bit.band(var_0_0.ObstacleConfig[arg_47_0], var_47_0) > 0
+	return bit.band(WorldConst.ObstacleConfig[arg_47_0], var_47_0) > 0
 end
 
-function var_0_0.RangeCheck(arg_48_0, arg_48_1, arg_48_2)
+function WorldConst.RangeCheck(arg_48_0, arg_48_1, arg_48_2)
 	for iter_48_0 = arg_48_0.row - arg_48_1, arg_48_0.row + arg_48_1 do
 		for iter_48_1 = arg_48_0.column - arg_48_1, arg_48_0.column + arg_48_1 do
-			if var_0_0.InFOVRange(arg_48_0.row, arg_48_0.column, iter_48_0, iter_48_1, arg_48_1) then
+			if WorldConst.InFOVRange(arg_48_0.row, arg_48_0.column, iter_48_0, iter_48_1, arg_48_1) then
 				arg_48_2(iter_48_0, iter_48_1)
 			end
 		end
 	end
 end
 
-function var_0_0.CheckWorldStorySkip(arg_49_0)
+function WorldConst.CheckWorldStorySkip(arg_49_0)
 	return table.contains(pg.gameset.world_quickmode_skiplua.description, arg_49_0) and getProxy(SettingsProxy):GetWorldFlag("story_tips") and pg.NewStoryMgr.GetInstance():IsPlayed(arg_49_0)
 end
 
-function var_0_0.GetNShopTimeStamp()
-	if not var_0_0.nShopTimestamp then
+function WorldConst.GetNShopTimeStamp()
+	if not WorldConst.nShopTimestamp then
 		local var_50_0 = {}
 
 		var_50_0.year, var_50_0.month, var_50_0.day = unpack(getGameset("world_newshop_date")[2])
 		var_50_0.hour, var_50_0.min, var_50_0.sec = 0, 0, 0
-		var_0_0.nShopTimestamp = pg.TimeMgr.GetInstance():Table2ServerTime(var_50_0)
+		WorldConst.nShopTimestamp = pg.TimeMgr.GetInstance():Table2ServerTime(var_50_0)
 	end
 
-	return var_0_0.nShopTimestamp
+	return WorldConst.nShopTimestamp
 end
 
-return var_0_0
+return WorldConst

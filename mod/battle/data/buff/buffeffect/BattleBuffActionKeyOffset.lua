@@ -1,28 +1,35 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffActionKeyOffset = class("BattleBuffActionKeyOffset", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffActionKeyOffset.__name = "BattleBuffActionKeyOffset"
+ys.Battle.BattleBuffActionKeyOffset = class("BattleBuffActionKeyOffset", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffActionKeyOffset.__name = "BattleBuffActionKeyOffset"
 
-local var_0_1 = var_0_0.Battle.BattleBuffActionKeyOffset
+local BattleBuffActionKeyOffset = ys.Battle.BattleBuffActionKeyOffset
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffActionKeyOffset.Ctor(self, effectData)
+	BattleBuffActionKeyOffset.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._actionKey = arg_2_0._tempData.arg_list.key
+function BattleBuffActionKeyOffset.SetArgs(self, arg_2_1, arg_2_2)
+	self._actionKey = self._tempData.arg_list.key
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	if arg_3_1:ActionKeyOffsetUseable() then
-		arg_3_1:SetActionKeyOffset(arg_3_0._actionKey)
+--- @class BattleBuffActionKeyOffset
+--- @param owner BattleUnit
+--- @param buff BattleBuffUnit
+--- @return nil
+--- 当Effect附加时调用该回调
+--- - 关于BattleBuffActionKeyOffset: 从名字看不太懂
+--- - 看了一些实例，大致的用途有：隐藏舰装、切换形态等，偏向视觉效果
+function BattleBuffActionKeyOffset.onAttach(self, owner, buff)
+	if owner:ActionKeyOffsetUseable() then
+		owner:SetActionKeyOffset(self._actionKey)
 	end
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	if arg_4_1:ActionKeyOffsetUseable() then
-		arg_4_1:SetActionKeyOffset(nil)
+function BattleBuffActionKeyOffset.onRemove(self, owner, buff)
+	if owner:ActionKeyOffsetUseable() then
+		owner:SetActionKeyOffset(nil)
 	end
 end

@@ -18,91 +18,94 @@ BattleBuffEffect.FX_TYPE_DOT = 5
 BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE = 6
 BattleBuffEffect.FX_TYPE_COUNTER = 7
 
-function BattleBuffEffect.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._tempData = Clone(arg_1_1)
-	arg_1_0._type = arg_1_0._tempData.type
+function BattleBuffEffect.Ctor(self, effectData)
+	self._tempData = Clone(effectData)
+	self._type = self._tempData.type
 
-	local var_1_0 = arg_1_0._tempData.arg_list
+	local arg_list = self._tempData.arg_list
 
-	arg_1_0._quota = var_1_0.quota or -1
-	arg_1_0._indexRequire = var_1_0.index
-	arg_1_0._damageAttrRequire = var_1_0.damageAttr
-	arg_1_0._damageReasonRequire = var_1_0.damageReason
-	arg_1_0._damageSrcTagRequire = var_1_0.srcTag
-	arg_1_0._deathCauseRequire = var_1_0.deathCause
-	arg_1_0._countType = var_1_0.countType
-	arg_1_0._behit = var_1_0.be_hit_condition
-	arg_1_0._ammoTypeRequire = var_1_0.ammoType
-	arg_1_0._ammoIndexRequire = var_1_0.ammoIndex
-	arg_1_0._bulletTagRequire = var_1_0.bulletTag
-	arg_1_0._victimTagRequire = var_1_0.victimTag
-	arg_1_0._buffStateIDRequire = var_1_0.buff_state_id
-	arg_1_0._cloakRequire = var_1_0.cloak_state
-	arg_1_0._fleetAttrRequire = var_1_0.fleetAttr
-	arg_1_0._fleetAttrDeltaRequire = var_1_0.fleetAttrDelta
-	arg_1_0._stackRequire = var_1_0.stack_require
+	self._quota = arg_list.quota or -1
+	self._indexRequire = arg_list.index
+	self._damageAttrRequire = arg_list.damageAttr
+	self._damageReasonRequire = arg_list.damageReason
+	self._damageSrcTagRequire = arg_list.srcTag
+	self._deathCauseRequire = arg_list.deathCause
+	self._countType = arg_list.countType
+	self._behit = arg_list.be_hit_condition
+	self._ammoTypeRequire = arg_list.ammoType
+	self._ammoIndexRequire = arg_list.ammoIndex
+	self._bulletTagRequire = arg_list.bulletTag
+	self._victimTagRequire = arg_list.victimTag
+	self._buffStateIDRequire = arg_list.buff_state_id
+	self._cloakRequire = arg_list.cloak_state
+	self._fleetAttrRequire = arg_list.fleetAttr
+	self._fleetAttrDeltaRequire = arg_list.fleetAttrDelta
+	self._stackRequire = arg_list.stack_require
 
-	arg_1_0:ConfigHPTrigger()
-	arg_1_0:ConfigAttrTrigger()
-	arg_1_0:SetActive()
+	self:ConfigHPTrigger()
+	self:ConfigAttrTrigger()
+	self:SetActive()
 end
 
-function BattleBuffEffect.GetEffectType(arg_2_0)
+function BattleBuffEffect.GetEffectType(self)
 	return BattleBuffEffect.FX_TYPE_NOR
 end
 
-function BattleBuffEffect.GetPopConfig(arg_3_0)
-	return arg_3_0._tempData.pop
+function BattleBuffEffect.GetPopConfig(self)
+	return self._tempData.pop
 end
 
-function BattleBuffEffect.HaveQuota(arg_4_0)
-	if arg_4_0._quota == 0 then
+function BattleBuffEffect.HaveQuota(self)
+	if self._quota == 0 then
 		return false
 	else
 		return true
 	end
 end
 
-function BattleBuffEffect.GetEffectAttachData(arg_5_0)
+function BattleBuffEffect.GetEffectAttachData(self)
 	return nil
 end
 
-function BattleBuffEffect.ConfigHPTrigger(arg_6_0)
-	local var_6_0 = arg_6_0._tempData.arg_list
+function BattleBuffEffect.ConfigHPTrigger(self)
+	local arg_list = self._tempData.arg_list
 
-	arg_6_0._hpUpperBound = var_6_0.hpUpperBound
-	arg_6_0._hpLowerBound = var_6_0.hpLowerBound
+	self._hpUpperBound = arg_list.hpUpperBound
+	self._hpLowerBound = arg_list.hpLowerBound
 
-	if arg_6_0._hpUpperBound and arg_6_0._hpLowerBound == nil then
-		arg_6_0._hpLowerBound = 0
+	if self._hpUpperBound and self._hpLowerBound == nil then
+		self._hpLowerBound = 0
 	end
 
-	if arg_6_0._hpLowerBound and arg_6_0._hpUpperBound == nil then
-		arg_6_0._hpUpperBound = 1
+	if self._hpLowerBound and self._hpUpperBound == nil then
+		self._hpUpperBound = 1
 	end
 
-	arg_6_0._hpSigned = var_6_0.hpSigned or -1
-	arg_6_0._hpOutInterval = var_6_0.hpOutInterval
-	arg_6_0._dHPGreater = var_6_0.dhpGreater
-	arg_6_0._dhpSmaller = var_6_0.dhpSmaller
-	arg_6_0._dHPGreaterMaxHP = var_6_0.dhpGreaterMaxhp
-	arg_6_0._dhpSmallerMaxhp = var_6_0.dhpSmallerMaxhp
+	self._hpSigned = arg_list.hpSigned or -1
+	self._hpOutInterval = arg_list.hpOutInterval
+	self._dHPGreater = arg_list.dhpGreater
+	self._dhpSmaller = arg_list.dhpSmaller
+	self._dHPGreaterMaxHP = arg_list.dhpGreaterMaxhp
+	self._dhpSmallerMaxhp = arg_list.dhpSmallerMaxhp
 end
 
-function BattleBuffEffect.ConfigAttrTrigger(arg_7_0)
-	local var_7_0 = arg_7_0._tempData.arg_list
+function BattleBuffEffect.ConfigAttrTrigger(self)
+	local arg_list = self._tempData.arg_list
 
-	arg_7_0._attrLowerBound = var_7_0.attrLowerBound
-	arg_7_0._attrUpperBound = var_7_0.attrUpperBound
-	arg_7_0._attrInterval = var_7_0.attrInterval
+	self._attrLowerBound = arg_list.attrLowerBound
+	self._attrUpperBound = arg_list.attrUpperBound
+	self._attrInterval = arg_list.attrInterval
 end
 
-function BattleBuffEffect.SetCaster(arg_8_0, arg_8_1)
-	arg_8_0._caster = arg_8_1
+--- @class BattleBuffEffect
+--- @param caster BattleUnit
+--- @return nil
+function BattleBuffEffect.SetCaster(self, caster)
+	self._caster = caster
 end
 
-function BattleBuffEffect.SetCommander(arg_9_0, arg_9_1)
-	arg_9_0._commander = arg_9_1
+function BattleBuffEffect.SetCommander(self, commander)
+	self._commander = commander
 end
 
 function BattleBuffEffect.SetBullet(arg_10_0, arg_10_1)
@@ -125,117 +128,123 @@ end
 --- @return nil
 --- BuffEffect的触发接口
 function BattleBuffEffect.Trigger(self, effectType, owner, buff, args)
-	-- 对应到的就是onAttach、onRemove等函数...
+	-- effectType跟这些函数名是一样的
+	-- 因此对应到的就是onAttach、onRemove等函数...
+	-- 需要注意使用的是对应子类重载后的Trigger，因此调用的也是子类重载后的onAttach等函数
+	-- 这样设计就让不同的BuffEffect在不同的Trigger下有不同的行为
+		-- 一般的调用链为：基类:Trigger(因为子类大概率不重写Trigger)->子类:onXXX(子类重载后的函数)
+	-- 这个基类里面的onXXX函数只是一个最基本的实现，避免子类没有重载时调用时报错，因此不用太在意
+		-- 有些子类会重载onTrigger, 所以不管哪种情况都要调用onTrigger，逻辑相同
 	self[effectType](self, owner, buff, args)
 end
 
-function BattleBuffEffect.onAttach(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_0:onTrigger(arg_14_1, arg_14_2)
+function BattleBuffEffect.onAttach(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onRemove(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_0:onTrigger(arg_15_1, arg_15_2)
+function BattleBuffEffect.onRemove(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBuffAdded(arg_16_0, arg_16_1, arg_16_2, arg_16_3)
-	if not arg_16_0:buffStateRequire(arg_16_3.buffID) then
+function BattleBuffEffect.onBuffAdded(self, owner, buff, args)
+	if not self:buffStateRequire(args.buffID) then
 		return
 	end
 
-	arg_16_0:onTrigger(arg_16_1, arg_16_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBuffRemoved(arg_17_0, arg_17_1, arg_17_2, arg_17_3)
-	if not arg_17_0:buffStateRequire(arg_17_3.buffID) then
+function BattleBuffEffect.onBuffRemoved(self, owner, buff, args)
+	if not self:buffStateRequire(args.buffID) then
 		return
 	end
 
-	arg_17_0:onTrigger(arg_17_1, arg_17_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onUpdate(arg_18_0, arg_18_1, arg_18_2, arg_18_3)
-	arg_18_0:onTrigger(arg_18_1, arg_18_2, arg_18_3)
+function BattleBuffEffect.onUpdate(self, arg_18_1, arg_18_2, arg_18_3)
+	self:onTrigger(arg_18_1, arg_18_2, arg_18_3)
 end
 
-function BattleBuffEffect.onStack(arg_19_0, arg_19_1, arg_19_2)
-	arg_19_0:onTrigger(arg_19_1, arg_19_2)
+function BattleBuffEffect.onStack(self, arg_19_1, arg_19_2)
+	self:onTrigger(arg_19_1, arg_19_2)
 end
 
-function BattleBuffEffect.onBulletHit(arg_20_0, arg_20_1, arg_20_2, arg_20_3)
-	if not arg_20_0:equipIndexRequire(arg_20_3.equipIndex) then
+function BattleBuffEffect.onBulletHit(self, arg_20_1, arg_20_2, arg_20_3)
+	if not self:equipIndexRequire(arg_20_3.equipIndex) then
 		return
 	end
 
-	if not arg_20_0:bulletTagRequire(arg_20_3.bulletTag) then
+	if not self:bulletTagRequire(arg_20_3.bulletTag) then
 		return
 	end
 
-	if not arg_20_0:victimRequire(arg_20_3.target, arg_20_1) then
+	if not self:victimRequire(arg_20_3.target, arg_20_1) then
 		return
 	end
 
-	arg_20_0:onTrigger(arg_20_1, arg_20_2, arg_20_3)
+	self:onTrigger(arg_20_1, arg_20_2, arg_20_3)
 end
 
-function BattleBuffEffect.onTeammateBulletHit(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
-	arg_21_0:onBulletHit(arg_21_1, arg_21_2, arg_21_3)
+function BattleBuffEffect.onTeammateBulletHit(self, arg_21_1, arg_21_2, arg_21_3)
+	self:onBulletHit(arg_21_1, arg_21_2, arg_21_3)
 end
 
-function BattleBuffEffect.onBeHit(arg_22_0, arg_22_1, arg_22_2, arg_22_3)
-	if arg_22_0._behit then
-		if arg_22_0._behit.damage_type == arg_22_3.weaponType and arg_22_0._behit.bullet_type == arg_22_3.bulletType then
-			arg_22_0:onTrigger(arg_22_1, arg_22_2)
+function BattleBuffEffect.onBeHit(self, arg_22_1, arg_22_2, arg_22_3)
+	if self._behit then
+		if self._behit.damage_type == arg_22_3.weaponType and self._behit.bullet_type == arg_22_3.bulletType then
+			self:onTrigger(arg_22_1, arg_22_2)
 		end
 	else
-		arg_22_0:onTrigger(arg_22_1, arg_22_2)
+		self:onTrigger(arg_22_1, arg_22_2)
 	end
 end
 
-function BattleBuffEffect.onFire(arg_23_0, arg_23_1, arg_23_2, arg_23_3)
-	if not arg_23_0:equipIndexRequire(arg_23_3.equipIndex) then
+function BattleBuffEffect.onFire(self, arg_23_1, arg_23_2, arg_23_3)
+	if not self:equipIndexRequire(arg_23_3.equipIndex) then
 		return
 	end
 
-	arg_23_0:onTrigger(arg_23_1, arg_23_2)
+	self:onTrigger(arg_23_1, arg_23_2)
 end
 
-function BattleBuffEffect.onCombo(arg_24_0, arg_24_1, arg_24_2, arg_24_3)
-	if not arg_24_0:equipIndexRequire(arg_24_3.equipIndex) then
+function BattleBuffEffect.onCombo(self, arg_24_1, arg_24_2, arg_24_3)
+	if not self:equipIndexRequire(arg_24_3.equipIndex) then
 		return
 	end
 
 	local var_24_0 = arg_24_3.matchUnitCount
-	local var_24_1 = arg_24_0._tempData.arg_list.upperBound
-	local var_24_2 = arg_24_0._tempData.arg_list.lowerBound
+	local var_24_1 = self._tempData.arg_list.upperBound
+	local var_24_2 = self._tempData.arg_list.lowerBound
 
 	if var_24_1 and var_24_0 <= var_24_1 then
-		arg_24_0:onTrigger(arg_24_1, arg_24_2)
+		self:onTrigger(arg_24_1, arg_24_2)
 	elseif var_24_2 and var_24_2 <= var_24_0 then
-		arg_24_0:onTrigger(arg_24_1, arg_24_2)
+		self:onTrigger(arg_24_1, arg_24_2)
 	end
 end
 
-function BattleBuffEffect.stackRequire(arg_25_0, arg_25_1)
-	if arg_25_0._stackRequire then
-		local var_25_0 = arg_25_1:GetStack()
+function BattleBuffEffect.stackRequire(self, buff)
+	if self._stackRequire then
+		local stack = buff:GetStack()
 
-		return BattleFormulas.simpleCompare(arg_25_0._stackRequire, var_25_0)
+		return BattleFormulas.simpleCompare(self._stackRequire, stack)
 	else
 		return true
 	end
 end
 
-function BattleBuffEffect.fleetAttrRequire(arg_26_0, arg_26_1, arg_26_2)
-	if arg_26_0._fleetAttrRequire then
-		local var_26_0, var_26_1 = string.find(arg_26_0._fleetAttrRequire, "%p+")
-		local var_26_2 = string.sub(arg_26_0._fleetAttrRequire, 1, var_26_0 - 1)
-
-		if arg_26_2 ~= nil and var_26_2 ~= arg_26_2 then
+function BattleBuffEffect.fleetAttrRequire(self, owner, attr)
+	if self._fleetAttrRequire then
+		local opStart, opEnd = string.find(self._fleetAttrRequire, "%p+")
+		local requiredAttr = string.sub(self._fleetAttrRequire, 1, opStart - 1)
+		-- 比较的是同种属性
+		if attr ~= nil and requiredAttr ~= attr then
 			return false
-		elseif arg_26_1:GetFleetVO() then
-			local var_26_3 = arg_26_1:GetFleetVO():GetFleetAttr()
-
-			return BattleFormulas.parseCompare(arg_26_0._fleetAttrRequire, var_26_3)
+		elseif owner:GetFleetVO() then
+			local fleetAttr = owner:GetFleetVO():GetFleetAttr()
+			
+			return BattleFormulas.parseCompare(self._fleetAttrRequire, fleetAttr)
 		else
 			return false
 		end
@@ -244,54 +253,55 @@ function BattleBuffEffect.fleetAttrRequire(arg_26_0, arg_26_1, arg_26_2)
 	return true
 end
 
-function BattleBuffEffect.fleetAttrDelatRequire(arg_27_0, arg_27_1)
-	if arg_27_0._fleetAttrDeltaRequire then
-		return arg_27_1 and BattleFormulas.simpleCompare(arg_27_0._fleetAttrDeltaRequire, arg_27_1)
+function BattleBuffEffect.fleetAttrDelatRequire(self, delta)
+	if self._fleetAttrDeltaRequire then
+		return delta and BattleFormulas.simpleCompare(self._fleetAttrDeltaRequire, delta)
 	end
 
 	return true
 end
 
-function BattleBuffEffect.fleetAttrRepeatConsume(arg_28_0, arg_28_1)
-	local var_28_0 = arg_28_0._caster:GetFleetVO():GetFleetAttr()
-	local var_28_1 = var_28_0:GetCurrent(arg_28_1.attrName)
-	local var_28_2 = math.modf(var_28_1 / arg_28_1.value)
+function BattleBuffEffect.fleetAttrRepeatConsume(self, attrConsumeRepeat)
+	local fleetAttr = self._caster:GetFleetVO():GetFleetAttr()
+	local attrValue = fleetAttr:GetCurrent(attrConsumeRepeat.attrName)
+	local consumedStacks = math.modf(attrValue / attrConsumeRepeat.value)
 
-	if arg_28_1.repeatCeil then
-		var_28_2 = math.min(arg_28_1.repeatCeil, var_28_2)
+	if attrConsumeRepeat.repeatCeil then
+		consumedStacks = math.min(attrConsumeRepeat.repeatCeil, consumedStacks)
 	end
 
-	local var_28_3 = var_28_2 * arg_28_1.value
+	local consumedAttr = consumedStacks * attrConsumeRepeat.value
 
-	var_28_0:SetCurrent(arg_28_1.attrName, var_28_1 - var_28_3)
+	fleetAttr:SetCurrent(attrConsumeRepeat.attrName, attrValue - consumedAttr)
 
-	return var_28_2
+	return consumedStacks
 end
 
-function BattleBuffEffect.repeatCountParse(arg_29_0, arg_29_1)
-	local var_29_0 = type(arg_29_1)
+function BattleBuffEffect.repeatCountParse(self, repeatCount)
+	local countType = type(repeatCount)
 
-	if var_29_0 == "number" then
-		return arg_29_1
-	elseif var_29_0 == "string" then
-		local var_29_1, var_29_2 = string.find(arg_29_1, "%p+")
-		local var_29_3 = string.sub(arg_29_1, 1, var_29_1 - 1)
-		local var_29_4 = string.sub(arg_29_1, var_29_2 + 1, #arg_29_1)
+	if countType == "number" then
+		return repeatCount
+	-- 目前没有发现是string的情况
+	elseif countType == "string" then
+		local opStart, opEnd = string.find(repeatCount, "%p+")
+		local attrTypeString = string.sub(repeatCount, 1, opStart - 1)
+		local attrName = string.sub(repeatCount, opEnd + 1, #repeatCount)
 
-		if var_29_3 == "fleetAttr" then
-			return arg_29_0._caster:GetFleetVO():GetFleetAttr():GetCurrent(var_29_4)
-		elseif var_29_3 == "attr" then
-			return arg_29_0._caster:GetAttrByName(var_29_4)
+		if attrTypeString == "fleetAttr" then
+			return self._caster:GetFleetVO():GetFleetAttr():GetCurrent(attrName)
+		elseif attrTypeString == "attr" then
+			return self._caster:GetAttrByName(attrName)
 		end
 	end
 end
 
-function BattleBuffEffect.equipIndexRequire(arg_30_0, arg_30_1)
-	if not arg_30_0._indexRequire then
+function BattleBuffEffect.equipIndexRequire(self, equipIndex)
+	if not self._indexRequire then
 		return true
 	else
-		for iter_30_0, iter_30_1 in ipairs(arg_30_0._indexRequire) do
-			if iter_30_1 == arg_30_1 then
+		for _, index in ipairs(self._indexRequire) do
+			if index == equipIndex then
 				return true
 			end
 		end
@@ -300,13 +310,14 @@ function BattleBuffEffect.equipIndexRequire(arg_30_0, arg_30_1)
 	end
 end
 
-function BattleBuffEffect.ammoRequire(arg_31_0, arg_31_1)
-	if not arg_31_0._ammoTypeRequire then
+function BattleBuffEffect.ammoRequire(self, owner)
+	if not self._ammoTypeRequire then
 		return true
 	else
-		local var_31_0 = arg_31_1:GetWeaponByIndex(arg_31_0._ammoIndexRequire)
-
-		if not var_31_0 or var_31_0:GetPrimalAmmoType() ~= arg_31_0._ammoTypeRequire then
+		-- 检查武器(对应的装备)的位置
+		local weapon = owner:GetWeaponByIndex(self._ammoIndexRequire)
+		-- 检查弹药类型
+		if not weapon or weapon:GetPrimalAmmoType() ~= self._ammoTypeRequire then
 			return false
 		else
 			return true
@@ -336,131 +347,131 @@ function BattleBuffEffect.buffStateRequire(arg_33_0, arg_33_1)
 	end
 end
 
-function BattleBuffEffect.onWeaponSteday(arg_34_0, arg_34_1, arg_34_2, arg_34_3)
-	arg_34_0:onFire(arg_34_1, arg_34_2, arg_34_3)
+function BattleBuffEffect.onWeaponSteday(self, arg_34_1, arg_34_2, arg_34_3)
+	self:onFire(arg_34_1, arg_34_2, arg_34_3)
 end
 
-function BattleBuffEffect.onChargeWeaponFire(arg_35_0, arg_35_1, arg_35_2, arg_35_3)
-	arg_35_0:onFire(arg_35_1, arg_35_2, arg_35_3)
+function BattleBuffEffect.onChargeWeaponFire(self, arg_35_1, arg_35_2, arg_35_3)
+	self:onFire(arg_35_1, arg_35_2, arg_35_3)
 end
 
-function BattleBuffEffect.onTorpedoWeaponFire(arg_36_0, arg_36_1, arg_36_2, arg_36_3)
-	arg_36_0:onFire(arg_36_1, arg_36_2, arg_36_3)
+function BattleBuffEffect.onTorpedoWeaponFire(self, arg_36_1, arg_36_2, arg_36_3)
+	self:onFire(arg_36_1, arg_36_2, arg_36_3)
 end
 
-function BattleBuffEffect.onAntiAirWeaponFireFar(arg_37_0, arg_37_1, arg_37_2, arg_37_3)
-	arg_37_0:onFire(arg_37_1, arg_37_2, arg_37_3)
+function BattleBuffEffect.onAntiAirWeaponFireFar(self, arg_37_1, arg_37_2, arg_37_3)
+	self:onFire(arg_37_1, arg_37_2, arg_37_3)
 end
 
-function BattleBuffEffect.onAntiAirWeaponFireNear(arg_38_0, arg_38_1, arg_38_2, arg_38_3)
-	arg_38_0:onFire(arg_38_1, arg_38_2, arg_38_3)
+function BattleBuffEffect.onAntiAirWeaponFireNear(self, arg_38_1, arg_38_2, arg_38_3)
+	self:onFire(arg_38_1, arg_38_2, arg_38_3)
 end
 
-function BattleBuffEffect.onManualMissileFire(arg_39_0, arg_39_1, arg_39_2, arg_39_3)
-	arg_39_0:onFire(arg_39_1, arg_39_2, arg_39_3)
+function BattleBuffEffect.onManualMissileFire(self, arg_39_1, arg_39_2, arg_39_3)
+	self:onFire(arg_39_1, arg_39_2, arg_39_3)
 end
 
-function BattleBuffEffect.onAllInStrike(arg_40_0, arg_40_1, arg_40_2, arg_40_3)
-	arg_40_0:onFire(arg_40_1, arg_40_2, arg_40_3)
+function BattleBuffEffect.onAllInStrike(self, arg_40_1, arg_40_2, arg_40_3)
+	self:onFire(arg_40_1, arg_40_2, arg_40_3)
 end
 
-function BattleBuffEffect.onAllInStrikeSteady(arg_41_0, arg_41_1, arg_41_2, arg_41_3)
-	arg_41_0:onFire(arg_41_1, arg_41_2, arg_41_3)
+function BattleBuffEffect.onAllInStrikeSteady(self, arg_41_1, arg_41_2, arg_41_3)
+	self:onFire(arg_41_1, arg_41_2, arg_41_3)
 end
 
-function BattleBuffEffect.onPointStrikeReady(arg_42_0, arg_42_1, arg_42_2, arg_42_3)
-	arg_42_0:onFire(arg_42_1, arg_42_2, arg_42_3)
+function BattleBuffEffect.onPointStrikeReady(self, arg_42_1, arg_42_2, arg_42_3)
+	self:onFire(arg_42_1, arg_42_2, arg_42_3)
 end
 
-function BattleBuffEffect.onPointStrikeSteady(arg_43_0, arg_43_1, arg_43_2, arg_43_3)
-	arg_43_0:onFire(arg_43_1, arg_43_2, arg_43_3)
+function BattleBuffEffect.onPointStrikeSteady(self, arg_43_1, arg_43_2, arg_43_3)
+	self:onFire(arg_43_1, arg_43_2, arg_43_3)
 end
 
-function BattleBuffEffect.onPointStrike(arg_44_0, arg_44_1, arg_44_2, arg_44_3)
-	arg_44_0:onFire(arg_44_1, arg_44_2, arg_44_3)
+function BattleBuffEffect.onPointStrike(self, arg_44_1, arg_44_2, arg_44_3)
+	self:onFire(arg_44_1, arg_44_2, arg_44_3)
 end
 
-function BattleBuffEffect.onWeaonInterrupt(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
-	arg_45_0:onTrigger(arg_45_1, arg_45_2)
+function BattleBuffEffect.onWeaonInterrupt(self, arg_45_1, arg_45_2, arg_45_3)
+	self:onTrigger(arg_45_1, arg_45_2)
 end
 
-function BattleBuffEffect.onWeaponSuccess(arg_46_0, arg_46_1, arg_46_2, arg_46_3)
-	arg_46_0:onTrigger(arg_46_1, arg_46_2)
+function BattleBuffEffect.onWeaponSuccess(self, arg_46_1, arg_46_2, arg_46_3)
+	self:onTrigger(arg_46_1, arg_46_2)
 end
 
-function BattleBuffEffect.onChargeWeaponReady(arg_47_0, arg_47_1, arg_47_2, arg_47_3)
-	arg_47_0:onTrigger(arg_47_1, arg_47_2)
+function BattleBuffEffect.onChargeWeaponReady(self, arg_47_1, arg_47_2, arg_47_3)
+	self:onTrigger(arg_47_1, arg_47_2)
 end
 
-function BattleBuffEffect.onManualTorpedoReady(arg_48_0, arg_48_1, arg_48_2, arg_48_3)
-	arg_48_0:onTrigger(arg_48_1, arg_48_2)
+function BattleBuffEffect.onManualTorpedoReady(self, arg_48_1, arg_48_2, arg_48_3)
+	self:onTrigger(arg_48_1, arg_48_2)
 end
 
-function BattleBuffEffect.onAirAssistReady(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
-	arg_49_0:onTrigger(arg_49_1, arg_49_2)
+function BattleBuffEffect.onAirAssistReady(self, arg_49_1, arg_49_2, arg_49_3)
+	self:onTrigger(arg_49_1, arg_49_2)
 end
 
-function BattleBuffEffect.onManualMissileReady(arg_50_0, arg_50_1, arg_50_2, arg_50_3)
-	arg_50_0:onTrigger(arg_50_1, arg_50_2)
+function BattleBuffEffect.onManualMissileReady(self, arg_50_1, arg_50_2, arg_50_3)
+	self:onTrigger(arg_50_1, arg_50_2)
 end
 
-function BattleBuffEffect.onTorpedoButtonPush(arg_51_0, arg_51_1, arg_51_2, arg_51_3)
-	arg_51_0:onTrigger(arg_51_1, arg_51_2)
+function BattleBuffEffect.onTorpedoButtonPush(self, arg_51_1, arg_51_2, arg_51_3)
+	self:onTrigger(arg_51_1, arg_51_2)
 end
 
-function BattleBuffEffect.onBeforeFatalDamage(arg_52_0, arg_52_1, arg_52_2)
-	arg_52_0:onTrigger(arg_52_1, arg_52_2)
+function BattleBuffEffect.onBeforeFatalDamage(self, arg_52_1, arg_52_2)
+	self:onTrigger(arg_52_1, arg_52_2)
 end
 
-function BattleBuffEffect.onAircraftCreate(arg_53_0, arg_53_1, arg_53_2, arg_53_3)
-	arg_53_0:onTrigger(arg_53_1, arg_53_2, arg_53_3)
+function BattleBuffEffect.onAircraftCreate(self, arg_53_1, arg_53_2, arg_53_3)
+	self:onTrigger(arg_53_1, arg_53_2, arg_53_3)
 end
 
-function BattleBuffEffect.onFriendlyAircraftDying(arg_54_0, arg_54_1, arg_54_2, arg_54_3)
-	if arg_54_0._tempData.arg_list.templateID then
-		if arg_54_3.unit:GetTemplateID() == arg_54_0._tempData.arg_list.templateID then
-			arg_54_0:onTrigger(arg_54_1, arg_54_2)
+function BattleBuffEffect.onFriendlyAircraftDying(self, arg_54_1, arg_54_2, arg_54_3)
+	if self._tempData.arg_list.templateID then
+		if arg_54_3.unit:GetTemplateID() == self._tempData.arg_list.templateID then
+			self:onTrigger(arg_54_1, arg_54_2)
 		end
 	else
-		arg_54_0:onTrigger(arg_54_1, arg_54_2)
+		self:onTrigger(arg_54_1, arg_54_2)
 	end
 end
 
-function BattleBuffEffect.onTeammateShipDying(arg_55_0, arg_55_1, arg_55_2)
-	arg_55_0:onTrigger(arg_55_1, arg_55_2)
+function BattleBuffEffect.onTeammateShipDying(self, arg_55_1, arg_55_2)
+	self:onTrigger(arg_55_1, arg_55_2)
 end
 
-function BattleBuffEffect.onFoeAircraftDying(arg_56_0, arg_56_1, arg_56_2, arg_56_3)
-	if arg_56_0._tempData.arg_list.inside then
+function BattleBuffEffect.onFoeAircraftDying(self, arg_56_1, arg_56_2, arg_56_3)
+	if self._tempData.arg_list.inside then
 		local var_56_0 = arg_56_3.unit
 
 		if not arg_56_1:GetFleetVO():GetFleetAntiAirWeapon():IsOutOfRange(var_56_0) then
-			arg_56_0:onTrigger(arg_56_1, arg_56_2)
+			self:onTrigger(arg_56_1, arg_56_2)
 		end
-	elseif arg_56_0._tempData.arg_list.killer then
-		if arg_56_0:killerRequire(arg_56_0._tempData.arg_list.killer, arg_56_3.killer, arg_56_1) then
-			arg_56_0:onTrigger(arg_56_1, arg_56_2)
+	elseif self._tempData.arg_list.killer then
+		if self:killerRequire(self._tempData.arg_list.killer, arg_56_3.killer, arg_56_1) then
+			self:onTrigger(arg_56_1, arg_56_2)
 		end
 	else
-		arg_56_0:onTrigger(arg_56_1, arg_56_2)
+		self:onTrigger(arg_56_1, arg_56_2)
 	end
 end
 
-function BattleBuffEffect.onFoeDying(arg_57_0, arg_57_1, arg_57_2, arg_57_3)
-	if arg_57_0._tempData.arg_list.killer then
-		if arg_57_0:killerRequire(arg_57_0._tempData.arg_list.killer, arg_57_3.killer, arg_57_1) then
-			arg_57_0:onTrigger(arg_57_1, arg_57_2)
+function BattleBuffEffect.onFoeDying(self, arg_57_1, arg_57_2, arg_57_3)
+	if self._tempData.arg_list.killer then
+		if self:killerRequire(self._tempData.arg_list.killer, arg_57_3.killer, arg_57_1) then
+			self:onTrigger(arg_57_1, arg_57_2)
 		end
-	elseif arg_57_0:victimRequire(arg_57_3.unit, arg_57_1) then
-		arg_57_0:onTrigger(arg_57_1, arg_57_2)
+	elseif self:victimRequire(arg_57_3.unit, arg_57_1) then
+		self:onTrigger(arg_57_1, arg_57_2)
 	else
-		arg_57_0:onTrigger(arg_57_1, arg_57_2)
+		self:onTrigger(arg_57_1, arg_57_2)
 	end
 end
 
-function BattleBuffEffect.onSink(arg_58_0, arg_58_1, arg_58_2)
-	if arg_58_0:deathCauseRequire(arg_58_1) then
-		arg_58_0:onTrigger(arg_58_1, arg_58_2)
+function BattleBuffEffect.onSink(self, arg_58_1, arg_58_2)
+	if self:deathCauseRequire(arg_58_1) then
+		self:onTrigger(arg_58_1, arg_58_2)
 	end
 end
 
@@ -563,174 +574,174 @@ function BattleBuffEffect.DamageSourceRequire(arg_63_0, arg_63_1, arg_63_2)
 	end
 end
 
-function BattleBuffEffect.onInitGame(arg_64_0, arg_64_1, arg_64_2)
-	arg_64_0:onTrigger(arg_64_1, arg_64_2)
+function BattleBuffEffect.onInitGame(self, arg_64_1, arg_64_2)
+	self:onTrigger(arg_64_1, arg_64_2)
 end
 
-function BattleBuffEffect.onStartGame(arg_65_0, arg_65_1, arg_65_2)
-	arg_65_0:onTrigger(arg_65_1, arg_65_2)
+function BattleBuffEffect.onStartGame(self, arg_65_1, arg_65_2)
+	self:onTrigger(arg_65_1, arg_65_2)
 end
 
-function BattleBuffEffect.onFinishGame(arg_66_0, arg_66_1, arg_66_2)
-	arg_66_0:onTrigger(arg_66_1, arg_66_2)
+function BattleBuffEffect.onFinishGame(self, arg_66_1, arg_66_2)
+	self:onTrigger(arg_66_1, arg_66_2)
 end
 
-function BattleBuffEffect.onManual(arg_67_0, arg_67_1, arg_67_2)
-	arg_67_0:onTrigger(arg_67_1, arg_67_2)
+function BattleBuffEffect.onManual(self, arg_67_1, arg_67_2)
+	self:onTrigger(arg_67_1, arg_67_2)
 end
 
-function BattleBuffEffect.onAutoBot(arg_68_0, arg_68_1, arg_68_2)
-	arg_68_0:onTrigger(arg_68_1, arg_68_2)
+function BattleBuffEffect.onAutoBot(self, arg_68_1, arg_68_2)
+	self:onTrigger(arg_68_1, arg_68_2)
 end
 
-function BattleBuffEffect.onFlagShip(arg_69_0, arg_69_1, arg_69_2)
-	arg_69_0:onTrigger(arg_69_1, arg_69_2)
+function BattleBuffEffect.onFlagShip(self, arg_69_1, arg_69_2)
+	self:onTrigger(arg_69_1, arg_69_2)
 end
 
-function BattleBuffEffect.onDALCollabFlagShip(arg_70_0, arg_70_1, arg_70_2)
-	arg_70_0:onTrigger(arg_70_1, arg_70_2)
+function BattleBuffEffect.onDALCollabFlagShip(self, arg_70_1, arg_70_2)
+	self:onTrigger(arg_70_1, arg_70_2)
 end
 
-function BattleBuffEffect.onUpperConsort(arg_71_0, arg_71_1, arg_71_2)
-	arg_71_0:onTrigger(arg_71_1, arg_71_2)
+function BattleBuffEffect.onUpperConsort(self, arg_71_1, arg_71_2)
+	self:onTrigger(arg_71_1, arg_71_2)
 end
 
-function BattleBuffEffect.onLowerConsort(arg_72_0, arg_72_1, arg_72_2)
-	arg_72_0:onTrigger(arg_72_1, arg_72_2)
+function BattleBuffEffect.onLowerConsort(self, arg_72_1, arg_72_2)
+	self:onTrigger(arg_72_1, arg_72_2)
 end
 
-function BattleBuffEffect.onLeader(arg_73_0, arg_73_1, arg_73_2)
-	arg_73_0:onTrigger(arg_73_1, arg_73_2)
+function BattleBuffEffect.onLeader(self, arg_73_1, arg_73_2)
+	self:onTrigger(arg_73_1, arg_73_2)
 end
 
-function BattleBuffEffect.onCenter(arg_74_0, arg_74_1, arg_74_2)
-	arg_74_0:onTrigger(arg_74_1, arg_74_2)
+function BattleBuffEffect.onCenter(self, arg_74_1, arg_74_2)
+	self:onTrigger(arg_74_1, arg_74_2)
 end
 
-function BattleBuffEffect.onRear(arg_75_0, arg_75_1, arg_75_2)
-	arg_75_0:onTrigger(arg_75_1, arg_75_2)
+function BattleBuffEffect.onRear(self, arg_75_1, arg_75_2)
+	self:onTrigger(arg_75_1, arg_75_2)
 end
 
-function BattleBuffEffect.onSubLeader(arg_76_0, arg_76_1, arg_76_2)
-	arg_76_0:onTrigger(arg_76_1, arg_76_2)
+function BattleBuffEffect.onSubLeader(self, arg_76_1, arg_76_2)
+	self:onTrigger(arg_76_1, arg_76_2)
 end
 
-function BattleBuffEffect.onUpperSubConsort(arg_77_0, arg_77_1, arg_77_2)
-	arg_77_0:onTrigger(arg_77_1, arg_77_2)
+function BattleBuffEffect.onUpperSubConsort(self, arg_77_1, arg_77_2)
+	self:onTrigger(arg_77_1, arg_77_2)
 end
 
-function BattleBuffEffect.onLowerSubConsort(arg_78_0, arg_78_1, arg_78_2)
-	arg_78_0:onTrigger(arg_78_1, arg_78_2)
+function BattleBuffEffect.onLowerSubConsort(self, arg_78_1, arg_78_2)
+	self:onTrigger(arg_78_1, arg_78_2)
 end
 
-function BattleBuffEffect.onBulletCollide(arg_79_0, arg_79_1, arg_79_2, arg_79_3)
-	if not arg_79_0:equipIndexRequire(arg_79_3.equipIndex) then
+function BattleBuffEffect.onBulletCollide(self, arg_79_1, arg_79_2, arg_79_3)
+	if not self:equipIndexRequire(arg_79_3.equipIndex) then
 		return
 	end
 
-	arg_79_0:onTrigger(arg_79_1, arg_79_2)
+	self:onTrigger(arg_79_1, arg_79_2)
 end
 
-function BattleBuffEffect.onBulletCollideBefore(arg_80_0, arg_80_1, arg_80_2, arg_80_3)
-	if not arg_80_0:equipIndexRequire(arg_80_3.equipIndex) then
+function BattleBuffEffect.onBulletCollideBefore(self, arg_80_1, arg_80_2, arg_80_3)
+	if not self:equipIndexRequire(arg_80_3.equipIndex) then
 		return
 	end
 
-	arg_80_0:onTrigger(arg_80_1, arg_80_2)
+	self:onTrigger(arg_80_1, arg_80_2)
 end
 
-function BattleBuffEffect.onBombBulletBang(arg_81_0, arg_81_1, arg_81_2, arg_81_3)
-	if not arg_81_0:equipIndexRequire(arg_81_3.equipIndex) then
+function BattleBuffEffect.onBombBulletBang(self, arg_81_1, arg_81_2, arg_81_3)
+	if not self:equipIndexRequire(arg_81_3.equipIndex) then
 		return
 	end
 
-	arg_81_0:onTrigger(arg_81_1, arg_81_2)
+	self:onTrigger(arg_81_1, arg_81_2)
 end
 
-function BattleBuffEffect.onTorpedoBulletBang(arg_82_0, arg_82_1, arg_82_2, arg_82_3)
-	if not arg_82_0:equipIndexRequire(arg_82_3.equipIndex) then
+function BattleBuffEffect.onTorpedoBulletBang(self, arg_82_1, arg_82_2, arg_82_3)
+	if not self:equipIndexRequire(arg_82_3.equipIndex) then
 		return
 	end
 
-	arg_82_0:onTrigger(arg_82_1, arg_82_2)
+	self:onTrigger(arg_82_1, arg_82_2)
 end
 
-function BattleBuffEffect.onBulletHitBefore(arg_83_0, arg_83_1, arg_83_2, arg_83_3)
-	if arg_83_0._behit then
-		if arg_83_0._behit.damage_type == arg_83_3.weaponType and arg_83_0._behit.bullet_type == arg_83_3.bulletType then
-			arg_83_0:onTrigger(arg_83_1, arg_83_2)
+function BattleBuffEffect.onBulletHitBefore(self, arg_83_1, arg_83_2, arg_83_3)
+	if self._behit then
+		if self._behit.damage_type == arg_83_3.weaponType and self._behit.bullet_type == arg_83_3.bulletType then
+			self:onTrigger(arg_83_1, arg_83_2)
 		end
 	else
-		arg_83_0:onTrigger(arg_83_1, arg_83_2)
+		self:onTrigger(arg_83_1, arg_83_2)
 	end
 end
 
-function BattleBuffEffect.onBulletCreate(arg_84_0, arg_84_1, arg_84_2, arg_84_3)
-	if not arg_84_0:equipIndexRequire(arg_84_3.equipIndex) then
+function BattleBuffEffect.onBulletCreate(self, arg_84_1, arg_84_2, arg_84_3)
+	if not self:equipIndexRequire(arg_84_3.equipIndex) then
 		return
 	end
 
-	arg_84_0:onTrigger(arg_84_1, arg_84_2, arg_84_3)
+	self:onTrigger(arg_84_1, arg_84_2, arg_84_3)
 end
 
-function BattleBuffEffect.onChargeWeaponBulletCreate(arg_85_0, arg_85_1, arg_85_2, arg_85_3)
-	arg_85_0:onBulletCreate(arg_85_1, arg_85_2, arg_85_3)
+function BattleBuffEffect.onChargeWeaponBulletCreate(self, arg_85_1, arg_85_2, arg_85_3)
+	self:onBulletCreate(arg_85_1, arg_85_2, arg_85_3)
 end
 
-function BattleBuffEffect.onTorpedoWeaponBulletCreate(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
-	arg_86_0:onBulletCreate(arg_86_1, arg_86_2, arg_86_3)
+function BattleBuffEffect.onTorpedoWeaponBulletCreate(self, arg_86_1, arg_86_2, arg_86_3)
+	self:onBulletCreate(arg_86_1, arg_86_2, arg_86_3)
 end
 
-function BattleBuffEffect.onInternalBulletCreate(arg_87_0, arg_87_1, arg_87_2, arg_87_3)
-	if not arg_87_0:equipIndexRequire(arg_87_3.equipIndex) then
+function BattleBuffEffect.onInternalBulletCreate(self, arg_87_1, arg_87_2, arg_87_3)
+	if not self:equipIndexRequire(arg_87_3.equipIndex) then
 		return
 	end
 
-	arg_87_0:onTrigger(arg_87_1, arg_87_2, arg_87_3)
+	self:onTrigger(arg_87_1, arg_87_2, arg_87_3)
 end
 
-function BattleBuffEffect.onManualBulletCreate(arg_88_0, arg_88_1, arg_88_2, arg_88_3)
-	if not arg_88_0:equipIndexRequire(arg_88_3.equipIndex) then
+function BattleBuffEffect.onManualBulletCreate(self, arg_88_1, arg_88_2, arg_88_3)
+	if not self:equipIndexRequire(arg_88_3.equipIndex) then
 		return
 	end
 
-	arg_88_0:onTrigger(arg_88_1, arg_88_2, arg_88_3)
+	self:onTrigger(arg_88_1, arg_88_2, arg_88_3)
 end
 
-function BattleBuffEffect.onBeforeTakeDamage(arg_89_0, arg_89_1, arg_89_2, arg_89_3)
-	if arg_89_0:damageCheck(arg_89_3) then
-		arg_89_0:onTrigger(arg_89_1, arg_89_2, arg_89_3)
+function BattleBuffEffect.onBeforeTakeDamage(self, arg_89_1, arg_89_2, arg_89_3)
+	if self:damageCheck(arg_89_3) then
+		self:onTrigger(arg_89_1, arg_89_2, arg_89_3)
 	end
 end
 
-function BattleBuffEffect.onTakeDamage(arg_90_0, arg_90_1, arg_90_2, arg_90_3)
-	if arg_90_0:damageCheck(arg_90_3) then
-		arg_90_0:onTrigger(arg_90_1, arg_90_2, arg_90_3)
+function BattleBuffEffect.onTakeDamage(self, arg_90_1, arg_90_2, arg_90_3)
+	if self:damageCheck(arg_90_3) then
+		self:onTrigger(arg_90_1, arg_90_2, arg_90_3)
 	end
 end
 
-function BattleBuffEffect.onTakeHealing(arg_91_0, arg_91_1, arg_91_2, arg_91_3)
-	arg_91_0:onTrigger(arg_91_1, arg_91_2, arg_91_3)
+function BattleBuffEffect.onTakeHealing(self, arg_91_1, arg_91_2, arg_91_3)
+	self:onTrigger(arg_91_1, arg_91_2, arg_91_3)
 end
 
-function BattleBuffEffect.onShieldAbsorb(arg_92_0, arg_92_1, arg_92_2, arg_92_3)
-	arg_92_0:onTrigger(arg_92_1, arg_92_2, arg_92_3)
+function BattleBuffEffect.onShieldAbsorb(self, arg_92_1, arg_92_2, arg_92_3)
+	self:onTrigger(arg_92_1, arg_92_2, arg_92_3)
 end
 
-function BattleBuffEffect.onDamageFix(arg_93_0, arg_93_1, arg_93_2, arg_93_3)
-	arg_93_0:onTrigger(arg_93_1, arg_93_2, arg_93_3)
+function BattleBuffEffect.onDamageFix(self, arg_93_1, arg_93_2, arg_93_3)
+	self:onTrigger(arg_93_1, arg_93_2, arg_93_3)
 end
 
-function BattleBuffEffect.onDamageConclude(arg_94_0, arg_94_1, arg_94_2, arg_94_3)
-	arg_94_0:onTrigger(arg_94_1, arg_94_2, arg_94_3)
+function BattleBuffEffect.onDamageConclude(self, arg_94_1, arg_94_2, arg_94_3)
+	self:onTrigger(arg_94_1, arg_94_2, arg_94_3)
 end
 
-function BattleBuffEffect.onOverHealing(arg_95_0, arg_95_1, arg_95_2, arg_95_3)
-	arg_95_0:onTrigger(arg_95_1, arg_95_2, arg_95_3)
+function BattleBuffEffect.onOverHealing(self, arg_95_1, arg_95_2, arg_95_3)
+	self:onTrigger(arg_95_1, arg_95_2, arg_95_3)
 end
 
-function BattleBuffEffect.onFleetAttrUpdate(arg_96_0, arg_96_1, arg_96_2, arg_96_3)
-	arg_96_0:onTrigger(arg_96_1, arg_96_2, arg_96_3)
+function BattleBuffEffect.onFleetAttrUpdate(self, arg_96_1, arg_96_2, arg_96_3)
+	self:onTrigger(arg_96_1, arg_96_2, arg_96_3)
 end
 
 function BattleBuffEffect.damageCheck(arg_97_0, arg_97_1)
@@ -753,28 +764,29 @@ function BattleBuffEffect.damageReasonRequire(arg_99_0, arg_99_1)
 	end
 end
 
-function BattleBuffEffect.hpIntervalRequire(arg_100_0, arg_100_1, arg_100_2)
-	if arg_100_0._hpUpperBound == nil and arg_100_0._hpLowerBound == nil then
+function BattleBuffEffect.hpIntervalRequire(self, hpRate, arg_100_2)
+	if self._hpUpperBound == nil and self._hpLowerBound == nil then
 		return true
 	end
 
-	if not arg_100_2 or arg_100_0._hpSigned == 0 then
+	if not arg_100_2 or self._hpSigned == 0 then
 		-- block empty
-	elseif arg_100_2 * arg_100_0._hpSigned < 0 then
+	elseif arg_100_2 * self._hpSigned < 0 then
 		return false
 	end
 
-	local var_100_0
-
-	if arg_100_0._hpOutInterval then
-		if arg_100_1 >= arg_100_0._hpUpperBound or arg_100_1 <= arg_100_0._hpLowerBound then
-			var_100_0 = true
+	local satisfied
+	-- 如果要求是区间外
+	-- 注意并不是完全相反，包含了等于的情况
+	if self._hpOutInterval then
+		if hpRate >= self._hpUpperBound or hpRate <= self._hpLowerBound then
+			satisfied = true
 		end
-	elseif arg_100_1 <= arg_100_0._hpUpperBound and arg_100_1 >= arg_100_0._hpLowerBound then
-		var_100_0 = true
+	elseif hpRate <= self._hpUpperBound and hpRate >= self._hpLowerBound then
+		satisfied = true
 	end
 
-	return var_100_0
+	return satisfied
 end
 
 function BattleBuffEffect.dhpRequire(arg_101_0, arg_101_1, arg_101_2)
@@ -795,71 +807,72 @@ function BattleBuffEffect.dhpRequire(arg_101_0, arg_101_1, arg_101_2)
 	end
 end
 
-function BattleBuffEffect.attrIntervalRequire(arg_102_0, arg_102_1)
-	local var_102_0 = true
-
-	if arg_102_0._attrUpperBound and arg_102_1 >= arg_102_0._attrUpperBound then
-		var_102_0 = false
+function BattleBuffEffect.attrIntervalRequire(self, attrIntervalValue)
+	local satisfied = true
+	-- 注意: 这个检查略有不同，实际上满足要求的是开区间
+	-- 即(lowerBound, upperBound)，与其他的闭区间不同
+	if self._attrUpperBound and attrIntervalValue >= self._attrUpperBound then
+		satisfied = false
 	end
 
-	if arg_102_0._attrLowerBound and arg_102_1 <= arg_102_0._attrLowerBound then
-		var_102_0 = false
+	if self._attrLowerBound and attrIntervalValue <= self._attrLowerBound then
+		satisfied = false
 	end
 
-	return var_102_0
+	return satisfied
 end
 
-function BattleBuffEffect.onHPRatioUpdate(arg_103_0, arg_103_1, arg_103_2, arg_103_3)
+function BattleBuffEffect.onHPRatioUpdate(self, arg_103_1, arg_103_2, arg_103_3)
 	local var_103_0 = arg_103_1:GetHPRate()
 	local var_103_1 = arg_103_3.dHP
 
-	if arg_103_0:hpIntervalRequire(var_103_0, var_103_1) and arg_103_0:dhpRequire(arg_103_1:GetMaxHP(), var_103_1) then
-		arg_103_0:doOnHPRatioUpdate(arg_103_1, arg_103_2, arg_103_3)
+	if self:hpIntervalRequire(var_103_0, var_103_1) and self:dhpRequire(arg_103_1:GetMaxHP(), var_103_1) then
+		self:doOnHPRatioUpdate(arg_103_1, arg_103_2, arg_103_3)
 	end
 end
 
-function BattleBuffEffect.onFriendlyHpRatioUpdate(arg_104_0, arg_104_1, arg_104_2, arg_104_3)
+function BattleBuffEffect.onFriendlyHpRatioUpdate(self, arg_104_1, arg_104_2, arg_104_3)
 	local var_104_0 = arg_104_3.unit
 	local var_104_1 = arg_104_3.dHP
 	local var_104_2 = var_104_0:GetHPRate()
 
-	if arg_104_0:hpIntervalRequire(var_104_2, var_104_1) and arg_104_0:dhpRequire(var_104_0:GetMaxHP(), var_104_1) then
-		arg_104_0:doOnHPRatioUpdate(arg_104_1, arg_104_2, arg_104_3)
+	if self:hpIntervalRequire(var_104_2, var_104_1) and self:dhpRequire(var_104_0:GetMaxHP(), var_104_1) then
+		self:doOnHPRatioUpdate(arg_104_1, arg_104_2, arg_104_3)
 	end
 end
 
-function BattleBuffEffect.onTeammateHpRatioUpdate(arg_105_0, arg_105_1, arg_105_2, arg_105_3)
-	arg_105_0:onFriendlyHpRatioUpdate(arg_105_1, arg_105_2, arg_105_3)
+function BattleBuffEffect.onTeammateHpRatioUpdate(self, arg_105_1, arg_105_2, arg_105_3)
+	self:onFriendlyHpRatioUpdate(arg_105_1, arg_105_2, arg_105_3)
 end
 
-function BattleBuffEffect.onBulletKill(arg_106_0, arg_106_1, arg_106_2, arg_106_3)
-	if arg_106_0._tempData.arg_list.killer_weapon_id then
-		if arg_106_0:killerWeaponRequire(arg_106_0._tempData.arg_list.killer_weapon_id, arg_106_3.killer, arg_106_1) then
-			arg_106_0:onTrigger(arg_106_1, arg_106_2)
+function BattleBuffEffect.onBulletKill(self, arg_106_1, arg_106_2, arg_106_3)
+	if self._tempData.arg_list.killer_weapon_id then
+		if self:killerWeaponRequire(self._tempData.arg_list.killer_weapon_id, arg_106_3.killer, arg_106_1) then
+			self:onTrigger(arg_106_1, arg_106_2)
 		end
 	else
-		arg_106_0:onTrigger(arg_106_1, arg_106_2)
+		self:onTrigger(arg_106_1, arg_106_2)
 	end
 end
 
-function BattleBuffEffect.onBattleBuffCount(arg_107_0, arg_107_1, arg_107_2, arg_107_3)
+function BattleBuffEffect.onBattleBuffCount(self, arg_107_1, arg_107_2, arg_107_3)
 	local var_107_0 = arg_107_3.buffFX
 
-	if var_107_0:GetCountType() == arg_107_0._countType then
+	if var_107_0:GetCountType() == self._countType then
 		if var_107_0:Repeater() then
 			while var_107_0:GetCountProgress() >= 1 do
-				arg_107_0:onTrigger(arg_107_1, arg_107_2)
+				self:onTrigger(arg_107_1, arg_107_2)
 				var_107_0:ConsumeCount()
 			end
-		elseif arg_107_0:onTrigger(arg_107_1, arg_107_2) ~= "overheat" then
+		elseif self:onTrigger(arg_107_1, arg_107_2) ~= "overheat" then
 			var_107_0:ResetCount()
 		end
 	end
 end
 
-function BattleBuffEffect.onShieldBroken(arg_108_0, arg_108_1, arg_108_2, arg_108_3)
-	if arg_108_3.shieldBuffID == arg_108_0._tempData.arg_list.shieldBuffID then
-		arg_108_0:onTrigger(arg_108_1, arg_108_2)
+function BattleBuffEffect.onShieldBroken(self, arg_108_1, arg_108_2, arg_108_3)
+	if arg_108_3.shieldBuffID == self._tempData.arg_list.shieldBuffID then
+		self:onTrigger(arg_108_1, arg_108_2)
 	end
 end
 
@@ -876,71 +889,71 @@ function BattleBuffEffect.onTrigger(self, owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.doOnHPRatioUpdate(arg_110_0, arg_110_1, arg_110_2, arg_110_3)
-	arg_110_0:onTrigger(arg_110_1, arg_110_2, arg_110_3)
+function BattleBuffEffect.doOnHPRatioUpdate(self, arg_110_1, arg_110_2, arg_110_3)
+	self:onTrigger(arg_110_1, arg_110_2, arg_110_3)
 end
 
-function BattleBuffEffect.doOnFriendlyHPRatioUpdate(arg_111_0, arg_111_1, arg_111_2, arg_111_3)
-	arg_111_0:onTrigger(arg_111_1, arg_111_2, arg_111_3)
+function BattleBuffEffect.doOnFriendlyHPRatioUpdate(self, arg_111_1, arg_111_2, arg_111_3)
+	self:onTrigger(arg_111_1, arg_111_2, arg_111_3)
 end
 
-function BattleBuffEffect.onSubmarineDive(arg_112_0, arg_112_1, arg_112_2, arg_112_3)
-	arg_112_0:onTrigger(arg_112_1, arg_112_2, arg_112_3)
+function BattleBuffEffect.onSubmarineDive(self, arg_112_1, arg_112_2, arg_112_3)
+	self:onTrigger(arg_112_1, arg_112_2, arg_112_3)
 end
 
-function BattleBuffEffect.onSubmarineRaid(arg_113_0, arg_113_1, arg_113_2, arg_113_3)
-	arg_113_0:onTrigger(arg_113_1, arg_113_2, arg_113_3)
+function BattleBuffEffect.onSubmarineRaid(self, arg_113_1, arg_113_2, arg_113_3)
+	self:onTrigger(arg_113_1, arg_113_2, arg_113_3)
 end
 
-function BattleBuffEffect.onSubmarineFloat(arg_114_0, arg_114_1, arg_114_2, arg_114_3)
-	arg_114_0:onTrigger(arg_114_1, arg_114_2, arg_114_3)
+function BattleBuffEffect.onSubmarineFloat(self, arg_114_1, arg_114_2, arg_114_3)
+	self:onTrigger(arg_114_1, arg_114_2, arg_114_3)
 end
 
-function BattleBuffEffect.onSubmarineRetreat(arg_115_0, arg_115_1, arg_115_2, arg_115_3)
-	arg_115_0:onTrigger(arg_115_1, arg_115_2, arg_115_3)
+function BattleBuffEffect.onSubmarineRetreat(self, arg_115_1, arg_115_2, arg_115_3)
+	self:onTrigger(arg_115_1, arg_115_2, arg_115_3)
 end
 
-function BattleBuffEffect.onSubmarineAid(arg_116_0, arg_116_1, arg_116_2, arg_116_3)
-	arg_116_0:onTrigger(arg_116_1, arg_116_2, arg_116_3)
+function BattleBuffEffect.onSubmarineAid(self, arg_116_1, arg_116_2, arg_116_3)
+	self:onTrigger(arg_116_1, arg_116_2, arg_116_3)
 end
 
-function BattleBuffEffect.onSubmarinFreeDive(arg_117_0, arg_117_1, arg_117_2, arg_117_3)
-	arg_117_0:onTrigger(arg_117_1, arg_117_2, arg_117_3)
+function BattleBuffEffect.onSubmarinFreeDive(self, arg_117_1, arg_117_2, arg_117_3)
+	self:onTrigger(arg_117_1, arg_117_2, arg_117_3)
 end
 
-function BattleBuffEffect.onSubmarinFreeFloat(arg_118_0, arg_118_1, arg_118_2, arg_118_3)
-	arg_118_0:onTrigger(arg_118_1, arg_118_2, arg_118_3)
+function BattleBuffEffect.onSubmarinFreeFloat(self, arg_118_1, arg_118_2, arg_118_3)
+	self:onTrigger(arg_118_1, arg_118_2, arg_118_3)
 end
 
-function BattleBuffEffect.onSubmarineFreeSpecial(arg_119_0, arg_119_1, arg_119_2, arg_119_3)
-	arg_119_0:onTrigger(arg_119_1, arg_119_2, arg_119_3)
+function BattleBuffEffect.onSubmarineFreeSpecial(self, arg_119_1, arg_119_2, arg_119_3)
+	self:onTrigger(arg_119_1, arg_119_2, arg_119_3)
 end
 
-function BattleBuffEffect.onSubDetected(arg_120_0, arg_120_1, arg_120_2, arg_120_3)
-	arg_120_0:onTrigger(arg_120_1, arg_120_2, arg_120_3)
+function BattleBuffEffect.onSubDetected(self, arg_120_1, arg_120_2, arg_120_3)
+	self:onTrigger(arg_120_1, arg_120_2, arg_120_3)
 end
 
-function BattleBuffEffect.onSubUnDetected(arg_121_0, arg_121_1, arg_121_2, arg_121_3)
-	arg_121_0:onTrigger(arg_121_1, arg_121_2, arg_121_3)
+function BattleBuffEffect.onSubUnDetected(self, arg_121_1, arg_121_2, arg_121_3)
+	self:onTrigger(arg_121_1, arg_121_2, arg_121_3)
 end
 
-function BattleBuffEffect.onAntiSubHateChain(arg_122_0, arg_122_1, arg_122_2, arg_122_3)
-	arg_122_0:onTrigger(arg_122_1, arg_122_2, attach)
+function BattleBuffEffect.onAntiSubHateChain(self, arg_122_1, arg_122_2, arg_122_3)
+	self:onTrigger(arg_122_1, arg_122_2, attach)
 end
 
-function BattleBuffEffect.onRetreat(arg_123_0, arg_123_1, arg_123_2, arg_123_3)
-	arg_123_0:onTrigger(arg_123_1, arg_123_2, arg_123_3)
+function BattleBuffEffect.onRetreat(self, arg_123_1, arg_123_2, arg_123_3)
+	self:onTrigger(arg_123_1, arg_123_2, arg_123_3)
 end
 
-function BattleBuffEffect.onCloakUpdate(arg_124_0, arg_124_1, arg_124_2, arg_124_3)
-	if arg_124_0:cloakStateRequire(arg_124_3.cloakState) then
-		arg_124_0:onTrigger(arg_124_1, arg_124_2, arg_124_3)
+function BattleBuffEffect.onCloakUpdate(self, arg_124_1, arg_124_2, arg_124_3)
+	if self:cloakStateRequire(arg_124_3.cloakState) then
+		self:onTrigger(arg_124_1, arg_124_2, arg_124_3)
 	end
 end
 
-function BattleBuffEffect.onTeammateCloakUpdate(arg_125_0, arg_125_1, arg_125_2, arg_125_3)
-	if arg_125_0:cloakStateRequire(arg_125_3.cloakState) then
-		arg_125_0:onTrigger(arg_125_1, arg_125_2, arg_125_3)
+function BattleBuffEffect.onTeammateCloakUpdate(self, arg_125_1, arg_125_2, arg_125_3)
+	if self:cloakStateRequire(arg_125_3.cloakState) then
+		self:onTrigger(arg_125_1, arg_125_2, arg_125_3)
 	end
 end
 
@@ -960,51 +973,63 @@ function BattleBuffEffect.Clear(arg_128_0)
 	arg_128_0._commander = nil
 end
 
-function BattleBuffEffect.getTargetList(arg_129_0, arg_129_1, arg_129_2, arg_129_3, arg_129_4)
-	if type(arg_129_2) == "string" then
-		arg_129_2 = {
-			arg_129_2
+--- @class BattleBuffEffect
+--- @param owner BattleUnit
+--- @param targetTypeList string|table<string>
+--- @param arg_list table<string, any>
+--- @param extraArgs table<string, any>
+--- @return table<BattleUnit>
+--- 获取目标列表的通用函数
+function BattleBuffEffect.getTargetList(self, owner, targetTypeList, arg_list, extraArgs)
+	if type(targetTypeList) == "string" then
+		targetTypeList = {
+			targetTypeList
 		}
 	end
 
-	local var_129_0 = arg_129_3
+	local argList = arg_list
 
-	if table.contains(arg_129_2, "TargetDamageSource") then
-		var_129_0 = Clone(arg_129_3)
-		var_129_0.damageSourceID = arg_129_4.damageSrc
+	if table.contains(targetTypeList, "TargetDamageSource") then
+		argList = Clone(arg_list)
+		argList.damageSourceID = extraArgs.damageSrc
+	end
+	-- 注：这个表最开始是空的
+	-- 具体怎么初始化，要看第一个调用的targetChoise函数是什么，不同的函数初始化targetList的方式不同
+	-- 比较常见的初始化方式有: TargetEntityUnit, getShipListByIFF等
+	local targetList
+
+	for _, targetType in ipairs(targetTypeList) do
+		-- 到BattleTargetChoise调用对应的函数获取目标
+		-- 注意是多层筛选，也即需要全部类型都满足
+		targetList = ys.Battle.BattleTargetChoise[targetType](owner, argList, targetList)
 	end
 
-	local var_129_1
-
-	for iter_129_0, iter_129_1 in ipairs(arg_129_2) do
-		var_129_1 = ys.Battle.BattleTargetChoise[iter_129_1](arg_129_1, var_129_0, var_129_1)
-	end
-
-	return var_129_1
+	return targetList
 end
 
-function BattleBuffEffect.commanderRequire(arg_130_0, arg_130_1)
-	if arg_130_0._tempData.arg_list.CMDBuff_id then
-		local var_130_0, var_130_1 = ys.Battle.BattleDataProxy.GetInstance():GetCommanderBuff()
-		local var_130_2
-		local var_130_3 = arg_130_1:GetTemplate().type
+function BattleBuffEffect.commanderRequire(self, owner)
+	if self._tempData.arg_list.CMDBuff_id then
+		local commanderBuff, subCommanderBuff = ys.Battle.BattleDataProxy.GetInstance():GetCommanderBuff()
+		local CMDbuffs
+		local shipType = owner:GetTemplate().type
 
-		if table.contains(TeamType.SubShipType, var_130_3) then
-			var_130_2 = var_130_1
+		if table.contains(TeamType.SubShipType, shipType) then
+			CMDbuffs = subCommanderBuff
 		else
-			var_130_2 = var_130_0
+			CMDbuffs = commanderBuff
 		end
 
-		local var_130_4 = {}
-		local var_130_5 = arg_130_0._tempData.arg_list.CMDBuff_id
+		local fleetCommanderBuffList = {}
+		local CMDBuff_id = self._tempData.arg_list.CMDBuff_id
 
-		for iter_130_0, iter_130_1 in ipairs(var_130_2) do
-			if iter_130_1.id == var_130_5 then
-				table.insert(var_130_4, iter_130_1)
+		for _, CMDbuff in ipairs(CMDbuffs) do
+			-- 找到对应的指挥喵天赋Buff
+			if CMDbuff.id == CMDBuff_id then
+				table.insert(fleetCommanderBuffList, CMDbuff)
 			end
 		end
 
-		return #var_130_4 > 0
+		return #fleetCommanderBuffList > 0
 	else
 		return true
 	end

@@ -1,33 +1,35 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAddAttrRatio", var_0_0.Battle.BattleBuffAddAttr)
+local ys = ys
+local BattleBuffAddAttrRatio = class("BattleBuffAddAttrRatio", ys.Battle.BattleBuffAddAttr)
 
-var_0_0.Battle.BattleBuffAddAttrRatio = var_0_1
-var_0_1.__name = "BattleBuffAddAttrRatio"
+ys.Battle.BattleBuffAddAttrRatio = BattleBuffAddAttrRatio
+BattleBuffAddAttrRatio.__name = "BattleBuffAddAttrRatio"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAttrRatio.Ctor(self, effectData)
+	BattleBuffAddAttrRatio.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
+function BattleBuffAddAttrRatio.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._group = arg_3_0._tempData.arg_list.group or arg_3_2:GetID()
-	arg_3_0._attr = arg_3_0._tempData.arg_list.attr
-	arg_3_0._attrBound = arg_3_0._tempData.arg_list.attrBound
+function BattleBuffAddAttrRatio.SetArgs(self, owner, buff)
+	self._group = self._tempData.arg_list.group or buff:GetID()
+	self._attr = self._tempData.arg_list.attr
+	self._attrBound = self._tempData.arg_list.attrBound
+	-- convertAttr存在时，按convertAttr的属性值计算加成
+	-- 比如，可以用防空值，按一定比例加成炮击值
+	local attr = self._tempData.arg_list.convertAttr or self._attr
+	local attrValue = ys.Battle.BattleAttr.GetBase(owner, attr)
+	-- 等价于(number/100)% * attrValue
+	self._number = self._tempData.arg_list.number * attrValue * 0.0001
+	self._numberBase = self._number
 
-	local var_3_0 = arg_3_0._tempData.arg_list.convertAttr or arg_3_0._attr
-	local var_3_1 = var_0_0.Battle.BattleAttr.GetBase(arg_3_1, var_3_0)
-
-	arg_3_0._number = arg_3_0._tempData.arg_list.number * var_3_1 * 0.0001
-	arg_3_0._numberBase = arg_3_0._number
-
-	if arg_3_0._attrBound then
-		arg_3_0._numberBase = math.min(arg_3_0._numberBase, arg_3_0._attrBound)
+	-- 每层的效果最多提高到attrBound
+	if self._attrBound then
+		self._numberBase = math.min(self._numberBase, self._attrBound)
 	end
 
-	arg_3_0._attrID = arg_3_0._tempData.arg_list.attr_group_ID
+	self._attrID = self._tempData.arg_list.attr_group_ID
 end

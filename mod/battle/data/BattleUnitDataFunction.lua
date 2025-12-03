@@ -1,85 +1,85 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleAttr
-local var_0_4 = pg.ship_data_statistics
-local var_0_5 = pg.ship_data_template
-local var_0_6 = pg.ship_skin_template
-local var_0_7 = pg.enemy_data_statistics
-local var_0_8 = pg.weapon_property
-local var_0_9 = pg.formation_template
-local var_0_10 = pg.auto_pilot_template
-local var_0_11 = pg.aircraft_template
-local var_0_12 = pg.ship_skin_words
-local var_0_13 = pg.equip_data_statistics
-local var_0_14 = pg.equip_data_template
-local var_0_15 = pg.spweapon_data_statistics
-local var_0_16 = pg.enemy_data_skill
-local var_0_17 = pg.ship_data_personality
-local var_0_18 = pg.enemy_data_by_type
-local var_0_19 = pg.ship_data_by_type
-local var_0_20 = pg.ship_level
-local var_0_21 = pg.skill_data_template
-local var_0_22 = pg.ship_data_trans
-local var_0_23 = pg.battle_environment_behaviour_template
-local var_0_24 = pg.equip_skin_template
-local var_0_25 = pg.activity_template
-local var_0_26 = pg.activity_event_worldboss
-local var_0_27 = pg.world_joint_boss_template
-local var_0_28 = pg.world_boss_level
-local var_0_29 = pg.guild_boss_event
-local var_0_30 = pg.ship_strengthen_meta
-local var_0_31 = pg.map_data
-local var_0_32 = pg.strategy_data_template
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAttr = ys.Battle.BattleAttr
+local ship_data_statistics = pg.ship_data_statistics
+local ship_data_template = pg.ship_data_template
+local ship_skin_template = pg.ship_skin_template
+local enemy_data_statistics = pg.enemy_data_statistics
+local weapon_property = pg.weapon_propertyp
+local formation_template = pg.formation_template
+local auto_pilot_template = pg.auto_pilot_template
+local aircraft_template = pg.aircraft_template
+local ship_skin_words = pg.ship_skin_words
+local equip_data_statistics = pg.equip_data_statistics
+local equip_data_template = pg.equip_data_template
+local spweapon_data_statistics = pg.spweapon_data_statistics
+local enemy_data_skill = pg.enemy_data_skill
+local ship_data_personality = pg.ship_data_personality
+local enemy_data_by_type = pg.enemy_data_by_type
+local ship_data_by_type = pg.ship_data_by_type
+local ship_level = pg.ship_level
+local skill_data_template = pg.skill_data_template
+local ship_data_trans = pg.ship_data_trans
+local battle_environment_behaviour_template = pg.battle_environment_behaviour_template
+local equip_skin_template = pg.equip_skin_template
+local activity_template = pg.activity_template
+local activity_event_worldboss = pg.activity_event_worldboss
+local world_joint_boss_template = pg.world_joint_boss_template
+local world_boss_level = pg.world_boss_level
+local guild_boss_event = pg.guild_boss_event
+local ship_strengthen_meta = pg.ship_strengthen_meta
+local map_data = pg.map_data
+local strategy_data_template = pg.strategy_data_template
 
-var_0_0.Battle.BattleDataFunction = var_0_0.Battle.BattleDataFunction or {}
+ys.Battle.BattleDataFunction = ys.Battle.BattleDataFunction or {}
 
-local var_0_33 = var_0_0.Battle.BattleDataFunction
-
-function var_0_33.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4, arg_1_5, arg_1_6, arg_1_7, arg_1_8, arg_1_9, arg_1_10, arg_1_11, arg_1_12)
+local BattleDataFunction = ys.Battle.BattleDataFunction
+-- TODO
+function BattleDataFunction.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4, arg_1_5, arg_1_6, arg_1_7, arg_1_8, arg_1_9, arg_1_10, arg_1_11, arg_1_12)
 	local var_1_0
 	local var_1_1
 
-	if arg_1_1 == var_0_1.UnitType.PLAYER_UNIT then
-		var_1_0 = var_0_0.Battle.BattlePlayerUnit.New(arg_1_0, arg_1_2)
+	if arg_1_1 == BattleConst.UnitType.PLAYER_UNIT then
+		var_1_0 = ys.Battle.BattlePlayerUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetSkinId(arg_1_4)
 		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
 
 		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == var_0_1.UnitType.SUB_UNIT then
-		var_1_0 = var_0_0.Battle.BattleSubUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.SUB_UNIT then
+		var_1_0 = ys.Battle.BattleSubUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetSkinId(arg_1_4)
 		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
 
 		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == var_0_1.UnitType.ENEMY_UNIT then
-		var_1_0 = var_0_0.Battle.BattleEnemyUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.ENEMY_UNIT then
+		var_1_0 = ys.Battle.BattleEnemyUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetOverrideLevel(arg_1_11)
-	elseif arg_1_1 == var_0_1.UnitType.MINION_UNIT then
-		var_1_0 = var_0_0.Battle.BattleMinionUnit.New(arg_1_0, arg_1_2)
-	elseif arg_1_1 == var_0_1.UnitType.BOSS_UNIT then
-		var_1_0 = var_0_0.Battle.BattleBossUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.MINION_UNIT then
+		var_1_0 = ys.Battle.BattleMinionUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.BOSS_UNIT then
+		var_1_0 = ys.Battle.BattleBossUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetOverrideLevel(arg_1_11)
-	elseif arg_1_1 == var_0_1.UnitType.CONST_UNIT then
-		var_1_0 = var_0_0.Battle.BattleConstPlayerUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.CONST_UNIT then
+		var_1_0 = ys.Battle.BattleConstPlayerUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetSkinId(arg_1_4)
 		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
 
 		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == var_0_1.UnitType.CARDPUZZLE_PLAYER_UNIT then
-		var_1_0 = var_0_0.Battle.BattleCardPuzzlePlayerUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.CARDPUZZLE_PLAYER_UNIT then
+		var_1_0 = ys.Battle.BattleCardPuzzlePlayerUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetSkinId(arg_1_4)
 		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
-	elseif arg_1_1 == var_0_1.UnitType.SUPPORT_UNIT then
-		var_1_0 = var_0_0.Battle.BattleSupportUnit.New(arg_1_0, arg_1_2)
+	elseif arg_1_1 == BattleConst.UnitType.SUPPORT_UNIT then
+		var_1_0 = ys.Battle.BattleSupportUnit.New(arg_1_0, arg_1_2)
 
 		var_1_0:SetSkinId(arg_1_4)
 		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
@@ -87,14 +87,14 @@ function var_0_33.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1
 
 	var_1_0:SetTemplate(arg_1_3, arg_1_6, arg_1_7)
 
-	if arg_1_1 == var_0_1.UnitType.MINION_UNIT then
+	if arg_1_1 == BattleConst.UnitType.MINION_UNIT then
 		var_1_0:SetMaster(arg_1_12)
 		var_1_0:InheritMasterAttr()
 	end
 
 	local var_1_2 = {}
 
-	if arg_1_1 == var_0_1.UnitType.ENEMY_UNIT or arg_1_1 == var_0_1.UnitType.MINION_UNIT or arg_1_1 == var_0_1.UnitType.BOSS_UNIT then
+	if arg_1_1 == BattleConst.UnitType.ENEMY_UNIT or arg_1_1 == BattleConst.UnitType.MINION_UNIT or arg_1_1 == BattleConst.UnitType.BOSS_UNIT then
 		for iter_1_0, iter_1_1 in ipairs(arg_1_5) do
 			var_1_2[#var_1_2 + 1] = {
 				equipment = {
@@ -115,8 +115,8 @@ function var_0_33.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1
 			else
 				local var_1_3 = iter_1_3.equipmentInfo and iter_1_3.equipmentInfo:getConfig("torpedo_ammo") or 0
 
-				if not var_1_1 or iter_1_2 <= var_1_1 or #var_0_33.GetWeaponDataFromID(iter_1_3.id).weapon_id then
-					local var_1_4 = var_0_33.GetWeaponDataFromID(iter_1_3.id)
+				if not var_1_1 or iter_1_2 <= var_1_1 or #BattleDataFunction.GetWeaponDataFromID(iter_1_3.id).weapon_id then
+					local var_1_4 = BattleDataFunction.GetWeaponDataFromID(iter_1_3.id)
 
 					var_1_2[#var_1_2 + 1] = {
 						equipment = var_1_4,
@@ -140,17 +140,17 @@ function var_0_33.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1
 	return var_1_0
 end
 
-function var_0_33.InitUnitSkill(arg_2_0, arg_2_1, arg_2_2)
+function BattleDataFunction.InitUnitSkill(arg_2_0, arg_2_1, arg_2_2)
 	local var_2_0 = arg_2_0.skills or {}
 
 	for iter_2_0, iter_2_1 in pairs(var_2_0) do
-		local var_2_1 = var_0_0.Battle.BattleBuffUnit.New(iter_2_1.id, iter_2_1.level, arg_2_1)
+		local var_2_1 = ys.Battle.BattleBuffUnit.New(iter_2_1.id, iter_2_1.level, arg_2_1)
 
 		arg_2_1:AddBuff(var_2_1)
 	end
 end
 
-function var_0_33.GetEquipSkill(arg_3_0, arg_3_1)
+function BattleDataFunction.GetEquipSkill(arg_3_0, arg_3_1)
 	local var_3_0 = Ship.WEAPON_COUNT
 	local var_3_1 = {}
 
@@ -159,11 +159,11 @@ function var_0_33.GetEquipSkill(arg_3_0, arg_3_1)
 
 		if var_3_2 then
 			local var_3_3
-			local var_3_4 = var_0_33.GetWeaponDataFromID(var_3_2)
+			local var_3_4 = BattleDataFunction.GetWeaponDataFromID(var_3_2)
 
 			if var_3_4 then
 				for iter_3_2, iter_3_3 in ipairs(var_3_4.skill_id) do
-					local var_3_5 = arg_3_1 and var_0_33.SkillTranform(arg_3_1, iter_3_3[1]) or iter_3_3[1]
+					local var_3_5 = arg_3_1 and BattleDataFunction.SkillTranform(arg_3_1, iter_3_3[1]) or iter_3_3[1]
 					local var_3_6 = iter_3_3[2] or 1
 					local var_3_7 = {
 						buffID = var_3_5,
@@ -174,7 +174,7 @@ function var_0_33.GetEquipSkill(arg_3_0, arg_3_1)
 				end
 
 				for iter_3_4, iter_3_5 in ipairs(var_3_4.hidden_skill_id) do
-					local var_3_8 = arg_3_1 and var_0_33.SkillTranform(arg_3_1, iter_3_5[1]) or iter_3_5[1]
+					local var_3_8 = arg_3_1 and BattleDataFunction.SkillTranform(arg_3_1, iter_3_5[1]) or iter_3_5[1]
 					local var_3_9 = iter_3_5[2] or 1
 					local var_3_10 = {
 						buffID = var_3_8,
@@ -190,8 +190,8 @@ function var_0_33.GetEquipSkill(arg_3_0, arg_3_1)
 	return var_3_1
 end
 
-function var_0_33.AttachWeather(arg_4_0, arg_4_1)
-	if table.contains(arg_4_1, var_0_1.WEATHER.NIGHT) then
+function BattleDataFunction.AttachWeather(arg_4_0, arg_4_1)
+	if table.contains(arg_4_1, BattleConst.WEATHER.NIGHT) then
 		local var_4_0 = arg_4_0:GetTemplate().type
 
 		if arg_4_0:GetFleetVO() then
@@ -201,27 +201,27 @@ function var_0_33.AttachWeather(arg_4_0, arg_4_1)
 				local var_4_2 = var_4_1:GetFleetBias()
 				local var_4_3 = var_4_2:GetCrewCount() + 1
 
-				var_4_2:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_SCOUT[var_4_3])
+				var_4_2:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SCOUT[var_4_3])
 				var_4_2:AppendCrew(arg_4_0)
 			elseif table.contains(TeamType.MainShipType, var_4_0) then
 				var_4_1:AttachCloak(arg_4_0)
 			elseif table.contains(TeamType.SubShipType, var_4_0) then
-				local var_4_4 = var_0_0.Battle.BattleUnitAimBiasComponent.New()
+				local var_4_4 = ys.Battle.BattleUnitAimBiasComponent.New()
 
-				var_4_4:ConfigRangeFormula(var_0_0.Battle.BattleFormulas.CalculateMaxAimBiasRangeSub, var_0_0.Battle.BattleFormulas.CalculateBiasDecay)
-				var_4_4:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_SUB)
+				var_4_4:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeSub, ys.Battle.BattleFormulas.CalculateBiasDecay)
+				var_4_4:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 				var_4_4:AppendCrew(arg_4_0)
 				var_4_4:Active(var_4_4.STATE_ACTIVITING)
 			end
-		elseif arg_4_0:GetUnitType() == var_0_1.UnitType.ENEMY_UNIT or arg_4_0:GetUnitType() == var_0_1.UnitType.MINION_UNIT or arg_4_0:GetUnitType() == var_0_1.UnitType.BOSS_UNIT then
-			local var_4_5 = var_0_0.Battle.BattleUnitAimBiasComponent.New()
+		elseif arg_4_0:GetUnitType() == BattleConst.UnitType.ENEMY_UNIT or arg_4_0:GetUnitType() == BattleConst.UnitType.MINION_UNIT or arg_4_0:GetUnitType() == BattleConst.UnitType.BOSS_UNIT then
+			local var_4_5 = ys.Battle.BattleUnitAimBiasComponent.New()
 
-			var_4_5:ConfigRangeFormula(var_0_0.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, var_0_0.Battle.BattleFormulas.CalculateBiasDecayMonster)
+			var_4_5:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonster)
 
 			if table.contains(TeamType.SubShipType, var_4_0) then
-				var_4_5:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_SUB)
+				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
-				var_4_5:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_MONSTER)
+				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
 			end
 
 			var_4_5:AppendCrew(arg_4_0)
@@ -231,10 +231,10 @@ function var_0_33.AttachWeather(arg_4_0, arg_4_1)
 	end
 end
 
-function var_0_33.AttachSmoke(arg_5_0)
+function BattleDataFunction.AttachSmoke(arg_5_0)
 	local var_5_0 = arg_5_0:GetUnitType()
 
-	if var_5_0 == var_0_1.UnitType.ENEMY_UNIT or var_5_0 == var_0_1.UnitType.BOSS_UNIT then
+	if var_5_0 == BattleConst.UnitType.ENEMY_UNIT or var_5_0 == BattleConst.UnitType.BOSS_UNIT then
 		if arg_5_0:GetAimBias() then
 			local var_5_1 = arg_5_0:GetAimBias()
 			local var_5_2 = var_5_1:GetCurrentState()
@@ -245,14 +245,14 @@ function var_0_33.AttachSmoke(arg_5_0)
 				var_5_1:SmokeRecover()
 			end
 		else
-			local var_5_3 = var_0_0.Battle.BattleUnitAimBiasComponent.New()
+			local var_5_3 = ys.Battle.BattleUnitAimBiasComponent.New()
 
-			var_5_3:ConfigRangeFormula(var_0_0.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, var_0_0.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
+			var_5_3:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
 
 			if table.contains(TeamType.SubShipType, shipType) then
-				var_5_3:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_SUB)
+				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
-				var_5_3:ConfigMinRange(var_0_2.AIM_BIAS_MIN_RANGE_MONSTER)
+				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
 			end
 
 			var_5_3:AppendCrew(arg_5_0)
@@ -262,23 +262,23 @@ function var_0_33.AttachSmoke(arg_5_0)
 	end
 end
 
-function var_0_33.InitEquipSkill(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = var_0_33.GetEquipSkill(arg_6_0, arg_6_2)
+function BattleDataFunction.InitEquipSkill(arg_6_0, arg_6_1, arg_6_2)
+	local var_6_0 = BattleDataFunction.GetEquipSkill(arg_6_0, arg_6_2)
 
 	for iter_6_0, iter_6_1 in ipairs(var_6_0) do
-		local var_6_1 = var_0_0.Battle.BattleBuffUnit.New(iter_6_1.buffID, iter_6_1.buffLV, arg_6_1)
+		local var_6_1 = ys.Battle.BattleBuffUnit.New(iter_6_1.buffID, iter_6_1.buffLV, arg_6_1)
 
 		arg_6_1:AddBuff(var_6_1)
 	end
 end
 
-function var_0_33.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
+function BattleDataFunction.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
 	arg_7_0 = arg_7_0 or {}
 
-	local var_7_0 = var_0_0.Battle.BattleState.GetInstance():GetBattleType()
+	local var_7_0 = ys.Battle.BattleState.GetInstance():GetBattleType()
 
 	for iter_7_0, iter_7_1 in pairs(arg_7_0) do
-		local var_7_1 = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(iter_7_1.id, iter_7_1.level).limit
+		local var_7_1 = ys.Battle.BattleDataFunction.GetBuffTemplate(iter_7_1.id, iter_7_1.level).limit
 		local var_7_2 = false
 
 		if var_7_1 then
@@ -292,7 +292,7 @@ function var_0_33.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
 		end
 
 		if not var_7_2 then
-			local var_7_3 = var_0_0.Battle.BattleBuffUnit.New(iter_7_1.id, iter_7_1.level, arg_7_1)
+			local var_7_3 = ys.Battle.BattleBuffUnit.New(iter_7_1.id, iter_7_1.level, arg_7_1)
 
 			var_7_3:SetCommander(iter_7_1.commander)
 			arg_7_1:AddBuff(var_7_3)
@@ -300,119 +300,119 @@ function var_0_33.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
 	end
 end
 
-function var_0_33.CreateWeaponUnit(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-	arg_8_3 = arg_8_3 or -1
+function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, weapon_type)
+	index = index or -1
 
-	local var_8_0 = arg_8_1:GetUnitType()
-	local var_8_1
-	local var_8_2 = var_0_33.GetWeaponPropertyDataFromID(arg_8_0)
+	local hostUnitType = host:GetUnitType()
+	local weapon
+	local weaponTemplate = BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
 
-	assert(var_8_2 ~= nil, "找不到武器配置：id = " .. arg_8_0)
+	assert(weaponTemplate ~= nil, "找不到武器配置：id = " .. weaponId)
 
-	local var_8_3 = arg_8_4 or var_8_2.type
+	local weaponType = weapon_type or weaponTemplate.type
 
-	if var_8_3 == var_0_1.EquipmentType.MAIN_CANNON then
-		var_8_1 = var_0_0.Battle.BattleWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.SUB_CANNON then
-		var_8_1 = var_0_0.Battle.BattleWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.TORPEDO then
-		var_8_1 = var_0_0.Battle.BattleTorpedoUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.MANUAL_TORPEDO then
-		var_8_1 = var_0_0.Battle.BattleManualTorpedoUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.ANTI_AIR then
-		var_8_1 = var_0_0.Battle.BattleAntiAirUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.FLEET_ANTI_AIR or var_8_3 == var_0_1.EquipmentType.FLEET_RANGE_ANTI_AIR then
-		var_8_1 = var_0_0.Battle.BattleWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.INTERCEPT_AIRCRAFT or var_8_3 == var_0_1.EquipmentType.STRIKE_AIRCRAFT then
-		if var_8_0 == var_0_1.UnitType.SUPPORT_UNIT then
-			var_8_1 = var_0_0.Battle.BattleSupportHiveUnit.New()
+	if weaponType == BattleConst.EquipmentType.MAIN_CANNON then
+		weapon = ys.Battle.BattleWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.SUB_CANNON then
+		weapon = ys.Battle.BattleWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.TORPEDO then
+		weapon = ys.Battle.BattleTorpedoUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.MANUAL_TORPEDO then
+		weapon = ys.Battle.BattleManualTorpedoUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.ANTI_AIR then
+		weapon = ys.Battle.BattleAntiAirUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.FLEET_ANTI_AIR or weaponType == BattleConst.EquipmentType.FLEET_RANGE_ANTI_AIR then
+		weapon = ys.Battle.BattleWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+		if hostUnitType == BattleConst.UnitType.SUPPORT_UNIT then
+			weapon = ys.Battle.BattleSupportHiveUnit.New()
 		else
-			var_8_1 = var_0_0.Battle.BattleHiveUnit.New()
+			weapon = ys.Battle.BattleHiveUnit.New()
 		end
-	elseif var_8_3 == var_0_1.EquipmentType.SPECIAL then
-		var_8_1 = var_0_0.Battle.BattleSpecialWeapon.New()
-	elseif var_8_3 == var_0_1.EquipmentType.ANTI_SEA then
-		var_8_1 = var_0_0.Battle.BattleDirectHitWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.HAMMER_HEAD then
-		var_8_1 = var_0_0.Battle.BattleHammerHeadWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.BOMBER_PRE_CAST_ALERT then
-		var_8_1 = var_0_0.Battle.BattleBombWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.POINT_HIT_AND_LOCK or var_8_3 == var_0_1.EquipmentType.MANUAL_MISSILE or var_8_3 == var_0_1.EquipmentType.MANUAL_METEOR then
-		var_8_1 = var_0_0.Battle.BattlePointHitWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.POINT_AIR_STRIKE then
-		var_8_1 = var_0_0.Battle.BattlePointAirStrikeUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.BEAM then
-		var_8_1 = var_0_0.Battle.BattleLaserUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.DEPTH_CHARGE then
-		var_8_1 = var_0_0.Battle.BattleDepthChargeUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.REPEATER_ANTI_AIR then
-		var_8_1 = var_0_0.Battle.BattleRepeaterAntiAirUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.DISPOSABLE_TORPEDO then
-		var_8_1 = var_0_0.Battle.BattleDisposableTorpedoUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.SPACE_LASER then
-		var_8_1 = var_0_0.Battle.BattleSpaceLaserWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.MISSILE then
-		var_8_1 = var_0_0.Battle.BattleMissileWeaponUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.MANUAL_AAMISSILE then
-		var_8_1 = var_0_0.Battle.BattleManualAAMissileUnit.New()
-	elseif var_8_3 == var_0_1.EquipmentType.AUTO_MISSILE then
-		var_8_1 = var_0_0.Battle.BattleAutoMissileUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.SPECIAL then
+		weapon = ys.Battle.BattleSpecialWeapon.New()
+	elseif weaponType == BattleConst.EquipmentType.ANTI_SEA then
+		weapon = ys.Battle.BattleDirectHitWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.HAMMER_HEAD then
+		weapon = ys.Battle.BattleHammerHeadWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.BOMBER_PRE_CAST_ALERT then
+		weapon = ys.Battle.BattleBombWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.POINT_HIT_AND_LOCK or weaponType == BattleConst.EquipmentType.MANUAL_MISSILE or weaponType == BattleConst.EquipmentType.MANUAL_METEOR then
+		weapon = ys.Battle.BattlePointHitWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.POINT_AIR_STRIKE then
+		weapon = ys.Battle.BattlePointAirStrikeUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.BEAM then
+		weapon = ys.Battle.BattleLaserUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.DEPTH_CHARGE then
+		weapon = ys.Battle.BattleDepthChargeUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.REPEATER_ANTI_AIR then
+		weapon = ys.Battle.BattleRepeaterAntiAirUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.DISPOSABLE_TORPEDO then
+		weapon = ys.Battle.BattleDisposableTorpedoUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.SPACE_LASER then
+		weapon = ys.Battle.BattleSpaceLaserWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.MISSILE then
+		weapon = ys.Battle.BattleMissileWeaponUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.MANUAL_AAMISSILE then
+		weapon = ys.Battle.BattleManualAAMissileUnit.New()
+	elseif weaponType == BattleConst.EquipmentType.AUTO_MISSILE then
+		weapon = ys.Battle.BattleAutoMissileUnit.New()
 	end
 
-	assert(var_8_1 ~= nil, "创建武器失败，不存在该类型的武器：id = " .. arg_8_0)
-	var_8_1:SetPotentialFactor(arg_8_2)
-	var_8_1:SetEquipmentIndex(arg_8_3)
-	var_8_1:SetTemplateData(var_8_2)
-	var_8_1:SetHostData(arg_8_1)
+	assert(weapon ~= nil, "创建武器失败，不存在该类型的武器：id = " .. weaponId)
+	weapon:SetPotentialFactor(potential)
+	weapon:SetEquipmentIndex(index)
+	weapon:SetTemplateData(weaponTemplate)
+	weapon:SetHostData(host)
 
-	if var_8_0 == var_0_1.UnitType.PLAYER_UNIT then
-		if var_8_2.auto_aftercast > 0 then
-			var_8_1:OverrideGCD(var_8_2.auto_aftercast)
+	if hostUnitType == BattleConst.UnitType.PLAYER_UNIT then
+		if weaponTemplate.auto_aftercast > 0 then
+			weapon:OverrideGCD(weaponTemplate.auto_aftercast)
 		end
-	elseif var_8_0 == var_0_1.UnitType.ENEMY_UNIT or var_0_1.UnitType.BOSS_UNIT then
-		var_8_1:HostOnEnemy()
+	elseif hostUnitType == BattleConst.UnitType.ENEMY_UNIT or BattleConst.UnitType.BOSS_UNIT then
+		weapon:HostOnEnemy()
+	end
+	-- 创建时即进入CD
+	if weaponTemplate.type == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponTemplate.type == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+		weapon:EnterCoolDown()
 	end
 
-	if var_8_2.type == var_0_1.EquipmentType.INTERCEPT_AIRCRAFT or var_8_2.type == var_0_1.EquipmentType.STRIKE_AIRCRAFT then
-		var_8_1:EnterCoolDown()
-	end
-
-	return var_8_1
+	return weapon
 end
 
-function var_0_33.CreateAircraftUnit(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
-	local var_9_0
-	local var_9_1 = var_0_33.GetAircraftTmpDataFromID(arg_9_1)
+function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, potential)
+	local aircraft
+	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(aircraftId)
 
-	assert(var_9_1 ~= nil, "找不到飞机配置：id = " .. arg_9_1)
+	assert(aircraftTemplate ~= nil, "找不到飞机配置：id = " .. aircraftId)
 
-	if type(var_9_1.funnel_behavior) == "table" then
-		if var_9_1.funnel_behavior.hover_range then
-			var_9_0 = var_0_0.Battle.BattelUAVUnit.New(arg_9_0)
-		elseif var_9_1.funnel_behavior.AI then
-			var_9_0 = var_0_0.Battle.BattlePatternFunnelUnit.New(arg_9_0)
+	if type(aircraftTemplate.funnel_behavior) == "table" then
+		if aircraftTemplate.funnel_behavior.hover_range then
+			aircraft = ys.Battle.BattleUAVUnit.New(aircraftUID)
+		elseif aircraftTemplate.funnel_behavior.AI then
+			aircraft = ys.Battle.BattlePatternFunnelUnit.New(aircraftUID)
 		else
-			var_9_0 = var_0_0.Battle.BattleFunnelUnit.New(arg_9_0)
+			aircraft = ys.Battle.BattleFunnelUnit.New(aircraftUID)
 		end
 	else
-		var_9_0 = var_0_0.Battle.BattleAircraftUnit.New(arg_9_0)
+		aircraft = ys.Battle.BattleAircraftUnit.New(aircraftUID)
 	end
 
-	var_9_0:SetMotherUnit(arg_9_2)
-	var_9_0:SetWeanponPotential(arg_9_3)
-	var_9_0:SetTemplate(var_9_1)
+	aircraft:SetMotherUnit(mother)
+	aircraft:SetWeanponPotential(potential)
+	aircraft:SetTemplate(aircraftTemplate)
 
-	return var_9_0
+	return aircraft
 end
 
-function var_0_33.CreateAllInStrike(arg_10_0)
+function BattleDataFunction.CreateAllInStrike(arg_10_0)
 	local var_10_0 = arg_10_0:GetTemplateID()
-	local var_10_1 = var_0_33.GetPlayerShipModelFromID(var_10_0)
+	local var_10_1 = BattleDataFunction.GetPlayerShipModelFromID(var_10_0)
 	local var_10_2 = 0
 	local var_10_3 = {}
 
 	for iter_10_0, iter_10_1 in ipairs(var_10_1.airassist_time) do
-		local var_10_4 = var_0_0.Battle.BattleAllInStrike.New(iter_10_1)
+		local var_10_4 = ys.Battle.BattleAllInStrike.New(iter_10_1)
 
 		var_10_4:SetHost(arg_10_0)
 
@@ -422,13 +422,13 @@ function var_0_33.CreateAllInStrike(arg_10_0)
 	return var_10_3
 end
 
-function var_0_33.ExpandAllinStrike(arg_11_0)
+function BattleDataFunction.ExpandAllinStrike(arg_11_0)
 	local var_11_0 = arg_11_0:GetTemplateID()
-	local var_11_1 = var_0_33.GetPlayerShipModelFromID(var_11_0).airassist_time
+	local var_11_1 = BattleDataFunction.GetPlayerShipModelFromID(var_11_0).airassist_time
 
 	if #var_11_1 > 0 then
 		local var_11_2 = var_11_1[#var_11_1]
-		local var_11_3 = var_0_0.Battle.BattleAllInStrike.New(var_11_2)
+		local var_11_3 = ys.Battle.BattleAllInStrike.New(var_11_2)
 
 		var_11_3:SetHost(arg_11_0)
 		arg_11_0:GetFleetVO():GetAirAssistVO():AppendWeapon(var_11_3)
@@ -441,10 +441,10 @@ function var_0_33.ExpandAllinStrike(arg_11_0)
 	end
 end
 
-function var_0_33.CreateAirFighterUnit(arg_12_0, arg_12_1)
+function BattleDataFunction.CreateAirFighterUnit(arg_12_0, arg_12_1)
 	local var_12_0
-	local var_12_1 = var_0_33.GetAircraftTmpDataFromID(arg_12_1.templateID)
-	local var_12_2 = var_0_0.Battle.BattleAirFighterUnit.New(arg_12_0)
+	local var_12_1 = BattleDataFunction.GetAircraftTmpDataFromID(arg_12_1.templateID)
+	local var_12_2 = ys.Battle.BattleAirFighterUnit.New(arg_12_0)
 
 	var_12_2:SetWeaponTemplateID(arg_12_1.weaponID)
 	var_12_2:SetBackwardWeaponID(arg_12_1.backwardWeaponID)
@@ -453,146 +453,146 @@ function var_0_33.CreateAirFighterUnit(arg_12_0, arg_12_1)
 	return var_12_2
 end
 
-function var_0_33.GetPlayerShipTmpDataFromID(arg_13_0)
-	assert(var_0_4[arg_13_0] ~= nil, ">>ship_data_statistics<< 找不到玩家船只配置：id = " .. arg_13_0)
+function BattleDataFunction.GetPlayerShipTmpDataFromID(arg_13_0)
+	assert(ship_data_statistics[arg_13_0] ~= nil, ">>ship_data_statistics<< 找不到玩家船只配置：id = " .. arg_13_0)
 
-	return Clone(var_0_4[arg_13_0])
+	return Clone(ship_data_statistics[arg_13_0])
 end
 
-function var_0_33.GetPlayerShipModelFromID(arg_14_0)
-	assert(var_0_5[arg_14_0] ~= nil, ">>ship_data_template<< 找不到玩家船只模组配置：id = " .. arg_14_0)
+function BattleDataFunction.GetPlayerShipModelFromID(arg_14_0)
+	assert(ship_data_template[arg_14_0] ~= nil, ">>ship_data_template<< 找不到玩家船只模组配置：id = " .. arg_14_0)
 
-	return var_0_5[arg_14_0]
+	return ship_data_template[arg_14_0]
 end
 
-function var_0_33.GetPlayerShipSkinDataFromID(arg_15_0)
-	assert(var_0_6[arg_15_0] ~= nil, ">>ship_skin_template<< 找不到舰娘皮肤配置：id = " .. arg_15_0)
+function BattleDataFunction.GetPlayerShipSkinDataFromID(arg_15_0)
+	assert(ship_skin_template[arg_15_0] ~= nil, ">>ship_skin_template<< 找不到舰娘皮肤配置：id = " .. arg_15_0)
 
-	return var_0_6[arg_15_0]
+	return ship_skin_template[arg_15_0]
 end
 
-function var_0_33.GetShipTypeTmp(arg_16_0)
-	assert(var_0_19[arg_16_0] ~= nil, ">>ship_data_by_type<< 找不到舰船类型配置：id = " .. arg_16_0)
+function BattleDataFunction.GetShipTypeTmp(arg_16_0)
+	assert(ship_data_by_type[arg_16_0] ~= nil, ">>ship_data_by_type<< 找不到舰船类型配置：id = " .. arg_16_0)
 
-	return var_0_19[arg_16_0]
+	return ship_data_by_type[arg_16_0]
 end
 
-function var_0_33.GetMonsterTmpDataFromID(arg_17_0)
-	assert(var_0_7[arg_17_0] ~= nil, ">>enemy_data_statistics<< 找不到敌方船只配置：id = " .. arg_17_0)
+function BattleDataFunction.GetMonsterTmpDataFromID(arg_17_0)
+	assert(enemy_data_statistics[arg_17_0] ~= nil, ">>enemy_data_statistics<< 找不到敌方船只配置：id = " .. arg_17_0)
 
-	return var_0_7[arg_17_0]
+	return enemy_data_statistics[arg_17_0]
 end
 
-function var_0_33.GetAircraftTmpDataFromID(arg_18_0)
-	assert(var_0_11[arg_18_0] ~= nil, ">>aircraft_template<< 找不到飞机配置：id = " .. arg_18_0)
+function BattleDataFunction.GetAircraftTmpDataFromID(arg_18_0)
+	assert(aircraft_template[arg_18_0] ~= nil, ">>aircraft_template<< 找不到飞机配置：id = " .. arg_18_0)
 
-	return var_0_11[arg_18_0]
+	return aircraft_template[arg_18_0]
 end
 
-function var_0_33.GetWeaponDataFromID(arg_19_0)
+function BattleDataFunction.GetWeaponDataFromID(arg_19_0)
 	if arg_19_0 ~= Equipment.EQUIPMENT_STATE_EMPTY and arg_19_0 ~= Equipment.EQUIPMENT_STATE_LOCK then
-		assert(var_0_13[arg_19_0] ~= nil, ">>equip_data_statistics<< 找不到武器类装备配置：id = " .. arg_19_0)
+		assert(equip_data_statistics[arg_19_0] ~= nil, ">>equip_data_statistics<< 找不到武器类装备配置：id = " .. arg_19_0)
 	end
 
-	return var_0_13[arg_19_0]
+	return equip_data_statistics[arg_19_0]
 end
 
-function var_0_33.GetEquipDataTemplate(arg_20_0)
-	assert(var_0_14[arg_20_0] ~= nil, ">>equip_data_template<< 找不到武器装备模板：id = " .. arg_20_0)
+function BattleDataFunction.GetEquipDataTemplate(arg_20_0)
+	assert(equip_data_template[arg_20_0] ~= nil, ">>equip_data_template<< 找不到武器装备模板：id = " .. arg_20_0)
 
-	return var_0_14[arg_20_0]
+	return equip_data_template[arg_20_0]
 end
 
-function var_0_33.GetSpWeaponDataFromID(arg_21_0)
-	assert(var_0_15[arg_21_0] ~= nil, ">>spweapon_data_statistics<< 找不到特殊兵装配置：id = " .. arg_21_0)
+function BattleDataFunction.GetSpWeaponDataFromID(arg_21_0)
+	assert(spweapon_data_statistics[arg_21_0] ~= nil, ">>spweapon_data_statistics<< 找不到特殊兵装配置：id = " .. arg_21_0)
 
-	return var_0_15[arg_21_0]
+	return spweapon_data_statistics[arg_21_0]
 end
 
-function var_0_33.GetWeaponPropertyDataFromID(arg_22_0)
-	assert(var_0_8[arg_22_0] ~= nil, ">>weapon_property<< 找不到武器行为配置：id = " .. arg_22_0)
+function BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
+	assert(weapon_property[weaponId] ~= nil, ">>weapon_property<< 找不到武器行为配置：id = " .. weaponId)
 
-	return var_0_8[arg_22_0]
+	return weapon_property[weaponId]
 end
 
-function var_0_33.GetFormationTmpDataFromID(arg_23_0)
-	assert(var_0_9[arg_23_0] ~= nil, ">>formation_template<<找不到阵型配置：id = " .. arg_23_0)
+function BattleDataFunction.GetFormationTmpDataFromID(arg_23_0)
+	assert(formation_template[arg_23_0] ~= nil, ">>formation_template<<找不到阵型配置：id = " .. arg_23_0)
 
-	return var_0_9[arg_23_0]
+	return formation_template[arg_23_0]
 end
 
-function var_0_33.GetAITmpDataFromID(arg_24_0)
-	assert(var_0_10[arg_24_0] ~= nil, ">>auto_pilot_template<< 找不到移动ai配置：id = " .. arg_24_0)
+function BattleDataFunction.GetAITmpDataFromID(arg_24_0)
+	assert(auto_pilot_template[arg_24_0] ~= nil, ">>auto_pilot_template<< 找不到移动ai配置：id = " .. arg_24_0)
 
-	return var_0_10[arg_24_0]
+	return auto_pilot_template[arg_24_0]
 end
 
-function var_0_33.GetShipPersonality(arg_25_0)
-	assert(var_0_17[arg_25_0] ~= nil, ">>shipPersonality<< 找不到性格配置：id = " .. arg_25_0)
+function BattleDataFunction.GetShipPersonality(arg_25_0)
+	assert(ship_data_personality[arg_25_0] ~= nil, ">>shipPersonality<< 找不到性格配置：id = " .. arg_25_0)
 
-	return var_0_17[arg_25_0]
+	return ship_data_personality[arg_25_0]
 end
 
-function var_0_33.GetEnemyTypeDataByType(arg_26_0)
-	assert(var_0_18[arg_26_0] ~= nil, ">>enemy_data_by_type<< 找不到怪物类型：type = " .. arg_26_0)
+function BattleDataFunction.GetEnemyTypeDataByType(arg_26_0)
+	assert(enemy_data_by_type[arg_26_0] ~= nil, ">>enemy_data_by_type<< 找不到怪物类型：type = " .. arg_26_0)
 
-	return var_0_18[arg_26_0]
+	return enemy_data_by_type[arg_26_0]
 end
 
-function var_0_33.GetArenaBuffByShipType(arg_27_0)
-	return var_0_33.GetShipTypeTmp(arg_27_0).arena_buff
+function BattleDataFunction.GetArenaBuffByShipType(arg_27_0)
+	return BattleDataFunction.GetShipTypeTmp(arg_27_0).arena_buff
 end
 
-function var_0_33.GetPlayerUnitDurabilityExtraAddition(arg_28_0, arg_28_1)
+function BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(arg_28_0, arg_28_1)
 	if arg_28_0 == SYSTEM_DUEL then
-		assert(var_0_20[arg_28_1] ~= nil, ">>ship_level<< 找不到等级配置：level = " .. arg_28_1)
+		assert(ship_level[arg_28_1] ~= nil, ">>ship_level<< 找不到等级配置：level = " .. arg_28_1)
 
-		return var_0_20[arg_28_1].arena_durability_ratio, var_0_20[arg_28_1].arena_durability_add
+		return ship_level[arg_28_1].arena_durability_ratio, ship_level[arg_28_1].arena_durability_add
 	else
 		return 1, 0
 	end
 end
 
-function var_0_33.GetSkillDataTemplate(arg_29_0)
-	return var_0_21[arg_29_0]
+function BattleDataFunction.GetSkillDataTemplate(arg_29_0)
+	return skill_data_template[arg_29_0]
 end
 
-function var_0_33.GetShipTransformDataTemplate(arg_30_0)
-	local var_30_0 = var_0_33.GetPlayerShipModelFromID(arg_30_0)
+function BattleDataFunction.GetShipTransformDataTemplate(arg_30_0)
+	local var_30_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_30_0)
 
-	return var_0_22[var_30_0.group_type]
+	return ship_data_trans[var_30_0.group_type]
 end
 
-function var_0_33.GetShipMetaFromDataTemplate(arg_31_0)
-	local var_31_0 = var_0_33.GetPlayerShipModelFromID(arg_31_0)
+function BattleDataFunction.GetShipMetaFromDataTemplate(arg_31_0)
+	local var_31_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_31_0)
 
-	return var_0_30[var_31_0.group_type]
+	return ship_strengthen_meta[var_31_0.group_type]
 end
 
-function var_0_33.GetEquipSkinDataFromID(arg_32_0)
-	assert(var_0_24[arg_32_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_32_0)
+function BattleDataFunction.GetEquipSkinDataFromID(arg_32_0)
+	assert(equip_skin_template[arg_32_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_32_0)
 
-	return var_0_24[arg_32_0]
+	return equip_skin_template[arg_32_0]
 end
 
-function var_0_33.GetEquipSkin(arg_33_0)
-	assert(var_0_24[arg_33_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_33_0)
+function BattleDataFunction.GetEquipSkin(arg_33_0)
+	assert(equip_skin_template[arg_33_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_33_0)
 
-	local var_33_0 = var_0_24[arg_33_0]
+	local var_33_0 = equip_skin_template[arg_33_0]
 
 	return var_33_0.bullet_name, var_33_0.derivate_bullet, var_33_0.derivate_torpedo, var_33_0.derivate_boom, var_33_0.fire_fx_name, var_33_0.hit_fx_name
 end
 
-function var_0_33.GetEquipSkinSFX(arg_34_0)
-	assert(var_0_24[arg_34_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_34_0)
+function BattleDataFunction.GetEquipSkinSFX(arg_34_0)
+	assert(equip_skin_template[arg_34_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_34_0)
 
-	local var_34_0 = var_0_24[arg_34_0]
+	local var_34_0 = equip_skin_template[arg_34_0]
 
 	return var_34_0.hit_sfx, var_34_0.miss_sfx
 end
 
-function var_0_33.GetSpecificGuildBossEnemyList(arg_35_0, arg_35_1)
-	local var_35_0 = var_0_29[arg_35_0].expedition_id
+function BattleDataFunction.GetSpecificGuildBossEnemyList(arg_35_0, arg_35_1)
+	local var_35_0 = guild_boss_event[arg_35_0].expedition_id
 	local var_35_1 = {}
 
 	if var_35_0[1] == arg_35_1 then
@@ -602,9 +602,9 @@ function var_0_33.GetSpecificGuildBossEnemyList(arg_35_0, arg_35_1)
 	return var_35_1
 end
 
-function var_0_33.GetSpecificEnemyList(arg_36_0, arg_36_1)
-	local var_36_0 = var_0_25[arg_36_0]
-	local var_36_1 = var_0_26[var_36_0.config_id].ex_expedition_enemy
+function BattleDataFunction.GetSpecificEnemyList(arg_36_0, arg_36_1)
+	local var_36_0 = activity_template[arg_36_0]
+	local var_36_1 = activity_event_worldboss[var_36_0.config_id].ex_expedition_enemy
 	local var_36_2
 
 	for iter_36_0, iter_36_1 in ipairs(var_36_1) do
@@ -618,25 +618,25 @@ function var_0_33.GetSpecificEnemyList(arg_36_0, arg_36_1)
 	return var_36_2
 end
 
-function var_0_33.GetMetaBossTemplate(arg_37_0)
-	return var_0_27[arg_37_0]
+function BattleDataFunction.GetMetaBossTemplate(arg_37_0)
+	return world_joint_boss_template[arg_37_0]
 end
 
-function var_0_33.GetMetaBossLevelTemplate(arg_38_0, arg_38_1)
-	local var_38_0 = var_0_33.GetMetaBossTemplate(arg_38_0).boss_level_id + (arg_38_1 - 1)
+function BattleDataFunction.GetMetaBossLevelTemplate(arg_38_0, arg_38_1)
+	local var_38_0 = BattleDataFunction.GetMetaBossTemplate(arg_38_0).boss_level_id + (arg_38_1 - 1)
 
-	return var_0_28[var_38_0]
+	return world_boss_level[var_38_0]
 end
 
-function var_0_33.GetSpecificWorldJointEnemyList(arg_39_0, arg_39_1, arg_39_2)
-	local var_39_0 = var_0_33.GetMetaBossLevelTemplate(arg_39_1, arg_39_2)
+function BattleDataFunction.GetSpecificWorldJointEnemyList(arg_39_0, arg_39_1, arg_39_2)
+	local var_39_0 = BattleDataFunction.GetMetaBossLevelTemplate(arg_39_1, arg_39_2)
 
 	return {
 		var_39_0.enemy_id
 	}
 end
 
-function var_0_33.IncreaseAttributes(arg_40_0, arg_40_1, arg_40_2)
+function BattleDataFunction.IncreaseAttributes(arg_40_0, arg_40_1, arg_40_2)
 	for iter_40_0, iter_40_1 in ipairs(arg_40_2) do
 		if iter_40_1[arg_40_1] ~= nil and type(iter_40_1[arg_40_1]) == "number" then
 			arg_40_0 = arg_40_0 + iter_40_1[arg_40_1]
@@ -644,51 +644,52 @@ function var_0_33.IncreaseAttributes(arg_40_0, arg_40_1, arg_40_2)
 	end
 end
 
-function var_0_33.CreateAirFighterWeaponUnit(arg_41_0, arg_41_1, arg_41_2, arg_41_3)
-	local var_41_0
-	local var_41_1 = var_0_33.GetWeaponPropertyDataFromID(arg_41_0)
+-- 飞机单位创建的武器
+function BattleDataFunction.CreateAirFighterWeaponUnit(weaponId, aircraft, index, potential)
+	local weapon
+	local weaponTemplate = BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
 
-	assert(var_41_1 ~= nil, "找不到武器配置：id = " .. arg_41_0)
+	assert(weaponTemplate ~= nil, "找不到武器配置：id = " .. weaponId)
 
-	if var_41_1.type == var_0_1.EquipmentType.MAIN_CANNON then
-		var_41_0 = var_0_0.Battle.BattleWeaponUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.SUB_CANNON then
-		var_41_0 = var_0_0.Battle.BattleWeaponUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.TORPEDO then
-		var_41_0 = var_0_0.Battle.BattleTorpedoUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.ANTI_AIR then
-		var_41_0 = var_0_0.Battle.BattleAntiAirUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.ANTI_SEA then
-		var_41_0 = var_0_0.Battle.BattleDirectHitWeaponUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.HAMMER_HEAD then
-		var_41_0 = var_0_0.Battle.BattleHammerHeadWeaponUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.BOMBER_PRE_CAST_ALERT then
-		var_41_0 = var_0_0.Battle.BattleBombWeaponUnit.New()
-	elseif var_41_1.type == var_0_1.EquipmentType.DEPTH_CHARGE then
-		var_41_0 = var_0_0.Battle.BattleDepthChargeUnit.New()
+	if weaponTemplate.type == BattleConst.EquipmentType.MAIN_CANNON then
+		weapon = ys.Battle.BattleWeaponUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.SUB_CANNON then
+		weapon = ys.Battle.BattleWeaponUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.TORPEDO then
+		weapon = ys.Battle.BattleTorpedoUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.ANTI_AIR then
+		weapon = ys.Battle.BattleAntiAirUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.ANTI_SEA then
+		weapon = ys.Battle.BattleDirectHitWeaponUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.HAMMER_HEAD then
+		weapon = ys.Battle.BattleHammerHeadWeaponUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.BOMBER_PRE_CAST_ALERT then
+		weapon = ys.Battle.BattleBombWeaponUnit.New()
+	elseif weaponTemplate.type == BattleConst.EquipmentType.DEPTH_CHARGE then
+		weapon = ys.Battle.BattleDepthChargeUnit.New()
 	end
 
-	assert(var_41_0 ~= nil, "创建武器失败，不存在该类型的武器：id = " .. arg_41_0)
-	var_41_0:SetPotentialFactor(arg_41_3)
+	assert(weapon ~= nil, "创建武器失败，不存在该类型的武器：id = " .. weaponId)
+	weapon:SetPotentialFactor(potential)
 
-	local var_41_2 = Clone(var_41_1)
+	local template = Clone(weaponTemplate)
 
-	var_41_2.spawn_bound = "weapon"
+	template.spawn_bound = "weapon"
 
-	var_41_0:SetTemplateData(var_41_2)
-	var_41_0:SetHostData(arg_41_1, arg_41_2)
+	weapon:SetTemplateData(template)
+	weapon:SetHostData(aircraft, index)
 
-	return var_41_0
+	return weapon
 end
 
-function var_0_33.GetWords(arg_42_0, arg_42_1, arg_42_2)
+function BattleDataFunction.GetWords(arg_42_0, arg_42_1, arg_42_2)
 	local var_42_0, var_42_1, var_42_2 = ShipWordHelper.GetWordAndCV(arg_42_0, arg_42_1, 1, true, arg_42_2)
 
 	return var_42_2
 end
 
-function var_0_33.SkillTranform(arg_43_0, arg_43_1)
-	local var_43_0 = var_0_33.GetSkillDataTemplate(arg_43_1)
+function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
+	local var_43_0 = BattleDataFunction.GetSkillDataTemplate(arg_43_1)
 
 	if not var_43_0 then
 		return arg_43_1
@@ -703,8 +704,8 @@ function var_0_33.SkillTranform(arg_43_0, arg_43_1)
 	end
 end
 
-function var_0_33.GenerateHiddenBuff(arg_44_0)
-	local var_44_0 = var_0_33.GetPlayerShipModelFromID(arg_44_0).hide_buff_list
+function BattleDataFunction.GenerateHiddenBuff(arg_44_0)
+	local var_44_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_44_0).hide_buff_list
 	local var_44_1 = {}
 
 	for iter_44_0, iter_44_1 in ipairs(var_44_0) do
@@ -718,11 +719,11 @@ function var_0_33.GenerateHiddenBuff(arg_44_0)
 	return var_44_1
 end
 
-function var_0_33.GetDivingFilter(arg_45_0)
-	return var_0_31[arg_45_0].diving_filter
+function BattleDataFunction.GetDivingFilter(arg_45_0)
+	return map_data[arg_45_0].diving_filter
 end
 
-function var_0_33.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
+function BattleDataFunction.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
 	local var_46_0 = arg_46_0 - arg_46_2
 
 	return {
@@ -760,35 +761,35 @@ function var_0_33.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_46_2, arg_
 	}
 end
 
-function var_0_33.GetEnvironmentBehaviour(arg_47_0)
-	assert(var_0_23[arg_47_0] ~= nil, ">>battle_environment_behaviour_template<< 找不到环境行为配置：id = " .. arg_47_0)
+function BattleDataFunction.GetEnvironmentBehaviour(arg_47_0)
+	assert(battle_environment_behaviour_template[arg_47_0] ~= nil, ">>battle_environment_behaviour_template<< 找不到环境行为配置：id = " .. arg_47_0)
 
-	return var_0_23[arg_47_0]
+	return battle_environment_behaviour_template[arg_47_0]
 end
 
-function var_0_33.AttachUltimateBonus(arg_48_0)
+function BattleDataFunction.AttachUltimateBonus(arg_48_0)
 	local var_48_0 = arg_48_0:GetTemplateID()
 
 	if not Ship.IsMaxStarByTmpID(var_48_0) then
 		return
 	end
 
-	local var_48_1 = var_0_33.GetPlayerShipModelFromID(var_48_0).specific_type
+	local var_48_1 = BattleDataFunction.GetPlayerShipModelFromID(var_48_0).specific_type
 
 	for iter_48_0, iter_48_1 in ipairs(var_48_1) do
 		if iter_48_1 == ShipType.SpecificTypeTable.gunner then
-			var_0_3.SetCurrent(arg_48_0, "barrageCounterMod", var_0_1.UltimateBonus.GunnerCountMod)
+			BattleAttr.SetCurrent(arg_48_0, "barrageCounterMod", BattleConst.UltimateBonus.GunnerCountMod)
 		elseif iter_48_1 == ShipType.SpecificTypeTable.torpedo then
-			local var_48_2 = var_0_0.Battle.BattleBuffUnit.New(var_0_1.UltimateBonus.TorpedoBarrageBuff)
+			local var_48_2 = ys.Battle.BattleBuffUnit.New(BattleConst.UltimateBonus.TorpedoBarrageBuff)
 
 			arg_48_0:AddBuff(var_48_2)
 		elseif iter_48_1 == ShipType.SpecificTypeTable.auxiliary then
-			var_0_33.AuxBoost(arg_48_0)
+			BattleDataFunction.AuxBoost(arg_48_0)
 		end
 	end
 end
 
-function var_0_33.AuxBoost(arg_49_0)
+function BattleDataFunction.AuxBoost(arg_49_0)
 	local var_49_0 = arg_49_0:GetEquipment()
 
 	for iter_49_0, iter_49_1 in ipairs(var_49_0) do
@@ -801,18 +802,18 @@ function var_0_33.AuxBoost(arg_49_0)
 				if var_49_1[var_49_2] then
 					local var_49_3 = var_49_1["value_" .. iter_49_2]
 					local var_49_4 = AttributeType.ConvertBattleAttrName(var_49_1[var_49_2])
-					local var_49_5 = var_0_3.GetBase(arg_49_0, var_49_4) + var_49_3 * var_0_1.UltimateBonus.AuxBoostValue
+					local var_49_5 = BattleAttr.GetBase(arg_49_0, var_49_4) + var_49_3 * BattleConst.UltimateBonus.AuxBoostValue
 
-					var_0_3.SetCurrent(arg_49_0, var_49_4, var_49_5)
-					var_0_3.SetBaseAttr(arg_49_0)
+					BattleAttr.SetCurrent(arg_49_0, var_49_4, var_49_5)
+					BattleAttr.SetBaseAttr(arg_49_0)
 				end
 			end
 		end
 	end
 end
 
-function var_0_33.GetSLGStrategyBuffByCombatBuffID(arg_50_0)
-	for iter_50_0, iter_50_1 in pairs(var_0_32) do
+function BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(arg_50_0)
+	for iter_50_0, iter_50_1 in pairs(strategy_data_template) do
 		if iter_50_1.buff_id == arg_50_0 then
 			return iter_50_1
 		end

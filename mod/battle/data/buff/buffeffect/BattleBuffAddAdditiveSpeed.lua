@@ -1,59 +1,75 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = class("BattleBuffAddAdditiveSpeed", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleBuffAddAdditiveSpeed = class("BattleBuffAddAdditiveSpeed", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAddAdditiveSpeed = var_0_2
-var_0_2.__name = "BattleBuffAddAdditiveSpeed"
+ys.Battle.BattleBuffAddAdditiveSpeed = BattleBuffAddAdditiveSpeed
+BattleBuffAddAdditiveSpeed.__name = "BattleBuffAddAdditiveSpeed"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAdditiveSpeed.Ctor(self, effectData)
+	BattleBuffAddAdditiveSpeed.super.Ctor(self, effectData)
 end
 
-function var_0_2.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._singularity = arg_2_0._tempData.arg_list.singularity or {
+function BattleBuffAddAdditiveSpeed.SetArgs(self, owner, buff)
+	-- 指的是黑洞的中心位置，往这个位置吸引
+	self._singularity = self._tempData.arg_list.singularity or {
 		x = 0,
 		z = 0
 	}
-	arg_2_0._casterGravity = arg_2_0._tempData.arg_list.gravitationalCaster
-	arg_2_0._force = arg_2_0._tempData.arg_list.force
-	arg_2_0._forceScalteRate = arg_2_0._tempData.arg_list.scale_rate
+	-- 主要决定施法者会不会影响黑洞的位置
+	self._casterGravity = self._tempData.arg_list.gravitationalCaster
+	-- 牵引力
+	self._force = self._tempData.arg_list.force
+	-- 从下面逻辑来看，这个参数决定牵引力是否随距离变化而变化
+	self._forceScalteRate = self._tempData.arg_list.scale_rate
 
-	if not arg_2_0._casterGravity then
-		arg_2_0._staticSingularity = Vector3.New(arg_2_0._singularity.x, 0, arg_2_0._singularity.z)
+	if not self._casterGravity then
+		self._staticSingularity = Vector3.New(self._singularity.x, 0, self._singularity.z)
 	else
-		local var_2_0 = arg_2_2:GetCaster():GetIFF()
+		-- 如果有casterGravity，根据阵营调整黑洞位置
+		local iff = buff:GetCaster():GetIFF()
 
-		arg_2_0._singularityOffset = Vector3.New(arg_2_0._singularity.x * var_2_0, 0, arg_2_0._singularity.z)
+		self._singularityOffset = Vector3.New(self._singularity.x * iff, 0, self._singularity.z)
 	end
 end
 
-function var_0_2.onUpdate(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0
+--- @class BattleBuffAddAdditiveSpeed
+--- @param owner BattleUnit: 这里指的是被Buff作用的单位
+--- @param buff BattleBuffUnit
+--- @return nil
+function BattleBuffAddAdditiveSpeed.onUpdate(self, owner, buff)
+	local singularity
 
-	if arg_3_0._casterGravity then
-		var_3_0 = arg_3_2:GetCaster():GetPosition() + arg_3_0._singularityOffset
+	if self._casterGravity then
+		singularity = buff:GetCaster():GetPosition() + self._singularityOffset
 	else
-		var_3_0 = arg_3_0._staticSingularity
+		singularity = self._staticSingularity
 	end
+	-- 计算从单位位置到黑洞中心的向量
+	local vector = pg.Tool.FilterY(singularity - owner:GetPosition())
+	-- 归一化作为方向
+	local direction = vector.normalized
+	-- 牵引力数值
+	local force = self._force
+	-- 距离
+	local distance = vector.magnitude
 
-	local var_3_1 = pg.Tool.FilterY(var_3_0 - arg_3_1:GetPosition())
-	local var_3_2 = var_3_1.normalized
-	local var_3_3 = arg_3_0._force
-	local var_3_4 = var_3_1.magnitude
-
-	if var_3_4 < 2 then
-		var_3_3 = 1e-08
-	elseif arg_3_0._forceScalteRate then
-		var_3_3 = math.min(var_3_4, 1 / var_3_4 * var_3_3)
+	-- 如果距离很近了，基本不再牵引
+	if distance < 2 then
+		force = 1e-08
+	elseif self._forceScalteRate then
+		-- 取min(distance, force/distance)作为牵引力，距离越远牵引力越小
+		force = math.min(distance, 1 / distance * force)
 	end
+	-- 每帧的牵引速度增量
+	-- 注：碧蓝航线的"力"是简化的实现，直接改变速度，不是通过加速度来改变速度
+	-- 虽然游戏内也确实有加速度机制，但加速度一般是设定的恒定值，与力无关
+	local additiveSpeed = direction * force
 
-	local var_3_5 = var_3_2 * var_3_3
-
-	arg_3_1:SetAdditiveSpeed(var_3_5)
+	owner:SetAdditiveSpeed(additiveSpeed)
 end
 
-function var_0_2.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:RemoveAdditiveSpeed()
+function BattleBuffAddAdditiveSpeed.onRemove(self, owner, buff)
+	owner:RemoveAdditiveSpeed()
 end

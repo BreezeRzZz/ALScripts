@@ -1241,23 +1241,23 @@ function BattleUnit.AddBuff(arg_134_0, arg_134_1, arg_134_2)
 	})
 end
 
-function BattleUnit.SetBuffStack(arg_135_0, arg_135_1, arg_135_2, arg_135_3)
-	if arg_135_3 <= 0 then
-		arg_135_0:RemoveBuff(arg_135_1)
+function BattleUnit.SetBuffStack(self, buffId, buffLevel, stack)
+	if stack <= 0 then
+		self:RemoveBuff(buffId)
 	else
-		local var_135_0 = arg_135_0:GetBuff(arg_135_1)
+		local buff = self:GetBuff(buffId)
 
-		if var_135_0 then
-			var_135_0:UpdateStack(arg_135_0, arg_135_3)
+		if buff then
+			buff:UpdateStack(self, stack)
 
-			return var_135_0
+			return buff
 		else
-			local var_135_1 = ys.Battle.BattleBuffUnit.New(arg_135_1, arg_135_2)
+			local newBuff = ys.Battle.BattleBuffUnit.New(buffId, buffLevel)
 
-			arg_135_0:AddBuff(var_135_1)
-			var_135_1:UpdateStack(arg_135_0, arg_135_3)
+			self:AddBuff(newBuff)
+			newBuff:UpdateStack(self, stack)
 
-			return var_135_1
+			return newBuff
 		end
 	end
 end
@@ -1645,7 +1645,7 @@ function BattleUnit.GetMaster(arg_196_0)
 	return nil
 end
 
-function BattleUnit.IsSpectre(arg_197_0)
+function BattleUnit.IsSpectre(self)
 	return
 end
 

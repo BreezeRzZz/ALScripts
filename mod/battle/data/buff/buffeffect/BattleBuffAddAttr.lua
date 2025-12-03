@@ -8,11 +8,11 @@ BattleBuffAddAttr.__name = "BattleBuffAddAttr"
 BattleBuffAddAttr.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 
 --- @class BattleBuffAddAttr
---- @param template table
+--- @param effectData table
 --- @return nil
 --- 构造函数
-function BattleBuffAddAttr.Ctor(self, template)
-	ys.Battle.BattleBuffAddAttr.super.Ctor(self, template)
+function BattleBuffAddAttr.Ctor(self, effectData)
+	ys.Battle.BattleBuffAddAttr.super.Ctor(self, effectData)
 end
 
 --- @return number
@@ -43,7 +43,7 @@ end
 --- @param owner BattleUnit
 --- @param buff BattleBuffUnit
 --- @return nil
---- 当Effect附加时调用该回调
+--- 当Buff附加时立刻调用该回调
 function BattleBuffAddAttr.onAttach(self, owner, buff)
 	self:UpdateAttr(owner)
 end
@@ -51,7 +51,7 @@ end
 --- @param owner BattleUnit
 --- @param buff BattleBuffUnit
 --- @return nil
---- 当Effect叠加时调用该回调
+--- 当Buff叠加时调用该回调
 --- 相当于效果每层叠加
 function BattleBuffAddAttr.onStack(self, owner, buff)
 	self._number = self._numberBase * buff._stack
@@ -62,7 +62,7 @@ end
 --- @param owner BattleUnit
 --- @param buff BattleBuffUnit
 --- @return nil
---- 当Effect移除时调用该回调
+--- 当Buff移除时调用该回调
 --- 数值归0
 function BattleBuffAddAttr.onRemove(self, owner, buff)
 	self._number = 0

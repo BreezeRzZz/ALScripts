@@ -1,11 +1,11 @@
-local var_0_0 = class("Fleet", import(".BaseVO"))
+local Fleet = class("Fleet", import(".BaseVO"))
 
-var_0_0.C_TEAM_NAME = {
+Fleet.C_TEAM_NAME = {
 	vanguard = i18n("word_vanguard_fleet"),
 	main = i18n("word_main_fleet"),
 	submarine = i18n("word_sub_fleet")
 }
-var_0_0.DEFAULT_NAME = {
+Fleet.DEFAULT_NAME = {
 	i18n("ship_formationUI_fleetName1"),
 	i18n("ship_formationUI_fleetName2"),
 	i18n("ship_formationUI_fleetName3"),
@@ -18,7 +18,7 @@ var_0_0.DEFAULT_NAME = {
 	[102] = i18n("ship_formationUI_fleetName_challenge"),
 	[103] = i18n("ship_formationUI_fleetName_challenge_sub")
 }
-var_0_0.DEFAULT_NAME_FOR_DOCKYARD = {
+Fleet.DEFAULT_NAME_FOR_DOCKYARD = {
 	i18n("ship_formationUI_fleetName1"),
 	i18n("ship_formationUI_fleetName2"),
 	i18n("ship_formationUI_fleetName3"),
@@ -31,7 +31,7 @@ var_0_0.DEFAULT_NAME_FOR_DOCKYARD = {
 	[102] = i18n("ship_formationUI_fleetName_challenge"),
 	[103] = i18n("ship_formationUI_fleetName_challenge_sub")
 }
-var_0_0.DEFAULT_NAME_BOSS_ACT = {
+Fleet.DEFAULT_NAME_BOSS_ACT = {
 	i18n("ship_formationUI_fleetName_easy"),
 	i18n("ship_formationUI_fleetName_normal"),
 	i18n("ship_formationUI_fleetName_hard"),
@@ -43,7 +43,7 @@ var_0_0.DEFAULT_NAME_BOSS_ACT = {
 	[14] = i18n("ship_formationUI_fleetName_extra_ss"),
 	[15] = i18n("ship_formationUI_fleetName_sp_ss")
 }
-var_0_0.DEFAULT_NAME_BOSS_SINGLE_ACT = {
+Fleet.DEFAULT_NAME_BOSS_SINGLE_ACT = {
 	i18n("ship_formationUI_fleetName_easy"),
 	i18n("ship_formationUI_fleetName_normal"),
 	i18n("ship_formationUI_fleetName_hard"),
@@ -55,7 +55,7 @@ var_0_0.DEFAULT_NAME_BOSS_SINGLE_ACT = {
 	[14] = i18n("ship_formationUI_fleetName_sp_ss"),
 	[15] = i18n("ship_formationUI_fleetName_extra_ss")
 }
-var_0_0.DEFAULT_NAME_BOSS_SINGLE_VARIABLE_ACT = {
+Fleet.DEFAULT_NAME_BOSS_SINGLE_VARIABLE_ACT = {
 	i18n("ship_formationUI_fleetName_1"),
 	i18n("ship_formationUI_fleetName_2"),
 	i18n("ship_formationUI_fleetName_3"),
@@ -70,16 +70,16 @@ var_0_0.DEFAULT_NAME_BOSS_SINGLE_VARIABLE_ACT = {
 	i18n("ship_formationUI_fleetName_12"),
 	(i18n("ship_formationUI_fleetName_13"))
 }
-var_0_0.REGULAR_FLEET_ID = 1
-var_0_0.REGULAR_FLEET_NUMS = 6
-var_0_0.SUBMARINE_FLEET_ID = 11
-var_0_0.SUBMARINE_FLEET_NUMS = 4
-var_0_0.MEGA_SUBMARINE_FLEET_OFFSET = 100
+Fleet.REGULAR_FLEET_ID = 1
+Fleet.REGULAR_FLEET_NUMS = 6
+Fleet.SUBMARINE_FLEET_ID = 11
+Fleet.SUBMARINE_FLEET_NUMS = 4
+Fleet.MEGA_SUBMARINE_FLEET_OFFSET = 100
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
+function Fleet.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.id = arg_1_1.id
 	arg_1_0.name = arg_1_1.name or ""
-	arg_1_0.defaultName = var_0_0.DEFAULT_NAME[arg_1_0.id]
+	arg_1_0.defaultName = Fleet.DEFAULT_NAME[arg_1_0.id]
 
 	arg_1_0:updateShips(arg_1_1.ship_list)
 
@@ -94,7 +94,7 @@ function var_0_0.Ctor(arg_1_0, arg_1_1)
 	arg_1_0:updateCommanderSkills()
 end
 
-function var_0_0.isUnlock(arg_2_0)
+function Fleet.isUnlock(arg_2_0)
 	local var_2_0 = {
 		nil,
 		nil,
@@ -115,15 +115,15 @@ function var_0_0.isUnlock(arg_2_0)
 	return true
 end
 
-function var_0_0.containShip(arg_3_0, arg_3_1)
+function Fleet.containShip(arg_3_0, arg_3_1)
 	return table.contains(arg_3_0.ships, arg_3_1.id)
 end
 
-function var_0_0.isFirstFleet(arg_4_0)
-	return arg_4_0.id == var_0_0.REGULAR_FLEET_ID
+function Fleet.isFirstFleet(arg_4_0)
+	return arg_4_0.id == Fleet.REGULAR_FLEET_ID
 end
 
-function var_0_0.outputCommanders(arg_5_0)
+function Fleet.outputCommanders(arg_5_0)
 	local var_5_0 = {}
 
 	for iter_5_0, iter_5_1 in pairs(arg_5_0.commanderIds) do
@@ -137,7 +137,7 @@ function var_0_0.outputCommanders(arg_5_0)
 	return var_5_0
 end
 
-function var_0_0.getCommanders(arg_6_0)
+function Fleet.getCommanders(arg_6_0)
 	local var_6_0 = {}
 
 	for iter_6_0, iter_6_1 in pairs(arg_6_0.commanderIds) do
@@ -147,11 +147,11 @@ function var_0_0.getCommanders(arg_6_0)
 	return var_6_0
 end
 
-function var_0_0.getCommanderByPos(arg_7_0, arg_7_1)
+function Fleet.getCommanderByPos(arg_7_0, arg_7_1)
 	return arg_7_0:getCommanders()[arg_7_1]
 end
 
-function var_0_0.updateCommanderByPos(arg_8_0, arg_8_1, arg_8_2)
+function Fleet.updateCommanderByPos(arg_8_0, arg_8_1, arg_8_2)
 	if arg_8_2 then
 		arg_8_0.commanderIds[arg_8_1] = arg_8_2.id
 	else
@@ -161,7 +161,7 @@ function var_0_0.updateCommanderByPos(arg_8_0, arg_8_1, arg_8_2)
 	arg_8_0:updateCommanderSkills()
 end
 
-function var_0_0.getCommandersAddition(arg_9_0)
+function Fleet.getCommandersAddition(arg_9_0)
 	local var_9_0 = {}
 
 	for iter_9_0, iter_9_1 in pairs(CommanderConst.PROPERTIES) do
@@ -182,7 +182,7 @@ function var_0_0.getCommandersAddition(arg_9_0)
 	return var_9_0
 end
 
-function var_0_0.getCommandersTalentDesc(arg_10_0)
+function Fleet.getCommandersTalentDesc(arg_10_0)
 	local var_10_0 = {}
 
 	for iter_10_0, iter_10_1 in pairs(arg_10_0:getCommanders()) do
@@ -204,7 +204,7 @@ function var_0_0.getCommandersTalentDesc(arg_10_0)
 	return var_10_0
 end
 
-function var_0_0.findCommanderBySkillId(arg_11_0, arg_11_1)
+function Fleet.findCommanderBySkillId(arg_11_0, arg_11_1)
 	local var_11_0 = arg_11_0:getCommanders()
 
 	for iter_11_0, iter_11_1 in pairs(var_11_0) do
@@ -218,7 +218,7 @@ function var_0_0.findCommanderBySkillId(arg_11_0, arg_11_1)
 	end
 end
 
-function var_0_0.updateCommanderSkills(arg_14_0)
+function Fleet.updateCommanderSkills(arg_14_0)
 	local var_14_0 = #arg_14_0.skills
 
 	while var_14_0 > 0 do
@@ -242,7 +242,7 @@ function var_0_0.updateCommanderSkills(arg_14_0)
 	end
 end
 
-function var_0_0.buildBattleBuffList(arg_15_0)
+function Fleet.buildBattleBuffList(arg_15_0)
 	local var_15_0 = {}
 	local var_15_1, var_15_2 = FleetSkill.triggerSkill(arg_15_0, FleetSkill.TypeBattleBuff)
 
@@ -304,11 +304,11 @@ function var_0_0.buildBattleBuffList(arg_15_0)
 	return var_15_0
 end
 
-function var_0_0.getSkills(arg_16_0)
+function Fleet.getSkills(arg_16_0)
 	return arg_16_0.skills
 end
 
-function var_0_0.getShipIds(arg_17_0)
+function Fleet.getShipIds(arg_17_0)
 	local var_17_0 = {}
 	local var_17_1 = {
 		arg_17_0.mainShips,
@@ -325,21 +325,21 @@ function var_0_0.getShipIds(arg_17_0)
 	return var_17_0
 end
 
-function var_0_0.GetRawShipIds(arg_18_0)
+function Fleet.GetRawShipIds(arg_18_0)
 	return arg_18_0.ships
 end
 
-function var_0_0.GetRawCommanderIds(arg_19_0)
+function Fleet.GetRawCommanderIds(arg_19_0)
 	return arg_19_0.commanderIds
 end
 
-function var_0_0.findSkills(arg_20_0, arg_20_1)
+function Fleet.findSkills(arg_20_0, arg_20_1)
 	return _.filter(arg_20_0:getSkills(), function(arg_21_0)
 		return arg_21_0:GetType() == arg_20_1
 	end)
 end
 
-function var_0_0.updateShips(arg_22_0, arg_22_1)
+function Fleet.updateShips(arg_22_0, arg_22_1)
 	arg_22_0.ships = {}
 	arg_22_0.vanguardShips = {}
 	arg_22_0.mainShips = {}
@@ -356,13 +356,13 @@ function var_0_0.updateShips(arg_22_0, arg_22_1)
 	end
 end
 
-function var_0_0.switchShip(arg_23_0, arg_23_1, arg_23_2, arg_23_3)
+function Fleet.switchShip(arg_23_0, arg_23_1, arg_23_2, arg_23_3)
 	local var_23_0 = arg_23_0:getTeamByName(arg_23_1)
 
 	var_23_0[arg_23_2], var_23_0[arg_23_3] = var_23_0[arg_23_3], var_23_0[arg_23_2]
 end
 
-function var_0_0.getShipPos(arg_24_0, arg_24_1)
+function Fleet.getShipPos(arg_24_0, arg_24_1)
 	if not arg_24_1 then
 		return
 	end
@@ -373,7 +373,7 @@ function var_0_0.getShipPos(arg_24_0, arg_24_1)
 	return table.indexof(var_24_1, arg_24_1.id) or -1, var_24_0
 end
 
-function var_0_0.getTeamByName(arg_25_0, arg_25_1)
+function Fleet.getTeamByName(arg_25_0, arg_25_1)
 	if arg_25_1 == TeamType.Vanguard then
 		return arg_25_0.vanguardShips
 	elseif arg_25_1 == TeamType.Main then
@@ -383,7 +383,7 @@ function var_0_0.getTeamByName(arg_25_0, arg_25_1)
 	end
 end
 
-function var_0_0.CanInsertShip(arg_26_0, arg_26_1, arg_26_2)
+function Fleet.CanInsertShip(arg_26_0, arg_26_1, arg_26_2)
 	if arg_26_0:isFull() or arg_26_0:containShip(arg_26_1) or not arg_26_1:isAvaiable() or #arg_26_0:getTeamByName(arg_26_2) >= TeamType.GetTeamShipMax(arg_26_2) then
 		return false
 	end
@@ -391,7 +391,7 @@ function var_0_0.CanInsertShip(arg_26_0, arg_26_1, arg_26_2)
 	return true
 end
 
-function var_0_0.insertShip(arg_27_0, arg_27_1, arg_27_2, arg_27_3)
+function Fleet.insertShip(arg_27_0, arg_27_1, arg_27_2, arg_27_3)
 	if not arg_27_0:CanInsertShip(arg_27_1, arg_27_3) then
 		errorMsg("fleet insert error")
 		pg.TipsMgr.GetInstance():ShowTips("fleet insert error")
@@ -407,7 +407,7 @@ function var_0_0.insertShip(arg_27_0, arg_27_1, arg_27_2, arg_27_3)
 	end
 end
 
-function var_0_0.canRemove(arg_28_0, arg_28_1)
+function Fleet.canRemove(arg_28_0, arg_28_1)
 	local var_28_0, var_28_1 = arg_28_0:getShipPos(arg_28_1)
 
 	if var_28_0 > 0 and #(arg_28_0:getTeamByName(var_28_1) or {}) == 1 and arg_28_0:isFirstFleet() then
@@ -417,27 +417,27 @@ function var_0_0.canRemove(arg_28_0, arg_28_1)
 	end
 end
 
-function var_0_0.isRegularFleet(arg_29_0)
-	return arg_29_0.id >= var_0_0.SUBMARINE_FLEET_ID and arg_29_0.id < var_0_0.SUBMARINE_FLEET_ID + var_0_0.SUBMARINE_FLEET_NUMS or arg_29_0.id >= var_0_0.REGULAR_FLEET_ID and arg_29_0.id < var_0_0.REGULAR_FLEET_ID + var_0_0.REGULAR_FLEET_NUMS
+function Fleet.isRegularFleet(arg_29_0)
+	return arg_29_0.id >= Fleet.SUBMARINE_FLEET_ID and arg_29_0.id < Fleet.SUBMARINE_FLEET_ID + Fleet.SUBMARINE_FLEET_NUMS or arg_29_0.id >= Fleet.REGULAR_FLEET_ID and arg_29_0.id < Fleet.REGULAR_FLEET_ID + Fleet.REGULAR_FLEET_NUMS
 end
 
-function var_0_0.isSubmarineFleet(arg_30_0)
-	return arg_30_0.id >= var_0_0.SUBMARINE_FLEET_ID and arg_30_0.id < var_0_0.SUBMARINE_FLEET_ID + var_0_0.SUBMARINE_FLEET_NUMS
+function Fleet.isSubmarineFleet(arg_30_0)
+	return arg_30_0.id >= Fleet.SUBMARINE_FLEET_ID and arg_30_0.id < Fleet.SUBMARINE_FLEET_ID + Fleet.SUBMARINE_FLEET_NUMS
 end
 
-function var_0_0.isPVPFleet(arg_31_0)
+function Fleet.isPVPFleet(arg_31_0)
 	return arg_31_0.id == FleetProxy.PVP_FLEET_ID
 end
 
-function var_0_0.getFleetType(arg_32_0)
-	if arg_32_0.id and arg_32_0.id >= var_0_0.SUBMARINE_FLEET_ID and arg_32_0.id < var_0_0.SUBMARINE_FLEET_ID + var_0_0.SUBMARINE_FLEET_NUMS then
+function Fleet.getFleetType(arg_32_0)
+	if arg_32_0.id and arg_32_0.id >= Fleet.SUBMARINE_FLEET_ID and arg_32_0.id < Fleet.SUBMARINE_FLEET_ID + Fleet.SUBMARINE_FLEET_NUMS then
 		return FleetType.Submarine
 	end
 
 	return FleetType.Normal
 end
 
-function var_0_0.removeShip(arg_33_0, arg_33_1)
+function Fleet.removeShip(arg_33_0, arg_33_1)
 	assert(arg_33_0:containShip(arg_33_1), "ship are not in fleet")
 
 	local var_33_0 = arg_33_1.id
@@ -471,7 +471,7 @@ function var_0_0.removeShip(arg_33_0, arg_33_1)
 	return nil
 end
 
-function var_0_0.isFull(arg_34_0)
+function Fleet.isFull(arg_34_0)
 	local var_34_0 = arg_34_0:getFleetType()
 
 	if var_34_0 == FleetType.Normal then
@@ -483,11 +483,11 @@ function var_0_0.isFull(arg_34_0)
 	return false
 end
 
-function var_0_0.isEmpty(arg_35_0)
+function Fleet.isEmpty(arg_35_0)
 	return #arg_35_0.ships == 0
 end
 
-function var_0_0.isLegalToFight(arg_36_0)
+function Fleet.isLegalToFight(arg_36_0)
 	local var_36_0 = arg_36_0:getFleetType()
 
 	if var_36_0 == FleetType.Normal then
@@ -503,7 +503,7 @@ function var_0_0.isLegalToFight(arg_36_0)
 	return true
 end
 
-function var_0_0.getSkillNum(arg_37_0)
+function Fleet.getSkillNum(arg_37_0)
 	local var_37_0 = {
 		"zhupao",
 		"yulei",
@@ -548,7 +548,7 @@ function var_0_0.getSkillNum(arg_37_0)
 	return var_37_1
 end
 
-function var_0_0.GetPropertiesSum(arg_38_0)
+function Fleet.GetPropertiesSum(arg_38_0)
 	local var_38_0 = {
 		cannon = 0,
 		antiAir = 0,
@@ -569,7 +569,7 @@ function var_0_0.GetPropertiesSum(arg_38_0)
 	return var_38_0
 end
 
-function var_0_0.GetCostSum(arg_39_0)
+function Fleet.GetCostSum(arg_39_0)
 	local var_39_0 = {
 		gold = 0,
 		oil = 0
@@ -586,7 +586,7 @@ function var_0_0.GetCostSum(arg_39_0)
 	return var_39_0
 end
 
-function var_0_0.getStartCost(arg_40_0)
+function Fleet.getStartCost(arg_40_0)
 	local var_40_0 = {
 		gold = 0,
 		oil = 0
@@ -602,7 +602,7 @@ function var_0_0.getStartCost(arg_40_0)
 	return var_40_0
 end
 
-function var_0_0.getEndCost(arg_41_0)
+function Fleet.getEndCost(arg_41_0)
 	local var_41_0 = {
 		gold = 0,
 		oil = 0
@@ -618,7 +618,7 @@ function var_0_0.getEndCost(arg_41_0)
 	return var_41_0
 end
 
-function var_0_0.GetGearScoreSum(arg_42_0, arg_42_1)
+function Fleet.GetGearScoreSum(arg_42_0, arg_42_1)
 	local var_42_0
 
 	if arg_42_1 == nil then
@@ -637,7 +637,7 @@ function var_0_0.GetGearScoreSum(arg_42_0, arg_42_1)
 	return var_42_1
 end
 
-function var_0_0.GetEnergyStatus(arg_43_0)
+function Fleet.GetEnergyStatus(arg_43_0)
 	local var_43_0 = false
 	local var_43_1 = ""
 	local var_43_2 = ""
@@ -667,7 +667,7 @@ function var_0_0.GetEnergyStatus(arg_43_0)
 	return var_43_0, i18n("ship_energy_low_warn", var_43_1, var_43_2)
 end
 
-function var_0_0.genRobotDataString(arg_45_0)
+function Fleet.genRobotDataString(arg_45_0)
 	local var_45_0 = getProxy(BayProxy):getRawData()
 	local var_45_1 = "99999,"
 
@@ -713,21 +713,21 @@ function var_0_0.genRobotDataString(arg_45_0)
 	return var_45_1 .. math.floor(var_45_2 + var_45_3) .. ","
 end
 
-function var_0_0.getIndex(arg_46_0)
-	if arg_46_0.id >= var_0_0.SUBMARINE_FLEET_ID and arg_46_0.id < var_0_0.SUBMARINE_FLEET_ID + var_0_0.SUBMARINE_FLEET_NUMS then
-		return arg_46_0.id - var_0_0.SUBMARINE_FLEET_ID + 1
-	elseif arg_46_0.id >= var_0_0.REGULAR_FLEET_ID and arg_46_0.id < var_0_0.REGULAR_FLEET_ID + var_0_0.REGULAR_FLEET_NUMS then
-		return arg_46_0.id - var_0_0.REGULAR_FLEET_ID + 1
+function Fleet.getIndex(arg_46_0)
+	if arg_46_0.id >= Fleet.SUBMARINE_FLEET_ID and arg_46_0.id < Fleet.SUBMARINE_FLEET_ID + Fleet.SUBMARINE_FLEET_NUMS then
+		return arg_46_0.id - Fleet.SUBMARINE_FLEET_ID + 1
+	elseif arg_46_0.id >= Fleet.REGULAR_FLEET_ID and arg_46_0.id < Fleet.REGULAR_FLEET_ID + Fleet.REGULAR_FLEET_NUMS then
+		return arg_46_0.id - Fleet.REGULAR_FLEET_ID + 1
 	end
 
 	return arg_46_0.id
 end
 
-function var_0_0.getShipCount(arg_47_0)
+function Fleet.getShipCount(arg_47_0)
 	return #arg_47_0.ships
 end
 
-function var_0_0.avgLevel(arg_48_0)
+function Fleet.avgLevel(arg_48_0)
 	local var_48_0 = 0
 
 	for iter_48_0, iter_48_1 in ipairs(arg_48_0.ships) do
@@ -737,7 +737,7 @@ function var_0_0.avgLevel(arg_48_0)
 	return math.floor(var_48_0 / #arg_48_0.ships)
 end
 
-function var_0_0.clearFleet(arg_49_0)
+function Fleet.clearFleet(arg_49_0)
 	local var_49_0 = Clone(arg_49_0.ships)
 	local var_49_1 = getProxy(BayProxy)
 
@@ -748,7 +748,7 @@ function var_0_0.clearFleet(arg_49_0)
 	end
 end
 
-function var_0_0.EnergyCheck(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
+function Fleet.EnergyCheck(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
 	arg_50_4 = arg_50_4 or "ship_energy_low_warn"
 
 	local var_50_0 = {}
@@ -799,7 +799,7 @@ function var_0_0.EnergyCheck(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
 	end
 end
 
-function var_0_0.getFleetAirDominanceValue(arg_54_0)
+function Fleet.getFleetAirDominanceValue(arg_54_0)
 	local var_54_0 = getProxy(BayProxy)
 	local var_54_1 = arg_54_0:getCommanders()
 	local var_54_2 = 0
@@ -813,7 +813,7 @@ function var_0_0.getFleetAirDominanceValue(arg_54_0)
 	return var_54_2
 end
 
-function var_0_0.RemoveUnusedItems(arg_56_0)
+function Fleet.RemoveUnusedItems(arg_56_0)
 	local var_56_0 = Clone(arg_56_0.ships)
 	local var_56_1 = getProxy(BayProxy)
 
@@ -843,7 +843,7 @@ function var_0_0.RemoveUnusedItems(arg_56_0)
 	end
 end
 
-function var_0_0.removeShipById(arg_57_0, arg_57_1)
+function Fleet.removeShipById(arg_57_0, arg_57_1)
 	for iter_57_0, iter_57_1 in ipairs(arg_57_0.ships) do
 		if iter_57_1 == arg_57_1 then
 			table.remove(arg_57_0.ships, iter_57_0)
@@ -871,7 +871,7 @@ function var_0_0.removeShipById(arg_57_0, arg_57_1)
 	end
 end
 
-function var_0_0.HaveShipsInEvent(arg_58_0)
+function Fleet.HaveShipsInEvent(arg_58_0)
 	local var_58_0 = getProxy(BayProxy):getRawData()
 
 	for iter_58_0, iter_58_1 in ipairs(arg_58_0.ships) do
@@ -881,50 +881,64 @@ function var_0_0.HaveShipsInEvent(arg_58_0)
 	end
 end
 
-function var_0_0.GetFleetSonarRange(arg_59_0)
-	local var_59_0 = getProxy(BayProxy)
-	local var_59_1 = 0
-	local var_59_2 = 0
-	local var_59_3 = 0
-	local var_59_4 = 0
-	local var_59_5 = ys.Battle.BattleConfig
+--- @class Fleet
+--- @return number
+--- 计算声纳范围
+function Fleet.GetFleetSonarRange(self)
+	local bayProxy = getProxy(BayProxy)
+	local sonarRange = 0
+	local extraSonarRange = 0
+	local equipmentExtraSonarRange = 0
+	local mainAntiSub = 0
+	local BattleConfig = ys.Battle.BattleConfig
 
-	for iter_59_0, iter_59_1 in ipairs(arg_59_0.ships) do
-		local var_59_6 = var_59_0:getShipById(iter_59_1)
+	for _, shipID in ipairs(self.ships) do
+		--- @type Ship
+		local ship = bayProxy:getShipById(shipID)
 
-		if var_59_6 then
-			local var_59_7 = var_59_6:getShipType()
-			local var_59_8 = var_59_5.VAN_SONAR_PROPERTY[var_59_7]
+		if ship then
+			local shipType = ship:getShipType()
+			local sonarProperty = BattleConfig.VAN_SONAR_PROPERTY[shipType]
 
-			if var_59_8 then
-				local var_59_9 = (var_59_6:getShipProperties()[AttributeType.AntiSub] or 0) / var_59_8.a - var_59_8.b
+			if sonarProperty then
+				-- 此处getShipProperties计算的是舰船的白字属性，即只计算（基础 + 强化) * (1 + 好感度加成) + 改造
+				-- 对于驱逐/导驱V: a = 2, b = 32, minRange = 45, maxRange = 100
+				-- 对于轻巡: a = 2.86, b = 0, minRange = 30, maxRange = 80
+				-- 公式: sonarRange = (AntiSub / a) - b
+				-- 1. 两种公式何时相等：x/2 - 32 > x/2.86 => x > 212.83
+					-- 反潜 <= 212时，轻巡的基础声呐范围更高；反潜 >= 213时，驱逐/导驱V的基础声呐范围更高
+				-- 2. 驱逐/导驱V达到最大声呐范围所需反潜：x/2 - 32 = 100 -> x = 264；最小：x/2 - 32 = 45 -> x = 154
+				-- 3. 轻巡达到最大声呐范围所需反潜：x/2.86 = 80 -> x = 228.8；最小：x/2.86 = 30 -> x = 85.8
+				local baseSonarRange = (ship:getShipProperties()[AttributeType.AntiSub] or 0) / sonarProperty.a - sonarProperty.b
 
-				var_59_1 = math.max(var_59_1, Mathf.Clamp(var_59_9, var_59_8.minRange, var_59_8.maxRange))
+				sonarRange = math.max(sonarRange, Mathf.Clamp(baseSonarRange, sonarProperty.minRange, sonarProperty.maxRange))
 			end
 
-			if table.contains(TeamType.MainShipType, var_59_7) then
-				var_59_4 = var_59_4 + (var_59_6:getShipProperties()[AttributeType.AntiSub] or 0)
+			if table.contains(TeamType.MainShipType, shipType) then
+				mainAntiSub = mainAntiSub + (ship:getShipProperties()[AttributeType.AntiSub] or 0)
 			end
 
-			for iter_59_2, iter_59_3 in ipairs(var_59_6:getActiveEquipments()) do
-				if iter_59_3 then
-					var_59_3 = var_59_3 + (iter_59_3:getConfig("equip_parameters").range or 0)
+			for _, equipment in ipairs(ship:getActiveEquipments()) do
+				if equipment then
+					equipmentExtraSonarRange = equipmentExtraSonarRange + (equipment:getConfig("equip_parameters").range or 0)
 				end
 			end
 		end
 	end
 
-	if var_59_1 ~= 0 then
-		local var_59_10 = var_59_5.MAIN_SONAR_PROPERTY
-		local var_59_11 = var_59_4 / var_59_10.a
+	if sonarRange ~= 0 then
+		local MAIN_SONAR_PROPERTY = BattleConfig.MAIN_SONAR_PROPERTY
+		-- a = 24, minRange = 0, maxRange = 15
+		-- 4. 主力单位达到最大声呐范围所需反潜：x/24 = 15 -> x = 360；最小：x/24 = 0 -> x = 0
+		local mainSonarRange = mainAntiSub / MAIN_SONAR_PROPERTY.a
 
-		var_59_2 = var_59_3 + Mathf.Clamp(var_59_11, var_59_10.minRange, var_59_10.maxRange)
+		extraSonarRange = equipmentExtraSonarRange + Mathf.Clamp(mainSonarRange, MAIN_SONAR_PROPERTY.minRange, MAIN_SONAR_PROPERTY.maxRange)
 	end
 
-	return var_59_1 + var_59_2
+	return sonarRange + extraSonarRange
 end
 
-function var_0_0.getInvestSums(arg_60_0)
+function Fleet.getInvestSums(arg_60_0)
 	local var_60_0 = getProxy(BayProxy)
 
 	local function var_60_1(arg_61_0, arg_61_1)
@@ -938,7 +952,7 @@ function var_0_0.getInvestSums(arg_60_0)
 	return math.pow(var_60_2, 0.6666666666666666)
 end
 
-function var_0_0.ExistActNpcShip(arg_62_0)
+function Fleet.ExistActNpcShip(arg_62_0)
 	local var_62_0 = getProxy(BayProxy)
 
 	for iter_62_0, iter_62_1 in ipairs(arg_62_0.ships) do
@@ -952,8 +966,8 @@ function var_0_0.ExistActNpcShip(arg_62_0)
 	return false
 end
 
-function var_0_0.GetName(arg_63_0)
-	return arg_63_0.name == "" and var_0_0.DEFAULT_NAME[arg_63_0.id] or arg_63_0.name
+function Fleet.GetName(arg_63_0)
+	return arg_63_0.name == "" and Fleet.DEFAULT_NAME[arg_63_0.id] or arg_63_0.name
 end
 
-return var_0_0
+return Fleet

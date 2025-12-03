@@ -1,98 +1,102 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleSkillUnit = class("BattleSkillUnit")
-var_0_0.Battle.BattleSkillUnit.__name = "BattleSkillUnit"
+ys.Battle.BattleSkillUnit = class("BattleSkillUnit")
+ys.Battle.BattleSkillUnit.__name = "BattleSkillUnit"
 
-local var_0_3 = var_0_0.Battle.BattleSkillUnit
+local BattleSkillUnit = ys.Battle.BattleSkillUnit
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._id = arg_1_1
-	arg_1_0._level = arg_1_2
-	arg_1_0._tempData = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(arg_1_1, arg_1_2)
-	arg_1_0._cd = arg_1_0._tempData.cd
-	arg_1_0._effectList = {}
-	arg_1_0._lastEffectTarget = {}
+function BattleSkillUnit.Ctor(self, skillId, skillLevel)
+	self._id = skillId
+	self._level = skillLevel
+	-- 获得skill_*.lua对应等级的技能数据
+	self._tempData = ys.Battle.BattleDataFunction.GetSkillTemplate(skillId, skillLevel)
+	self._cd = self._tempData.cd
+	self._effectList = {}
+	self._lastEffectTarget = {}
 
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.effect_list) do
-		local var_1_0 = iter_1_1.type
-
-		arg_1_0._effectList[iter_1_0] = var_0_0.Battle[var_1_0].New(iter_1_1, arg_1_2)
+	for index, effect in ipairs(self._tempData.effect_list) do
+		local effectType = effect.type
+		-- 构建的是BattleSkillEffect的子类实例
+		self._effectList[index] = ys.Battle[effectType].New(effect, skillLevel)
 	end
 
-	arg_1_0._finaleEffectCount = 0
-	arg_1_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
+	self._finaleEffectCount = 0
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_3.GenerateSpell(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	local var_2_0 = var_0_0.Battle.BattleSkillUnit.New(arg_2_0, arg_2_1)
+--- 类函数
+function BattleSkillUnit.GenerateSpell(skillId, skillLevel, owner, attachData)
+	local skill = ys.Battle.BattleSkillUnit.New(skillId, skillLevel)
 
-	var_2_0._attachData = arg_2_3
+	skill._attachData = attachData
 
-	return var_2_0
+	return skill
 end
 
-function var_0_3.GetSkillEffectList(arg_3_0)
-	return arg_3_0._effectList
+function BattleSkillUnit.GetSkillEffectList(self)
+	return self._effectList
 end
 
-function var_0_3.Cast(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = var_0_0.Battle.BattleState.GetInstance()
+function BattleSkillUnit.Cast(self, owner, commander)
+	local battleState = ys.Battle.BattleState.GetInstance()
 
-	if arg_4_0._tempData.focus_duration then
-		arg_4_1:DispatchCutIn(arg_4_0._tempData)
+	if self._tempData.focus_duration then
+		owner:DispatchCutIn(self._tempData)
 	end
 
-	if arg_4_0._tempData.painting == 1 then
-		if arg_4_2 then
-			arg_4_1:DispatchSkillFloat(arg_4_2:getSkills()[1]:getConfig("name"), arg_4_2:getPainting())
+	if self._tempData.painting == 1 then
+		if commander then
+			owner:DispatchSkillFloat(commander:getSkills()[1]:getConfig("name"), commander:getPainting())
 		else
-			arg_4_1:DispatchSkillFloat(arg_4_0._tempData.name)
+			owner:DispatchSkillFloat(self._tempData.name)
 		end
-	elseif type(arg_4_0._tempData.painting) == "string" then
-		arg_4_1:DispatchSkillFloat(arg_4_0._tempData.name, nil, arg_4_0._tempData.painting)
+	elseif type(self._tempData.painting) == "string" then
+		owner:DispatchSkillFloat(self._tempData.name, nil, self._tempData.painting)
 	end
 
-	local var_4_1 = type(arg_4_0._tempData.castCV)
+	local castCV = type(self._tempData.castCV)
 
-	if var_4_1 == "string" then
-		arg_4_1:DispatchVoice(arg_4_0._tempData.castCV)
-	elseif var_4_1 == "table" then
-		local var_4_2, var_4_3, var_4_4 = ShipWordHelper.GetWordAndCV(arg_4_0._tempData.castCV.skinID, arg_4_0._tempData.castCV.key)
+	if castCV == "string" then
+		owner:DispatchVoice(self._tempData.castCV)
+	elseif castCV == "table" then
+		local var_4_2, var_4_3, var_4_4 = ShipWordHelper.GetWordAndCV(self._tempData.castCV.skinID, self._tempData.castCV.key)
 
 		pg.CriMgr.GetInstance():PlaySoundEffect_V3(var_4_3)
 	end
 
-	if arg_4_0._tempData.sfx then
-		var_0_0.Battle.PlayBattleSFX(arg_4_0._tempData.sfx)
+	if self._tempData.sfx then
+		ys.Battle.PlayBattleSFX(self._tempData.sfx)
 	end
 
-	local var_4_5 = arg_4_0._attachData
+	local attachData = self._attachData
+	--- effect: BattleSkillEffect
+	for _, effect in ipairs(self._effectList) do
+		--- @type BattleUnit | table<BattleUnit>
+		local targetList = effect:GetTarget(owner, self)
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._effectList) do
-		local var_4_6 = iter_4_1:GetTarget(arg_4_1, arg_4_0)
+		self._lastEffectTarget = targetList
 
-		arg_4_0._lastEffectTarget = var_4_6
+		effect:SetCommander(commander)
 
-		iter_4_1:SetCommander(arg_4_2)
+		if effect:IsFinaleEffect() then
+			self._finaleEffectCount = self._finaleEffectCount + 1
 
-		if iter_4_1:IsFinaleEffect() then
-			arg_4_0._finaleEffectCount = arg_4_0._finaleEffectCount + 1
-
-			local function var_4_7()
-				arg_4_0:callbackCount(arg_4_1)
+			local function finaleCallBack()
+				-- 变为STATE_SKILL_END
+				self:callbackCount(owner)
 			end
 
-			iter_4_1:SetFinaleCallback(var_4_7)
+			effect:SetFinaleCallback(finaleCallBack)
 		end
 
-		iter_4_1:Effect(arg_4_1, var_4_6, var_4_5)
+		effect:Effect(owner, targetList, attachData)
 	end
 
-	local var_4_8 = arg_4_0._tempData.aniEffect
+	local var_4_8 = self._tempData.aniEffect
 
 	if var_4_8 and var_4_8 ~= "" then
 		local var_4_9 = {
@@ -102,39 +106,39 @@ function var_0_3.Cast(arg_4_0, arg_4_1, arg_4_2)
 			posFun = var_4_8.posFun
 		}
 
-		arg_4_1:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.ADD_EFFECT, var_4_9))
+		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, var_4_9))
 	end
 
-	if arg_4_0._tempData.action then
-		arg_4_1:StateChange(var_0_0.Battle.UnitState.STATE_SKILL_START)
+	if self._tempData.action then
+		owner:StateChange(ys.Battle.UnitState.STATE_SKILL_START)
 	end
 end
 
-function var_0_3.SetTarget(arg_6_0, arg_6_1)
+function BattleSkillUnit.SetTarget(arg_6_0, arg_6_1)
 	arg_6_0._lastEffectTarget = arg_6_1
 end
 
-function var_0_3.Interrupt(arg_7_0)
+function BattleSkillUnit.Interrupt(arg_7_0)
 	for iter_7_0, iter_7_1 in ipairs(arg_7_0._effectList) do
 		iter_7_1:Interrupt()
 	end
 end
 
-function var_0_3.Clear(arg_8_0)
+function BattleSkillUnit.Clear(arg_8_0)
 	for iter_8_0, iter_8_1 in ipairs(arg_8_0._effectList) do
 		iter_8_1:Clear()
 	end
 end
 
-function var_0_3.callbackCount(arg_9_0, arg_9_1)
-	arg_9_0._finaleEffectCount = arg_9_0._finaleEffectCount - 1
+function BattleSkillUnit.callbackCount(self, owner)
+	self._finaleEffectCount = self._finaleEffectCount - 1
 
-	if arg_9_0._finaleEffectCount == 0 and arg_9_0._tempData.action then
-		arg_9_1:StateChange(var_0_0.Battle.UnitState.STATE_SKILL_END)
+	if self._finaleEffectCount == 0 and self._tempData.action then
+		owner:StateChange(ys.Battle.UnitState.STATE_SKILL_END)
 	end
 end
 
-function var_0_3.GetDamageSum(arg_10_0)
+function BattleSkillUnit.GetDamageSum(arg_10_0)
 	local var_10_0 = 0
 
 	for iter_10_0, iter_10_1 in ipairs(arg_10_0._effectList) do
@@ -144,12 +148,12 @@ function var_0_3.GetDamageSum(arg_10_0)
 	return var_10_0
 end
 
-function var_0_3.IsFireSkill(arg_11_0, arg_11_1)
+function BattleSkillUnit.IsFireSkill(arg_11_0, arg_11_1)
 	local var_11_0 = false
-	local var_11_1 = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(arg_11_0, arg_11_1)
+	local var_11_1 = ys.Battle.BattleDataFunction.GetSkillTemplate(arg_11_0, arg_11_1)
 
 	for iter_11_0, iter_11_1 in ipairs(var_11_1.effect_list) do
-		if iter_11_1.type == var_0_0.Battle.BattleSkillFire.__name or iter_11_1.type == var_0_0.Battle.BattleSkillFireSupport.__name then
+		if iter_11_1.type == ys.Battle.BattleSkillFire.__name or iter_11_1.type == ys.Battle.BattleSkillFireSupport.__name then
 			var_11_0 = true
 
 			break

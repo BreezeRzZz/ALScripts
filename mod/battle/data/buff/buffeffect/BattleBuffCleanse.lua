@@ -1,36 +1,39 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffCleanse", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffCleanse = class("BattleBuffCleanse", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffCleanse = var_0_1
-var_0_1.__name = "BattleBuffCleanse"
+ys.Battle.BattleBuffCleanse = BattleBuffCleanse
+BattleBuffCleanse.__name = "BattleBuffCleanse"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffCleanse.Ctor(self, effectData)
+	BattleBuffCleanse.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._buffIDList = arg_2_0._tempData.arg_list.buff_id_list
-	arg_2_0._check_target = arg_2_0._tempData.arg_list.check_target
-	arg_2_0._minTargetNumber = arg_2_0._tempData.arg_list.minTargetNumber or 0
-	arg_2_0._maxTargetNumber = arg_2_0._tempData.arg_list.maxTargetNumber or 10000
+function BattleBuffCleanse.SetArgs(self, owner, buff)
+	self._buffIDList = self._tempData.arg_list.buff_id_list
+	self._check_target = self._tempData.arg_list.check_target
+	self._minTargetNumber = self._tempData.arg_list.minTargetNumber or 0
+	self._maxTargetNumber = self._tempData.arg_list.maxTargetNumber or 10000
 end
 
-function var_0_1.onTrigger(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	var_0_1.super.onTrigger(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
+function BattleBuffCleanse.onTrigger(self, owner, buff, args)
+	-- quota - 1，但好像这类effect一般没有quota属性，所以可能没啥用
+	BattleBuffCleanse.super.onTrigger(self, owner, buff, args)
 
-	if arg_3_0._check_target then
-		local var_3_0 = #arg_3_0:getTargetList(arg_3_1, arg_3_0._check_target, arg_3_0._tempData.arg_list, arg_3_3)
+	if self._check_target then
+		local targetNum = #self:getTargetList(owner, self._check_target, self._tempData.arg_list, args)
 
-		if var_3_0 >= arg_3_0._minTargetNumber and var_3_0 <= arg_3_0._maxTargetNumber then
-			for iter_3_0, iter_3_1 in ipairs(arg_3_0._buffIDList) do
-				arg_3_1:RemoveBuff(iter_3_1)
+		-- 在[minTargetNumber, maxTargetNumber]范围内才清除buff
+		-- 根据默认值，可以认为如果没有对应的min/max参数，则相当于不限制这边
+		if targetNum >= self._minTargetNumber and targetNum <= self._maxTargetNumber then
+			for _, buffID in ipairs(self._buffIDList) do
+				owner:RemoveBuff(buffID)
 			end
 		end
 	else
-		for iter_3_2, iter_3_3 in ipairs(arg_3_0._buffIDList) do
-			arg_3_1:RemoveBuff(iter_3_3)
+		for _, buffID in ipairs(self._buffIDList) do
+			owner:RemoveBuff(buffID)
 		end
 	end
 end

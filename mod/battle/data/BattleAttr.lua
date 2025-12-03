@@ -4,51 +4,52 @@ local BattleAttr = {}
 ys.Battle.BattleAttr = BattleAttr
 local BattleConst = ys.Battle.BattleConst
 
+-- 舰载机/召唤物的属性继承列表
 BattleAttr.AttrListInheritance = {
-	"level",
-	"formulaLevel",
-	"repressReduce",
-	"cannonPower",
-	"torpedoPower",
-	"antiAirPower",
-	"airPower",
-	"antiSubPower",
-	"fleetGS",
-	"loadSpeed",
-	"attackRating",
-	"dodgeRate",
-	"velocity",
-	"luck",
-	"cri",
-	"criDamage",
-	"criDamageResist",
-	"hiveExtraHP",
-	"GCT",
-	"bulletSpeedRatio",
-	"torpedoSpeedExtra",
-	"damageRatioBullet",
-	"damageEnhanceProjectile",
-	"healingEnhancement",
-	"injureRatio",
-	"injureRatioByCannon",
-	"injureRatioByBulletTorpedo",
-	"injureRatioByAir",
-	"damageRatioByCannon",
-	"damageRatioByBulletTorpedo",
-	"damageRatioByAir",
-	"damagePreventRantTorpedo",
-	"accuracyRateExtra",
-	"dodgeRateExtra",
-	"perfectDodge",
-	"immuneDirectHit",
-	"chargeBulletAccuracy",
-	"dropBombAccuracy",
-	"aircraftBooster",
-	"manualEnhancement",
-	"initialEnhancement",
-	"worldBuffResistance",
-	"airResistPierceActive",
-	"airResistPierce"
+	"level",	        			-- 等级
+	"formulaLevel",  				-- 用于公式计算的等级(考虑了安全海域)
+	"repressReduce", 				-- 海域压制减伤
+	"cannonPower",  				-- 炮击值
+	"torpedoPower", 				-- 雷击值
+	"antiAirPower", 				-- 防空值
+	"airPower",     				-- 航空值
+	"antiSubPower",					-- 反潜值
+	"fleetGS",						-- 舰队实力
+	"loadSpeed",					-- 装填值
+	"attackRating",					-- 命中值
+	"dodgeRate",				    -- 机动值
+	"velocity",						-- 航速
+	"luck",							-- 幸运值
+	"cri",							-- 暴击率
+	"criDamage",					-- 暴击伤害
+	"criDamageResist",				-- 暴击伤害抵抗
+	"hiveExtraHP",					-- 舰载机额外血量
+	"GCT",							-- 必定暴击
+	"bulletSpeedRatio",				-- 子弹速度倍率
+	"torpedoSpeedExtra",			-- 鱼雷额外速度
+	"damageRatioBullet",			-- 子弹伤害倍率
+	"damageEnhanceProjectile",		-- 投射物伤害增强
+	"healingEnhancement",			-- 治疗效果提升
+	"injureRatio",					-- 受伤倍率
+	"injureRatioByCannon",			-- 受炮击属性伤害倍率
+	"injureRatioByBulletTorpedo", 	-- 受雷击属性伤害倍率
+	"injureRatioByAir",				-- 受航空属性伤害倍率
+	"damageRatioByCannon",			-- 炮击属性伤害倍率
+	"damageRatioByBulletTorpedo",	-- 雷击属性伤害倍率
+	"damageRatioByAir",				-- 航空属性伤害倍率
+	"damagePreventRantTorpedo",		-- 鱼雷伤害减免率
+	"accuracyRateExtra",			-- 额外命中率
+	"dodgeRateExtra",				-- 额外闪避率
+	"perfectDodge",					-- 必定闪避
+	"immuneDirectHit",				-- 免疫触底攻击
+	"chargeBulletAccuracy",			-- 跨射精度
+	"dropBombAccuracy",				-- 航空炸弹精度
+	"aircraftBooster",				-- 舰载机额外移速
+	"manualEnhancement",			-- 手动增伤
+	"initialEnhancement",			-- 首轮增伤
+	"worldBuffResistance",			-- 大世界适应性的调整
+	"airResistPierceActive",		-- 是否航空减伤穿透（航母隐匿）
+	"airResistPierce"				-- 航空减伤穿透值
 }
 
 --- @param attrs table<any, string|nil>
@@ -59,11 +60,16 @@ function BattleAttr.InsertInheritedAttr(attrs)
 		BattleAttr.AttrListInheritance[#BattleAttr.AttrListInheritance + 1] = attr
 	end
 end
-
+-- 以下是动态添加的可继承属性
+-- 1. 弹药伤害增强
 BattleAttr.InsertInheritedAttr(ys.Battle.BattleConfig.AMMO_DAMAGE_ENHANCE)
+-- 2. 受弹药伤害减免
 BattleAttr.InsertInheritedAttr(ys.Battle.BattleConfig.AMMO_DAMAGE_REDUCE)
+-- 3. 弹药对甲倍率增强
 BattleAttr.InsertInheritedAttr(ys.Battle.BattleConfig.DAMAGE_AMMO_TO_ARMOR_RATE_ENHANCE)
+-- 4. 对甲倍率增强
 BattleAttr.InsertInheritedAttr(ys.Battle.BattleConfig.DAMAGE_TO_ARMOR_RATE_ENHANCE)
+-- 5. 舰种命中率提高
 BattleAttr.InsertInheritedAttr(ys.Battle.BattleConfig.SHIP_TYPE_ACCURACY_ENHANCE)
 -- 此处是Tag的处理方式，通过定义通用前缀
 BattleAttr.TAG_EHC_KEY = "DMG_TAG_EHC_"

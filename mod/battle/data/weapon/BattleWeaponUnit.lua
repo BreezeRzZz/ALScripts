@@ -247,8 +247,7 @@ end
 --- 设置皮肤数据
 function BattleWeaponUnit.SetSkinData(self, skinID)
 	self._skinID = skinID
-	-- 此处应为BattleUnitDataFunction的GetEquipSkin函数
-	-- 可能会自动获取需要的DataFunction？
+	-- 在BattleUnitDataFunction中
 	local bulletName, derivateBullet, derivateTorpedo, derivateBoom, fireFXName, hitFXName = BattleDataFunction.GetEquipSkin(self._skinID)
 
 	self:SetModelID(bulletName)
@@ -261,7 +260,7 @@ function BattleWeaponUnit.SetSkinData(self, skinID)
 		self._skinHitFX = hitFXName
 	end
 
-	-- 同理是BattleUnitDataFunction的GetEquipSkinSFX函数
+	-- 在BattleUnitDataFunction中
 	local hitSFX, missSFX = BattleDataFunction.GetEquipSkinSFX(self._skinID)
 
 	self._skinHixSFX = hitSFX
@@ -302,7 +301,7 @@ end
 --- 设置子弹皮肤
 function BattleWeaponUnit.setBulletSkin(self, bullet, bulletID)
 	if self._derivateSkinID then
-		-- 这里是BattleBulletDataFunction的GetBulletTmpDataFromID函数 
+		-- 在BattleBulletDataFunction中
 		local bulletType = BattleDataFunction.GetBulletTmpDataFromID(bulletID).type
 
 		if bulletType == BattleConst.BulletType.BOMB and self._derivateBoom ~= "" then
@@ -986,7 +985,7 @@ function BattleWeaponUnit.Fire(self, target)
 end
 
 --- @class BattleWeaponUnit
---- @param target BattleUnit
+--- @param target BattleUnit|nil
 --- @return nil
 --- 默认的攻击方法
 function BattleWeaponUnit.DoAttack(self, target)
@@ -1491,7 +1490,7 @@ end
 --- 获取武器的主要弹药类型
 --- - 获取第一位bullet的ammo_type
 function BattleWeaponUnit.GetPrimalAmmoType(self)
-	-- 这里是BattleBulletDataFunction的GetBulletTmpDataFromID函数
+	-- 在BattleBulletDataFunction中
 	return BattleDataFunction.GetBulletTmpDataFromID(self._tmpData.bullet_ID[1]).ammo_type
 end
 

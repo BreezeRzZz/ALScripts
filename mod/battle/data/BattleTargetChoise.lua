@@ -19,27 +19,28 @@ function BattleTargetChoise.TargetAll()
 end
 
 function BattleTargetChoise.TargetEntityUnit()
-	local var_4_0 = {}
-	local var_4_1 = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
+	local entityUnits = {}
+	local allUnits = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
 
-	for iter_4_0, iter_4_1 in pairs(var_4_1) do
-		if not iter_4_1:IsSpectre() then
-			var_4_0[#var_4_0 + 1] = iter_4_1
+	for _, unit in pairs(allUnits) do
+		-- 幽灵类不算
+		if not unit:IsSpectre() then
+			entityUnits[#entityUnits + 1] = unit
 		end
 	end
 
-	return var_4_0
+	return entityUnits
 end
 
-function BattleTargetChoise.TargetSpectreUnit(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = {}
-	local var_5_1 = ys.Battle.BattleDataProxy.GetInstance():GetSpectreShipList()
+function BattleTargetChoise.TargetSpectreUnit(caster, argList, candidateList)
+	local targetList = {}
+	local spectreList = ys.Battle.BattleDataProxy.GetInstance():GetSpectreShipList()
 
-	for iter_5_0, iter_5_1 in pairs(var_5_1) do
-		var_5_0[#var_5_0 + 1] = iter_5_1
+	for _, spectre in pairs(spectreList) do
+		targetList[#targetList + 1] = spectre
 	end
 
-	return var_5_0
+	return targetList
 end
 
 function BattleTargetChoise.TargetTemplate(arg_6_0, arg_6_1, arg_6_2)
@@ -142,27 +143,27 @@ function BattleTargetChoise.getShipListByIFF(arg_11_0)
 	return var_11_1
 end
 
-function BattleTargetChoise.TargetAllHelp(arg_12_0, arg_12_1, arg_12_2)
-	local var_12_0 = {}
+function BattleTargetChoise.TargetAllHelp(caster, argList, candidateList)
+	local targetList = {}
 
-	if arg_12_0 then
-		arg_12_1 = arg_12_1 or {}
+	if caster then
+		argList = argList or {}
 
-		local var_12_1 = arg_12_1.exceptCaster
-		local var_12_2 = arg_12_0:GetUniqueID()
-		local var_12_3 = arg_12_0:GetIFF()
-		local var_12_4 = arg_12_2 or BattleTargetChoise.getShipListByIFF(var_12_3)
+		local exceptCaster = argList.exceptCaster
+		local casterUID = caster:GetUniqueID()
+		local casterIFF = caster:GetIFF()
+		local _candidateList = candidateList or BattleTargetChoise.getShipListByIFF(casterIFF)
 
-		for iter_12_0, iter_12_1 in pairs(var_12_4) do
-			local var_12_5 = iter_12_1:GetUniqueID()
-
-			if iter_12_1:IsAlive() and iter_12_1:GetIFF() == var_12_3 and (not var_12_1 or var_12_5 ~= var_12_2) then
-				var_12_0[#var_12_0 + 1] = iter_12_1
+		for _, candidate in pairs(_candidateList) do
+			local candidateUID = candidate:GetUniqueID()
+			-- 如果exceptCaster为true，则排除施法者自己
+			if candidate:IsAlive() and candidate:GetIFF() == casterIFF and (not exceptCaster or candidateUID ~= casterUID) then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
 
-	return var_12_0
+	return targetList
 end
 
 function BattleTargetChoise.TargetHelpLeastHP(arg_13_0, arg_13_1, arg_13_2)
@@ -403,43 +404,46 @@ function BattleTargetChoise.TargetShipTypeFriendly(arg_25_0, arg_25_1, arg_25_2)
 	return var_25_0
 end
 
-function BattleTargetChoise.TargetSelf(arg_26_0)
+function BattleTargetChoise.TargetSelf(caster)
 	return {
-		arg_26_0
+		caster
 	}
 end
 
-function BattleTargetChoise.TargetAllHarm(arg_27_0, arg_27_1, arg_27_2)
-	local var_27_0 = {}
-	local var_27_1
-	local var_27_2 = arg_27_0:GetIFF()
-	local var_27_3 = ys.Battle.BattleDataProxy.GetInstance()
+function BattleTargetChoise.TargetAllHarm(caster, argList, candidateList)
+	local targetList = {}
+	local enemyList
+	local casterIFF = caster:GetIFF()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-	if arg_27_2 then
-		var_27_1 = {}
+	if candidateList then
+		enemyList = {}
 
-		for iter_27_0, iter_27_1 in ipairs(arg_27_2) do
-			if iter_27_1:GetIFF() * var_27_2 == -1 then
-				table.insert(var_27_1, iter_27_1)
+		for _, candidate in ipairs(candidateList) do
+			if candidate:GetIFF() * casterIFF == -1 then
+				table.insert(enemyList, candidate)
 			end
 		end
-	elseif var_27_2 == BattleConfig.FRIENDLY_CODE then
-		var_27_1 = var_27_3:GetFoeShipList()
-	elseif var_27_2 == BattleConfig.FOE_CODE then
-		var_27_1 = var_27_3:GetFriendlyShipList()
+	elseif casterIFF == BattleConfig.FRIENDLY_CODE then
+		enemyList = battleDataProxy:GetFoeShipList()
+	elseif casterIFF == BattleConfig.FOE_CODE then
+		enemyList = battleDataProxy:GetFriendlyShipList()
 	end
 
-	local var_27_4, var_27_5, var_27_6, var_27_7 = var_27_3:GetFieldBound()
+	local _, _, _, rightFieldBound = battleDataProxy:GetFieldBound()
 
-	if var_27_1 then
-		for iter_27_2, iter_27_3 in pairs(var_27_1) do
-			if iter_27_3:IsAlive() and var_27_7 > iter_27_3:GetPosition().x and iter_27_3:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
-				var_27_0[#var_27_0 + 1] = iter_27_3
+	if enemyList then
+		for _, enemy in pairs(enemyList) do
+			-- 注意：
+				-- 1. 敌人不能超过战场右边界(因为游戏机制会生成一些敌人在玩家不可见的地方做一些事情，比如召唤小怪，因此限制了场外的敌人不能被选中)
+				-- 2. 下沉状态的敌人不能被选中
+			if enemy:IsAlive() and rightFieldBound > enemy:GetPosition().x and enemy:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
+				targetList[#targetList + 1] = enemy
 			end
 		end
 	end
 
-	return var_27_0
+	return targetList
 end
 
 function BattleTargetChoise.TargetAllFoe(arg_28_0, arg_28_1, arg_28_2)
@@ -606,16 +610,16 @@ function BattleTargetChoise.TargetHarmFarthest(arg_34_0, arg_34_1, arg_34_2)
 	}
 end
 
-function BattleTargetChoise.TargetHarmRandom(arg_35_0, arg_35_1, arg_35_2)
-	arg_35_1 = arg_35_1 or {}
+function BattleTargetChoise.TargetHarmRandom(caster, argList, candidateList)
+	argList = argList or {}
+	-- 选择的是，没有处于隐匿状态的敌人
+	local targetList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 
-	local var_35_0 = arg_35_2 and BattleTargetChoise.TargetFoeUncloak(arg_35_0, arg_35_1, arg_35_2) or BattleTargetChoise.TargetFoeUncloak(arg_35_0)
-
-	if #var_35_0 > 0 then
-		local var_35_1 = math.random(#var_35_0)
+	if #targetList > 0 then
+		local targetIndex = math.random(#targetList)
 
 		return {
-			var_35_0[var_35_1]
+			targetList[targetIndex]
 		}
 	else
 		return {}

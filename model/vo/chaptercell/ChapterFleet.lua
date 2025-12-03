@@ -1,11 +1,11 @@
-local var_0_0 = class("ChapterFleet", import(".LevelCellData"))
+local ChapterFleet = class("ChapterFleet", import(".LevelCellData"))
 
-var_0_0.DUTY_CLEANPATH = 1
-var_0_0.DUTY_KILLBOSS = 2
-var_0_0.DUTY_KILLALL = 3
-var_0_0.DUTY_IDLE = 4
+ChapterFleet.DUTY_CLEANPATH = 1
+ChapterFleet.DUTY_KILLBOSS = 2
+ChapterFleet.DUTY_KILLALL = 3
+ChapterFleet.DUTY_IDLE = 4
 
-function var_0_0.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function ChapterFleet.Ctor(arg_1_0, arg_1_1, arg_1_2)
 	arg_1_0:updateNpcShipList(arg_1_2)
 
 	arg_1_0.id = arg_1_1.id
@@ -71,11 +71,11 @@ function var_0_0.Ctor(arg_1_0, arg_1_1, arg_1_2)
 	arg_1_0:updateCommanderSkills()
 end
 
-function var_0_0.setup(arg_6_0, arg_6_1)
+function ChapterFleet.setup(arg_6_0, arg_6_1)
 	arg_6_0.chapter = arg_6_1
 end
 
-function var_0_0.fetchShipVO(arg_7_0, arg_7_1)
+function ChapterFleet.fetchShipVO(arg_7_0, arg_7_1)
 	local var_7_0
 
 	if arg_7_0.npcShipList[arg_7_1] then
@@ -91,7 +91,7 @@ function var_0_0.fetchShipVO(arg_7_0, arg_7_1)
 	return var_7_0
 end
 
-function var_0_0.updateNpcShipList(arg_8_0, arg_8_1)
+function ChapterFleet.updateNpcShipList(arg_8_0, arg_8_1)
 	arg_8_0.npcShipList = {}
 
 	for iter_8_0, iter_8_1 in ipairs(arg_8_1) do
@@ -99,18 +99,18 @@ function var_0_0.updateNpcShipList(arg_8_0, arg_8_1)
 	end
 end
 
-function var_0_0.GetLine(arg_9_0)
+function ChapterFleet.GetLine(arg_9_0)
 	return arg_9_0.line
 end
 
-function var_0_0.SetLine(arg_10_0, arg_10_1)
+function ChapterFleet.SetLine(arg_10_0, arg_10_1)
 	arg_10_0.line = {
 		row = arg_10_1.row,
 		column = arg_10_1.column
 	}
 end
 
-function var_0_0.updateCommanders(arg_11_0, arg_11_1)
+function ChapterFleet.updateCommanders(arg_11_0, arg_11_1)
 	arg_11_0.commanders = {}
 
 	local var_11_0 = getProxy(CommanderProxy)
@@ -125,11 +125,11 @@ function var_0_0.updateCommanders(arg_11_0, arg_11_1)
 	end
 end
 
-function var_0_0.getCommanders(arg_12_0)
+function ChapterFleet.getCommanders(arg_12_0)
 	return arg_12_0.commanders or {}
 end
 
-function var_0_0.prepareShips(arg_13_0, arg_13_1)
+function ChapterFleet.prepareShips(arg_13_0, arg_13_1)
 	arg_13_0.statics = {}
 	arg_13_0.statics[TeamType.Vanguard] = {
 		count = 0
@@ -154,7 +154,7 @@ function var_0_0.prepareShips(arg_13_0, arg_13_1)
 	arg_13_0.staticsReady = true
 end
 
-function var_0_0.updateShips(arg_15_0, arg_15_1)
+function ChapterFleet.updateShips(arg_15_0, arg_15_1)
 	arg_15_0[TeamType.Vanguard] = {}
 	arg_15_0[TeamType.Main] = {}
 	arg_15_0[TeamType.Submarine] = {}
@@ -173,7 +173,7 @@ function var_0_0.updateShips(arg_15_0, arg_15_1)
 	arg_15_0:ResortShips()
 end
 
-function var_0_0.ResortShips(arg_17_0)
+function ChapterFleet.ResortShips(arg_17_0)
 	local var_17_0 = {
 		TeamType.Vanguard,
 		TeamType.Main,
@@ -198,7 +198,7 @@ function var_0_0.ResortShips(arg_17_0)
 	end)
 end
 
-function var_0_0.getTeamByName(arg_22_0, arg_22_1)
+function ChapterFleet.getTeamByName(arg_22_0, arg_22_1)
 	local var_22_0 = {}
 	local var_22_1 = arg_22_0[arg_22_1]
 
@@ -209,7 +209,7 @@ function var_0_0.getTeamByName(arg_22_0, arg_22_1)
 	return var_22_0
 end
 
-function var_0_0.flushShips(arg_23_0)
+function ChapterFleet.flushShips(arg_23_0)
 	local var_23_0 = getProxy(FleetProxy):getFleetById(arg_23_0.fleetId)
 
 	arg_23_0.name = var_23_0 and var_23_0.name ~= "" and var_23_0.name or Fleet.DEFAULT_NAME[arg_23_0.fleetId] or Fleet.DEFAULT_NAME[arg_23_0.id]
@@ -257,7 +257,7 @@ function var_0_0.flushShips(arg_23_0)
 	arg_23_0[TeamType.Submarine] = var_23_5
 end
 
-function var_0_0.updateShipHp(arg_27_0, arg_27_1, arg_27_2)
+function ChapterFleet.updateShipHp(arg_27_0, arg_27_1, arg_27_2)
 	local var_27_0 = arg_27_0.ships[arg_27_1]
 
 	if var_27_0 then
@@ -268,11 +268,11 @@ function var_0_0.updateShipHp(arg_27_0, arg_27_1, arg_27_2)
 	end
 end
 
-function var_0_0.getShip(arg_28_0, arg_28_1)
+function ChapterFleet.getShip(arg_28_0, arg_28_1)
 	return arg_28_0.ships[arg_28_1]
 end
 
-function var_0_0.getShips(arg_29_0, arg_29_1)
+function ChapterFleet.getShips(arg_29_0, arg_29_1)
 	local var_29_0 = {}
 	local var_29_1 = arg_29_0:getFleetType()
 
@@ -296,7 +296,7 @@ function var_0_0.getShips(arg_29_0, arg_29_1)
 	return var_29_0
 end
 
-function var_0_0.getShipsByTeam(arg_34_0, arg_34_1, arg_34_2)
+function ChapterFleet.getShipsByTeam(arg_34_0, arg_34_1, arg_34_2)
 	local var_34_0 = {}
 
 	for iter_34_0, iter_34_1 in ipairs(arg_34_0[arg_34_1]) do
@@ -316,11 +316,11 @@ function var_0_0.getShipsByTeam(arg_34_0, arg_34_1, arg_34_2)
 	return var_34_0
 end
 
-function var_0_0.containsShip(arg_35_0, arg_35_1)
+function ChapterFleet.containsShip(arg_35_0, arg_35_1)
 	return arg_35_0.ships[arg_35_1] and true or false
 end
 
-function var_0_0.replaceShip(arg_36_0, arg_36_1, arg_36_2)
+function ChapterFleet.replaceShip(arg_36_0, arg_36_1, arg_36_2)
 	errorMsg("ChapterFleet replaceShip function used")
 
 	if arg_36_0.ships[arg_36_1] and not arg_36_0.ships[arg_36_2.id] then
@@ -353,7 +353,7 @@ function var_0_0.replaceShip(arg_36_0, arg_36_1, arg_36_2)
 	end
 end
 
-function var_0_0.addShip(arg_37_0, arg_37_1)
+function ChapterFleet.addShip(arg_37_0, arg_37_1)
 	errorMsg("ChapterFleet addShip function used")
 
 	if not arg_37_0.ships[arg_37_1.id] then
@@ -375,7 +375,7 @@ function var_0_0.addShip(arg_37_0, arg_37_1)
 	end
 end
 
-function var_0_0.removeShip(arg_38_0, arg_38_1)
+function ChapterFleet.removeShip(arg_38_0, arg_38_1)
 	errorMsg("ChapterFleet removeShip function used")
 
 	arg_38_0.ships[arg_38_1] = nil
@@ -397,7 +397,7 @@ function var_0_0.removeShip(arg_38_0, arg_38_1)
 	end
 end
 
-function var_0_0.switchShip(arg_39_0, arg_39_1, arg_39_2, arg_39_3)
+function ChapterFleet.switchShip(arg_39_0, arg_39_1, arg_39_2, arg_39_3)
 	local var_39_0 = arg_39_0:getShipsByTeam(arg_39_1, false)
 	local var_39_1 = var_39_0[arg_39_2].id
 	local var_39_2 = var_39_0[arg_39_3].id
@@ -425,7 +425,7 @@ function var_0_0.switchShip(arg_39_0, arg_39_1, arg_39_2, arg_39_3)
 	end
 end
 
-function var_0_0.synchronousShipIndex(arg_40_0, arg_40_1)
+function ChapterFleet.synchronousShipIndex(arg_40_0, arg_40_1)
 	local var_40_0 = {
 		TeamType.Vanguard,
 		TeamType.Main,
@@ -445,7 +445,7 @@ function var_0_0.synchronousShipIndex(arg_40_0, arg_40_1)
 	end
 end
 
-function var_0_0.isValid(arg_41_0)
+function ChapterFleet.isValid(arg_41_0)
 	local var_41_0 = arg_41_0:getFleetType()
 
 	if var_41_0 == FleetType.Normal then
@@ -465,7 +465,7 @@ function var_0_0.isValid(arg_41_0)
 	return false
 end
 
-function var_0_0.getCost(arg_45_0)
+function ChapterFleet.getCost(arg_45_0)
 	local var_45_0 = {
 		gold = 0,
 		oil = 0
@@ -484,7 +484,7 @@ function var_0_0.getCost(arg_45_0)
 	return var_45_0, var_45_1
 end
 
-function var_0_0.getInvestSums(arg_47_0, arg_47_1)
+function ChapterFleet.getInvestSums(arg_47_0, arg_47_1)
 	local function var_47_0(arg_48_0, arg_48_1)
 		local var_48_0 = arg_48_1:getProperties(arg_47_0:getCommanders())
 
@@ -496,7 +496,7 @@ function var_0_0.getInvestSums(arg_47_0, arg_47_1)
 	return math.pow(var_47_1, 0.6666666666666666)
 end
 
-function var_0_0.getDodgeSums(arg_49_0)
+function ChapterFleet.getDodgeSums(arg_49_0)
 	local function var_49_0(arg_50_0, arg_50_1)
 		return arg_50_0 + arg_50_1:getProperties(arg_49_0:getCommanders())[AttributeType.Dodge]
 	end
@@ -506,7 +506,7 @@ function var_0_0.getDodgeSums(arg_49_0)
 	return math.pow(var_49_1, 0.6666666666666666)
 end
 
-function var_0_0.getAntiAircraftSums(arg_51_0)
+function ChapterFleet.getAntiAircraftSums(arg_51_0)
 	local function var_51_0(arg_52_0, arg_52_1)
 		return arg_52_0 + arg_52_1:getProperties(arg_51_0:getCommanders())[AttributeType.AntiAircraft]
 	end
@@ -514,7 +514,7 @@ function var_0_0.getAntiAircraftSums(arg_51_0)
 	return (_.reduce(arg_51_0:getShips(false), 0, var_51_0))
 end
 
-function var_0_0.getShipAmmo(arg_53_0)
+function ChapterFleet.getShipAmmo(arg_53_0)
 	local var_53_0 = 0
 
 	if arg_53_0:getFleetType() == FleetType.Normal then
@@ -532,13 +532,13 @@ function var_0_0.getShipAmmo(arg_53_0)
 	return var_53_0
 end
 
-function var_0_0.clearShipHpChange(arg_54_0)
+function ChapterFleet.clearShipHpChange(arg_54_0)
 	for iter_54_0, iter_54_1 in pairs(arg_54_0.ships) do
 		arg_54_0.ships[iter_54_1.id].hpChange = 0
 	end
 end
 
-function var_0_0.getEquipAmbushRateReduce(arg_55_0)
+function ChapterFleet.getEquipAmbushRateReduce(arg_55_0)
 	local var_55_0 = 0
 
 	for iter_55_0, iter_55_1 in pairs(arg_55_0.ships) do
@@ -552,7 +552,7 @@ function var_0_0.getEquipAmbushRateReduce(arg_55_0)
 	return var_55_0 / 10000
 end
 
-function var_0_0.getEquipDodgeRateUp(arg_56_0)
+function ChapterFleet.getEquipDodgeRateUp(arg_56_0)
 	local var_56_0 = 0
 
 	for iter_56_0, iter_56_1 in pairs(arg_56_0.ships) do
@@ -566,7 +566,7 @@ function var_0_0.getEquipDodgeRateUp(arg_56_0)
 	return var_56_0 / 10000
 end
 
-function var_0_0.isFormationDiffWith(arg_57_0, arg_57_1)
+function ChapterFleet.isFormationDiffWith(arg_57_0, arg_57_1)
 	local var_57_0 = {
 		TeamType.Main,
 		TeamType.Vanguard,
@@ -587,7 +587,7 @@ function var_0_0.isFormationDiffWith(arg_57_0, arg_57_1)
 	return false
 end
 
-function var_0_0.getShipIds(arg_58_0)
+function ChapterFleet.getShipIds(arg_58_0)
 	local var_58_0 = {}
 	local var_58_1 = arg_58_0:getFleetType()
 
@@ -611,56 +611,71 @@ function var_0_0.getShipIds(arg_58_0)
 	return var_58_0
 end
 
-function var_0_0.containsSameKind(arg_62_0, arg_62_1)
+function ChapterFleet.containsSameKind(arg_62_0, arg_62_1)
 	return arg_62_1 and _.any(_.values(arg_62_0.ships), function(arg_63_0)
 		return arg_62_1:isSameKind(arg_63_0)
 	end)
 end
 
-function var_0_0.increaseSlowSpeedFactor(arg_64_0)
+function ChapterFleet.increaseSlowSpeedFactor(arg_64_0)
 	arg_64_0.slowSpeedFactor = arg_64_0.slowSpeedFactor + 1
 end
 
-function var_0_0.getSpeed(arg_65_0)
+function ChapterFleet.getSpeed(arg_65_0)
 	local var_65_0 = arg_65_0:triggerSkill(FleetSkill.TypeMoveSpeed) or 0
 
 	return math.max(arg_65_0.baseSpeed + var_65_0 - arg_65_0.slowSpeedFactor, 1)
 end
 
-function var_0_0.calcBaseSpeed(arg_66_0)
-	local var_66_0 = arg_66_0:getShips(true)
-	local var_66_1 = _.reduce(var_66_0, 0, function(arg_67_0, arg_67_1)
-		return arg_67_0 + arg_67_1:getProperties()[AttributeType.Speed]
-	end) / #var_66_0 * (1 - 0.02 * (#var_66_0 - 1))
-	local var_66_2
-	local var_66_3
-	local var_66_4 = arg_66_0:getFleetType()
+--- @class ChapterFleet
+--- @return number
+--- 计算舰队每次移动的格子数
+function ChapterFleet.calcBaseSpeed(self)
+	-- 根据舰船类型会获取不同的舰船列表
+	-- normal: 前排 + 后排
+	-- submarine: 潜艇
+	-- support: 支援
+	local ships = self:getShips(true)
+	-- 每艘舰船用于计算的航速: 计入基础航速、指挥喵加成、装备加成
+	-- 再取平均值后，乘上(1 - 0.02 * (舰船数量 - 1))
+	local totalSpeed = _.reduce(ships, 0, function(memo, ship)
+		return memo + ship:getProperties()[AttributeType.Speed]
+	end) / #ships * (1 - 0.02 * (#ships - 1))
+	local threshold1
+	local threshold2
+	local fleetType = self:getFleetType()
 
-	if var_66_4 == FleetType.Normal then
-		var_66_2 = pg.gameset.chapter_move_speed_1.key_value
-		var_66_3 = pg.gameset.chapter_move_speed_2.key_value
-	elseif var_66_4 == FleetType.Submarine then
-		var_66_2 = pg.gameset.submarine_move_speed_1.key_value
-		var_66_3 = pg.gameset.submarine_move_speed_2.key_value
-	elseif var_66_4 == FleetType.Support then
-		var_66_2 = pg.gameset.chapter_move_speed_1.key_value
-		var_66_3 = pg.gameset.chapter_move_speed_2.key_value
+	if fleetType == FleetType.Normal then
+		-- threshold1 = 25, threshold2 = 36
+		threshold1 = pg.gameset.chapter_move_speed_1.key_value
+		threshold2 = pg.gameset.chapter_move_speed_2.key_value
+	elseif fleetType == FleetType.Submarine then
+		-- threshold1 = 10, threshold2 = 25
+		threshold1 = pg.gameset.submarine_move_speed_1.key_value
+		threshold2 = pg.gameset.submarine_move_speed_2.key_value
+	elseif fleetType == FleetType.Support then
+		-- threshold1 = 25, threshold2 = 36
+		threshold1 = pg.gameset.chapter_move_speed_1.key_value
+		threshold2 = pg.gameset.chapter_move_speed_2.key_value
 	end
-
-	if var_66_1 <= var_66_2 then
+	-- 以普通舰队举例：
+		-- [0, 25] -> 2
+		-- (25, 36] -> 3
+		-- (36, +∞) -> 4
+	if totalSpeed <= threshold1 then
 		return 2
-	elseif var_66_3 < var_66_1 then
+	elseif threshold2 < totalSpeed then
 		return 4
 	else
 		return 3
 	end
 end
 
-function var_0_0.getDefeatCount(arg_68_0)
+function ChapterFleet.getDefeatCount(arg_68_0)
 	return arg_68_0.defeatEnemies
 end
 
-function var_0_0.getStrategies(arg_69_0)
+function ChapterFleet.getStrategies(arg_69_0)
 	local var_69_0 = arg_69_0:getOwnStrategies()
 
 	for iter_69_0, iter_69_1 in pairs(arg_69_0.stgPicked) do
@@ -691,7 +706,7 @@ function var_0_0.getStrategies(arg_69_0)
 	end)
 end
 
-function var_0_0.getOwnStrategies(arg_71_0)
+function ChapterFleet.getOwnStrategies(arg_71_0)
 	local var_71_0 = {}
 	local var_71_1 = arg_71_0:getShips(true)
 
@@ -714,11 +729,11 @@ function var_0_0.getOwnStrategies(arg_71_0)
 	return var_71_0
 end
 
-function var_0_0.achievedStrategy(arg_75_0, arg_75_1, arg_75_2)
+function ChapterFleet.achievedStrategy(arg_75_0, arg_75_1, arg_75_2)
 	arg_75_0.stgPicked[arg_75_1] = (arg_75_0.stgPicked[arg_75_1] or 0) + arg_75_2
 end
 
-function var_0_0.consumeOneStrategy(arg_76_0, arg_76_1)
+function ChapterFleet.consumeOneStrategy(arg_76_0, arg_76_1)
 	local var_76_0 = arg_76_0:getOwnStrategies()
 
 	if var_76_0[arg_76_1] and var_76_0[arg_76_1] > 0 then
@@ -734,7 +749,7 @@ function var_0_0.consumeOneStrategy(arg_76_0, arg_76_1)
 	end
 end
 
-function var_0_0.GetStrategyCount(arg_77_0, arg_77_1)
+function ChapterFleet.GetStrategyCount(arg_77_0, arg_77_1)
 	local var_77_0 = arg_77_0:getStrategies()
 	local var_77_1 = _.detect(var_77_0, function(arg_78_0)
 		return arg_78_0.id == arg_77_1
@@ -743,11 +758,11 @@ function var_0_0.GetStrategyCount(arg_77_0, arg_77_1)
 	return var_77_1 and var_77_1.count or 0
 end
 
-function var_0_0.getFormationStg(arg_79_0)
+function ChapterFleet.getFormationStg(arg_79_0)
 	return PlayerPrefs.GetInt("team_formation_" .. arg_79_0.id, 1)
 end
 
-function var_0_0.canUseStrategy(arg_80_0, arg_80_1)
+function ChapterFleet.canUseStrategy(arg_80_0, arg_80_1)
 	local var_80_0 = pg.strategy_data_template[arg_80_1.id]
 
 	if var_80_0.type == ChapterConst.StgTypeForm then
@@ -775,15 +790,15 @@ function var_0_0.canUseStrategy(arg_80_0, arg_80_1)
 	return true
 end
 
-function var_0_0.getNextStgUser(arg_82_0, arg_82_1)
+function ChapterFleet.getNextStgUser(arg_82_0, arg_82_1)
 	return arg_82_0.id
 end
 
-function var_0_0.GetStatusStrategy(arg_83_0)
+function ChapterFleet.GetStatusStrategy(arg_83_0)
 	return arg_83_0.stgIds
 end
 
-function var_0_0.getFleetType(arg_84_0)
+function ChapterFleet.getFleetType(arg_84_0)
 	local var_84_0 = 0
 
 	for iter_84_0, iter_84_1 in pairs(arg_84_0.ships) do
@@ -803,7 +818,7 @@ function var_0_0.getFleetType(arg_84_0)
 	end
 end
 
-function var_0_0.canClearTorpedo(arg_85_0)
+function ChapterFleet.canClearTorpedo(arg_85_0)
 	local var_85_0 = arg_85_0:getShipsByTeam(TeamType.Vanguard, true)
 
 	return _.any(var_85_0, function(arg_86_0)
@@ -811,7 +826,7 @@ function var_0_0.canClearTorpedo(arg_85_0)
 	end)
 end
 
-function var_0_0.getHuntingRange(arg_87_0, arg_87_1)
+function ChapterFleet.getHuntingRange(arg_87_0, arg_87_1)
 	if arg_87_0:getFleetType() ~= FleetType.Submarine then
 		assert(false)
 
@@ -831,13 +846,13 @@ function var_0_0.getHuntingRange(arg_87_0, arg_87_1)
 	end))
 end
 
-function var_0_0.inHuntingRange(arg_89_0, arg_89_1, arg_89_2)
+function ChapterFleet.inHuntingRange(arg_89_0, arg_89_1, arg_89_2)
 	return _.any(arg_89_0:getHuntingRange(), function(arg_90_0)
 		return arg_90_0.row == arg_89_1 and arg_90_0.column == arg_89_2
 	end)
 end
 
-function var_0_0.getSummonCost(arg_91_0)
+function ChapterFleet.getSummonCost(arg_91_0)
 	local var_91_0 = arg_91_0:getShips(false)
 
 	return _.reduce(var_91_0, 0, function(arg_92_0, arg_92_1)
@@ -845,7 +860,7 @@ function var_0_0.getSummonCost(arg_91_0)
 	end)
 end
 
-function var_0_0.getMapAura(arg_93_0)
+function ChapterFleet.getMapAura(arg_93_0)
 	local var_93_0 = {}
 
 	for iter_93_0, iter_93_1 in pairs(arg_93_0.ships) do
@@ -859,7 +874,7 @@ function var_0_0.getMapAura(arg_93_0)
 	return var_93_0
 end
 
-function var_0_0.getMapAid(arg_94_0)
+function ChapterFleet.getMapAid(arg_94_0)
 	local var_94_0 = {}
 
 	for iter_94_0, iter_94_1 in pairs(arg_94_0.ships) do
@@ -877,7 +892,7 @@ function var_0_0.getMapAid(arg_94_0)
 	return var_94_0
 end
 
-function var_0_0.updateCommanderSkills(arg_95_0)
+function ChapterFleet.updateCommanderSkills(arg_95_0)
 	local var_95_0 = arg_95_0:getCommanders()
 
 	for iter_95_0, iter_95_1 in pairs(var_95_0) do
@@ -889,27 +904,27 @@ function var_0_0.updateCommanderSkills(arg_95_0)
 	end
 end
 
-function var_0_0.getSkills(arg_98_0)
+function ChapterFleet.getSkills(arg_98_0)
 	return arg_98_0.skills
 end
 
-function var_0_0.getSkill(arg_99_0, arg_99_1)
+function ChapterFleet.getSkill(arg_99_0, arg_99_1)
 	return _.detect(arg_99_0:getSkills(), function(arg_100_0)
 		return arg_100_0.id == arg_99_1
 	end)
 end
 
-function var_0_0.findSkills(arg_101_0, arg_101_1)
+function ChapterFleet.findSkills(arg_101_0, arg_101_1)
 	return _.filter(arg_101_0:getSkills(), function(arg_102_0)
 		return arg_102_0:GetType() == arg_101_1
 	end)
 end
 
-function var_0_0.triggerSkill(arg_103_0, arg_103_1)
+function ChapterFleet.triggerSkill(arg_103_0, arg_103_1)
 	return arg_103_0.chapter:triggerSkill(arg_103_0, arg_103_1)
 end
 
-function var_0_0.findCommanderBySkillId(arg_104_0, arg_104_1)
+function ChapterFleet.findCommanderBySkillId(arg_104_0, arg_104_1)
 	local var_104_0 = arg_104_0:getCommanders()
 
 	for iter_104_0, iter_104_1 in pairs(var_104_0) do
@@ -923,7 +938,7 @@ function var_0_0.findCommanderBySkillId(arg_104_0, arg_104_1)
 	end
 end
 
-function var_0_0.getFleetAirDominanceValue(arg_107_0)
+function ChapterFleet.getFleetAirDominanceValue(arg_107_0)
 	local var_107_0 = 0
 
 	for iter_107_0, iter_107_1 in ipairs(arg_107_0:getShips(false)) do
@@ -933,7 +948,7 @@ function var_0_0.getFleetAirDominanceValue(arg_107_0)
 	return var_107_0
 end
 
-function var_0_0.StaticTransformChapterFleet2Fleet(arg_108_0, arg_108_1)
+function ChapterFleet.StaticTransformChapterFleet2Fleet(arg_108_0, arg_108_1)
 	local var_108_0 = _.pluck(arg_108_0:getShipsByTeam(TeamType.Vanguard, arg_108_1), "id")
 
 	table.insertto(var_108_0, _.pluck(arg_108_0:getShipsByTeam(TeamType.Main, arg_108_1), "id"))
@@ -954,4 +969,4 @@ function var_0_0.StaticTransformChapterFleet2Fleet(arg_108_0, arg_108_1)
 	})
 end
 
-return var_0_0
+return ChapterFleet

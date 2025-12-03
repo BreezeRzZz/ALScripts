@@ -1,23 +1,25 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAddTag", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffAddTag = class("BattleBuffAddTag", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAddTag = var_0_1
-var_0_1.__name = "BattleBuffAddTag"
+ys.Battle.BattleBuffAddTag = BattleBuffAddTag
+BattleBuffAddTag.__name = "BattleBuffAddTag"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddTag.Ctor(self, effectData)
+	BattleBuffAddTag.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._labelTag = arg_2_0._tempData.arg_list.tag
+function BattleBuffAddTag.SetArgs(self, owner, buff)
+	self._labelTag = self._tempData.arg_list.tag
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:AddLabelTag(arg_3_0._labelTag)
+function BattleBuffAddTag.onAttach(self, owner, buff)
+	-- BattleUnit.AddLabelTag: 插入labelTagList，labelTag属性对应的tag数值+1
+	owner:AddLabelTag(self._labelTag)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:RemoveLabelTag(arg_4_0._labelTag)
+function BattleBuffAddTag.onRemove(self, owner, buff)
+	-- BattleUnit.RemoveLabelTag: 从labelTagList移除，labelTag属性对应的tag数值-1
+	owner:RemoveLabelTag(self._labelTag)
 end

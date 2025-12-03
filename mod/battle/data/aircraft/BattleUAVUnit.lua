@@ -5,10 +5,10 @@ local var_0_1 = var_0_0.Battle.BattleConfig
 local var_0_2 = var_0_0.Battle.BattleTargetChoise
 local var_0_3 = var_0_0.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattelUAVUnit = class("BattelUAVUnit", var_0_0.Battle.BattleAircraftUnit)
-var_0_0.Battle.BattelUAVUnit.__name = "BattelUAVUnit"
+var_0_0.Battle.BattleUAVUnit = class("BattleUAVUnit", var_0_0.Battle.BattleAircraftUnit)
+var_0_0.Battle.BattleUAVUnit.__name = "BattleUAVUnit"
 
-local var_0_4 = var_0_0.Battle.BattelUAVUnit
+local var_0_4 = var_0_0.Battle.BattleUAVUnit
 
 var_0_4.MOVE_STATE = "MOVE_STATE"
 var_0_4.HOVER_STATE = "HOVER_STATE"

@@ -47,7 +47,7 @@ end
 
 function var_0_3.createMajorEmitter(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4, arg_4_5)
 	local function var_4_0(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
-		local var_5_0, var_5_1 = arg_4_0:SpwanAircraft(arg_5_2)
+		local var_5_0, var_5_1 = arg_4_0:SpawnAircraft(arg_5_2)
 
 		var_5_0:AddCreateTimer(var_5_1, 1.5)
 
@@ -59,7 +59,7 @@ function var_0_3.createMajorEmitter(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4,
 	var_0_3.super.createMajorEmitter(arg_4_0, arg_4_1, arg_4_2, nil, var_4_0, nil)
 end
 
-function var_0_3.SpwanAircraft(arg_6_0, arg_6_1)
+function var_0_3.SpawnAircraft(arg_6_0, arg_6_1)
 	local var_6_0 = arg_6_0._dataProxy:CreateAircraft(arg_6_0._host, arg_6_0._tmpData.id, arg_6_0:GetPotential(), arg_6_0._skinID)
 	local var_6_1 = arg_6_0:GetBaseAngle() + arg_6_1
 	local var_6_2 = math.deg2Rad * var_6_1

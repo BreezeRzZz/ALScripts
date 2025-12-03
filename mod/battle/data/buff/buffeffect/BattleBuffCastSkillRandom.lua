@@ -1,89 +1,93 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.BattleBuffCastSkillRandom = class("BattleBuffCastSkillRandom", var_0_0.Battle.BattleBuffCastSkill)
-var_0_0.Battle.BattleBuffCastSkillRandom.__name = "BattleBuffCastSkillRandom"
+ys.Battle.BattleBuffCastSkillRandom = class("BattleBuffCastSkillRandom", ys.Battle.BattleBuffCastSkill)
+ys.Battle.BattleBuffCastSkillRandom.__name = "BattleBuffCastSkillRandom"
 
-local var_0_2 = var_0_0.Battle.BattleBuffCastSkillRandom
+local BattleBuffCastSkillRandom = ys.Battle.BattleBuffCastSkillRandom
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffCastSkillRandom.Ctor(self, effectData)
+	BattleBuffCastSkillRandom.super.Ctor(self, effectData)
 
-	arg_1_0._skillList = {}
+	self._skillList = {}
 end
 
-function var_0_2.spell(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffCastSkillRandom.spell(self, target, args)
+	local arg_list = self._tempData.arg_list
 
-	if var_2_0.skill_id_list then
-		local var_2_1 = {}
-		local var_2_2 = var_2_0.range
+	if arg_list.skill_id_list then
+		local randomRanges = {}
+		local range = arg_list.range
 
-		for iter_2_0, iter_2_1 in ipairs(var_2_0.skill_id_list) do
-			var_2_1[iter_2_1] = var_2_2[iter_2_0]
+		for index, skillId in ipairs(arg_list.skill_id_list) do
+			randomRanges[skillId] = range[index]
 		end
 
-		local var_2_3 = math.random()
+		local random = math.random()
 
-		for iter_2_2, iter_2_3 in pairs(var_2_1) do
-			local var_2_4 = iter_2_3[1]
-			local var_2_5 = iter_2_3[2]
+		for skillId, randomRange in pairs(randomRanges) do
+			local rangeMin = randomRange[1]
+			local rangeMax = randomRange[2]
+			-- [rangeMin, rangeMax)
+			if rangeMin <= random and random < rangeMax then
+				self._skillList[skillId] = self._skillList[skillId] or ys.Battle.BattleSkillUnit.GenerateSpell(skillId, self._level, target, attData)
 
-			if var_2_4 <= var_2_3 and var_2_3 < var_2_5 then
-				arg_2_0._skillList[iter_2_2] = arg_2_0._skillList[iter_2_2] or var_0_0.Battle.BattleSkillUnit.GenerateSpell(iter_2_2, arg_2_0._level, arg_2_1, attData)
+				local skill = self._skillList[skillId]
 
-				local var_2_6 = arg_2_0._skillList[iter_2_2]
-
-				if arg_2_2 and arg_2_2.target then
-					var_2_6:SetTarget({
-						arg_2_2.target
+				if args and args.target then
+					skill:SetTarget({
+						args.target
 					})
 				end
 
-				var_2_6:Cast(arg_2_1, arg_2_0._commander)
+				skill:Cast(target, self._commander)
 			end
 		end
-	elseif var_2_0.random_skill_tag then
-		local var_2_7 = var_2_0.random_skill_tag
-		local var_2_8 = arg_2_1:GetLabelTag()
-		local var_2_9 = {}
+	elseif arg_list.random_skill_tag then
+		local random_skill_tag = arg_list.random_skill_tag
+		local labelTagList = target:GetLabelTag()
+		local randomSkillIdTable = {}
 
-		for iter_2_4, iter_2_5 in ipairs(var_2_8) do
-			local var_2_10, var_2_11 = string.find(iter_2_5, var_2_7)
+		for _, labelTag in ipairs(labelTagList) do
+			-- 举例：random_skill_tag = "YUMIAITEMSKILL"
+			-- tag = "YUMIAITEMSKILL60860", "YUMIAITEMSKILL60871", ...
+			-- 后面的就是skill ID
+			local randomTagStart, randomTagEnd = string.find(labelTag, random_skill_tag)
 
-			if var_2_10 then
-				local var_2_12 = tonumber(string.sub(iter_2_5, var_2_11 + 1, #iter_2_5))
-
-				if not table.contains(var_2_9, var_2_12) then
-					table.insert(var_2_9, var_2_12)
+			if randomTagStart then
+				local skillId = tonumber(string.sub(labelTag, randomTagEnd + 1, #labelTag))
+				-- 去重
+				if not table.contains(randomSkillIdTable, skillId) then
+					table.insert(randomSkillIdTable, skillId)
 				end
 			end
 		end
 
-		if #var_2_9 > 0 then
-			local var_2_13 = var_2_9[math.random(#var_2_9)]
+		if #randomSkillIdTable > 0 then
+			-- 等概率随机选一个
+			local randomSkillId = randomSkillIdTable[math.random(#randomSkillIdTable)]
 
-			arg_2_0._skillList[var_2_13] = arg_2_0._skillList[var_2_13] or var_0_0.Battle.BattleSkillUnit.GenerateSpell(var_2_13, arg_2_0._level, arg_2_1, attData)
+			self._skillList[randomSkillId] = self._skillList[randomSkillId] or ys.Battle.BattleSkillUnit.GenerateSpell(randomSkillId, self._level, target, attData)
 
-			local var_2_14 = arg_2_0._skillList[var_2_13]
+			local skill = self._skillList[randomSkillId]
 
-			if arg_2_2 and arg_2_2.target then
-				var_2_14:SetTarget({
-					arg_2_2.target
+			if args and args.target then
+				skill:SetTarget({
+					args.target
 				})
 			end
 
-			var_2_14:Cast(arg_2_1, arg_2_0._commander)
+			skill:Cast(target, self._commander)
 		end
 	end
 end
 
-function var_0_2.Clear(arg_3_0)
-	var_0_2.super.Clear(arg_3_0)
+function BattleBuffCastSkillRandom.Clear(self)
+	BattleBuffCastSkillRandom.super.Clear(self)
 
-	for iter_3_0, iter_3_1 in pairs(arg_3_0._skillList) do
-		iter_3_1:Clear()
+	for _, skill in pairs(self._skillList) do
+		skill:Clear()
 	end
 end

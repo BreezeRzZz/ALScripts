@@ -1,12 +1,12 @@
-local var_0_0 = class("BayProxy", import(".NetProxy"))
+local BayProxy = class("BayProxy", import(".NetProxy"))
 
-var_0_0.SHIP_ADDED = "ship added"
-var_0_0.SHIP_REMOVED = "ship removed"
-var_0_0.SHIP_UPDATED = "ship updated"
-var_0_0.SHIP_EQUIPMENT_ADDED = "ship equipment added"
-var_0_0.SHIP_EQUIPMENT_REMOVED = "ship equipment removed"
+BayProxy.SHIP_ADDED = "ship added"
+BayProxy.SHIP_REMOVED = "ship removed"
+BayProxy.SHIP_UPDATED = "ship updated"
+BayProxy.SHIP_EQUIPMENT_ADDED = "ship equipment added"
+BayProxy.SHIP_EQUIPMENT_REMOVED = "ship equipment removed"
 
-function var_0_0.register(arg_1_0)
+function BayProxy.register(arg_1_0)
 	arg_1_0:on(12001, function(arg_2_0)
 		arg_1_0.data = {}
 		arg_1_0.activityNPCShipIds = {}
@@ -30,7 +30,7 @@ function var_0_0.register(arg_1_0)
 					table.insert(arg_1_0.metaShipIDList, var_2_0.id)
 				end
 
-				var_0_0.recordShipLevelVertify(var_2_0)
+				BayProxy.recordShipLevelVertify(var_2_0)
 				arg_1_0:UpdateShipEquipAndSkinCount(var_2_0, true)
 			else
 				warning("不存在的角色: " .. var_2_0.id)
@@ -63,7 +63,7 @@ function var_0_0.register(arg_1_0)
 					table.insert(arg_1_0.metaShipIDList, var_4_0.id)
 				end
 
-				var_0_0.recordShipLevelVertify(var_4_0)
+				BayProxy.recordShipLevelVertify(var_4_0)
 				arg_1_0:UpdateShipEquipAndSkinCount(var_4_0, true)
 			else
 				warning("不存在的角色: " .. var_4_0.id)
@@ -114,7 +114,7 @@ function var_0_0.register(arg_1_0)
 	arg_1_0.shipHighestLevel = 0
 end
 
-function var_0_0.recoverAllShipEnergy(arg_7_0)
+function BayProxy.recoverAllShipEnergy(arg_7_0)
 	local var_7_0 = pg.energy_template[3].upper_bound - 1
 	local var_7_1 = pg.energy_template[4].upper_bound
 	local var_7_2 = {}
@@ -163,7 +163,7 @@ function var_0_0.recoverAllShipEnergy(arg_7_0)
 	end
 end
 
-function var_0_0.addEnergyListener(arg_10_0, arg_10_1)
+function BayProxy.addEnergyListener(arg_10_0, arg_10_1)
 	if arg_10_1 <= 0 then
 		arg_10_0:recoverAllShipEnergy()
 		arg_10_0:addEnergyListener(Ship.ENERGY_RECOVER_TIME)
@@ -185,7 +185,7 @@ function var_0_0.addEnergyListener(arg_10_0, arg_10_1)
 	arg_10_0.energyTimer:Start()
 end
 
-function var_0_0.remove(arg_12_0)
+function BayProxy.remove(arg_12_0)
 	if arg_12_0.energyTimer then
 		arg_12_0.energyTimer:Stop()
 
@@ -193,31 +193,31 @@ function var_0_0.remove(arg_12_0)
 	end
 end
 
-function var_0_0.recordShipLevelVertify(arg_13_0)
+function BayProxy.recordShipLevelVertify(arg_13_0)
 	if arg_13_0 then
-		ys.BattleShipLevelVertify[arg_13_0.id] = var_0_0.generateLevelVertify(arg_13_0.level)
+		ys.BattleShipLevelVertify[arg_13_0.id] = BayProxy.generateLevelVertify(arg_13_0.level)
 	end
 end
 
-function var_0_0.checkShiplevelVertify(arg_14_0)
-	if var_0_0.generateLevelVertify(arg_14_0.level) == ys.BattleShipLevelVertify[arg_14_0.id] then
+function BayProxy.checkShiplevelVertify(arg_14_0)
+	if BayProxy.generateLevelVertify(arg_14_0.level) == ys.BattleShipLevelVertify[arg_14_0.id] then
 		return true
 	else
 		return false
 	end
 end
 
-function var_0_0.generateLevelVertify(arg_15_0)
+function BayProxy.generateLevelVertify(arg_15_0)
 	return (arg_15_0 + 1114) * 824
 end
 
-function var_0_0.addShip(arg_16_0, arg_16_1, arg_16_2)
+function BayProxy.addShip(arg_16_0, arg_16_1, arg_16_2)
 	assert(isa(arg_16_1, Ship), "should be an instance of Ship")
 	assert(arg_16_0.data[arg_16_1.id] == nil, "ship already exist, use updateShip() instead")
 
 	arg_16_0.data[arg_16_1.id] = arg_16_1
 
-	var_0_0.recordShipLevelVertify(arg_16_1)
+	BayProxy.recordShipLevelVertify(arg_16_1)
 	arg_16_0:UpdateShipEquipAndSkinCount(arg_16_1, true)
 
 	arg_16_2 = defaultValue(arg_16_2, true)
@@ -247,11 +247,11 @@ function var_0_0.addShip(arg_16_0, arg_16_1, arg_16_2)
 	end
 
 	if getProxy(PlayerProxy):getInited() then
-		arg_16_0:sendNotification(var_0_0.SHIP_ADDED, arg_16_1:clone())
+		arg_16_0:sendNotification(BayProxy.SHIP_ADDED, arg_16_1:clone())
 	end
 end
 
-function var_0_0.countShip(arg_17_0, arg_17_1)
+function BayProxy.countShip(arg_17_0, arg_17_1)
 	local var_17_0 = getProxy(PlayerProxy)
 	local var_17_1 = var_17_0:getData()
 
@@ -259,7 +259,7 @@ function var_0_0.countShip(arg_17_0, arg_17_1)
 	var_17_0:updatePlayer(var_17_1)
 end
 
-function var_0_0.getNewShip(arg_18_0, arg_18_1)
+function BayProxy.getNewShip(arg_18_0, arg_18_1)
 	local var_18_0 = arg_18_0.newShipList or {}
 
 	if arg_18_1 then
@@ -269,7 +269,7 @@ function var_0_0.getNewShip(arg_18_0, arg_18_1)
 	return var_18_0
 end
 
-function var_0_0.getMetaTransItemMap(arg_19_0, arg_19_1)
+function BayProxy.getMetaTransItemMap(arg_19_0, arg_19_1)
 	local var_19_0
 
 	if arg_19_0.metaTransItemMap and arg_19_0.metaTransItemMap[arg_19_1] and #arg_19_0.metaTransItemMap[arg_19_1] > 0 then
@@ -281,7 +281,7 @@ function var_0_0.getMetaTransItemMap(arg_19_0, arg_19_1)
 	return var_19_0
 end
 
-function var_0_0.addMetaTransItemMap(arg_20_0, arg_20_1, arg_20_2)
+function BayProxy.addMetaTransItemMap(arg_20_0, arg_20_1, arg_20_2)
 	if not arg_20_0.metaTransItemMap then
 		arg_20_0.metaTransItemMap = {}
 	end
@@ -293,7 +293,7 @@ function var_0_0.addMetaTransItemMap(arg_20_0, arg_20_1, arg_20_2)
 	table.insert(arg_20_0.metaTransItemMap[arg_20_1], arg_20_2)
 end
 
-function var_0_0.getShipsByFleet(arg_21_0, arg_21_1)
+function BayProxy.getShipsByFleet(arg_21_0, arg_21_1)
 	assert(isa(arg_21_1, Fleet), "should be an instance of Fleet")
 
 	local var_21_0 = {}
@@ -305,7 +305,7 @@ function var_0_0.getShipsByFleet(arg_21_0, arg_21_1)
 	return var_21_0
 end
 
-function var_0_0.getSortShipsByFleet(arg_22_0, arg_22_1)
+function BayProxy.getSortShipsByFleet(arg_22_0, arg_22_1)
 	assert(isa(arg_22_1, Fleet), "should be an instance of Fleet")
 
 	local var_22_0 = {}
@@ -325,7 +325,7 @@ function var_0_0.getSortShipsByFleet(arg_22_0, arg_22_1)
 	return var_22_0
 end
 
-function var_0_0.getShipByTeam(arg_23_0, arg_23_1, arg_23_2)
+function BayProxy.getShipByTeam(arg_23_0, arg_23_1, arg_23_2)
 	assert(isa(arg_23_1, Fleet), "should be an instance of Fleet")
 
 	local var_23_0 = {}
@@ -347,7 +347,7 @@ function var_0_0.getShipByTeam(arg_23_0, arg_23_1, arg_23_2)
 	return Clone(var_23_0)
 end
 
-function var_0_0.getShipsByTypes(arg_24_0, arg_24_1)
+function BayProxy.getShipsByTypes(arg_24_0, arg_24_1)
 	local var_24_0 = {}
 
 	for iter_24_0, iter_24_1 in pairs(arg_24_0.data) do
@@ -359,7 +359,7 @@ function var_0_0.getShipsByTypes(arg_24_0, arg_24_1)
 	return var_24_0
 end
 
-function var_0_0.getShipsByStatus(arg_25_0, arg_25_1)
+function BayProxy.getShipsByStatus(arg_25_0, arg_25_1)
 	local var_25_0 = {}
 
 	for iter_25_0, iter_25_1 in pairs(arg_25_0.data) do
@@ -371,7 +371,7 @@ function var_0_0.getShipsByStatus(arg_25_0, arg_25_1)
 	return var_25_0
 end
 
-function var_0_0.getShipsByTeamType(arg_26_0, arg_26_1)
+function BayProxy.getShipsByTeamType(arg_26_0, arg_26_1)
 	local var_26_0 = {}
 
 	for iter_26_0, iter_26_1 in pairs(arg_26_0.data) do
@@ -383,7 +383,7 @@ function var_0_0.getShipsByTeamType(arg_26_0, arg_26_1)
 	return var_26_0
 end
 
-function var_0_0.getConfigShipCount(arg_27_0, arg_27_1)
+function BayProxy.getConfigShipCount(arg_27_0, arg_27_1)
 	local var_27_0 = 0
 
 	for iter_27_0, iter_27_1 in pairs(arg_27_0.data) do
@@ -395,7 +395,7 @@ function var_0_0.getConfigShipCount(arg_27_0, arg_27_1)
 	return var_27_0
 end
 
-function var_0_0.getShips(arg_28_0)
+function BayProxy.getShips(arg_28_0)
 	local var_28_0 = {}
 
 	for iter_28_0, iter_28_1 in pairs(arg_28_0.data) do
@@ -405,13 +405,13 @@ function var_0_0.getShips(arg_28_0)
 	return var_28_0
 end
 
-function var_0_0.getShipList(arg_29_0, arg_29_1)
+function BayProxy.getShipList(arg_29_0, arg_29_1)
 	return underscore.map(arg_29_1, function(arg_30_0)
 		return arg_29_0.data[arg_30_0] or false
 	end)
 end
 
-function var_0_0.getRawShipCount(arg_31_0)
+function BayProxy.getRawShipCount(arg_31_0)
 	local var_31_0 = 0
 
 	for iter_31_0, iter_31_1 in pairs(arg_31_0.data) do
@@ -421,7 +421,7 @@ function var_0_0.getRawShipCount(arg_31_0)
 	return var_31_0
 end
 
-function var_0_0.getShipCount(arg_32_0)
+function BayProxy.getShipCount(arg_32_0)
 	local var_32_0 = {}
 
 	for iter_32_0, iter_32_1 in ipairs(getGameset("unoccupied_ship_nationality")[2]) do
@@ -442,17 +442,17 @@ function var_0_0.getShipCount(arg_32_0)
 	return var_32_1, var_32_2
 end
 
-function var_0_0.getShipById(arg_33_0, arg_33_1)
+function BayProxy.getShipById(arg_33_0, arg_33_1)
 	if arg_33_0.data[arg_33_1] ~= nil then
 		return arg_33_0.data[arg_33_1]:clone()
 	end
 end
 
-function var_0_0.RawGetShipById(arg_34_0, arg_34_1)
+function BayProxy.RawGetShipById(arg_34_0, arg_34_1)
 	return arg_34_0.data[arg_34_1]
 end
 
-function var_0_0.getActivityNPCShipByActId(arg_35_0, arg_35_1)
+function BayProxy.getActivityNPCShipByActId(arg_35_0, arg_35_1)
 	for iter_35_0, iter_35_1 in ipairs(arg_35_0.activityNPCShipIds) do
 		if arg_35_0.data[iter_35_1].activityNpc == arg_35_1 then
 			return iter_35_1
@@ -460,7 +460,7 @@ function var_0_0.getActivityNPCShipByActId(arg_35_0, arg_35_1)
 	end
 end
 
-function var_0_0.getMetaShipByGroupId(arg_36_0, arg_36_1)
+function BayProxy.getMetaShipByGroupId(arg_36_0, arg_36_1)
 	for iter_36_0, iter_36_1 in pairs(arg_36_0.data) do
 		if iter_36_1:isMetaShip() and iter_36_1.metaCharacter.id == arg_36_1 then
 			return iter_36_1
@@ -468,11 +468,11 @@ function var_0_0.getMetaShipByGroupId(arg_36_0, arg_36_1)
 	end
 end
 
-function var_0_0.getMetaShipIDList(arg_37_0)
+function BayProxy.getMetaShipIDList(arg_37_0)
 	return arg_37_0.metaShipIDList
 end
 
-function var_0_0.updateShip(arg_38_0, arg_38_1)
+function BayProxy.updateShip(arg_38_0, arg_38_1)
 	if arg_38_1.isNpc then
 		return
 	end
@@ -492,7 +492,7 @@ function var_0_0.updateShip(arg_38_0, arg_38_1)
 
 	arg_38_0.data[arg_38_1.id] = arg_38_1
 
-	var_0_0.recordShipLevelVertify(arg_38_1)
+	BayProxy.recordShipLevelVertify(arg_38_1)
 	arg_38_0:UpdateShipEquipAndSkinCount(arg_38_1, true)
 
 	if var_38_0:isActivityNpc() and not arg_38_1:isActivityNpc() then
@@ -512,15 +512,15 @@ function var_0_0.updateShip(arg_38_0, arg_38_1)
 		end
 	end
 
-	arg_38_0:sendNotification(var_0_0.SHIP_UPDATED, arg_38_1:clone())
+	arg_38_0:sendNotification(BayProxy.SHIP_UPDATED, arg_38_1:clone())
 end
 
-function var_0_0.removeShip(arg_39_0, arg_39_1)
+function BayProxy.removeShip(arg_39_0, arg_39_1)
 	assert(isa(arg_39_1, Ship), "should be an instance of Ship")
 	arg_39_0:removeShipById(arg_39_1.id)
 end
 
-function var_0_0.getEquipment2ByflagShip(arg_40_0)
+function BayProxy.getEquipment2ByflagShip(arg_40_0)
 	local var_40_0 = getProxy(PlayerProxy):getData()
 	local var_40_1 = arg_40_0:getShipById(var_40_0.character)
 
@@ -529,7 +529,7 @@ function var_0_0.getEquipment2ByflagShip(arg_40_0)
 	return var_40_1:getEquip(2)
 end
 
-function var_0_0.removeShipById(arg_41_0, arg_41_1)
+function BayProxy.removeShipById(arg_41_0, arg_41_1)
 	local var_41_0 = arg_41_0.data[arg_41_1]
 
 	assert(var_41_0 ~= nil, "ship should exist")
@@ -543,10 +543,10 @@ function var_0_0.removeShipById(arg_41_0, arg_41_1)
 
 	var_41_0:display("removed")
 	arg_41_0:UpdateShipEquipAndSkinCount(var_41_0, false)
-	arg_41_0:sendNotification(var_0_0.SHIP_REMOVED, var_41_0)
+	arg_41_0:sendNotification(BayProxy.SHIP_REMOVED, var_41_0)
 end
 
-function var_0_0.findShipByGroup(arg_42_0, arg_42_1)
+function BayProxy.findShipByGroup(arg_42_0, arg_42_1)
 	for iter_42_0, iter_42_1 in pairs(arg_42_0.data) do
 		if iter_42_1.groupId == arg_42_1 then
 			return iter_42_1
@@ -556,7 +556,7 @@ function var_0_0.findShipByGroup(arg_42_0, arg_42_1)
 	return nil
 end
 
-function var_0_0.findShipsByGroup(arg_43_0, arg_43_1)
+function BayProxy.findShipsByGroup(arg_43_0, arg_43_1)
 	local var_43_0 = {}
 
 	for iter_43_0, iter_43_1 in pairs(arg_43_0.data) do
@@ -568,7 +568,7 @@ function var_0_0.findShipsByGroup(arg_43_0, arg_43_1)
 	return var_43_0
 end
 
-function var_0_0.ExistGroupShip(arg_44_0, arg_44_1)
+function BayProxy.ExistGroupShip(arg_44_0, arg_44_1)
 	for iter_44_0, iter_44_1 in pairs(arg_44_0.data) do
 		if iter_44_1.groupId == arg_44_1 then
 			return true
@@ -578,7 +578,7 @@ function var_0_0.ExistGroupShip(arg_44_0, arg_44_1)
 	return false
 end
 
-function var_0_0._ExistGroupShip(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
+function BayProxy._ExistGroupShip(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
 	local function var_45_0(arg_46_0)
 		if arg_45_2 then
 			return arg_46_0:isRemoulded()
@@ -604,7 +604,7 @@ function var_0_0._ExistGroupShip(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
 	return false
 end
 
-function var_0_0.getSameGroupShipCount(arg_48_0, arg_48_1)
+function BayProxy.getSameGroupShipCount(arg_48_0, arg_48_1)
 	local var_48_0 = 0
 
 	for iter_48_0, iter_48_1 in pairs(arg_48_0.data) do
@@ -616,7 +616,7 @@ function var_0_0.getSameGroupShipCount(arg_48_0, arg_48_1)
 	return var_48_0
 end
 
-function var_0_0.getUpgradeShips(arg_49_0, arg_49_1)
+function BayProxy.getUpgradeShips(arg_49_0, arg_49_1)
 	local var_49_0 = arg_49_1:getConfig("rarity")
 	local var_49_1 = arg_49_1.groupId
 	local var_49_2 = {}
@@ -630,25 +630,32 @@ function var_0_0.getUpgradeShips(arg_49_0, arg_49_1)
 	return var_49_2
 end
 
-function var_0_0.getBayPower(arg_50_0)
-	local var_50_0 = {}
-	local var_50_1 = 0
-
-	for iter_50_0, iter_50_1 in pairs(arg_50_0.data) do
-		local var_50_2 = iter_50_1.configId
-		local var_50_3 = iter_50_1:getShipCombatPower()
-
-		if ShipGroup.GetGroupConfig(iter_50_1:getGroupId()).handbook_type ~= 1 and (not var_50_0[var_50_2] or var_50_3 > var_50_0[var_50_2]) then
-			var_50_1 = var_50_1 - defaultValue(var_50_0[var_50_2], 0)
-			var_50_0[var_50_2] = var_50_3
-			var_50_1 = var_50_1 + var_50_3
+--- @class BayProxy
+--- @return number
+--- 计算用户的综合实力
+function BayProxy.getBayPower(self)
+	-- 用于记录同一configId的最大战力
+	local maxPower = {}
+	local bayPower = 0
+	-- self.data: table<number, Ship>, 从id到Ship对象的映射
+	-- ship: Ship对象，参考model/vo/Ship.lua
+	for _, ship in pairs(self.data) do
+		local configId = ship.configId
+		local combatPower = ship:getShipCombatPower()
+		-- 联动船不计入战力，因为对应的handbook_type为1
+		-- 其他的舰船，每个独立的configId只取最高战力
+		-- 所以包括的有：舰船每个突破形态，以及改造形态（如果改造后更换了configId）
+		if ShipGroup.GetGroupConfig(ship:getGroupId()).handbook_type ~= 1 and (not maxPower[configId] or combatPower > maxPower[configId]) then
+			bayPower = bayPower - defaultValue(maxPower[configId], 0)
+			maxPower[configId] = combatPower
+			bayPower = bayPower + combatPower
 		end
 	end
 
-	return var_50_1
+	return bayPower
 end
 
-function var_0_0.GetBayPowerRootedAsyn(arg_51_0, arg_51_1)
+function BayProxy.GetBayPowerRootedAsyn(arg_51_0, arg_51_1)
 	local var_51_0
 
 	var_51_0 = coroutine.wrap(function()
@@ -680,11 +687,11 @@ function var_0_0.GetBayPowerRootedAsyn(arg_51_0, arg_51_1)
 	var_51_0()
 end
 
-function var_0_0.getBayPowerRooted(arg_53_0)
-	return arg_53_0:getBayPower()^0.667
+function BayProxy.getBayPowerRooted(self)
+	return self:getBayPower()^0.667
 end
 
-function var_0_0.getEquipsInShips(arg_54_0, arg_54_1)
+function BayProxy.getEquipsInShips(arg_54_0, arg_54_1)
 	local var_54_0 = {}
 
 	for iter_54_0, iter_54_1 in pairs(arg_54_0.data) do
@@ -703,7 +710,7 @@ function var_0_0.getEquipsInShips(arg_54_0, arg_54_1)
 	return var_54_0
 end
 
-function var_0_0.UpdateShipEquipAndSkinCount(arg_55_0, arg_55_1, arg_55_2)
+function BayProxy.UpdateShipEquipAndSkinCount(arg_55_0, arg_55_1, arg_55_2)
 	if not arg_55_1 then
 		return
 	end
@@ -727,15 +734,15 @@ function var_0_0.UpdateShipEquipAndSkinCount(arg_55_0, arg_55_1, arg_55_2)
 	end
 end
 
-function var_0_0.GetEquipCountInShips(arg_56_0, arg_56_1)
+function BayProxy.GetEquipCountInShips(arg_56_0, arg_56_1)
 	return arg_56_0.equipCountDic[arg_56_1] or 0
 end
 
-function var_0_0.GetEquipSkinCountInShips(arg_57_0, arg_57_1)
+function BayProxy.GetEquipSkinCountInShips(arg_57_0, arg_57_1)
 	return arg_57_0.equipSkinCountDic[arg_57_1] or 0
 end
 
-function var_0_0.GetEquipsInShipsRaw(arg_58_0)
+function BayProxy.GetEquipsInShipsRaw(arg_58_0)
 	local function var_58_0(arg_59_0, arg_59_1, arg_59_2)
 		local var_59_0 = CreateShell(arg_59_0)
 
@@ -758,7 +765,7 @@ function var_0_0.GetEquipsInShipsRaw(arg_58_0)
 	return var_58_1
 end
 
-function var_0_0.getEquipmentSkinInShips(arg_60_0, arg_60_1, arg_60_2)
+function BayProxy.getEquipmentSkinInShips(arg_60_0, arg_60_1, arg_60_2)
 	local function var_60_0(arg_61_0)
 		local var_61_0 = false
 
@@ -794,7 +801,7 @@ function var_0_0.getEquipmentSkinInShips(arg_60_0, arg_60_1, arg_60_2)
 	return var_60_1
 end
 
-function var_0_0.GetSpWeaponsInShips(arg_63_0, arg_63_1)
+function BayProxy.GetSpWeaponsInShips(arg_63_0, arg_63_1)
 	local var_63_0 = {}
 
 	for iter_63_0, iter_63_1 in pairs(arg_63_0.data) do
@@ -810,7 +817,7 @@ function var_0_0.GetSpWeaponsInShips(arg_63_0, arg_63_1)
 	return var_63_0
 end
 
-function var_0_0.getProposeGroupList(arg_64_0)
+function BayProxy.getProposeGroupList(arg_64_0)
 	local var_64_0 = {}
 
 	for iter_64_0, iter_64_1 in pairs(arg_64_0.data) do
@@ -822,7 +829,7 @@ function var_0_0.getProposeGroupList(arg_64_0)
 	return var_64_0
 end
 
-function var_0_0.GetRecommendShip(arg_65_0, arg_65_1, arg_65_2, arg_65_3)
+function BayProxy.GetRecommendShip(arg_65_0, arg_65_1, arg_65_2, arg_65_3)
 	assert(arg_65_3)
 
 	local var_65_0 = arg_65_0:getShipsByTypes(arg_65_1)
@@ -868,7 +875,7 @@ function var_0_0.GetRecommendShip(arg_65_0, arg_65_1, arg_65_2, arg_65_3)
 	return var_65_4
 end
 
-function var_0_0.getActivityRecommendShips(arg_68_0, arg_68_1, arg_68_2, arg_68_3, arg_68_4)
+function BayProxy.getActivityRecommendShips(arg_68_0, arg_68_1, arg_68_2, arg_68_3, arg_68_4)
 	local var_68_0 = arg_68_0:getShipsByTypes(arg_68_1)
 	local var_68_1 = {}
 
@@ -911,7 +918,7 @@ function var_0_0.getActivityRecommendShips(arg_68_0, arg_68_1, arg_68_2, arg_68_
 	return var_68_5
 end
 
-function var_0_0.getDelegationRecommendShips(arg_70_0, arg_70_1)
+function BayProxy.getDelegationRecommendShips(arg_70_0, arg_70_1)
 	local var_70_0 = 6 - #arg_70_1.shipIds
 	local var_70_1 = arg_70_1.template.ship_type
 	local var_70_2 = arg_70_1.template.ship_lv
@@ -971,7 +978,7 @@ function var_0_0.getDelegationRecommendShips(arg_70_0, arg_70_1)
 	return var_70_9
 end
 
-function var_0_0.getDelegationRecommendShipsLV1(arg_72_0, arg_72_1)
+function BayProxy.getDelegationRecommendShipsLV1(arg_72_0, arg_72_1)
 	local var_72_0 = 6 - #arg_72_1.shipIds
 	local var_72_1 = arg_72_1.template.ship_type
 	local var_72_2 = Clone(arg_72_1.shipIds)
@@ -1019,7 +1026,7 @@ function var_0_0.getDelegationRecommendShipsLV1(arg_72_0, arg_72_1)
 	return var_72_7
 end
 
-function var_0_0.getWorldRecommendShip(arg_75_0, arg_75_1, arg_75_2)
+function BayProxy.getWorldRecommendShip(arg_75_0, arg_75_1, arg_75_2)
 	local var_75_0 = arg_75_0:getShipsByTeamType(arg_75_1)
 	local var_75_1 = {}
 
@@ -1057,7 +1064,7 @@ function var_0_0.getWorldRecommendShip(arg_75_0, arg_75_1, arg_75_2)
 	return var_75_4
 end
 
-function var_0_0.getModRecommendShip(arg_77_0, arg_77_1, arg_77_2)
+function BayProxy.getModRecommendShip(arg_77_0, arg_77_1, arg_77_2)
 	local var_77_0 = underscore.map(arg_77_2, function(arg_78_0)
 		return arg_77_0.data[arg_78_0]
 	end)
@@ -1141,7 +1148,7 @@ function var_0_0.getModRecommendShip(arg_77_0, arg_77_1, arg_77_2)
 	end)
 end
 
-function var_0_0.getUpgradeRecommendShip(arg_82_0, arg_82_1, arg_82_2, arg_82_3)
+function BayProxy.getUpgradeRecommendShip(arg_82_0, arg_82_1, arg_82_2, arg_82_3)
 	local var_82_0 = arg_82_0:getUpgradeShips(arg_82_1)
 	local var_82_1 = pg.ShipFlagMgr.GetInstance():FilterShips(ShipStatus.FILTER_SHIPS_FLAGS_4, underscore.keys(arg_82_0.data))
 
@@ -1184,7 +1191,7 @@ function var_0_0.getUpgradeRecommendShip(arg_82_0, arg_82_1, arg_82_2, arg_82_3)
 	end)
 end
 
-function var_0_0.getGroupPropose(arg_86_0, arg_86_1)
+function BayProxy.getGroupPropose(arg_86_0, arg_86_1)
 	local var_86_0 = false
 
 	if arg_86_0.data then
@@ -1198,13 +1205,13 @@ function var_0_0.getGroupPropose(arg_86_0, arg_86_1)
 	return var_86_0
 end
 
-function var_0_0.updateRandomFlagShips(arg_87_0, arg_87_1)
+function BayProxy.updateRandomFlagShips(arg_87_0, arg_87_1)
 	for iter_87_0, iter_87_1 in ipairs(arg_87_1) do
 		arg_87_0.data[iter_87_1.ship_id]:updateRandomFlag(iter_87_1.flag, iter_87_1.shadow)
 	end
 end
 
-function var_0_0.getRandomFlagShipPhantomMarks(arg_88_0)
+function BayProxy.getRandomFlagShipPhantomMarks(arg_88_0)
 	local var_88_0 = {}
 
 	for iter_88_0, iter_88_1 in pairs(arg_88_0.data) do
@@ -1214,7 +1221,7 @@ function var_0_0.getRandomFlagShipPhantomMarks(arg_88_0)
 	return var_88_0
 end
 
-function var_0_0.getAllShipPhantomMarks(arg_89_0)
+function BayProxy.getAllShipPhantomMarks(arg_89_0)
 	local var_89_0 = {}
 
 	for iter_89_0, iter_89_1 in pairs(arg_89_0.data) do
@@ -1224,27 +1231,27 @@ function var_0_0.getAllShipPhantomMarks(arg_89_0)
 	return var_89_0
 end
 
-function var_0_0.GetShipPhantom(arg_90_0, arg_90_1)
+function BayProxy.GetShipPhantom(arg_90_0, arg_90_1)
 	local var_90_0, var_90_1 = ShipPhantom.UnpackMark(arg_90_1)
 
 	return arg_90_0.data[var_90_0] and ShipPhantom.Create(arg_90_0.data[var_90_0], var_90_1) or nil
 end
 
-function var_0_0.getShipPhantomList(arg_91_0, arg_91_1)
+function BayProxy.getShipPhantomList(arg_91_0, arg_91_1)
 	return underscore.map(arg_91_1, function(arg_92_0)
 		return arg_91_0:GetShipPhantom(arg_92_0)
 	end)
 end
 
-function var_0_0.updateShipSkin(arg_93_0, arg_93_1, arg_93_2, arg_93_3)
+function BayProxy.updateShipSkin(arg_93_0, arg_93_1, arg_93_2, arg_93_3)
 	local var_93_0 = arg_93_0.data[arg_93_1]
 
 	assert(var_93_0)
 	var_93_0:updateSkinId(arg_93_3, arg_93_2)
-	arg_93_0:sendNotification(var_0_0.SHIP_UPDATED, var_93_0:clone())
+	arg_93_0:sendNotification(BayProxy.SHIP_UPDATED, var_93_0:clone())
 end
 
-function var_0_0.CanUseShareSkinPhantoms(arg_94_0, arg_94_1)
+function BayProxy.CanUseShareSkinPhantoms(arg_94_0, arg_94_1)
 	local var_94_0 = ShipSkin.New({
 		id = arg_94_1
 	})
@@ -1278,4 +1285,4 @@ function var_0_0.CanUseShareSkinPhantoms(arg_94_0, arg_94_1)
 	return var_94_6
 end
 
-return var_0_0
+return BayProxy

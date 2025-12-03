@@ -1,26 +1,26 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAddAttrCommander", var_0_0.Battle.BattleBuffAddAttr)
+local ys = ys
+local BattleBuffAddAttrCommander = class("BattleBuffAddAttrCommander", ys.Battle.BattleBuffAddAttr)
 
-var_0_0.Battle.BattleBuffAddAttrCommander = var_0_1
-var_0_1.__name = "BattleBuffAddAttrCommander"
+ys.Battle.BattleBuffAddAttrCommander = BattleBuffAddAttrCommander
+BattleBuffAddAttrCommander.__name = "BattleBuffAddAttrCommander"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAttrCommander.Ctor(self, effectData)
+	BattleBuffAddAttrCommander.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
+function BattleBuffAddAttrCommander.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._group = arg_3_0._tempData.arg_list.group or arg_3_2:GetID()
-	arg_3_0._attr = arg_3_0._tempData.arg_list.convertAttr
+function BattleBuffAddAttrCommander.SetArgs(self, owner, buff)
+	self._group = self._tempData.arg_list.group or buff:GetID()
+	self._attr = self._tempData.arg_list.convertAttr
 
-	local var_3_0 = arg_3_0._tempData.arg_list.ability
-	local var_3_1 = arg_3_0._tempData.arg_list.convertRate
+	local ability = self._tempData.arg_list.ability
+	local convertRate = self._tempData.arg_list.convertRate
 
-	arg_3_0._number = arg_3_0._commander:getAbilitys()[var_3_0].value * var_3_1
-	arg_3_0._numberBase = arg_3_0._number
+	self._number = self._commander:getAbilitys()[ability].value * convertRate
+	self._numberBase = self._number
 end

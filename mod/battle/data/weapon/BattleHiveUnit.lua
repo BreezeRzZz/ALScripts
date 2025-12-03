@@ -1,59 +1,59 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleHiveUnit = class("BattleHiveUnit", var_0_0.Battle.BattleWeaponUnit)
-var_0_0.Battle.BattleHiveUnit.__name = "BattleHiveUnit"
+ys.Battle.BattleHiveUnit = class("BattleHiveUnit", ys.Battle.BattleWeaponUnit)
+ys.Battle.BattleHiveUnit.__name = "BattleHiveUnit"
 
-local var_0_3 = var_0_0.Battle.BattleHiveUnit
+local BattleHiveUnit = ys.Battle.BattleHiveUnit
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleHiveUnit.Ctor(self)
+	BattleHiveUnit.super.Ctor(self)
 end
 
-function var_0_3.Update(arg_2_0)
-	arg_2_0:UpdateReload()
-	arg_2_0:updateMovementInfo()
+function BattleHiveUnit.Update(self)
+	self:UpdateReload()
+	self:updateMovementInfo()
 
-	if arg_2_0._currentState == arg_2_0.STATE_READY then
-		if arg_2_0._host:GetUnitType() ~= var_0_1.UnitType.PLAYER_UNIT then
-			if arg_2_0._preCastInfo.time == nil then
-				arg_2_0._currentState = arg_2_0.STATE_PRECAST_FINISH
+	if self._currentState == self.STATE_READY then
+		if self._host:GetUnitType() ~= BattleConst.UnitType.PLAYER_UNIT then
+			if self._preCastInfo.time == nil then
+				self._currentState = self.STATE_PRECAST_FINISH
 			else
-				arg_2_0:PreCast()
+				self:PreCast()
 			end
 		else
 			local var_2_0
 
-			if arg_2_0._antiSub then
-				var_2_0 = var_0_0.Battle.BattleTargetChoise.LegalTarget(arg_2_0._host)
-				var_2_0 = var_0_0.Battle.BattleTargetChoise.TargetDiveState(nil, nil, var_2_0)
-				var_2_0 = var_0_0.Battle.BattleTargetChoise.TargetDetectedUnit(nil, nil, var_2_0)
+			if self._antiSub then
+				var_2_0 = ys.Battle.BattleTargetChoise.LegalTarget(self._host)
+				var_2_0 = ys.Battle.BattleTargetChoise.TargetDiveState(nil, nil, var_2_0)
+				var_2_0 = ys.Battle.BattleTargetChoise.TargetDetectedUnit(nil, nil, var_2_0)
 			else
-				var_2_0 = var_0_0.Battle.BattleTargetChoise.TargetAircraftHarm(arg_2_0._host)
+				var_2_0 = ys.Battle.BattleTargetChoise.TargetAircraftHarm(self._host)
 			end
 
 			if #var_2_0 > 0 then
-				arg_2_0._currentState = arg_2_0.STATE_PRECAST_FINISH
+				self._currentState = self.STATE_PRECAST_FINISH
 			end
 		end
 	end
 
-	if arg_2_0._currentState == arg_2_0.STATE_PRECAST_FINISH then
-		arg_2_0:updateMovementInfo()
-		arg_2_0:Fire()
+	if self._currentState == self.STATE_PRECAST_FINISH then
+		self:updateMovementInfo()
+		self:Fire()
 	end
 end
 
-function var_0_3.SetTemplateData(arg_3_0, arg_3_1)
-	var_0_3.super.SetTemplateData(arg_3_0, arg_3_1)
+function BattleHiveUnit.SetTemplateData(arg_3_0, arg_3_1)
+	BattleHiveUnit.super.SetTemplateData(arg_3_0, arg_3_1)
 
-	arg_3_0._antiSub = table.contains(arg_3_1.search_condition, var_0_1.OXY_STATE.DIVE)
+	arg_3_0._antiSub = table.contains(arg_3_1.search_condition, BattleConst.OXY_STATE.DIVE)
 end
 
-function var_0_3.Fire(arg_4_0)
+function BattleHiveUnit.Fire(arg_4_0)
 	arg_4_0:DispatchGCD()
 
 	arg_4_0._currentState = arg_4_0.STATE_ATTACK
@@ -69,27 +69,28 @@ function var_0_3.Fire(arg_4_0)
 	return true
 end
 
-function var_0_3.createMajorEmitter(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
-	local function var_5_0(arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
-		local var_6_0, var_6_1 = arg_5_0:SpwanAircraft(arg_6_2)
+function BattleHiveUnit.createMajorEmitter(self, barrageID, index, emitterType, spawnFunc, stopFunc)
+	-- HiveUnit的createMajorEmitter主要目的是创建舰载机，因此不需要使用正常武器的大多参数
+	local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority, target)
+		local aircraft, direction = self:SpawnAircraft(barrageAngle)
 
-		var_6_0:AddCreateTimer(var_6_1, 1.5)
+		aircraft:AddCreateTimer(direction, 1.5)
 
-		if arg_5_0._debugRecordDEFAircraft then
-			table.insert(arg_5_0._debugRecordDEFAircraft, var_6_0)
+		if self._debugRecordDEFAircraft then
+			table.insert(self._debugRecordDEFAircraft, aircraft)
 		end
 	end
 
-	var_0_3.super.createMajorEmitter(arg_5_0, arg_5_1, arg_5_2, nil, var_5_0, nil)
+	BattleHiveUnit.super.createMajorEmitter(self, barrageID, index, nil, spawnFunc, nil)
 end
 
-function var_0_3.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
+function BattleHiveUnit.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
 	arg_7_0._tempEmitterList = {}
 
 	local function var_7_0(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-		local var_8_0, var_8_1 = arg_7_0:SpwanAircraft(arg_8_2)
+		local var_8_0, var_8_1 = arg_7_0:SpawnAircraft(arg_8_2)
 
-		var_0_0.Battle.BattleVariable.AddExempt(var_8_0:GetSpeedExemptKey(), var_8_0:GetIFF(), var_0_2.SPEED_FACTOR_FOCUS_CHARACTER)
+		ys.Battle.BattleVariable.AddExempt(var_8_0:GetSpeedExemptKey(), var_8_0:GetIFF(), BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
 		var_8_0:AddCreateTimer(var_8_1, 1)
 
 		if arg_7_0._debugRecordATKAircraft then
@@ -115,10 +116,10 @@ function var_0_3.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
 		end
 	end
 
-	arg_7_2 = arg_7_2 or var_0_3.EMITTER_SHOTGUN
+	arg_7_2 = arg_7_2 or BattleHiveUnit.EMITTER_SHOTGUN
 
 	for iter_7_0, iter_7_1 in ipairs(arg_7_0._tmpData.barrage_ID) do
-		local var_7_2 = var_0_0.Battle[arg_7_2].New(var_7_0, var_7_1, iter_7_1)
+		local var_7_2 = ys.Battle[arg_7_2].New(var_7_0, var_7_1, iter_7_1)
 
 		arg_7_0._tempEmitterList[#arg_7_0._tempEmitterList + 1] = var_7_2
 	end
@@ -132,28 +133,28 @@ function var_0_3.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
 	arg_7_0._host:CloakExpose(arg_7_0._tmpData.expose)
 end
 
-function var_0_3.SpwanAircraft(arg_10_0, arg_10_1)
-	local var_10_0 = arg_10_0._dataProxy:CreateAircraft(arg_10_0._host, arg_10_0._tmpData.id, arg_10_0:GetPotential(), arg_10_0._skinID)
+function BattleHiveUnit.SpawnAircraft(self, barrageAngle)
+	local aircraft = self._dataProxy:CreateAircraft(self._host, self._tmpData.id, self:GetPotential(), self._skinID)
 
-	if arg_10_0:GetStandHost() then
-		var_10_0:SetAttr(arg_10_0:GetStandHost())
+	if self:GetStandHost() then
+		aircraft:SetAttr(self:GetStandHost())
 	end
 
-	local var_10_1 = arg_10_0:GetBaseAngle() + arg_10_1
-	local var_10_2 = math.deg2Rad * var_10_1
-	local var_10_3 = Vector3(math.cos(var_10_2), 0, math.sin(var_10_2))
+	local angle = self:GetBaseAngle() + barrageAngle
+	local angleRad = math.deg2Rad * angle
+	local direction = Vector3(math.cos(angleRad), 0, math.sin(angleRad))
 
-	arg_10_0:TriggerBuffWhenSpawnAircraft(var_10_0)
+	self:TriggerBuffWhenSpawnAircraft(aircraft)
 
-	if arg_10_0._strikePoint then
-		var_10_0:SetStrikePoint(arg_10_0._strikePoint)
+	if self._strikePoint then
+		aircraft:SetStrikePoint(self._strikePoint)
 	end
 
-	return var_10_0, var_10_3
+	return aircraft, direction
 end
 
-function var_0_3.TriggerBuffWhenSpawnAircraft(arg_11_0, arg_11_1)
-	local var_11_0 = var_0_1.BuffEffectType.ON_AIRCRAFT_CREATE
+function BattleHiveUnit.TriggerBuffWhenSpawnAircraft(arg_11_0, arg_11_1)
+	local var_11_0 = BattleConst.BuffEffectType.ON_AIRCRAFT_CREATE
 	local var_11_1 = {
 		aircraft = arg_11_1,
 		equipIndex = arg_11_0._equipmentIndex
@@ -162,27 +163,27 @@ function var_0_3.TriggerBuffWhenSpawnAircraft(arg_11_0, arg_11_1)
 	arg_11_0._host:TriggerBuff(var_11_0, var_11_1)
 end
 
-function var_0_3.SetStrikePoint(arg_12_0, arg_12_1)
+function BattleHiveUnit.SetStrikePoint(arg_12_0, arg_12_1)
 	arg_12_0._strikePoint = arg_12_1
 end
 
-function var_0_3.GetStrikePoint(arg_13_0)
+function BattleHiveUnit.GetStrikePoint(arg_13_0)
 	return arg_13_0._strikePoint
 end
 
-function var_0_3.GetATKAircraftList(arg_14_0)
+function BattleHiveUnit.GetATKAircraftList(arg_14_0)
 	arg_14_0._debugRecordATKAircraft = arg_14_0._debugRecordATKAircraft or {}
 
 	return arg_14_0._debugRecordATKAircraft
 end
 
-function var_0_3.GetDEFAircraftList(arg_15_0)
+function BattleHiveUnit.GetDEFAircraftList(arg_15_0)
 	arg_15_0._debugRecordDEFAircraft = arg_15_0._debugRecordDEFAircraft or {}
 
 	return arg_15_0._debugRecordDEFAircraft
 end
 
-function var_0_3.GetDamageSUM(arg_16_0)
+function BattleHiveUnit.GetDamageSUM(arg_16_0)
 	local var_16_0 = 0
 	local var_16_1 = arg_16_0:GetDEFAircraftList()
 

@@ -62,30 +62,30 @@ function var_0_3.OutRange(arg_6_0)
 	var_0_3.super.OutRange(arg_6_0)
 end
 
-function var_0_3.SetSpawnPosition(arg_7_0, arg_7_1)
-	var_0_3.super.SetSpawnPosition(arg_7_0, arg_7_1)
+function var_0_3.SetSpawnPosition(self, pos)
+	var_0_3.super.SetSpawnPosition(self, pos)
 
-	if arg_7_0._barragePriority then
-		arg_7_0._explodePos = arg_7_0._explodePos + Vector3(arg_7_0._offsetX, 0, arg_7_0._offsetZ)
+	if self._barragePriority then
+		self._explodePos = self._explodePos + Vector3(self._offsetX, 0, self._offsetZ)
 
-		local var_7_0 = Quaternion.Euler(0, arg_7_0._barrageAngle, 0)
-		local var_7_1 = pg.Tool.FilterY(arg_7_0._spawnPos)
+		local var_7_0 = Quaternion.Euler(0, self._barrageAngle, 0)
+		local var_7_1 = pg.Tool.FilterY(self._spawnPos)
 
-		arg_7_0._explodePos = var_7_0 * (arg_7_0._explodePos - var_7_1) + var_7_1
+		self._explodePos = var_7_0 * (self._explodePos - var_7_1) + var_7_1
 	end
 
-	if arg_7_0._fixToRange and Vector3.BattleDistance(arg_7_0._explodePos, arg_7_0._spawnPos) > arg_7_0._range then
-		local var_7_2 = pg.Tool.FilterY(arg_7_0._explodePos - arg_7_0._spawnPos)
+	if self._fixToRange and Vector3.BattleDistance(self._explodePos, self._spawnPos) > self._range then
+		local direction = pg.Tool.FilterY(self._explodePos - self._spawnPos)
 
-		arg_7_0._explodePos = Vector3.Normalize(var_7_2) * arg_7_0._range + arg_7_0._spawnPos
+		self._explodePos = Vector3.Normalize(direction) * self._range + self._spawnPos
 	end
 
-	if arg_7_0._convertedVelocity ~= 0 then
-		local var_7_3 = pg.Tool.FilterY(arg_7_0._spawnPos)
-		local var_7_4 = Vector3.Distance(var_7_3, arg_7_0._explodePos) / arg_7_0._convertedVelocity
-		local var_7_5 = arg_7_0._explodePos.y - arg_7_0._spawnPos.y
+	if self._convertedVelocity ~= 0 then
+		local var_7_3 = pg.Tool.FilterY(self._spawnPos)
+		local var_7_4 = Vector3.Distance(var_7_3, self._explodePos) / self._convertedVelocity
+		local var_7_5 = self._explodePos.y - self._spawnPos.y
 
-		arg_7_0._verticalSpeed = arg_7_0:GetTemplate().extra_param.launchVrtSpeed or var_7_5 / var_7_4 - 0.5 * arg_7_0._gravity * var_7_4
+		self._verticalSpeed = self:GetTemplate().extra_param.launchVrtSpeed or var_7_5 / var_7_4 - 0.5 * self._gravity * var_7_4
 	end
 end
 

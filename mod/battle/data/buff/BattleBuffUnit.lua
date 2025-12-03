@@ -130,23 +130,23 @@ function BattleBuffUnit.GetCommander(arg_14_0)
 	return arg_14_0._commander
 end
 
-function BattleBuffUnit.UpdateStack(arg_15_0, arg_15_1, arg_15_2)
-	if arg_15_0._stack == arg_15_2 then
+function BattleBuffUnit.UpdateStack(self, owner, stack)
+	if self._stack == stack then
 		return
 	end
 
-	arg_15_0._stack = math.min(arg_15_2, arg_15_0._tempData.stack)
+	self._stack = math.min(stack, self._tempData.stack)
 
-	arg_15_0:onTrigger(BuffEffectType.ON_STACK, arg_15_1)
-	arg_15_0:SetRemoveTime()
+	self:onTrigger(BuffEffectType.ON_STACK, owner)
+	self:SetRemoveTime()
 
-	local var_15_0 = {
-		unit_id = arg_15_1:GetUniqueID(),
-		buff_id = arg_15_0._id,
-		stack_count = arg_15_0._stack
+	local args = {
+		unit_id = owner:GetUniqueID(),
+		buff_id = self._id,
+		stack_count = self._stack
 	}
 
-	arg_15_1:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_STACK, var_15_0))
+	owner:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_STACK, args))
 end
 
 function BattleBuffUnit.Remove(arg_16_0, arg_16_1)

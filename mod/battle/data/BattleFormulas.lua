@@ -178,9 +178,9 @@ function BattleFormulas.ConvertBulletDataSpeed(bulletVelocity)
 	return bulletVelocity / bulletSpeedConvertRatio
 end
 
---- @param isWorld boolean: 是否在大型作战中
+--- @param inWorld boolean: 是否在大型作战中
 --- @return function: 一个闭包函数，根据上下文计算伤害
-function BattleFormulas.CreateContextCalculateDamage(isWorld)
+function BattleFormulas.CreateContextCalculateDamage(inWorld)
 	--- @param bullet BattleBulletUnit: 参与伤害结算的子弹实体
 	--- @param target BattleUnit : 受到伤害的目标实体
 	--- @param damageReduceDistance number : 距离伤害衰减比例，只有具有边际伤害的反潜设备才需要考虑
@@ -305,7 +305,7 @@ function BattleFormulas.CreateContextCalculateDamage(isWorld)
 		-- damageRatioBullet(子弹伤害倍率)
 		local damageRatioBullet = BattleAttr.GetCurrent(bullet, "damageRatioBullet")
 		-- damageRatioTag(标签伤害倍率)
-		local damageRatioTag = BattleAttr.GetTagAttr(bullet, target, isWorld)
+		local damageRatioTag = BattleAttr.GetTagAttr(bullet, target, inWorld)
 		-- injureRatio(目标受伤倍率)
 		local injureRatio = BattleAttr.GetCurrent(target, "injureRatio")
 		-- damageAmmoToArmorRate(弹药对甲倍率)
@@ -359,7 +359,7 @@ function BattleFormulas.CreateContextCalculateDamage(isWorld)
 		local damageEnhanceProjectile = BattleAttr.GetCurrent(bullet, "damageEnhanceProjectile")
 		local finalDamageBeforeFloor = math.max(0, finalDamageAfterRepress + damageEnhanceProjectile)
 
-		if isWorld then
+		if inWorld then
 			finalDamageBeforeFloor = finalDamageBeforeFloor * (bfConsts.NUM1 + BattleAttr.GetCurrent(bullet, "worldBuffResistance"))
 		end
 

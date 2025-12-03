@@ -2,15 +2,15 @@ ys = ys or {}
 
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleAOEData")
+local BattleAOEData = class("BattleAOEData")
 
-var_0_0.Battle.BattleAOEData = var_0_2
-var_0_2.__name = "BattleAOEData"
-var_0_2.ALIGNMENT_LEFT = "left"
-var_0_2.ALIGNMENT_RIGHT = "right"
-var_0_2.ALIGNMENT_MIDDLE = "middle"
+var_0_0.Battle.BattleAOEData = BattleAOEData
+BattleAOEData.__name = "BattleAOEData"
+BattleAOEData.ALIGNMENT_LEFT = "left"
+BattleAOEData.ALIGNMENT_RIGHT = "right"
+BattleAOEData.ALIGNMENT_MIDDLE = "middle"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
+function BattleAOEData.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
 	arg_1_0._areaUniqueID = arg_1_1
 	arg_1_0._areaCldFunc = arg_1_3
 	arg_1_0._endFunc = arg_1_4
@@ -26,7 +26,7 @@ function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
 	arg_1_0._timeExemptKey = "aoe_" .. arg_1_0._areaUniqueID
 end
 
-function var_0_2.StartTimer(arg_2_0)
+function BattleAOEData.StartTimer(arg_2_0)
 	if arg_2_0._lifeTime == -1 then
 		arg_2_0._flag = false
 
@@ -42,46 +42,46 @@ function var_0_2.StartTimer(arg_2_0)
 	end
 end
 
-function var_0_2.GetTimeRationExemptKey(arg_4_0)
+function BattleAOEData.GetTimeRationExemptKey(arg_4_0)
 	return arg_4_0._timeExemptKey
 end
 
-function var_0_2.RemoveTimer(arg_5_0)
+function BattleAOEData.RemoveTimer(arg_5_0)
 	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_5_0._lifeTimer)
 
 	arg_5_0._lifeTimer = nil
 	arg_5_0._flag = false
 end
 
-function var_0_2.ClearCLDList(arg_6_0)
+function BattleAOEData.ClearCLDList(arg_6_0)
 	arg_6_0._cldObjList = {}
 end
 
-function var_0_2.AppendCldObj(arg_7_0, arg_7_1)
+function BattleAOEData.AppendCldObj(arg_7_0, arg_7_1)
 	arg_7_0._cldObjList[#arg_7_0._cldObjList + 1] = arg_7_1
 end
 
-function var_0_2.Settle(arg_8_0)
+function BattleAOEData.Settle(arg_8_0)
 	arg_8_0.SortCldObjList(arg_8_0._cldObjList)
 	arg_8_0._cldComponent:GetCldData().func(arg_8_0._cldObjList)
 end
 
-function var_0_2.SettleFinale(arg_9_0)
+function BattleAOEData.SettleFinale(arg_9_0)
 	if arg_9_0._endFunc then
 		arg_9_0.SortCldObjList(arg_9_0._cldObjList)
 		arg_9_0._endFunc(arg_9_0._cldObjList)
 	end
 end
 
-function var_0_2.ForceExit(arg_10_0)
+function BattleAOEData.ForceExit(arg_10_0)
 	return
 end
 
-function var_0_2.SortCldObjList(arg_11_0)
-	table.sort(arg_11_0, var_0_2._Fun_SortCldObjList)
+function BattleAOEData.SortCldObjList(arg_11_0)
+	table.sort(arg_11_0, BattleAOEData._Fun_SortCldObjList)
 end
 
-function var_0_2._Fun_SortCldObjList(arg_12_0, arg_12_1)
+function BattleAOEData._Fun_SortCldObjList(arg_12_0, arg_12_1)
 	if arg_12_0.IsBoss ~= arg_12_1.IsBoss then
 		if arg_12_1.IsBoss then
 			return true
@@ -93,31 +93,31 @@ function var_0_2._Fun_SortCldObjList(arg_12_0, arg_12_1)
 	end
 end
 
-function var_0_2.SetOpponentAffected(arg_13_0, arg_13_1)
+function BattleAOEData.SetOpponentAffected(arg_13_0, arg_13_1)
 	arg_13_0._opponentAffected = arg_13_1
 end
 
-function var_0_2.OpponentAffected(arg_14_0)
+function BattleAOEData.OpponentAffected(arg_14_0)
 	return arg_14_0._opponentAffected
 end
 
-function var_0_2.SetIndiscriminate(arg_15_0, arg_15_1)
+function BattleAOEData.SetIndiscriminate(arg_15_0, arg_15_1)
 	arg_15_0._indicriminate = arg_15_1
 end
 
-function var_0_2.GetIndiscriminate(arg_16_0)
+function BattleAOEData.GetIndiscriminate(arg_16_0)
 	return arg_16_0._indicriminate
 end
 
-function var_0_2.GetActiveFlag(arg_17_0)
+function BattleAOEData.GetActiveFlag(arg_17_0)
 	return arg_17_0._flag
 end
 
-function var_0_2.SetActiveFlag(arg_18_0, arg_18_1)
+function BattleAOEData.SetActiveFlag(arg_18_0, arg_18_1)
 	arg_18_0._flag = arg_18_1
 end
 
-function var_0_2.Dispose(arg_19_0)
+function BattleAOEData.Dispose(arg_19_0)
 	for iter_19_0, iter_19_1 in ipairs(arg_19_0._component) do
 		iter_19_1:Dispose()
 	end
@@ -129,105 +129,105 @@ function var_0_2.Dispose(arg_19_0)
 	arg_19_0._cldObjList = nil
 end
 
-function var_0_2.GetUniqueID(arg_20_0)
+function BattleAOEData.GetUniqueID(arg_20_0)
 	return arg_20_0._areaUniqueID
 end
 
-function var_0_2.GetIFF(arg_21_0)
+function BattleAOEData.GetIFF(arg_21_0)
 	return arg_21_0._IFF
 end
 
-function var_0_2.GetAreaType(arg_22_0)
+function BattleAOEData.GetAreaType(arg_22_0)
 	return arg_22_0._areaType
 end
 
-function var_0_2.GetPosition(arg_23_0)
+function BattleAOEData.GetPosition(arg_23_0)
 	return arg_23_0._pos
 end
 
-function var_0_2.GetTickness(arg_24_0)
+function BattleAOEData.GetTickness(arg_24_0)
 	return arg_24_0._tickness
 end
 
-function var_0_2.GetLifeTime(arg_25_0)
+function BattleAOEData.GetLifeTime(arg_25_0)
 	return arg_25_0._lifeTime
 end
 
-function var_0_2.GetFieldType(arg_26_0)
+function BattleAOEData.GetFieldType(arg_26_0)
 	return arg_26_0._fieldType
 end
 
-function var_0_2.GetDiveFilter(arg_27_0)
+function BattleAOEData.GetDiveFilter(arg_27_0)
 	return arg_27_0._diveFilter
 end
 
-function var_0_2.GetCldFunc(arg_28_0)
+function BattleAOEData.GetCldFunc(arg_28_0)
 	return arg_28_0._areaCldFunc
 end
 
-function var_0_2.GetHeight(arg_29_0)
+function BattleAOEData.GetHeight(arg_29_0)
 	return arg_29_0._height
 end
 
-function var_0_2.GetWidth(arg_30_0)
+function BattleAOEData.GetWidth(arg_30_0)
 	return arg_30_0._width
 end
 
-function var_0_2.GetAngle(arg_31_0)
+function BattleAOEData.GetAngle(arg_31_0)
 	return arg_31_0._angle
 end
 
-function var_0_2.GetRange(arg_32_0)
+function BattleAOEData.GetRange(arg_32_0)
 	return arg_32_0._range
 end
 
-function var_0_2.GetSectorAngle(arg_33_0)
+function BattleAOEData.GetSectorAngle(arg_33_0)
 	return arg_33_0._sectorAngle
 end
 
-function var_0_2.SetAreaType(arg_34_0, arg_34_1)
+function BattleAOEData.SetAreaType(arg_34_0, arg_34_1)
 	arg_34_0._areaType = arg_34_1
 
 	arg_34_0:InitCldComponent()
 end
 
-function var_0_2.SetDiveFilter(arg_35_0, arg_35_1)
+function BattleAOEData.SetDiveFilter(arg_35_0, arg_35_1)
 	arg_35_0._diveFilter = arg_35_1
 end
 
-function var_0_2.SetPosition(arg_36_0, arg_36_1)
+function BattleAOEData.SetPosition(arg_36_0, arg_36_1)
 	arg_36_0._pos = arg_36_1
 end
 
-function var_0_2.SetTickness(arg_37_0, arg_37_1)
+function BattleAOEData.SetTickness(arg_37_0, arg_37_1)
 	arg_37_0._tickness = arg_37_1
 end
 
-function var_0_2.SetFieldType(arg_38_0, arg_38_1)
+function BattleAOEData.SetFieldType(arg_38_0, arg_38_1)
 	arg_38_0._fieldType = arg_38_1
 end
 
-function var_0_2.SetLifeTime(arg_39_0, arg_39_1)
+function BattleAOEData.SetLifeTime(arg_39_0, arg_39_1)
 	arg_39_0._lifeTime = arg_39_1
 end
 
-function var_0_2.SetHeight(arg_40_0, arg_40_1)
+function BattleAOEData.SetHeight(arg_40_0, arg_40_1)
 	arg_40_0._height = arg_40_1
 end
 
-function var_0_2.SetWidth(arg_41_0, arg_41_1)
+function BattleAOEData.SetWidth(arg_41_0, arg_41_1)
 	arg_41_0._width = arg_41_1
 end
 
-function var_0_2.SetAngle(arg_42_0, arg_42_1)
+function BattleAOEData.SetAngle(arg_42_0, arg_42_1)
 	arg_42_0._angle = arg_42_1
 end
 
-function var_0_2.SetRange(arg_43_0, arg_43_1)
+function BattleAOEData.SetRange(arg_43_0, arg_43_1)
 	arg_43_0._range = arg_43_1
 end
 
-function var_0_2.SetSectorAngle(arg_44_0, arg_44_1, arg_44_2)
+function BattleAOEData.SetSectorAngle(arg_44_0, arg_44_1, arg_44_2)
 	arg_44_0._sectorAngle = arg_44_1
 	arg_44_0._sectorDir = arg_44_2
 
@@ -250,31 +250,31 @@ function var_0_2.SetSectorAngle(arg_44_0, arg_44_1, arg_44_2)
 	arg_44_0._negativeCircleNormalizeOffset = arg_44_0._normalizeOffset + math.pi * 2
 end
 
-function var_0_2.SetAnchorPointAlignment(arg_45_0, arg_45_1)
-	if arg_45_1 == var_0_2.ALIGNMENT_LEFT then
+function BattleAOEData.SetAnchorPointAlignment(arg_45_0, arg_45_1)
+	if arg_45_1 == BattleAOEData.ALIGNMENT_LEFT then
 		arg_45_0._alignment = Vector3(arg_45_0._width * 0.5, 0, 0)
-	elseif arg_45_1 == var_0_2.ALIGNMENT_RIGHT then
+	elseif arg_45_1 == BattleAOEData.ALIGNMENT_RIGHT then
 		arg_45_0._alignment = Vector3(arg_45_0._width * -0.5, 0, 0)
 	end
 end
 
-function var_0_2.GetAnchorPointAlignment(arg_46_0)
+function BattleAOEData.GetAnchorPointAlignment(arg_46_0)
 	return arg_46_0._alignment
 end
 
-function var_0_2.GetFXStatic(arg_47_0)
+function BattleAOEData.GetFXStatic(arg_47_0)
 	return arg_47_0._fxStatic
 end
 
-function var_0_2.SetFXStatic(arg_48_0, arg_48_1)
+function BattleAOEData.SetFXStatic(arg_48_0, arg_48_1)
 	arg_48_0._fxStatic = arg_48_1
 end
 
-function var_0_2.AppendComponent(arg_49_0, arg_49_1)
+function BattleAOEData.AppendComponent(arg_49_0, arg_49_1)
 	table.insert(arg_49_0._component, arg_49_1)
 end
 
-function var_0_2.InitCldComponent(arg_50_0)
+function BattleAOEData.InitCldComponent(arg_50_0)
 	if arg_50_0._areaType == var_0_1.AreaType.CUBE or arg_50_0._areaType == var_0_1.AreaType.ELLIPSE then
 		arg_50_0._cldComponent = var_0_0.Battle.BattleCubeCldComponent.New(arg_50_0._width, arg_50_0._tickness, arg_50_0._height, 0, 0)
 	elseif arg_50_0._areaType == var_0_1.AreaType.COLUMN then
@@ -292,72 +292,72 @@ function var_0_2.InitCldComponent(arg_50_0)
 	arg_50_0._cldComponent:SetActive(true)
 end
 
-function var_0_2.GetCldComponent(arg_51_0)
+function BattleAOEData.GetCldComponent(arg_51_0)
 	return arg_51_0._cldComponent
 end
 
-function var_0_2.DeactiveCldBox(arg_52_0)
+function BattleAOEData.DeactiveCldBox(arg_52_0)
 	arg_52_0._cldComponent:SetActive(false)
 end
 
-function var_0_2.GetCldBox(arg_53_0)
+function BattleAOEData.GetCldBox(arg_53_0)
 	return arg_53_0._cldComponent:GetCldBox(arg_53_0:GetPosition() + arg_53_0._alignment)
 end
 
-function var_0_2.GetCldData(arg_54_0)
+function BattleAOEData.GetCldData(arg_54_0)
 	return arg_54_0._cldComponent:GetCldData()
 end
 
-function var_0_2.UpdateDistanceInfo(arg_55_0)
-	for iter_55_0, iter_55_1 in ipairs(arg_55_0._cldObjList) do
-		local var_55_0
-		local var_55_1 = iter_55_1.LeftBound
-		local var_55_2 = iter_55_1.RightBound
-		local var_55_3 = iter_55_1.UpperBound
-		local var_55_4 = iter_55_1.LowerBound
-		local var_55_5 = arg_55_0._pos.x
-		local var_55_6
-		local var_55_7
+function BattleAOEData.UpdateDistanceInfo(self)
+	for _, cldObj in ipairs(self._cldObjList) do
+		local distance
+		local leftBound = cldObj.LeftBound
+		local rightBound = cldObj.RightBound
+		local upperBound = cldObj.UpperBound
+		local lowerBound = cldObj.LowerBound
+		local posX = self._pos.x
+		local inRangeX
+		local cldPointX
 
-		if var_55_1 <= var_55_5 and var_55_5 <= var_55_2 then
-			var_55_6 = true
-		elseif var_55_5 < var_55_1 then
-			var_55_7 = var_55_1
-		elseif var_55_2 < var_55_5 then
-			var_55_7 = var_55_2
+		if leftBound <= posX and posX <= rightBound then
+			inRangeX = true
+		elseif posX < leftBound then
+			cldPointX = leftBound
+		elseif rightBound < posX then
+			cldPointX = rightBound
 		end
 
-		local var_55_8 = arg_55_0._pos.z
-		local var_55_9
-		local var_55_10
+		local posZ = self._pos.z
+		local inRangeZ
+		local cldPointZ
 
-		if var_55_4 <= var_55_8 and var_55_8 <= var_55_3 then
-			var_55_9 = true
-		elseif var_55_8 < var_55_4 then
-			var_55_10 = var_55_4
-		elseif var_55_3 < var_55_8 then
-			var_55_10 = var_55_3
+		if lowerBound <= posZ and posZ <= upperBound then
+			inRangeZ = true
+		elseif posZ < lowerBound then
+			cldPointZ = lowerBound
+		elseif upperBound < posZ then
+			cldPointZ = upperBound
 		end
 
-		if var_55_6 and var_55_9 then
-			var_55_0 = 0
-		elseif var_55_6 then
-			var_55_0 = math.abs(var_55_10 - var_55_8)
-		elseif var_55_9 then
-			var_55_0 = math.abs(var_55_7 - var_55_5)
+		if inRangeX and inRangeZ then
+			distance = 0
+		elseif inRangeX then
+			distance = math.abs(cldPointZ - posZ)
+		elseif inRangeZ then
+			distance = math.abs(cldPointX - posX)
 		else
-			var_55_0 = math.sqrt((var_55_7 - var_55_5)^2 + (var_55_10 - var_55_8)^2)
+			distance = math.sqrt((cldPointX - posX)^2 + (cldPointZ - posZ)^2)
 		end
 
-		arg_55_0._cldObjDistanceList[iter_55_1.UID] = var_55_0
+		self._cldObjDistanceList[cldObj.UID] = distance
 	end
 end
 
-function var_0_2.GetDistance(arg_56_0, arg_56_1)
+function BattleAOEData.GetDistance(arg_56_0, arg_56_1)
 	return arg_56_0._cldObjDistanceList[arg_56_1]
 end
 
-function var_0_2.IsOutOfAngle(arg_57_0, arg_57_1)
+function BattleAOEData.IsOutOfAngle(arg_57_0, arg_57_1)
 	if not arg_57_0._sectorAngle or arg_57_0._sectorAngle >= 360 then
 		return false
 	else
