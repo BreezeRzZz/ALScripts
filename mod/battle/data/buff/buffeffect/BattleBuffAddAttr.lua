@@ -54,7 +54,8 @@ end
 --- 当Buff叠加时调用该回调
 --- 相当于效果每层叠加
 function BattleBuffAddAttr.onStack(self, owner, buff)
-	self._number = self._numberBase * buff._stack
+	local stack = math.min(buff._stackCap, buff._stack)
+	self._number = self._numberBase * stack
 
 	self:UpdateAttr(owner)
 end
