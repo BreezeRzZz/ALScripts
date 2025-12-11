@@ -1214,7 +1214,7 @@ function BattleFormulas.RandomPosNull(point, quota)
 	return nil
 end
 
---- @param point table: 不知道是啥结构，只知道是一个表
+--- @param point Vector3
 --- @return Vector3
 --- 计算一个随机位置
 function BattleFormulas.RandomPos(point)
@@ -1237,7 +1237,7 @@ function BattleFormulas.RandomPos(point)
 	end
 end
 
---- @param point table: 不知道是啥结构，只知道是一个表
+--- @param point Vector3
 --- @param coordLeft string: 坐标左边界的键名
 --- @param coordRight string: 坐标右边界的键名
 --- @return number

@@ -854,18 +854,20 @@ function BattleBuffEffect.onBulletKill(self, arg_106_1, arg_106_2, arg_106_3)
 		self:onTrigger(arg_106_1, arg_106_2)
 	end
 end
-
-function BattleBuffEffect.onBattleBuffCount(self, arg_107_1, arg_107_2, arg_107_3)
-	local var_107_0 = arg_107_3.buffFX
-
-	if var_107_0:GetCountType() == self._countType then
-		if var_107_0:Repeater() then
-			while var_107_0:GetCountProgress() >= 1 do
-				self:onTrigger(arg_107_1, arg_107_2)
-				var_107_0:ConsumeCount()
+-- 用于处理那些依赖buffEffect计数器的效果
+function BattleBuffEffect.onBattleBuffCount(self, owner, buff, args)
+	local buffEffect = args.buffFX
+	-- 检查countType是否匹配
+	if buffEffect:GetCountType() == self._countType then
+		-- 表示是累计计数，然后消耗计数来触发的类型
+		-- 对应的是buffEffect.arg_list的keep字段
+		if buffEffect:Repeater() then
+			while buffEffect:GetCountProgress() >= 1 do
+				self:onTrigger(owner, buff)
+				buffEffect:ConsumeCount()
 			end
-		elseif self:onTrigger(arg_107_1, arg_107_2) ~= "overheat" then
-			var_107_0:ResetCount()
+		elseif self:onTrigger(owner, buff) ~= "overheat" then
+			buffEffect:ResetCount()
 		end
 	end
 end

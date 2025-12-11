@@ -327,7 +327,7 @@ function BattleBulletUnit.SetShiftInfo(arg_21_0, arg_21_1, arg_21_2)
 	end
 
 	arg_21_0._offsetX = arg_21_1 + var_21_0
-	arg_21_0._offsetZ = arg_21_2 + var_21_1ac
+	arg_21_0._offsetZ = arg_21_2 + var_21_1
 end
 
 function BattleBulletUnit.SetRotateInfo(self, targetPos, baseAngle, barrageAngle)
@@ -591,7 +591,7 @@ end
 function BattleBulletUnit.GetPosition(arg_61_0)
 	return arg_61_0._position or Vector3.zero
 end
-
+-- TODO
 function BattleBulletUnit.SetSpawnPosition(arg_62_0, arg_62_1)
 	arg_62_0._spawnPos = arg_62_1
 	arg_62_0._position = arg_62_1:Clone()
@@ -688,7 +688,7 @@ end
 function BattleBulletUnit.GetPierceCount(arg_80_0)
 	return arg_80_0._pierceCount
 end
-
+-- TODO
 function BattleBulletUnit.AppendAttachBuff(arg_81_0, arg_81_1)
 	arg_81_0._attachBuffList = arg_81_0._attachBuffList or arg_81_0:generateAttachBuffList()
 
@@ -700,7 +700,7 @@ function BattleBulletUnit.GetAttachBuff(arg_82_0)
 
 	return arg_82_0._attachBuffList
 end
-
+-- TODO
 function BattleBulletUnit.generateAttachBuffList(arg_83_0)
 	local var_83_0 = {}
 

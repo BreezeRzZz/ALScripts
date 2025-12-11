@@ -327,7 +327,7 @@ function var_0_0.HandleCrashDamage(arg_13_0, arg_13_1, arg_13_2)
 	arg_13_0:HandleDirectDamage(arg_13_1, var_13_0, arg_13_2, var_0_3.UnitDeathReason.CRUSH)
 	arg_13_0:HandleDirectDamage(arg_13_2, var_13_1, arg_13_1, var_0_3.UnitDeathReason.CRUSH)
 end
-
+-- TODO
 function var_0_0.HandleBuffPlacer(arg_14_0, arg_14_1, arg_14_2)
 	local var_14_0 = var_0_5.GetBuffTemplate(arg_14_0.buff_id).effect_list
 	local var_14_1 = false

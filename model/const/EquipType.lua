@@ -1,5 +1,5 @@
 local var_0_0 = class("EquipType")
-
+-- TODO
 var_0_0.CannonQuZhu = 1
 var_0_0.CannonQingXun = 2
 var_0_0.CannonZhongXun = 3

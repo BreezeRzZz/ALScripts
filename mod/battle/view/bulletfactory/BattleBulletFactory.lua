@@ -1,66 +1,66 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
 
-var_0_0.Battle.BattleBulletFactory = singletonClass("BattleBulletFactory")
-var_0_0.Battle.BattleBulletFactory.__name = "BattleBulletFactory"
+ys.Battle.BattleBulletFactory = singletonClass("BattleBulletFactory")
+ys.Battle.BattleBulletFactory.__name = "BattleBulletFactory"
 
-local var_0_2 = var_0_0.Battle.BattleBulletFactory
+local BattleBulletFactory = ys.Battle.BattleBulletFactory
 
-function var_0_2.Ctor(arg_1_0)
+function BattleBulletFactory.Ctor(arg_1_0)
 	return
 end
 
-function var_0_2.RecyleTempModel(arg_2_0, arg_2_1)
+function BattleBulletFactory.RecyleTempModel(arg_2_0, arg_2_1)
 	arg_2_0._tempGOPool:Recycle(arg_2_1)
 end
 
-function var_0_2.Clear(arg_3_0)
+function BattleBulletFactory.Clear(arg_3_0)
 	if arg_3_0._tempGOPool then
 		arg_3_0._tempGOPool:Dispose()
 
 		arg_3_0._tempGOPool = nil
 	end
 end
+-- TODO
+function BattleBulletFactory.CreateBullet(self, tf, bullet, position, fireFXID, direction)
+	bullet:SetOutRangeCallback(self.OutRangeFunc)
 
-function var_0_2.CreateBullet(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4, arg_4_5)
-	arg_4_2:SetOutRangeCallback(arg_4_0.OutRangeFunc)
+	local bulletView = self:MakeBullet()
 
-	local var_4_0 = arg_4_0:MakeBullet()
+	bulletView:SetFactory(self)
+	bulletView:SetBulletData(bullet)
+	self:MakeModel(bulletView, position, fireFXID, direction)
 
-	var_4_0:SetFactory(arg_4_0)
-	var_4_0:SetBulletData(arg_4_2)
-	arg_4_0:MakeModel(var_4_0, arg_4_3, arg_4_4, arg_4_5)
-
-	if arg_4_4 and arg_4_4 ~= "" then
-		arg_4_0:PlayFireFX(arg_4_1, arg_4_2, arg_4_3, arg_4_4, arg_4_5, nil)
+	if fireFXID and fireFXID ~= "" then
+		self:PlayFireFX(tf, bullet, position, fireFXID, direction, nil)
 	end
 
-	return var_4_0
+	return bulletView
 end
 
-function var_0_2.GetSceneMediator(arg_5_0)
-	return var_0_0.Battle.BattleState.GetInstance():GetSceneMediator()
+function BattleBulletFactory.GetSceneMediator(arg_5_0)
+	return ys.Battle.BattleState.GetInstance():GetSceneMediator()
 end
 
-function var_0_2.GetDataProxy(arg_6_0)
-	return var_0_0.Battle.BattleDataProxy.GetInstance()
+function BattleBulletFactory.GetDataProxy(arg_6_0)
+	return ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_2.GetFXPool(arg_7_0)
-	return var_0_0.Battle.BattleFXPool.GetInstance()
+function BattleBulletFactory.GetFXPool(arg_7_0)
+	return ys.Battle.BattleFXPool.GetInstance()
 end
 
-function var_0_2.GetBulletPool(arg_8_0)
-	return var_0_0.Battle.BattleResourceManager.GetInstance()
+function BattleBulletFactory.GetBulletPool(arg_8_0)
+	return ys.Battle.BattleResourceManager.GetInstance()
 end
 
-function var_0_2.OutRangeFunc(arg_9_0)
-	var_0_2.GetDataProxy():RemoveBulletUnit(arg_9_0:GetUniqueID())
+function BattleBulletFactory.OutRangeFunc(arg_9_0)
+	BattleBulletFactory.GetDataProxy():RemoveBulletUnit(arg_9_0:GetUniqueID())
 end
 
-function var_0_2.GetTempGOPool(arg_10_0)
+function BattleBulletFactory.GetTempGOPool(arg_10_0)
 	if arg_10_0._tempGOPool == nil then
 		local var_10_0 = GameObject("temp_bullet_OBJ")
 
@@ -76,7 +76,7 @@ function var_0_2.GetTempGOPool(arg_10_0)
 	return arg_10_0._tempGOPool
 end
 
-function var_0_2.PlayFireFX(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4, arg_11_5, arg_11_6)
+function BattleBulletFactory.PlayFireFX(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4, arg_11_5, arg_11_6)
 	local var_11_0 = arg_11_2:GetWeaponTempData().effect_move == 1
 
 	if arg_11_4 == "" or arg_11_4 == nil then
@@ -94,7 +94,7 @@ function var_0_2.PlayFireFX(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4, ar
 			var_11_2 = var_11_2:Add(arg_11_3)
 		end
 
-		if arg_11_5 == var_0_1.UnitDir.LEFT then
+		if arg_11_5 == BattleConst.UnitDir.LEFT then
 			local var_11_3 = var_11_1.transform
 			local var_11_4 = var_11_3.localEulerAngles
 
@@ -106,66 +106,66 @@ function var_0_2.PlayFireFX(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4, ar
 	end
 end
 
-function var_0_2.MakeBullet(arg_12_0)
+function BattleBulletFactory.MakeBullet(arg_12_0)
 	return nil
 end
 
-function var_0_2.MakeModel(arg_13_0, arg_13_1, arg_13_2)
+function BattleBulletFactory.MakeModel(arg_13_0, arg_13_1, arg_13_2)
 	return nil
 end
 
-function var_0_2.MakeBombPreCastAlter(arg_14_0, arg_14_1, arg_14_2)
+function BattleBulletFactory.MakeBombPreCastAlter(arg_14_0, arg_14_1, arg_14_2)
 	return arg_14_0:MakeModel(arg_14_1, arg_14_2)
 end
 
-function var_0_2.MakeModelAfterBombPreCastAlert(arg_15_0, arg_15_1)
+function BattleBulletFactory.MakeModelAfterBombPreCastAlert(arg_15_0, arg_15_1)
 	return nil
 end
 
-function var_0_2.MakeTrack(arg_16_0, arg_16_1, arg_16_2, arg_16_3)
+function BattleBulletFactory.MakeTrack(arg_16_0, arg_16_1, arg_16_2, arg_16_3)
 	arg_16_1:AddTrack(arg_16_2)
 	pg.EffectMgr.GetInstance():PlayBattleEffect(arg_16_2, arg_16_3, true)
 end
 
-function var_0_2.RemoveBullet(arg_17_0, arg_17_1)
+function BattleBulletFactory.RemoveBullet(arg_17_0, arg_17_1)
 	arg_17_1:Dispose()
 end
 
-function var_0_2.GetFactoryList()
-	if var_0_2._factoryList == nil then
-		var_0_2._factoryList = {
-			[var_0_1.BulletType.CANNON] = var_0_0.Battle.BattleCannonBulletFactory.GetInstance(),
-			[var_0_1.BulletType.BOMB] = var_0_0.Battle.BattleBombBulletFactory.GetInstance(),
-			[var_0_1.BulletType.TORPEDO] = var_0_0.Battle.BattleTorpedoBulletFactory.GetInstance(),
-			[var_0_1.BulletType.DIRECT] = var_0_0.Battle.BattleDirectBulletFactory.GetInstance(),
-			[var_0_1.BulletType.SHRAPNEL] = var_0_0.Battle.BattleShrapnelBulletFactory.GetInstance(),
-			[var_0_1.BulletType.ANTI_AIR] = var_0_0.Battle.BattleAntiAirBulletFactory.GetInstance(),
-			[var_0_1.BulletType.ANTI_SEA] = var_0_0.Battle.BattleAntiSeaBulletFactory.GetInstance(),
-			[var_0_1.BulletType.STRAY] = var_0_0.Battle.BattleStrayBulletFactory.GetInstance(),
-			[var_0_1.BulletType.EFFECT] = var_0_0.Battle.BattleEffectBulletFactory.GetInstance(),
-			[var_0_1.BulletType.BEAM] = var_0_0.Battle.BattleBeamBulletFactory.GetInstance(),
-			[var_0_1.BulletType.G_BULLET] = var_0_0.Battle.BattleGravitationBulletFactory.GetInstance(),
-			[var_0_1.BulletType.ELECTRIC_ARC] = var_0_0.Battle.BattleElectricArcBulletFactory.GetInstance(),
-			[var_0_1.BulletType.SPACE_LASER] = var_0_0.Battle.BattleSpaceLaserFactory.GetInstance(),
-			[var_0_1.BulletType.MISSILE] = var_0_0.Battle.BattleMissileFactory.GetInstance(),
-			[var_0_1.BulletType.SCALE] = var_0_0.Battle.BattleScaleBulletFactory.GetInstance(),
-			[var_0_1.BulletType.TRIGGER_BOMB] = var_0_0.Battle.BattleTriggerBulletFactory.GetInstance(),
-			[var_0_1.BulletType.AAMissile] = var_0_0.Battle.BattleAAMissileFactory.GetInstance()
+function BattleBulletFactory.GetFactoryList()
+	if BattleBulletFactory._factoryList == nil then
+		BattleBulletFactory._factoryList = {
+			[BattleConst.BulletType.CANNON] = ys.Battle.BattleCannonBulletFactory.GetInstance(),
+			[BattleConst.BulletType.BOMB] = ys.Battle.BattleBombBulletFactory.GetInstance(),
+			[BattleConst.BulletType.TORPEDO] = ys.Battle.BattleTorpedoBulletFactory.GetInstance(),
+			[BattleConst.BulletType.DIRECT] = ys.Battle.BattleDirectBulletFactory.GetInstance(),
+			[BattleConst.BulletType.SHRAPNEL] = ys.Battle.BattleShrapnelBulletFactory.GetInstance(),
+			[BattleConst.BulletType.ANTI_AIR] = ys.Battle.BattleAntiAirBulletFactory.GetInstance(),
+			[BattleConst.BulletType.ANTI_SEA] = ys.Battle.BattleAntiSeaBulletFactory.GetInstance(),
+			[BattleConst.BulletType.STRAY] = ys.Battle.BattleStrayBulletFactory.GetInstance(),
+			[BattleConst.BulletType.EFFECT] = ys.Battle.BattleEffectBulletFactory.GetInstance(),
+			[BattleConst.BulletType.BEAM] = ys.Battle.BattleBeamBulletFactory.GetInstance(),
+			[BattleConst.BulletType.G_BULLET] = ys.Battle.BattleGravitationBulletFactory.GetInstance(),
+			[BattleConst.BulletType.ELECTRIC_ARC] = ys.Battle.BattleElectricArcBulletFactory.GetInstance(),
+			[BattleConst.BulletType.SPACE_LASER] = ys.Battle.BattleSpaceLaserFactory.GetInstance(),
+			[BattleConst.BulletType.MISSILE] = ys.Battle.BattleMissileFactory.GetInstance(),
+			[BattleConst.BulletType.SCALE] = ys.Battle.BattleScaleBulletFactory.GetInstance(),
+			[BattleConst.BulletType.TRIGGER_BOMB] = ys.Battle.BattleTriggerBulletFactory.GetInstance(),
+			[BattleConst.BulletType.AAMissile] = ys.Battle.BattleAAMissileFactory.GetInstance()
 		}
 	end
 
-	return var_0_2._factoryList
+	return BattleBulletFactory._factoryList
 end
 
-function var_0_2.DestroyFactory()
-	var_0_2._factoryList = nil
+function BattleBulletFactory.DestroyFactory()
+	BattleBulletFactory._factoryList = nil
 end
 
-function var_0_2.NeutralizeBullet()
-	var_0_0.Battle.BattleAntiAirBulletFactory.GetInstance():NeutralizeBullet()
-	var_0_0.Battle.BattleAntiSeaBulletFactory.GetInstance():NeutralizeBullet()
+function BattleBulletFactory.NeutralizeBullet()
+	ys.Battle.BattleAntiAirBulletFactory.GetInstance():NeutralizeBullet()
+	ys.Battle.BattleAntiSeaBulletFactory.GetInstance():NeutralizeBullet()
 end
 
-function var_0_2.GetRandomBone(arg_21_0)
+function BattleBulletFactory.GetRandomBone(arg_21_0)
 	return arg_21_0[math.floor(math.Random(0, #arg_21_0)) + 1]
 end

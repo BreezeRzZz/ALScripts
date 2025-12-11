@@ -87,7 +87,8 @@ function var_0_0.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
 		assert(false, "compare type error")
 	end
 end
-
+-- TODO
+-- 左侧是战斗外属性名，右侧是战斗内属性名
 var_0_0.attrNameTable = {
 	[var_0_0.Durability] = "maxHP",
 	[var_0_0.Cannon] = "cannonPower",
@@ -108,7 +109,7 @@ var_0_0.attrNameTable = {
 	[var_0_0.OxyAttackDuration] = "oxyAtkDuration",
 	[var_0_0.OxyRaidDistance] = "raidDist"
 }
-
+-- TODO
 function var_0_0.ConvertBattleAttrName(arg_5_0)
 	if var_0_0.attrNameTable[arg_5_0] then
 		return var_0_0.attrNameTable[arg_5_0]

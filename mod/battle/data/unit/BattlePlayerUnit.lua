@@ -102,23 +102,23 @@ function BattlePlayerUnit.SetTemplate(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
 
 	arg_12_0:setStandardLabelTag()
 end
+-- TODO
+function BattlePlayerUnit.overrideSkin(self, skinID, needPainting)
+	self._skinData = BattleDataFunction.GetPlayerShipSkinDataFromID(skinID)
 
-function BattlePlayerUnit.overrideSkin(arg_13_0, arg_13_1, arg_13_2)
-	arg_13_0._skinData = BattleDataFunction.GetPlayerShipSkinDataFromID(arg_13_1)
-
-	local var_13_0 = {
+	local keys = {
 		"prefab",
 		"fx_container",
 		"bound_bone",
 		"smoke"
 	}
 
-	if arg_13_2 then
-		var_13_0[#var_13_0 + 1] = "painting"
+	if needPainting then
+		keys[#keys + 1] = "painting"
 	end
-
-	_.each(var_13_0, function(arg_14_0)
-		arg_13_0._tmpData[arg_14_0] = arg_13_0._skinData[arg_14_0]
+	-- 全部记到tmpData里
+	_.each(keys, function(key)
+		self._tmpData[key] = self._skinData[key]
 	end)
 end
 

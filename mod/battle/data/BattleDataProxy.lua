@@ -2,13 +2,13 @@ ys = ys or {}
 
 local ys = ys
 local BattleEvent = ys.Battle.BattleEvent
-local var_0_2 = ys.Battle.BattleFormulas
+local BattleFormulas = ys.Battle.BattleFormulas
 local BattleConst = ys.Battle.BattleConst
 local BattleConfig = ys.Battle.BattleConfig
 local BattleDataFunction = ys.Battle.BattleDataFunction
-local var_0_6 = ys.Battle.BattleAttr
-local var_0_7 = ys.Battle.BattleVariable
-local var_0_8 = ys.Battle.BattleCardPuzzleEvent
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 local BattleDataProxy = singletonClass("BattleDataProxy", ys.MVC.Proxy)
 
 ys.Battle.BattleDataProxy = BattleDataProxy
@@ -25,11 +25,11 @@ function BattleDataProxy.InitBattle(arg_2_0, arg_2_1)
 	local var_2_1 = var_2_0 == SYSTEM_WORLD or var_2_0 == SYSTEM_WORLD_BOSS
 	local var_2_2 = pg.SdkMgr.GetInstance():CheckPretest() and (PlayerPrefs.GetInt("stage_scratch") or 0) == 1
 
-	arg_2_0:SetupCalculateDamage(var_2_2 and GodenFnger or var_0_2.CreateContextCalculateDamage(var_2_1))
+	arg_2_0:SetupCalculateDamage(var_2_2 and GodenFnger or BattleFormulas.CreateContextCalculateDamage(var_2_1))
 	arg_2_0:SetupDamageKamikazeAir()
 	arg_2_0:SetupDamageKamikazeShip()
 	arg_2_0:SetupDamageCrush()
-	var_0_7.Init()
+	BattleVariable.Init()
 	arg_2_0:InitData(arg_2_1)
 	arg_2_0:DispatchEvent(ys.Event.New(BattleEvent.STAGE_DATA_INIT_FINISH))
 	arg_2_0._cameraUtil:Initialize()
@@ -52,11 +52,11 @@ function BattleDataProxy.OnCameraRatioUpdate(arg_3_0)
 
 	arg_3_0._cameraUtil:setArrowPoint()
 end
-
+-- TODO
 function BattleDataProxy.Start(arg_4_0)
 	arg_4_0._startTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
 end
-
+-- TODO
 function BattleDataProxy.TriggerBattleInitBuffs(arg_5_0)
 	for iter_5_0, iter_5_1 in pairs(arg_5_0._fleetList) do
 		local var_5_0 = iter_5_1:GetUnitList()
@@ -64,82 +64,83 @@ function BattleDataProxy.TriggerBattleInitBuffs(arg_5_0)
 		iter_5_1:FleetBuffTrigger(BattleConst.BuffEffectType.ON_INIT_GAME)
 	end
 end
+-- TODO
+function BattleDataProxy.TirggerBattleStartBuffs(self)
+	for _, fleet in pairs(self._fleetList) do
+		local unitList = fleet:GetUnitList()
+		local scoutList = fleet:GetScoutList()
+		local leader = scoutList[1]
+		local rear = #scoutList > 1 and scoutList[#scoutList] or nil
+		local center = #scoutList == 3 and scoutList[2] or nil
+		local mainList = fleet:GetMainList()
+		local flagShip = mainList[1]
+		local upperConsort = mainList[2]
+		local lowerConsort = mainList[3]
 
-function BattleDataProxy.TirggerBattleStartBuffs(arg_6_0)
-	for iter_6_0, iter_6_1 in pairs(arg_6_0._fleetList) do
-		local var_6_0 = iter_6_1:GetUnitList()
-		local var_6_1 = iter_6_1:GetScoutList()
-		local var_6_2 = var_6_1[1]
-		local var_6_3 = #var_6_1 > 1 and var_6_1[#var_6_1] or nil
-		local var_6_4 = #var_6_1 == 3 and var_6_1[2] or nil
-		local var_6_5 = iter_6_1:GetMainList()
-		local var_6_6 = var_6_5[1]
-		local var_6_7 = var_6_5[2]
-		local var_6_8 = var_6_5[3]
+		for _, unit in ipairs(unitList) do
+			underscore.each(self._battleInitData.ChapterBuffIDs or {}, function(buffID)
+				local buff = ys.Battle.BattleBuffUnit.New(buffID)
 
-		for iter_6_2, iter_6_3 in ipairs(var_6_0) do
-			underscore.each(arg_6_0._battleInitData.ChapterBuffIDs or {}, function(arg_7_0)
-				local var_7_0 = ys.Battle.BattleBuffUnit.New(arg_7_0)
-
-				iter_6_3:AddBuff(var_7_0)
+				unit:AddBuff(buff)
 			end)
-			underscore.each(arg_6_0._battleInitData.GlobalBuffIDs or {}, function(arg_8_0)
-				arg_8_0 = tonumber(arg_8_0)
+			underscore.each(self._battleInitData.GlobalBuffIDs or {}, function(buffID)
+				buffID = tonumber(buffID)
 
-				local var_8_0 = ys.Battle.BattleBuffUnit.New(arg_8_0)
+				local buff = ys.Battle.BattleBuffUnit.New(buffID)
 
-				iter_6_3:AddBuff(var_8_0)
+				unit:AddBuff(buff)
 			end)
 
-			if arg_6_0._battleInitData.MapAuraSkills then
-				for iter_6_4, iter_6_5 in ipairs(arg_6_0._battleInitData.MapAuraSkills) do
-					local var_6_9 = ys.Battle.BattleBuffUnit.New(iter_6_5.id, iter_6_5.level)
+			if self._battleInitData.MapAuraSkills then
+				for _, mapAuraSkill in ipairs(self._battleInitData.MapAuraSkills) do
+					local buff = ys.Battle.BattleBuffUnit.New(mapAuraSkill.id, mapAuraSkill.level)
 
-					iter_6_3:AddBuff(var_6_9)
+					unit:AddBuff(buff)
 				end
 			end
 
-			if arg_6_0._battleInitData.MapAidSkills then
-				for iter_6_6, iter_6_7 in ipairs(arg_6_0._battleInitData.MapAidSkills) do
-					local var_6_10 = ys.Battle.BattleBuffUnit.New(iter_6_7.id, iter_6_7.level)
+			if self._battleInitData.MapAidSkills then
+				for _, mapAidSkill in ipairs(self._battleInitData.MapAidSkills) do
+					local buff = ys.Battle.BattleBuffUnit.New(mapAidSkill.id, mapAidSkill.level)
 
-					iter_6_3:AddBuff(var_6_10)
+					unit:AddBuff(buff)
 				end
 			end
 
-			if arg_6_0._currentStageData.stageBuff then
-				for iter_6_8, iter_6_9 in ipairs(arg_6_0._currentStageData.stageBuff) do
-					local var_6_11 = ys.Battle.BattleBuffUnit.New(iter_6_9.id, iter_6_9.level)
+			if self._currentStageData.stageBuff then
+				for _, stageBuffItem in ipairs(self._currentStageData.stageBuff) do
+					local buff = ys.Battle.BattleBuffUnit.New(stageBuffItem.id, stageBuffItem.level)
 
-					iter_6_3:AddBuff(var_6_11)
+					unit:AddBuff(buff)
 				end
 			end
 
-			iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_START_GAME)
+			unit:TriggerBuff(BattleConst.BuffEffectType.ON_START_GAME)
 
-			if iter_6_3 == var_6_6 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_FLAG_SHIP)
-			elseif iter_6_3 == var_6_7 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_UPPER_CONSORT)
-			elseif iter_6_3 == var_6_8 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_LOWER_CONSORT)
-			elseif iter_6_3 == var_6_2 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_LEADER)
-			elseif iter_6_3 == var_6_4 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_CENTER)
-			elseif iter_6_3 == var_6_3 then
-				iter_6_3:TriggerBuff(BattleConst.BuffEffectType.ON_REAR)
+			if unit == flagShip then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_FLAG_SHIP)
+			elseif unit == upperConsort then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_UPPER_CONSORT)
+			elseif unit == lowerConsort then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_LOWER_CONSORT)
+			elseif unit == leader then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_LEADER)
+			elseif unit == center then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_CENTER)
+			elseif unit == rear then
+				unit:TriggerBuff(BattleConst.BuffEffectType.ON_REAR)
 			end
 		end
 
-		local var_6_12 = iter_6_1:GetSupportUnitList()
+		local supportUnitList = fleet:GetSupportUnitList()
 
-		for iter_6_10, iter_6_11 in ipairs(var_6_12) do
-			underscore.each(arg_6_0._battleInitData.ChapterBuffIDs or {}, function(arg_9_0)
-				if BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(arg_9_0).type == ChapterConst.AirDominanceStrategyBuffType then
-					local var_9_0 = ys.Battle.BattleBuffUnit.New(arg_9_0)
+		for _, supportUnit in ipairs(supportUnitList) do
+			underscore.each(self._battleInitData.ChapterBuffIDs or {}, function(buffID)
+				-- 支援舰队可添加制空权Buff
+				if BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(buffID).type == ChapterConst.AirDominanceStrategyBuffType then
+					local buff = ys.Battle.BattleBuffUnit.New(buffID)
 
-					iter_6_11:AddBuff(var_9_0)
+					supportUnit:AddBuff(buff)
 				end
 			end)
 		end
@@ -263,7 +264,7 @@ function BattleDataProxy.InitData(arg_18_0, arg_18_1)
 				})
 			end
 
-			arg_18_0._mapId = var_0_2.WeightRandom(var_18_1)
+			arg_18_0._mapId = BattleFormulas.WeightRandom(var_18_1)
 		end
 	end
 
@@ -286,7 +287,7 @@ function BattleDataProxy.InitData(arg_18_0, arg_18_1)
 				arg_18_0._completelyRepress = true
 			end
 
-			arg_18_0._repressReduce = var_0_2.ChapterRepressReduce(var_18_3.repressReduce)
+			arg_18_0._repressReduce = BattleFormulas.ChapterRepressReduce(var_18_3.repressReduce)
 			arg_18_0._repressLevel = var_18_3.repressLevel
 			arg_18_0._repressEnemyHpRant = var_18_3.repressEnemyHpRant
 		elseif arg_18_0._battleInitData.battleType == SYSTEM_WORLD or arg_18_0._battleInitData.battleType == SYSTEM_WORLD_BOSS then
@@ -524,7 +525,7 @@ function BattleDataProxy.InitUserAidData(arg_26_0)
 		var_26_1.formationID = BattleConfig.FORMATION_ID
 		var_26_1.id = iter_26_1.id
 
-		var_0_2.AttrFixer(arg_26_0._battleInitData.battleType, var_26_1)
+		BattleFormulas.AttrFixer(arg_26_0._battleInitData.battleType, var_26_1)
 
 		local var_26_2 = iter_26_1.proficiency or {
 			1,
@@ -693,7 +694,7 @@ function BattleDataProxy.GetFleetByIFF(arg_40_0, arg_40_1)
 
 			var_40_1:InitCardPuzzleData(var_40_2)
 			var_40_1:CustomConfigID(arg_40_0._battleInitData.CardPuzzleCombatID)
-			arg_40_0:DispatchEvent(ys.Event.New(var_0_8.CARD_PUZZLE_INIT))
+			arg_40_0:DispatchEvent(ys.Event.New(BattleCardPuzzleEvent.CARD_PUZZLE_INIT))
 		end
 	end
 
@@ -994,8 +995,8 @@ function BattleDataProxy.UpdateWeather(arg_57_0, arg_57_1)
 				if not var_57_3 or var_57_3:GetCurrentState() ~= var_57_3.STATE_SUMMON_SICKNESS then
 					local var_57_4 = iter_57_3:GetIFF()
 					local var_57_5 = var_57_1[var_57_4]
-					local var_57_6 = var_0_6.GetCurrent(iter_57_3, "attackRating")
-					local var_57_7 = var_0_6.GetCurrent(iter_57_3, "aimBiasExtraACC")
+					local var_57_6 = BattleAttr.GetCurrent(iter_57_3, "attackRating")
+					local var_57_7 = BattleAttr.GetCurrent(iter_57_3, "aimBiasExtraACC")
 
 					var_57_1[var_57_4] = math.max(var_57_5, var_57_6)
 					var_57_2[var_57_4] = var_57_2[var_57_4] + var_57_7
@@ -1065,7 +1066,7 @@ function BattleDataProxy.UpdateCountDown(arg_59_0, arg_59_1)
 	arg_59_0._totalTime = arg_59_1 - arg_59_0._startTimeStamp
 	arg_59_0._lastUpdateTime = arg_59_1
 end
-
+-- TODO: 200多行的函数，吓哭了
 function BattleDataProxy.SpawnMonster(arg_60_0, arg_60_1, arg_60_2, arg_60_3, arg_60_4, arg_60_5)
 	local var_60_0 = arg_60_0:GenerateUnitID()
 	local var_60_1 = BattleDataFunction.GetMonsterTmpDataFromID(arg_60_1.monsterTemplateID)
@@ -1096,7 +1097,7 @@ function BattleDataProxy.SpawnMonster(arg_60_0, arg_60_1, arg_60_2, arg_60_3, ar
 
 	local var_60_8 = BattleDataFunction.CreateBattleUnitData(var_60_0, arg_60_3, arg_60_4, arg_60_1.monsterTemplateID, nil, var_60_2, arg_60_1.extraInfo, nil, nil, nil, nil, arg_60_1.level)
 
-	var_0_6.MonsterAttrFixer(arg_60_0._battleInitData.battleType, var_60_8)
+	BattleAttr.MonsterAttrFixer(arg_60_0._battleInitData.battleType, var_60_8)
 
 	local var_60_9
 
@@ -1112,7 +1113,7 @@ function BattleDataProxy.SpawnMonster(arg_60_0, arg_60_1, arg_60_2, arg_60_3, ar
 
 	var_60_8:SetCurrentHP(var_60_9)
 
-	local var_60_10 = var_0_2.RandomPos(arg_60_1.corrdinate)
+	local var_60_10 = BattleFormulas.RandomPos(arg_60_1.corrdinate)
 
 	var_60_8:SetPosition(var_60_10)
 	var_60_8:SetAI(arg_60_1.pilotAITemplateID or var_60_1.pilot_ai_template_id)
@@ -1247,98 +1248,99 @@ function BattleDataProxy.UpdateHostileSubmarine(arg_62_0, arg_62_1)
 	arg_62_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_HOSTILE_SUBMARINE))
 end
 
-function BattleDataProxy.SpawnNPC(arg_63_0, arg_63_1, arg_63_2)
-	local var_63_0 = arg_63_0:GenerateUnitID()
-	local var_63_1 = BattleConst.UnitType.MINION_UNIT
-	local var_63_2 = BattleDataFunction.GetMonsterTmpDataFromID(arg_63_1.monsterTemplateID)
-	local var_63_3 = {}
+function BattleDataProxy.SpawnNPC(self, spawnData, caster)
+	local UID = self:GenerateUnitID()
+	local MINION_UNIT = BattleConst.UnitType.MINION_UNIT
+	local monsterTemplate = BattleDataFunction.GetMonsterTmpDataFromID(spawnData.monsterTemplateID)
+	local equipmentList = {}
 
-	for iter_63_0, iter_63_1 in ipairs(var_63_2.equipment_list) do
-		table.insert(var_63_3, {
-			id = iter_63_1
+	for _, equipment in ipairs(monsterTemplate.equipment_list) do
+		table.insert(equipmentList, {
+			id = equipment
 		})
 	end
 
-	local var_63_4 = BattleDataFunction.CreateBattleUnitData(var_63_0, var_63_1, arg_63_2:GetIFF(), arg_63_1.monsterTemplateID, nil, var_63_3, arg_63_1.extraInfo, nil, nil, nil, nil, arg_63_1.level, arg_63_2)
-	local var_63_5 = var_63_4:GetMaxHP()
+	local unit = BattleDataFunction.CreateBattleUnitData(UID, MINION_UNIT, caster:GetIFF(), spawnData.monsterTemplateID, nil, equipmentList, spawnData.extraInfo, nil, nil, nil, nil, spawnData.level, caster)
+	local maxHP = unit:GetMaxHP()
 
-	var_63_4:SetCurrentHP(var_63_5)
+	unit:SetCurrentHP(maxHP)
 
-	local var_63_6
-
-	if arg_63_1.corrdinate then
-		var_63_6 = var_0_2.RandomPos(arg_63_1.corrdinate)
+	local pos
+	-- 若指定坐标则在指定坐标生成，否则在召唤者位置生成
+	-- 虽然有随机功能，但传入的参数一般没有设定随机参数
+	if spawnData.corrdinate then
+		pos = BattleFormulas.RandomPos(spawnData.corrdinate)
 	else
-		var_63_6 = Clone(arg_63_2:GetPosition())
+		pos = Clone(caster:GetPosition())
 	end
 
-	var_63_4:SetPosition(var_63_6)
-	var_63_4:SetAI(arg_63_1.pilotAITemplateID or var_63_2.pilot_ai_template_id)
-	arg_63_0:setShipUnitBound(var_63_4)
+	unit:SetPosition(pos)
+	unit:SetAI(spawnData.pilotAITemplateID or monsterTemplate.pilot_ai_template_id)
+	self:setShipUnitBound(unit)
 
-	if table.contains(TeamType.SubShipType, var_63_2.type) then
-		var_63_4:InitOxygen()
+	if table.contains(TeamType.SubShipType, monsterTemplate.type) then
+		unit:InitOxygen()
 
-		if var_63_4:GetIFF() ~= BattleConfig.FRIENDLY_CODE then
-			arg_63_0:UpdateHostileSubmarine(true)
+		if unit:GetIFF() ~= BattleConfig.FRIENDLY_CODE then
+			self:UpdateHostileSubmarine(true)
 		end
 	end
 
-	BattleDataFunction.AttachWeather(var_63_4, arg_63_0._weahter)
+	BattleDataFunction.AttachWeather(unit, self._weahter)
 
-	arg_63_0._freeShipList[var_63_0] = var_63_4
-	arg_63_0._unitList[var_63_0] = var_63_4
+	self._freeShipList[UID] = unit
+	self._unitList[UID] = unit
 
-	arg_63_0._cldSystem:InitShipCld(var_63_4)
+	self._cldSystem:InitShipCld(unit)
+	-- 设定出生的虚弱期
+	local sickness = spawnData.sickness or BattleConst.SUMMONING_SICKNESS_DURATION
 
-	local var_63_7 = arg_63_1.sickness or BattleConst.SUMMONING_SICKNESS_DURATION
+	unit:SummonSickness(sickness)
+	unit:SetMoveCast(spawnData.moveCast == true)
 
-	var_63_4:SummonSickness(var_63_7)
-	var_63_4:SetMoveCast(arg_63_1.moveCast == true)
+	self._minionShipList[UID] = unit
 
-	arg_63_0._minionShipList[var_63_0] = var_63_4
-
-	if arg_63_1.phase then
-		ys.Battle.BattleUnitPhaseSwitcher.New(var_63_4):SetTemplateData(arg_63_1.phase)
+	if spawnData.phase then
+		ys.Battle.BattleUnitPhaseSwitcher.New(unit):SetTemplateData(spawnData.phase)
 	end
 
-	local var_63_8 = {
-		type = var_63_1,
-		unit = var_63_4,
-		bossData = arg_63_1.bossData,
-		extraInfo = arg_63_1.extraInfo
+	local args = {
+		type = MINION_UNIT,
+		unit = unit,
+		bossData = spawnData.bossData,
+		extraInfo = spawnData.extraInfo
 	}
 
-	arg_63_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_63_8))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, args))
 
-	local function var_63_9(arg_64_0)
-		for iter_64_0, iter_64_1 in ipairs(arg_64_0) do
+	local function initBuff(buffList)
+		for _, buff in ipairs(buffList) do
 			local var_64_0
-			local var_64_1
-			local var_64_2
+			local buffId
+			local buffLevel
 
-			if type(iter_64_1) == "number" then
-				var_64_1 = iter_64_1
-				var_64_2 = 1
+			if type(buff) == "number" then
+				buffId = buff
+				buffLevel = 1
 			else
-				var_64_1 = iter_64_1.ID
-				var_64_2 = iter_64_1.LV or 1
+				buffId = buff.ID
+				buffLevel = buff.LV or 1
 			end
 
-			local var_64_3 = ys.Battle.BattleBuffUnit.New(var_64_1, var_64_2, var_63_4)
+			local newBuff = ys.Battle.BattleBuffUnit.New(buffId, buffLevel, unit)
 
-			var_63_4:AddBuff(var_64_3)
+			unit:AddBuff(newBuff)
 		end
 	end
 
-	local var_63_10 = var_63_4:GetTemplate().buff_list
-	local var_63_11 = arg_63_1.buffList or {}
+	local buffList = unit:GetTemplate().buff_list
+	local spawnBuffList = spawnData.buffList or {}
 
-	var_63_9(var_63_10)
-	var_63_9(var_63_11)
-	var_63_4:CheckWeaponInitial()
+	initBuff(buffList)
+	initBuff(spawnBuffList)
+	unit:CheckWeaponInitial()
 
-	return var_63_4
+	return unit
 end
 
 function BattleDataProxy.EnemyEscape(arg_65_0)
@@ -1663,7 +1665,7 @@ function BattleDataProxy.generatePlayerUnit(arg_83_0, arg_83_1, arg_83_2, arg_83
 	var_83_1.formationID = BattleConfig.FORMATION_ID
 	var_83_1.id = arg_83_1.id
 
-	var_0_6.AttrFixer(arg_83_0._battleInitData.battleType, var_83_1)
+	BattleAttr.AttrFixer(arg_83_0._battleInitData.battleType, var_83_1)
 
 	local var_83_2 = arg_83_1.proficiency or {
 		1,
@@ -1705,9 +1707,9 @@ function BattleDataProxy.generatePlayerUnit(arg_83_0, arg_83_1, arg_83_2, arg_83
 	end
 
 	if var_83_4 == SYSTEM_WORLD then
-		local var_83_6 = var_0_2.WorldMapRewardHealingRate(arg_83_0._battleInitData.EnemyMapRewards, arg_83_0._battleInitData.FleetMapRewards)
+		local var_83_6 = BattleFormulas.WorldMapRewardHealingRate(arg_83_0._battleInitData.EnemyMapRewards, arg_83_0._battleInitData.FleetMapRewards)
 
-		var_0_6.SetCurrent(var_83_5, "healingRate", var_83_6)
+		BattleAttr.SetCurrent(var_83_5, "healingRate", var_83_6)
 	end
 
 	var_83_5:SetPosition(arg_83_3)
@@ -1731,7 +1733,7 @@ function BattleDataProxy.generateSupportPlayerUnit(arg_85_0, arg_85_1, arg_85_2)
 	var_85_1.formationID = BattleConfig.FORMATION_ID
 	var_85_1.id = arg_85_1.id
 
-	var_0_6.AttrFixer(arg_85_0._battleInitData.battleType, var_85_1)
+	BattleAttr.AttrFixer(arg_85_0._battleInitData.battleType, var_85_1)
 
 	local var_85_2 = arg_85_1.proficiency or {
 		1,
@@ -1950,7 +1952,7 @@ function BattleDataProxy.CreateAircraft(self, host, aircraftId, potential, skinI
 
 	return aircraft
 end
-
+-- TODO
 function BattleDataProxy.CreateAirFighter(arg_105_0, arg_105_1)
 	local var_105_0 = arg_105_0:GenerateAircraftID()
 	local var_105_1 = BattleDataFunction.CreateAirFighterUnit(var_105_0, arg_105_1)
@@ -2222,37 +2224,36 @@ function BattleDataProxy.SpawnLastingEllipseArea(arg_120_0, arg_120_1, arg_120_2
 	return var_120_1
 end
 
-function BattleDataProxy.SpawnLastingCubeArea(arg_121_0, arg_121_1, arg_121_2, arg_121_3, arg_121_4, arg_121_5, arg_121_6, arg_121_7, arg_121_8, arg_121_9, arg_121_10, arg_121_11, arg_121_12)
-	arg_121_9 = arg_121_9 or false
+function BattleDataProxy.SpawnLastingCubeArea(self, fieldType, ownerIFF, areaCenter, areaWidth, areaHeight, lifetime, areaCldFunc, exitCldFunc, isFriend, fxID, endFunc, frequent)
+	isFriend = isFriend or false
 
-	local var_121_0 = arg_121_0:GenerateAreaID()
-	local var_121_1 = ys.Battle.BattleLastingAOEData.New(var_121_0, arg_121_2, arg_121_7, arg_121_8, arg_121_11, arg_121_12)
-	local var_121_2 = Clone(arg_121_3)
+	local aoeID = self:GenerateAreaID()
+	local lastingAOEData = ys.Battle.BattleLastingAOEData.New(aoeID, ownerIFF, areaCldFunc, exitCldFunc, endFunc, frequent)
+	local center = Clone(areaCenter)
 
-	var_121_1:SetPosition(var_121_2)
-	var_121_1:SetWidth(arg_121_4)
-	var_121_1:SetHeight(arg_121_5)
-	var_121_1:SetAreaType(BattleConst.AreaType.CUBE)
-	var_121_1:SetLifeTime(arg_121_6)
-	var_121_1:SetFieldType(arg_121_1)
-	var_121_1:SetOpponentAffected(not arg_121_9)
-	arg_121_0:CreateAreaOfEffect(var_121_1)
+	lastingAOEData:SetPosition(center)
+	lastingAOEData:SetWidth(areaWidth)
+	lastingAOEData:SetHeight(areaHeight)
+	lastingAOEData:SetAreaType(BattleConst.AreaType.CUBE)
+	lastingAOEData:SetLifeTime(lifetime)
+	lastingAOEData:SetFieldType(fieldType)
+	lastingAOEData:SetOpponentAffected(not isFriend)
+	self:CreateAreaOfEffect(lastingAOEData)
 
-	if arg_121_10 and arg_121_10 ~= "" then
-		local var_121_3 = {
-			area = var_121_1,
-			FXID = arg_121_10
+	if fxID and fxID ~= "" then
+		local args = {
+			area = lastingAOEData,
+			FXID = fxID
 		}
 
-		arg_121_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, var_121_3))
+		self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, args))
 	end
 
-	return var_121_1
+	return lastingAOEData
 end
 
-function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodePos, range, time, arg_122_6, miss_fx, cldFunc)
-	-- opponentAffected
-	arg_122_6 = arg_122_6 or false
+function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodePos, range, time, isFriend, miss_fx, cldFunc)
+	isFriend = isFriend or false
 
 	local aoeID = self:GenerateAreaID()
 	local aoeData = ys.Battle.BattleTriggerAOEData.New(aoeID, iff, cldFunc)
@@ -2263,7 +2264,7 @@ function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodeP
 	aoeData:SetAreaType(BattleConst.AreaType.COLUMN)
 	aoeData:SetLifeTime(time)
 	aoeData:SetFieldType(effectField)
-	aoeData:SetOpponentAffected(not arg_122_6)
+	aoeData:SetOpponentAffected(not isFriend)
 	self:CreateAreaOfEffect(aoeData)
 
 	if miss_fx and miss_fx ~= "" then
@@ -2601,7 +2602,7 @@ function BattleDataProxy.SpawnFusionUnit(arg_157_0, arg_157_1, arg_157_2, arg_15
 	local var_157_1 = arg_157_1:GetIFF()
 	local var_157_2 = arg_157_0:generatePlayerUnit(arg_157_2, var_157_1, var_157_0, arg_157_0._commanderBuff)
 
-	var_0_6.SetFusionAttrFromElement(var_157_2, arg_157_1, arg_157_3, arg_157_4)
+	BattleAttr.SetFusionAttrFromElement(var_157_2, arg_157_1, arg_157_3, arg_157_4)
 	var_157_2:SetCurrentHP(var_157_2:GetMaxHP())
 	arg_157_1:GetFleetVO():AppendPlayerUnit(var_157_2)
 	arg_157_0:setShipUnitBound(var_157_2)
@@ -2636,7 +2637,7 @@ function BattleDataProxy.DefusionUnit(arg_158_0, arg_158_1)
 end
 
 function BattleDataProxy.FreezeUnit(arg_159_0, arg_159_1)
-	var_0_6.SetCurrent(arg_159_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.FUSION_ELEMENT_UNIT_TYPE)
+	BattleAttr.SetCurrent(arg_159_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.FUSION_ELEMENT_UNIT_TYPE)
 	arg_159_1:UpdateBlindInvisibleBySpectre()
 	arg_159_0:SwitchSpectreUnit(arg_159_1)
 
@@ -2662,7 +2663,7 @@ function BattleDataProxy.FreezeUnit(arg_159_0, arg_159_1)
 end
 
 function BattleDataProxy.ActiveFreezeUnit(arg_160_0, arg_160_1)
-	var_0_6.SetCurrent(arg_160_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.PLAYER_DEFAULT)
+	BattleAttr.SetCurrent(arg_160_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.PLAYER_DEFAULT)
 	arg_160_1:UpdateBlindInvisibleBySpectre()
 	arg_160_0:SwitchSpectreUnit(arg_160_1)
 	BattleDataFunction.AttachWeather(arg_160_1, arg_160_0._weahter)

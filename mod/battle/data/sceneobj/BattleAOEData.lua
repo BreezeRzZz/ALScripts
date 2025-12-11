@@ -10,20 +10,20 @@ BattleAOEData.ALIGNMENT_LEFT = "left"
 BattleAOEData.ALIGNMENT_RIGHT = "right"
 BattleAOEData.ALIGNMENT_MIDDLE = "middle"
 
-function BattleAOEData.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
-	arg_1_0._areaUniqueID = arg_1_1
-	arg_1_0._areaCldFunc = arg_1_3
-	arg_1_0._endFunc = arg_1_4
-	arg_1_0._IFF = arg_1_2
-	arg_1_0._cldObjList = {}
-	arg_1_0._cldObjDistanceList = {}
+function BattleAOEData.Ctor(self, areaUID, IFF, areaCldFunc, endFunc)
+	self._areaUniqueID = areaUID
+	self._areaCldFunc = areaCldFunc
+	self._endFunc = endFunc
+	self._IFF = IFF
+	self._cldObjList = {}
+	self._cldObjDistanceList = {}
 
-	arg_1_0:SetTickness(10)
+	self:SetTickness(10)
 
-	arg_1_0._alignment = Vector3.zero
-	arg_1_0._angle = 0
-	arg_1_0._component = {}
-	arg_1_0._timeExemptKey = "aoe_" .. arg_1_0._areaUniqueID
+	self._alignment = Vector3.zero
+	self._angle = 0
+	self._component = {}
+	self._timeExemptKey = "aoe_" .. self._areaUniqueID
 end
 
 function BattleAOEData.StartTimer(arg_2_0)

@@ -1,39 +1,39 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffAddAircraftOrb = class("BattleBuffAddAircraftOrb", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffAddAircraftOrb.__name = "BattleBuffAddAircraftOrb"
+ys.Battle.BattleBuffAddAircraftOrb = class("BattleBuffAddAircraftOrb", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffAddAircraftOrb.__name = "BattleBuffAddAircraftOrb"
 
-local var_0_1 = var_0_0.Battle.BattleBuffAddAircraftOrb
+local BattleBuffAddAircraftOrb = ys.Battle.BattleBuffAddAircraftOrb
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAircraftOrb.Ctor(self, effectData)
+	BattleBuffAddAircraftOrb.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffAddAircraftOrb.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._buffID = var_2_0.buff_id
-	arg_2_0._rant = var_2_0.rant or 10000
-	arg_2_0._level = var_2_0.level or 1
-	arg_2_0._buffLevel = var_2_0.buff_level or 1
+	self._buffID = arg_list.buff_id
+	self._rant = arg_list.rant or 10000
+	self._level = arg_list.level or 1
+	self._buffLevel = arg_list.buff_level or 1
 end
 
-function var_0_1.onAircraftCreate(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	if not arg_3_0:equipIndexRequire(arg_3_3.equipIndex) then
+function BattleBuffAddAircraftOrb.onAircraftCreate(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	local var_3_0 = {
-		buffID = arg_3_0._buffID,
-		rant = arg_3_0._rant,
-		level = arg_3_0._level,
-		buff_level = arg_3_0._buffLevel
+	local attachBuff = {
+		buffID = self._buffID,
+		rant = self._rant,
+		level = self._level,
+		buff_level = self._buffLevel
 	}
-	local var_3_1 = arg_3_3.aircraft:GetWeapon()
+	local aircraftWeaponList = args.aircraft:GetWeapon()
 
-	for iter_3_0, iter_3_1 in ipairs(var_3_1) do
-		iter_3_1:SetBulletOrbData(var_3_0)
+	for _, aircraftWeapon in ipairs(aircraftWeaponList) do
+		aircraftWeapon:SetBulletOrbData(attachBuff)
 	end
 end

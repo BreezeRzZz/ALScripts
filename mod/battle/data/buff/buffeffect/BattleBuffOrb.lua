@@ -1,43 +1,43 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffOrb", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffOrb = class("BattleBuffOrb", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffOrb = var_0_1
-var_0_1.__name = "BattleBuffOrb"
+ys.Battle.BattleBuffOrb = BattleBuffOrb
+BattleBuffOrb.__name = "BattleBuffOrb"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffOrb.Ctor(self, effectData)
+	BattleBuffOrb.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffOrb.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._buffID = var_2_0.buff_id
-	arg_2_0._rant = var_2_0.rant or 10000
-	arg_2_0._level = var_2_0.level or 1
-	arg_2_0._buffLevel = var_2_0.buff_level or 1
-	arg_2_0._type = var_2_0.type
+	self._buffID = arg_list.buff_id
+	self._rant = arg_list.rant or 10000
+	self._level = arg_list.level or 1
+	self._buffLevel = arg_list.buff_level or 1
+	self._type = arg_list.type
 end
 
-function var_0_1.onTrigger(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_3._bullet
+function BattleBuffOrb.onTrigger(self, owner, buff, args)
+	local bullet = args._bullet
 
-	if arg_3_0._type and var_3_0:GetTemplate().type ~= arg_3_0._type then
+	if self._type and bullet:GetTemplate().type ~= self._type then
 		return
 	end
 
-	arg_3_0:attachOrb(var_3_0)
-	var_0_1.super.onTrigger(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
+	self:attachOrb(bullet)
+	BattleBuffOrb.super.onTrigger(self, owner, buff, args)
 end
 
-function var_0_1.attachOrb(arg_4_0, arg_4_1)
-	local var_4_0 = {
-		buff_id = arg_4_0._buffID,
-		rant = arg_4_0._rant,
-		level = arg_4_0._level,
-		buff_level = arg_4_0._buffLevel
+function BattleBuffOrb.attachOrb(self, bullet)
+	local attachBuff = {
+		buff_id = self._buffID,
+		rant = self._rant,
+		level = self._level,
+		buff_level = self._buffLevel
 	}
 
-	arg_4_1:AppendAttachBuff(var_4_0)
+	bullet:AppendAttachBuff(attachBuff)
 end

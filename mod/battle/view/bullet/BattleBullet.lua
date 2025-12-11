@@ -1,26 +1,26 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBulletEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleBullet = class("BattleBullet", var_0_0.Battle.BattleSceneObject)
-var_0_0.Battle.BattleBullet.__name = "BattleBullet"
+ys.Battle.BattleBullet = class("BattleBullet", ys.Battle.BattleSceneObject)
+ys.Battle.BattleBullet.__name = "BattleBullet"
 
-local var_0_4 = var_0_0.Battle.BattleBullet
+local BattleBullet = ys.Battle.BattleBullet
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+function BattleBullet.Ctor(arg_1_0)
+	BattleBullet.super.Ctor(arg_1_0)
+	ys.EventListener.AttachEventListener(arg_1_0)
 
-	arg_1_0.resMgr = var_0_0.Battle.BattleResourceManager.GetInstance()
+	arg_1_0.resMgr = ys.Battle.BattleResourceManager.GetInstance()
 	arg_1_0._cacheSpeed = Vector3.zero
 	arg_1_0._calcSpeed = Vector3.zero
 	arg_1_0._cacheTFPos = Vector3.zero
 end
 
-function var_0_4.Update(arg_2_0, arg_2_1)
+function BattleBullet.Update(arg_2_0, arg_2_1)
 	local var_2_0 = arg_2_0._bulletData:GetSpeed()
 
 	arg_2_0._calcSpeed:Set(var_2_0.x, var_2_0.y, var_2_0.z)
@@ -50,7 +50,7 @@ function var_0_4.Update(arg_2_0, arg_2_1)
 	end
 end
 
-function var_0_4.UpdatePosition(arg_3_0)
+function BattleBullet.UpdatePosition(arg_3_0)
 	local var_3_0 = arg_3_0:GetPosition()
 
 	arg_3_0._tf.localPosition = var_3_0
@@ -58,11 +58,11 @@ function var_0_4.UpdatePosition(arg_3_0)
 	arg_3_0._cacheTFPos:Set(var_3_0.x, var_3_0.y, var_3_0.z)
 end
 
-function var_0_4.DoOutRange(arg_4_0)
+function BattleBullet.DoOutRange(arg_4_0)
 	arg_4_0._bulletMissFunc(arg_4_0)
 end
 
-function var_0_4.SetBulletData(arg_5_0, arg_5_1)
+function BattleBullet.SetBulletData(arg_5_0, arg_5_1)
 	arg_5_0._bulletData = arg_5_1
 
 	arg_5_0._bulletData:SetStartTimeStamp(pg.TimeMgr.GetInstance():GetCombatTime())
@@ -73,19 +73,19 @@ function var_0_4.SetBulletData(arg_5_0, arg_5_1)
 	arg_5_0:AddBulletEvent()
 end
 
-function var_0_4.AddBulletEvent(arg_6_0)
-	arg_6_0._bulletData:RegisterEventListener(arg_6_0, var_0_1.HIT, arg_6_0.onBulletHit)
-	arg_6_0._bulletData:RegisterEventListener(arg_6_0, var_0_1.INTERCEPTED, arg_6_0.onIntercepted)
-	arg_6_0._bulletData:RegisterEventListener(arg_6_0, var_0_1.OUT_RANGE, arg_6_0.onOutRange)
+function BattleBullet.AddBulletEvent(arg_6_0)
+	arg_6_0._bulletData:RegisterEventListener(arg_6_0, BattleBulletEvent.HIT, arg_6_0.onBulletHit)
+	arg_6_0._bulletData:RegisterEventListener(arg_6_0, BattleBulletEvent.INTERCEPTED, arg_6_0.onIntercepted)
+	arg_6_0._bulletData:RegisterEventListener(arg_6_0, BattleBulletEvent.OUT_RANGE, arg_6_0.onOutRange)
 end
 
-function var_0_4.RemoveBulletEvent(arg_7_0)
-	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, var_0_1.HIT)
-	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, var_0_1.INTERCEPTED)
-	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, var_0_1.OUT_RANGE)
+function BattleBullet.RemoveBulletEvent(arg_7_0)
+	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, BattleBulletEvent.HIT)
+	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, BattleBulletEvent.INTERCEPTED)
+	arg_7_0._bulletData:UnregisterEventListener(arg_7_0, BattleBulletEvent.OUT_RANGE)
 end
 
-function var_0_4.onBulletHit(arg_8_0, arg_8_1)
+function BattleBullet.onBulletHit(arg_8_0, arg_8_1)
 	local var_8_0 = arg_8_1.Data
 	local var_8_1 = arg_8_1.Data.UID
 	local var_8_2 = arg_8_1.Data.type
@@ -93,25 +93,25 @@ function var_0_4.onBulletHit(arg_8_0, arg_8_1)
 	arg_8_0._bulletHitFunc(arg_8_0, var_8_1, var_8_2)
 end
 
-function var_0_4.onIntercepted(arg_9_0)
-	local var_9_0, var_9_1 = var_0_0.Battle.BattleFXPool.GetInstance():GetFX(arg_9_0:GetBulletData():GetTemplate().hit_fx)
+function BattleBullet.onIntercepted(arg_9_0)
+	local var_9_0, var_9_1 = ys.Battle.BattleFXPool.GetInstance():GetFX(arg_9_0:GetBulletData():GetTemplate().hit_fx)
 
 	pg.EffectMgr.GetInstance():PlayBattleEffect(var_9_0, var_9_1:Add(arg_9_0:GetPosition()), true)
 end
 
-function var_0_4.onOutRange(arg_10_0, arg_10_1)
+function BattleBullet.onOutRange(arg_10_0, arg_10_1)
 	arg_10_0:DoOutRange()
 end
 
-function var_0_4.GetBulletData(arg_11_0)
+function BattleBullet.GetBulletData(arg_11_0)
 	return arg_11_0._bulletData
 end
 
-function var_0_4.GetPosition(arg_12_0)
+function BattleBullet.GetPosition(arg_12_0)
 	return arg_12_0._bulletData:GetPosition()
 end
 
-function var_0_4.Dispose(arg_13_0)
+function BattleBullet.Dispose(arg_13_0)
 	if arg_13_0._rotateScript then
 		arg_13_0._rotateScript:SetSpeed(Vector3.zero)
 	end
@@ -121,7 +121,7 @@ function var_0_4.Dispose(arg_13_0)
 	if arg_13_0._isTempGO then
 		arg_13_0._factory:RecyleTempModel(arg_13_0._go)
 	else
-		var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_13_0._go)
+		ys.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_13_0._go)
 	end
 
 	if arg_13_0._trackFX then
@@ -133,28 +133,28 @@ function var_0_4.Dispose(arg_13_0)
 	arg_13_0._tf = nil
 	arg_13_0._trackFX = nil
 
-	var_0_0.EventListener.DetachEventListener(arg_13_0)
+	ys.EventListener.DetachEventListener(arg_13_0)
 end
 
-function var_0_4.GetModleID(arg_14_0)
+function BattleBullet.GetModleID(arg_14_0)
 	return arg_14_0._bulletData:GetModleID()
 end
 
-function var_0_4.GetFXID(arg_15_0)
+function BattleBullet.GetFXID(arg_15_0)
 	return arg_15_0._cfgTpl.hit_fx
 end
 
-function var_0_4.GetMissFXID(arg_16_0)
+function BattleBullet.GetMissFXID(arg_16_0)
 	return arg_16_0._cfgTpl.miss_fx
 end
 
-function var_0_4.GetTrackFXID(arg_17_0)
+function BattleBullet.GetTrackFXID(arg_17_0)
 	return arg_17_0._cfgTpl.track_fx
 end
 
-function var_0_4.AddModel(arg_18_0, arg_18_1)
+function BattleBullet.AddModel(arg_18_0, arg_18_1)
 	if arg_18_0._isTempGO and arg_18_0._go == nil then
-		var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_18_1)
+		ys.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_18_1)
 
 		return false
 	else
@@ -197,18 +197,18 @@ function var_0_4.AddModel(arg_18_0, arg_18_1)
 	end
 end
 
-function var_0_4.SetAnimaSpeed(arg_19_0, arg_19_1)
+function BattleBullet.SetAnimaSpeed(arg_19_0, arg_19_1)
 	if arg_19_0._skeleton then
 		arg_19_1 = arg_19_1 or 1
 		arg_19_0._skeleton.timeScale = arg_19_1
 	end
 end
 
-function var_0_4.AddRotateScript(arg_20_0)
+function BattleBullet.AddRotateScript(arg_20_0)
 	arg_20_0._rotateScript = arg_20_0.resMgr:GetRotateScript(arg_20_0._go)
 end
 
-function var_0_4.AddTempModel(arg_21_0, arg_21_1)
+function BattleBullet.AddTempModel(arg_21_0, arg_21_1)
 	arg_21_0._isTempGO = true
 
 	arg_21_0:SetGO(arg_21_1)
@@ -218,96 +218,105 @@ function var_0_4.AddTempModel(arg_21_0, arg_21_1)
 	end
 end
 
-function var_0_4.AddTrack(arg_22_0, arg_22_1)
+function BattleBullet.AddTrack(arg_22_0, arg_22_1)
 	arg_22_0._trackFX = arg_22_1
 
 	LuaHelper.SetGOParentTF(arg_22_1, arg_22_0._tf, false)
 end
+-- TODO
+function BattleBullet.SetSpawn(self, position)
+	local offset, zExtraOffset = self:getHeightAdjust(position)
+	local _offset = offset:Clone()
 
-function var_0_4.SetSpawn(arg_23_0, arg_23_1)
-	local var_23_0, var_23_1 = arg_23_0:getHeightAdjust(arg_23_1)
-	local var_23_2 = var_23_0:Clone()
+	_offset.z = _offset.z + zExtraOffset
+	self._tf.localPosition = _offset
+	-- note
+	self._bulletData:SetSpawnPosition(_offset)
 
-	var_23_2.z = var_23_2.z + var_23_1
-	arg_23_0._tf.localPosition = var_23_2
+	local targetPos, _, _ = self._bulletData:GetRotateInfo()
 
-	arg_23_0._bulletData:SetSpawnPosition(var_23_2)
+	if targetPos then
+		local angle
 
-	local var_23_3, var_23_4, var_23_5 = arg_23_0._bulletData:GetRotateInfo()
-
-	if var_23_3 then
-		local var_23_6
-
-		if arg_23_0._bulletData:GetOffsetPriority() then
-			var_23_6 = math.rad2Deg * math.atan2(var_23_3.z - var_23_0.z, var_23_3.x - var_23_2.x)
+		if self._bulletData:GetOffsetPriority() then
+			angle = math.rad2Deg * math.atan2(targetPos.z - offset.z, targetPos.x - _offset.x)
 		else
-			var_23_6 = math.rad2Deg * math.atan2(var_23_3.z - var_23_0.z - var_23_1, var_23_3.x - var_23_2.x)
+			angle = math.rad2Deg * math.atan2(targetPos.z - offset.z - zExtraOffset, targetPos.x - _offset.x)
 		end
 
-		arg_23_0._bulletData:InitSpeed(var_23_6)
+		self._bulletData:InitSpeed(angle)
 	else
-		arg_23_0._bulletData:InitSpeed(nil)
+		self._bulletData:InitSpeed(nil)
 	end
 end
+-- TODO
+function BattleBullet.getHeightAdjust(self, position)
+	local extra_param = self._bulletData:GetTemplate().extra_param
 
-function var_0_4.getHeightAdjust(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_0._bulletData:GetTemplate().extra_param
+	if extra_param.airdrop then
+		local explodePosition = self._bulletData:GetExplodePostion()
+		local xExtraOffset = 0
 
-	if var_24_0.airdrop then
-		local var_24_1 = arg_24_0._bulletData:GetExplodePostion()
-		local var_24_2 = 0
+		if extra_param.dropOffset then
+			-- t = sqrt(2h/g)
+			-- xExtraOffset = v * t
+			-- 表示的是，y轴上落下来的时间，刚好能走这么多距离
+			-- 因此提前这个距离投放，使得落点正好是目标点，即从XZ平面上用的时间和y轴上落下的时间一致
+			xExtraOffset = math.sqrt(math.abs(extra_param.offsetY * 2 / self._bulletData._gravity)) * self._bulletData:GetConvertedVelocity()
 
-		if var_24_0.dropOffset then
-			var_24_2 = math.sqrt(math.abs(var_24_0.offsetY * 2 / arg_24_0._bulletData._gravity)) * arg_24_0._bulletData:GetConvertedVelocity()
-
-			if arg_24_0._bulletData:GetHost():GetDirection() < 0 then
-				var_24_2 = var_24_2 * -1
+			if self._bulletData:GetHost():GetDirection() < 0 then
+				xExtraOffset = xExtraOffset * -1
 			end
 		end
 
-		return Vector3(var_24_1.x - var_24_2, var_24_0.offsetY or arg_24_1.y, var_24_1.z), 0
+		return Vector3(explodePosition.x - xExtraOffset, extra_param.offsetY or position.y, explodePosition.z), 0
 	else
-		local var_24_3, var_24_4 = arg_24_0._bulletData:GetOffset()
-		local var_24_5 = arg_24_1.x + var_24_3
-		local var_24_6 = arg_24_1.z + var_24_4
-
-		if arg_24_0._bulletData:IsGravitate() then
-			return Vector3(var_24_5, arg_24_1.y, var_24_6), 0
+		-- 根源来自于barrage_template中的offset_x, offset_z
+		local offsetX, offsetZ = self._bulletData:GetOffset()
+		local positionX = position.x + offsetX
+		local positionZ = position.z + offsetZ
+		-- gravity不为0时满足
+		if self._bulletData:IsGravitate() then
+			return Vector3(positionX, position.y, positionZ), 0
 		else
-			local var_24_7 = 0
-			local var_24_8
-			local var_24_9 = var_0_2.BulletHeight
-
-			if var_24_9 >= arg_24_1.y then
-				var_24_8 = arg_24_1.y
+			local zExtraOffset = 0
+			local positionY
+			-- BulletHeight = 1
+			local BulletHeight = BattleConfig.BulletHeight
+			-- 即position.y <= 1时不做高度调整
+			-- 高度调整的目的可能是透视处理?
+			if BulletHeight >= position.y then
+				positionY = position.y
 			else
-				var_24_8 = var_24_9
-				var_24_7 = arg_24_0.GetZExtraOffset(arg_24_1.y)
+				positionY = BulletHeight
+				zExtraOffset = self.GetZExtraOffset(position.y)
 			end
 
-			return Vector3(var_24_5, var_24_8, var_24_6), var_24_7
+			return Vector3(positionX, positionY, positionZ), zExtraOffset
 		end
 	end
 end
-
-function var_0_4.GetZExtraOffset(arg_25_0)
-	return var_0_2.HeightOffsetRate * (arg_25_0 - var_0_2.BulletHeight)
+-- TODO
+function BattleBullet.GetZExtraOffset(positionY)
+	-- HeightOffsetRate = 1.5
+	-- 即1.5 * (positionY - 1）
+	return BattleConfig.HeightOffsetRate * (positionY - BattleConfig.BulletHeight)
 end
 
-function var_0_4.GetFactory(arg_26_0)
+function BattleBullet.GetFactory(arg_26_0)
 	return arg_26_0._factory
 end
 
-function var_0_4.SetFactory(arg_27_0, arg_27_1)
+function BattleBullet.SetFactory(arg_27_0, arg_27_1)
 	arg_27_0._factory = arg_27_1
 end
 
-function var_0_4.SetFXFunc(arg_28_0, arg_28_1, arg_28_2)
+function BattleBullet.SetFXFunc(arg_28_0, arg_28_1, arg_28_2)
 	arg_28_0._bulletHitFunc = arg_28_1
 	arg_28_0._bulletMissFunc = arg_28_2
 end
 
-function var_0_4.Neutrailze(arg_29_0)
+function BattleBullet.Neutrailze(arg_29_0)
 	if arg_29_0._bulletMissFunc then
 		arg_29_0._bulletMissFunc(arg_29_0)
 	end

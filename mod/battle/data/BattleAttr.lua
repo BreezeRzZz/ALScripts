@@ -445,12 +445,19 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 	attr.oxyAtkDuration = templateData.attack_duration
 	attr.raidDist = templateData.raid_distance
 	attr.sonarRange = templateData.sonarRange or 0
+	-- 隐匿基础上限 = 机动 + 50
 	attr.cloakExposeBase = extraInfo and extraInfo.dodge + ys.Battle.BattleConfig.CLOAK_EXPOSE_CONST or 0
 	attr.cloakExposeExtra = 0
+	-- cloakRestore: 隐匿回复线，如果破隐，需要到此值之下才能回复隐匿
+	-- CLOAK_BASE_RESTORE_DELTA = -60
 	attr.cloakRestore = attr.cloakExposeBase + attr.cloakExposeExtra + ys.Battle.BattleConfig.CLOAK_BASE_RESTORE_DELTA
+	-- cloakRecovery:隐匿回复速度(/s), = 5
 	attr.cloakRecovery = ys.Battle.BattleConfig.CLOAK_RECOVERY
+	-- cloakStrikeAdditive: 每次空袭额外增加的暴露值, = 6，即后续是基础+6*n
 	attr.cloakStrikeAdditive = ys.Battle.BattleConfig.CLOAK_STRIKE_ADDITIVE
+	-- 相同
 	attr.cloakBombardAdditive = ys.Battle.BattleConfig.CLOAK_STRIKE_ADDITIVE
+	-- 隐匿航空穿透：= 0.1
 	attr.airResistPierce = ys.Battle.BattleConfig.BASE_ARP
 	attr.aimBias = 0
 	attr.aimBiasDecaySpeed = 0
@@ -479,58 +486,63 @@ function BattleAttr.AttrFixer(arg_35_0, arg_35_1)
 	end
 end
 
-function BattleAttr.InitDOTAttr(arg_36_0, arg_36_1)
-	local var_36_0 = ys.Battle.BattleConfig.DOT_CONFIG_DEFAULT
-	local var_36_1 = ys.Battle.BattleConfig.DOT_CONFIG
+function BattleAttr.InitDOTAttr(attr, templateData)
+	local DOT_CONFIG_DEFAULT = ys.Battle.BattleConfig.DOT_CONFIG_DEFAULT
+	local DOT_CONFIG = ys.Battle.BattleConfig.DOT_CONFIG
 
-	for iter_36_0, iter_36_1 in ipairs(var_36_1) do
-		for iter_36_2, iter_36_3 in pairs(iter_36_1) do
-			if iter_36_2 == "hit" then
-				arg_36_0[iter_36_3] = arg_36_1[iter_36_3] or var_36_0[iter_36_2]
+	for _, dotAttrTable in ipairs(DOT_CONFIG) do
+		for baseDOTAttrName, DOTAttrName in pairs(dotAttrTable) do
+			-- 如果是DOT命中率提高，则使用templateData中的值，否则使用默认值
+			-- 默认值全是0
+			if baseDOTAttrName == "hit" then
+				attr[DOTAttrName] = templateData[DOTAttrName] or DOT_CONFIG_DEFAULT[baseDOTAttrName]
 			else
-				arg_36_0[iter_36_3] = var_36_0[iter_36_2]
+				attr[DOTAttrName] = DOT_CONFIG_DEFAULT[baseDOTAttrName]
 			end
 		end
 	end
 end
+-- 计算敌人属性
+-- 第二个参数没用到，删掉了
+function BattleAttr.SetEnemyAttr(enemy)
+	local enemyTemplateData = enemy._tmpData
+	local enemyLevel = enemy:GetLevel()
+	local enemyAttr = enemy._attr or {}
 
-function BattleAttr.SetEnemyAttr(arg_37_0, arg_37_1)
-	local var_37_0 = arg_37_0._tmpData
-	local var_37_1 = arg_37_0:GetLevel()
-	local var_37_2 = arg_37_0._attr or {}
+	enemy._attr = enemyAttr
+	enemyAttr.battleUID = enemy:GetUniqueID()
+	enemyAttr.level = enemyLevel
+	enemyAttr.formulaLevel = enemyLevel
 
-	arg_37_0._attr = var_37_2
-	var_37_2.battleUID = arg_37_0:GetUniqueID()
-	var_37_2.level = var_37_1
-	var_37_2.formulaLevel = var_37_1
+	local growthRatio = (enemyLevel - 1) / 1000
+	-- 注意点：
+		-- 1. 敌人的属性计算中，耐久是向上取整的，而舰船是向下取整的
+		-- 2. 敌人的属性计算中，其他属性都不取整，而舰船都是向下取整的
+	enemyAttr.maxHP = math.ceil(enemyTemplateData.durability + enemyTemplateData.durability_growth * growthRatio)
+	enemyAttr.HPRate = 1
+	enemyAttr.DMGRate = 0
+	enemyAttr.cannonPower = enemyTemplateData.cannon + enemyTemplateData.cannon_growth * growthRatio
+	enemyAttr.torpedoPower = enemyTemplateData.torpedo + enemyTemplateData.torpedo_growth * growthRatio
+	enemyAttr.antiAirPower = enemyTemplateData.antiaircraft + enemyTemplateData.antiaircraft_growth * growthRatio
+	enemyAttr.airPower = enemyTemplateData.air + enemyTemplateData.air_growth * growthRatio
+	enemyAttr.antiSubPower = enemyTemplateData.antisub + enemyTemplateData.antisub_growth * growthRatio
+	enemyAttr.loadSpeed = enemyTemplateData.reload + enemyTemplateData.reload_growth * growthRatio
+	enemyAttr.armorType = enemyTemplateData.armor_type
+	enemyAttr.attackRating = enemyTemplateData.hit + enemyTemplateData.hit_growth * growthRatio
+	enemyAttr.dodgeRate = enemyTemplateData.dodge + enemyTemplateData.dodge_growth * growthRatio
+	enemyAttr.velocity = ys.Battle.BattleFormulas.ConvertShipSpeed(enemyTemplateData.speed + enemyTemplateData.speed_growth * growthRatio)
+	enemyAttr.baseVelocity = enemyAttr.velocity
+	enemyAttr.luck = enemyTemplateData.luck + enemyTemplateData.luck_growth * growthRatio
+	enemyAttr.bulletSpeedRatio = 0
+	enemyAttr.id = "enemy_" .. tostring(enemyTemplateData.id)
+	enemyAttr.repressReduce = 1
+	enemyAttr.healingRate = 1
+	enemyAttr.comboTag = "combo_" .. enemyAttr.battleUID
+	enemyAttr.labelTag = {}
+	enemyAttr.TargetChoise = {}
+	enemyAttr.guardian = {}
 
-	local var_37_3 = (var_37_1 - 1) / 1000
-
-	var_37_2.maxHP = math.ceil(var_37_0.durability + var_37_0.durability_growth * var_37_3)
-	var_37_2.HPRate = 1
-	var_37_2.DMGRate = 0
-	var_37_2.cannonPower = var_37_0.cannon + var_37_0.cannon_growth * var_37_3
-	var_37_2.torpedoPower = var_37_0.torpedo + var_37_0.torpedo_growth * var_37_3
-	var_37_2.antiAirPower = var_37_0.antiaircraft + var_37_0.antiaircraft_growth * var_37_3
-	var_37_2.airPower = var_37_0.air + var_37_0.air_growth * var_37_3
-	var_37_2.antiSubPower = var_37_0.antisub + var_37_0.antisub_growth * var_37_3
-	var_37_2.loadSpeed = var_37_0.reload + var_37_0.reload_growth * var_37_3
-	var_37_2.armorType = var_37_0.armor_type
-	var_37_2.attackRating = var_37_0.hit + var_37_0.hit_growth * var_37_3
-	var_37_2.dodgeRate = var_37_0.dodge + var_37_0.dodge_growth * var_37_3
-	var_37_2.velocity = ys.Battle.BattleFormulas.ConvertShipSpeed(var_37_0.speed + var_37_0.speed_growth * var_37_3)
-	var_37_2.baseVelocity = var_37_2.velocity
-	var_37_2.luck = var_37_0.luck + var_37_0.luck_growth * var_37_3
-	var_37_2.bulletSpeedRatio = 0
-	var_37_2.id = "enemy_" .. tostring(var_37_0.id)
-	var_37_2.repressReduce = 1
-	var_37_2.healingRate = 1
-	var_37_2.comboTag = "combo_" .. var_37_2.battleUID
-	var_37_2.labelTag = {}
-	var_37_2.TargetChoise = {}
-	var_37_2.guardian = {}
-
-	BattleAttr.SetBaseAttr(arg_37_0)
+	BattleAttr.SetBaseAttr(enemy)
 end
 
 function BattleAttr.SetEnemyWorldEnhance(arg_38_0)
@@ -563,81 +575,91 @@ function BattleAttr.SetEnemyWorldEnhance(arg_38_0)
 	BattleAttr.SetBaseAttr(arg_38_0)
 end
 
-function BattleAttr.SetMinionAttr(arg_39_0, arg_39_1)
-	local var_39_0 = arg_39_0:GetMaster()
-	local var_39_1 = BattleAttr.GetAttr(var_39_0)
-	local var_39_2 = arg_39_0._tmpData
-	local var_39_3 = var_39_1.level
-	local var_39_4 = arg_39_0._attr or {}
+--- @param minion BattleMinionUnit
+--- @return nil
+--- 设置召唤物属性
+--- 第二个参数没用，删掉了
+function BattleAttr.SetMinionAttr(minion)
+	local master = minion:GetMaster()
+	local masterAttr = BattleAttr.GetAttr(master)
+	local minionTemplateData = minion._tmpData
+	local masterLevel = masterAttr.level
+	local minionAttr = minion._attr or {}
 
-	arg_39_0._attr = var_39_4
-	var_39_4.battleUID = arg_39_0:GetUniqueID()
-
-	for iter_39_0, iter_39_1 in ipairs(BattleAttr.AttrListInheritance) do
-		var_39_4[iter_39_1] = var_39_1[iter_39_1]
+	minion._attr = minionAttr
+	minionAttr.battleUID = minion:GetUniqueID()
+	-- 按照上述继承列表继承属性
+	for _, inheritAttrName in ipairs(BattleAttr.AttrListInheritance) do
+		minionAttr[inheritAttrName] = masterAttr[inheritAttrName]
 	end
-
-	for iter_39_2, iter_39_3 in pairs(var_39_1) do
-		if string.find(iter_39_2, BattleAttr.TAG_EHC_KEY) then
-			var_39_4[iter_39_2] = iter_39_3
+	-- 继承标记增伤属性
+	for attrName, attrValue in pairs(masterAttr) do
+		if string.find(attrName, BattleAttr.TAG_EHC_KEY) then
+			minionAttr[attrName] = attrValue
 		end
 	end
-
-	for iter_39_4, iter_39_5 in pairs(var_39_1) do
-		if string.find(iter_39_4, BattleAttr.TAG_CRI_EHC_KEY) then
-			var_39_4[iter_39_4] = iter_39_5
+	-- 继承标记暴击提高属性
+	for attrName, attrValue in pairs(masterAttr) do
+		if string.find(attrName, BattleAttr.TAG_CRI_EHC_KEY) then
+			minionAttr[attrName] = attrValue
 		end
 	end
+	-- 继承等级
+	minionAttr.id = masterAttr.id
+	minionAttr.level = masterLevel
+	minionAttr.formulaLevel = masterLevel
 
-	var_39_4.id = var_39_1.id
-	var_39_4.level = var_39_3
-	var_39_4.formulaLevel = var_39_3
-
-	local function var_39_5(arg_40_0, arg_40_1)
-		local var_40_0 = var_39_2[arg_40_0 .. "_growth"]
-
-		if var_40_0 == 0 then
-			var_39_4[arg_40_1] = var_39_2[arg_40_0]
-		elseif var_40_0 == -1 then
-			if arg_40_0 == "durability" then
-				var_39_4[arg_40_1] = var_39_0:GetCurrentHP()
+	-- 下面的逻辑要覆盖掉上面继承的一些属性
+	local function inheritAttr(tmpAttr, attrName)
+		local attrGrowth = minionTemplateData[tmpAttr .. "_growth"]
+		-- 如果是0，用模板里的基础属性
+		if attrGrowth == 0 then
+			minionAttr[attrName] = minionTemplateData[tmpAttr]
+		-- 如果对应的成长属性是-1,表示直接继承master的该属性
+		-- 注意耐久值继承的是master的当前血量而不是最大血量
+		-- (这个逻辑也太随意了，template里写-1表示继承master，纯magic number...你要不用个boolean字段表示继承呢?)
+		elseif attrGrowth == -1 then
+			if tmpAttr == "durability" then
+				minionAttr[attrName] = master:GetCurrentHP()
 			else
-				var_39_4[arg_40_1] = var_39_1[arg_40_1]
+				minionAttr[attrName] = masterAttr[attrName]
 			end
 		else
-			var_39_4[arg_40_1] = var_39_1[arg_40_1] * var_40_0 * 0.0001
+			-- 这表示的是按比例继承master的该属性
+			-- 继承比例为(attrGrowth * 0.01)%
+			minionAttr[attrName] = masterAttr[attrName] * attrGrowth * 0.0001
 		end
 	end
 
-	var_39_4.HPRate = 1
-	var_39_4.DMGRate = 0
+	minionAttr.HPRate = 1
+	minionAttr.DMGRate = 0
+	-- 左侧是战斗外属性名，右侧是战斗内属性名
+	inheritAttr("durability", "maxHP")
+	inheritAttr("cannon", "cannonPower")
+	inheritAttr("torpedo", "torpedoPower")
+	inheritAttr("antiaircraft", "antiAirPower")
+	inheritAttr("air", "airPower")
+	inheritAttr("antisub", "antiSubPower")
+	inheritAttr("reload", "loadSpeed")
+	inheritAttr("hit", "attackRating")
+	inheritAttr("dodge", "dodgeRate")
+	inheritAttr("luck", "luck")
+	-- 重新设置装甲类型
+	minionAttr.armorType = minionTemplateData.armor_type
 
-	var_39_5("durability", "maxHP")
-	var_39_5("cannon", "cannonPower")
-	var_39_5("torpedo", "torpedoPower")
-	var_39_5("antiaircraft", "antiAirPower")
-	var_39_5("air", "airPower")
-	var_39_5("antisub", "antiSubPower")
-	var_39_5("reload", "loadSpeed")
-	var_39_5("hit", "attackRating")
-	var_39_5("dodge", "dodgeRate")
-	var_39_5("luck", "luck")
+	inheritAttr("speed", "velocity")
+	-- 以下内容相当于没有继承
+	minionAttr.velocity = ys.Battle.BattleFormulas.ConvertShipSpeed(minionAttr.velocity)
+	minionAttr.baseVelocity = minionAttr.velocity
+	minionAttr.bulletSpeedRatio = 0
+	minionAttr.repressReduce = 1
+	minionAttr.healingRate = 1
+	minionAttr.comboTag = "combo_" .. minionAttr.battleUID
+	minionAttr.labelTag = {}
+	minionAttr.TargetChoise = {}
+	minionAttr.guardian = {}
 
-	var_39_4.armorType = var_39_2.armor_type
-
-	var_39_5("speed", "velocity")
-
-	var_39_4.velocity = ys.Battle.BattleFormulas.ConvertShipSpeed(var_39_4.velocity)
-	var_39_4.baseVelocity = var_39_4.velocity
-	var_39_4.bulletSpeedRatio = 0
-	var_39_4.repressReduce = 1
-	var_39_4.healingRate = 1
-	var_39_4.comboTag = "combo_" .. var_39_4.battleUID
-	var_39_4.labelTag = {}
-	var_39_4.TargetChoise = {}
-	var_39_4.guardian = {}
-
-	BattleAttr.SetBaseAttr(arg_39_0)
+	BattleAttr.SetBaseAttr(minion)
 end
 
 function BattleAttr.IsWorldMapRewardAttrWarning(arg_41_0, arg_41_1)
@@ -713,7 +735,7 @@ function BattleAttr.SetAircraftAttFromTemp(arg_44_0)
 	arg_44_0._attr.dodge = arg_44_0._tmpData.dodge
 	arg_44_0._attr.dodgeLimit = arg_44_0._tmpData.dodge_limit
 end
-
+-- TODO
 function BattleAttr.SetAirFighterAttr(arg_45_0, arg_45_1)
 	local var_45_0 = arg_45_0._attr or {}
 

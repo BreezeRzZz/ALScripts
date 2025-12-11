@@ -3,7 +3,7 @@ ys = ys or {}
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleConst
 local var_0_2 = var_0_1.ActionName
-
+-- TODO
 var_0_0.Battle.UnitState = class("UnitState")
 var_0_0.Battle.UnitState.__name = "UnitState"
 var_0_0.Battle.UnitState.STATE_IDLE = "STATE_IDLE"

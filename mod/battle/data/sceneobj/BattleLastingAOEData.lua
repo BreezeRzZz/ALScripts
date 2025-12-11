@@ -1,25 +1,25 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleLastingAOEData", var_0_0.Battle.BattleAOEData)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleLastingAOEData = class("BattleLastingAOEData", ys.Battle.BattleAOEData)
 
-var_0_0.Battle.BattleLastingAOEData = var_0_2
-var_0_2.__name = "BattleLastingAOEData"
+ys.Battle.BattleLastingAOEData = BattleLastingAOEData
+BattleLastingAOEData.__name = "BattleLastingAOEData"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4, arg_1_5, arg_1_6)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_5)
+function BattleLastingAOEData.Ctor(self, areaUID, IFF, areaCldFunc, exitCldFunc, endFunc, frequent)
+	BattleLastingAOEData.super.Ctor(self, areaUID, IFF, areaCldFunc, endFunc)
 
-	arg_1_0._exitCldFunc = arg_1_4
+	self._exitCldFunc = exitCldFunc
 
-	if arg_1_6 then
-		arg_1_0.Settle = arg_1_0.frequentlySettle
+	if frequent then
+		self.Settle = self.frequentlySettle
 	end
 
-	arg_1_0._handledList = {}
+	self._handledList = {}
 end
 
-function var_0_2.Dispose(arg_2_0)
+function BattleLastingAOEData.Dispose(arg_2_0)
 	for iter_2_0, iter_2_1 in pairs(arg_2_0._handledList) do
 		arg_2_0._exitCldFunc(iter_2_0)
 
@@ -29,58 +29,58 @@ function var_0_2.Dispose(arg_2_0)
 	arg_2_0._exitCldFunc = nil
 	arg_2_0._handledList = nil
 
-	var_0_2.super.Dispose(arg_2_0)
+	BattleLastingAOEData.super.Dispose(arg_2_0)
 end
 
-function var_0_2.Settle(arg_3_0)
-	local var_3_0 = {}
-	local var_3_1 = {}
+function BattleLastingAOEData.Settle(self)
+	local cldObjList = {}
+	local existList = {}
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._cldObjList) do
-		var_3_1[iter_3_1.UID] = true
+	for _, cldObj in ipairs(self._cldObjList) do
+		existList[cldObj.UID] = true
 
-		if not arg_3_0._handledList[iter_3_1] then
-			var_3_0[#var_3_0 + 1] = iter_3_1
-			arg_3_0._handledList[iter_3_1] = true
+		if not self._handledList[cldObj] then
+			cldObjList[#cldObjList + 1] = cldObj
+			self._handledList[cldObj] = true
 		end
 	end
 
-	arg_3_0.SortCldObjList(var_3_0)
-	arg_3_0._cldComponent:GetCldData().func(var_3_0, obj)
+	self.SortCldObjList(cldObjList)
+	self._cldComponent:GetCldData().func(cldObjList, obj)
 
-	for iter_3_2, iter_3_3 in pairs(arg_3_0._handledList) do
-		if not var_3_1[iter_3_2.UID] or iter_3_2.ImmuneCLD == true then
-			arg_3_0._exitCldFunc(iter_3_2)
+	for cldObj, _ in pairs(self._handledList) do
+		if not existList[cldObj.UID] or cldObj.ImmuneCLD == true then
+			self._exitCldFunc(cldObj)
 
-			arg_3_0._handledList[iter_3_2] = nil
+			self._handledList[cldObj] = nil
 		end
 	end
 end
 
-function var_0_2.frequentlySettle(arg_4_0)
-	local var_4_0 = {}
+function BattleLastingAOEData.frequentlySettle(self)
+	local existList = {}
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._cldObjList) do
-		var_4_0[iter_4_1.UID] = true
+	for _, cldObj in ipairs(self._cldObjList) do
+		existList[cldObj.UID] = true
 
-		if not arg_4_0._handledList[iter_4_1] then
-			arg_4_0._handledList[iter_4_1] = true
+		if not self._handledList[cldObj] then
+			self._handledList[cldObj] = true
 		end
 	end
 
-	for iter_4_2, iter_4_3 in pairs(arg_4_0._handledList) do
-		if not var_4_0[iter_4_2.UID] then
-			arg_4_0._exitCldFunc(iter_4_2)
+	for cldObj, _ in pairs(self._handledList) do
+		if not existList[cldObj.UID] then
+			self._exitCldFunc(cldObj)
 
-			arg_4_0._handledList[iter_4_2] = nil
+			self._handledList[cldObj] = nil
 		end
 	end
 
-	arg_4_0.SortCldObjList(arg_4_0._cldObjList)
-	arg_4_0._cldComponent:GetCldData().func(arg_4_0._cldObjList)
+	self.SortCldObjList(self._cldObjList)
+	self._cldComponent:GetCldData().func(self._cldObjList)
 end
 
-function var_0_2.ForceExit(arg_5_0, arg_5_1)
+function BattleLastingAOEData.ForceExit(arg_5_0, arg_5_1)
 	local var_5_0
 
 	for iter_5_0, iter_5_1 in pairs(arg_5_0._handledList) do

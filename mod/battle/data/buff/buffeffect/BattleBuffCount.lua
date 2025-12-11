@@ -1,196 +1,199 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleAttr
-local var_0_3 = class("BattleBuffCount", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleBuffCount = class("BattleBuffCount", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffCount = var_0_3
-var_0_3.__name = "BattleBuffCount"
+ys.Battle.BattleBuffCount = BattleBuffCount
+BattleBuffCount.__name = "BattleBuffCount"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffCount.Ctor(self, effectData)
+	BattleBuffCount.super.Ctor(self, effectData)
 end
 
-function var_0_3.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_COUNTER
+function BattleBuffCount.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_COUNTER
 end
 
-function var_0_3.Repeater(arg_3_0)
-	return arg_3_0._keepRestCount
+function BattleBuffCount.Repeater(self)
+	return self._keepRestCount
 end
 
-function var_0_3.SetArgs(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = arg_4_0._tempData.arg_list
+function BattleBuffCount.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_4_0._countTarget = var_4_0.countTarget or 1
-	arg_4_0._countType = var_4_0.countType
-	arg_4_0._weaponType = var_4_0.weaponType
-	arg_4_0._index = var_4_0.index
-	arg_4_0._maxHPRatio = var_4_0.maxHPRatio or 0
-	arg_4_0._casterMaxHPRatio = var_4_0.casterMaxHPRatio or 0
-	arg_4_0._clock = arg_4_0._tempData.arg_list.clock
-	arg_4_0._interrupt = arg_4_0._tempData.arg_list.interrupt
-	arg_4_0._iconType = arg_4_0._tempData.arg_list.iconType or 1
-	arg_4_0._gunnerBonus = var_4_0.gunnerBonus
-	arg_4_0._keepRestCount = var_4_0.keep
+	self._countTarget = arg_list.countTarget or 1
+	self._countType = arg_list.countType
+	self._weaponType = arg_list.weaponType
+	self._index = arg_list.index
+	self._maxHPRatio = arg_list.maxHPRatio or 0
+	self._casterMaxHPRatio = arg_list.casterMaxHPRatio or 0
+	self._clock = self._tempData.arg_list.clock
+	self._interrupt = self._tempData.arg_list.interrupt
+	self._iconType = self._tempData.arg_list.iconType or 1
+	self._gunnerBonus = arg_list.gunnerBonus
+	self._keepRestCount = arg_list.keep
 
-	arg_4_0:ResetCount()
+	self:ResetCount()
 
-	if arg_4_0._clock then
-		arg_4_1:DispatchCastClock(true, arg_4_0, arg_4_0._iconType, arg_4_0._interrupt)
+	if self._clock then
+		owner:DispatchCastClock(true, self, self._iconType, self._interrupt)
 	end
 end
 
-function var_0_3.onRemove(arg_5_0, arg_5_1, arg_5_2)
-	if arg_5_0._clock then
-		local var_5_0 = arg_5_0._interrupt and arg_5_0._count < arg_5_0._countTarget
+function BattleBuffCount.onRemove(self, owner, buff)
+	if self._clock then
+		local interrupt = self._interrupt and self._count < self._countTarget
 
-		arg_5_1:DispatchCastClock(false, arg_5_0, nil, var_5_0)
+		owner:DispatchCastClock(false, self, nil, interrupt)
 	end
 end
 
-function var_0_3.onTrigger(arg_6_0, arg_6_1, arg_6_2)
-	var_0_3.super.onTrigger(arg_6_0, arg_6_1, arg_6_2)
+function BattleBuffCount.onTrigger(self, owner, buff)
+	BattleBuffCount.super.onTrigger(self, owner, buff)
 
-	arg_6_0._count = arg_6_0._count + 1
+	self._count = self._count + 1
 
-	arg_6_0:checkCount(arg_6_1)
+	self:checkCount(owner)
 end
-
-function var_0_3.onFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-	if not arg_7_0:equipIndexRequire(arg_7_3.equipIndex) then
+-- 这是onFire触发的计数器，主要用于全弹发射或其他基于攻击次数的触发
+function BattleBuffCount.onFire(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	arg_7_0._count = arg_7_0._count + 1
-
-	arg_7_0:checkModCount(arg_7_1)
+	self._count = self._count + 1
+	-- 达到数量则触发
+	self:checkModCount(owner)
 end
+-- 基于间隔时间的触发
+function BattleBuffCount.onUpdate(self, owner, buff, args)
+	local timeStamp = args.timeStamp
 
-function var_0_3.onUpdate(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	local var_8_0 = arg_8_3.timeStamp
+	self._count = timeStamp - (self._lastTriggerTime or buff:GetBuffStartTime())
 
-	arg_8_0._count = var_8_0 - (arg_8_0._lastTriggerTime or arg_8_2:GetBuffStartTime())
+	if self._count >= self._countTarget then
+		self._lastTriggerTime = timeStamp
 
-	if arg_8_0._count >= arg_8_0._countTarget then
-		arg_8_0._lastTriggerTime = var_8_0
-
-		arg_8_0:ResetCount()
-		arg_8_1:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
-			buffFX = arg_8_0
+		self:ResetCount()
+		owner:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
+			buffFX = self
 		})
 	end
 end
+-- 基于受到伤害的触发，每受到一定伤害触发
+function BattleBuffCount.onTakeDamage(self, owner, buff, args)
+	-- damageCheck检查伤害的属性和伤害的原因(damageReason)
+	if self:damageCheck(args) then
+		local damage = args.damage
 
-function var_0_3.onTakeDamage(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
-	if arg_9_0:damageCheck(arg_9_3) then
-		local var_9_0 = arg_9_3.damage
+		self._count = self._count + damage
 
-		arg_9_0._count = arg_9_0._count + var_9_0
-
-		arg_9_0:checkHPCount(arg_9_1)
+		self:checkHPCount(owner)
 	end
 end
+-- 基于受到治疗的触发，每受到一定治疗量触发
+function BattleBuffCount.onTakeHealing(self, owner, buff, args)
+	local damage = args.damage
 
-function var_0_3.onTakeHealing(arg_10_0, arg_10_1, arg_10_2, arg_10_3)
-	local var_10_0 = arg_10_3.damage
+	self._count = self._count + damage
 
-	arg_10_0._count = arg_10_0._count + var_10_0
-
-	arg_10_0:checkHPCount(arg_10_1)
+	self:checkHPCount(owner)
 end
+-- 基于血量变化的触发，每变动一定血量触发
+function BattleBuffCount.onHPRatioUpdate(self, owner, buff, args)
+	-- validDHP不计入溢出治疗和过量伤害
+	local validDHP = math.abs(args.validDHP)
 
-function var_0_3.onHPRatioUpdate(arg_11_0, arg_11_1, arg_11_2, arg_11_3)
-	local var_11_0 = math.abs(arg_11_3.validDHP)
+	self._count = self._count + validDHP
 
-	arg_11_0._count = arg_11_0._count + var_11_0
-
-	arg_11_0:checkHPCount(arg_11_1)
+	self:checkHPCount(owner)
 end
+-- 基于叠层数的触发，每达到一定叠层数触发
+function BattleBuffCount.onStack(self, owner, buff, args)
+	self._count = buff:GetStack()
 
-function var_0_3.onStack(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
-	arg_12_0._count = arg_12_2:GetStack()
-
-	arg_12_0:checkCount(arg_12_1)
+	self:checkCount(owner)
 end
-
-function var_0_3.onBulletHit(arg_13_0, arg_13_1, arg_13_2, arg_13_3)
-	if not arg_13_0:equipIndexRequire(arg_13_3.equipIndex) then
+-- 基于子弹命中造成的伤害触发，每造成一定伤害触发
+function BattleBuffCount.onBulletHit(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	arg_13_0._count = arg_13_0._count + arg_13_3.damage
+	self._count = self._count + args.damage
 
-	arg_13_0:checkCount(arg_13_1)
+	self:checkCount(owner)
 end
 
-function var_0_3.checkCount(arg_14_0, arg_14_1)
-	if arg_14_0._count >= arg_14_0._countTarget then
-		arg_14_1:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
-			buffFX = arg_14_0
+function BattleBuffCount.checkCount(self, owner)
+	if self._count >= self._countTarget then
+		owner:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
+			buffFX = self
+		})
+	end
+end
+-- 只有onFire会用，因为barrageCounterMod只影响全弹发射类的触发
+function BattleBuffCount.checkModCount(self, owner)
+	if self._count >= self:getCount(owner) then
+		owner:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
+			buffFX = self
 		})
 	end
 end
 
-function var_0_3.checkModCount(arg_15_0, arg_15_1)
-	if arg_15_0._count >= arg_15_0:getCount(arg_15_1) then
-		arg_15_1:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
-			buffFX = arg_15_0
+function BattleBuffCount.getCount(self, owner)
+	local countTarget = self._countTarget
+	local barrageCounterMod = BattleAttr.GetCurrent(owner, "barrageCounterMod")
+	-- barrageCounterMod 默认为1，对应加成的驱逐舰为2
+	-- 为向上取整，例如11次攻击，驱逐舰加成后为6次触发
+	if self._gunnerBonus then
+		countTarget = math.ceil(countTarget / barrageCounterMod)
+	end
+
+	return countTarget
+end
+-- 检查计数是否到达指定血量
+function BattleBuffCount.checkHPCount(self, owner)
+	if not self._hpCountTarget then
+		self:calcHPCount(owner)
+	end
+
+	if self._count >= self._hpCountTarget then
+		owner:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
+			buffFX = self
 		})
 	end
 end
 
-function var_0_3.getCount(arg_16_0, arg_16_1)
-	local var_16_0 = arg_16_0._countTarget
-	local var_16_1 = var_0_2.GetCurrent(arg_16_1, "barrageCounterMod")
+function BattleBuffCount.calcHPCount(self, owner)
+	local _, ownerMaxHP = owner:GetHP()
+	local _, casterMaxHP = self._caster:GetHP()
 
-	if arg_16_0._gunnerBonus then
-		var_16_0 = math.ceil(var_16_0 / var_16_1)
-	end
-
-	return var_16_0
+	self._hpCountTarget = math.floor(self._casterMaxHPRatio * casterMaxHP + self._maxHPRatio * ownerMaxHP + self._countTarget)
 end
 
-function var_0_3.checkHPCount(arg_17_0, arg_17_1)
-	if not arg_17_0._hpCountTarget then
-		arg_17_0:calcHPCount(arg_17_1)
-	end
-
-	if arg_17_0._count >= arg_17_0._hpCountTarget then
-		arg_17_1:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BATTLE_BUFF_COUNT, {
-			buffFX = arg_17_0
-		})
-	end
+function BattleBuffCount.GetCountType(self)
+	return self._countType
 end
 
-function var_0_3.calcHPCount(arg_18_0, arg_18_1)
-	local var_18_0, var_18_1 = arg_18_1:GetHP()
-	local var_18_2, var_18_3 = arg_18_0._caster:GetHP()
+function BattleBuffCount.GetCountProgress(self)
+	local target = self._hpCountTarget or self._countTarget
 
-	arg_18_0._hpCountTarget = math.floor(arg_18_0._casterMaxHPRatio * var_18_3 + arg_18_0._maxHPRatio * var_18_1 + arg_18_0._countTarget)
+	return self._count / target
 end
 
-function var_0_3.GetCountType(arg_19_0)
-	return arg_19_0._countType
+function BattleBuffCount.SetCount(self, count)
+	self._count = count
 end
 
-function var_0_3.GetCountProgress(arg_20_0)
-	local var_20_0 = arg_20_0._hpCountTarget or arg_20_0._countTarget
-
-	return arg_20_0._count / var_20_0
+function BattleBuffCount.ResetCount(self)
+	self._count = 0
 end
 
-function var_0_3.SetCount(arg_21_0, arg_21_1)
-	arg_21_0._count = arg_21_1
-end
+function BattleBuffCount.ConsumeCount(self)
+	local target = self._hpCountTarget or self._countTarget
 
-function var_0_3.ResetCount(arg_22_0)
-	arg_22_0._count = 0
-end
-
-function var_0_3.ConsumeCount(arg_23_0)
-	local var_23_0 = arg_23_0._hpCountTarget or arg_23_0._countTarget
-
-	arg_23_0._count = math.max(arg_23_0._count - var_23_0)
+	self._count = math.max(self._count - target)
 end

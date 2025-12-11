@@ -1,45 +1,47 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffField", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffField = class("BattleBuffField", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffField = var_0_1
-var_0_1.__name = "BattleBuffField"
+ys.Battle.BattleBuffField = BattleBuffField
+BattleBuffField.__name = "BattleBuffField"
 
-local var_0_2 = var_0_0.Battle.BattleConst
+local BattleConst = ys.Battle.BattleConst
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffField.Ctor(self, effectData)
+	BattleBuffField.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._level = arg_2_2:GetLv()
-	arg_2_0._caster = arg_2_2:GetCaster()
+function BattleBuffField.SetArgs(self, owner, buff)
+	self._level = buff:GetLv()
+	self._caster = buff:GetCaster()
 
-	local var_2_0 = arg_2_0._tempData.arg_list
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._auraBuffID = var_2_0.buff_id
-	arg_2_0._target = var_2_0.target
-	arg_2_0._check_target = var_2_0.check_target or "TargetNull"
-	arg_2_0._isUpdateAura = var_2_0.FAura
+	self._auraBuffID = arg_list.buff_id
+	self._target = arg_list.target
+	self._check_target = arg_list.check_target or "TargetNull"
+	-- 这个字段只有致盲Buff用过
+	self._isUpdateAura = arg_list.FAura
 
-	local var_2_1 = true
-	local var_2_2 = type(arg_2_0._target)
-
-	if var_2_2 == "string" and arg_2_0._target == "TargetAllHarm" or var_2_2 == "table" and table.contains(arg_2_0._target, "TargetAllHarm") or var_2_2 == "string" and arg_2_0._target == "TargetAllFoe" or var_2_2 == "table" and table.contains(arg_2_0._target, "TargetAllFoe") then
-		var_2_1 = false
+	local isFriend = true
+	local targetVarType = type(self._target)
+	-- 如果是敌人，修改变量，以便后续构建对敌人生效的AOE
+	if targetVarType == "string" and self._target == "TargetAllHarm" or targetVarType == "table" and table.contains(self._target, "TargetAllHarm") or targetVarType == "string" and self._target == "TargetAllFoe" or targetVarType == "table" and table.contains(self._target, "TargetAllFoe") then
+		isFriend = false
 	end
 
-	local function var_2_3(arg_3_0)
-		for iter_3_0, iter_3_1 in ipairs(arg_3_0) do
-			if iter_3_1.Active then
-				local var_3_0 = arg_2_0:getTargetList(arg_2_1, arg_2_0._target, arg_2_0._tempData.arg_list)
+	local function cldFunc(arg_3_0)
+		for _, cldData in ipairs(arg_3_0) do
+			-- cldData -> cldData
+			if cldData.Active then
+				local targetList = self:getTargetList(owner, self._target, self._tempData.arg_list)
 
-				for iter_3_2, iter_3_3 in ipairs(var_3_0) do
-					if iter_3_3:GetUniqueID() == iter_3_1.UID then
-						local var_3_1 = var_0_0.Battle.BattleBuffUnit.New(arg_2_0._auraBuffID, arg_2_0._level, arg_2_0._caster)
+				for _, target in ipairs(targetList) do
+					if target:GetUniqueID() == cldData.UID then
+						local auraBuff = ys.Battle.BattleBuffUnit.New(self._auraBuffID, self._level, self._caster)
 
-						iter_3_3:AddBuff(var_3_1)
+						target:AddBuff(auraBuff)
 
 						break
 					end
@@ -48,13 +50,13 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 		end
 	end
 
-	local function var_2_4(arg_4_0)
-		if arg_4_0.Active then
-			local var_4_0 = arg_2_0:getTargetList(arg_2_1, arg_2_0._target, arg_2_0._tempData.arg_list)
+	local function exitCldFunc(cldData)
+		if cldData.Active then
+			local targetList = self:getTargetList(owner, self._target, self._tempData.arg_list)
 
-			for iter_4_0, iter_4_1 in ipairs(var_4_0) do
-				if iter_4_1:GetUniqueID() == arg_4_0.UID then
-					iter_4_1:RemoveBuff(arg_2_0._auraBuffID)
+			for _, target in ipairs(targetList) do
+				if target:GetUniqueID() == cldData.UID then
+					target:RemoveBuff(self._auraBuffID)
 
 					break
 				end
@@ -62,21 +64,21 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 		end
 	end
 
-	local var_2_5 = arg_2_0._isUpdateAura and var_2_4 or nil
-	local var_2_6 = arg_2_0._isUpdateAura and true or false
-	local var_2_7 = var_0_0.Battle.BattleDataProxy.GetInstance()
-	local var_2_8, var_2_9, var_2_10, var_2_11 = var_2_7:GetFieldBound()
-	local var_2_12 = Vector3((var_2_10 + var_2_11) * 0.5, 0, (var_2_8 + var_2_9) * 0.5)
-	local var_2_13 = math.abs(var_2_11 - var_2_10)
-	local var_2_14 = math.abs(var_2_8 - var_2_9)
-
-	arg_2_0._aura = var_2_7:SpawnLastingCubeArea(var_0_2.AOEField.SURFACE, arg_2_1:GetIFF(), var_2_12, var_2_13, var_2_14, 0, var_2_3, var_2_4, var_2_1, nil, var_2_5, var_2_6)
+	local endFunc = self._isUpdateAura and exitCldFunc or nil
+	local isUpdateAura = self._isUpdateAura and true or false
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local totalUpperBound, totalLowerBound, leftFieldBound, rightFieldBound = battleDataProxy:GetFieldBound()
+	local auraCenter = Vector3((leftFieldBound + rightFieldBound) * 0.5, 0, (totalUpperBound + totalLowerBound) * 0.5)
+	local auraWidth = math.abs(rightFieldBound - leftFieldBound)
+	local auraHeight = math.abs(totalUpperBound - totalLowerBound)
+	--- @type BattleLastingAOEData
+	self._aura = battleDataProxy:SpawnLastingCubeArea(BattleConst.AOEField.SURFACE, owner:GetIFF(), auraCenter, auraWidth, auraHeight, 0, cldFunc, exitCldFunc, isFriend, nil, endFunc, isUpdateAura)
 end
 
-function var_0_1.Clear(arg_5_0)
-	arg_5_0._aura:SetActiveFlag(false)
+function BattleBuffField.Clear(self)
+	self._aura:SetActiveFlag(false)
 
-	arg_5_0._aura = nil
+	self._aura = nil
 
-	var_0_1.super.Clear(arg_5_0)
+	BattleBuffField.super.Clear(self)
 end

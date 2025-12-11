@@ -44,7 +44,7 @@ function var_0_0.getConsume(arg_7_0)
 
 	return var_7_0
 end
-
+-- TODO
 function var_0_0.getAttrsAddition(arg_8_0)
 	local var_8_0 = {}
 	local var_8_1 = {}

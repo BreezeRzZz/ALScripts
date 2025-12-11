@@ -508,7 +508,7 @@ function BattleUnit.DispatchScorePoint(self, score)
 	}))
 end
 
-function BattleUnit.SetTemplate(self, templateID, arg_33_2)
+function BattleUnit.SetTemplate(self, templateID, templateData)
 	self._tmpID = templateID
 end
 
@@ -562,13 +562,13 @@ function BattleUnit.SetRemoteBoundBone(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
 	var_45_0[arg_45_2] = arg_45_3
 	arg_45_0._remoteBoundBone[arg_45_1] = var_45_0
 end
-
-function BattleUnit.GetRemoteBoundBone(arg_46_0, arg_46_1)
-	for iter_46_0, iter_46_1 in pairs(arg_46_0._remoteBoundBone) do
-		local var_46_0 = iter_46_1[arg_46_1]
+-- tODO
+function BattleUnit.GetRemoteBoundBone(self, spawnBound)
+	for _, iter_46_1 in pairs(self._remoteBoundBone) do
+		local var_46_0 = iter_46_1[spawnBound]
 
 		if var_46_0 then
-			local var_46_1 = ys.Battle.BattleTargetChoise.TargetFleetIndex(arg_46_0, {
+			local var_46_1 = ys.Battle.BattleTargetChoise.TargetFleetIndex(self, {
 				fleetPos = var_46_0
 			})[1]
 
@@ -601,34 +601,36 @@ function BattleUnit.ContainsLabelTag(arg_48_0, arg_48_1)
 	return false
 end
 
-function BattleUnit.AddLabelTag(arg_49_0, arg_49_1)
-	table.insert(arg_49_0._labelTagList, arg_49_1)
+function BattleUnit.AddLabelTag(self, tag)
+	-- labelTagList: table<number, string>
+	table.insert(self._labelTagList, tag)
+	-- labelTag: table<string, number>，是一个属性
+	local currentLabelTag = BattleAttr.GetCurrent(self, "labelTag")
 
-	local var_49_0 = BattleAttr.GetCurrent(arg_49_0, "labelTag")
-
-	var_49_0[arg_49_1] = (var_49_0[arg_49_1] or 0) + 1
+	currentLabelTag[tag] = (currentLabelTag[tag] or 0) + 1
 end
 
-function BattleUnit.RemoveLabelTag(arg_50_0, arg_50_1)
-	for iter_50_0, iter_50_1 in ipairs(arg_50_0._labelTagList) do
-		if iter_50_1 == arg_50_1 then
-			table.remove(arg_50_0._labelTagList, iter_50_0)
+function BattleUnit.RemoveLabelTag(self, tag)
+	for iter_50_0, iter_50_1 in ipairs(self._labelTagList) do
+		if iter_50_1 == tag then
+			table.remove(self._labelTagList, iter_50_0)
 
-			local var_50_0 = BattleAttr.GetCurrent(arg_50_0, "labelTag")
+			local currentLabelTag = BattleAttr.GetCurrent(self, "labelTag")
 
-			var_50_0[arg_50_1] = var_50_0[arg_50_1] - 1
+			currentLabelTag[tag] = currentLabelTag[tag] - 1
 
 			break
 		end
 	end
 end
+-- 用于设定标准标签
+-- 包括国际标签N_和舰种标签T_
+function BattleUnit.setStandardLabelTag(self)
+	local nationalityTag = "N_" .. self._tmpData.nationality
+	local typeTag = "T_" .. self._tmpData.type
 
-function BattleUnit.setStandardLabelTag(arg_51_0)
-	local var_51_0 = "N_" .. arg_51_0._tmpData.nationality
-	local var_51_1 = "T_" .. arg_51_0._tmpData.type
-
-	arg_51_0:AddLabelTag(var_51_0)
-	arg_51_0:AddLabelTag(var_51_1)
+	self:AddLabelTag(nationalityTag)
+	self:AddLabelTag(typeTag)
 end
 
 function BattleUnit.GetRarity(arg_52_0)
@@ -960,10 +962,10 @@ function BattleUnit.GetManualWeaponParallel(arg_101_0)
 	}
 end
 
-function BattleUnit.configWeaponQueueParallel(arg_102_0)
-	local var_102_0 = arg_102_0:GetManualWeaponParallel()
+function BattleUnit.configWeaponQueueParallel(self)
+	local manualWeaponParallel = self:GetManualWeaponParallel()
 
-	arg_102_0._weaponQueue:ConfigParallel(var_102_0[BattleConst.ManualWeaponIndex.CALIBRATION], var_102_0[BattleConst.ManualWeaponIndex.TORPEDO])
+	self._weaponQueue:ConfigParallel(manualWeaponParallel[BattleConst.ManualWeaponIndex.CALIBRATION], manualWeaponParallel[BattleConst.ManualWeaponIndex.TORPEDO])
 end
 
 function BattleUnit.ClearWeapon(arg_103_0)

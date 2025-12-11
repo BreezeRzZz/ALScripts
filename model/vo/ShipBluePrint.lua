@@ -1,188 +1,192 @@
-local var_0_0 = class("ShipBluePrint", import(".BaseVO"))
+local ShipBluePrint = class("ShipBluePrint", import(".BaseVO"))
 
-var_0_0.STATE_LOCK = 1
-var_0_0.STATE_DEV = 2
-var_0_0.STATE_DEV_FINISHED = 3
-var_0_0.STATE_UNLOCK = 4
-var_0_0.TASK_STATE_LOCK = 1
-var_0_0.TASK_STATE_OPENING = 2
-var_0_0.TASK_STATE_WAIT = 3
-var_0_0.TASK_STATE_START = 4
-var_0_0.TASK_STATE_ACHIEVED = 5
-var_0_0.TASK_STATE_FINISHED = 6
-var_0_0.TASK_STATE_PAUSE = 7
-var_0_0.STRENGTHEN_TYPE_ATTR = "attr"
-var_0_0.STRENGTHEN_TYPE_DIALOGUE = "dialog"
-var_0_0.STRENGTHEN_TYPE_SKILL = "skill"
-var_0_0.STRENGTHEN_TYPE_CHANGE_SKILL = "change_skill"
-var_0_0.STRENGTHEN_TYPE_BASE_LIST = "base"
-var_0_0.STRENGTHEN_TYPE_SKIN = "skin"
-var_0_0.STRENGTHEN_TYPE_BREAKOUT = "breakout"
-var_0_0.STRENGTHEN_TYPE_PRLOAD_COUNT = "preload"
-var_0_0.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY = "equipmentproficiency"
+ShipBluePrint.STATE_LOCK = 1
+ShipBluePrint.STATE_DEV = 2
+ShipBluePrint.STATE_DEV_FINISHED = 3
+ShipBluePrint.STATE_UNLOCK = 4
+ShipBluePrint.TASK_STATE_LOCK = 1
+ShipBluePrint.TASK_STATE_OPENING = 2
+ShipBluePrint.TASK_STATE_WAIT = 3
+ShipBluePrint.TASK_STATE_START = 4
+ShipBluePrint.TASK_STATE_ACHIEVED = 5
+ShipBluePrint.TASK_STATE_FINISHED = 6
+ShipBluePrint.TASK_STATE_PAUSE = 7
+ShipBluePrint.STRENGTHEN_TYPE_ATTR = "attr"
+ShipBluePrint.STRENGTHEN_TYPE_DIALOGUE = "dialog"
+ShipBluePrint.STRENGTHEN_TYPE_SKILL = "skill"
+ShipBluePrint.STRENGTHEN_TYPE_CHANGE_SKILL = "change_skill"
+ShipBluePrint.STRENGTHEN_TYPE_BASE_LIST = "base"
+ShipBluePrint.STRENGTHEN_TYPE_SKIN = "skin"
+ShipBluePrint.STRENGTHEN_TYPE_BREAKOUT = "breakout"
+ShipBluePrint.STRENGTHEN_TYPE_PRLOAD_COUNT = "preload"
+ShipBluePrint.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY = "equipmentproficiency"
 
-local var_0_1 = pg.ship_data_blueprint
-local var_0_2 = pg.ship_strengthen_blueprint
+local ship_data_blueprint = pg.ship_data_blueprint
+local ship_strengthen_blueprint = pg.ship_strengthen_blueprint
 local var_0_3 = false
 
-function var_0_0.print(...)
+function ShipBluePrint.print(...)
 	if var_0_3 then
 		print(...)
 	end
 end
 
-function var_0_0.Ctor(arg_2_0, arg_2_1)
-	arg_2_0.configId = arg_2_1.id
-	arg_2_0.id = arg_2_0.configId
-	arg_2_0.state = var_0_0.STATE_LOCK
-	arg_2_0.startTime = 0
-	arg_2_0.shipId = 0
-	arg_2_0.duration = 0
-	arg_2_0.level = 0
-	arg_2_0.fateLevel = -1
-	arg_2_0.exp = 0
-	arg_2_0.strengthenConfig = {}
+function ShipBluePrint.Ctor(self, arg_2_1)
+	self.configId = arg_2_1.id
+	self.id = self.configId
+	self.state = ShipBluePrint.STATE_LOCK
+	self.startTime = 0
+	self.shipId = 0
+	self.duration = 0
+	self.level = 0
+	self.fateLevel = -1
+	self.exp = 0
+	self.strengthenConfig = {}
+	-- configTable是ship_data_blueprint
+	for level, effectID in ipairs(self:getConfig("strengthen_effect")) do
+		-- ship_strengthen_blueprint对应ID的表
+		local effectTmp = Clone(ship_strengthen_blueprint[effectID])
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0:getConfig("strengthen_effect")) do
-		local var_2_0 = Clone(var_0_2[iter_2_1])
-
-		if var_2_0.special == 1 then
-			arg_2_0:warpspecialEffect(var_2_0)
+		if effectTmp.special == 1 then
+			self:warpspecialEffect(effectTmp)
 		end
-
-		arg_2_0.strengthenConfig[iter_2_0] = var_2_0
+		-- strengthenConfig配置的就是ship_strengthen_blueprint每一级对应的表
+		self.strengthenConfig[level] = effectTmp
 	end
 
-	arg_2_0.fateStrengthenConfig = {}
+	self.fateStrengthenConfig = {}
 
-	for iter_2_2, iter_2_3 in ipairs(arg_2_0:getConfig("fate_strengthen")) do
-		local var_2_1 = Clone(var_0_2[iter_2_3])
+	for fateLevel, fateEffectID in ipairs(self:getConfig("fate_strengthen")) do
+		local fateEffectTmp = Clone(ship_strengthen_blueprint[fateEffectID])
 
-		if var_2_1.special == 1 then
-			arg_2_0:warpspecialEffect(var_2_1)
+		if fateEffectTmp.special == 1 then
+			self:warpspecialEffect(fateEffectTmp)
 		end
 
-		arg_2_0.fateStrengthenConfig[iter_2_2] = var_2_1
+		self.fateStrengthenConfig[fateLevel] = fateEffectTmp
 	end
 end
 
-function var_0_0.warpspecialEffect(arg_3_0, arg_3_1)
-	local var_3_0 = {}
-	local var_3_1 = string.split(arg_3_1.effect_desc, "|")
-	local var_3_2 = 0
+function ShipBluePrint.warpspecialEffect(self, template)
+	local special_effect = {}
+	local effectDescList = string.split(template.effect_desc, "|")
+	local index = 0
 
-	if type(arg_3_1.effect_attr) == "table" then
-		for iter_3_0, iter_3_1 in ipairs(arg_3_1.effect_attr) do
-			var_3_2 = var_3_2 + 1
-
-			table.insert(var_3_0, {
-				var_0_0.STRENGTHEN_TYPE_ATTR,
-				iter_3_1,
-				var_3_1[var_3_2] or ""
+	if type(template.effect_attr) == "table" then
+		for _, attrTable in ipairs(template.effect_attr) do
+			index = index + 1
+			-- 每一项的格式是一个表
+				-- 第一项是类别，属于字符串
+				-- 第二项是具体数值，是一个表，格式示例：{"durability"，596}
+				-- 第三项是描述，属于字符串
+			table.insert(special_effect, {
+				ShipBluePrint.STRENGTHEN_TYPE_ATTR,
+				attrTable,
+				effectDescList[index] or ""
 			})
 		end
 
-		arg_3_1.effect_attr = nil
+		template.effect_attr = nil
 	end
 
-	if arg_3_1.effect_breakout ~= 0 then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_BREAKOUT,
-			arg_3_1.effect_breakout,
-			var_3_1[var_3_2] or ""
+	if template.effect_breakout ~= 0 then
+		index = index + 1
+		-- 这是突破效果，表示突破后的舰船ID
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_BREAKOUT,
+			template.effect_breakout,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_breakout = nil
+		template.effect_breakout = nil
 	end
 
-	if type(arg_3_1.effect_skill) == "table" then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_SKILL,
-			arg_3_1.effect_skill,
-			var_3_1[var_3_2] or ""
+	if type(template.effect_skill) == "table" then
+		index = index + 1
+		-- 目前看起来全空，不用管
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_SKILL,
+			template.effect_skill,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_skill = nil
+		template.effect_skill = nil
 	end
 
-	if type(arg_3_1.change_skill) == "table" then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_CHANGE_SKILL,
-			arg_3_1.change_skill,
-			var_3_1[var_3_2] or ""
+	if type(template.change_skill) == "table" then
+		index = index + 1
+		-- 天运会修改的技能
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_CHANGE_SKILL,
+			template.change_skill,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.change_skill = nil
+		template.change_skill = nil
 	end
 
-	if type(arg_3_1.effect_base) == "table" then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_BASE_LIST,
-			arg_3_1.effect_base,
-			var_3_1[var_3_2] or ""
+	if type(template.effect_base) == "table" then
+		index = index + 1
+		-- 目前看起来全空，不用管
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_BASE_LIST,
+			template.effect_base,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_base = nil
+		template.effect_base = nil
 	end
 
-	if type(arg_3_1.effect_preload) == "table" then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_PRLOAD_COUNT,
-			arg_3_1.effect_preload,
-			var_3_1[var_3_2] or ""
+	if type(template.effect_preload) == "table" then
+		index = index + 1
+		-- 目前看起来全空，不用管
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_PRLOAD_COUNT,
+			template.effect_preload,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_preload = nil
+		template.effect_preload = nil
 	end
 
-	if type(arg_3_1.effect_dialog) == "table" then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_DIALOGUE,
-			arg_3_1.effect_dialog,
-			var_3_1[var_3_2] or ""
+	if type(template.effect_dialog) == "table" then
+		index = index + 1
+		-- 不用管
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_DIALOGUE,
+			template.effect_dialog,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_dialog = nil
+		template.effect_dialog = nil
 	end
 
-	if arg_3_1.effect_skin ~= 0 then
-		var_3_2 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_SKIN,
-			arg_3_1.effect_skin,
-			var_3_1[var_3_2] or ""
+	if template.effect_skin ~= 0 then
+		index = index + 1
+		-- 不用管
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_SKIN,
+			template.effect_skin,
+			effectDescList[index] or ""
 		})
 
-		arg_3_1.effect_skin = nil
+		template.effect_skin = nil
 	end
 
-	if type(arg_3_1.effect_equipment_proficiency) == "table" then
-		local var_3_3 = var_3_2 + 1
-
-		table.insert(var_3_0, {
-			var_0_0.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY,
-			arg_3_1.effect_equipment_proficiency,
-			var_3_1[var_3_3] or ""
+	if type(template.effect_equipment_proficiency) == "table" then
+		local index = index + 1
+		-- 武器效率提高，格式：{equipIndex, value}
+		table.insert(special_effect, {
+			ShipBluePrint.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY,
+			template.effect_equipment_proficiency,
+			effectDescList[index] or ""
 		})
 	end
 
-	arg_3_1.special_effect = var_3_0
+	template.special_effect = special_effect
 end
 
-function var_0_0.updateInfo(arg_4_0, arg_4_1)
+function ShipBluePrint.updateInfo(arg_4_0, arg_4_1)
 	arg_4_0.startTime = arg_4_1.start_time or 0
 	arg_4_0.shipId = arg_4_1.ship_id or 0
 	arg_4_0.level = arg_4_1.blue_print_level and math.min(arg_4_1.blue_print_level, arg_4_0:getMaxLevel()) or 0
@@ -193,23 +197,23 @@ function var_0_0.updateInfo(arg_4_0, arg_4_1)
 	arg_4_0:updateState()
 end
 
-function var_0_0.updateStartUpTime(arg_5_0, arg_5_1)
+function ShipBluePrint.updateStartUpTime(arg_5_0, arg_5_1)
 	arg_5_0.duration = arg_5_1
 end
 
-function var_0_0.updateState(arg_6_0)
+function ShipBluePrint.updateState(arg_6_0)
 	if arg_6_0:isFetched() then
-		arg_6_0.state = var_0_0.STATE_UNLOCK
+		arg_6_0.state = ShipBluePrint.STATE_UNLOCK
 	elseif arg_6_0.startTime == 0 then
-		arg_6_0.state = var_0_0.STATE_LOCK
+		arg_6_0.state = ShipBluePrint.STATE_LOCK
 	elseif arg_6_0:isFinishedAllTasks() then
-		arg_6_0.state = var_0_0.STATE_DEV_FINISHED
+		arg_6_0.state = ShipBluePrint.STATE_DEV_FINISHED
 	else
-		arg_6_0.state = var_0_0.STATE_DEV
+		arg_6_0.state = ShipBluePrint.STATE_DEV
 	end
 end
 
-function var_0_0.addExp(arg_7_0, arg_7_1)
+function ShipBluePrint.addExp(arg_7_0, arg_7_1)
 	assert(arg_7_1, "exp can not be nil")
 
 	arg_7_0.exp = arg_7_0.exp + arg_7_1
@@ -241,7 +245,7 @@ function var_0_0.addExp(arg_7_0, arg_7_1)
 	end
 end
 
-function var_0_0.getNextLevelExp(arg_8_0)
+function ShipBluePrint.getNextLevelExp(arg_8_0)
 	if arg_8_0.level == arg_8_0:getMaxLevel() then
 		return -1
 	else
@@ -251,7 +255,7 @@ function var_0_0.getNextLevelExp(arg_8_0)
 	end
 end
 
-function var_0_0.getNextFateLevelExp(arg_9_0)
+function ShipBluePrint.getNextFateLevelExp(arg_9_0)
 	if arg_9_0.fateLevel == arg_9_0:getMaxFateLevel() then
 		return -1
 	else
@@ -261,7 +265,7 @@ function var_0_0.getNextFateLevelExp(arg_9_0)
 	end
 end
 
-function var_0_0.canLevelUp(arg_10_0)
+function ShipBluePrint.canLevelUp(arg_10_0)
 	if arg_10_0.level == arg_10_0:getMaxLevel() then
 		return false
 	end
@@ -273,11 +277,11 @@ function var_0_0.canLevelUp(arg_10_0)
 	return false
 end
 
-function var_0_0.canFateSimulation(arg_11_0)
+function ShipBluePrint.canFateSimulation(arg_11_0)
 	return #arg_11_0.fateStrengthenConfig > 0 and arg_11_0.fateLevel >= 0
 end
 
-function var_0_0.canFateLevelUp(arg_12_0)
+function ShipBluePrint.canFateLevelUp(arg_12_0)
 	if arg_12_0.fateLevel == arg_12_0:getMaxFateLevel() then
 		return false
 	end
@@ -289,23 +293,23 @@ function var_0_0.canFateLevelUp(arg_12_0)
 	return false
 end
 
-function var_0_0.getMaxLevel(arg_13_0)
+function ShipBluePrint.getMaxLevel(arg_13_0)
 	return arg_13_0.strengthenConfig[#arg_13_0.strengthenConfig].lv
 end
 
-function var_0_0.getMaxFateLevel(arg_14_0)
+function ShipBluePrint.getMaxFateLevel(arg_14_0)
 	return arg_14_0.fateStrengthenConfig[#arg_14_0.fateStrengthenConfig].lv - 30
 end
 
-function var_0_0.isMaxLevel(arg_15_0)
+function ShipBluePrint.isMaxLevel(arg_15_0)
 	return arg_15_0.level == arg_15_0:getMaxLevel()
 end
 
-function var_0_0.isMaxFateLevel(arg_16_0)
+function ShipBluePrint.isMaxFateLevel(arg_16_0)
 	return arg_16_0.fateLevel == arg_16_0:getMaxFateLevel()
 end
 
-function var_0_0.isMaxIntensifyLevel(arg_17_0)
+function ShipBluePrint.isMaxIntensifyLevel(arg_17_0)
 	if #arg_17_0:getConfig("fate_strengthen") > 0 then
 		return arg_17_0:isMaxFateLevel()
 	else
@@ -313,138 +317,143 @@ function var_0_0.isMaxIntensifyLevel(arg_17_0)
 	end
 end
 
-function var_0_0.getBluePrintAddition(arg_18_0, arg_18_1)
-	local var_18_0 = table.indexof(ShipModAttr.BLUEPRINT_ATTRS, arg_18_1)
-	local var_18_1 = arg_18_0:getConfig("attr_exp")[var_18_0]
+function ShipBluePrint.getBluePrintAddition(self, property)
+	-- BLUEPRINT_ATTRS 与常规一致，按顺序为炮击、雷击、防空、航空、装填
+	local propertyIndex = table.indexof(ShipModAttr.BLUEPRINT_ATTRS, property)
+	-- 每级需要的经验值
+	local propertyExp = self:getConfig("attr_exp")[propertyIndex]
 
-	if var_18_1 then
-		local var_18_2 = 0
+	if propertyExp then
+		local totalStrengthenExp = 0
 
-		for iter_18_0 = 1, arg_18_0.level do
-			var_18_2 = var_18_2 + arg_18_0.strengthenConfig[iter_18_0].effect[var_18_0]
+		for level = 1, self.level do
+			totalStrengthenExp = totalStrengthenExp + self.strengthenConfig[level].effect[propertyIndex]
 		end
 
-		local var_18_3 = 0
+		local restExp = 0
 
-		if not arg_18_0:isMaxLevel() then
-			local var_18_4 = arg_18_0:getNextLevelExp()
-
-			var_18_3 = arg_18_0.exp / var_18_4 * arg_18_0.strengthenConfig[arg_18_0.level + 1].effect[var_18_0]
+		if not self:isMaxLevel() then
+			-- need_exp字段
+			local nextLevelExp = self:getNextLevelExp()
+			-- self.exp应该是当前等级的exp, 所以要除以nextLevelExp，得到当前等级的经验百分比
+			-- 因此可以获得下一级的部分强化经验值
+			-- 注意区分船的exp和强化exp，不是同一个概念
+			restExp = self.exp / nextLevelExp * self.strengthenConfig[self.level + 1].effect[propertyIndex]
 		end
 
-		local var_18_5 = (var_18_2 + var_18_3) / var_18_1
-		local var_18_6 = (var_18_2 + var_18_3) % var_18_1
+		local bluePrintAddition = (totalStrengthenExp + restExp) / propertyExp
+		local restStrengthenExp = (totalStrengthenExp + restExp) % propertyExp
 
-		return var_18_5, var_18_6
+		return bluePrintAddition, restStrengthenExp
 	else
 		return 0, 0
 	end
 end
 
-function var_0_0.getShipVO(arg_19_0)
+function ShipBluePrint.getShipVO(arg_19_0)
 	return Ship.New({
 		configId = tonumber(arg_19_0.id .. "1")
 	})
 end
 
-function var_0_0.isFetched(arg_20_0)
+function ShipBluePrint.isFetched(arg_20_0)
 	return arg_20_0.shipId ~= 0
 end
 
-function var_0_0.getState(arg_21_0)
+function ShipBluePrint.getState(arg_21_0)
 	return arg_21_0.state
 end
 
-function var_0_0.start(arg_22_0, arg_22_1)
-	arg_22_0.state = var_0_0.STATE_DEV
+function ShipBluePrint.start(arg_22_0, arg_22_1)
+	arg_22_0.state = ShipBluePrint.STATE_DEV
 	arg_22_0.startTime = arg_22_1
 	arg_22_0.duration = 0
 end
 
-function var_0_0.reset(arg_23_0)
-	arg_23_0.state = var_0_0.STATE_LOCK
+function ShipBluePrint.reset(arg_23_0)
+	arg_23_0.state = ShipBluePrint.STATE_LOCK
 	arg_23_0.startTime = 0
 end
 
-function var_0_0.isLock(arg_24_0)
-	return arg_24_0.state == var_0_0.STATE_LOCK
+function ShipBluePrint.isLock(arg_24_0)
+	return arg_24_0.state == ShipBluePrint.STATE_LOCK
 end
 
-function var_0_0.isDeving(arg_25_0)
-	return arg_25_0.state == var_0_0.STATE_DEV
+function ShipBluePrint.isDeving(arg_25_0)
+	return arg_25_0.state == ShipBluePrint.STATE_DEV
 end
 
-function var_0_0.isFinished(arg_26_0)
-	return arg_26_0.state == var_0_0.STATE_DEV_FINISHED
+function ShipBluePrint.isFinished(arg_26_0)
+	return arg_26_0.state == ShipBluePrint.STATE_DEV_FINISHED
 end
 
-function var_0_0.finish(arg_27_0)
-	arg_27_0.state = var_0_0.STATE_DEV_FINISHED
+function ShipBluePrint.finish(arg_27_0)
+	arg_27_0.state = ShipBluePrint.STATE_DEV_FINISHED
 end
 
-function var_0_0.unlock(arg_28_0, arg_28_1)
+function ShipBluePrint.unlock(arg_28_0, arg_28_1)
 	arg_28_0.shipId = arg_28_1
-	arg_28_0.state = var_0_0.STATE_UNLOCK
+	arg_28_0.state = ShipBluePrint.STATE_UNLOCK
 	arg_28_0.duration = 0
 end
 
-function var_0_0.isUnlock(arg_29_0)
-	return arg_29_0.state == var_0_0.STATE_UNLOCK
+function ShipBluePrint.isUnlock(arg_29_0)
+	return arg_29_0.state == ShipBluePrint.STATE_UNLOCK
 end
 
-function var_0_0.getItemId(arg_30_0)
+function ShipBluePrint.getItemId(arg_30_0)
 	return arg_30_0:getConfig("strengthen_item")
 end
 
-function var_0_0.bindConfigTable(arg_31_0)
+function ShipBluePrint.bindConfigTable(arg_31_0)
 	return pg.ship_data_blueprint
 end
 
-function var_0_0.getTaskIds(arg_32_0)
+function ShipBluePrint.getTaskIds(arg_32_0)
 	return _.map(arg_32_0:getConfig("unlock_task"), function(arg_33_0)
 		return arg_33_0[1]
 	end)
 end
 
-function var_0_0.getTaskOpenTimeStamp(arg_34_0, arg_34_1)
+function ShipBluePrint.getTaskOpenTimeStamp(arg_34_0, arg_34_1)
 	local var_34_0 = table.indexof(arg_34_0:getTaskIds(), arg_34_1)
 
 	return arg_34_0:getConfig("unlock_task")[var_34_0][2] + arg_34_0.startTime + 1
 end
 
-function var_0_0.isFinishedAllTasks(arg_35_0)
+function ShipBluePrint.isFinishedAllTasks(arg_35_0)
 	local var_35_0 = getProxy(TaskProxy)
 
 	return _.all(arg_35_0:getTaskIds(), function(arg_36_0)
-		return arg_35_0:getTaskStateById(arg_36_0) == var_0_0.TASK_STATE_FINISHED
+		return arg_35_0:getTaskStateById(arg_36_0) == ShipBluePrint.TASK_STATE_FINISHED
 	end)
 end
 
-function var_0_0.getTaskStateById(arg_37_0, arg_37_1)
+function ShipBluePrint.getTaskStateById(arg_37_0, arg_37_1)
 	if arg_37_0:isLock() then
 		if arg_37_0.duration > 0 then
-			return var_0_0.TASK_STATE_PAUSE
+			return ShipBluePrint.TASK_STATE_PAUSE
 		else
-			return var_0_0.TASK_STATE_LOCK
+			return ShipBluePrint.TASK_STATE_LOCK
 		end
 	elseif arg_37_0:getTaskOpenTimeStamp(arg_37_1) > pg.TimeMgr.GetInstance():GetServerTime() then
-		return var_0_0.TASK_STATE_WAIT
+		return ShipBluePrint.TASK_STATE_WAIT
 	else
 		local var_37_0 = getProxy(TaskProxy):getTaskVO(arg_37_1)
 
 		if var_37_0 and var_37_0:isReceive() then
-			return var_0_0.TASK_STATE_FINISHED
+			return ShipBluePrint.TASK_STATE_FINISHED
 		elseif var_37_0 and var_37_0:isFinish() then
-			return var_0_0.TASK_STATE_ACHIEVED
+			return ShipBluePrint.TASK_STATE_ACHIEVED
 		elseif var_37_0 then
-			return var_0_0.TASK_STATE_START
+			return ShipBluePrint.TASK_STATE_START
 		else
-			return var_0_0.TASK_STATE_OPENING
+			return ShipBluePrint.TASK_STATE_OPENING
 		end
 	end
 end
 
-function var_0_0.getExpRetio(arg_38_0, arg_38_1)
+function ShipBluePrint.getExpRetio(arg_38_0, arg_38_1)
 	local var_38_0 = arg_38_0:getConfig("attr_exp")
 
 	assert(arg_38_1 > 0 and arg_38_1 <= #var_38_0, "invalid index" .. arg_38_1)
@@ -452,7 +461,7 @@ function var_0_0.getExpRetio(arg_38_0, arg_38_1)
 	return var_38_0[arg_38_1]
 end
 
-function var_0_0.specialStrengthens(arg_39_0)
+function ShipBluePrint.specialStrengthens(arg_39_0)
 	local var_39_0 = {}
 	local var_39_1 = noEmptyStr(arg_39_0:getConfig("normal_display"))
 
@@ -477,11 +486,11 @@ function var_0_0.specialStrengthens(arg_39_0)
 	return var_39_0
 end
 
-function var_0_0.getSpecials(arg_40_0)
+function ShipBluePrint.getSpecials(arg_40_0)
 	return arg_40_0.strengthenConfig[arg_40_0.level].special_effect
 end
 
-function var_0_0.getTopLimitAttrValue(arg_41_0, arg_41_1)
+function ShipBluePrint.getTopLimitAttrValue(arg_41_0, arg_41_1)
 	if arg_41_0.level == 0 then
 		return 0
 	else
@@ -496,13 +505,13 @@ function var_0_0.getTopLimitAttrValue(arg_41_0, arg_41_1)
 	end
 end
 
-function var_0_0.getItemExp(arg_42_0)
+function ShipBluePrint.getItemExp(arg_42_0)
 	local var_42_0 = arg_42_0:getConfig("strengthen_item")
 
 	return Item.getConfigData(var_42_0).usage_arg[1]
 end
 
-function var_0_0.getShipProperties(arg_43_0, arg_43_1, arg_43_2)
+function ShipBluePrint.getShipProperties(arg_43_0, arg_43_1, arg_43_2)
 	assert(arg_43_1, "shipVO can not be nil" .. arg_43_0.shipId)
 
 	local var_43_0 = arg_43_1:getBaseProperties()
@@ -528,54 +537,56 @@ function var_0_0.getShipProperties(arg_43_0, arg_43_1, arg_43_2)
 	return var_43_0
 end
 
-function var_0_0.getTotalAdditions(arg_44_0)
-	local var_44_0 = {}
-	local var_44_1 = arg_44_0:attrSpecialAddition()
+function ShipBluePrint.getTotalAdditions(self)
+	local totalAdditions = {}
+	-- specialAddition就是对effect_attr的累加
+	local specialAddition = self:attrSpecialAddition()
 
-	for iter_44_0, iter_44_1 in ipairs(Ship.PROPERTIES) do
-		local var_44_2, var_44_3 = arg_44_0:getBluePrintAddition(iter_44_1)
+	for _, property in ipairs(Ship.PROPERTIES) do
+		local bluePrintAddition, var_44_3 = self:getBluePrintAddition(property)
 
-		var_44_0[iter_44_1] = var_44_2 + (var_44_1[iter_44_1] or 0)
+		totalAdditions[property] = bluePrintAddition + (specialAddition[property] or 0)
 	end
 
-	return var_44_0
+	return totalAdditions
 end
 
-function var_0_0.attrSpecialAddition(arg_45_0)
-	local var_45_0 = {}
+function ShipBluePrint.attrSpecialAddition(self)
+	local specialAddition = {}
 
-	for iter_45_0 = 1, arg_45_0.level do
-		local var_45_1 = arg_45_0.strengthenConfig[iter_45_0]
+	for level = 1, self.level do
+		-- 来自ship_strengthen_blueprint
+		local strengthenTmp = self.strengthenConfig[level]
 
-		if var_45_1.special == 1 and type(var_45_1.special_effect) == "table" then
-			for iter_45_1, iter_45_2 in ipairs(var_45_1.special_effect) do
-				if iter_45_2[1] == var_0_0.STRENGTHEN_TYPE_ATTR then
-					local var_45_2 = iter_45_2[2]
-
-					var_45_0[var_45_2[1]] = (var_45_0[var_45_2[1]] or 0) + var_45_2[2]
+		if strengthenTmp.special == 1 and type(strengthenTmp.special_effect) == "table" then
+			for _, specialEffectItem in ipairs(strengthenTmp.special_effect) do
+				if specialEffectItem[1] == ShipBluePrint.STRENGTHEN_TYPE_ATTR then
+					local effectAttrTable = specialEffectItem[2]
+					-- 累加effect_attr
+					specialAddition[effectAttrTable[1]] = (specialAddition[effectAttrTable[1]] or 0) + effectAttrTable[2]
 				end
 			end
 		end
 	end
 
-	for iter_45_3 = 1, arg_45_0.fateLevel do
-		local var_45_3 = arg_45_0.fateStrengthenConfig[iter_45_3]
+	for j = 1, self.fateLevel do
+		local fateStrengthenTmp = self.fateStrengthenConfig[j]
 
-		if var_45_3.special == 1 and type(var_45_3.special_effect) == "table" then
-			for iter_45_4, iter_45_5 in ipairs(var_45_3.special_effect) do
-				if iter_45_5[1] == var_0_0.STRENGTHEN_TYPE_ATTR then
-					local var_45_4 = iter_45_5[2]
-
-					var_45_0[var_45_4[1]] = (var_45_0[var_45_4[1]] or 0) + var_45_4[2]
+		if fateStrengthenTmp.special == 1 and type(fateStrengthenTmp.special_effect) == "table" then
+			for iter_45_4, iter_45_5 in ipairs(fateStrengthenTmp.special_effect) do
+				if iter_45_5[1] == ShipBluePrint.STRENGTHEN_TYPE_ATTR then
+					local effectAttrTable = iter_45_5[2]
+					-- 累加effect_attr
+					specialAddition[effectAttrTable[1]] = (specialAddition[effectAttrTable[1]] or 0) + effectAttrTable[2]
 				end
 			end
 		end
 	end
 
-	return var_45_0
+	return specialAddition
 end
 
-function var_0_0.getUseageMaxItem(arg_46_0)
+function ShipBluePrint.getUseageMaxItem(arg_46_0)
 	local var_46_0 = 0
 
 	for iter_46_0 = arg_46_0.level + 1, arg_46_0:getMaxLevel() do
@@ -587,7 +598,7 @@ function var_0_0.getUseageMaxItem(arg_46_0)
 	return math.max(math.ceil((var_46_0 - arg_46_0.exp) / arg_46_0:getItemExp()), 0)
 end
 
-function var_0_0.getFateUseageMaxItem(arg_47_0)
+function ShipBluePrint.getFateUseageMaxItem(arg_47_0)
 	local var_47_0 = 0
 
 	for iter_47_0 = arg_47_0.fateLevel + 1, arg_47_0:getMaxFateLevel() do
@@ -599,19 +610,19 @@ function var_0_0.getFateUseageMaxItem(arg_47_0)
 	return math.max(math.ceil((var_47_0 - arg_47_0.exp) / arg_47_0:getItemExp()), 0)
 end
 
-function var_0_0.getOpenTaskList(arg_48_0)
+function ShipBluePrint.getOpenTaskList(arg_48_0)
 	return arg_48_0:getConfig("unlock_task_open_condition")
 end
 
-function var_0_0.getStrengthenConfig(arg_49_0, arg_49_1)
+function ShipBluePrint.getStrengthenConfig(arg_49_0, arg_49_1)
 	return arg_49_0.strengthenConfig[arg_49_1]
 end
 
-function var_0_0.getFateStrengthenConfig(arg_50_0, arg_50_1)
+function ShipBluePrint.getFateStrengthenConfig(arg_50_0, arg_50_1)
 	return arg_50_0.fateStrengthenConfig[arg_50_1]
 end
 
-function var_0_0.getUnlockVoices(arg_51_0)
+function ShipBluePrint.getUnlockVoices(arg_51_0)
 	local var_51_0 = {}
 
 	for iter_51_0 = 1, arg_51_0.level do
@@ -622,7 +633,7 @@ function var_0_0.getUnlockVoices(arg_51_0)
 
 			if type(var_51_2) == "table" then
 				for iter_51_1, iter_51_2 in ipairs(var_51_2) do
-					if iter_51_2[1] == var_0_0.STRENGTHEN_TYPE_DIALOGUE then
+					if iter_51_2[1] == ShipBluePrint.STRENGTHEN_TYPE_DIALOGUE then
 						for iter_51_3, iter_51_4 in ipairs(iter_51_2[2]) do
 							table.insert(var_51_0, iter_51_4)
 						end
@@ -635,7 +646,7 @@ function var_0_0.getUnlockVoices(arg_51_0)
 	return var_51_0
 end
 
-function var_0_0.getUnlockLevel(arg_52_0, arg_52_1)
+function ShipBluePrint.getUnlockLevel(arg_52_0, arg_52_1)
 	local var_52_0 = arg_52_0:getMaxLevel()
 
 	for iter_52_0 = 1, var_52_0 do
@@ -643,7 +654,7 @@ function var_0_0.getUnlockLevel(arg_52_0, arg_52_1)
 
 		if type(var_52_1) == "table" then
 			for iter_52_1, iter_52_2 in ipairs(var_52_1) do
-				if iter_52_2[1] == var_0_0.STRENGTHEN_TYPE_DIALOGUE then
+				if iter_52_2[1] == ShipBluePrint.STRENGTHEN_TYPE_DIALOGUE then
 					for iter_52_3, iter_52_4 in ipairs(iter_52_2[2]) do
 						if arg_52_1 == iter_52_4 then
 							return iter_52_0
@@ -657,7 +668,7 @@ function var_0_0.getUnlockLevel(arg_52_0, arg_52_1)
 	return 0
 end
 
-function var_0_0.getBaseList(self, ship)
+function ShipBluePrint.getBaseList(self, ship)
 	assert(ship, "shipVO can not be nil" .. self.shipId)
 
 	for iter_53_0 = self.level, 1, -1 do
@@ -667,7 +678,7 @@ function var_0_0.getBaseList(self, ship)
 			local var_53_1 = var_53_0.special_effect
 
 			for iter_53_1, iter_53_2 in ipairs(var_53_1) do
-				if iter_53_2[1] == var_0_0.STRENGTHEN_TYPE_BASE_LIST then
+				if iter_53_2[1] == ShipBluePrint.STRENGTHEN_TYPE_BASE_LIST then
 					return iter_53_2[2]
 				end
 			end
@@ -677,7 +688,7 @@ function var_0_0.getBaseList(self, ship)
 	return ship:getConfig("base_list")
 end
 
-function var_0_0.getPreLoadCount(arg_54_0, arg_54_1)
+function ShipBluePrint.getPreLoadCount(arg_54_0, arg_54_1)
 	assert(arg_54_1, "shipVO can not be nil" .. arg_54_0.shipId)
 
 	for iter_54_0 = arg_54_0.level, 1, -1 do
@@ -687,7 +698,7 @@ function var_0_0.getPreLoadCount(arg_54_0, arg_54_1)
 			local var_54_1 = var_54_0.special_effect
 
 			for iter_54_1, iter_54_2 in ipairs(var_54_1) do
-				if iter_54_2[1] == var_0_0.STRENGTHEN_TYPE_PRLOAD_COUNT then
+				if iter_54_2[1] == ShipBluePrint.STRENGTHEN_TYPE_PRLOAD_COUNT then
 					return iter_54_2[2]
 				end
 			end
@@ -697,7 +708,7 @@ function var_0_0.getPreLoadCount(arg_54_0, arg_54_1)
 	return arg_54_1:getConfig("preload_count")
 end
 
-function var_0_0.getEquipProficiencyList(arg_55_0, arg_55_1)
+function ShipBluePrint.getEquipProficiencyList(arg_55_0, arg_55_1)
 	assert(arg_55_1, "shipVO can not be nil" .. arg_55_0.shipId)
 
 	local var_55_0 = {}
@@ -709,7 +720,7 @@ function var_0_0.getEquipProficiencyList(arg_55_0, arg_55_1)
 			local var_55_2 = var_55_1.special_effect
 
 			for iter_55_1, iter_55_2 in ipairs(var_55_2) do
-				if iter_55_2[1] == var_0_0.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY then
+				if iter_55_2[1] == ShipBluePrint.STRENGTHEN_TYPE_EQUIPMENTPROFICIENCY then
 					local var_55_3 = iter_55_2[2][1]
 					local var_55_4 = iter_55_2[2][2]
 
@@ -728,7 +739,7 @@ function var_0_0.getEquipProficiencyList(arg_55_0, arg_55_1)
 	return var_55_5
 end
 
-function var_0_0.isFinishPrevTask(arg_56_0)
+function ShipBluePrint.isFinishPrevTask(arg_56_0)
 	local var_56_0 = true
 	local var_56_1 = true
 
@@ -745,7 +756,7 @@ function var_0_0.isFinishPrevTask(arg_56_0)
 	return var_56_0, var_56_1
 end
 
-function var_0_0.isShipModMaxLevel(arg_57_0, arg_57_1)
+function ShipBluePrint.isShipModMaxLevel(arg_57_0, arg_57_1)
 	assert(arg_57_1, "shipVO can not be nil" .. arg_57_0.shipId)
 
 	local var_57_0 = arg_57_0:getStrengthenConfig(math.min(arg_57_0.level + 1, arg_57_0:getMaxLevel()))
@@ -757,7 +768,7 @@ function var_0_0.isShipModMaxLevel(arg_57_0, arg_57_1)
 	end
 end
 
-function var_0_0.isShipModMaxFateLevel(arg_58_0, arg_58_1)
+function ShipBluePrint.isShipModMaxFateLevel(arg_58_0, arg_58_1)
 	assert(arg_58_1, "shipVO can not be nil" .. arg_58_0.shipId)
 
 	local var_58_0 = arg_58_0:getFateStrengthenConfig(math.min(arg_58_0.fateLevel + 1, arg_58_0:getMaxFateLevel()))
@@ -769,7 +780,7 @@ function var_0_0.isShipModMaxFateLevel(arg_58_0, arg_58_1)
 	end
 end
 
-function var_0_0.isShipModMaxIntensifyLevel(arg_59_0, arg_59_1)
+function ShipBluePrint.isShipModMaxIntensifyLevel(arg_59_0, arg_59_1)
 	if arg_59_0:canFateSimulation() then
 		return arg_59_0:isShipModMaxFateLevel(arg_59_1)
 	else
@@ -777,22 +788,22 @@ function var_0_0.isShipModMaxIntensifyLevel(arg_59_0, arg_59_1)
 	end
 end
 
-function var_0_0.getChangeSkillList(arg_60_0)
+function ShipBluePrint.getChangeSkillList(arg_60_0)
 	return arg_60_0:getConfig("change_skill")
 end
 
-function var_0_0.isRarityUR(arg_61_0)
+function ShipBluePrint.isRarityUR(arg_61_0)
 	return arg_61_0:getShipVO():getRarity() >= ShipRarity.SSR
 end
 
-function var_0_0.getFateMaxLeftOver(arg_62_0)
+function ShipBluePrint.getFateMaxLeftOver(arg_62_0)
 	local var_62_0 = arg_62_0:isRarityUR() and pg.gameset.fate_sim_ur.key_value or pg.gameset.fate_sim_ssr.key_value
 	local var_62_1 = var_62_0 - arg_62_0:getFateUseNum()
 
 	return var_62_1 < 0 and var_62_0 or var_62_1
 end
 
-function var_0_0.getFateUseNum(arg_63_0)
+function ShipBluePrint.getFateUseNum(arg_63_0)
 	local var_63_0 = 0
 
 	if arg_63_0:isMaxLevel() then
@@ -813,17 +824,17 @@ function var_0_0.getFateUseNum(arg_63_0)
 	return var_63_0
 end
 
-function var_0_0.isPursuing(arg_64_0)
+function ShipBluePrint.isPursuing(arg_64_0)
 	return arg_64_0:getConfig("is_pursuing") == 1
 end
 
-function var_0_0.getPursuingPrice(arg_65_0, arg_65_1)
+function ShipBluePrint.getPursuingPrice(arg_65_0, arg_65_1)
 	arg_65_1 = arg_65_1 or 100
 
 	return arg_65_0:getConfig("price") * arg_65_1 / 100
 end
 
-function var_0_0.getUnlockItem(arg_66_0)
+function ShipBluePrint.getUnlockItem(arg_66_0)
 	local var_66_0 = getProxy(BagProxy)
 
 	for iter_66_0, iter_66_1 in ipairs(arg_66_0:getConfig("gain_item_id")) do
@@ -833,16 +844,16 @@ function var_0_0.getUnlockItem(arg_66_0)
 	end
 end
 
-function var_0_0.isPursuingCostTip(arg_67_0)
+function ShipBluePrint.isPursuingCostTip(arg_67_0)
 	return arg_67_0:isPursuing() and arg_67_0:isUnlock() and not arg_67_0:isMaxIntensifyLevel() and not arg_67_0:isShipModMaxIntensifyLevel(getProxy(BayProxy):getShipById(arg_67_0.shipId)) and getProxy(TechnologyProxy):calcPursuingCost(arg_67_0, 1) == 0
 end
 
-function var_0_0.setPhantomQuestProgress(arg_68_0, arg_68_1, arg_68_2)
+function ShipBluePrint.setPhantomQuestProgress(arg_68_0, arg_68_1, arg_68_2)
 	arg_68_0.phantomQuestProgress = arg_68_0.phantomQuestProgress or {}
 	arg_68_0.phantomQuestProgress[arg_68_1] = arg_68_2
 end
 
-function var_0_0.getPhantomQuestCostDrop(arg_69_0)
+function ShipBluePrint.getPhantomQuestCostDrop(arg_69_0)
 	if arg_69_0.config.type == 5 then
 		return Drop.New({
 			type = DROP_TYPE_RESOURCE,
@@ -854,7 +865,7 @@ function var_0_0.getPhantomQuestCostDrop(arg_69_0)
 	end
 end
 
-function var_0_0.getPhantomQuestProgress(arg_70_0, arg_70_1)
+function ShipBluePrint.getPhantomQuestProgress(arg_70_0, arg_70_1)
 	assert(arg_70_0.shipId)
 
 	return switch(arg_70_1, {
@@ -879,7 +890,7 @@ function var_0_0.getPhantomQuestProgress(arg_70_0, arg_70_1)
 	})
 end
 
-function var_0_0.getPhantomQuestInfo(arg_76_0, arg_76_1)
+function ShipBluePrint.getPhantomQuestInfo(arg_76_0, arg_76_1)
 	local var_76_0 = pg.technology_shadow_unlock[arg_76_1]
 
 	return {
@@ -889,16 +900,16 @@ function var_0_0.getPhantomQuestInfo(arg_76_0, arg_76_1)
 	}
 end
 
-function var_0_0.getAllPhantomQuestInfo(arg_77_0)
+function ShipBluePrint.getAllPhantomQuestInfo(arg_77_0)
 	return underscore.map(pg.technology_shadow_unlock.all, function(arg_78_0)
 		return arg_77_0:getPhantomQuestInfo(arg_78_0)
 	end)
 end
 
-function var_0_0.isUnlockShipPhantom(arg_79_0)
+function ShipBluePrint.isUnlockShipPhantom(arg_79_0)
 	local var_79_0 = getGameset("technology_shadow_unlock_lv")[1]
 
 	return arg_79_0:isFetched() and var_79_0 <= getProxy(BayProxy):getShipById(arg_79_0.shipId).level
 end
 
-return var_0_0
+return ShipBluePrint

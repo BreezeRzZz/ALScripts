@@ -1544,6 +1544,8 @@ function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 		end
 	end
 	-- spawn_bound是一个table的情况
+	-- 一般都是一个字符串，table比较少见
+	-- 字符串的情况下，position一般是nil，因为大多数时候调用这个函数的时候并没有传position参数
 	if type(template.spawn_bound) == "table" and not position then
 		local mainUnitPosition = self._dataProxy:GetStageInfo().mainUnitPosition
 
@@ -1560,7 +1562,7 @@ function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 		fireFxID = fireFXID,
 		position = position
 	}
-
+	-- 对应到创建子弹事件的参数
 	local createBulletEvent = ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_BULLET, eventArgs)
 
 	self:DispatchEvent(createBulletEvent)

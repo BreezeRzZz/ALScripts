@@ -1,59 +1,60 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleFormulas
-local var_0_4 = var_0_0.Battle.BattleAttr
-local var_0_5 = var_0_0.Battle.BattleConfig
-local var_0_6 = var_0_0.Battle.BattleUnitEvent
-local var_0_7 = var_0_0.Battle.UnitState
-local var_0_8 = class("BattleMinionUnit", var_0_0.Battle.BattleEnemyUnit)
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleAttr = ys.Battle.BattleAttr
+local BattleConfig = ys.Battle.BattleConfig
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local UnitState = ys.Battle.UnitState
+local BattleMinionUnit = class("BattleMinionUnit", ys.Battle.BattleEnemyUnit)
+-- Minion继承的是Enemy，但己方的Minion也是用这个类
+-- 因此不能靠Enemy的逻辑来区分友方和敌方，必须用IFF来区分
+ys.Battle.BattleMinionUnit = BattleMinionUnit
+BattleMinionUnit.__name = "BattleMinionUnit"
 
-var_0_0.Battle.BattleMinionUnit = var_0_8
-var_0_8.__name = "BattleMinionUnit"
-
-function var_0_8.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_8.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattleMinionUnit.Ctor(self, uid, iff)
+	BattleMinionUnit.super.Ctor(self, uid, iff)
 end
 
-function var_0_8.GetUnitType(arg_2_0)
-	return var_0_2.UnitType.MINION_UNIT
+function BattleMinionUnit.GetUnitType(self)
+	return BattleConst.UnitType.MINION_UNIT
 end
 
-function var_0_8.SetMaster(arg_3_0, arg_3_1)
-	arg_3_0._master = arg_3_1
+function BattleMinionUnit.SetMaster(self, master)
+	self._master = master
 end
 
-function var_0_8.InheritMasterAttr(arg_4_0)
-	var_0_4.SetMinionAttr(arg_4_0)
-	var_0_4.InitDOTAttr(arg_4_0._attr, arg_4_0._tmpData)
-	arg_4_0:setStandardLabelTag()
+function BattleMinionUnit.InheritMasterAttr(self)
+	BattleAttr.SetMinionAttr(self)
+	BattleAttr.InitDOTAttr(self._attr, self._tmpData)
+	self:setStandardLabelTag()
 end
 
-function var_0_8.SetTemplate(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._tmpID = arg_5_1
-	arg_5_0._tmpData = var_0_1.GetMonsterTmpDataFromID(arg_5_0._tmpID)
+function BattleMinionUnit.SetTemplate(self, templateID, templateData)
+	self._tmpID = templateID
+	self._tmpData = BattleDataFunction.GetMonsterTmpDataFromID(self._tmpID)
 
-	arg_5_0:configWeaponQueueParallel()
-	arg_5_0:InitCldComponent()
+	self:configWeaponQueueParallel()
+	self:InitCldComponent()
 end
 
-function var_0_8.IsShowHPBar(arg_6_0)
+function BattleMinionUnit.IsShowHPBar(self)
 	return false
 end
 
-function var_0_8.GetMaster(arg_7_0)
-	return arg_7_0._master
+function BattleMinionUnit.GetMaster(self)
+	return self._master
 end
 
-function var_0_8.DispatchVoice(arg_8_0)
+function BattleMinionUnit.DispatchVoice(self)
 	return
 end
 
-function var_0_8.Retreat(arg_9_0)
-	var_0_8.super.Retreat(arg_9_0)
-	arg_9_0:SetDeathReason(var_0_2.UnitDeathReason.LEAVE)
-	arg_9_0:DeacActionClear()
-	arg_9_0._battleProxy:KillUnit(arg_9_0:GetUniqueID())
+function BattleMinionUnit.Retreat(self)
+	BattleMinionUnit.super.Retreat(self)
+	self:SetDeathReason(BattleConst.UnitDeathReason.LEAVE)
+	self:DeacActionClear()
+	self._battleProxy:KillUnit(self:GetUniqueID())
 end

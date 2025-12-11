@@ -37,107 +37,107 @@ local strategy_data_template = pg.strategy_data_template
 ys.Battle.BattleDataFunction = ys.Battle.BattleDataFunction or {}
 
 local BattleDataFunction = ys.Battle.BattleDataFunction
--- TODO
-function BattleDataFunction.CreateBattleUnitData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4, arg_1_5, arg_1_6, arg_1_7, arg_1_8, arg_1_9, arg_1_10, arg_1_11, arg_1_12)
-	local var_1_0
-	local var_1_1
 
-	if arg_1_1 == BattleConst.UnitType.PLAYER_UNIT then
-		var_1_0 = ys.Battle.BattlePlayerUnit.New(arg_1_0, arg_1_2)
+function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemplateID, skinId, equipmentList, templateData, extraInfo, proficiencyList, baseInfo, preloadInfo, overrideLevel, caster)
+	local unit
+	local weaponCount
 
-		var_1_0:SetSkinId(arg_1_4)
-		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
+	if unitType == BattleConst.UnitType.PLAYER_UNIT then
+		unit = ys.Battle.BattlePlayerUnit.New(uid, IFF)
 
-		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == BattleConst.UnitType.SUB_UNIT then
-		var_1_0 = ys.Battle.BattleSubUnit.New(arg_1_0, arg_1_2)
+		unit:SetSkinId(skinId)
+		unit:SetWeaponInfo(baseInfo, preloadInfo)
+		-- Ship.WEAPON_COUNT = 3
+		weaponCount = Ship.WEAPON_COUNT
+	elseif unitType == BattleConst.UnitType.SUB_UNIT then
+		unit = ys.Battle.BattleSubUnit.New(uid, IFF)
 
-		var_1_0:SetSkinId(arg_1_4)
-		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
+		unit:SetSkinId(skinId)
+		unit:SetWeaponInfo(baseInfo, preloadInfo)
 
-		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == BattleConst.UnitType.ENEMY_UNIT then
-		var_1_0 = ys.Battle.BattleEnemyUnit.New(arg_1_0, arg_1_2)
+		weaponCount = Ship.WEAPON_COUNT
+	elseif unitType == BattleConst.UnitType.ENEMY_UNIT then
+		unit = ys.Battle.BattleEnemyUnit.New(uid, IFF)
 
-		var_1_0:SetOverrideLevel(arg_1_11)
-	elseif arg_1_1 == BattleConst.UnitType.MINION_UNIT then
-		var_1_0 = ys.Battle.BattleMinionUnit.New(arg_1_0, arg_1_2)
-	elseif arg_1_1 == BattleConst.UnitType.BOSS_UNIT then
-		var_1_0 = ys.Battle.BattleBossUnit.New(arg_1_0, arg_1_2)
+		unit:SetOverrideLevel(overrideLevel)
+	elseif unitType == BattleConst.UnitType.MINION_UNIT then
+		unit = ys.Battle.BattleMinionUnit.New(uid, IFF)
+	elseif unitType == BattleConst.UnitType.BOSS_UNIT then
+		unit = ys.Battle.BattleBossUnit.New(uid, IFF)
 
-		var_1_0:SetOverrideLevel(arg_1_11)
-	elseif arg_1_1 == BattleConst.UnitType.CONST_UNIT then
-		var_1_0 = ys.Battle.BattleConstPlayerUnit.New(arg_1_0, arg_1_2)
+		unit:SetOverrideLevel(overrideLevel)
+	elseif unitType == BattleConst.UnitType.CONST_UNIT then
+		unit = ys.Battle.BattleConstPlayerUnit.New(uid, IFF)
 
-		var_1_0:SetSkinId(arg_1_4)
-		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
+		unit:SetSkinId(skinId)
+		unit:SetWeaponInfo(baseInfo, preloadInfo)
 
-		var_1_1 = Ship.WEAPON_COUNT
-	elseif arg_1_1 == BattleConst.UnitType.CARDPUZZLE_PLAYER_UNIT then
-		var_1_0 = ys.Battle.BattleCardPuzzlePlayerUnit.New(arg_1_0, arg_1_2)
+		weaponCount = Ship.WEAPON_COUNT
+	elseif unitType == BattleConst.UnitType.CARDPUZZLE_PLAYER_UNIT then
+		unit = ys.Battle.BattleCardPuzzlePlayerUnit.New(uid, IFF)
 
-		var_1_0:SetSkinId(arg_1_4)
-		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
-	elseif arg_1_1 == BattleConst.UnitType.SUPPORT_UNIT then
-		var_1_0 = ys.Battle.BattleSupportUnit.New(arg_1_0, arg_1_2)
+		unit:SetSkinId(skinId)
+		unit:SetWeaponInfo(baseInfo, preloadInfo)
+	elseif unitType == BattleConst.UnitType.SUPPORT_UNIT then
+		unit = ys.Battle.BattleSupportUnit.New(uid, IFF)
 
-		var_1_0:SetSkinId(arg_1_4)
-		var_1_0:SetWeaponInfo(arg_1_9, arg_1_10)
+		unit:SetSkinId(skinId)
+		unit:SetWeaponInfo(baseInfo, preloadInfo)
 	end
 
-	var_1_0:SetTemplate(arg_1_3, arg_1_6, arg_1_7)
+	unit:SetTemplate(monsterTemplateID, templateData, extraInfo)
 
-	if arg_1_1 == BattleConst.UnitType.MINION_UNIT then
-		var_1_0:SetMaster(arg_1_12)
-		var_1_0:InheritMasterAttr()
+	if unitType == BattleConst.UnitType.MINION_UNIT then
+		unit:SetMaster(caster)
+		unit:InheritMasterAttr()
 	end
 
-	local var_1_2 = {}
+	local unitEquipList = {}
 
-	if arg_1_1 == BattleConst.UnitType.ENEMY_UNIT or arg_1_1 == BattleConst.UnitType.MINION_UNIT or arg_1_1 == BattleConst.UnitType.BOSS_UNIT then
-		for iter_1_0, iter_1_1 in ipairs(arg_1_5) do
-			var_1_2[#var_1_2 + 1] = {
+	if unitType == BattleConst.UnitType.ENEMY_UNIT or unitType == BattleConst.UnitType.MINION_UNIT or unitType == BattleConst.UnitType.BOSS_UNIT then
+		for _, equipmentInfo in ipairs(equipmentList) do
+			unitEquipList[#unitEquipList + 1] = {
 				equipment = {
 					weapon_id = {
-						iter_1_1.id
+						equipmentInfo.id
 					}
 				}
 			}
 		end
 	else
-		for iter_1_2, iter_1_3 in ipairs(arg_1_5) do
-			if not iter_1_3.id then
-				var_1_2[#var_1_2 + 1] = {
+		for equipIndex, equipmentInfo in ipairs(equipmentList) do
+			if not equipmentInfo.id then
+				unitEquipList[#unitEquipList + 1] = {
 					equipment = false,
 					torpedoAmmo = 0,
-					skin = iter_1_3.skin
+					skin = equipmentInfo.skin
 				}
 			else
-				local var_1_3 = iter_1_3.equipmentInfo and iter_1_3.equipmentInfo:getConfig("torpedo_ammo") or 0
+				local torpedoAmmo = equipmentInfo.equipmentInfo and equipmentInfo.equipmentInfo:getConfig("torpedo_ammo") or 0
 
-				if not var_1_1 or iter_1_2 <= var_1_1 or #BattleDataFunction.GetWeaponDataFromID(iter_1_3.id).weapon_id then
-					local var_1_4 = BattleDataFunction.GetWeaponDataFromID(iter_1_3.id)
+				if not weaponCount or equipIndex <= weaponCount or #BattleDataFunction.GetWeaponDataFromID(equipmentInfo.id).weapon_id then
+					local equipment = BattleDataFunction.GetWeaponDataFromID(equipmentInfo.id)
 
-					var_1_2[#var_1_2 + 1] = {
-						equipment = var_1_4,
-						skin = iter_1_3.skin,
-						torpedoAmmo = var_1_3
+					unitEquipList[#unitEquipList + 1] = {
+						equipment = equipment,
+						skin = equipmentInfo.skin,
+						torpedoAmmo = torpedoAmmo
 					}
 				else
-					var_1_2[#var_1_2 + 1] = {
+					unitEquipList[#unitEquipList + 1] = {
 						equipment = false,
-						skin = iter_1_3.skin,
-						torpedoAmmo = var_1_3
+						skin = equipmentInfo.skin,
+						torpedoAmmo = torpedoAmmo
 					}
 				end
 			end
 		end
 	end
 
-	var_1_0:SetProficiencyList(arg_1_8)
-	var_1_0:SetEquipment(var_1_2)
+	unit:SetProficiencyList(proficiencyList)
+	unit:SetEquipment(unitEquipList)
 
-	return var_1_0
+	return unit
 end
 
 function BattleDataFunction.InitUnitSkill(arg_2_0, arg_2_1, arg_2_2)
@@ -405,52 +405,53 @@ function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, 
 	return aircraft
 end
 
-function BattleDataFunction.CreateAllInStrike(arg_10_0)
-	local var_10_0 = arg_10_0:GetTemplateID()
-	local var_10_1 = BattleDataFunction.GetPlayerShipModelFromID(var_10_0)
-	local var_10_2 = 0
-	local var_10_3 = {}
+function BattleDataFunction.CreateAllInStrike(unit)
+	local templateID = unit:GetTemplateID()
+	-- ship_data_template
+	local shipTemplate = BattleDataFunction.GetPlayerShipModelFromID(templateID)
+	local airAssistList = {}
 
-	for iter_10_0, iter_10_1 in ipairs(var_10_1.airassist_time) do
-		local var_10_4 = ys.Battle.BattleAllInStrike.New(iter_10_1)
+	for index, skillID in ipairs(shipTemplate.airassist_time) do
+		local allInStrike = ys.Battle.BattleAllInStrike.New(skillID)
 
-		var_10_4:SetHost(arg_10_0)
+		allInStrike:SetHost(unit)
 
-		var_10_3[iter_10_0] = var_10_4
+		airAssistList[index] = allInStrike
 	end
 
-	return var_10_3
+	return airAssistList
 end
 
-function BattleDataFunction.ExpandAllinStrike(arg_11_0)
-	local var_11_0 = arg_11_0:GetTemplateID()
-	local var_11_1 = BattleDataFunction.GetPlayerShipModelFromID(var_11_0).airassist_time
+function BattleDataFunction.ExpandAllinStrike(unit)
+	local templateID = unit:GetTemplateID()
+	local airassist_time = BattleDataFunction.GetPlayerShipModelFromID(templateID).airassist_time
 
-	if #var_11_1 > 0 then
-		local var_11_2 = var_11_1[#var_11_1]
-		local var_11_3 = ys.Battle.BattleAllInStrike.New(var_11_2)
+	if #airassist_time > 0 then
+		local lastAirAssist = airassist_time[#airassist_time]
+		local allInStrike = ys.Battle.BattleAllInStrike.New(lastAirAssist)
 
-		var_11_3:SetHost(arg_11_0)
-		arg_11_0:GetFleetVO():GetAirAssistVO():AppendWeapon(var_11_3)
-		var_11_3:OverHeat()
-		arg_11_0:GetAirAssistQueue():AppendWeapon(var_11_3)
+		allInStrike:SetHost(unit)
+		unit:GetFleetVO():GetAirAssistVO():AppendWeapon(allInStrike)
+		allInStrike:OverHeat()
+		unit:GetAirAssistQueue():AppendWeapon(allInStrike)
 
-		local var_11_4 = arg_11_0:GetAirAssistList()
+		local airAssistList = unit:GetAirAssistList()
 
-		var_11_4[#var_11_4 + 1] = var_11_3
+		airAssistList[#airAssistList + 1] = allInStrike
 	end
 end
 
-function BattleDataFunction.CreateAirFighterUnit(arg_12_0, arg_12_1)
+function BattleDataFunction.CreateAirFighterUnit(aircraftUID, args)
 	local var_12_0
-	local var_12_1 = BattleDataFunction.GetAircraftTmpDataFromID(arg_12_1.templateID)
-	local var_12_2 = ys.Battle.BattleAirFighterUnit.New(arg_12_0)
+	-- aircraft_template
+	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(args.templateID)
+	local aircraft = ys.Battle.BattleAirFighterUnit.New(aircraftUID)
 
-	var_12_2:SetWeaponTemplateID(arg_12_1.weaponID)
-	var_12_2:SetBackwardWeaponID(arg_12_1.backwardWeaponID)
-	var_12_2:SetTemplate(var_12_1)
+	aircraft:SetWeaponTemplateID(args.weaponID)
+	aircraft:SetBackwardWeaponID(args.backwardWeaponID)
+	aircraft:SetTemplate(aircraftTemplate)
 
-	return var_12_2
+	return aircraft
 end
 
 function BattleDataFunction.GetPlayerShipTmpDataFromID(arg_13_0)
@@ -687,7 +688,7 @@ function BattleDataFunction.GetWords(arg_42_0, arg_42_1, arg_42_2)
 
 	return var_42_2
 end
-
+-- TODO
 function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
 	local var_43_0 = BattleDataFunction.GetSkillDataTemplate(arg_43_1)
 
@@ -703,7 +704,7 @@ function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
 		return var_43_1[arg_43_0]
 	end
 end
-
+-- TODO
 function BattleDataFunction.GenerateHiddenBuff(arg_44_0)
 	local var_44_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_44_0).hide_buff_list
 	local var_44_1 = {}
@@ -767,45 +768,55 @@ function BattleDataFunction.GetEnvironmentBehaviour(arg_47_0)
 	return battle_environment_behaviour_template[arg_47_0]
 end
 
-function BattleDataFunction.AttachUltimateBonus(arg_48_0)
-	local var_48_0 = arg_48_0:GetTemplateID()
+-- 添加驱逐舰的满破加成
+function BattleDataFunction.AttachUltimateBonus(playerUnit)
+	local shipID = playerUnit:GetTemplateID()
 
-	if not Ship.IsMaxStarByTmpID(var_48_0) then
+	if not Ship.IsMaxStarByTmpID(shipID) then
 		return
 	end
+	-- ship_data_template
+	--- @type table<string>
+	local specific_type = BattleDataFunction.GetPlayerShipModelFromID(shipID).specific_type
 
-	local var_48_1 = BattleDataFunction.GetPlayerShipModelFromID(var_48_0).specific_type
+	for _, specificTypeItem in ipairs(specific_type) do
+		if specificTypeItem == ShipType.SpecificTypeTable.gunner then
+			BattleAttr.SetCurrent(playerUnit, "barrageCounterMod", BattleConst.UltimateBonus.GunnerCountMod)
+		elseif specificTypeItem == ShipType.SpecificTypeTable.torpedo then
+			local torpedoBuff = ys.Battle.BattleBuffUnit.New(BattleConst.UltimateBonus.TorpedoBarrageBuff)
 
-	for iter_48_0, iter_48_1 in ipairs(var_48_1) do
-		if iter_48_1 == ShipType.SpecificTypeTable.gunner then
-			BattleAttr.SetCurrent(arg_48_0, "barrageCounterMod", BattleConst.UltimateBonus.GunnerCountMod)
-		elseif iter_48_1 == ShipType.SpecificTypeTable.torpedo then
-			local var_48_2 = ys.Battle.BattleBuffUnit.New(BattleConst.UltimateBonus.TorpedoBarrageBuff)
-
-			arg_48_0:AddBuff(var_48_2)
-		elseif iter_48_1 == ShipType.SpecificTypeTable.auxiliary then
-			BattleDataFunction.AuxBoost(arg_48_0)
+			playerUnit:AddBuff(torpedoBuff)
+		elseif specificTypeItem == ShipType.SpecificTypeTable.auxiliary then
+			BattleDataFunction.AuxBoost(playerUnit)
 		end
 	end
 end
 
-function BattleDataFunction.AuxBoost(arg_49_0)
-	local var_49_0 = arg_49_0:GetEquipment()
+function BattleDataFunction.AuxBoost(playerUnit)
+	local equipmentList = playerUnit:GetEquipment()
 
-	for iter_49_0, iter_49_1 in ipairs(var_49_0) do
-		if iter_49_1 and iter_49_1.equipment and table.contains(EquipType.DeviceEquipTypes, iter_49_1.equipment.type) then
-			local var_49_1 = iter_49_1.equipment
+	for _, equipInfo in ipairs(equipmentList) do
+		-- DeviceEquipTypes = {Equipment, AntiSubAircraft, Sonar, Helicopter, Goods}
+		if equipInfo and equipInfo.equipment and table.contains(EquipType.DeviceEquipTypes, equipInfo.equipment.type) then
+			local equipment = equipInfo.equipment
 
-			for iter_49_2 = 1, 3 do
-				local var_49_2 = "attribute_" .. iter_49_2
+			for index = 1, 3 do
+				local attrName = "attribute_" .. index
 
-				if var_49_1[var_49_2] then
-					local var_49_3 = var_49_1["value_" .. iter_49_2]
-					local var_49_4 = AttributeType.ConvertBattleAttrName(var_49_1[var_49_2])
-					local var_49_5 = BattleAttr.GetBase(arg_49_0, var_49_4) + var_49_3 * BattleConst.UltimateBonus.AuxBoostValue
+				if equipment[attrName] then
+					local attrValue = equipment["value_" .. index]
+					local battleAttrName = AttributeType.ConvertBattleAttrName(equipment[attrName])
+					-- GetBase获得的是不计算战斗内Buff的属性值
+					-- 即包含：floor(floor(面板) * (1 + 指挥喵能力加成)) + 装备加成 + 科技加成 + 指挥喵天赋加成
+					-- 加成方式是，直接将设备的属性值乘以AuxBoostValue后，直接加到基础属性上
+					-- 实际上等价于直接将设备的属性改为原来的(1 + AuxBoostValue)倍
+						-- 一个要注意的点是不向下取整
+						-- 这和平常稍有不同，因为平常的装备加成这部分都是整数，所以一般Base属性也是整数
+						-- 但这里乘以AuxBoostValue后，可能会变成小数
+					local newBattleAttrValue = BattleAttr.GetBase(playerUnit, battleAttrName) + attrValue * BattleConst.UltimateBonus.AuxBoostValue
 
-					BattleAttr.SetCurrent(arg_49_0, var_49_4, var_49_5)
-					BattleAttr.SetBaseAttr(arg_49_0)
+					BattleAttr.SetCurrent(playerUnit, battleAttrName, newBattleAttrValue)
+					BattleAttr.SetBaseAttr(playerUnit)
 				end
 			end
 		end

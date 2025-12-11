@@ -1,28 +1,28 @@
 ys = ys or {}
+-- TODO
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleResourceManager = ys.Battle.BattleResourceManager
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleCharacter = class("BattleCharacter", ys.Battle.BattleSceneObject)
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = var_0_0.Battle.BattleResourceManager
-local var_0_5 = var_0_0.Battle.BattleFormulas
-local var_0_6 = class("BattleCharacter", var_0_0.Battle.BattleSceneObject)
+ys.Battle.BattleCharacter = BattleCharacter
+BattleCharacter.__name = "BattleCharacter"
 
-var_0_0.Battle.BattleCharacter = var_0_6
-var_0_6.__name = "BattleCharacter"
-
-local var_0_7 = Vector2(-1200, -1200)
+local anchoredPosition = Vector2(-1200, -1200)
 local var_0_8 = Vector3.New(0.3, -1.8, 0)
 
-var_0_6.AIM_OFFSET = Vector3.New(0, -3.5, 0)
+BattleCharacter.AIM_OFFSET = Vector3.New(0, -3.5, 0)
 
-function var_0_6.Ctor(arg_1_0)
-	var_0_6.super.Ctor(arg_1_0)
+function BattleCharacter.Ctor(arg_1_0)
+	BattleCharacter.super.Ctor(arg_1_0)
 	arg_1_0:Init()
 end
 
-function var_0_6.Init(arg_2_0)
-	var_0_0.EventListener.AttachEventListener(arg_2_0)
+function BattleCharacter.Init(arg_2_0)
+	ys.EventListener.AttachEventListener(arg_2_0)
 	arg_2_0:InitBulletFactory()
 	arg_2_0:InitEffectView()
 
@@ -56,124 +56,138 @@ function var_0_6.Init(arg_2_0)
 	arg_2_0._actionIndex = nil
 end
 
-function var_0_6.InitBulletFactory(arg_3_0)
-	arg_3_0._bulletFactoryList = var_0_0.Battle.BattleBulletFactory.GetFactoryList()
+function BattleCharacter.InitBulletFactory(arg_3_0)
+	arg_3_0._bulletFactoryList = ys.Battle.BattleBulletFactory.GetFactoryList()
 end
 
-function var_0_6.SetUnitData(arg_4_0, arg_4_1)
+function BattleCharacter.SetUnitData(arg_4_0, arg_4_1)
 	arg_4_0._unitData = arg_4_1
 
 	arg_4_0:AddUnitEvent()
 end
+-- TODO
+function BattleCharacter.SetBoneList(self)
+	self._boneList = {}
+	self._remoteBoneTable = {}
+	self._bonePosTable = nil
+	self._posMatrix = nil
 
-function var_0_6.SetBoneList(arg_5_0)
-	arg_5_0._boneList = {}
-	arg_5_0._remoteBoneTable = {}
-	arg_5_0._bonePosTable = nil
-	arg_5_0._posMatrix = nil
+	local initScale = self:GetInitScale()
 
-	local var_5_0 = arg_5_0:GetInitScale()
-
-	for iter_5_0, iter_5_1 in pairs(arg_5_0._unitData:GetTemplate().bound_bone) do
-		if iter_5_0 ~= "remote" then
-			arg_5_0:insertBondList(iter_5_0, iter_5_1)
+	for weaponBone, boneOffset in pairs(self._unitData:GetTemplate().bound_bone) do
+		if weaponBone ~= "remote" then
+			self:insertBondList(weaponBone, boneOffset)
 		end
 	end
-
-	for iter_5_2, iter_5_3 in pairs(var_0_3.CommonBone) do
-		arg_5_0:insertBondList(iter_5_2, iter_5_3)
+	-- CommonBone = {rangeantiaircraft = { {1.5, 1.1, 0} } }
+	for commonBone, boneOffset in pairs(BattleConfig.CommonBone) do
+		self:insertBondList(commonBone, boneOffset)
 	end
 end
 
-function var_0_6.insertBondList(arg_6_0, arg_6_1, arg_6_2)
-	for iter_6_0, iter_6_1 in ipairs(arg_6_2) do
-		if type(iter_6_1) == "table" then
-			local var_6_0 = {}
-
-			var_6_0[#var_6_0 + 1] = Vector3(iter_6_1[1], iter_6_1[2], iter_6_1[3])
-			arg_6_0._boneList[arg_6_1] = var_6_0
+--- @class BattleCharacter
+--- @param boneType string
+--- @param boneOffset table<number, table<number, number>>
+function BattleCharacter.insertBondList(self, boneType, boneOffset)
+	-- boneOffsetItem: table<number, number>
+	for _, boneOffsetItem in ipairs(boneOffset) do
+		if type(boneOffsetItem) == "table" then
+			local boneOffsetPos = {}
+			-- boneOffsetPos: table<number, Vector3>
+			boneOffsetPos[#boneOffsetPos + 1] = Vector3(boneOffsetItem[1], boneOffsetItem[2], boneOffsetItem[3])
+			-- boneList: table<string, table<number, Vector3>>
+			self._boneList[boneType] = boneOffsetPos
 		end
 	end
 end
 
-function var_0_6.SpawnBullet(arg_7_0, arg_7_1, arg_7_2, arg_7_3, arg_7_4)
-	local var_7_0 = arg_7_0._bulletFactoryList[arg_7_1:GetTemplate().type]
-	local var_7_1 = arg_7_0._unitData:GetRemoteBoundBone(arg_7_2)
-	local var_7_2 = arg_7_4 or var_7_1 or arg_7_0:GetBonePos(arg_7_2)
+function BattleCharacter.SpawnBullet(self, bullet, spawnBound, fireFXID, position)
+	local bulletfactory = self._bulletFactoryList[bullet:GetTemplate().type]
+	local remoteBoundBone = self._unitData:GetRemoteBoundBone(spawnBound)
+	local spawnPosition = position or remoteBoundBone or self:GetBonePos(spawnBound)
 
-	var_7_0:CreateBullet(arg_7_0._tf, arg_7_1, var_7_2, arg_7_3, arg_7_0._unitData:GetDirection())
+	bulletfactory:CreateBullet(self._tf, bullet, spawnPosition, fireFXID, self._unitData:GetDirection())
 end
-
-function var_0_6.GetBonePos(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_0._boneList[arg_8_1]
-
-	if var_8_0 == nil or #var_8_0 == 0 then
-		for iter_8_0, iter_8_1 in pairs(arg_8_0._boneList) do
-			var_8_0 = iter_8_1
+-- TODO
+function BattleCharacter.GetBonePos(self, spawnBound)
+	--- @type table<number, Vector3>
+	local boneOffsetPos = self._boneList[spawnBound]
+	-- 如果没有
+	if boneOffsetPos == nil or #boneOffsetPos == 0 then
+		for _, _boneOffsetPos in pairs(self._boneList) do
+			boneOffsetPos = _boneOffsetPos
 
 			break
 		end
 	end
 
-	local var_8_1
-
-	if not arg_8_0._posMatrix then
-		var_8_1 = arg_8_0._tf.localToWorldMatrix
-		arg_8_0._posMatrix = var_8_1
-		arg_8_0._bonePosTable = {}
+	local localToWorldMatrix
+	-- 这里可能是关键?
+	-- ship_skin_template中给出的好像是局部坐标，这里还要经过矩阵转换成世界坐标
+	-- 游戏战斗内使用的坐标系是世界坐标系
+	if not self._posMatrix then
+		localToWorldMatrix = self._tf.localToWorldMatrix
+		self._posMatrix = localToWorldMatrix
+		self._bonePosTable = {}
 	else
-		var_8_1 = arg_8_0._posMatrix
+		localToWorldMatrix = self._posMatrix
 	end
 
-	local var_8_2 = arg_8_0._bonePosTable[arg_8_1]
+	local boneWorldPos = self._bonePosTable[spawnBound]
 
-	if var_8_2 == nil then
-		var_8_2 = {}
-
-		for iter_8_2, iter_8_3 in ipairs(var_8_0) do
-			var_8_2[#var_8_2 + 1] = var_8_1:MultiplyPoint3x4(iter_8_3)
+	if boneWorldPos == nil then
+		boneWorldPos = {}
+		-- boneOffsetPosItem: Vector3
+		for _, boneOffsetPosItem in ipairs(boneOffsetPos) do
+			-- 这里是把局部坐标转换成世界坐标
+			-- MultiplyPoint3x4是一个变换矩阵
+			-- 请参考：Unity的Matrix4x4.MultiplyPoint3x4
+			-- 但由于舰船不会旋转，永远是面向X轴正方向，所以这里其实相当于做了一个平移
+			-- 可以理解为舰船的坐标 + 绑点的局部坐标 = 绑点的世界坐标
+			boneWorldPos[#boneWorldPos + 1] = localToWorldMatrix:MultiplyPoint3x4(boneOffsetPosItem)
 		end
 
-		arg_8_0._bonePosTable[arg_8_1] = var_8_2
+		self._bonePosTable[spawnBound] = boneWorldPos
 	end
 
-	if #var_8_2 == 1 then
-		return var_8_2[1]
+	if #boneWorldPos == 1 then
+		return boneWorldPos[1]
 	else
-		return var_8_2[math.floor(math.Random(0, #var_8_2)) + 1]
+		-- 有多个绑骨，则随机选一个返回
+		return boneWorldPos[math.floor(math.Random(0, #boneWorldPos)) + 1]
 	end
 end
 
-function var_0_6.GetBoneList(arg_9_0)
-	return arg_9_0._boneList
+function BattleCharacter.GetBoneList(self)
+	return self._boneList
 end
 
-function var_0_6.AddFXOffsets(arg_10_0, arg_10_1, arg_10_2)
+function BattleCharacter.AddFXOffsets(arg_10_0, arg_10_1, arg_10_2)
 	arg_10_0._FXAttachPoint = arg_10_1
 	arg_10_0._FXOffset = arg_10_2
 end
 
-function var_0_6.GetFXOffsets(arg_11_0, arg_11_1)
+function BattleCharacter.GetFXOffsets(arg_11_0, arg_11_1)
 	arg_11_1 = arg_11_1 or 1
 
 	return arg_11_0._FXOffset[arg_11_1]
 end
 
-function var_0_6.GetAttachPoint(arg_12_0)
+function BattleCharacter.GetAttachPoint(arg_12_0)
 	return arg_12_0._FXAttachPoint
 end
 
-function var_0_6.GetSpecificFXScale(arg_13_0)
+function BattleCharacter.GetSpecificFXScale(arg_13_0)
 	return {}
 end
 
-function var_0_6.PlayFX(arg_14_0, arg_14_1)
+function BattleCharacter.PlayFX(arg_14_0, arg_14_1)
 	local var_14_0 = arg_14_0:GetFactory():GetFXPool():GetFX(arg_14_1)
 
 	pg.EffectMgr.GetInstance():PlayBattleEffect(var_14_0, arg_14_0:GetPosition(), true)
 end
 
-function var_0_6.AddFX(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
+function BattleCharacter.AddFX(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
 	local var_15_0 = arg_15_0:GetFactory():GetFXPool():GetCharacterFX(arg_15_1, arg_15_0, not arg_15_2, function(arg_16_0)
 		if arg_15_4 then
 			arg_15_4()
@@ -195,15 +209,15 @@ function var_0_6.AddFX(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
 	return var_15_0
 end
 
-function var_0_6.RemoveFX(arg_17_0, arg_17_1)
+function BattleCharacter.RemoveFX(arg_17_0, arg_17_1)
 	if arg_17_0._allFX and arg_17_0._allFX[arg_17_1] then
 		arg_17_0._allFX[arg_17_1] = nil
 
-		var_0_4.GetInstance():DestroyOb(arg_17_1)
+		BattleResourceManager.GetInstance():DestroyOb(arg_17_1)
 	end
 end
 
-function var_0_6.RemoveCacheFX(arg_18_0, arg_18_1)
+function BattleCharacter.RemoveCacheFX(arg_18_0, arg_18_1)
 	local var_18_0 = arg_18_0._cacheFXList[arg_18_1]
 
 	if var_18_0 ~= nil and #var_18_0 > 0 then
@@ -211,15 +225,15 @@ function var_0_6.RemoveCacheFX(arg_18_0, arg_18_1)
 
 		arg_18_0._allFX[var_18_1] = nil
 
-		var_0_4.GetInstance():DestroyOb(var_18_1)
+		BattleResourceManager.GetInstance():DestroyOb(var_18_1)
 	end
 end
 
-function var_0_6.AddWaveFX(arg_19_0, arg_19_1)
+function BattleCharacter.AddWaveFX(arg_19_0, arg_19_1)
 	arg_19_0._waveFX = arg_19_0:AddFX(arg_19_1)
 end
 
-function var_0_6.RemoveWaveFX(arg_20_0)
+function BattleCharacter.RemoveWaveFX(arg_20_0)
 	if not arg_20_0._waveFX then
 		return
 	end
@@ -227,7 +241,7 @@ function var_0_6.RemoveWaveFX(arg_20_0)
 	arg_20_0:RemoveFX(arg_20_0._waveFX)
 end
 
-function var_0_6.onAddBuffClock(arg_21_0, arg_21_1)
+function BattleCharacter.onAddBuffClock(arg_21_0, arg_21_1)
 	local var_21_0 = arg_21_1.Data
 
 	if var_21_0.isActive then
@@ -241,7 +255,7 @@ function var_0_6.onAddBuffClock(arg_21_0, arg_21_1)
 	end
 end
 
-function var_0_6.AddBlink(arg_22_0, arg_22_1, arg_22_2, arg_22_3, arg_22_4, arg_22_5, arg_22_6, arg_22_7)
+function BattleCharacter.AddBlink(arg_22_0, arg_22_1, arg_22_2, arg_22_3, arg_22_4, arg_22_5, arg_22_6, arg_22_7)
 	if arg_22_0._unitData:GetDiveInvisible() then
 		return nil
 	end
@@ -271,13 +285,13 @@ function var_0_6.AddBlink(arg_22_0, arg_22_1, arg_22_2, arg_22_3, arg_22_4, arg_
 	return var_22_0
 end
 
-function var_0_6.RemoveBlink(arg_23_0, arg_23_1)
+function BattleCharacter.RemoveBlink(arg_23_0, arg_23_1)
 	arg_23_0._blinkDict[arg_23_1] = nil
 
 	SpineAnim.RemoveBlink(arg_23_0._go, arg_23_1)
 end
 
-function var_0_6.AddShaderColor(arg_24_0, arg_24_1)
+function BattleCharacter.AddShaderColor(arg_24_0, arg_24_1)
 	if not arg_24_0._unitData:GetExposed() then
 		return
 	end
@@ -287,29 +301,29 @@ function var_0_6.AddShaderColor(arg_24_0, arg_24_1)
 	SpineAnim.AddShaderColor(arg_24_0._go, arg_24_1)
 end
 
-function var_0_6.GetPosition(arg_25_0)
+function BattleCharacter.GetPosition(arg_25_0)
 	return arg_25_0._characterPos
 end
 
-function var_0_6.GetUnitData(arg_26_0)
+function BattleCharacter.GetUnitData(arg_26_0)
 	return arg_26_0._unitData
 end
 
-function var_0_6.GetDestroyFXID(arg_27_0)
+function BattleCharacter.GetDestroyFXID(arg_27_0)
 	return arg_27_0:GetUnitData():GetTemplate().bomb_fx
 end
 
-function var_0_6.GetOffsetPos(arg_28_0)
+function BattleCharacter.GetOffsetPos(arg_28_0)
 	return (BuildVector3(arg_28_0._unitData:GetTemplate().position_offset))
 end
 
-function var_0_6.GetReferenceVector(arg_29_0, arg_29_1)
+function BattleCharacter.GetReferenceVector(arg_29_0, arg_29_1)
 	if arg_29_1 == nil then
 		return arg_29_0._referenceVector
 	else
 		arg_29_0._referenceVectorTemp:Set(arg_29_0._characterPos.x, arg_29_0._characterPos.y, arg_29_0._characterPos.z)
 		arg_29_0._referenceVectorTemp:Sub(arg_29_1)
-		var_0_0.Battle.BattleVariable.CameraPosToUICameraByRef(arg_29_0._referenceVectorTemp)
+		ys.Battle.BattleVariable.CameraPosToUICameraByRef(arg_29_0._referenceVectorTemp)
 
 		arg_29_0._referenceVectorTemp.z = 2
 
@@ -317,38 +331,38 @@ function var_0_6.GetReferenceVector(arg_29_0, arg_29_1)
 	end
 end
 
-function var_0_6.GetInitScale(arg_30_0)
+function BattleCharacter.GetInitScale(arg_30_0)
 	return arg_30_0._unitData:GetTemplate().scale / 50
 end
 
-function var_0_6.AddUnitEvent(arg_31_0)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SPAWN_CACHE_BULLET, arg_31_0.onSpawnCacheBullet)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.CREATE_TEMPORARY_WEAPON, arg_31_0.onNewWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.POP_UP, arg_31_0.onPopup)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.VOICE, arg_31_0.onVoice)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.PLAY_FX, arg_31_0.onPlayFX)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.REMOVE_WEAPON, arg_31_0.onRemoveWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.ADD_BLINK, arg_31_0.onBlink)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SUBMARINE_VISIBLE, arg_31_0.onUpdateDiveInvisible)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SUBMARINE_DETECTED, arg_31_0.onDetected)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SUBMARINE_FORCE_DETECTED, arg_31_0.onForceDetected)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.BLIND_VISIBLE, arg_31_0.onUpdateBlindInvisible)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.BLIND_EXPOSE, arg_31_0.onBlindExposed)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.INIT_ANIT_SUB_VIGILANCE, arg_31_0.onInitVigilantState)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.INIT_CLOAK, arg_31_0.onInitCloak)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.UPDATE_CLOAK_CONFIG, arg_31_0.onUpdateCloakConfig)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.UPDATE_CLOAK_LOCK, arg_31_0.onUpdateCloakLock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.INIT_AIMBIAS, arg_31_0.onInitAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.UPDATE_AIMBIAS_LOCK, arg_31_0.onUpdateAimBiasLock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.HOST_AIMBIAS, arg_31_0.onHostAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.REMOVE_AIMBIAS, arg_31_0.onRemoveAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_0.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE, arg_31_0.onChangeSize)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_0.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, arg_31_0.onNewWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.HIDE_WAVE_FX, arg_31_0.RemoveWaveFX)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.ADD_BUFF_CLOCK, arg_31_0.onAddBuffClock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SWITCH_SPINE, arg_31_0.onSwitchSpine)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.SWITCH_SHADER, arg_31_0.onSwitchShader)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, var_0_1.UPDATE_SCORE, arg_31_0.onUpdateScore)
+function BattleCharacter.AddUnitEvent(arg_31_0)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SPAWN_CACHE_BULLET, arg_31_0.onSpawnCacheBullet)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.CREATE_TEMPORARY_WEAPON, arg_31_0.onNewWeapon)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.POP_UP, arg_31_0.onPopup)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.VOICE, arg_31_0.onVoice)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.PLAY_FX, arg_31_0.onPlayFX)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.REMOVE_WEAPON, arg_31_0.onRemoveWeapon)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.ADD_BLINK, arg_31_0.onBlink)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_VISIBLE, arg_31_0.onUpdateDiveInvisible)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_DETECTED, arg_31_0.onDetected)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_FORCE_DETECTED, arg_31_0.onForceDetected)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.BLIND_VISIBLE, arg_31_0.onUpdateBlindInvisible)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.BLIND_EXPOSE, arg_31_0.onBlindExposed)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE, arg_31_0.onInitVigilantState)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_CLOAK, arg_31_0.onInitCloak)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_CLOAK_CONFIG, arg_31_0.onUpdateCloakConfig)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_CLOAK_LOCK, arg_31_0.onUpdateCloakLock)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_AIMBIAS, arg_31_0.onInitAimBias)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_AIMBIAS_LOCK, arg_31_0.onUpdateAimBiasLock)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.HOST_AIMBIAS, arg_31_0.onHostAimBias)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.REMOVE_AIMBIAS, arg_31_0.onRemoveAimBias)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE, arg_31_0.onChangeSize)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, arg_31_0.onNewWeapon)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.HIDE_WAVE_FX, arg_31_0.RemoveWaveFX)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.ADD_BUFF_CLOCK, arg_31_0.onAddBuffClock)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SWITCH_SPINE, arg_31_0.onSwitchSpine)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SWITCH_SHADER, arg_31_0.onSwitchShader)
+	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_SCORE, arg_31_0.onUpdateScore)
 
 	local var_31_0 = arg_31_0._unitData:GetAutoWeapons()
 
@@ -359,44 +373,44 @@ function var_0_6.AddUnitEvent(arg_31_0)
 	arg_31_0._effectOb:SetUnitDataEvent(arg_31_0._unitData)
 end
 
-function var_0_6.RemoveUnitEvent(arg_32_0)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.UPDATE_HP)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.CREATE_TEMPORARY_WEAPON)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.CHANGE_ACTION)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SPAWN_CACHE_BULLET)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.POP_UP)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.VOICE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.PLAY_FX)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.REMOVE_WEAPON)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.ADD_BLINK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SUBMARINE_VISIBLE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SUBMARINE_DETECTED)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SUBMARINE_FORCE_DETECTED)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.BLIND_VISIBLE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.BLIND_EXPOSE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.UPDATE_SCORE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.CHANGE_ANTI_SUB_VIGILANCE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.INIT_ANIT_SUB_VIGILANCE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.ANTI_SUB_VIGILANCE_SONAR_CHECK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.UPDATE_CLOAK_CONFIG)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.UPDATE_CLOAK_LOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.INIT_CLOAK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.HOST_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.UPDATE_AIMBIAS_LOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.INIT_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.REMOVE_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.ADD_BUFF_CLOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SWITCH_SPINE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_1.SWITCH_SHADER)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON)
+function BattleCharacter.RemoveUnitEvent(arg_32_0)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_HP)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CREATE_TEMPORARY_WEAPON)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CHANGE_ACTION)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SPAWN_CACHE_BULLET)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.POP_UP)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.VOICE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.PLAY_FX)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.REMOVE_WEAPON)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ADD_BLINK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_VISIBLE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_DETECTED)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_FORCE_DETECTED)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.BLIND_VISIBLE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.BLIND_EXPOSE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_SCORE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_CLOAK_CONFIG)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_CLOAK_LOCK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_CLOAK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.HOST_AIMBIAS)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_AIMBIAS_LOCK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_AIMBIAS)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.REMOVE_AIMBIAS)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ADD_BUFF_CLOCK)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SWITCH_SPINE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SWITCH_SHADER)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE)
+	arg_32_0._unitData:UnregisterEventListener(arg_32_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON)
 
 	for iter_32_0, iter_32_1 in pairs(arg_32_0._weaponRegisterList) do
 		arg_32_0:UnregisterWeaponListener(iter_32_0)
 	end
 end
 
-function var_0_6.Update(arg_33_0)
+function BattleCharacter.Update(arg_33_0)
 	local var_33_0 = pg.TimeMgr.GetInstance():GetCombatTime()
 
 	arg_33_0._bonePosSet = nil
@@ -418,35 +432,35 @@ function var_0_6.Update(arg_33_0)
 	arg_33_0:UpdateBuffClock()
 	arg_33_0:UpdateOrbit()
 end
-
-function var_0_6.RegisterWeaponListener(arg_34_0, arg_34_1)
+-- 注册对CREATE_BULLET和FIRE事件的监听,设置对应的回调函数
+function BattleCharacter.RegisterWeaponListener(arg_34_0, arg_34_1)
 	if arg_34_0._weaponRegisterList[arg_34_1] then
 		return
 	end
 
-	arg_34_1:RegisterEventListener(arg_34_0, var_0_1.CREATE_BULLET, arg_34_0.onCreateBullet)
-	arg_34_1:RegisterEventListener(arg_34_0, var_0_1.FIRE, arg_34_0.onCannonFire)
+	arg_34_1:RegisterEventListener(arg_34_0, BattleUnitEvent.CREATE_BULLET, arg_34_0.onCreateBullet)
+	arg_34_1:RegisterEventListener(arg_34_0, BattleUnitEvent.FIRE, arg_34_0.onCannonFire)
 
 	arg_34_0._weaponRegisterList[arg_34_1] = true
 end
 
-function var_0_6.UnregisterWeaponListener(arg_35_0, arg_35_1)
+function BattleCharacter.UnregisterWeaponListener(arg_35_0, arg_35_1)
 	arg_35_0._weaponRegisterList[arg_35_1] = nil
 
-	arg_35_1:UnregisterEventListener(arg_35_0, var_0_1.CREATE_BULLET)
-	arg_35_1:UnregisterEventListener(arg_35_0, var_0_1.FIRE)
+	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.CREATE_BULLET)
+	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.FIRE)
+end
+-- TODO
+function BattleCharacter.onCreateBullet(self, args)
+	local bullet = args.Data.bullet
+	local spawnBound = args.Data.spawnBound
+	local fireFxID = args.Data.fireFxID
+	local position = args.Data.position
+
+	self:SpawnBullet(bullet, spawnBound, fireFxID, position)
 end
 
-function var_0_6.onCreateBullet(arg_36_0, arg_36_1)
-	local var_36_0 = arg_36_1.Data.bullet
-	local var_36_1 = arg_36_1.Data.spawnBound
-	local var_36_2 = arg_36_1.Data.fireFxID
-	local var_36_3 = arg_36_1.Data.position
-
-	arg_36_0:SpawnBullet(var_36_0, var_36_1, var_36_2, var_36_3)
-end
-
-function var_0_6.onCannonFire(arg_37_0, arg_37_1)
+function BattleCharacter.onCannonFire(arg_37_0, arg_37_1)
 	local var_37_0 = arg_37_1.Dispatcher
 	local var_37_1 = arg_37_1.Data.target
 	local var_37_2 = arg_37_1.Data.actionIndex or "attack"
@@ -463,7 +477,7 @@ function var_0_6.onCannonFire(arg_37_0, arg_37_1)
 		arg_37_0._cacheWeapon = {}
 		var_37_4 = true
 
-		arg_37_0._unitData:StateChange(var_0_0.Battle.UnitState.STATE_ATTACK, var_37_2)
+		arg_37_0._unitData:StateChange(ys.Battle.UnitState.STATE_ATTACK, var_37_2)
 	end
 
 	if var_37_4 == true then
@@ -480,7 +494,7 @@ function var_0_6.onCannonFire(arg_37_0, arg_37_1)
 	end
 end
 
-function var_0_6.onSpawnCacheBullet(arg_38_0)
+function BattleCharacter.onSpawnCacheBullet(arg_38_0)
 	if arg_38_0._cacheWeapon then
 		for iter_38_0, iter_38_1 in ipairs(arg_38_0._cacheWeapon) do
 			iter_38_1.weapon:DoAttack(iter_38_1.target)
@@ -494,13 +508,13 @@ function var_0_6.onSpawnCacheBullet(arg_38_0)
 	end
 end
 
-function var_0_6.onNewWeapon(arg_39_0, arg_39_1)
+function BattleCharacter.onNewWeapon(arg_39_0, arg_39_1)
 	local var_39_0 = arg_39_1.Data.weapon
 
 	arg_39_0:RegisterWeaponListener(var_39_0)
 end
 
-function var_0_6.onPopup(arg_40_0, arg_40_1)
+function BattleCharacter.onPopup(arg_40_0, arg_40_1)
 	local var_40_0 = arg_40_1.Data
 	local var_40_1 = var_40_0.content
 	local var_40_2 = var_40_0.duration
@@ -509,7 +523,7 @@ function var_0_6.onPopup(arg_40_0, arg_40_1)
 	arg_40_0:SetPopup(var_40_1, var_40_2, var_40_3)
 end
 
-function var_0_6.onVoice(arg_41_0, arg_41_1)
+function BattleCharacter.onVoice(arg_41_0, arg_41_1)
 	local var_41_0 = arg_41_1.Data
 	local var_41_1 = var_41_0.content
 	local var_41_2 = var_41_0.key
@@ -517,7 +531,7 @@ function var_0_6.onVoice(arg_41_0, arg_41_1)
 	arg_41_0:Voice(var_41_1, var_41_2)
 end
 
-function var_0_6.onPlayFX(arg_42_0, arg_42_1)
+function BattleCharacter.onPlayFX(arg_42_0, arg_42_1)
 	local var_42_0 = arg_42_1.Data.fxName
 
 	if arg_42_1.Data.notAttach then
@@ -527,7 +541,7 @@ function var_0_6.onPlayFX(arg_42_0, arg_42_1)
 	end
 end
 
-function var_0_6.onRemoveWeapon(arg_43_0, arg_43_1)
+function BattleCharacter.onRemoveWeapon(arg_43_0, arg_43_1)
 	local var_43_0 = arg_43_1.Data.weapon
 
 	if arg_43_0._cacheWeapon then
@@ -543,7 +557,7 @@ function var_0_6.onRemoveWeapon(arg_43_0, arg_43_1)
 	arg_43_0:UnregisterWeaponListener(var_43_0)
 end
 
-function var_0_6.onBlink(arg_44_0, arg_44_1)
+function BattleCharacter.onBlink(arg_44_0, arg_44_1)
 	local var_44_0 = arg_44_1.Data.blink
 	local var_44_1 = var_44_0.red
 	local var_44_2 = var_44_0.green
@@ -555,17 +569,17 @@ function var_0_6.onBlink(arg_44_0, arg_44_1)
 	arg_44_0:AddBlink(var_44_1, var_44_2, var_44_3, var_44_5, var_44_6, true, var_44_4)
 end
 
-function var_0_6.onUpdateDiveInvisible(arg_45_0, arg_45_1)
+function BattleCharacter.onUpdateDiveInvisible(arg_45_0, arg_45_1)
 	arg_45_0:UpdateDiveInvisible()
 end
 
-function var_0_6.UpdateDiveInvisible(arg_46_0, arg_46_1)
+function BattleCharacter.UpdateDiveInvisible(arg_46_0, arg_46_1)
 	if not arg_46_0._go then
 		return
 	end
 
 	local var_46_0 = not arg_46_0._unitData:GetForceExpose() and arg_46_0._unitData:GetDiveInvisible()
-	local var_46_1 = arg_46_0._unitData:GetIFF() == var_0_3.FOE_CODE
+	local var_46_1 = arg_46_0._unitData:GetIFF() == BattleConfig.FOE_CODE
 
 	if var_46_0 then
 		local var_46_2 = arg_46_0:GetFactory():GetDivingFilterColor()
@@ -588,11 +602,11 @@ function var_0_6.UpdateDiveInvisible(arg_46_0, arg_46_1)
 	end
 end
 
-function var_0_6.onUpdateBlindInvisible(arg_47_0, arg_47_1)
+function BattleCharacter.onUpdateBlindInvisible(arg_47_0, arg_47_1)
 	arg_47_0:UpdateBlindInvisible()
 end
 
-function var_0_6.UpdateBlindInvisible(arg_48_0)
+function BattleCharacter.UpdateBlindInvisible(arg_48_0)
 	local var_48_0 = arg_48_0._unitData:GetExposed()
 
 	arg_48_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_48_0
@@ -600,7 +614,7 @@ function var_0_6.UpdateBlindInvisible(arg_48_0)
 	arg_48_0:updateComponentVisible()
 end
 
-function var_0_6.updateInvisible(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
+function BattleCharacter.updateInvisible(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
 	if arg_49_1 then
 		arg_49_0:SwitchShader(arg_49_2, arg_49_3)
 		arg_49_0._animator:ChangeRenderQueue(2999)
@@ -614,44 +628,44 @@ function var_0_6.updateInvisible(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
 	end
 end
 
-function var_0_6.onDetected(arg_50_0, arg_50_1)
+function BattleCharacter.onDetected(arg_50_0, arg_50_1)
 	if not arg_50_0._go then
 		return
 	end
 
-	if arg_50_0._unitData:GetDiveDetected() and arg_50_0._unitData:GetIFF() == var_0_3.FOE_CODE then
+	if arg_50_0._unitData:GetDiveDetected() and arg_50_0._unitData:GetIFF() == BattleConfig.FOE_CODE then
 		arg_50_0._shockFX = arg_50_0:AddFX("shock", true, true)
 	else
 		arg_50_0:RemoveCacheFX("shock")
 	end
 
-	if arg_50_0._unitData:GetIFF() == var_0_3.FOE_CODE then
+	if arg_50_0._unitData:GetIFF() == BattleConfig.FOE_CODE then
 		arg_50_0:UpdateCharacterDetected()
 	end
 
 	arg_50_0:updateComponentVisible()
 end
 
-function var_0_6.UpdateCharacterDetected(arg_51_0)
-	if arg_51_0._unitData:GetIFF() == var_0_3.FRIENDLY_CODE or arg_51_0._unitData:GetDiveDetected() then
-		arg_51_0:spineSemiTransparentFade(0, 0.7, var_0_3.SUB_FADE_IN_DURATION)
+function BattleCharacter.UpdateCharacterDetected(arg_51_0)
+	if arg_51_0._unitData:GetIFF() == BattleConfig.FRIENDLY_CODE or arg_51_0._unitData:GetDiveDetected() then
+		arg_51_0:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
 	else
-		arg_51_0:spineSemiTransparentFade(0.7, 0, var_0_3.SUB_FADE_OUT_DURATION)
+		arg_51_0:spineSemiTransparentFade(0.7, 0, BattleConfig.SUB_FADE_OUT_DURATION)
 	end
 end
 
-function var_0_6.onForceDetected(arg_52_0, arg_52_1)
+function BattleCharacter.onForceDetected(arg_52_0, arg_52_1)
 	arg_52_0:UpdateCharacterForceDetected()
 end
 
-function var_0_6.UpdateCharacterForceDetected(arg_53_0)
-	if arg_53_0._unitData:GetIFF() == var_0_3.FOE_CODE and arg_53_0._unitData:GetForceExpose() then
-		arg_53_0:spineSemiTransparentFade(0, 0.7, var_0_3.SUB_FADE_IN_DURATION)
+function BattleCharacter.UpdateCharacterForceDetected(arg_53_0)
+	if arg_53_0._unitData:GetIFF() == BattleConfig.FOE_CODE and arg_53_0._unitData:GetForceExpose() then
+		arg_53_0:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
 		arg_53_0:updateComponentVisible()
 	end
 end
 
-function var_0_6.onBlindExposed(arg_54_0, arg_54_1)
+function BattleCharacter.onBlindExposed(arg_54_0, arg_54_1)
 	local var_54_0 = arg_54_0._unitData:GetExposed()
 
 	arg_54_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_54_0
@@ -659,11 +673,11 @@ function var_0_6.onBlindExposed(arg_54_0, arg_54_1)
 	arg_54_0:updateComponentVisible()
 end
 
-function var_0_6.updateComponentVisible(arg_55_0)
+function BattleCharacter.updateComponentVisible(arg_55_0)
 	local var_55_0
 
-	if arg_55_0._unitData:GetIFF() ~= var_0_3.FOE_CODE then
-		var_55_0 = arg_55_0._unitData:GetAttrByName(var_0_0.Battle.BattleBuffSetBattleUnitType.ATTR_KEY) > var_0_3.FUSION_ELEMENT_UNIT_TYPE
+	if arg_55_0._unitData:GetIFF() ~= BattleConfig.FOE_CODE then
+		var_55_0 = arg_55_0._unitData:GetAttrByName(ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY) > BattleConfig.FUSION_ELEMENT_UNIT_TYPE
 	else
 		local var_55_1 = arg_55_0._unitData:GetExposed()
 		local var_55_2 = arg_55_0._unitData:GetDiveDetected()
@@ -690,8 +704,8 @@ function var_0_6.updateComponentVisible(arg_55_0)
 	end
 end
 
-function var_0_6.updateComponentDiveInvisible(arg_56_0)
-	local var_56_0 = arg_56_0._unitData:GetDiveDetected() and arg_56_0._unitData:GetIFF() == var_0_3.FOE_CODE
+function BattleCharacter.updateComponentDiveInvisible(arg_56_0)
+	local var_56_0 = arg_56_0._unitData:GetDiveDetected() and arg_56_0._unitData:GetIFF() == BattleConfig.FOE_CODE
 	local var_56_1 = arg_56_0._unitData:GetDiveInvisible()
 	local var_56_2
 	local var_56_3 = (var_56_0 or not var_56_1) and true or false
@@ -701,7 +715,7 @@ function var_0_6.updateComponentDiveInvisible(arg_56_0)
 	SetActive(arg_56_0._FXAttachPoint, var_56_3)
 end
 
-function var_0_6.updateComponentBlindInvisible(arg_57_0)
+function BattleCharacter.updateComponentBlindInvisible(arg_57_0)
 	local var_57_0 = arg_57_0._unitData:GetExposed()
 
 	arg_57_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_57_0
@@ -711,7 +725,7 @@ function var_0_6.updateComponentBlindInvisible(arg_57_0)
 	SetActive(arg_57_0._FXAttachPoint, var_57_0)
 end
 
-function var_0_6.spineSemiTransparentFade(arg_58_0, arg_58_1, arg_58_2, arg_58_3)
+function BattleCharacter.spineSemiTransparentFade(arg_58_0, arg_58_1, arg_58_2, arg_58_3)
 	LeanTween.cancel(arg_58_0._go)
 	onDelayTick(function()
 		if not arg_58_0._go then
@@ -724,7 +738,7 @@ function var_0_6.spineSemiTransparentFade(arg_58_0, arg_58_1, arg_58_2, arg_58_3
 	end, 0.06)
 end
 
-function var_0_6.onInitVigilantState(arg_60_0, arg_60_1)
+function BattleCharacter.onInitVigilantState(arg_60_0, arg_60_1)
 	arg_60_0._factory:MakeVigilantBar(arg_60_0)
 
 	range = arg_60_1.Data.sonarRange * 0.5
@@ -741,27 +755,27 @@ function var_0_6.onInitVigilantState(arg_60_0, arg_60_1)
 		var_61_0:Play("antiSubZoom", -1, 0)
 	end
 
-	arg_60_0._unitData:RegisterEventListener(arg_60_0, var_0_1.CHANGE_ANTI_SUB_VIGILANCE, arg_60_0.onVigilantStateChange)
-	arg_60_0._unitData:RegisterEventListener(arg_60_0, var_0_1.ANTI_SUB_VIGILANCE_SONAR_CHECK, var_60_1)
+	arg_60_0._unitData:RegisterEventListener(arg_60_0, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE, arg_60_0.onVigilantStateChange)
+	arg_60_0._unitData:RegisterEventListener(arg_60_0, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK, var_60_1)
 end
 
-function var_0_6.onVigilantStateChange(arg_62_0, arg_62_1)
+function BattleCharacter.onVigilantStateChange(arg_62_0, arg_62_1)
 	arg_62_0:updateVigilantMark()
 end
 
-function var_0_6.updateVigilantMark(arg_63_0)
+function BattleCharacter.updateVigilantMark(arg_63_0)
 	if arg_63_0._vigilantBar then
 		arg_63_0._vigilantBar:UpdateVigilantMark()
 	end
 end
 
-function var_0_6.OnActionChange(arg_64_0, arg_64_1)
+function BattleCharacter.OnActionChange(arg_64_0, arg_64_1)
 	local var_64_0 = arg_64_1.Data.actionType
 
 	arg_64_0:PlayAction(var_64_0)
 end
 
-function var_0_6.PlayAction(arg_65_0, arg_65_1)
+function BattleCharacter.PlayAction(arg_65_0, arg_65_1)
 	local var_65_0 = arg_65_1
 	local var_65_1 = false
 
@@ -775,11 +789,11 @@ function var_0_6.PlayAction(arg_65_0, arg_65_1)
 		arg_65_0:setLocalScale(var_65_2, true)
 	end
 
-	arg_65_0._animator:SetAction(var_65_0, 0, var_0_2.ActionLoop[arg_65_1])
+	arg_65_0._animator:SetAction(var_65_0, 0, BattleConst.ActionLoop[arg_65_1])
 
 	arg_65_0._actionIndex = arg_65_1
 
-	if arg_65_1 == var_0_2.ActionName.VICTORY or arg_65_1 == var_0_2.ActionName.VICTORY_SWIM then
+	if arg_65_1 == BattleConst.ActionName.VICTORY or arg_65_1 == BattleConst.ActionName.VICTORY_SWIM then
 		arg_65_0._effectOb:ClearEffect()
 	end
 
@@ -807,13 +821,13 @@ function var_0_6.PlayAction(arg_65_0, arg_65_1)
 	end
 end
 
-function var_0_6.SetAnimaSpeed(arg_66_0, arg_66_1)
+function BattleCharacter.SetAnimaSpeed(arg_66_0, arg_66_1)
 	arg_66_0._skeleton = arg_66_0._skeleton or arg_66_0:GetTf():GetComponent("SkeletonAnimation")
 	arg_66_1 = arg_66_1 or 1
 	arg_66_0._skeleton.timeScale = arg_66_1
 end
 
-function var_0_6.UpdatePosition(arg_67_0)
+function BattleCharacter.UpdatePosition(arg_67_0)
 	if not arg_67_0._go then
 		return
 	end
@@ -828,20 +842,20 @@ function var_0_6.UpdatePosition(arg_67_0)
 	arg_67_0._tf.localPosition = arg_67_0:getCharacterPos()
 end
 
-function var_0_6.getCharacterPos(arg_68_0)
+function BattleCharacter.getCharacterPos(arg_68_0)
 	return arg_68_0._characterPos
 end
 
-function var_0_6.UpdateMatrix(arg_69_0)
+function BattleCharacter.UpdateMatrix(arg_69_0)
 	arg_69_0._bonePosTable = nil
 	arg_69_0._posMatrix = nil
 end
 
-function var_0_6.UpdateUIComponentPosition(arg_70_0)
+function BattleCharacter.UpdateUIComponentPosition(arg_70_0)
 	local var_70_0 = arg_70_0._unitData:GetPosition()
 
 	arg_70_0._referenceVector:Set(var_70_0.x, var_70_0.y, var_70_0.z)
-	var_0_0.Battle.BattleVariable.CameraPosToUICameraByRef(arg_70_0._referenceVector)
+	ys.Battle.BattleVariable.CameraPosToUICameraByRef(arg_70_0._referenceVector)
 
 	arg_70_0._referenceVector.z = 10
 	arg_70_0._referenceUpdateFlag = not arg_70_0._referenceVector:Equals(arg_70_0._referenceVectorCache)
@@ -851,11 +865,11 @@ function var_0_6.UpdateUIComponentPosition(arg_70_0)
 	end
 end
 
-function var_0_6.UpdateHPPopContainerPosition(arg_71_0)
+function BattleCharacter.UpdateHPPopContainerPosition(arg_71_0)
 	arg_71_0._hpPopContainerTF.position = arg_71_0._referenceVector
 end
 
-function var_0_6.UpdateHPBarPosition(arg_72_0)
+function BattleCharacter.UpdateHPBarPosition(arg_72_0)
 	if not arg_72_0._hideHP then
 		arg_72_0._hpBarPos:Copy(arg_72_0._referenceVector):Add(arg_72_0._hpBarOffset)
 
@@ -863,44 +877,44 @@ function var_0_6.UpdateHPBarPosition(arg_72_0)
 	end
 end
 
-function var_0_6.SetBarHidden(arg_73_0, arg_73_1, arg_73_2)
+function BattleCharacter.SetBarHidden(arg_73_0, arg_73_1, arg_73_2)
 	arg_73_0._alwaysHideArrow = arg_73_1
 	arg_73_0._hideHP = arg_73_2
 
 	if arg_73_0._arrowBar then
 		if arg_73_0._alwaysHideArrow then
-			arg_73_0._arrowBarTf.anchoredPosition = var_0_7
+			arg_73_0._arrowBarTf.anchoredPosition = anchoredPosition
 		else
 			arg_73_0._arrowBarTf.position = arg_73_0._arrowVector
 		end
 	end
 end
 
-function var_0_6.UpdateCastClockPosition(arg_74_0)
+function BattleCharacter.UpdateCastClockPosition(arg_74_0)
 	arg_74_0._castClock:UpdateCastClockPosition(arg_74_0._referenceVector)
 end
 
-function var_0_6.UpdateBarrierClockPosition(arg_75_0)
+function BattleCharacter.UpdateBarrierClockPosition(arg_75_0)
 	arg_75_0._barrierClock:UpdateBarrierClockPosition(arg_75_0._referenceVector)
 end
 
-function var_0_6.SetArrowPoint(arg_76_0)
+function BattleCharacter.SetArrowPoint(arg_76_0)
 	arg_76_0._arrowVector:Set()
 
-	arg_76_0._cameraUtil = var_0_0.Battle.BattleCameraUtil.GetInstance()
+	arg_76_0._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
 	arg_76_0._arrowCenterPos = arg_76_0._cameraUtil:GetArrowCenterPos()
 end
 
 local var_0_9 = Vector3(-1, 1, 1)
 local var_0_10 = Vector3(1, 1, 1)
 
-function var_0_6.UpdateArrowBarPosition(arg_77_0)
+function BattleCharacter.UpdateArrowBarPosition(arg_77_0)
 	local var_77_0 = arg_77_0._cameraUtil:GetCharacterArrowBarPosition(arg_77_0._referenceVector, arg_77_0._arrowVector)
 
 	if not var_77_0 then
 		if not arg_77_0._inViewArea then
 			arg_77_0._inViewArea = true
-			arg_77_0._arrowBarTf.anchoredPosition = var_0_7
+			arg_77_0._arrowBarTf.anchoredPosition = anchoredPosition
 		end
 	else
 		local var_77_1 = arg_77_0._unitData:GetBornPosition()
@@ -924,7 +938,7 @@ function var_0_6.UpdateArrowBarPosition(arg_77_0)
 	end
 end
 
-function var_0_6.UpdateArrowBarRotation(arg_78_0)
+function BattleCharacter.UpdateArrowBarRotation(arg_78_0)
 	if arg_78_0._inViewArea then
 		return
 	end
@@ -937,7 +951,7 @@ function var_0_6.UpdateArrowBarRotation(arg_78_0)
 	arg_78_0._arrowBarTf.eulerAngles = arg_78_0._arrowAngleVector
 end
 
-function var_0_6.UpdateChatPosition(arg_79_0)
+function BattleCharacter.UpdateChatPosition(arg_79_0)
 	if not arg_79_0._popGO then
 		return
 	end
@@ -949,7 +963,7 @@ function var_0_6.UpdateChatPosition(arg_79_0)
 	end
 end
 
-function var_0_6.Dispose(arg_80_0)
+function BattleCharacter.Dispose(arg_80_0)
 	if arg_80_0._popGO then
 		LeanTween.cancel(arg_80_0._popGO)
 	end
@@ -995,11 +1009,11 @@ function var_0_6.Dispose(arg_80_0)
 	arg_80_0._cacheWeapon = nil
 
 	for iter_80_0, iter_80_1 in pairs(arg_80_0._allFX) do
-		var_0_4.GetInstance():DestroyOb(iter_80_0)
+		BattleResourceManager.GetInstance():DestroyOb(iter_80_0)
 	end
 
 	for iter_80_2, iter_80_3 in pairs(arg_80_0._orbitList) do
-		var_0_4.GetInstance():DestroyOb(iter_80_2)
+		BattleResourceManager.GetInstance():DestroyOb(iter_80_2)
 	end
 
 	arg_80_0._orbitList = nil
@@ -1036,7 +1050,7 @@ function var_0_6.Dispose(arg_80_0)
 	arg_80_0._waveFX = nil
 
 	arg_80_0:RemoveUnitEvent()
-	var_0_0.EventListener.DetachEventListener(arg_80_0)
+	ys.EventListener.DetachEventListener(arg_80_0)
 
 	arg_80_0._bulletFactoryList = nil
 
@@ -1047,10 +1061,10 @@ function var_0_6.Dispose(arg_80_0)
 	arg_80_0._tagFXList = nil
 	arg_80_0._weaponRegisterList = nil
 
-	var_0_6.super.Dispose(arg_80_0)
+	BattleCharacter.super.Dispose(arg_80_0)
 end
 
-function var_0_6.AddModel(arg_81_0, arg_81_1)
+function BattleCharacter.AddModel(arg_81_0, arg_81_1)
 	arg_81_0:SetGO(arg_81_1)
 
 	arg_81_0._hpBarOffset = Vector3(0, arg_81_0._unitData:GetBoxSize().y, 0)
@@ -1071,10 +1085,10 @@ function var_0_6.AddModel(arg_81_0, arg_81_1)
 
 	local var_81_1 = arg_81_0._unitData:GetOxyState()
 
-	if var_81_1 and var_81_1:GetCurrentDiveState() == var_0_0.Battle.BattleConst.OXY_STATE.DIVE then
-		arg_81_0:PlayAction(var_0_0.Battle.BattleConst.ActionName.DIVE)
+	if var_81_1 and var_81_1:GetCurrentDiveState() == ys.Battle.BattleConst.OXY_STATE.DIVE then
+		arg_81_0:PlayAction(ys.Battle.BattleConst.ActionName.DIVE)
 	else
-		arg_81_0:PlayAction(var_0_0.Battle.BattleConst.ActionName.MOVE)
+		arg_81_0:PlayAction(ys.Battle.BattleConst.ActionName.MOVE)
 	end
 
 	arg_81_0._animator:SetActionCallBack(function(arg_82_0)
@@ -1086,10 +1100,10 @@ function var_0_6.AddModel(arg_81_0, arg_81_1)
 			arg_81_0:changeOrbitListVisible(arg_82_0)
 		end
 	end)
-	arg_81_0._unitData:RegisterEventListener(arg_81_0, var_0_1.CHANGE_ACTION, arg_81_0.OnActionChange)
+	arg_81_0._unitData:RegisterEventListener(arg_81_0, BattleUnitEvent.CHANGE_ACTION, arg_81_0.OnActionChange)
 end
 
-function var_0_6.changeOrbitListVisible(arg_83_0, arg_83_1)
+function BattleCharacter.changeOrbitListVisible(arg_83_0, arg_83_1)
 	local var_83_0
 
 	if arg_83_1 == "skin_on" then
@@ -1107,7 +1121,7 @@ function var_0_6.changeOrbitListVisible(arg_83_0, arg_83_1)
 	end
 end
 
-function var_0_6.SwitchModel(arg_84_0, arg_84_1, arg_84_2)
+function BattleCharacter.SwitchModel(arg_84_0, arg_84_1, arg_84_2)
 	local var_84_0 = arg_84_0._go
 
 	arg_84_0:SetGO(arg_84_1)
@@ -1165,10 +1179,10 @@ function var_0_6.SwitchModel(arg_84_0, arg_84_1, arg_84_2)
 
 	arg_84_0._effectOb:SwitchOwner(arg_84_0, var_84_3)
 	arg_84_0._FXAttachPoint.transform:SetParent(arg_84_0:GetTf(), false)
-	var_0_4.GetInstance():DestroyOb(var_84_0)
+	BattleResourceManager.GetInstance():DestroyOb(var_84_0)
 end
 
-function var_0_6.AddOrbit(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
+function BattleCharacter.AddOrbit(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
 	local var_86_0 = arg_86_2.orbit_combat_bound[1]
 
 	if arg_86_3 then
@@ -1218,14 +1232,14 @@ function var_0_6.AddOrbit(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
 		end
 	end
 
-	arg_86_0._orbitSpineOrderOffset = arg_86_0._orbitSpineOrderOffset + var_0_6.getMaxZSort(arg_86_1)
+	arg_86_0._orbitSpineOrderOffset = arg_86_0._orbitSpineOrderOffset + BattleCharacter.getMaxZSort(arg_86_1)
 
 	arg_86_0:sortOrbitZOrder()
 end
 
-function var_0_6.sortOrbitZOrder(arg_87_0)
+function BattleCharacter.sortOrbitZOrder(arg_87_0)
 	for iter_87_0, iter_87_1 in pairs(arg_87_0._orbitList) do
-		local var_87_0 = var_0_6.getMaxZSort(iter_87_0)
+		local var_87_0 = BattleCharacter.getMaxZSort(iter_87_0)
 
 		eachChild(iter_87_0, function(arg_88_0)
 			if arg_88_0 and arg_88_0:GetComponent("MeshRenderer") then
@@ -1239,7 +1253,7 @@ function var_0_6.sortOrbitZOrder(arg_87_0)
 	end
 end
 
-function var_0_6.getMaxZSort(arg_89_0)
+function BattleCharacter.getMaxZSort(arg_89_0)
 	local var_89_0 = 0
 
 	eachChild(arg_89_0, function(arg_90_0)
@@ -1253,7 +1267,7 @@ function var_0_6.getMaxZSort(arg_89_0)
 	return var_89_0
 end
 
-function var_0_6.changeOrbitAction(arg_91_0, arg_91_1, arg_91_2)
+function BattleCharacter.changeOrbitAction(arg_91_0, arg_91_1, arg_91_2)
 	for iter_91_0, iter_91_1 in ipairs(arg_91_2) do
 		local var_91_0 = arg_91_1.transform:Find(iter_91_1.node)
 
@@ -1271,7 +1285,7 @@ function var_0_6.changeOrbitAction(arg_91_0, arg_91_1, arg_91_2)
 	end
 end
 
-function var_0_6.UpdateOrbit(arg_92_0)
+function BattleCharacter.UpdateOrbit(arg_92_0)
 	if #arg_92_0._orbitSpeedUpdateList <= 0 then
 		return
 	end
@@ -1285,7 +1299,7 @@ function var_0_6.UpdateOrbit(arg_92_0)
 		local var_92_4 = true
 
 		for iter_92_2, iter_92_3 in ipairs(var_92_3) do
-			var_92_4 = var_0_5.simpleCompare(iter_92_3, var_92_0) and var_92_4
+			var_92_4 = BattleFormulas.simpleCompare(iter_92_3, var_92_0) and var_92_4
 		end
 
 		if var_92_4 then
@@ -1294,32 +1308,32 @@ function var_0_6.UpdateOrbit(arg_92_0)
 	end
 end
 
-function var_0_6.AddSmokeFXs(arg_93_0, arg_93_1)
+function BattleCharacter.AddSmokeFXs(arg_93_0, arg_93_1)
 	arg_93_0._smokeList = arg_93_1
 
 	arg_93_0:updateSomkeFX()
 end
 
-function var_0_6.AddShadow(arg_94_0, arg_94_1)
+function BattleCharacter.AddShadow(arg_94_0, arg_94_1)
 	arg_94_0._shadow = arg_94_1
 end
 
-function var_0_6.AddHPBar(arg_95_0, arg_95_1)
+function BattleCharacter.AddHPBar(arg_95_0, arg_95_1)
 	arg_95_0._HPBar = arg_95_1
 	arg_95_0._HPBarTf = arg_95_1.transform
 	arg_95_0._HPProgressBar = arg_95_0._HPBarTf:Find("blood")
 	arg_95_0._HPProgress = arg_95_0._HPProgressBar:GetComponent(typeof(Image))
 
-	arg_95_0._unitData:RegisterEventListener(arg_95_0, var_0_1.UPDATE_HP, arg_95_0.OnUpdateHP)
+	arg_95_0._unitData:RegisterEventListener(arg_95_0, BattleUnitEvent.UPDATE_HP, arg_95_0.OnUpdateHP)
 
 	arg_95_0._HPBarTf.position = arg_95_0._referenceVector + arg_95_0._hpBarOffset
 end
 
-function var_0_6.AddUIComponentContainer(arg_96_0, arg_96_1)
+function BattleCharacter.AddUIComponentContainer(arg_96_0, arg_96_1)
 	arg_96_0:UpdateUIComponentPosition()
 end
 
-function var_0_6.AddPopNumPool(arg_97_0, arg_97_1)
+function BattleCharacter.AddPopNumPool(arg_97_0, arg_97_1)
 	arg_97_0._popNumPool = arg_97_1
 	arg_97_0._hpPopIndex_put = 1
 	arg_97_0._hpPopIndex_get = 1
@@ -1329,90 +1343,90 @@ function var_0_6.AddPopNumPool(arg_97_0, arg_97_1)
 	arg_97_0._hpPopContainerTF = arg_97_0._popNumBundle:GetContainer().transform
 end
 
-function var_0_6.AddArrowBar(arg_98_0, arg_98_1)
+function BattleCharacter.AddArrowBar(arg_98_0, arg_98_1)
 	arg_98_0._arrowBar = arg_98_1
 	arg_98_0._arrowBarTf = arg_98_1.transform
 
 	arg_98_0:SetArrowPoint()
 end
 
-function var_0_6.AddCastClock(arg_99_0, arg_99_1)
+function BattleCharacter.AddCastClock(arg_99_0, arg_99_1)
 	local var_99_0 = arg_99_1.transform
 
 	SetActive(var_99_0, false)
 
-	arg_99_0._castClock = var_0_0.Battle.BattleCastBar.New(var_99_0)
+	arg_99_0._castClock = ys.Battle.BattleCastBar.New(var_99_0)
 
 	arg_99_0:UpdateCastClockPosition()
 end
 
-function var_0_6.AddBuffClock(arg_100_0, arg_100_1)
+function BattleCharacter.AddBuffClock(arg_100_0, arg_100_1)
 	local var_100_0 = arg_100_1.transform
 
 	SetActive(var_100_0, false)
 
-	arg_100_0._buffClock = var_0_0.Battle.BattleBuffClock.New(var_100_0)
+	arg_100_0._buffClock = ys.Battle.BattleBuffClock.New(var_100_0)
 end
 
-function var_0_6.AddBarrierClock(arg_101_0, arg_101_1)
+function BattleCharacter.AddBarrierClock(arg_101_0, arg_101_1)
 	local var_101_0 = arg_101_1.transform
 
 	SetActive(var_101_0, false)
 
-	arg_101_0._barrierClock = var_0_0.Battle.BattleBarrierBar.New(var_101_0)
+	arg_101_0._barrierClock = ys.Battle.BattleBarrierBar.New(var_101_0)
 
 	arg_101_0:UpdateBarrierClockPosition()
 end
 
-function var_0_6.AddVigilantBar(arg_102_0, arg_102_1)
-	arg_102_0._vigilantBar = var_0_0.Battle.BattleVigilantBar.New(arg_102_1.transform)
+function BattleCharacter.AddVigilantBar(arg_102_0, arg_102_1)
+	arg_102_0._vigilantBar = ys.Battle.BattleVigilantBar.New(arg_102_1.transform)
 
 	arg_102_0._vigilantBar:ConfigVigilant(arg_102_0._unitData:GetAntiSubState())
 	arg_102_0._vigilantBar:UpdateVigilantProgress()
 	arg_102_0:updateVigilantMark()
 end
 
-function var_0_6.UpdateVigilantBarPosition(arg_103_0)
+function BattleCharacter.UpdateVigilantBarPosition(arg_103_0)
 	arg_103_0._vigilantBar:UpdateVigilantBarPosition(arg_103_0._hpBarPos)
 end
 
-function var_0_6.AddCloakBar(arg_104_0, arg_104_1)
+function BattleCharacter.AddCloakBar(arg_104_0, arg_104_1)
 	arg_104_0._cloakBarTf = arg_104_1.transform
-	arg_104_0._cloakBar = var_0_0.Battle.BattleCloakBar.New(arg_104_0._cloakBarTf)
+	arg_104_0._cloakBar = ys.Battle.BattleCloakBar.New(arg_104_0._cloakBarTf)
 
 	arg_104_0._cloakBar:ConfigCloak(arg_104_0._unitData:GetCloak())
 	arg_104_0._cloakBar:UpdateCloakProgress()
 end
 
-function var_0_6.UpdateCloakBarPosition(arg_105_0, arg_105_1)
+function BattleCharacter.UpdateCloakBarPosition(arg_105_0, arg_105_1)
 	if arg_105_0._inViewArea then
-		arg_105_0._cloakBarTf.anchoredPosition = var_0_7
+		arg_105_0._cloakBarTf.anchoredPosition = anchoredPosition
 	else
 		arg_105_0._cloakBar:UpdateCloarBarPosition(arg_105_0._arrowVector)
 	end
 end
 
-function var_0_6.onInitCloak(arg_106_0, arg_106_1)
+function BattleCharacter.onInitCloak(arg_106_0, arg_106_1)
 	arg_106_0._factory:MakeCloakBar(arg_106_0)
 end
 
-function var_0_6.onUpdateCloakConfig(arg_107_0, arg_107_1)
+function BattleCharacter.onUpdateCloakConfig(arg_107_0, arg_107_1)
 	arg_107_0._cloakBar:UpdateCloakConfig()
 end
 
-function var_0_6.onUpdateCloakLock(arg_108_0, arg_108_1)
+function BattleCharacter.onUpdateCloakLock(arg_108_0, arg_108_1)
 	arg_108_0._cloakBar:UpdateCloakLock()
 end
 
-function var_0_6.AddAimBiasBar(arg_109_0, arg_109_1)
+function BattleCharacter.AddAimBiasBar(arg_109_0, arg_109_1)
 	arg_109_0._aimBiarBarTF = arg_109_1
-	arg_109_0._aimBiarBar = var_0_0.Battle.BattleAimbiasBar.New(arg_109_1)
+	arg_109_0._aimBiarBar = ys.Battle.BattleAimbiasBar.New(arg_109_1)
 
 	arg_109_0._aimBiarBar:ConfigAimBias(arg_109_0._unitData:GetAimBias())
 	arg_109_0._aimBiarBar:UpdateAimBiasProgress()
 end
 
-function var_0_6.IsDoubleChar(arg_110_0)
+function BattleCharacter.IsDoubleChar(arg_110_0)
 	if arg_110_0._skeleton then
 		local var_110_0 = arg_110_0._skeleton.skeleton:FindBoneIndex("char1_face")
 		local var_110_1 = arg_110_0._skeleton.skeleton:FindBoneIndex("char2_face")
@@ -1425,34 +1439,34 @@ function var_0_6.IsDoubleChar(arg_110_0)
 	return false
 end
 
-function var_0_6.UpdateAimBiasBar(arg_111_0)
+function BattleCharacter.UpdateAimBiasBar(arg_111_0)
 	if arg_111_0._aimBiarBar then
 		arg_111_0._aimBiarBar:UpdateAimBiasProgress()
 	end
 end
 
-function var_0_6.UpdateBuffClock(arg_112_0)
+function BattleCharacter.UpdateBuffClock(arg_112_0)
 	if arg_112_0._buffClock and arg_112_0._buffClock:IsActive() then
 		arg_112_0._buffClock:UpdateCastClockPosition(arg_112_0._referenceVector)
 		arg_112_0._buffClock:UpdateCastClock()
 	end
 end
 
-function var_0_6.onUpdateAimBiasLock(arg_113_0, arg_113_1)
+function BattleCharacter.onUpdateAimBiasLock(arg_113_0, arg_113_1)
 	arg_113_0._aimBiarBar:UpdateLockStateView()
 end
 
-function var_0_6.onInitAimBias(arg_114_0, arg_114_1)
+function BattleCharacter.onInitAimBias(arg_114_0, arg_114_1)
 	if arg_114_0._unitData:GetAimBias():GetHost() == arg_114_0._unitData then
 		arg_114_0._factory:MakeAimBiasBar(arg_114_0)
 	end
 end
 
-function var_0_6.onHostAimBias(arg_115_0, arg_115_1)
+function BattleCharacter.onHostAimBias(arg_115_0, arg_115_1)
 	arg_115_0._factory:MakeAimBiasBar(arg_115_0)
 end
 
-function var_0_6.onRemoveAimBias(arg_116_0, arg_116_1)
+function BattleCharacter.onRemoveAimBias(arg_116_0, arg_116_1)
 	arg_116_0._aimBiarBar:SetActive(false)
 	arg_116_0._aimBiarBar:Dispose()
 
@@ -1460,7 +1474,7 @@ function var_0_6.onRemoveAimBias(arg_116_0, arg_116_1)
 	arg_116_0._aimBiarBarTF = nil
 end
 
-function var_0_6.AddAimBiasFogFX(arg_117_0)
+function BattleCharacter.AddAimBiasFogFX(arg_117_0)
 	local var_117_0 = arg_117_0._unitData:GetTemplate().fog_fx
 
 	if var_117_0 and var_117_0 ~= "" then
@@ -1468,11 +1482,11 @@ function var_0_6.AddAimBiasFogFX(arg_117_0)
 	end
 end
 
-function var_0_6.OnUpdateHP(arg_118_0, arg_118_1)
+function BattleCharacter.OnUpdateHP(arg_118_0, arg_118_1)
 	arg_118_0:_DealHPPop(arg_118_1.Data)
 end
 
-function var_0_6._DealHPPop(arg_119_0, arg_119_1)
+function BattleCharacter._DealHPPop(arg_119_0, arg_119_1)
 	if arg_119_0._hpPopIndex_put == arg_119_0._hpPopIndex_get and arg_119_0._hpPopCount == 0 then
 		arg_119_0:_PlayHPPop(arg_119_1)
 
@@ -1485,7 +1499,7 @@ function var_0_6._DealHPPop(arg_119_0, arg_119_1)
 	end
 end
 
-function var_0_6.UpdateHPPop(arg_120_0)
+function BattleCharacter.UpdateHPPop(arg_120_0)
 	if arg_120_0._hpPopIndex_put == arg_120_0._hpPopIndex_get then
 		return
 	else
@@ -1501,7 +1515,7 @@ function var_0_6.UpdateHPPop(arg_120_0)
 	end
 end
 
-function var_0_6._PlayHPPop(arg_121_0, arg_121_1)
+function BattleCharacter._PlayHPPop(arg_121_0, arg_121_1)
 	if arg_121_0._popNumBundle:IsScorePop() then
 		return
 	end
@@ -1518,7 +1532,7 @@ function var_0_6._PlayHPPop(arg_121_0, arg_121_1)
 	var_121_6:Play()
 end
 
-function var_0_6._CalcHPPopCount(arg_122_0)
+function BattleCharacter._CalcHPPopCount(arg_122_0)
 	if arg_122_0._hpPopIndex_put - arg_122_0._hpPopIndex_get > 5 then
 		return 1
 	else
@@ -1526,7 +1540,7 @@ function var_0_6._CalcHPPopCount(arg_122_0)
 	end
 end
 
-function var_0_6.onUpdateScore(arg_123_0, arg_123_1)
+function BattleCharacter.onUpdateScore(arg_123_0, arg_123_1)
 	local var_123_0 = arg_123_1.Data.score
 	local var_123_1 = arg_123_0._popNumBundle:GetScorePop(var_123_0)
 
@@ -1534,7 +1548,7 @@ function var_0_6.onUpdateScore(arg_123_0, arg_123_1)
 	var_123_1:Play()
 end
 
-function var_0_6.UpdateHpBar(arg_124_0)
+function BattleCharacter.UpdateHpBar(arg_124_0)
 	local var_124_0 = arg_124_0._unitData:GetCurrentHP()
 
 	if arg_124_0._HPProgress and arg_124_0._cacheHP ~= var_124_0 then
@@ -1545,11 +1559,11 @@ function var_0_6.UpdateHpBar(arg_124_0)
 	end
 end
 
-function var_0_6.onChangeSize(arg_125_0, arg_125_1)
+function BattleCharacter.onChangeSize(arg_125_0, arg_125_1)
 	arg_125_0:doChangeSize(arg_125_1)
 end
 
-function var_0_6.updateSomkeFX(arg_126_0)
+function BattleCharacter.updateSomkeFX(arg_126_0)
 	local var_126_0 = arg_126_0._unitData:GetHPRate()
 
 	for iter_126_0, iter_126_1 in ipairs(arg_126_0._smokeList) do
@@ -1590,21 +1604,21 @@ function var_0_6.updateSomkeFX(arg_126_0)
 	end
 end
 
-function var_0_6.doChangeSize(arg_127_0, arg_127_1)
+function BattleCharacter.doChangeSize(arg_127_0, arg_127_1)
 	local var_127_0 = arg_127_1.Data.size_ratio
 
 	arg_127_0:setLocalScale(arg_127_0._tf.localScale * var_127_0)
 end
 
-function var_0_6.InitEffectView(arg_128_0)
-	arg_128_0._effectOb = var_0_0.Battle.BattleEffectComponent.New(arg_128_0)
+function BattleCharacter.InitEffectView(arg_128_0)
+	arg_128_0._effectOb = ys.Battle.BattleEffectComponent.New(arg_128_0)
 end
 
-function var_0_6.UpdateAniEffect(arg_129_0, arg_129_1)
+function BattleCharacter.UpdateAniEffect(arg_129_0, arg_129_1)
 	arg_129_0._effectOb:Update(arg_129_1)
 end
 
-function var_0_6.UpdateTagEffect(arg_130_0, arg_130_1)
+function BattleCharacter.UpdateTagEffect(arg_130_0, arg_130_1)
 	local var_130_0 = arg_130_0._unitData:GetBoxSize().y * 0.5
 
 	for iter_130_0, iter_130_1 in pairs(arg_130_0._tagFXList) do
@@ -1613,7 +1627,7 @@ function var_0_6.UpdateTagEffect(arg_130_0, arg_130_1)
 	end
 end
 
-function var_0_6.SetPopup(arg_131_0, arg_131_1, arg_131_2, arg_131_3)
+function BattleCharacter.SetPopup(arg_131_0, arg_131_1, arg_131_2, arg_131_3)
 	if arg_131_0._voiceTimer then
 		if arg_131_0._voiceKey == arg_131_3 then
 			arg_131_0._voiceKey = nil
@@ -1651,11 +1665,11 @@ function var_0_6.SetPopup(arg_131_0, arg_131_1, arg_131_2, arg_131_3)
 		end
 	end
 
-	var_0_6.setChatText(arg_131_0._popGO, arg_131_1)
+	BattleCharacter.setChatText(arg_131_0._popGO, arg_131_1)
 	SetActive(arg_131_0._popGO, true)
 end
 
-function var_0_6.ChatPopAnimation(arg_134_0, arg_134_1)
+function BattleCharacter.ChatPopAnimation(arg_134_0, arg_134_1)
 	local var_134_0 = arg_134_0.transform:GetComponent(typeof(Animation))
 
 	var_134_0:Play("popup_in")
@@ -1667,7 +1681,7 @@ function var_0_6.ChatPopAnimation(arg_134_0, arg_134_1)
 	end))
 end
 
-function var_0_6.ChatPop(arg_137_0, arg_137_1)
+function BattleCharacter.ChatPop(arg_137_0, arg_137_1)
 	arg_137_1 = arg_137_1 or 2.5
 
 	LeanTween.scale(rtf(arg_137_0.gameObject), Vector3.New(1, 1, 1), 0.3):setEase(LeanTweenType.easeOutBack):setOnComplete(System.Action(function()
@@ -1677,7 +1691,7 @@ function var_0_6.ChatPop(arg_137_0, arg_137_1)
 	end))
 end
 
-function var_0_6.setChatText(arg_140_0, arg_140_1)
+function BattleCharacter.setChatText(arg_140_0, arg_140_1)
 	local var_140_0 = findTF(arg_140_0, "Text"):GetComponent(typeof(Text))
 
 	var_140_0.text = arg_140_1
@@ -1689,7 +1703,7 @@ function var_0_6.setChatText(arg_140_0, arg_140_1)
 	end
 end
 
-function var_0_6.Voice(arg_141_0, arg_141_1, arg_141_2)
+function BattleCharacter.Voice(arg_141_0, arg_141_1, arg_141_2)
 	if arg_141_0._voiceTimer then
 		return
 	end
@@ -1709,7 +1723,7 @@ function var_0_6.Voice(arg_141_0, arg_141_1, arg_141_2)
 	end)
 end
 
-function var_0_6.setLocalScale(arg_144_0, arg_144_1, arg_144_2)
+function BattleCharacter.setLocalScale(arg_144_0, arg_144_1, arg_144_2)
 	arg_144_0._tf.localScale = arg_144_1
 
 	if not arg_144_2 then
@@ -1717,17 +1731,17 @@ function var_0_6.setLocalScale(arg_144_0, arg_144_1, arg_144_2)
 	end
 end
 
-function var_0_6.SonarAcitve(arg_145_0, arg_145_1)
+function BattleCharacter.SonarAcitve(arg_145_0, arg_145_1)
 	return
 end
 
-function var_0_6.SwitchShader(arg_146_0, arg_146_1, arg_146_2, arg_146_3)
+function BattleCharacter.SwitchShader(arg_146_0, arg_146_1, arg_146_2, arg_146_3)
 	LeanTween.cancel(arg_146_0._go)
 
 	arg_146_2 = arg_146_2 or Color.New(0, 0, 0, 0)
 
 	if arg_146_1 then
-		local var_146_0 = var_0_4.GetInstance():GetShader(arg_146_1)
+		local var_146_0 = BattleResourceManager.GetInstance():GetShader(arg_146_1)
 
 		arg_146_0._animator:ShiftShader(var_146_0, arg_146_2)
 
@@ -1740,21 +1754,21 @@ function var_0_6.SwitchShader(arg_146_0, arg_146_1, arg_146_2, arg_146_3)
 	arg_146_0._color = arg_146_2
 end
 
-function var_0_6.PauseActionAnimation(arg_147_0, arg_147_1)
+function BattleCharacter.PauseActionAnimation(arg_147_0, arg_147_1)
 	local var_147_0 = arg_147_1 and 0 or 1
 
 	arg_147_0._animator:GetAnimationState().TimeScale = var_147_0
 end
 
-function var_0_6.GetFactory(arg_148_0)
+function BattleCharacter.GetFactory(arg_148_0)
 	return arg_148_0._factory
 end
 
-function var_0_6.SetFactory(arg_149_0, arg_149_1)
+function BattleCharacter.SetFactory(arg_149_0, arg_149_1)
 	arg_149_0._factory = arg_149_1
 end
 
-function var_0_6.onSwitchSpine(arg_150_0, arg_150_1)
+function BattleCharacter.onSwitchSpine(arg_150_0, arg_150_1)
 	local var_150_0 = arg_150_1.Data
 	local var_150_1 = var_150_0.skin
 
@@ -1763,7 +1777,7 @@ function var_0_6.onSwitchSpine(arg_150_0, arg_150_1)
 	arg_150_0:SwitchSpine(var_150_1)
 end
 
-function var_0_6.SwitchSpine(arg_151_0, arg_151_1)
+function BattleCharacter.SwitchSpine(arg_151_0, arg_151_1)
 	for iter_151_0, iter_151_1 in pairs(arg_151_0._blinkDict) do
 		SpineAnim.RemoveBlink(arg_151_0._go, iter_151_0)
 	end
@@ -1771,7 +1785,7 @@ function var_0_6.SwitchSpine(arg_151_0, arg_151_1)
 	arg_151_0._factory:SwitchCharacterSpine(arg_151_0, arg_151_1)
 end
 
-function var_0_6.onSwitchShader(arg_152_0, arg_152_1)
+function BattleCharacter.onSwitchShader(arg_152_0, arg_152_1)
 	local var_152_0 = arg_152_1.Data
 	local var_152_1 = var_152_0.shader
 	local var_152_2 = var_152_0.color

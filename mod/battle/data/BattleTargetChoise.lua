@@ -130,17 +130,18 @@ function BattleTargetChoise.TargetShipArmor(arg_10_0, arg_10_1, arg_10_2)
 	return var_10_1
 end
 
-function BattleTargetChoise.getShipListByIFF(arg_11_0)
-	local var_11_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_11_1
-
-	if arg_11_0 == BattleConfig.FRIENDLY_CODE then
-		var_11_1 = var_11_0:GetFriendlyShipList()
-	elseif arg_11_0 == BattleConfig.FOE_CODE then
-		var_11_1 = var_11_0:GetFoeShipList()
+function BattleTargetChoise.getShipListByIFF(IFF)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local candidateList
+	-- TODO 到底哪些属于friendlyList，比如召唤出的单位算不算？
+	-- 粗看下来好像不算，之后再确认一下
+	if IFF == BattleConfig.FRIENDLY_CODE then
+		candidateList = battleDataProxy:GetFriendlyShipList()
+	elseif IFF == BattleConfig.FOE_CODE then
+		candidateList = battleDataProxy:GetFoeShipList()
 	end
 
-	return var_11_1
+	return candidateList
 end
 
 function BattleTargetChoise.TargetAllHelp(caster, argList, candidateList)
@@ -917,23 +918,23 @@ function BattleTargetChoise.TargetPlayerVanguardFleet(arg_50_0, arg_50_1, arg_50
 	end
 end
 
-function BattleTargetChoise.TargetPlayerMainFleet(arg_51_0, arg_51_1, arg_51_2)
-	local var_51_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_51_0:GetIFF()):GetMainList()
+function BattleTargetChoise.TargetPlayerMainFleet(caster, argList, candidateList)
+	local mainList = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF()):GetMainList()
 
-	if not arg_51_2 then
-		return var_51_0
+	if not candidateList then
+		return mainList
 	else
-		local var_51_1 = #arg_51_2
+		local index = #candidateList
 
-		while var_51_1 > 0 do
-			if not table.contains(var_51_0, arg_51_2[var_51_1]) then
-				table.remove(arg_51_2, var_51_1)
+		while index > 0 do
+			if not table.contains(mainList, candidateList[index]) then
+				table.remove(candidateList, index)
 			end
 
-			var_51_1 = var_51_1 - 1
+			index = index - 1
 		end
 
-		return arg_51_2
+		return candidateList
 	end
 end
 

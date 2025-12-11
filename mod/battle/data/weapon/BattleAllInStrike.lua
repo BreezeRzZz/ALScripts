@@ -1,5 +1,5 @@
 ys = ys or {}
-
+-- TODO
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleConst
 local var_0_2 = var_0_0.Battle.BattleFormulas
