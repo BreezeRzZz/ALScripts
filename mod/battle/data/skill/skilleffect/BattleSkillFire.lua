@@ -1,111 +1,120 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = class("BattleSkillFire", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleSkillFire = class("BattleSkillFire", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillFire = var_0_3
-var_0_3.__name = "BattleSkillFire"
+ys.Battle.BattleSkillFire = BattleSkillFire
+BattleSkillFire.__name = "BattleSkillFire"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattleSkillFire.Ctor(self, template, level)
+	BattleSkillFire.super.Ctor(self, template, level)
 
-	arg_1_0._weaponID = arg_1_0._tempData.arg_list.weapon_id
-	arg_1_0._emitter = arg_1_0._tempData.arg_list.emitter
-	arg_1_0._useSkin = arg_1_0._tempData.arg_list.useSkin
-	arg_1_0._equipIndex = arg_1_0._tempData.arg_list.equip_index or -1
-	arg_1_0._atkAttrConvert = arg_1_0._tempData.arg_list.attack_attribute_convert
+	self._weaponID = self._tempData.arg_list.weapon_id
+	self._emitter = self._tempData.arg_list.emitter
+	self._useSkin = self._tempData.arg_list.useSkin
+	self._equipIndex = self._tempData.arg_list.equip_index or -1
+	self._atkAttrConvert = self._tempData.arg_list.attack_attribute_convert
 end
 
-function var_0_3.SetWeaponSkin(arg_2_0, arg_2_1)
-	arg_2_0._modelID = arg_2_1
+function BattleSkillFire.SetWeaponSkin(self, skinID)
+	self._modelID = skinID
 end
 
-function var_0_3.IsFinaleEffect(arg_3_0)
+function BattleSkillFire.IsFinaleEffect(self)
 	return true
 end
 
-function var_0_3.DoDataEffect(arg_4_0, arg_4_1, arg_4_2)
-	if arg_4_0._weapon == nil then
-		arg_4_0._weapon = var_0_0.Battle.BattleDataFunction.CreateWeaponUnit(arg_4_0._weaponID, arg_4_1, nil, arg_4_0._equipIndex)
+function BattleSkillFire.DoDataEffect(self, caster, target)
+	if self._weapon == nil then
+		-- 在caster的equipIndex位置上创建一个临时武器
+		-- 临时武器一般不指定index，默认就是-1
+		-- 所以很多针对index = -1的effect，指的是对临时武器的effect
+		self._weapon = ys.Battle.BattleDataFunction.CreateWeaponUnit(self._weaponID, caster, nil, self._equipIndex)
 
-		if BATTLE_DEBUG and (arg_4_0._weapon:GetType() == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or arg_4_0._weapon:GetType() == var_0_2.EquipmentType.STRIKE_AIRCRAFT) then
-			arg_4_0._weapon:GetATKAircraftList()
-			arg_4_0._weapon:GetDEFAircraftList()
+		if BATTLE_DEBUG and (self._weapon:GetType() == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or self._weapon:GetType() == BattleConst.EquipmentType.STRIKE_AIRCRAFT) then
+			self._weapon:GetATKAircraftList()
+			self._weapon:GetDEFAircraftList()
 		end
 
-		if arg_4_0._modelID then
-			arg_4_0._weapon:SetModelID(arg_4_0._modelID)
-		elseif arg_4_0._useSkin then
-			local var_4_0 = arg_4_1:GetPriorityWeaponSkin()
+		if self._modelID then
+			self._weapon:SetModelID(self._modelID)
+		elseif self._useSkin then
+			local priorityWeaponSkin = caster:GetPriorityWeaponSkin()
 
-			if var_4_0 then
-				arg_4_0._weapon:SetModelID(var_0_1.GetEquipSkin(var_4_0))
+			if priorityWeaponSkin then
+				self._weapon:SetModelID(BattleDataFunction.GetEquipSkin(priorityWeaponSkin))
 			end
 		end
 
-		local var_4_1 = {
-			weapon = arg_4_0._weapon
+		local args = {
+			weapon = self._weapon
 		}
-		local var_4_2 = var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CREATE_TEMPORARY_WEAPON, var_4_1)
+		-- 对应在BattleCharacter.onNewWeapon
+		-- 主要用于进一步触发临时武器上的事件
+		local createWeaponEvent = ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_TEMPORARY_WEAPON, args)
 
-		arg_4_1:DispatchEvent(var_4_2)
+		caster:DispatchEvent(createWeaponEvent)
 	end
 
-	local function var_4_3()
-		arg_4_0._weapon:Clear()
+	local function extraStopFunc()
+		self._weapon:Clear()
 
-		if arg_4_0._finaleCallback then
-			arg_4_0._finaleCallback()
+		if self._finaleCallback then
+			self._finaleCallback()
 		end
 	end
 
-	if arg_4_0._atkAttrConvert then
-		arg_4_0._weapon:SetAtkAttrTrasnform(arg_4_0._atkAttrConvert.attr_type, arg_4_0._atkAttrConvert.A, arg_4_0._atkAttrConvert.B)
+	if self._atkAttrConvert then
+		-- 转换为：min(attr / A, B)
+		self._weapon:SetAtkAttrTrasnform(self._atkAttrConvert.attr_type, self._atkAttrConvert.A, self._atkAttrConvert.B)
 	end
 
-	arg_4_0._weapon:updateMovementInfo()
-	arg_4_0._weapon:SingleFire(arg_4_2, arg_4_0._emitter, var_4_3)
+	self._weapon:updateMovementInfo()
+	-- SingleFire即单次武器开火
+	-- 所以对应的武器的reload_max没有意义
+	self._weapon:SingleFire(target, self._emitter, extraStopFunc)
 end
 
-function var_0_3.DoDataEffectWithoutTarget(arg_6_0, arg_6_1)
-	arg_6_0:DoDataEffect(arg_6_1)
+function BattleSkillFire.DoDataEffectWithoutTarget(self, caster)
+	self:DoDataEffect(caster)
 end
 
-function var_0_3.Clear(arg_7_0)
-	var_0_3.super.Clear(arg_7_0)
+function BattleSkillFire.Clear(self)
+	BattleSkillFire.super.Clear(self)
 
-	if arg_7_0._weapon and not arg_7_0._weapon:GetHost():IsAlive() then
-		arg_7_0._weapon:Clear()
-	end
-end
-
-function var_0_3.Interrupt(arg_8_0)
-	var_0_3.super.Interrupt(arg_8_0)
-
-	if arg_8_0._weapon then
-		arg_8_0._weapon:Cease()
-		arg_8_0._weapon:Clear()
+	if self._weapon and not self._weapon:GetHost():IsAlive() then
+		self._weapon:Clear()
 	end
 end
 
-function var_0_3.GetDamageSum(arg_9_0)
-	local var_9_0 = 0
+function BattleSkillFire.Interrupt(self)
+	BattleSkillFire.super.Interrupt(self)
 
-	if not arg_9_0._weapon then
-		var_9_0 = 0
-	elseif arg_9_0._weapon:GetType() == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or arg_9_0._weapon:GetType() == var_0_2.EquipmentType.STRIKE_AIRCRAFT then
-		for iter_9_0, iter_9_1 in ipairs(arg_9_0._weapon:GetATKAircraftList()) do
-			local var_9_1 = iter_9_1:GetWeapon()
+	if self._weapon then
+		self._weapon:Cease()
+		self._weapon:Clear()
+	end
+end
 
-			for iter_9_2, iter_9_3 in ipairs(var_9_1) do
-				var_9_0 = var_9_0 + iter_9_3:GetDamageSUM()
+function BattleSkillFire.GetDamageSum(self)
+	local damageSum = 0
+
+	if not self._weapon then
+		damageSum = 0
+	-- 对于舰载机/拦截机，计算的是携带的(攻击)武器的总伤害
+	elseif self._weapon:GetType() == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or self._weapon:GetType() == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+		for _, aircraft in ipairs(self._weapon:GetATKAircraftList()) do
+			local weaponList = aircraft:GetWeapon()
+
+			for _, weapon in ipairs(weaponList) do
+				damageSum = damageSum + weapon:GetDamageSUM()
 			end
 		end
 	else
-		var_9_0 = arg_9_0._weapon:GetDamageSUM()
+		damageSum = self._weapon:GetDamageSUM()
 	end
 
-	return var_9_0
+	return damageSum
 end

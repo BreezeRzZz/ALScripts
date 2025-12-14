@@ -1,94 +1,94 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = class("BattleSkillFireSupport", var_0_0.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillFireSupport = var_0_3
-var_0_3.__name = "BattleSkillFireSupport"
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleSkillFireSupport = class("BattleSkillFireSupport", ys.Battle.BattleSkillEffect)
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, lv)
+ys.Battle.BattleSkillFireSupport = BattleSkillFireSupport
+BattleSkillFireSupport.__name = "BattleSkillFireSupport"
 
-	arg_1_0._weaponID = arg_1_0._tempData.arg_list.weapon_id
-	arg_1_0._supportTargetFilter = arg_1_0._tempData.arg_list.supportTarget.targetChoice
-	arg_1_0._supportTargetArgList = arg_1_0._tempData.arg_list.supportTarget.arg_list
+function BattleSkillFireSupport.Ctor(self, template)
+	BattleSkillFireSupport.super.Ctor(self, template, lv)
+
+	self._weaponID = self._tempData.arg_list.weapon_id
+	self._supportTargetFilter = self._tempData.arg_list.supportTarget.targetChoice
+	self._supportTargetArgList = self._tempData.arg_list.supportTarget.arg_list
 end
 
-function var_0_3.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_0._weapon == nil then
-		local var_2_0
+function BattleSkillFireSupport.DoDataEffect(self, caster, target)
+	if self._weapon == nil then
+		local candidateList
+		-- 常用的一般是TargetPlayerAidUnit+TargetShipTag的组合
+		for _, supportTargetType in ipairs(self._supportTargetFilter) do
+			candidateList = ys.Battle.BattleTargetChoise[supportTargetType](caster, self._supportTargetArgList, candidateList)
+		end
+		-- 原来standHost是用来提供跨队武器的属性用于计算的？
+		local standHost = candidateList[1]
 
-		for iter_2_0, iter_2_1 in ipairs(arg_2_0._supportTargetFilter) do
-			var_2_0 = var_0_0.Battle.BattleTargetChoise[iter_2_1](arg_2_1, arg_2_0._supportTargetArgList, var_2_0)
+		self._weapon = ys.Battle.BattleDataFunction.CreateWeaponUnit(self._weaponID, caster)
+
+		if BATTLE_DEBUG and (self._weapon:GetType() == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or self._weapon:GetType() == BattleConst.EquipmentType.STRIKE_AIRCRAFT) then
+			self._weapon:GetATKAircraftList()
 		end
 
-		local var_2_1 = var_2_0[1]
-
-		arg_2_0._weapon = var_0_0.Battle.BattleDataFunction.CreateWeaponUnit(arg_2_0._weaponID, arg_2_1)
-
-		if BATTLE_DEBUG and (arg_2_0._weapon:GetType() == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or arg_2_0._weapon:GetType() == var_0_2.EquipmentType.STRIKE_AIRCRAFT) then
-			arg_2_0._weapon:GetATKAircraftList()
+		if standHost then
+			self._weapon:SetStandHost(standHost)
 		end
 
-		if var_2_1 then
-			arg_2_0._weapon:SetStandHost(var_2_1)
-		end
-
-		local var_2_2 = {
-			weapon = arg_2_0._weapon
+		local args = {
+			weapon = self._weapon
 		}
-		local var_2_3 = var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CREATE_TEMPORARY_WEAPON, var_2_2)
+		local createWeaponEvent = ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_TEMPORARY_WEAPON, args)
 
-		arg_2_1:DispatchEvent(var_2_3)
+		caster:DispatchEvent(createWeaponEvent)
 	end
 
-	local function var_2_4()
-		arg_2_0._weapon:Clear()
+	local function extraStopFunc()
+		self._weapon:Clear()
 	end
 
-	arg_2_0._weapon:updateMovementInfo()
-	arg_2_0._weapon:SingleFire(arg_2_2, arg_2_0._emitter, var_2_4)
+	self._weapon:updateMovementInfo()
+	self._weapon:SingleFire(target, self._emitter, extraStopFunc)
 end
 
-function var_0_3.DoDataEffectWithoutTarget(arg_4_0, arg_4_1)
-	arg_4_0:DoDataEffect(arg_4_1)
+function BattleSkillFireSupport.DoDataEffectWithoutTarget(self, caster)
+	self:DoDataEffect(caster)
 end
 
-function var_0_3.Clear(arg_5_0)
-	var_0_3.super.Clear(arg_5_0)
+function BattleSkillFireSupport.Clear(self)
+	BattleSkillFireSupport.super.Clear(self)
 
-	if arg_5_0._weapon and not arg_5_0._weapon:GetHost():IsAlive() then
-		arg_5_0._weapon:Clear()
-	end
-end
-
-function var_0_3.Interrupt(arg_6_0)
-	var_0_3.super.Interrupt(arg_6_0)
-
-	if arg_6_0._weapon then
-		arg_6_0._weapon:Cease()
-		arg_6_0._weapon:Clear()
+	if self._weapon and not self._weapon:GetHost():IsAlive() then
+		self._weapon:Clear()
 	end
 end
 
-function var_0_3.GetDamageSum(arg_7_0)
-	local var_7_0 = 0
+function BattleSkillFireSupport.Interrupt(self)
+	BattleSkillFireSupport.super.Interrupt(self)
 
-	if not arg_7_0._weapon then
-		var_7_0 = 0
-	elseif arg_7_0._weapon:GetType() == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or arg_7_0._weapon:GetType() == var_0_2.EquipmentType.STRIKE_AIRCRAFT then
-		for iter_7_0, iter_7_1 in ipairs(arg_7_0._weapon:GetATKAircraftList()) do
-			local var_7_1 = iter_7_1:GetWeapon()
+	if self._weapon then
+		self._weapon:Cease()
+		self._weapon:Clear()
+	end
+end
 
-			for iter_7_2, iter_7_3 in ipairs(var_7_1) do
-				var_7_0 = var_7_0 + iter_7_3:GetDamageSUM()
+function BattleSkillFireSupport.GetDamageSum(self)
+	local damageSum = 0
+
+	if not self._weapon then
+		damageSum = 0
+	elseif self._weapon:GetType() == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or self._weapon:GetType() == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+		for _, aircraft in ipairs(self._weapon:GetATKAircraftList()) do
+			local weaponList = aircraft:GetWeapon()
+
+			for _, weapon in ipairs(weaponList) do
+				damageSum = damageSum + weapon:GetDamageSUM()
 			end
 		end
 	else
-		var_7_0 = arg_7_0._weapon:GetDamageSUM()
+		damageSum = self._weapon:GetDamageSUM()
 	end
 
-	return var_7_0
+	return damageSum
 end

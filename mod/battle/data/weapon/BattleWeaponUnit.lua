@@ -384,7 +384,8 @@ end
 --- @class BattleWeaponUnit
 --- @param standHost BattleUnit
 --- @return nil
---- ? 设置StandHost(暂时不知道用处)
+--- 设置StandHost, 用于跨队武器计算，standHost表示跨队武器的提供者
+--- 跨队武器的属性会使用standHost的属性进行计算，其他使用host的部分
 function BattleWeaponUnit.SetStandHost(self, standHost)
 	self._standHost = standHost
 end
@@ -560,6 +561,7 @@ BattleWeaponUnit.TrackingFunc = {
 --- @class BattleWeaponUnit
 --- @return nil
 --- 索敌函数，确定要攻击的敌人
+--- 这一步得到的目标一定是一个敌人
 function BattleWeaponUnit.Tracking(self)
 	-- SearchType为STRIKE的不需要索敌
 	if self._tmpData.search_type == WeaponSearchType.STRIKE then

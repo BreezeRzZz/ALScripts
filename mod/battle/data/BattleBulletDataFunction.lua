@@ -1,80 +1,83 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = pg.bullet_template
-local var_0_3 = pg.barrage_template
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local bullet_template = pg.bullet_template
+local barrage_template = pg.barrage_template
 
-var_0_0.Battle.BattleDataFunction = var_0_0.Battle.BattleDataFunction or {}
+ys.Battle.BattleDataFunction = ys.Battle.BattleDataFunction or {}
 
-local var_0_4 = var_0_0.Battle.BattleDataFunction
-local var_0_5 = var_0_1.UnitDir.LEFT
-local var_0_6 = var_0_1.UnitDir.RIGHT
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local LEFT = BattleConst.UnitDir.LEFT
+local RIGHT = BattleConst.UnitDir.RIGHT
 
-function var_0_4.CreateBattleBulletData(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
-	local var_1_0 = var_0_4.GetBulletTmpDataFromID(arg_1_1)
-	local var_1_1 = var_1_0.type
+-- 被BattleDataProxy.CreateBulletUnit调用，实际创建子弹数据内容
+function BattleDataFunction.CreateBattleBulletData(bulletUID, bulletID, host, weapon, targetPos)
+	local bulletTemplate = BattleDataFunction.GetBulletTmpDataFromID(bulletID)
+	local bulletType = bulletTemplate.type
+	-- 如有currentdrop参数，目标点设为发射者位置
+	if bulletTemplate.extra_param.currentdrop then
+		targetPos = host:GetPosition()
+	end
+	-- 这一步会根据子弹类型，创建不同的子弹单位
+	-- 得到的只有一个空壳（一般就只设置了UID和IFF），设置模板等信息还在下面
+	-- 但看了下，有的子弹类型的创建函数又会设置一些模板信息，搞不懂为什么设计成这样...
+	local bullet, bulletCld = BattleDataFunction.generateBulletFuncs[bulletType](bulletUID, bulletTemplate, host, weapon, targetPos)
 
-	if var_1_0.extra_param.currentdrop then
-		arg_1_4 = arg_1_2:GetPosition()
+	bullet:SetTemplateData(bulletTemplate)
+	bullet:SetAttr(host._attr)
+	bullet:SetBuffTrigger(host)
+	bullet:SetWeapon(weapon)
+	-- 如果是跨队武器设置了StandHost，则把(weapon)的StandHost的属性传给子弹
+	if weapon and weapon:GetStandHost() then
+		local standHostAttr = weapon:GetStandHost():GetAttr()
+
+		bullet:SetStandHostAttr(standHostAttr)
 	end
 
-	local var_1_2, var_1_3 = var_0_4.generateBulletFuncs[var_1_1](arg_1_0, var_1_0, arg_1_2, arg_1_3, arg_1_4)
+	local isIgnoreCld = bullet:IsIngoreCld()
 
-	var_1_2:SetTemplateData(var_1_0)
-	var_1_2:SetAttr(arg_1_2._attr)
-	var_1_2:SetBuffTrigger(arg_1_2)
-	var_1_2:SetWeapon(arg_1_3)
+	if isIgnoreCld ~= nil then
+		local isCld = not isIgnoreCld
 
-	if arg_1_3 and arg_1_3:GetStandHost() then
-		local var_1_4 = arg_1_3:GetStandHost():GetAttr()
-
-		var_1_2:SetStandHostAttr(var_1_4)
+		bullet:SetIsCld(isCld)
+		-- 此处根据isIgnoreCld，重新设置了bulletCld
+		bulletCld = isCld
 	end
 
-	local var_1_5 = var_1_2:IsIngoreCld()
+	return bullet, bulletCld
+end
 
-	if var_1_5 ~= nil then
-		local var_1_6 = not var_1_5
+function BattleDataFunction.GetBulletTmpDataFromID(bulletID)
+	assert(bullet_template[bulletID] ~= nil, "找不到子弹配置：id = " .. bulletID)
 
-		var_1_2:SetIsCld(var_1_6)
+	return bullet_template[bulletID]
+end
 
-		var_1_3 = var_1_6
+function BattleDataFunction.GetBarrageTmpDataFromID(barrageID)
+	assert(barrage_template[barrageID] ~= nil, "找不到弹幕配置：id = " .. barrageID)
+
+	return barrage_template[barrageID]
+end
+
+function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, arg_4_1)
+	assert(barrage_template[barrageID] ~= nil, "获取转换弹幕数据失败，找不到弹幕原型配置：id = " .. barrageID)
+
+	if BattleDataFunction.ConvertedBarrageTableList[barrageID] == nil or BattleDataFunction.ConvertedBarrageTableList[barrageID][arg_4_1] == nil then
+		BattleDataFunction.ConvertSpecificBarrage(barrageID, arg_4_1)
 	end
 
-	return var_1_2, var_1_3
+	return BattleDataFunction.ConvertedBarrageTableList[barrageID]
 end
 
-function var_0_4.GetBulletTmpDataFromID(arg_2_0)
-	assert(var_0_2[arg_2_0] ~= nil, "找不到子弹配置：id = " .. arg_2_0)
-
-	return var_0_2[arg_2_0]
-end
-
-function var_0_4.GetBarrageTmpDataFromID(arg_3_0)
-	assert(var_0_3[arg_3_0] ~= nil, "找不到弹幕配置：id = " .. arg_3_0)
-
-	return var_0_3[arg_3_0]
-end
-
-function var_0_4.GetConvertedBarrageTableFromID(arg_4_0, arg_4_1)
-	assert(var_0_3[arg_4_0] ~= nil, "获取转换弹幕数据失败，找不到弹幕原型配置：id = " .. arg_4_0)
-
-	if var_0_4.ConvertedBarrageTableList[arg_4_0] == nil or var_0_4.ConvertedBarrageTableList[arg_4_0][arg_4_1] == nil then
-		var_0_4.ConvertSpecificBarrage(arg_4_0, arg_4_1)
-	end
-
-	return var_0_4.ConvertedBarrageTableList[arg_4_0]
-end
-
-function var_0_4.GenerateTransBarrage(arg_5_0, arg_5_1, arg_5_2)
+function BattleDataFunction.GenerateTransBarrage(arg_5_0, arg_5_1, arg_5_2)
 	local var_5_0 = {}
-	local var_5_1 = var_0_4.GetBarrageTmpDataFromID(arg_5_0)
+	local var_5_1 = BattleDataFunction.GetBarrageTmpDataFromID(arg_5_0)
 
 	while var_5_1.trans_ID ~= -1 do
 		local var_5_2 = var_5_1.trans_ID
 
-		var_5_1 = var_0_4.GetBarrageTmpDataFromID(var_5_2)
+		var_5_1 = BattleDataFunction.GetBarrageTmpDataFromID(var_5_2)
 
 		local var_5_3 = {
 			transStartDelay = var_5_1.first_delay + var_5_1.delay * arg_5_2 + var_5_1.delta_delay * arg_5_2
@@ -97,188 +100,212 @@ function var_0_4.GenerateTransBarrage(arg_5_0, arg_5_1, arg_5_2)
 	return var_5_0
 end
 
-function var_0_4._createCannonBullet(arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
-	local var_6_0 = var_0_0.Battle.BattleCannonBulletUnit.New(arg_6_0, arg_6_2:GetIFF())
+function BattleDataFunction._createCannonBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleCannonBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_6_0:SetIsCld(true)
+	bullet:SetIsCld(true)
 
-	return var_6_0, true
+	return bullet, true
 end
 
-function var_0_4._createBombBullet(arg_7_0, arg_7_1, arg_7_2, arg_7_3, arg_7_4)
-	local var_7_0 = var_0_0.Battle.BattleBombBulletUnit.New(arg_7_0, arg_7_2:GetIFF())
+function BattleDataFunction._createBombBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleBombBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_7_0:SetAttr(arg_7_2._attr)
-	var_7_0:SetTemplateData(arg_7_1)
+	bullet:SetAttr(host._attr)
+	bullet:SetTemplateData(bulletTemplate)
 
-	if arg_7_4:EqualZero() then
-		arg_7_4 = arg_7_2:GetPosition():Clone()
+	-- 如果目标点是零向量，则根据发射者位置和武器的最大索敌范围(range)，计算一个目标点
+	if targetPos:EqualZero() then
+		targetPos = host:GetPosition():Clone()
 
-		local var_7_1 = arg_7_3:GetTemplateData().range
+		local range = weapon:GetTemplateData().range
 
-		if arg_7_2:GetDirection() == var_0_1.UnitDir.RIGHT then
-			arg_7_4.x = arg_7_4.x + var_7_1
+		if host:GetDirection() == BattleConst.UnitDir.RIGHT then
+			targetPos.x = targetPos.x + range
 		else
-			arg_7_4.x = arg_7_4.x - var_7_1
+			targetPos.x = targetPos.x - range
 		end
 	end
 
-	var_7_0:SetExplodePosition(arg_7_4)
-	var_7_0:SetIsCld(false)
+	bullet:SetExplodePosition(targetPos)
+	bullet:SetIsCld(false)
 
-	return var_7_0, false
+	return bullet, false
 end
 
-function var_0_4._createStrayBullet(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-	local var_8_0 = var_0_0.Battle.BattleStrayBulletUnit.New(arg_8_0, arg_8_2:GetIFF())
+function BattleDataFunction._createStrayBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleStrayBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_8_0:SetIsCld(true)
+	bullet:SetIsCld(true)
 
-	return var_8_0, true
+	return bullet, true
 end
 
-function var_0_4._createTorpedoBullet(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4)
-	local var_9_0 = var_0_0.Battle.BattleTorpedoBulletUnit.New(arg_9_0, arg_9_2:GetIFF())
+function BattleDataFunction._createTorpedoBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleTorpedoBulletUnit.New(bulletUID, host:GetIFF())
+	-- torpedo既有指定爆炸点，也有碰撞检测、
+	-- 实际结算伤害时一般是靠碰撞检测来实现的
+	bullet:SetExplodePosition(targetPos)
+	bullet:SetIsCld(true)
 
-	var_9_0:SetExplodePosition(arg_9_4)
-	var_9_0:SetIsCld(true)
-
-	return var_9_0, true
+	return bullet, true
 end
 
-function var_0_4._createDirectBullet(arg_10_0, arg_10_1, arg_10_2, arg_10_3, arg_10_4)
-	local var_10_0 = var_0_0.Battle.BattleAntiAirBulletUnit.New(arg_10_0, arg_10_2:GetIFF())
+function BattleDataFunction._createDirectBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	-- DirectBullet本质也是BattleAntiAirBulletUnit
+	-- 都用这个类，可能是因为这种子弹用的比较少，不会与其他子弹类型冲突，此外可能这种子弹没有模型
+	local bullet = ys.Battle.BattleAntiAirBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_10_0:SetIsCld(false)
+	bullet:SetIsCld(false)
 
-	return var_10_0, false
+	return bullet, false
 end
 
-function var_0_4._createAntiAirBullet(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4)
-	local var_11_0 = var_0_0.Battle.BattleAntiAirBulletUnit.New(arg_11_0, arg_11_2:GetIFF())
+function BattleDataFunction._createAntiAirBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleAntiAirBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_11_0:SetIsCld(false)
+	bullet:SetIsCld(false)
 
-	return var_11_0, false
+	return bullet, false
 end
 
-function var_0_4._createAntiSeaBullet(arg_12_0, arg_12_1, arg_12_2, arg_12_3, arg_12_4)
-	local var_12_0 = var_0_0.Battle.BattleAntiSeaBulletUnit.New(arg_12_0, arg_12_2:GetIFF())
+function BattleDataFunction._createAntiSeaBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleAntiSeaBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_12_0:SetIsCld(false)
+	bullet:SetIsCld(false)
 
-	return var_12_0, false
+	return bullet, false
 end
 
-function var_0_4._createSharpnelBullet(arg_13_0, arg_13_1, arg_13_2, arg_13_3, arg_13_4)
-	local var_13_0 = var_0_0.Battle.BattleShrapnelBulletUnit.New(arg_13_0, arg_13_2:GetIFF())
+function BattleDataFunction._createSharpnelBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleShrapnelBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_13_0:SetExplodePosition(arg_13_4)
-	var_13_0:SetSrcHost(arg_13_2)
-	var_13_0:SetIsCld(true)
+	bullet:SetExplodePosition(targetPos)
+	bullet:SetSrcHost(host)
+	bullet:SetIsCld(true)
 
-	return var_13_0, true
+	return bullet, true
 end
 
-function var_0_4._createEffectBullet(arg_14_0, arg_14_1, arg_14_2, arg_14_3, arg_14_4)
-	local var_14_0 = var_0_0.Battle.BattleEffectBulletUnit.New(arg_14_0, arg_14_2:GetIFF())
-
-	var_14_0:SetTemplateData(arg_14_1)
-	var_14_0:SetIsCld(false)
-	var_14_0:SetImmuneCLS(true)
-
-	if arg_14_1.attach_buff[1].flare then
-		var_14_0:spawnArea(true)
+function BattleDataFunction._createEffectBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleEffectBulletUnit.New(bulletUID, host:GetIFF())
+	bullet:SetTemplateData(bulletTemplate)
+	bullet:SetIsCld(false)
+	-- CLS指的是斩击等的清除子弹效果，所以ImmuneCLS表示这种子弹不会被清除
+	bullet:SetImmuneCLS(true)
+	-- 对于照明弹的处理
+	if bulletTemplate.attach_buff[1].flare then
+		bullet:spawnArea(true)
 	end
 
-	return var_14_0, false
+	return bullet, false
 end
 
-function var_0_4._createBeamBullet(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
-	local var_15_0 = var_0_0.Battle.BattleAntiAirBulletUnit.New(arg_15_0, arg_15_2:GetIFF())
+function BattleDataFunction._createBeamBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	-- 激光武器逻辑总结：由BattleLaserUnit管理多个BattleBeamUnit，每个BattleBeamUnit对应一个barrage_template和bullet_template组合
+	-- BattleBeamUnit负责激光的生成、发射点位置更新、碰撞检测等
+	-- 实际伤害结算逻辑，是生成一个没有碰撞体的BattleAntiAirBulletUnit来处理的
+	local bullet = ys.Battle.BattleAntiAirBulletUnit.New(bulletUID, host:GetIFF())
+	
+	bullet:SetIsCld(false)
 
-	var_15_0:SetIsCld(false)
-
-	return var_15_0, false
+	return bullet, false
 end
 
-function var_0_4._createGravitationBullet(arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
-	local var_16_0 = var_0_0.Battle.BattleGravitationBulletUnit.New(arg_16_0, arg_16_2:GetIFF())
+function BattleDataFunction._createGravitationBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleGravitationBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_16_0:SetExplodePosition(arg_16_4)
-	var_16_0:SetIsCld(true)
-	var_16_0:SetImmuneCLS(true)
+	bullet:SetExplodePosition(targetPos)
+	bullet:SetIsCld(true)
+	bullet:SetImmuneCLS(true)
 
-	return var_16_0, true
+	return bullet, true
 end
 
-function var_0_4._createMissile(arg_17_0, arg_17_1, arg_17_2, arg_17_3, arg_17_4)
-	local var_17_0 = var_0_0.Battle.BattleMissileUnit.New(arg_17_0, arg_17_2:GetIFF())
+function BattleDataFunction._createMissile(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleMissileUnit.New(bulletUID, host:GetIFF())
 
-	var_17_0:SetAttr(arg_17_2._attr)
-	var_17_0:SetTemplateData(arg_17_1)
-	var_17_0:SetImmuneCLS(true)
-	var_17_0:SetIsCld(false)
+	bullet:SetAttr(host._attr)
+	bullet:SetTemplateData(bulletTemplate)
+	bullet:SetImmuneCLS(true)
+	-- 导弹实际上没有碰撞检测
+	bullet:SetIsCld(false)
 
-	return var_17_0, false
+	return bullet, false
 end
 
-function var_0_4._createSpaceLaser(arg_18_0, arg_18_1, arg_18_2, arg_18_3, arg_18_4)
-	local var_18_0 = var_0_0.Battle.BattleSpaceLaserUnit.New(arg_18_0, arg_18_2:GetIFF())
+function BattleDataFunction._createSpaceLaser(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleSpaceLaserUnit.New(bulletUID, host:GetIFF())
 
-	var_18_0:SetIsCld(true)
-	var_18_0:SetImmuneCLS(true)
+	bullet:SetIsCld(true)
+	bullet:SetImmuneCLS(true)
 
-	return var_18_0, true
+	return bullet, true
 end
 
-function var_0_4._createScaleBullet(arg_19_0, arg_19_1, arg_19_2, arg_19_3, arg_19_4)
-	local var_19_0 = var_0_0.Battle.BattleScaleBulletUnit.New(arg_19_0, arg_19_2:GetIFF())
+function BattleDataFunction._createScaleBullet(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleScaleBulletUnit.New(bulletUID, host:GetIFF())
 
-	var_19_0:SetIsCld(true)
+	bullet:SetIsCld(true)
 
-	return var_19_0, true
+	return bullet, true
 end
 
-function var_0_4._createAAMissile(arg_20_0, arg_20_1, arg_20_2, arg_20_3, arg_20_4)
-	local var_20_0 = var_0_0.Battle.BattleTrackingAAMissileUnit.New(arg_20_0, arg_20_2:GetIFF())
+function BattleDataFunction._createAAMissile(bulletUID, bulletTemplate, host, weapon, targetPos)
+	local bullet = ys.Battle.BattleTrackingAAMissileUnit.New(bulletUID, host:GetIFF())
+	bullet:SetIsCld(true)
 
-	var_20_0:SetIsCld(true)
-
-	return var_20_0, true
+	return bullet, true
 end
 
-var_0_4.generateBulletFuncs = {}
-var_0_4.generateBulletFuncs[var_0_1.BulletType.CANNON] = var_0_4._createCannonBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.BOMB] = var_0_4._createBombBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.TORPEDO] = var_0_4._createTorpedoBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.DIRECT] = var_0_4._createDirectBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.ANTI_AIR] = var_0_4._createAntiAirBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.ANTI_SEA] = var_0_4._createAntiSeaBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.SHRAPNEL] = var_0_4._createSharpnelBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.STRAY] = var_0_4._createStrayBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.EFFECT] = var_0_4._createEffectBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.BEAM] = var_0_4._createBeamBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.G_BULLET] = var_0_4._createGravitationBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.ELECTRIC_ARC] = var_0_4._createDirectBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.MISSILE] = var_0_4._createMissile
-var_0_4.generateBulletFuncs[var_0_1.BulletType.SPACE_LASER] = var_0_4._createSpaceLaser
-var_0_4.generateBulletFuncs[var_0_1.BulletType.SCALE] = var_0_4._createScaleBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.TRIGGER_BOMB] = var_0_4._createBombBullet
-var_0_4.generateBulletFuncs[var_0_1.BulletType.AAMissile] = var_0_4._createAAMissile
+BattleDataFunction.generateBulletFuncs = {}
+-- CANNON(1) -> CreateCannonBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.CANNON] = BattleDataFunction._createCannonBullet
+-- BOMB(2) -> CreateBombBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.BOMB] = BattleDataFunction._createBombBullet
+-- TORPEDO(3) -> CreateTorpedoBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TORPEDO] = BattleDataFunction._createTorpedoBullet
+-- DIRECT(4) -> CreateDirectBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.DIRECT] = BattleDataFunction._createDirectBullet
+-- ANTI_AIR(6) -> CreateAntiAirBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ANTI_AIR] = BattleDataFunction._createAntiAirBullet
+-- ANTI_SEA(7) -> CreateAntiSeaBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ANTI_SEA] = BattleDataFunction._createAntiSeaBullet
+-- SHRAPNEL(5) -> CreateSharpnelBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SHRAPNEL] = BattleDataFunction._createSharpnelBullet
+-- STRAY(8) -> CreateStrayBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.STRAY] = BattleDataFunction._createStrayBullet
+-- EFFECT(9) -> CreateEffectBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.EFFECT] = BattleDataFunction._createEffectBullet
+-- BEAM(10) -> CreateBeamBullet(*实际创建BattleAntiAirBulletUnit负责实际的伤害结算逻辑，因为BattleBeamUnit本质不是子弹单位，不是BattleBulletUnit的子类)
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.BEAM] = BattleDataFunction._createBeamBullet
+-- G_BULLET(11) -> CreateGravitationBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.G_BULLET] = BattleDataFunction._createGravitationBullet
+-- ELECTRIC_ARC(12) -> CreateDirectBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ELECTRIC_ARC] = BattleDataFunction._createDirectBullet
+-- MISSILE(13) -> CreateMissile
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.MISSILE] = BattleDataFunction._createMissile
+-- SPACE_LASER(14) -> CreateSpaceLaser
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SPACE_LASER] = BattleDataFunction._createSpaceLaser
+-- SCALE(15) -> CreateScaleBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SCALE] = BattleDataFunction._createScaleBullet
+-- TRIGGER_BOMB(16) -> CreateBombBullet
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TRIGGER_BOMB] = BattleDataFunction._createBombBullet
+-- AAMissile(17) -> CreateAAMissile
+BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.AAMissile] = BattleDataFunction._createAAMissile
 
-function var_0_4.ConvertSpecificBarrage(arg_21_0, arg_21_1)
+function BattleDataFunction.ConvertSpecificBarrage(barrageID, arg_21_1)
 	local var_21_0
 
-	var_21_0[arg_21_1], var_21_0 = var_0_4.barrageInteration(pg.barrage_template[arg_21_0], arg_21_1), var_0_4.ConvertedBarrageTableList[arg_21_0] or {}
-	var_0_4.ConvertedBarrageTableList[arg_21_0] = var_21_0
+	var_21_0[arg_21_1], var_21_0 = BattleDataFunction.barrageInteration(pg.barrage_template[barrageID], arg_21_1), BattleDataFunction.ConvertedBarrageTableList[barrageID] or {}
+	BattleDataFunction.ConvertedBarrageTableList[barrageID] = var_21_0
 end
 
-function var_0_4.ClearConvertedBarrage()
-	var_0_4.ConvertedBarrageTableList = {}
+function BattleDataFunction.ClearConvertedBarrage()
+	BattleDataFunction.ConvertedBarrageTableList = {}
 end
 
-function var_0_4.barrageInteration(arg_23_0, arg_23_1)
+function BattleDataFunction.barrageInteration(arg_23_0, arg_23_1)
 	local var_23_0 = 1
 	local var_23_1 = arg_23_0.primal_repeat
 	local var_23_2 = {}
@@ -310,4 +337,4 @@ function var_0_4.barrageInteration(arg_23_0, arg_23_1)
 	return var_23_2
 end
 
-var_0_4.ClearConvertedBarrage()
+BattleDataFunction.ClearConvertedBarrage()

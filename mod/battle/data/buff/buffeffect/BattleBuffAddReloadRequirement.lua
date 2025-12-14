@@ -1,102 +1,102 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleAttr
-local var_0_3 = class("BattleBuffAddReloadRequirement", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleAttr = ys.Battle.BattleAttr
+local BattleBuffAddReloadRequirement = class("BattleBuffAddReloadRequirement", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAddReloadRequirement = var_0_3
-var_0_3.__name = "BattleBuffAddReloadRequirement"
+ys.Battle.BattleBuffAddReloadRequirement = BattleBuffAddReloadRequirement
+BattleBuffAddReloadRequirement.__name = "BattleBuffAddReloadRequirement"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddReloadRequirement.Ctor(self, effectData)
+	BattleBuffAddReloadRequirement.super.Ctor(self, effectData)
 end
 
-function var_0_3.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._weaponIndex = arg_2_0._tempData.arg_list.index
-	arg_2_0._weaponType = arg_2_0._tempData.arg_list.type
-	arg_2_0._value = arg_2_0._tempData.arg_list.number or 0
-	arg_2_0._convertAttr = arg_2_0._tempData.arg_list.convert_attr
-	arg_2_0._convertValue = arg_2_0._tempData.arg_list.convert_value
+function BattleBuffAddReloadRequirement.SetArgs(self, owner, buff)
+	self._weaponIndex = self._tempData.arg_list.index
+	self._weaponType = self._tempData.arg_list.type
+	self._value = self._tempData.arg_list.number or 0
+	self._convertAttr = self._tempData.arg_list.convert_attr
+	self._convertValue = self._tempData.arg_list.convert_value
 end
 
-function var_0_3.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = {}
+function BattleBuffAddReloadRequirement.onAttach(self, owner, buff)
+	local targetWeaponList = {}
 
-	if arg_3_0._weaponType then
-		local var_3_1
+	if self._weaponType then
+		local weaponList
 
-		if arg_3_0._weaponType == var_0_1.EquipmentType.POINT_HIT_AND_LOCK then
-			var_3_1 = arg_3_1:GetChargeList()
-		elseif arg_3_0._weaponType == var_0_1.EquipmentType.MANUAL_TORPEDO then
-			var_3_1 = arg_3_1:GetTorpedoList()
-		elseif arg_3_0._weaponType == var_0_1.EquipmentType.INTERCEPT_AIRCRAFT or arg_3_0._weaponType == var_0_1.EquipmentType.STRIKE_AIRCRAFT then
-			var_3_1 = arg_3_1:GetHiveList()
-		elseif arg_3_0._weaponType == var_0_1.EquipmentType.AIR_ASSIST then
-			var_3_1 = arg_3_1:GetAirAssistList()
+		if self._weaponType == BattleConst.EquipmentType.POINT_HIT_AND_LOCK then
+			weaponList = owner:GetChargeList()
+		elseif self._weaponType == BattleConst.EquipmentType.MANUAL_TORPEDO then
+			weaponList = owner:GetTorpedoList()
+		elseif self._weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or self._weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+			weaponList = owner:GetHiveList()
+		elseif self._weaponType == BattleConst.EquipmentType.AIR_ASSIST then
+			weaponList = owner:GetAirAssistList()
 		else
-			var_3_1 = arg_3_1:GetAutoWeapons()
+			weaponList = owner:GetAutoWeapons()
 		end
 
-		if var_3_1 then
-			for iter_3_0, iter_3_1 in ipairs(var_3_1) do
-				var_3_0[#var_3_0 + 1] = iter_3_1
+		if weaponList then
+			for _, weapon in ipairs(weaponList) do
+				targetWeaponList[#targetWeaponList + 1] = weapon
 			end
 		end
-	elseif arg_3_0._weaponIndex then
-		local var_3_2 = arg_3_1:GetTotalWeapon()
+	elseif self._weaponIndex then
+		local totalWeaponList = owner:GetTotalWeapon()
 
-		for iter_3_2, iter_3_3 in ipairs(var_3_2) do
-			if iter_3_3:GetEquipmentIndex() == arg_3_0._weaponIndex then
-				var_3_0[#var_3_0 + 1] = iter_3_3
+		for _, weapon in ipairs(totalWeaponList) do
+			if weapon:GetEquipmentIndex() == self._weaponIndex then
+				targetWeaponList[#targetWeaponList + 1] = weapon
 			end
 		end
 	else
 		assert(false, "BattleBuffAddReloadRequirement：缺少指定类型或索引")
 	end
 
-	for iter_3_4, iter_3_5 in ipairs(var_3_0) do
-		iter_3_5:AppendReloadFactor(arg_3_2, arg_3_0:calcFactor(arg_3_2:GetCaster()))
+	for _, weapon in ipairs(targetWeaponList) do
+		weapon:AppendReloadFactor(buff, self:calcFactor(buff:GetCaster()))
+		-- 计算全部Buff的装填因子的总效果
+		local reloadFactorList = weapon:GetReloadFactorList()
+		local baseReloadFactor = 1
 
-		local var_3_3 = iter_3_5:GetReloadFactorList()
-		local var_3_4 = 1
-
-		for iter_3_6, iter_3_7 in pairs(var_3_3) do
-			var_3_4 = var_3_4 + iter_3_7
+		for _, reloadFactor in pairs(reloadFactorList) do
+			baseReloadFactor = baseReloadFactor + reloadFactor
 		end
 
-		iter_3_5:FlushReloadMax(var_3_4)
+		weapon:FlushReloadMax(baseReloadFactor)
 	end
 
-	arg_3_0._targetWeaponList = var_3_0
+	self._targetWeaponList = targetWeaponList
 end
 
-function var_0_3.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._targetWeaponList) do
-		iter_4_1:RemoveReloadFactor(arg_4_2)
+function BattleBuffAddReloadRequirement.onRemove(self, owner, buff)
+	for _, weapon in ipairs(self._targetWeaponList) do
+		weapon:RemoveReloadFactor(buff)
 
-		local var_4_0 = iter_4_1:GetReloadFactorList()
-		local var_4_1 = 1
+		local reloadFactorList = weapon:GetReloadFactorList()
+		local baseReloadFactor = 1
 
-		for iter_4_2, iter_4_3 in pairs(var_4_0) do
-			var_4_1 = var_4_1 + iter_4_3
+		for _, reloadFactor in pairs(reloadFactorList) do
+			baseReloadFactor = baseReloadFactor + reloadFactor
 		end
 
-		iter_4_1:FlushReloadMax(var_4_1)
+		weapon:FlushReloadMax(baseReloadFactor)
 	end
 end
 
-function var_0_3.calcFactor(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_0._value
-	local var_5_1 = 0
+function BattleBuffAddReloadRequirement.calcFactor(self, owner)
+	local value = self._value
+	local convertedValue = 0
 
-	if arg_5_0._convertAttr == nil then
+	if self._convertAttr == nil then
 		-- block empty
-	elseif arg_5_0._convertAttr == "HPRate" or arg_5_0._convertAttr == "DMGRate" then
-		var_5_1 = var_0_2.GetCurrent(arg_5_1, arg_5_0._convertAttr) * arg_5_0._convertValue
+	elseif self._convertAttr == "HPRate" or self._convertAttr == "DMGRate" then
+		convertedValue = BattleAttr.GetCurrent(owner, self._convertAttr) * self._convertValue
 	else
-		var_5_1 = var_0_2.GetBase(arg_5_1, arg_5_0._convertAttr) * arg_5_0._convertValue
+		convertedValue = BattleAttr.GetBase(owner, self._convertAttr) * self._convertValue
 	end
 
-	return var_5_0 + var_5_1
+	return value + convertedValue
 end

@@ -102,7 +102,7 @@ function BattleSkillEffect.DataEffect(self, caster, target, attachData)
 
 		local function dataEffectFunc()
 			if caster and caster:IsAlive() then
-				self:DoDataEffect(caster, target, caster)
+				self:DoDataEffect(caster, target, attachData)
 			end
 
 			pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
@@ -113,7 +113,7 @@ function BattleSkillEffect.DataEffect(self, caster, target, attachData)
 		timer = pg.TimeMgr.GetInstance():AddBattleTimer("BattleSkill", -1, self._delay, dataEffectFunc, true)
 		self._timerList[newTimerIndex] = timer
 	else
-		self:DoDataEffect(caster, target, caster)
+		self:DoDataEffect(caster, target, attachData)
 	end
 end
 

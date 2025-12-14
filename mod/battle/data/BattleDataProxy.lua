@@ -516,25 +516,28 @@ function BattleDataProxy.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
 	end
 end
 
-function BattleDataProxy.InitUserAidData(arg_26_0)
-	for iter_26_0, iter_26_1 in ipairs(arg_26_0._battleInitData.AidUnitList) do
-		local var_26_0 = arg_26_0:GenerateUnitID()
-		local var_26_1 = iter_26_1.properties
+-- BattleTargetChoise.TargetPlayerAidUnit会使用
+function BattleDataProxy.InitUserAidData(self)
+	for _, aidUnit in ipairs(self._battleInitData.AidUnitList) do
+		local aidUnitUID = self:GenerateUnitID()
+		-- properties大致来自于Ship.getProperties, 也即计算战斗外属性的部分
+		-- 包含的内容只有Ship.PROPERTIES的12项属性
+		local templateData = aidUnit.properties
+		-- 除此之外，还使用援助者的level
+		templateData.level = aidUnit.level
+		templateData.formationID = BattleConfig.FORMATION_ID
+		templateData.id = aidUnit.id
 
-		var_26_1.level = iter_26_1.level
-		var_26_1.formationID = BattleConfig.FORMATION_ID
-		var_26_1.id = iter_26_1.id
-
-		BattleFormulas.AttrFixer(arg_26_0._battleInitData.battleType, var_26_1)
-
-		local var_26_2 = iter_26_1.proficiency or {
+		BattleFormulas.AttrFixer(self._battleInitData.battleType, templateData)
+		-- 效率没什么用，跨队武器不会用到，一般都是1
+		local proficiencyList = aidUnit.proficiency or {
 			1,
 			1,
 			1
 		}
-		local var_26_3 = BattleDataFunction.CreateBattleUnitData(var_26_0, BattleConst.UnitType.PLAYER_UNIT, BattleConfig.FRIENDLY_CODE, iter_26_1.tmpID, iter_26_1.skinId, iter_26_1.equipment, var_26_1, iter_26_1.baseProperties, var_26_2, iter_26_1.baseList, iter_26_1.preloasList)
+		local aidBattleUnit = BattleDataFunction.CreateBattleUnitData(aidUnitUID, BattleConst.UnitType.PLAYER_UNIT, BattleConfig.FRIENDLY_CODE, aidUnit.tmpID, aidUnit.skinId, aidUnit.equipment, templateData, aidUnit.baseProperties, proficiencyList, aidUnit.baseList, aidUnit.preloasList)
 
-		arg_26_0._aidUnitList[var_26_3:GetUniqueID()] = var_26_3
+		self._aidUnitList[aidBattleUnit:GetUniqueID()] = aidBattleUnit
 	end
 end
 
@@ -766,7 +769,7 @@ function BattleDataProxy.updateInit(arg_54_0, arg_54_1)
 
 	arg_54_0.Update = arg_54_0.updateLoop
 end
-
+-- TODO
 function BattleDataProxy.updateLoop(arg_55_0, arg_55_1)
 	arg_55_0.FrameIndex = arg_55_0.FrameIndex + 1
 
@@ -2034,24 +2037,24 @@ function BattleDataProxy.GenerateAircraftID(arg_109_0)
 
 	return arg_109_0._aircraftCount
 end
+-- 被BattleWeaponUnit.Spawn调用，实际构建子弹
+function BattleDataProxy.CreateBulletUnit(self, bulletID, host, weapon, targetPos)
+	local bulletUID = self:GenerateBulletID()
+	local bullet, isCld = BattleDataFunction.CreateBattleBulletData(bulletUID, bulletID, host, weapon, targetPos)
 
-function BattleDataProxy.CreateBulletUnit(arg_110_0, arg_110_1, arg_110_2, arg_110_3, arg_110_4)
-	local var_110_0 = arg_110_0:GenerateBulletID()
-	local var_110_1, var_110_2 = BattleDataFunction.CreateBattleBulletData(var_110_0, arg_110_1, arg_110_2, arg_110_3, arg_110_4)
-
-	if var_110_2 then
-		arg_110_0._cldSystem:InitBulletCld(var_110_1)
+	if isCld then
+		self._cldSystem:InitBulletCld(bullet)
 	end
 
-	local var_110_3, var_110_4 = arg_110_3:GetFixBulletRange()
+	local fixBulletRange, bulletOffsetRange = weapon:GetFixBulletRange()
 
-	if var_110_3 or var_110_4 then
-		var_110_1:FixRange(var_110_3, var_110_4)
+	if fixBulletRange or bulletOffsetRange then
+		bullet:FixRange(fixBulletRange, bulletOffsetRange)
 	end
 
-	arg_110_0._bulletList[var_110_0] = var_110_1
+	self._bulletList[bulletUID] = bullet
 
-	return var_110_1
+	return bullet
 end
 
 function BattleDataProxy.RemoveBulletUnit(arg_111_0, arg_111_1)
@@ -2088,7 +2091,7 @@ function BattleDataProxy.GenerateBulletID(arg_113_0)
 
 	return var_113_0
 end
-
+-- TODO
 function BattleDataProxy.CLSBullet(arg_114_0, arg_114_1, arg_114_2)
 	local var_114_0 = true
 
@@ -2169,31 +2172,31 @@ function BattleDataProxy.SpawnCubeArea(arg_118_0, arg_118_1, arg_118_2, arg_118_
 	return var_118_1
 end
 
-function BattleDataProxy.SpawnLastingColumnArea(arg_119_0, arg_119_1, arg_119_2, arg_119_3, arg_119_4, arg_119_5, arg_119_6, arg_119_7, arg_119_8, arg_119_9, arg_119_10, arg_119_11)
-	arg_119_8 = arg_119_8 or false
+function BattleDataProxy.SpawnLastingColumnArea(self, fieldType, ownerIFF, position, range, lifetime, areaCldFunc, exitCldFunc, friendly, fxID, endFunc, frequent)
+	friendly = friendly or false
 
-	local var_119_0 = arg_119_0:GenerateAreaID()
-	local var_119_1 = ys.Battle.BattleLastingAOEData.New(var_119_0, arg_119_2, arg_119_6, arg_119_7, arg_119_10, arg_119_11)
-	local var_119_2 = Clone(arg_119_3)
+	local aoeID = self:GenerateAreaID()
+	local lastingAoeData = ys.Battle.BattleLastingAOEData.New(aoeID, ownerIFF, areaCldFunc, exitCldFunc, endFunc, frequent)
+	local pos = Clone(position)
 
-	var_119_1:SetPosition(var_119_2)
-	var_119_1:SetRange(arg_119_4)
-	var_119_1:SetAreaType(BattleConst.AreaType.COLUMN)
-	var_119_1:SetLifeTime(arg_119_5)
-	var_119_1:SetFieldType(arg_119_1)
-	var_119_1:SetOpponentAffected(not arg_119_8)
-	arg_119_0:CreateAreaOfEffect(var_119_1)
+	lastingAoeData:SetPosition(pos)
+	lastingAoeData:SetRange(range)
+	lastingAoeData:SetAreaType(BattleConst.AreaType.COLUMN)
+	lastingAoeData:SetLifeTime(lifetime)
+	lastingAoeData:SetFieldType(fieldType)
+	lastingAoeData:SetOpponentAffected(not friendly)
+	self:CreateAreaOfEffect(lastingAoeData)
 
-	if arg_119_9 and arg_119_9 ~= "" then
-		local var_119_3 = {
-			area = var_119_1,
-			FXID = arg_119_9
+	if fxID and fxID ~= "" then
+		local args = {
+			area = lastingAoeData,
+			FXID = fxID
 		}
 
-		arg_119_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, var_119_3))
+		self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, args))
 	end
 
-	return var_119_1
+	return lastingAoeData
 end
 
 function BattleDataProxy.SpawnLastingEllipseArea(arg_120_0, arg_120_1, arg_120_2, arg_120_3, arg_120_4, arg_120_5, arg_120_6, arg_120_7, arg_120_8, arg_120_9, arg_120_10, arg_120_11, arg_120_12)
@@ -2224,36 +2227,36 @@ function BattleDataProxy.SpawnLastingEllipseArea(arg_120_0, arg_120_1, arg_120_2
 	return var_120_1
 end
 
-function BattleDataProxy.SpawnLastingCubeArea(self, fieldType, ownerIFF, areaCenter, areaWidth, areaHeight, lifetime, areaCldFunc, exitCldFunc, isFriend, fxID, endFunc, frequent)
-	isFriend = isFriend or false
+function BattleDataProxy.SpawnLastingCubeArea(self, fieldType, ownerIFF, position, areaWidth, areaHeight, lifetime, areaCldFunc, exitCldFunc, friendly, fxID, endFunc, frequent)
+	friendly = friendly or false
 
 	local aoeID = self:GenerateAreaID()
-	local lastingAOEData = ys.Battle.BattleLastingAOEData.New(aoeID, ownerIFF, areaCldFunc, exitCldFunc, endFunc, frequent)
-	local center = Clone(areaCenter)
+	local lastingAoeData = ys.Battle.BattleLastingAOEData.New(aoeID, ownerIFF, areaCldFunc, exitCldFunc, endFunc, frequent)
+	local pos = Clone(position)
 
-	lastingAOEData:SetPosition(center)
-	lastingAOEData:SetWidth(areaWidth)
-	lastingAOEData:SetHeight(areaHeight)
-	lastingAOEData:SetAreaType(BattleConst.AreaType.CUBE)
-	lastingAOEData:SetLifeTime(lifetime)
-	lastingAOEData:SetFieldType(fieldType)
-	lastingAOEData:SetOpponentAffected(not isFriend)
-	self:CreateAreaOfEffect(lastingAOEData)
+	lastingAoeData:SetPosition(pos)
+	lastingAoeData:SetWidth(areaWidth)
+	lastingAoeData:SetHeight(areaHeight)
+	lastingAoeData:SetAreaType(BattleConst.AreaType.CUBE)
+	lastingAoeData:SetLifeTime(lifetime)
+	lastingAoeData:SetFieldType(fieldType)
+	lastingAoeData:SetOpponentAffected(not friendly)
+	self:CreateAreaOfEffect(lastingAoeData)
 
 	if fxID and fxID ~= "" then
 		local args = {
-			area = lastingAOEData,
+			area = lastingAoeData,
 			FXID = fxID
 		}
 
 		self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, args))
 	end
 
-	return lastingAOEData
+	return lastingAoeData
 end
 
-function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodePos, range, time, isFriend, miss_fx, cldFunc)
-	isFriend = isFriend or false
+function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodePos, range, time, friendly, miss_fx, cldFunc)
+	friendly = friendly or false
 
 	local aoeID = self:GenerateAreaID()
 	local aoeData = ys.Battle.BattleTriggerAOEData.New(aoeID, iff, cldFunc)
@@ -2264,7 +2267,7 @@ function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodeP
 	aoeData:SetAreaType(BattleConst.AreaType.COLUMN)
 	aoeData:SetLifeTime(time)
 	aoeData:SetFieldType(effectField)
-	aoeData:SetOpponentAffected(not isFriend)
+	aoeData:SetOpponentAffected(not friendly)
 	self:CreateAreaOfEffect(aoeData)
 
 	if miss_fx and miss_fx ~= "" then

@@ -36,15 +36,15 @@ function BattleChargeWeaponVO.GetCurrentWeaponIconIndex(self)
 	if currentWeapon == nil then
 		return 1
 	else
-		local var_3_1 = currentWeapon:GetType()
+		local weaponType = currentWeapon:GetType()
 
-		if var_3_1 == EquipmentType.POINT_HIT_AND_LOCK then
+		if weaponType == EquipmentType.POINT_HIT_AND_LOCK then
 			return 1
-		elseif var_3_1 == EquipmentType.MANUAL_MISSILE then
+		elseif weaponType == EquipmentType.MANUAL_MISSILE then
 			return 10
-		elseif var_3_1 == EquipmentType.MANUAL_METEOR then
+		elseif weaponType == EquipmentType.MANUAL_METEOR then
 			return 11
-		elseif var_3_1 == EquipmentType.POINT_AIR_STRIKE then
+		elseif weaponType == EquipmentType.POINT_AIR_STRIKE then
 			return 12
 		end
 	end

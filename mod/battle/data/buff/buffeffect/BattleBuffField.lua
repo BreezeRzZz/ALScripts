@@ -24,11 +24,11 @@ function BattleBuffField.SetArgs(self, owner, buff)
 	-- 这个字段只有致盲Buff用过
 	self._isUpdateAura = arg_list.FAura
 
-	local isFriend = true
+	local friendly = true
 	local targetVarType = type(self._target)
 	-- 如果是敌人，修改变量，以便后续构建对敌人生效的AOE
 	if targetVarType == "string" and self._target == "TargetAllHarm" or targetVarType == "table" and table.contains(self._target, "TargetAllHarm") or targetVarType == "string" and self._target == "TargetAllFoe" or targetVarType == "table" and table.contains(self._target, "TargetAllFoe") then
-		isFriend = false
+		friendly = false
 	end
 
 	local function cldFunc(arg_3_0)
@@ -72,7 +72,7 @@ function BattleBuffField.SetArgs(self, owner, buff)
 	local auraWidth = math.abs(rightFieldBound - leftFieldBound)
 	local auraHeight = math.abs(totalUpperBound - totalLowerBound)
 	--- @type BattleLastingAOEData
-	self._aura = battleDataProxy:SpawnLastingCubeArea(BattleConst.AOEField.SURFACE, owner:GetIFF(), auraCenter, auraWidth, auraHeight, 0, cldFunc, exitCldFunc, isFriend, nil, endFunc, isUpdateAura)
+	self._aura = battleDataProxy:SpawnLastingCubeArea(BattleConst.AOEField.SURFACE, owner:GetIFF(), auraCenter, auraWidth, auraHeight, 0, cldFunc, exitCldFunc, friendly, nil, endFunc, isUpdateAura)
 end
 
 function BattleBuffField.Clear(self)

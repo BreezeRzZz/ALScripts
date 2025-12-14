@@ -135,7 +135,7 @@ function BattleBuffDOT.CalcNumber(self, owner, buff)
 		return math.max(0, math.floor(math.min(currentHP - maxHP * self._minRestHPRatio, finalDOTDMG * buff._stack * BattleAttr.GetCurrent(owner, "repressReduce"))))
 	end
 end
-
+-- orb一般指的是源头，可以是BattleUnit，也可以是BattleBulletUnit等
 function BattleBuffDOT.SetOrb(self, buff, orb, level)
 	self._orb = orb
 	self._level = level

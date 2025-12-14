@@ -572,7 +572,7 @@ local function var_0_2(arg_34_0, arg_34_1)
 		fleetIndex = arg_34_0:getConfig("location")
 	}
 end
-
+-- TODO
 function var_0_0.GenBattleData(arg_35_0)
 	local var_35_0 = {}
 	local var_35_1 = arg_35_0.contextData.system

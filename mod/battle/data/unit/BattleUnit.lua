@@ -229,7 +229,7 @@ function BattleUnit.GetTargetedPriority(self)
 			targetedPriority = -200
 		end
 	else
-		targetedPriority = self:GetTemplate().battle_unit_type
+		targetedPriority = self:GetTemplate().l
 	end
 
 	return targetedPriority
@@ -877,12 +877,12 @@ function BattleUnit.ReduceWeaponMount(arg_83_0, arg_83_1)
 	return
 end
 
-function BattleUnit.CeaseAllWeapon(arg_84_0, arg_84_1)
-	arg_84_0._ceaseFire = arg_84_1
+function BattleUnit.CeaseAllWeapon(self, ceaseFire)
+	self._ceaseFire = ceaseFire
 end
 
-function BattleUnit.IsCease(arg_85_0)
-	return arg_85_0._ceaseFire
+function BattleUnit.IsCease(self)
+	return self._ceaseFire
 end
 
 function BattleUnit.GetAllWeapon(arg_86_0)
@@ -1186,7 +1186,7 @@ function BattleUnit.UpdateMoveLimit(arg_133_0)
 
 	arg_133_0._move:SetStaticState(not var_133_0)
 end
-
+-- TODO
 function BattleUnit.AddBuff(arg_134_0, arg_134_1, arg_134_2)
 	local var_134_0 = arg_134_1:GetID()
 	local var_134_1 = {

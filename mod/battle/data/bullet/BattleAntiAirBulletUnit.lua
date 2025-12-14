@@ -1,34 +1,34 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleAntiAirBulletUnit = class("BattleAntiAirBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleAntiAirBulletUnit.__name = "BattleAntiAirBulletUnit"
+ys.Battle.BattleAntiAirBulletUnit = class("BattleAntiAirBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleAntiAirBulletUnit.__name = "BattleAntiAirBulletUnit"
 
-local var_0_1 = var_0_0.Battle.BattleAntiAirBulletUnit
+local BattleAntiAirBulletUnit = ys.Battle.BattleAntiAirBulletUnit
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_0.Battle.BattleAntiAirBulletUnit.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattleAntiAirBulletUnit.Ctor(self, UID, hostIFF)
+	ys.Battle.BattleAntiAirBulletUnit.super.Ctor(self, UID, hostIFF)
 end
 
-function var_0_1.Update(arg_2_0, arg_2_1)
+function BattleAntiAirBulletUnit.Update(arg_2_0, arg_2_1)
 	return
 end
 
-function var_0_1.IsOutRange(arg_3_0)
+function BattleAntiAirBulletUnit.IsOutRange(arg_3_0)
 	return false
 end
 
-function var_0_1.SetDirectHitUnit(arg_4_0, arg_4_1)
+function BattleAntiAirBulletUnit.SetDirectHitUnit(arg_4_0, arg_4_1)
 	arg_4_0._directHitUnit = arg_4_1
 end
 
-function var_0_1.GetDirectHitUnit(arg_5_0)
+function BattleAntiAirBulletUnit.GetDirectHitUnit(arg_5_0)
 	return arg_5_0._directHitUnit
 end
 
-function var_0_1.Dispose(arg_6_0)
+function BattleAntiAirBulletUnit.Dispose(arg_6_0)
 	arg_6_0._directHitUnit = nil
 
-	var_0_1.super.Dispose(arg_6_0)
+	BattleAntiAirBulletUnit.super.Dispose(arg_6_0)
 end

@@ -245,7 +245,7 @@ end
 function BattlePlayerUnit.GetPriorityWeaponSkin(arg_22_0)
 	return arg_22_0._priorityWeaponSkinID
 end
-
+-- TODO
 function BattlePlayerUnit.AddWeapon(arg_23_0, arg_23_1, arg_23_2, arg_23_3, arg_23_4, arg_23_5, arg_23_6)
 	local var_23_0 = BattleDataFunction.CreateWeaponUnit(arg_23_1, arg_23_0, arg_23_4, arg_23_5)
 
@@ -467,20 +467,20 @@ function BattlePlayerUnit.GetManualWeaponParallel(arg_31_0)
 	return arg_31_0._tmpData.parallel_max
 end
 
-function BattlePlayerUnit.CeaseAllWeapon(arg_32_0, arg_32_1)
-	if arg_32_1 then
-		for iter_32_0, iter_32_1 in ipairs(arg_32_0._totalWeapon) do
-			iter_32_1:Cease()
+function BattlePlayerUnit.CeaseAllWeapon(self, ceaseFire)
+	if ceaseFire then
+		for _, weapon in ipairs(self._totalWeapon) do
+			weapon:Cease()
 		end
 
-		local var_32_0 = arg_32_0._buffList
+		local buffList = self._buffList
 
-		for iter_32_2, iter_32_3 in pairs(var_32_0) do
-			iter_32_3:Interrupt()
+		for _, buff in pairs(buffList) do
+			buff:Interrupt()
 		end
 	end
 
-	BattlePlayerUnit.super.CeaseAllWeapon(arg_32_0, arg_32_1)
+	BattlePlayerUnit.super.CeaseAllWeapon(self, ceaseFire)
 end
 
 function BattlePlayerUnit.LeaderSetting(arg_33_0)
@@ -609,20 +609,20 @@ function BattlePlayerUnit.InitCldComponent(arg_49_0)
 	arg_49_0._cldComponent:SetCldData(var_49_0)
 end
 
-function BattlePlayerUnit.AddPointAirStrike(arg_50_0, arg_50_1, arg_50_2, arg_50_3)
-	local var_50_0 = arg_50_0:AddWeapon(arg_50_1, {}, nil, 1, -1)
+function BattlePlayerUnit.AddPointAirStrike(self, strikeWeaponID, coolDownDuration, initOverheat)
+	local strikeWeapon = self:AddWeapon(strikeWeaponID, {}, nil, 1, -1)
 
-	arg_50_0:GetFleetVO():GetChargeWeaponVO():AppendWeapon(var_50_0)
+	self:GetFleetVO():GetChargeWeaponVO():AppendWeapon(strikeWeapon)
 
-	if arg_50_3 then
-		var_50_0:OverHeat()
-		var_50_0:EnterCoolDown()
+	if initOverheat then
+		strikeWeapon:OverHeat()
+		strikeWeapon:EnterCoolDown()
 	end
 
-	arg_50_0:GetFleetVO():GetChargeWeaponVO():DispatchCountChange()
-	arg_50_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_POINT_AIR_STRIKE, {
-		weapon = var_50_0
+	self:GetFleetVO():GetChargeWeaponVO():DispatchCountChange()
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.CREATE_POINT_AIR_STRIKE, {
+		weapon = strikeWeapon
 	}))
 
-	return var_50_0
+	return strikeWeapon
 end

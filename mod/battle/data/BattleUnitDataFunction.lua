@@ -139,7 +139,7 @@ function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemp
 
 	return unit
 end
-
+-- TODO
 function BattleDataFunction.InitUnitSkill(arg_2_0, arg_2_1, arg_2_2)
 	local var_2_0 = arg_2_0.skills or {}
 

@@ -46,9 +46,11 @@ function BattleLastingAOEData.Settle(self)
 	end
 
 	self.SortCldObjList(cldObjList)
+	-- 此处的func即为areaCldFunc
 	self._cldComponent:GetCldData().func(cldObjList, obj)
 
 	for cldObj, _ in pairs(self._handledList) do
+		-- Settle会检查ImmuneCLD属性，frequentlySettle不会
 		if not existList[cldObj.UID] or cldObj.ImmuneCLD == true then
 			self._exitCldFunc(cldObj)
 

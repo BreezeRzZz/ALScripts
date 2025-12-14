@@ -316,24 +316,24 @@ function BattlePlayerWeaponVO.InitialDeduct(arg_30_0, arg_30_1)
 	arg_30_0:DispatchOverLoadChange()
 end
 
-function BattlePlayerWeaponVO.Charge(arg_31_0, arg_31_1)
-	arg_31_0.deleteElementFromArray(arg_31_1, arg_31_0._overHeatList)
+function BattlePlayerWeaponVO.Charge(self, weapon)
+	self.deleteElementFromArray(weapon, self._overHeatList)
 
-	arg_31_0._chargingList[#arg_31_0._chargingList + 1] = arg_31_1
+	self._chargingList[#self._chargingList + 1] = weapon
 
-	table.sort(arg_31_0._chargingList, function(arg_32_0, arg_32_1)
-		return arg_32_0:GetReloadFinishTimeStamp() < arg_32_1:GetReloadFinishTimeStamp()
+	table.sort(self._chargingList, function(weapon1, weapon2)
+		return weapon1:GetReloadFinishTimeStamp() < weapon2:GetReloadFinishTimeStamp()
 	end)
 
-	if #arg_31_0._readyList == 0 then
-		local var_31_0 = arg_31_0:GetNextTimeStamp()
+	if #self._readyList == 0 then
+		local nextTimeStamp = self:GetNextTimeStamp()
 
-		arg_31_0._max = math.max(arg_31_0._GCD, var_31_0 - pg.TimeMgr.GetInstance():GetCombatTime())
+		self._max = math.max(self._GCD, nextTimeStamp - pg.TimeMgr.GetInstance():GetCombatTime())
 
-		arg_31_0:resetCurrent()
+		self:resetCurrent()
 	end
 
-	arg_31_0:DispatchCountChange()
+	self:DispatchCountChange()
 end
 
 function BattlePlayerWeaponVO.ReloadBoost(arg_33_0, arg_33_1, arg_33_2)

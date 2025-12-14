@@ -479,7 +479,7 @@ function BattleTargetChoise.TargetAllFoe(arg_28_0, arg_28_1, arg_28_2)
 
 	return var_28_0
 end
-
+-- TODO
 function BattleTargetChoise.TargetFoeUncloak(arg_29_0, arg_29_1, arg_29_2)
 	local var_29_0 = {}
 	local var_29_1
@@ -977,15 +977,15 @@ function BattleTargetChoise.TargetPlayerByType(arg_55_0, arg_55_1)
 	return var_55_1
 end
 
-function BattleTargetChoise.TargetPlayerAidUnit(arg_56_0, arg_56_1)
-	local var_56_0 = ys.Battle.BattleDataProxy.GetInstance():GetAidUnit()
-	local var_56_1 = {}
+function BattleTargetChoise.TargetPlayerAidUnit(caster, argList)
+	local aidUnitList = ys.Battle.BattleDataProxy.GetInstance():GetAidUnit()
+	local candidateList = {}
 
-	for iter_56_0, iter_56_1 in pairs(var_56_0) do
-		table.insert(var_56_1, iter_56_1)
+	for _, aidUnit in pairs(aidUnitList) do
+		table.insert(candidateList, aidUnit)
 	end
 
-	return var_56_1
+	return candidateList
 end
 
 function BattleTargetChoise.TargetDamageSource(arg_57_0, arg_57_1, arg_57_2)

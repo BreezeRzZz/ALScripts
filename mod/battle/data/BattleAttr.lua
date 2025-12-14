@@ -672,15 +672,20 @@ function BattleAttr.IsWorldMapRewardAttrWarning(arg_41_0, arg_41_1)
 	return false
 end
 
-function BattleAttr.MonsterAttrFixer(arg_42_0, arg_42_1)
-	if arg_42_0 == SYSTEM_SCENARIO then
-		local var_42_0 = ys.Battle.BattleDataProxy.GetInstance()
-		local var_42_1 = var_42_0:IsCompletelyRepress() and var_42_0:GetRepressLevel() or 0
-		local var_42_2 = BattleAttr.GetCurrent(arg_42_1, "level")
-
-		BattleAttr.SetCurrent(arg_42_1, "formulaLevel", math.max(1, var_42_2 - var_42_1))
-	elseif arg_42_0 == SYSTEM_WORLD then
-		BattleAttr.SetEnemyWorldEnhance(arg_42_1)
+--- @param battleType number
+--- @param monster BattleEnemyUnit
+--- @return nil
+-- 修正怪物属性
+-- 被BattleDataProxy.SpawnMonster调用
+function BattleAttr.MonsterAttrFixer(battleType, monster)
+	if battleType == SYSTEM_SCENARIO then
+		local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+		local maxRepressLevel = battleDataProxy:IsCompletelyRepress() and battleDataProxy:GetRepressLevel() or 0
+		local monsterLevel = BattleAttr.GetCurrent(monster, "level")
+		-- 当安全海域时，怪物等级按压制等级降低
+		BattleAttr.SetCurrent(monster, "formulaLevel", math.max(1, monsterLevel - maxRepressLevel))
+	elseif battleType == SYSTEM_WORLD then
+		BattleAttr.SetEnemyWorldEnhance(monster)
 	end
 end
 

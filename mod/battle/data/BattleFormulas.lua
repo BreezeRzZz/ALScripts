@@ -194,6 +194,11 @@ function BattleFormulas.CreateContextCalculateDamage(inWorld)
 		local num10000 = bfConsts.NUM10000
 		local dRate = bfConsts.DRATE
 		local accuracyConst = bfConsts.ACCURACY
+		-- 此处若有跨队的standHost，则使用standHost的属性
+		-- 在下面的部分影响的内容有：
+			-- levelDiff
+			-- 命中、暴击计算
+			-- bullet.GetWeaponAtkAttr()
 		local weaponHostAttr = bullet:GetWeaponHostAttr()
 		local weapon = bullet:GetWeapon()
 		local weaponTemplate = bullet:GetWeaponTempData()
@@ -374,7 +379,7 @@ function BattleFormulas.CreateContextCalculateDamage(inWorld)
 	end
 end
 
---- @param orb BattleUnit
+--- @param bullet BattleBulletUnit
 --- @param igniteAttribute string
 --- @param igniteCoefficient number
 --- @return number
@@ -382,13 +387,12 @@ end
 --- 这个伤害还需要加上DOTBuff的number参数等
 	--- 关于参数orb:
 	--- - 从调用来看传入的是_orb，来源于caster，caster明显是一个unit
-	--- - BattleBulletUnit有GetWeapon()方法，但没有_attr
-	--- - 一般来说BattleUnit有_attr
+	--- - BattleBulletUnit有GetWeapon()方法，也能通过BattleBulletUnit.SetAttr设置属性（使用host属性，详见BattleDataFunction.CreateBattleBulletData)
 	--- - 待后续研究
-function BattleFormulas.CalculateIgniteDamage(orb, igniteAttribute, igniteCoefficient)
-	local attrs = orb._attr
+function BattleFormulas.CalculateIgniteDamage(bullet, igniteAttribute, igniteCoefficient)
+	local attrs = bullet._attr
 
-	return orb:GetWeapon():GetCorrectedDMG() * (1 + attrs[igniteAttribute] * bfConsts.PERCENT) * igniteCoefficient
+	return bullet:GetWeapon():GetCorrectedDMG() * (1 + attrs[igniteAttribute] * bfConsts.PERCENT) * igniteCoefficient
 end
 
 --- @param weapon BattleWeaponUnit 
@@ -580,7 +584,6 @@ function BattleFormulas.CalculateDamageFromSubmarinToMainShip(attacker, target)
 	local targetFormulaLevel = BattleAttr.GetCurrent(target, "formulaLevel")
 	local targetInjureRatio = BattleAttr.GetCurrent(target, "injureRatio")
 	local submarineKamikazeParams = bfConsts.SUBMARINE_KAMIKAZE
-
 	-- submarineKamikazeParams[1] = 80
 	-- submarineKamikazeParams[2] = 3.5
 	-- submarineKamikazeParams[3] = 1.5

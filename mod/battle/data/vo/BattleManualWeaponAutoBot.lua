@@ -3,7 +3,7 @@ ys = ys or {}
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleConfig
 local var_0_2 = var_0_0.Battle.BattleVariable
-
+-- TODO
 var_0_0.Battle.BattleManualWeaponAutoBot = class("BattleManualWeaponAutoBot")
 var_0_0.Battle.BattleManualWeaponAutoBot.__name = "BattleManualWeaponAutoBot"
 

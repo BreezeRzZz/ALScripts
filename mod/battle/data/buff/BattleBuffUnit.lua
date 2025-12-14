@@ -347,9 +347,9 @@ function BattleBuffUnit.GetBuffStartTime(arg_28_0)
 	return arg_28_0._buffStartTimeStamp
 end
 
-function BattleBuffUnit.Interrupt(arg_29_0)
-	for iter_29_0, iter_29_1 in ipairs(arg_29_0._effectList) do
-		iter_29_1:Interrupt()
+function BattleBuffUnit.Interrupt(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Interrupt()
 	end
 end
 

@@ -1,55 +1,55 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAura", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffAura = class("BattleBuffAura", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAura = var_0_1
-var_0_1.__name = "BattleBuffAura"
+ys.Battle.BattleBuffAura = BattleBuffAura
+BattleBuffAura.__name = "BattleBuffAura"
 
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAura.Ctor(self, effectData)
+	BattleBuffAura.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._buffLevel = arg_2_2:GetLv()
+function BattleBuffAura.SetArgs(self, owner, buff)
+	self._buffLevel = buff:GetLv()
 
-	local var_2_0 = arg_2_0._tempData.arg_list
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._auraRange = var_2_0.cld_data.box.range
-	arg_2_0._buffID = var_2_0.buff_id
-	arg_2_0._friendly = var_2_0.friendly_fire or false
+	self._auraRange = arg_list.cld_data.box.range
+	self._buffID = arg_list.buff_id
+	self._friendly = arg_list.friendly_fire or false
 
-	local var_2_1, var_2_2, var_2_3 = arg_2_0:getAreaCldFunc(arg_2_1)
+	local areaCldFunc, exitCldFunc, endFunc = self:getAreaCldFunc(owner)
 
-	arg_2_0._aura = var_0_0.Battle.BattleDataProxy.GetInstance():SpawnLastingColumnArea(var_0_2.AOEField.SURFACE, arg_2_1:GetIFF(), arg_2_1:GetPosition(), arg_2_0._auraRange, 0, var_2_1, var_2_2, arg_2_0._friendly, nil, var_2_3, false)
-	arg_2_0._angle = var_2_0.cld_data.angle
+	self._aura = ys.Battle.BattleDataProxy.GetInstance():SpawnLastingColumnArea(BattleConst.AOEField.SURFACE, owner:GetIFF(), owner:GetPosition(), self._auraRange, 0, areaCldFunc, exitCldFunc, self._friendly, nil, endFunc, false)
+	self._angle = arg_list.cld_data.angle
 
-	if arg_2_0._angle then
-		arg_2_0._aura:SetSectorAngle(arg_2_0._angle, arg_2_1:GetDirection())
+	if self._angle then
+		self._aura:SetSectorAngle(self._angle, owner:GetDirection())
 	end
+	-- 跟随移动的AOE? 可能是跟随owner移动
+	local mobillizedAOE = ys.Battle.BattleAOEMobilizedComponent.New(self._aura)
 
-	local var_2_4 = var_0_0.Battle.BattleAOEMobilizedComponent.New(arg_2_0._aura)
-
-	var_2_4:SetReferenceUnit(arg_2_1)
-	var_2_4:ConfigData(var_2_4.FOLLOW)
+	mobillizedAOE:SetReferenceUnit(owner)
+	mobillizedAOE:ConfigData(mobillizedAOE.FOLLOW)
 end
 
-function var_0_1.getAreaCldFunc(arg_3_0, arg_3_1)
-	local function var_3_0(arg_4_0)
-		local var_4_0 = arg_3_0:getTargetList(arg_3_1, {
+function BattleBuffAura.getAreaCldFunc(self, owner)
+	local function areaCldFunc(cldObjList)
+		local candidateList = self:getTargetList(owner, {
 			"TargetEntityUnit"
 		})
 
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-			if iter_4_1.Active then
-				for iter_4_2, iter_4_3 in ipairs(var_4_0) do
-					if iter_4_3:GetUniqueID() == iter_4_1.UID then
-						local var_4_1 = var_0_0.Battle.BattleBuffUnit.New(arg_3_0._buffID, arg_3_0._buffLevel, arg_3_0._caster)
+		for _, cldObj in ipairs(cldObjList) do
+			if cldObj.Active then
+				for _, candidate in ipairs(candidateList) do
+					if candidate:GetUniqueID() == cldObj.UID then
+						local buff = ys.Battle.BattleBuffUnit.New(self._buffID, self._buffLevel, self._caster)
 
-						iter_4_3:AddBuff(var_4_1, true)
+						candidate:AddBuff(buff, true)
 
 						break
 					end
@@ -58,15 +58,15 @@ function var_0_1.getAreaCldFunc(arg_3_0, arg_3_1)
 		end
 	end
 
-	local function var_3_1(arg_5_0)
-		if arg_5_0.Active then
-			local var_5_0 = arg_3_0:getTargetList(arg_3_1, {
+	local function exitCldFunc(cldObj)
+		if cldObj.Active then
+			local candidateList = self:getTargetList(owner, {
 				"TargetEntityUnit"
 			})
 
-			for iter_5_0, iter_5_1 in ipairs(var_5_0) do
-				if iter_5_1:GetUniqueID() == arg_5_0.UID then
-					iter_5_1:RemoveBuff(arg_3_0._buffID, true)
+			for _, candidate in ipairs(candidateList) do
+				if candidate:GetUniqueID() == cldObj.UID then
+					candidate:RemoveBuff(self._buffID, true)
 
 					break
 				end
@@ -74,15 +74,15 @@ function var_0_1.getAreaCldFunc(arg_3_0, arg_3_1)
 		end
 	end
 
-	local function var_3_2(arg_6_0)
-		if arg_6_0.Active then
-			local var_6_0 = arg_3_0:getTargetList(arg_3_1, {
+	local function endFunc(cldObj)
+		if cldObj.Active then
+			local candidateList = self:getTargetList(owner, {
 				"TargetEntityUnit"
 			})
 
-			for iter_6_0, iter_6_1 in ipairs(var_6_0) do
-				if iter_6_1:GetUniqueID() == arg_6_0.UID then
-					iter_6_1:RemoveBuff(arg_3_0._buffID, true)
+			for _, candidate in ipairs(candidateList) do
+				if candidate:GetUniqueID() == cldObj.UID then
+					candidate:RemoveBuff(self._buffID, true)
 
 					break
 				end
@@ -90,13 +90,13 @@ function var_0_1.getAreaCldFunc(arg_3_0, arg_3_1)
 		end
 	end
 
-	return var_3_0, var_3_1, var_3_2
+	return areaCldFunc, exitCldFunc, endFunc
 end
 
-function var_0_1.Clear(arg_7_0)
-	arg_7_0._aura:SetActiveFlag(false)
+function BattleBuffAura.Clear(self)
+	self._aura:SetActiveFlag(false)
 
-	arg_7_0._aura = nil
+	self._aura = nil
 
-	var_0_1.super.Clear(arg_7_0)
+	BattleBuffAura.super.Clear(self)
 end
