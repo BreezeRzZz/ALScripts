@@ -470,6 +470,8 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 	attr.barrageCounterMod = 1
 	attr.TargetChoise = {}
 	attr.guardian = {}
+	attr.injureRatioKamikazeAir = 1
+	attr.injureRatioKamikazeShip = 1
 
 	BattleAttr.SetBaseAttr(playerUnit)
 end

@@ -545,7 +545,7 @@ function BattleFormulas.CalculateDamageFromAircraftToMainShip(attacker, target)
 	-- planeLeakRate[12] = 1
 	local damage = math.max(planeLeakRate[1], math.floor((attackerCrashDMG * (planeLeakRate[2] + attackerAirPower * planeLeakRate[3]) + attackerFormulaLevel * planeLeakRate[4]) * (attackerHPRate * planeLeakRate[5] + planeLeakRate[6]) * (planeLeakRate[7] + (attackerFormulaLevel - targetFormulaLevel) * planeLeakRate[8]) * (planeLeakRate[9] / (targetAntiAirPower + planeLeakRate[10])) * (planeLeakRate[11] + targetInjureRatio) * (planeLeakRate[12] + targetInjureRatioByAir)))
 
-	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce")))
+	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce") * BattleAttr.GetCurrent(target, "injureRatioKamikazeAir")))
 end
 
 
@@ -570,7 +570,7 @@ function BattleFormulas.CalculateDamageFromShipToMainShip(attacker, target)
 	-- leakRate[7] = 0.5
 	local damage = math.max(leakRate[1], math.floor(((attackerCannonPower + attackerTorpedoPower) * leakRate[2] + attackerFormulaLevel * leakRate[7]) * (leakRate[5] + targetInjureRatio) * (attackerHPRate * leakRate[3] + leakRate[4]) * (leakRate[5] + (attackerFormulaLevel - targetFormulaLevel) * leakRate[6])))
 
-	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce")))
+	return (math.floor(damage * BattleAttr.GetCurrent(target, "repressReduce") * BattleAttr.GetCurrent(target, "injureRatioKamikazeShip")))
 end
 
 --- @param attacker BattleEnemyUnit

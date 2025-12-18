@@ -912,4 +912,8 @@ function ShipBluePrint.isUnlockShipPhantom(arg_79_0)
 	return arg_79_0:isFetched() and var_79_0 <= getProxy(BayProxy):getShipById(arg_79_0.shipId).level
 end
 
+function var_0_0.IsFate(arg_80_0)
+	return #arg_80_0:getConfig("fate_strengthen") > 0
+end
+
 return ShipBluePrint

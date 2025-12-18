@@ -189,7 +189,7 @@ end
 function BattleAOEData.SetAreaType(arg_34_0, arg_34_1)
 	arg_34_0._areaType = arg_34_1
 
-	arg_34_0:InitCldComponent()
+	arg_35_0:InitCldComponent()
 end
 
 function BattleAOEData.SetDiveFilter(arg_35_0, arg_35_1)
@@ -212,6 +212,10 @@ function BattleAOEData.SetLifeTime(arg_39_0, arg_39_1)
 	arg_39_0._lifeTime = arg_39_1
 end
 
+function BattleAOEData.SetSource(arg_41_0, arg_41_1)
+	arg_41_0._source = arg_41_1
+end
+
 function BattleAOEData.SetHeight(arg_40_0, arg_40_1)
 	arg_40_0._height = arg_40_1
 end
@@ -232,23 +236,23 @@ function BattleAOEData.SetSectorAngle(arg_44_0, arg_44_1, arg_44_2)
 	arg_44_0._sectorAngle = arg_44_1
 	arg_44_0._sectorDir = arg_44_2
 
-	local var_44_0 = arg_44_0._sectorAngle / 2
+	local var_46_0 = arg_46_0._sectorAngle / 2
 
-	arg_44_0._upperEdge = math.deg2Rad * var_44_0
-	arg_44_0._lowerEdge = -1 * arg_44_0._upperEdge
+	arg_46_0._upperEdge = math.deg2Rad * var_46_0
+	arg_46_0._lowerEdge = -1 * arg_46_0._upperEdge
 
-	local var_44_1 = 0
+	local var_46_1 = 0
 
-	if arg_44_2 == var_0_1.UnitDir.LEFT then
-		arg_44_0._normalizeOffset = math.pi - var_44_1
-	elseif arg_44_2 == var_0_1.UnitDir.RIGHT then
-		arg_44_0._normalizeOffset = var_44_1
+	if arg_46_2 == var_0_1.UnitDir.LEFT then
+		arg_46_0._normalizeOffset = math.pi - var_46_1
+	elseif arg_46_2 == var_0_1.UnitDir.RIGHT then
+		arg_46_0._normalizeOffset = var_46_1
 	end
 
-	arg_44_0._wholeCircle = math.pi - arg_44_0._normalizeOffset
-	arg_44_0._negativeCircle = -math.pi - arg_44_0._normalizeOffset
-	arg_44_0._wholeCircleNormalizeOffset = arg_44_0._normalizeOffset - math.pi * 2
-	arg_44_0._negativeCircleNormalizeOffset = arg_44_0._normalizeOffset + math.pi * 2
+	arg_46_0._wholeCircle = math.pi - arg_46_0._normalizeOffset
+	arg_46_0._negativeCircle = -math.pi - arg_46_0._normalizeOffset
+	arg_46_0._wholeCircleNormalizeOffset = arg_46_0._normalizeOffset - math.pi * 2
+	arg_46_0._negativeCircleNormalizeOffset = arg_46_0._normalizeOffset + math.pi * 2
 end
 
 function BattleAOEData.SetAnchorPointAlignment(arg_45_0, arg_45_1)
@@ -282,15 +286,15 @@ function BattleAOEData.InitCldComponent(arg_50_0)
 		arg_50_0._cldComponent = var_0_0.Battle.BattleColumnCldComponent.New(arg_50_0._range, arg_50_0._tickness)
 	end
 
-	local var_50_0 = {
+	local var_52_0 = {
 		type = var_0_1.CldType.AOE,
-		UID = arg_50_0:GetUniqueID(),
-		IFF = arg_50_0:GetIFF(),
-		func = arg_50_0:GetCldFunc()
+		UID = arg_52_0:GetUniqueID(),
+		IFF = arg_52_0:GetIFF(),
+		func = arg_52_0:GetCldFunc()
 	}
 
-	arg_50_0._cldComponent:SetCldData(var_50_0)
-	arg_50_0._cldComponent:SetActive(true)
+	arg_52_0._cldComponent:SetCldData(var_52_0)
+	arg_52_0._cldComponent:SetActive(true)
 end
 
 function BattleAOEData.GetCldComponent(arg_51_0)
@@ -362,18 +366,18 @@ function BattleAOEData.IsOutOfAngle(arg_57_0, arg_57_1)
 	if not arg_57_0._sectorAngle or arg_57_0._sectorAngle >= 360 then
 		return false
 	else
-		local var_57_0 = arg_57_1:GetPosition()
-		local var_57_1 = math.atan2(var_57_0.z - arg_57_0._pos.z, var_57_0.x - arg_57_0._pos.x)
+		local var_59_0 = arg_59_1:GetPosition()
+		local var_59_1 = math.atan2(var_59_0.z - arg_59_0._pos.z, var_59_0.x - arg_59_0._pos.x)
 
-		if var_57_1 > arg_57_0._wholeCircle then
-			var_57_1 = var_57_1 + arg_57_0._wholeCircleNormalizeOffset
-		elseif var_57_1 < arg_57_0._negativeCircle then
-			var_57_1 = var_57_1 + arg_57_0._negativeCircleNormalizeOffset
+		if var_59_1 > arg_59_0._wholeCircle then
+			var_59_1 = var_59_1 + arg_59_0._wholeCircleNormalizeOffset
+		elseif var_59_1 < arg_59_0._negativeCircle then
+			var_59_1 = var_59_1 + arg_59_0._negativeCircleNormalizeOffset
 		else
-			var_57_1 = var_57_1 + arg_57_0._normalizeOffset
+			var_59_1 = var_59_1 + arg_59_0._normalizeOffset
 		end
 
-		if var_57_1 > arg_57_0._lowerEdge and var_57_1 < arg_57_0._upperEdge then
+		if var_59_1 > arg_59_0._lowerEdge and var_59_1 < arg_59_0._upperEdge then
 			return false
 		else
 			return true

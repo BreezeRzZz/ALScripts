@@ -2186,6 +2186,14 @@ function BattleDataProxy.CLSMinion(arg_116_0)
 	end
 end
 
+function var_0_9.CLSAOE(arg_117_0)
+	for iter_117_0, iter_117_1 in pairs(arg_117_0._AOEList) do
+		if iter_117_1:GetSource() == iter_117_1.SOURCE_BULLET_9 then
+			arg_117_0:RemoveAreaOfEffect(iter_117_0)
+		end
+	end
+end
+
 function BattleDataProxy.SpawnColumnArea(arg_117_0, arg_117_1, arg_117_2, arg_117_3, arg_117_4, arg_117_5, arg_117_6, arg_117_7, arg_117_8)
 	arg_117_7 = arg_117_7 or false
 
@@ -2217,7 +2225,7 @@ function BattleDataProxy.SpawnCubeArea(arg_118_0, arg_118_1, arg_118_2, arg_118_
 	var_118_1:SetAreaType(BattleConst.AreaType.CUBE)
 	var_118_1:SetLifeTime(arg_118_6)
 	var_118_1:SetFieldType(arg_118_1)
-	var_118_1:SetOpponentAffected(not arg_118_8)
+	var_118_1:SetOpponentAffected(not arg_118_7)
 	arg_118_0:CreateAreaOfEffect(var_118_1)
 
 	return var_118_1
@@ -2263,13 +2271,13 @@ function BattleDataProxy.SpawnLastingEllipseArea(arg_120_0, arg_120_1, arg_120_2
 	var_120_1:SetAreaType(BattleConst.AreaType.ELLIPSE)
 	var_120_1:SetLifeTime(arg_120_6)
 	var_120_1:SetFieldType(arg_120_1)
-	var_120_1:SetOpponentAffected(not arg_120_9)
+	var_120_1:SetOpponentAffected(not arg_120_8)
 	arg_120_0:CreateAreaOfEffect(var_120_1)
 
-	if arg_120_10 and arg_120_10 ~= "" then
+	if arg_120_9 and arg_120_9 ~= "" then
 		local var_120_3 = {
 			area = var_120_1,
-			FXID = arg_120_10
+			FXID = arg_120_9
 		}
 
 		arg_120_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, var_120_3))
@@ -2336,20 +2344,20 @@ end
 function BattleDataProxy.CreateAreaOfEffect(arg_123_0, arg_123_1)
 	arg_123_0._AOEList[arg_123_1:GetUniqueID()] = arg_123_1
 
-	arg_123_0._cldSystem:InitAOECld(arg_123_1)
-	arg_123_1:StartTimer()
+	arg_124_0._cldSystem:InitAOECld(arg_124_1)
+	arg_124_1:StartTimer()
 end
 
 function BattleDataProxy.RemoveAreaOfEffect(arg_124_0, arg_124_1)
 	local var_124_0 = arg_124_0._AOEList[arg_124_1]
 
-	if not var_124_0 then
+	if not var_125_0 then
 		return
 	end
 
-	var_124_0:Dispose()
+	var_125_0:Dispose()
 
-	arg_124_0._AOEList[arg_124_1] = nil
+	arg_125_0._AOEList[arg_125_1] = nil
 
 	arg_124_0._cldSystem:DeleteAOECld(var_124_0)
 	arg_124_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AREA, {
@@ -2364,35 +2372,35 @@ end
 function BattleDataProxy.GenerateAreaID(arg_126_0)
 	arg_126_0._AOECount = arg_126_0._AOECount + 1
 
-	return arg_126_0._AOECount
+	return arg_127_0._AOECount
 end
 
 function BattleDataProxy.SpawnWall(arg_127_0, arg_127_1, arg_127_2, arg_127_3, arg_127_4)
 	local var_127_0 = arg_127_0:GenerateWallID()
 	local var_127_1 = ys.Battle.BattleWallData.New(var_127_0, arg_127_1, arg_127_2, arg_127_3, arg_127_4)
 
-	arg_127_0._wallList[var_127_0] = var_127_1
+	arg_128_0._wallList[var_128_0] = var_128_1
 
-	arg_127_0._cldSystem:InitWallCld(var_127_1)
+	arg_128_0._cldSystem:InitWallCld(var_128_1)
 
-	return var_127_1
+	return var_128_1
 end
 
 function BattleDataProxy.RemoveWall(arg_128_0, arg_128_1)
 	local var_128_0 = arg_128_0._wallList[arg_128_1]
 
-	arg_128_0._wallList[arg_128_1] = nil
+	arg_129_0._wallList[arg_129_1] = nil
 
-	arg_128_0._cldSystem:DeleteWallCld(var_128_0)
+	arg_129_0._cldSystem:DeleteWallCld(var_129_0)
 end
 
 function BattleDataProxy.SpawnShelter(arg_129_0, arg_129_1, arg_129_2)
 	local var_129_0 = arg_129_0:GernerateShelterID()
 	local var_129_1 = ys.Battle.BattleShelterData.New(var_129_0)
 
-	arg_129_0._shelterList[var_129_0] = var_129_1
+	arg_130_0._shelterList[var_130_0] = var_130_1
 
-	return var_129_1
+	return var_130_1
 end
 
 function BattleDataProxy.RemoveShelter(arg_130_0, arg_130_1)
@@ -2404,7 +2412,7 @@ function BattleDataProxy.RemoveShelter(arg_130_0, arg_130_1)
 	arg_130_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_SHELTER, var_130_1))
 	var_130_0:Deactive()
 
-	arg_130_0._shelterList[arg_130_1] = nil
+	arg_131_0._shelterList[arg_131_1] = nil
 end
 
 function BattleDataProxy.GetWallList(arg_131_0)
@@ -2414,45 +2422,45 @@ end
 function BattleDataProxy.GenerateWallID(arg_132_0)
 	arg_132_0._wallIndex = arg_132_0._wallIndex + 1
 
-	return arg_132_0._wallIndex
+	return arg_133_0._wallIndex
 end
 
 function BattleDataProxy.GernerateShelterID(arg_133_0)
 	arg_133_0._shelterIndex = arg_133_0._shelterIndex + 1
 
-	return arg_133_0._shelterIndex
+	return arg_134_0._shelterIndex
 end
 
 function BattleDataProxy.SpawnEnvironment(arg_134_0, arg_134_1)
 	local var_134_0 = arg_134_0:GernerateEnvironmentID()
 	local var_134_1 = ys.Battle.BattleEnvironmentUnit.New(var_134_0, BattleConfig.FOE_CODE)
 
-	var_134_1:SetTemplate(arg_134_1)
+	var_135_1:SetTemplate(arg_135_1)
 
-	local var_134_2 = var_134_1:GetBehaviours()
-	local var_134_3 = Vector3(arg_134_1.coordinate[1], arg_134_1.coordinate[2], arg_134_1.coordinate[3])
+	local var_135_2 = var_135_1:GetBehaviours()
+	local var_135_3 = Vector3(arg_135_1.coordinate[1], arg_135_1.coordinate[2], arg_135_1.coordinate[3])
 
-	local function var_134_4(arg_135_0)
-		local var_135_0 = {}
+	local function var_135_4(arg_136_0)
+		local var_136_0 = {}
 
-		for iter_135_0, iter_135_1 in ipairs(arg_135_0) do
-			if iter_135_1.Active then
-				local var_135_1 = arg_134_0._unitList[iter_135_1.UID]
+		for iter_136_0, iter_136_1 in ipairs(arg_136_0) do
+			if iter_136_1.Active then
+				local var_136_1 = arg_135_0._unitList[iter_136_1.UID]
 
-				if not var_135_1:IsSpectre() then
-					table.insert(var_135_0, var_135_1)
+				if not var_136_1:IsSpectre() then
+					table.insert(var_136_0, var_136_1)
 				end
 			end
 		end
 
-		var_134_1:UpdateFrequentlyCollide(var_135_0)
+		var_135_1:UpdateFrequentlyCollide(var_136_0)
 	end
 
-	local function var_134_5()
+	local function var_135_5()
 		return
 	end
 
-	local function var_134_6()
+	local function var_135_6()
 		return
 	end
 
@@ -2461,32 +2469,32 @@ function BattleDataProxy.SpawnEnvironment(arg_134_0, arg_134_1)
 	local var_134_9 = 0
 	local var_134_10
 
-	if #arg_134_1.cld_data == 1 then
-		local var_134_11 = arg_134_1.cld_data[1]
+	if #arg_135_1.cld_data == 1 then
+		local var_135_11 = arg_135_1.cld_data[1]
 
-		var_134_10 = arg_134_0:SpawnLastingColumnArea(var_134_7, var_134_8, var_134_3, var_134_11, var_134_9, var_134_4, var_134_5, false, arg_134_1.prefab, var_134_6, true)
+		var_135_10 = arg_135_0:SpawnLastingColumnArea(var_135_7, var_135_8, var_135_3, var_135_11, var_135_9, var_135_4, var_135_5, false, arg_135_1.prefab, var_135_6, true)
 	else
-		local var_134_12 = arg_134_1.cld_data[1]
-		local var_134_13 = arg_134_1.cld_data[2]
+		local var_135_12 = arg_135_1.cld_data[1]
+		local var_135_13 = arg_135_1.cld_data[2]
 
-		var_134_10 = arg_134_0:SpawnLastingCubeArea(var_134_7, var_134_8, var_134_3, var_134_12, var_134_13, var_134_9, var_134_4, var_134_5, false, arg_134_1.prefab, var_134_6, true)
+		var_135_10 = arg_135_0:SpawnLastingCubeArea(var_135_7, var_135_8, var_135_3, var_135_12, var_135_13, var_135_9, var_135_4, var_135_5, false, arg_135_1.prefab, var_135_6, true)
 	end
 
-	var_134_1:SetAOEData(var_134_10)
+	var_135_1:SetAOEData(var_135_10)
 
-	arg_134_0._environmentList[var_134_0] = var_134_1
+	arg_135_0._environmentList[var_135_0] = var_135_1
 
-	return var_134_1
+	return var_135_1
 end
 
 function BattleDataProxy.RemoveEnvironment(arg_138_0, arg_138_1)
 	local var_138_0 = arg_138_0._environmentList[arg_138_1]
 	local var_138_1 = var_138_0:GetAOEData()
 
-	arg_138_0:RemoveAreaOfEffect(var_138_1:GetUniqueID())
-	var_138_0:Dispose()
+	arg_139_0:RemoveAreaOfEffect(var_139_1:GetUniqueID())
+	var_139_0:Dispose()
 
-	arg_138_0._environmentList[arg_138_1] = nil
+	arg_139_0._environmentList[arg_139_1] = nil
 end
 
 function BattleDataProxy.DispatchWarning(arg_139_0, arg_139_1, arg_139_2)
@@ -2502,7 +2510,7 @@ end
 function BattleDataProxy.GernerateEnvironmentID(arg_141_0)
 	arg_141_0._environmentIndex = arg_141_0._environmentIndex + 1
 
-	return arg_141_0._environmentIndex
+	return arg_142_0._environmentIndex
 end
 
 function BattleDataProxy.SpawnEffect(arg_142_0, arg_142_1, arg_142_2, arg_142_3)
@@ -2517,8 +2525,7 @@ function BattleDataProxy.SpawnUIFX(arg_143_0, arg_143_1, arg_143_2, arg_143_3, a
 	arg_143_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UI_FX, {
 		FXID = arg_143_1,
 		position = arg_143_2,
-		localScale = arg_143_3,
-		orderDiff = arg_143_4
+		localScale = arg_143_3
 	}))
 end
 
@@ -2554,8 +2561,8 @@ end
 function BattleDataProxy.BlockManualCast(arg_149_0, arg_149_1)
 	local var_149_0 = arg_149_1 and 1 or -1
 
-	for iter_149_0, iter_149_1 in pairs(arg_149_0._fleetList) do
-		iter_149_1:SetWeaponBlock(var_149_0)
+	for iter_150_0, iter_150_1 in pairs(arg_150_0._fleetList) do
+		iter_150_1:SetWeaponBlock(var_150_0)
 	end
 end
 
@@ -2569,21 +2576,21 @@ function BattleDataProxy.SubmarineStrike(arg_151_0, arg_151_1)
 	local var_151_0 = arg_151_0:GetFleetByIFF(arg_151_1)
 	local var_151_1 = var_151_0:GetSubAidVO()
 
-	if var_151_0:GetWeaponBlock() or var_151_1:GetCurrent() < 1 then
+	if var_152_0:GetWeaponBlock() or var_152_1:GetCurrent() < 1 then
 		return
 	end
 
-	local var_151_2 = var_151_0:GetSubUnitData()
+	local var_152_2 = var_152_0:GetSubUnitData()
 
-	for iter_151_0, iter_151_1 in ipairs(var_151_2) do
-		local var_151_3 = arg_151_0:SpawnSub(iter_151_1, arg_151_1)
+	for iter_152_0, iter_152_1 in ipairs(var_152_2) do
+		local var_152_3 = arg_152_0:SpawnSub(iter_152_1, arg_152_1)
 
-		arg_151_0:InitAidUnitStatistics(var_151_3)
+		arg_152_0:InitAidUnitStatistics(var_152_3)
 	end
 
-	var_151_0:SubWarcry()
+	var_152_0:SubWarcry()
 
-	local var_151_4 = var_151_0:GetSubList()
+	local var_152_4 = var_152_0:GetSubList()
 
 	for iter_151_2, iter_151_3 in ipairs(var_151_4) do
 		if iter_151_2 == 1 then
@@ -2601,9 +2608,9 @@ function BattleDataProxy.SubmarineStrike(arg_151_0, arg_151_1)
 		end
 	end
 
-	local var_151_5 = var_151_4[1]
+	local var_152_5 = var_152_4[1]
 
-	var_151_1:Cast()
+	var_152_1:Cast()
 end
 
 function BattleDataProxy.GetWaveFlags(arg_152_0)
@@ -2615,13 +2622,13 @@ function BattleDataProxy.AddWaveFlag(arg_153_0, arg_153_1)
 		return
 	end
 
-	local var_153_0 = arg_153_0:GetWaveFlags()
+	local var_154_0 = arg_154_0:GetWaveFlags()
 
-	if table.contains(var_153_0, arg_153_1) then
+	if table.contains(var_154_0, arg_154_1) then
 		return
 	end
 
-	table.insert(var_153_0, arg_153_1)
+	table.insert(var_154_0, arg_154_1)
 end
 
 function BattleDataProxy.RemoveFlag(arg_154_0, arg_154_1)
@@ -2629,13 +2636,13 @@ function BattleDataProxy.RemoveFlag(arg_154_0, arg_154_1)
 		return
 	end
 
-	local var_154_0 = arg_154_0:GetWaveFlags()
+	local var_155_0 = arg_155_0:GetWaveFlags()
 
-	if not table.contains(var_154_0, arg_154_1) then
+	if not table.contains(var_155_0, arg_155_1) then
 		return
 	end
 
-	table.removebyvalue(var_154_0, arg_154_1)
+	table.removebyvalue(var_155_0, arg_155_1)
 end
 
 function BattleDataProxy.DispatchCustomWarning(arg_155_0, arg_155_1)
@@ -2670,19 +2677,19 @@ function BattleDataProxy.SpawnFusionUnit(arg_157_0, arg_157_1, arg_157_2, arg_15
 
 	arg_157_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_157_3))
 
-	return var_157_2
+	return var_158_2
 end
 
 function BattleDataProxy.DefusionUnit(arg_158_0, arg_158_1)
 	local var_158_0 = arg_158_1:GetIFF()
 	local var_158_1 = arg_158_0:GetFleetByIFF(var_158_0)
 
-	var_158_1:RemovePlayerUnit(arg_158_1)
+	var_159_1:RemovePlayerUnit(arg_159_1)
 
-	local var_158_2 = {}
+	local var_159_2 = {}
 
-	if var_158_1:GetFleetAntiAirWeapon():GetRange() == 0 then
-		var_158_2.isShow = false
+	if var_159_1:GetFleetAntiAirWeapon():GetRange() == 0 then
+		var_159_2.isShow = false
 	end
 
 	arg_158_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, var_158_2))
@@ -2695,10 +2702,10 @@ function BattleDataProxy.FreezeUnit(arg_159_0, arg_159_1)
 	arg_159_1:UpdateBlindInvisibleBySpectre()
 	arg_159_0:SwitchSpectreUnit(arg_159_1)
 
-	if arg_159_1:GetAimBias() then
-		local var_159_0 = arg_159_1:GetAimBias()
+	if arg_160_1:GetAimBias() then
+		local var_160_0 = arg_160_1:GetAimBias()
 
-		var_159_0:RemoveCrew(arg_159_1)
+		var_160_0:RemoveCrew(arg_160_1)
 
 		if var_159_0:GetCurrentState() == var_159_0.STATE_EXPIRE then
 			arg_159_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIM_BIAS, {
@@ -2707,12 +2714,12 @@ function BattleDataProxy.FreezeUnit(arg_159_0, arg_159_1)
 		end
 	end
 
-	arg_159_1:Freeze()
+	arg_160_1:Freeze()
 
-	local var_159_1 = arg_159_1:GetFleetVO()
+	local var_160_1 = arg_160_1:GetFleetVO()
 
-	if var_159_1 then
-		var_159_1:FreezeUnit(arg_159_1)
+	if var_160_1 then
+		var_160_1:FreezeUnit(arg_160_1)
 	end
 end
 
@@ -2723,10 +2730,10 @@ function BattleDataProxy.ActiveFreezeUnit(arg_160_0, arg_160_1)
 	BattleDataFunction.AttachWeather(arg_160_1, arg_160_0._weahter)
 	arg_160_1:ActiveFreeze()
 
-	local var_160_0 = arg_160_1:GetFleetVO()
+	local var_161_0 = arg_161_1:GetFleetVO()
 
-	if var_160_0 then
-		var_160_0:ActiveFreezeUnit(arg_160_1)
+	if var_161_0 then
+		var_161_0:ActiveFreezeUnit(arg_161_1)
 	end
 end
 
@@ -2734,9 +2741,9 @@ function BattleDataProxy.GetFleetLegal(arg_161_0, arg_161_1, arg_161_2)
 	if arg_161_2 == SYSTEM_DUEL or arg_161_2 == SYSTEM_PERFORM or arg_161_2 == SYSTEM_SUB_ROUTINE or arg_161_2 == SYSTEM_CARDPUZZLE or arg_161_2 == SYSTEM_PROLOGUE or arg_161_2 == SYSTEM_DODGEM or arg_161_2 == SYSTEM_SIMULATION or arg_161_2 == SYSTEM_SUBMARINE_RUN or arg_161_2 == SYSTEM_DEBUG or arg_161_2 == SYSTEM_AIRFIGHT then
 		return true
 	else
-		local var_161_0 = arg_161_0:GetFleetByIFF(arg_161_1)
+		local var_162_0 = arg_162_0:GetFleetByIFF(arg_162_1)
 
-		if #var_161_0:GetScoutList() == 0 or not var_161_0:GetFlagShip():IsAlive() then
+		if #var_162_0:GetScoutList() == 0 or not var_162_0:GetFlagShip():IsAlive() then
 			return false
 		else
 			return true
