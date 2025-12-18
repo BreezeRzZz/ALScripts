@@ -89,7 +89,7 @@ end
 function var_0_3.ForceSwitch(arg_5_0, arg_5_1)
 	arg_5_0:switch(arg_5_1)
 end
-
+-- TODO
 function var_0_3.switch(arg_6_0, arg_6_1)
 	if arg_6_1 == -1 or arg_6_0._phaseList[arg_6_1] == nil then
 		return
@@ -172,7 +172,7 @@ function var_0_3.switch(arg_6_0, arg_6_1)
 		arg_6_0._client:Retreat()
 	end
 end
-
+-- TODO：IMPORTANT
 function var_0_3.packagePhaseSwitchParam(arg_7_0, arg_7_1)
 	arg_7_0._currentPhaseSwitchParam = {}
 

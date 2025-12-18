@@ -1,60 +1,60 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleCubeCldComponent", var_0_0.Battle.BattleCldComponent)
+local ys = ys
+local BattleCubeCldComponent = class("BattleCubeCldComponent", ys.Battle.BattleCldComponent)
 
-var_0_0.Battle.BattleCubeCldComponent = var_0_1
-var_0_1.__name = "BattleCubeCldComponent"
+ys.Battle.BattleCubeCldComponent = BattleCubeCldComponent
+BattleCubeCldComponent.__name = "BattleCubeCldComponent"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4, arg_1_5)
-	var_0_0.Battle.BattleCubeCldComponent.super.Ctor(arg_1_0)
+function BattleCubeCldComponent.Ctor(self, cldBoxX, cldBoxY, cldBoxZ, offsetX, offsetZ)
+	ys.Battle.BattleCubeCldComponent.super.Ctor(self)
+	-- offset决定的是碰撞盒中心点相对于单位中心点的偏移，一般都是0
+	self._offsetX = offsetX
+	self._offsetZ = offsetZ
+	self._offset = Vector3(offsetX, 0, offsetZ)
+	self._boxSize = Vector3.zero
+	self._min = Vector3.zero
+	self._max = Vector3.zero
 
-	arg_1_0._offsetX = arg_1_4
-	arg_1_0._offsetZ = arg_1_5
-	arg_1_0._offset = Vector3(arg_1_4, 0, arg_1_5)
-	arg_1_0._boxSize = Vector3.zero
-	arg_1_0._min = Vector3.zero
-	arg_1_0._max = Vector3.zero
+	self:ResetSize(cldBoxX, cldBoxY, cldBoxZ)
 
-	arg_1_0:ResetSize(arg_1_1, arg_1_2, arg_1_3)
-
-	arg_1_0._box = pg.CldNode.New()
+	self._box = pg.CldNode.New()
 end
 
-function var_0_1.ResetOffset(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._offsetX = arg_2_1
-	arg_2_0._offsetZ = arg_2_2
-	arg_2_0._offset.x = arg_2_1
-	arg_2_0._offset.z = arg_2_2
+function BattleCubeCldComponent.ResetOffset(self, offsetX, offsetZ)
+	self._offsetX = offsetX
+	self._offsetZ = offsetZ
+	self._offset.x = offsetX
+	self._offset.z = offsetZ
 end
 
-function var_0_1.ResetSize(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_1 * 0.5
-	local var_3_1 = arg_3_2 * 0.5
-	local var_3_2 = arg_3_3 * 0.5
-
-	arg_3_0._boxSize.x = var_3_0
-	arg_3_0._boxSize.y = var_3_1
-	arg_3_0._boxSize.z = var_3_2
-	arg_3_0._min.x = arg_3_0._offsetX - var_3_0
-	arg_3_0._min.y = -var_3_1
-	arg_3_0._min.z = arg_3_0._offsetZ - var_3_2
-	arg_3_0._max.x = arg_3_0._offsetX + var_3_0
-	arg_3_0._max.y = var_3_1
-	arg_3_0._max.z = arg_3_0._offsetZ + var_3_2
+function BattleCubeCldComponent.ResetSize(self, cldBoxX, cldBoxY, cldBoxZ)
+	local halfBoxX = cldBoxX * 0.5
+	local halfBoxY = cldBoxY * 0.5
+	local halfBoxZ = cldBoxZ * 0.5
+	-- boxSize是按照Box一半算的
+	self._boxSize.x = halfBoxX
+	self._boxSize.y = halfBoxY
+	self._boxSize.z = halfBoxZ
+	self._min.x = self._offsetX - halfBoxX
+	self._min.y = -halfBoxY
+	self._min.z = self._offsetZ - halfBoxZ
+	self._max.x = self._offsetX + halfBoxX
+	self._max.y = halfBoxY
+	self._max.z = self._offsetZ + halfBoxZ
 end
 
-function var_0_1.GetCldBox(arg_4_0, arg_4_1)
-	if arg_4_1 then
-		arg_4_0._cldData.LeftBound = arg_4_1.x - math.abs(arg_4_0._min.x)
-		arg_4_0._cldData.RightBound = arg_4_1.x + math.abs(arg_4_0._max.x)
-		arg_4_0._cldData.LowerBound = arg_4_1.z - math.abs(arg_4_0._min.z)
-		arg_4_0._cldData.UpperBound = arg_4_1.z + math.abs(arg_4_0._max.z)
+function BattleCubeCldComponent.GetCldBox(self, position)
+	if position then
+		self._cldData.LeftBound = position.x - math.abs(self._min.x)
+		self._cldData.RightBound = position.x + math.abs(self._max.x)
+		self._cldData.LowerBound = position.z - math.abs(self._min.z)
+		self._cldData.UpperBound = position.z + math.abs(self._max.z)
 	end
-
-	return arg_4_0._box:UpdateBox(arg_4_0._min, arg_4_0._max, arg_4_1)
+	-- CldNode.UpdateBox
+	return self._box:UpdateBox(self._min, self._max, position)
 end
 
-function var_0_1.GetCldBoxSize(arg_5_0)
-	return arg_5_0._boxSize
+function BattleCubeCldComponent.GetCldBoxSize(self)
+	return self._boxSize
 end

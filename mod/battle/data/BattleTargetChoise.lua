@@ -567,25 +567,25 @@ function BattleTargetChoise.TargetNearest(arg_32_0, arg_32_1, arg_32_2)
 		var_32_1
 	}
 end
+-- TODO
+function BattleTargetChoise.TargetHarmNearest(caster, argList, candidateList)
+	argList = argList or {}
 
-function BattleTargetChoise.TargetHarmNearest(arg_33_0, arg_33_1, arg_33_2)
-	arg_33_1 = arg_33_1 or {}
+	local minDistance = argList.range or 9999999999
+	local nearest
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 
-	local var_33_0 = arg_33_1.range or 9999999999
-	local var_33_1
-	local var_33_2 = arg_33_2 and BattleTargetChoise.TargetFoeUncloak(arg_33_0, arg_33_1, arg_33_2) or BattleTargetChoise.TargetFoeUncloak(arg_33_0)
+	for _, candidate in ipairs(_candidateList) do
+		local distance = caster:GetDistance(candidate)
 
-	for iter_33_0, iter_33_1 in ipairs(var_33_2) do
-		local var_33_3 = arg_33_0:GetDistance(iter_33_1)
-
-		if var_33_3 < var_33_0 then
-			var_33_0 = var_33_3
-			var_33_1 = iter_33_1
+		if distance < minDistance then
+			minDistance = distance
+			nearest = candidate
 		end
 	end
 
 	return {
-		var_33_1
+		nearest
 	}
 end
 
@@ -626,32 +626,32 @@ function BattleTargetChoise.TargetHarmRandom(caster, argList, candidateList)
 		return {}
 	end
 end
+-- TODO
+function BattleTargetChoise.TargetHarmRandomByWeight(caster, argList, candidateList)
+	argList = argList or {}
 
-function BattleTargetChoise.TargetHarmRandomByWeight(arg_36_0, arg_36_1, arg_36_2)
-	arg_36_1 = arg_36_1 or {}
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
+	local maxPriorityCandList = {}
+	local maxPriority = -9999
 
-	local var_36_0 = arg_36_2 and BattleTargetChoise.TargetFoeUncloak(arg_36_0, arg_36_1, arg_36_2) or BattleTargetChoise.TargetFoeUncloak(arg_36_0)
-	local var_36_1 = {}
-	local var_36_2 = -9999
+	for _, candidate in ipairs(_candidateList) do
+		local priority = candidate:GetTargetedPriority() or 0
 
-	for iter_36_0, iter_36_1 in ipairs(var_36_0) do
-		local var_36_3 = iter_36_1:GetTargetedPriority() or 0
-
-		if var_36_3 == var_36_2 then
-			var_36_1[#var_36_1 + 1] = iter_36_1
-		elseif var_36_2 < var_36_3 then
-			var_36_1 = {
-				iter_36_1
+		if priority == maxPriority then
+			maxPriorityCandList[#maxPriorityCandList + 1] = candidate
+		elseif maxPriority < priority then
+			maxPriorityCandList = {
+				candidate
 			}
-			var_36_2 = var_36_3
+			maxPriority = priority
 		end
 	end
 
-	if #var_36_1 > 0 then
-		local var_36_4 = math.random(#var_36_1)
+	if #maxPriorityCandList > 0 then
+		local choice = math.random(#maxPriorityCandList)
 
 		return {
-			var_36_1[var_36_4]
+			maxPriorityCandList[choice]
 		}
 	else
 		return {}

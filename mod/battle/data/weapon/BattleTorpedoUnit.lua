@@ -1,7 +1,7 @@
 ys = ys or {}
 
 local var_0_0 = ys
-
+-- TODO
 var_0_0.Battle.BattleTorpedoUnit = class("BattleTorpedoUnit", var_0_0.Battle.BattleWeaponUnit)
 var_0_0.Battle.BattleTorpedoUnit.__name = "BattleTorpedoUnit"
 

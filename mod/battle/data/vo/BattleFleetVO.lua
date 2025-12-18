@@ -149,33 +149,34 @@ function BattleFleetVO.FreeMainUnit(arg_11_0, arg_11_1)
 	end
 end
 
-function BattleFleetVO.RandomMainVictim(arg_12_0, arg_12_1)
-	arg_12_1 = arg_12_1 or {}
+function BattleFleetVO.RandomMainVictim(self, attrList)
+	attrList = attrList or {}
 
-	local var_12_0 = {}
-	local var_12_1
+	local resList = {}
+	local victim
 
-	for iter_12_0, iter_12_1 in ipairs(arg_12_0._mainList) do
-		local var_12_2 = true
+	for _, mainUnit in ipairs(self._mainList) do
+		local canBeHit = true
 
-		for iter_12_2, iter_12_3 in ipairs(arg_12_1) do
-			if iter_12_1:GetAttrByName(iter_12_3) >= 1 then
-				var_12_2 = false
+		for _, attr in ipairs(attrList) do
+			-- 只用过immuneDirectHit来过滤
+			if mainUnit:GetAttrByName(attr) >= 1 then
+				canBeHit = false
 
 				break
 			end
 		end
 
-		if var_12_2 then
-			table.insert(var_12_0, iter_12_1)
+		if canBeHit then
+			table.insert(resList, mainUnit)
 		end
 	end
 
-	if #var_12_0 > 0 then
-		var_12_1 = var_12_0[math.random(#var_12_0)]
+	if #resList > 0 then
+		victim = resList[math.random(#resList)]
 	end
 
-	return var_12_1
+	return victim
 end
 
 function BattleFleetVO.NearestUnitByType(arg_13_0, arg_13_1, arg_13_2)
@@ -532,12 +533,12 @@ function BattleFleetVO.GetFleetUnitBound(arg_59_0)
 	return arg_59_0._totalUpperBound, arg_59_0._totalLowerBound
 end
 
-function BattleFleetVO.GetFleetExposeLine(arg_60_0)
-	return arg_60_0._exposeLineX
+function BattleFleetVO.GetFleetExposeLine(self)
+	return self._exposeLineX
 end
 
-function BattleFleetVO.GetFleetVisionLine(arg_61_0)
-	return arg_61_0._visionLineX
+function BattleFleetVO.GetFleetVisionLine(self)
+	return self._visionLineX
 end
 
 function BattleFleetVO.GetLeaderPersonality(arg_62_0)
@@ -783,16 +784,16 @@ function BattleFleetVO.FleetWarcry(arg_73_0)
 	var_73_0:DispatchVoice(var_73_4)
 	var_73_0:DispatchChat(var_73_6, 2.5, var_73_4)
 end
+-- TODO
+function BattleFleetVO.FleetUnitSpwanFinish(self)
+	local gearScore = 0
 
-function BattleFleetVO.FleetUnitSpwanFinish(arg_74_0)
-	local var_74_0 = 0
-
-	for iter_74_0, iter_74_1 in ipairs(arg_74_0._unitList) do
-		var_74_0 = var_74_0 + iter_74_1:GetGearScore()
+	for _, unit in ipairs(self._unitList) do
+		gearScore = gearScore + unit:GetGearScore()
 	end
-
-	for iter_74_2, iter_74_3 in ipairs(arg_74_0._unitList) do
-		BattleAttr.SetCurrent(iter_74_3, "fleetGS", var_74_0)
+	-- 设置舰队总战力，在一些计算中会用到
+	for _, unit in ipairs(self._unitList) do
+		BattleAttr.SetCurrent(unit, "fleetGS", gearScore)
 	end
 end
 

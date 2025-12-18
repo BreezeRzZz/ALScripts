@@ -16,42 +16,42 @@ BattleBuffUnit.DEFAULT_ANI_FX_CONFIG = {
 		0
 	}
 }
+-- TODO
+function BattleBuffUnit.Ctor(self, buffID, level, caster)
+	level = level or 1
+	self._id = buffID
 
-function BattleBuffUnit.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
-	arg_1_2 = arg_1_2 or 1
-	arg_1_0._id = arg_1_1
+	self:SetTemplate(buffID, level)
 
-	arg_1_0:SetTemplate(arg_1_1, arg_1_2)
+	self._time = self._tempData.time
+	self._RemoveTime = 0
+	self._effectList = {}
+	self._triggerSearchTable = {}
+	self._level = level
+	self._caster = caster
+	self._forceStack = self._tempData.force_stack
+	self._stackCap = self._tempData.stack_cap or self._tempData.stack
 
-	arg_1_0._time = arg_1_0._tempData.time
-	arg_1_0._RemoveTime = 0
-	arg_1_0._effectList = {}
-	arg_1_0._triggerSearchTable = {}
-	arg_1_0._level = arg_1_2
-	arg_1_0._caster = arg_1_3
-	arg_1_0._forceStack = arg_1_0._tempData.force_stack
-	arg_1_0._stackCap = arg_1_0._tempData.stack_cap or arg_1_0._tempData.stack
-
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.effect_list) do
+	for iter_1_0, iter_1_1 in ipairs(self._tempData.effect_list) do
 		local var_1_0 = ys.Battle[iter_1_1.type].New(iter_1_1)
 
-		arg_1_0._effectList[iter_1_0] = var_1_0
+		self._effectList[iter_1_0] = var_1_0
 
 		local var_1_1 = iter_1_1.trigger
 
 		for iter_1_2, iter_1_3 in ipairs(var_1_1) do
-			local var_1_2 = arg_1_0._triggerSearchTable[iter_1_3]
+			local var_1_2 = self._triggerSearchTable[iter_1_3]
 
 			if var_1_2 == nil then
 				var_1_2 = {}
-				arg_1_0._triggerSearchTable[iter_1_3] = var_1_2
+				self._triggerSearchTable[iter_1_3] = var_1_2
 			end
 
 			var_1_2[#var_1_2 + 1] = var_1_0
 		end
 	end
 end
-
+-- TODO
 function BattleBuffUnit.GetTriggerPriority(arg_2_0, arg_2_1)
 	local var_2_0 = BattleConfig.TRIGGER_PRIORITY[arg_2_1]
 	local var_2_1 = math.huge
@@ -77,7 +77,7 @@ function BattleBuffUnit.Attach(arg_4_0, arg_4_1)
 	arg_4_0:onTrigger(BuffEffectType.ON_ATTACH, arg_4_1)
 	arg_4_0:SetRemoveTime()
 end
-
+-- TODO
 function BattleBuffUnit.Stack(arg_5_0, arg_5_1)
 	arg_5_0._stack = math.min(arg_5_0._stack + 1, arg_5_0._tempData.stack)
 
@@ -202,7 +202,11 @@ function BattleBuffUnit.Trigger(owner, effectType, args)
 			canTriggerBuffList[#canTriggerBuffList + 1] = buff
 		end
 	end
-
+	-- 按照优先级排序并按顺序触发
+	-- 这个优先级，目前只针对ON_TAKE_DAMAGE的Trigger，具体参考BattleConfig.TRIGGER_PRIORITY
+	-- 优先级越小，则触发顺序越靠前，以下描述的">"表示优先级更高，越先触发，对应的就是数值越小
+	-- 简要描述：BattleBuffLockHealth > BattleBuffHPLink > BattleBuffShield = BattleBuffOverHealingShield = BattleBuffRecordShield = BattleBuffBarrier > BattleBuffCastSkillDamageCount > BattleBuffCount
+	-- 如果优先级相同，按照Buff的添加顺序触发(一般来说，就是Buff ID优先？），先添加的先触发
 	BattleBuffUnit.sortTriggerBuff(canTriggerBuffList, effectType)
 
 	for _, buff in ipairs(canTriggerBuffList) do
@@ -318,7 +322,7 @@ function BattleBuffUnit.onTrigger(self, effectType, owner, args)
 		self:Remove()
 	end
 end
-
+-- TODO
 function BattleBuffUnit.SetRemoveTime(arg_25_0)
 	local var_25_0 = pg.TimeMgr.GetInstance():GetCombatTime()
 

@@ -1089,6 +1089,8 @@ end
 --- @param repressReduce number
 --- @return number
 --- 计算普通图章节的压制减伤倍率
+--- 这个传入的repressReduce对应压制层数 * chapter_template的mitigation_rate(一般为2)
+--- 所以一般可认为，每层压制提供2%的伤害减免
 function BattleFormulas.ChapterRepressReduce(repressReduce)
 	return 1 - repressReduce * 0.01
 end

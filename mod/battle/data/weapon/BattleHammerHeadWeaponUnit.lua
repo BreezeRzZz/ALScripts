@@ -12,7 +12,7 @@ local var_0_3 = var_0_0.Battle.BattleHammerHeadWeaponUnit
 function var_0_3.Ctor(arg_1_0)
 	var_0_3.super.Ctor(arg_1_0)
 end
-
+-- 自爆船攻击前排逻辑，相当于创建这么个武器
 function var_0_3.DoAttack(arg_2_0, arg_2_1)
 	if arg_2_0._tmpData.bullet_ID[1] then
 		local var_2_0 = var_0_1.GetBulletTmpDataFromID(arg_2_0._tmpData.bullet_ID[1]).type

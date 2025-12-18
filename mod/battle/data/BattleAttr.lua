@@ -473,7 +473,7 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 
 	BattleAttr.SetBaseAttr(playerUnit)
 end
-
+-- TODO
 function BattleAttr.AttrFixer(arg_35_0, arg_35_1)
 	if arg_35_0 == SYSTEM_SCENARIO then
 		arg_35_1.repressReduce = ys.Battle.BattleDataProxy.GetInstance():GetRepressReduce()
@@ -876,14 +876,15 @@ function BattleAttr.FlashByBuff(arg_48_0, arg_48_1, arg_48_2)
 		BattleAttr.SetCurrent(arg_48_0, BattleAttr.FROM_TAG_EHC_KEY, var_48_0)
 	end
 end
+-- TODO
+-- 航速上限1.8倍，下限0.2倍
+function BattleAttr.FlashVelocity(unit, mulValue, addValue)
+	local maxVelocity = BattleAttr.GetBase(unit, "velocity") * 1.8
+	local minVelocity = BattleAttr.GetBase(unit, "velocity") * 0.2
+	local velocityBeforeClamp = unit._baseAttr.velocity * mulValue + addValue
+	local finalVelocity = Mathf.Clamp(velocityBeforeClamp, minVelocity, maxVelocity)
 
-function BattleAttr.FlashVelocity(arg_49_0, arg_49_1, arg_49_2)
-	local var_49_0 = BattleAttr.GetBase(arg_49_0, "velocity") * 1.8
-	local var_49_1 = BattleAttr.GetBase(arg_49_0, "velocity") * 0.2
-	local var_49_2 = arg_49_0._baseAttr.velocity * arg_49_1 + arg_49_2
-	local var_49_3 = Mathf.Clamp(var_49_2, var_49_1, var_49_0)
-
-	BattleAttr.SetCurrent(arg_49_0, "velocity", var_49_3)
+	BattleAttr.SetCurrent(unit, "velocity", finalVelocity)
 end
 
 function BattleAttr.HasSonar(arg_50_0)

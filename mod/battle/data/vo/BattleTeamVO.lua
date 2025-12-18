@@ -10,7 +10,7 @@ local var_0_6 = class("BattleTeamVO")
 
 var_0_0.Battle.BattleTeamVO = var_0_6
 var_0_6.__name = "BattleTeamVO"
-
+-- TODO
 function var_0_6.Ctor(arg_1_0, arg_1_1)
 	arg_1_0._teamID = arg_1_1
 

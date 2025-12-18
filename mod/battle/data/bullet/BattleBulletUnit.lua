@@ -202,7 +202,7 @@ end
 function BattleBulletUnit.SetStartTimeStamp(arg_11_0, arg_11_1)
 	arg_11_0._timeStamp = arg_11_1
 end
-
+-- TODO
 function BattleBulletUnit.Hit(arg_12_0, arg_12_1, arg_12_2)
 	arg_12_0._collidedList[arg_12_1] = true
 
@@ -471,7 +471,7 @@ end
 function BattleBulletUnit.GetExtraTag(arg_43_0)
 	return arg_43_0._tempData.extra_param.tag
 end
-
+-- TODO
 function BattleBulletUnit.AppendDamageUnit(arg_44_0, arg_44_1)
 	arg_44_0._damageList[#arg_44_0._damageList + 1] = arg_44_1
 end
@@ -782,25 +782,26 @@ function BattleBulletUnit.Dispose(arg_96_0)
 
 	ys.EventDispatcher.DetachEventDispatcher(arg_96_0)
 end
+-- TODO
+-- note: 子弹碰撞体初始化
+function BattleBulletUnit.InitCldComponent(self)
+	local cld_box = self:GetTemplate().cld_box
+	local cld_offset = self:GetTemplate().cld_offset
+	local offsetX = cld_offset[1]
 
-function BattleBulletUnit.InitCldComponent(arg_97_0)
-	local var_97_0 = arg_97_0:GetTemplate().cld_box
-	local var_97_1 = arg_97_0:GetTemplate().cld_offset
-	local var_97_2 = var_97_1[1]
-
-	if arg_97_0:GetIFF() == BattleConfig.FOE_CODE then
-		var_97_2 = var_97_2 * -1
+	if self:GetIFF() == BattleConfig.FOE_CODE then
+		offsetX = offsetX * -1
 	end
-
-	arg_97_0._cldComponent = ys.Battle.BattleCubeCldComponent.New(var_97_0[1], var_97_0[2], var_97_0[3], var_97_2, var_97_1[3])
-
-	local var_97_3 = {
+	-- 子弹在碰撞系统中，本质是一个立方体
+	self._cldComponent = ys.Battle.BattleCubeCldComponent.New(cld_box[1], cld_box[2], cld_box[3], offsetX, cld_offset[3])
+	-- 关于CldType: 在BattleCldSystem的各个HandleCldWithXXX函数中会根据type来区分不同的碰撞体进行不同的处理
+	local cldData = {
 		type = BattleConst.CldType.BULLET,
-		IFF = arg_97_0:GetIFF(),
-		UID = arg_97_0:GetUniqueID()
+		IFF = self:GetIFF(),
+		UID = self:GetUniqueID()
 	}
 
-	arg_97_0._cldComponent:SetCldData(var_97_3)
+	self._cldComponent:SetCldData(cldData)
 end
 
 function BattleBulletUnit.ResetCldSurface(arg_98_0)
@@ -817,8 +818,8 @@ function BattleBulletUnit.GetBoxSize(arg_99_0)
 	return arg_99_0._cldComponent:GetCldBoxSize()
 end
 
-function BattleBulletUnit.GetCldBox(arg_100_0)
-	return arg_100_0._cldComponent:GetCldBox(arg_100_0:GetPosition())
+function BattleBulletUnit.GetCldBox(self)
+	return self._cldComponent:GetCldBox(self:GetPosition())
 end
 
 function BattleBulletUnit.GetCldData(arg_101_0)

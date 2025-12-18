@@ -1,46 +1,46 @@
 pg = pg or {}
 
-local var_0_0 = pg
-local var_0_1 = class("CldNode")
+local pg = pg
+local CldNode = class("CldNode")
 
-var_0_0.CldNode = var_0_1
+pg.CldNode = CldNode
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	arg_1_0.cylinder = false
+function CldNode.Ctor(self, arg_1_1)
+	self.cylinder = false
 end
 
-function var_0_1.UpdateBox(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	arg_2_0.min = arg_2_1:Copy2(arg_2_0.min)
-	arg_2_0.max = arg_2_2:Copy2(arg_2_0.max)
+function CldNode.UpdateBox(self, min, max, position)
+	self.min = min:Copy2(self.min)
+	self.max = max:Copy2(self.max)
 
-	if arg_2_3 then
-		arg_2_0.min:Add(arg_2_3)
-		arg_2_0.max:Add(arg_2_3)
+	if position then
+		self.min:Add(position)
+		self.max:Add(position)
 	end
 
-	return arg_2_0
+	return self
 end
 
-function var_0_1.UpdateStaticBox(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0.min = arg_3_1
-	arg_3_0.max = arg_3_2
+function CldNode.UpdateStaticBox(self, min, max)
+	self.min = min
+	self.max = max
 
-	return arg_3_0
+	return self
 end
 
-function var_0_1.UpdateCylinder(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	if arg_4_3 < 0 then
-		arg_4_3 = -arg_4_3
+function CldNode.UpdateCylinder(self, center, tickness, range)
+	if range < 0 then
+		range = -range
 	end
 
-	arg_4_0.center = arg_4_1:Copy2(arg_4_0.center)
-	arg_4_0.range = arg_4_3
+	self.center = center:Copy2(self.center)
+	self.range = range
+	-- 这里的range是指半径
+	local box = Vector3(range, tickness, range)
 
-	local var_4_0 = Vector3(arg_4_3, arg_4_2, arg_4_3)
+	self.min = center - box
+	self.max = center + box
+	self.cylinder = true
 
-	arg_4_0.min = arg_4_1 - var_4_0
-	arg_4_0.max = arg_4_1 + var_4_0
-	arg_4_0.cylinder = true
-
-	return arg_4_0
+	return self
 end

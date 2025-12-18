@@ -5,7 +5,7 @@ local var_0_1 = class("BattleSkillWeaponFire", var_0_0.Battle.BattleSkillEffect)
 
 var_0_0.Battle.BattleSkillWeaponFire = var_0_1
 var_0_1.__name = "BattleSkillWeaponFire"
-
+-- TODO
 function var_0_1.Ctor(arg_1_0, arg_1_1)
 	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
 

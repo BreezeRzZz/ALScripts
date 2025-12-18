@@ -17,7 +17,8 @@ function BattleAOEData.Ctor(self, areaUID, IFF, areaCldFunc, endFunc)
 	self._IFF = IFF
 	self._cldObjList = {}
 	self._cldObjDistanceList = {}
-
+	-- tickness是y轴上的厚度
+	-- (难道不应该是thickness吗？)
 	self:SetTickness(10)
 
 	self._alignment = Vector3.zero

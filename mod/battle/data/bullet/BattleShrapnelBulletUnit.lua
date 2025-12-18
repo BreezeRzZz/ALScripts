@@ -154,6 +154,7 @@ end
 --- - 原本有一个参数，但父类的IsOutRange没有参数，所以这里也去掉参数
 function BattleShrapnelBulletUnit.IsOutRange(self)
 	if self._currentState == BattleShrapnelBulletUnit.STATE_NORMAL then
+		-- 对应的就是超出射程(range)的判断
 		return BattleShrapnelBulletUnit.super.IsOutRange(self)
 	else
 		return false

@@ -8,7 +8,8 @@ var_0_1.__name = "BattleColumnCldComponent"
 
 function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
 	var_0_0.Battle.BattleColumnCldComponent.super.Ctor(arg_1_0)
-
+	-- range和tickness都除以2
+	-- 所以实际上，原本的box参数是指直径和高度
 	arg_1_0._range = arg_1_1 * 0.5
 	arg_1_0._tickness = arg_1_2 * 0.5
 	arg_1_0._box = pg.CldNode.New()

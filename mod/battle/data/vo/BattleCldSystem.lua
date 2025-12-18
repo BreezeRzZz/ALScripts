@@ -65,7 +65,7 @@ function var_0_7.InitCldTree(arg_3_0)
 	arg_3_0._AOETreeList[var_0_2.AOEField.BULLET] = arg_3_0._bulletAOETree
 	arg_3_0._wallTree = pg.ColliderTree.New("wall", var_3_4, var_3_5, 2)
 end
-
+-- TODO
 function var_0_7.UpdateShipCldTree(arg_4_0, arg_4_1)
 	local var_4_0 = arg_4_1:GetSpeed()
 	local var_4_1 = arg_4_1:GetCldBox()
@@ -201,7 +201,7 @@ function var_0_7.UpdateAircraftCld(arg_8_0, arg_8_1)
 	arg_8_0:HandleBulletCldWithAircraft(var_8_3, arg_8_1)
 	arg_8_0._aircraftTree:Update(arg_8_1:GetCldBox())
 end
-
+-- TODO
 function var_0_7.HandleBulletCldWithAircraft(arg_9_0, arg_9_1, arg_9_2)
 	local var_9_0 = #arg_9_1
 

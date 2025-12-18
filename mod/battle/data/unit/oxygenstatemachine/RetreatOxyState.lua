@@ -2,7 +2,7 @@ ys = ys or {}
 
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleAttr
+local BattleAttr = var_0_0.Battle.BattleAttr
 
 var_0_0.Battle.RetreatOxyState = class("RetreatOxyState", var_0_0.Battle.IOxyState)
 var_0_0.Battle.RetreatOxyState.__name = "RetreatOxyState"
@@ -17,14 +17,14 @@ function var_0_3.GetWeaponUseableList(arg_2_0)
 	return {}
 end
 
-function var_0_3.UpdateCldData(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_2:GetDiveState()
-	local var_3_1 = arg_3_0:GetDiveState()
+function var_0_3.UpdateCldData(self, target, originalState)
+	local orginalDiveState = originalState:GetDiveState()
+	local currentDiveState = self:GetDiveState()
 
-	arg_3_1:GetCldData().Surface = var_3_1
+	target:GetCldData().Surface = currentDiveState
 
-	if var_3_0 ~= var_3_1 then
-		var_0_2.UnitCldEnable(arg_3_1)
+	if orginalDiveState ~= currentDiveState then
+		BattleAttr.UnitCldEnable(target)
 	end
 end
 

@@ -38,7 +38,8 @@ ys.Battle.BattleDataFunction = ys.Battle.BattleDataFunction or {}
 
 local BattleDataFunction = ys.Battle.BattleDataFunction
 
-function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemplateID, skinId, equipmentList, templateData, extraInfo, proficiencyList, baseInfo, preloadInfo, overrideLevel, caster)
+-- 被BattleDataProxy.generatePlayerUnit调用
+function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemplateID, skinId, equipmentList, templateData, extraInfo, proficiencyList, baseInfo, preloadInfo, overrideLevel, owner)
 	local unit
 	local weaponCount
 
@@ -88,7 +89,7 @@ function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemp
 	unit:SetTemplate(monsterTemplateID, templateData, extraInfo)
 
 	if unitType == BattleConst.UnitType.MINION_UNIT then
-		unit:SetMaster(caster)
+		unit:SetMaster(owner)
 		unit:InheritMasterAttr()
 	end
 
@@ -140,13 +141,14 @@ function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemp
 	return unit
 end
 -- TODO
-function BattleDataFunction.InitUnitSkill(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0.skills or {}
+-- 被BattleDataProxy.generatePlayerUnit调用
+function BattleDataFunction.InitUnitSkill(arg_2_0, owner, arg_2_2)
+	local skills = arg_2_0.skills or {}
 
-	for iter_2_0, iter_2_1 in pairs(var_2_0) do
-		local var_2_1 = ys.Battle.BattleBuffUnit.New(iter_2_1.id, iter_2_1.level, arg_2_1)
+	for _, skill in pairs(skills) do
+		local buff = ys.Battle.BattleBuffUnit.New(skill.id, skill.level, owner)
 
-		arg_2_1:AddBuff(var_2_1)
+		owner:AddBuff(buff)
 	end
 end
 
@@ -723,7 +725,7 @@ end
 function BattleDataFunction.GetDivingFilter(arg_45_0)
 	return map_data[arg_45_0].diving_filter
 end
-
+-- TODO
 function BattleDataFunction.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
 	local var_46_0 = arg_46_0 - arg_46_2
 

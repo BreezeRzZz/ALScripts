@@ -221,15 +221,15 @@ function BattleUnit.GetTargetedPriority(self)
 	local targetedPriority
 
 	if self._aimBias then
-		local var_17_1 = self._aimBias:GetCurrentState()
+		local aimBiasState = self._aimBias:GetCurrentState()
 
-		if var_17_1 == self._aimBias.STATE_SKILL_EXPOSE or var_17_1 == self._aimBias.STATE_TOTAL_EXPOSE then
+		if aimBiasState == self._aimBias.STATE_SKILL_EXPOSE or aimBiasState == self._aimBias.STATE_TOTAL_EXPOSE then
 			targetedPriority = self:GetTemplate().battle_unit_type
 		else
 			targetedPriority = -200
 		end
 	else
-		targetedPriority = self:GetTemplate().l
+		targetedPriority = self:GetTemplate().battle_unit_type
 	end
 
 	return targetedPriority
@@ -523,13 +523,13 @@ end
 function BattleUnit.SetSkinId(arg_36_0)
 	return
 end
-
+-- 被BattleDataProxy.generatePlayerUnit调用
 function BattleUnit.SetGearScore(arg_37_0, arg_37_1)
 	arg_37_0._GS = arg_37_1
 end
 
-function BattleUnit.GetGearScore(arg_38_0)
-	return arg_38_0._GS or 0
+function BattleUnit.GetGearScore(self)
+	return self._GS or 0
 end
 
 function BattleUnit.GetSkinID(arg_39_0)
@@ -660,7 +660,7 @@ end
 function BattleUnit.IsMoveCast(arg_58_0)
 	return arg_58_0._moveCast
 end
-
+-- TODO
 function BattleUnit.SetCrash(arg_59_0, arg_59_1)
 	arg_59_0._isCrash = arg_59_1
 
@@ -1187,59 +1187,62 @@ function BattleUnit.UpdateMoveLimit(arg_133_0)
 	arg_133_0._move:SetStaticState(not var_133_0)
 end
 -- TODO
-function BattleUnit.AddBuff(arg_134_0, arg_134_1, arg_134_2)
-	local var_134_0 = arg_134_1:GetID()
-	local var_134_1 = {
-		unit_id = arg_134_0._uniqueID,
-		buff_id = var_134_0
+function BattleUnit.AddBuff(self, buff, ifStock)
+	local buffID = buff:GetID()
+	local args = {
+		unit_id = self._uniqueID,
+		buff_id = buffID
 	}
-	local var_134_2 = arg_134_0:GetBuff(var_134_0)
+	-- self._buffList: table<number, BattleBuffUnit>
+	local oldBuff = self:GetBuff(buffID)
 
-	if var_134_2 then
-		if arg_134_2 then
-			local var_134_3 = arg_134_0._buffStockList[var_134_0] or {}
+	if oldBuff then
+		if ifStock then
+			-- self._buffStockList: table<number, table<number, BattleBuffUnit>>
+			-- 同一Buff ID对应多个Buff实例的列表
+			local buffStockItem = self._buffStockList[buffID] or {}
 
-			table.insert(var_134_3, arg_134_1)
+			table.insert(buffStockItem, buff)
 
-			arg_134_0._buffStockList[var_134_0] = var_134_3
+			self._buffStockList[buffID] = buffStockItem
 		else
-			local var_134_4 = var_134_2:GetLv()
-			local var_134_5 = arg_134_1:GetLv()
-			local var_134_6 = var_134_2:GetGroupLevel()
-			local var_134_7 = arg_134_1:GetGroupLevel()
+			local oldBuffLevel = oldBuff:GetLv()
+			local buffLevel = buff:GetLv()
+			local oldBuffGroupLevel = oldBuff:GetGroupLevel()
+			local buffGroupLevel = buff:GetGroupLevel()
+			-- 取较高的Buff等级
+			args.buff_level = math.max(oldBuffLevel, buffLevel)
+			-- 若新Buff Group等级不高于旧Buff Group等级，且旧Buff允许叠加，则进行叠层
+			if oldBuff:IsForceStack() or buffGroupLevel <= oldBuffGroupLevel then
+				oldBuff:Stack(self)
 
-			var_134_1.buff_level = math.max(var_134_4, var_134_5)
+				args.stack_count = oldBuff:GetStack()
 
-			if var_134_2:IsForceStack() or var_134_7 <= var_134_6 then
-				var_134_2:Stack(arg_134_0)
-
-				var_134_1.stack_count = var_134_2:GetStack()
-
-				arg_134_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_STACK, var_134_1))
+				self:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_STACK, args))
 			else
-				arg_134_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_CAST, var_134_1))
-				arg_134_0:RemoveBuff(var_134_0)
+				self:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_CAST, args))
+				self:RemoveBuff(buffID)
 
-				arg_134_0._buffList[var_134_0] = arg_134_1
+				self._buffList[buffID] = buff
 
-				arg_134_1:Attach(arg_134_0)
-				arg_134_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_ATTACH, var_134_1))
+				buff:Attach(self)
+				self:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_ATTACH, args))
 			end
 		end
 	else
-		arg_134_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_CAST, var_134_1))
+		self:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_CAST, args))
 
-		arg_134_0._buffList[var_134_0] = arg_134_1
+		self._buffList[buffID] = buff
 
-		arg_134_1:Attach(arg_134_0)
+		buff:Attach(self)
 
-		var_134_1.buff_level = arg_134_1:GetLv()
+		args.buff_level = buff:GetLv()
 
-		arg_134_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_ATTACH, var_134_1))
+		self:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_ATTACH, args))
 	end
 
-	arg_134_0:TriggerBuff(BattleConst.BuffEffectType.ON_BUFF_ADDED, {
-		buffID = var_134_0
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_BUFF_ADDED, {
+		buffID = buffID
 	})
 end
 
@@ -1347,10 +1350,10 @@ function BattleUnit.GetBuffList(arg_141_0)
 	return arg_141_0._buffList
 end
 
-function BattleUnit.GetBuff(arg_142_0, arg_142_1)
-	arg_142_0._buffList = arg_142_0._buffList
+function BattleUnit.GetBuff(self, buffID)
+	self._buffList = self._buffList
 
-	return arg_142_0._buffList[arg_142_1]
+	return self._buffList[buffID]
 end
 
 function BattleUnit.DispatchSkillFloat(arg_143_0, arg_143_1, arg_143_2, arg_143_3)
@@ -1780,7 +1783,7 @@ function BattleUnit.InitOxygen(arg_207_0)
 
 	return arg_207_0._oxyState
 end
-
+-- TODO
 function BattleUnit.UpdateOxygen(arg_208_0, arg_208_1)
 	if arg_208_0._oxyState then
 		arg_208_0._lastOxyUpdateStamp = arg_208_0._lastOxyUpdateStamp or arg_208_1
@@ -1819,7 +1822,7 @@ function BattleUnit.OxyConsume(arg_210_0)
 
 	arg_210_0._currentOxy = math.max(0, arg_210_0._currentOxy - arg_210_0._oxyConsume * var_210_0)
 end
-
+-- TODO
 function BattleUnit.ChangeOxygenState(arg_211_0, arg_211_1)
 	arg_211_0._oxyState:ChangeState(arg_211_1)
 end
