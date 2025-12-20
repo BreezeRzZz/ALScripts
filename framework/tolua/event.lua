@@ -232,7 +232,7 @@ local var_0_15 = UpdateBeat
 local var_0_16 = LateUpdateBeat
 local var_0_17 = FixedUpdateBeat
 local var_0_18 = CoUpdateBeat
-
+-- TODO
 function Update(arg_23_0, arg_23_1)
 	var_0_14:SetDeltaTime(arg_23_0, arg_23_1)
 	var_0_15()

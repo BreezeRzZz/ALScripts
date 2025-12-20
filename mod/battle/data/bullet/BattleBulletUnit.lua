@@ -183,6 +183,7 @@ function BattleBulletUnit.Update(arg_8_0, arg_8_1)
 	if arg_8_0._gravity == 0 then
 		arg_8_0._reachDestFlag = Vector3.SqrDistance(arg_8_0._spawnPos, arg_8_0._position) > arg_8_0._sqrRange
 	else
+		-- 用于改变fieldType
 		if arg_8_0._fieldSwitchHeight ~= 0 and arg_8_0._position.y <= arg_8_0._fieldSwitchHeight then
 			arg_8_0._field = BattleConst.BulletField.SURFACE
 		end
@@ -228,7 +229,7 @@ function BattleBulletUnit.ResetVelocity(arg_15_0, arg_15_1)
 
 	if not arg_15_1 then
 		arg_15_1 = var_15_0.velocity
-
+		-- TODO
 		if var_15_1.velocity_offset then
 			arg_15_1 = math.random(arg_15_1 - var_15_1.velocity_offset, arg_15_1 + var_15_1.velocity_offset)
 		elseif var_15_1.velocity_offsetF then

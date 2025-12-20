@@ -685,6 +685,8 @@ function BattleUnit.GetDeadFX(arg_62_0)
 	return arg_62_0._deadFX
 end
 
+-- TODO
+-- 被BattleDataFunction.CreateBattleUnitData调用
 function BattleUnit.SetEquipment(arg_63_0, arg_63_1)
 	arg_63_0._equipmentList = arg_63_1
 	arg_63_0._autoWeaponList = {}
@@ -714,7 +716,7 @@ end
 function BattleUnit.GetSpWeapon(arg_67_0)
 	return arg_67_0._spWeapon
 end
-
+-- TODO
 function BattleUnit.setWeapon(arg_68_0, arg_68_1)
 	for iter_68_0, iter_68_1 in ipairs(arg_68_1) do
 		local var_68_0 = iter_68_1.equipment.weapon_id
@@ -936,7 +938,7 @@ end
 function BattleUnit.GetHiveList(arg_97_0)
 	return arg_97_0._hiveList
 end
-
+-- TODO
 function BattleUnit.SetAirAssistList(arg_98_0, arg_98_1)
 	arg_98_0._airAssistList = arg_98_1
 	arg_98_0._airAssistQueue = ys.Battle.ManualWeaponQueue.New(arg_98_0:GetManualWeaponParallel()[BattleConst.ManualWeaponIndex.AIR_ASSIST])
@@ -1212,7 +1214,7 @@ function BattleUnit.AddBuff(self, buff, ifStock)
 			local buffGroupLevel = buff:GetGroupLevel()
 			-- 取较高的Buff等级
 			args.buff_level = math.max(oldBuffLevel, buffLevel)
-			-- 若新Buff Group等级不高于旧Buff Group等级，且旧Buff允许叠加，则进行叠层
+			-- 若新Buff Group等级不高于旧Buff Group等级，或者旧Buff能强制叠层，则进行叠层
 			if oldBuff:IsForceStack() or buffGroupLevel <= oldBuffGroupLevel then
 				oldBuff:Stack(self)
 

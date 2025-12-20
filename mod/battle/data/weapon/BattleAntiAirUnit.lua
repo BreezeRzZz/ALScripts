@@ -1,49 +1,49 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleAntiAirUnit", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleAntiAirUnit = class("BattleAntiAirUnit", ys.Battle.BattleWeaponUnit)
 
-var_0_0.Battle.BattleAntiAirUnit = var_0_1
-var_0_1.__name = "BattleAntiAirUnit"
+ys.Battle.BattleAntiAirUnit = BattleAntiAirUnit
+BattleAntiAirUnit.__name = "BattleAntiAirUnit"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleAntiAirUnit.Ctor(self)
+	BattleAntiAirUnit.super.Ctor(self)
 end
 
-function var_0_1.TriggerBuffOnFire(arg_2_0)
-	arg_2_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_ANTIAIR_FIRE_NEAR, {})
+function BattleAntiAirUnit.TriggerBuffOnFire(self)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_ANTIAIR_FIRE_NEAR, {})
 end
 
-function var_0_1.FilterTarget(arg_3_0)
-	local var_3_0 = arg_3_0._dataProxy:GetAircraftList()
-	local var_3_1 = {}
-	local var_3_2 = arg_3_0._host:GetIFF()
-	local var_3_3 = 1
+function BattleAntiAirUnit.FilterTarget(self)
+	local aircraftLIst = self._dataProxy:GetAircraftList()
+	local filteredList = {}
+	local hostIFF = self._host:GetIFF()
+	local index = 1
 
-	for iter_3_0, iter_3_1 in pairs(var_3_0) do
-		if iter_3_1:GetIFF() ~= var_3_2 and iter_3_1:IsVisitable() then
-			var_3_1[var_3_3] = iter_3_1
-			var_3_3 = var_3_3 + 1
+	for _, aircraft in pairs(aircraftLIst) do
+		if aircraft:GetIFF() ~= hostIFF and aircraft:IsVisitable() then
+			filteredList[index] = aircraft
+			index = index + 1
 		end
 	end
 
-	return var_3_1
+	return filteredList
 end
 
-function var_0_1.Spawn(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = var_0_1.super.Spawn(arg_4_0, arg_4_1, arg_4_2)
+function BattleAntiAirUnit.Spawn(self, bulletID, target)
+	local bullet = BattleAntiAirUnit.super.Spawn(self, bulletID, target)
 
-	var_4_0:SetDirectHitUnit(arg_4_2)
+	bullet:SetDirectHitUnit(target)
 
-	return var_4_0
+	return bullet
 end
 
-function var_0_1.TriggerBuffWhenSpawn(arg_5_0, arg_5_1)
-	local var_5_0 = {
-		_bullet = arg_5_1,
-		bulletTag = arg_5_1:GetExtraTag()
+function BattleAntiAirUnit.TriggerBuffWhenSpawn(self, bullet)
+	local args = {
+		_bullet = bullet,
+		bulletTag = bullet:GetExtraTag()
 	}
 
-	arg_5_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BULLET_CREATE, var_5_0)
-	arg_5_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_ANTIAIR_BULLET_CREATE, var_5_0)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BULLET_CREATE, args)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_ANTIAIR_BULLET_CREATE, args)
 end

@@ -10,7 +10,9 @@ local BattleBombBulletFactory = ys.Battle.BattleBombBulletFactory
 function BattleBombBulletFactory.Ctor(arg_1_0)
 	BattleBombBulletFactory.super.Ctor(arg_1_0)
 end
+
 -- TODO
+-- 炸弹类子弹的伤害结算流程
 function BattleBombBulletFactory.OutRangeFunc(arg_2_0)
 	local var_2_0 = arg_2_0:GetTemplate()
 	local var_2_1 = var_2_0.hit_type

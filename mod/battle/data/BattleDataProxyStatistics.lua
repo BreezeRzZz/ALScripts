@@ -6,7 +6,7 @@ local var_0_4 = ys.Battle.BattleConfig
 local var_0_5 = ys.Battle.BattleDataFunction
 local var_0_6 = ys.Battle.BattleAttr
 local var_0_7 = ys.Battle.BattleVariable
-
+-- TODO
 function var_0_0.StatisticsInit(arg_1_0, arg_1_1)
 	arg_1_0._statistics = {}
 	arg_1_0._statistics._battleScore = var_0_3.BattleScore.D

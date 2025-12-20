@@ -330,7 +330,7 @@ function var_0_0.UpdateEquipmentPanel(arg_13_0, arg_13_1, arg_13_2, arg_13_3)
 				setActive(var_13_32, false)
 			elseif #var_13_26 > 0 then
 				local var_13_34 = table.remove(var_13_26, 1)
-
+				-- TODO
 				if arg_13_2:isAircraft() and var_13_34.type == AttributeType.CD then
 					var_13_34 = var_13_4:getAircraftReloadCD()
 				end

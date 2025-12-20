@@ -134,7 +134,8 @@ function BattleTargetChoise.getShipListByIFF(IFF)
 	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 	local candidateList
 	-- TODO 到底哪些属于friendlyList，比如召唤出的单位算不算？
-	-- 粗看下来好像不算，之后再确认一下
+	-- 粗看下来不算
+	-- 潜艇也计入
 	if IFF == BattleConfig.FRIENDLY_CODE then
 		candidateList = battleDataProxy:GetFriendlyShipList()
 	elseif IFF == BattleConfig.FOE_CODE then
@@ -743,18 +744,21 @@ function BattleTargetChoise.TargetAircraftHarm(arg_41_0)
 	return var_41_1
 end
 
-function BattleTargetChoise.TargetAircraftGB(arg_42_0)
-	local var_42_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_42_1 = {}
-	local var_42_2 = arg_42_0:GetIFF()
+-- TODO
+-- SupportHiveUnit.Update有用到
+function BattleTargetChoise.TargetAircraftGB(host)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local candidateList = {}
+	local hostIFF = host:GetIFF()
 
-	for iter_42_0, iter_42_1 in pairs(var_42_0:GetAircraftList()) do
-		if var_42_2 ~= iter_42_1:GetIFF() and iter_42_1:IsVisitable() and iter_42_1:GetMotherUnit() == nil then
-			var_42_1[#var_42_1 + 1] = iter_42_1
+	for _, aircraft in pairs(battleDataProxy:GetAircraftList()) do
+		-- motherunit = nil, 表明是敌方的增援飞机
+		if hostIFF ~= aircraft:GetIFF() and aircraft:IsVisitable() and aircraft:GetMotherUnit() == nil then
+			candidateList[#candidateList + 1] = aircraft
 		end
 	end
 
-	return var_42_1
+	return candidateList
 end
 
 function BattleTargetChoise.TargetDiveState(arg_43_0, arg_43_1, arg_43_2)

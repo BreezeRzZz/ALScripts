@@ -15,7 +15,7 @@ local var_0_4 = Timer
 local var_0_5 = {
 	__index = var_0_4
 }
-
+-- TODO
 function var_0_4.New(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
 	assert(arg_1_1 > 0, "定时器间隔不能小于等于0！：" .. arg_1_1)
 

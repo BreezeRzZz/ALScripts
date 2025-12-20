@@ -1,23 +1,23 @@
-local var_0_0 = class("BattleResultMediator", import("..base.ContextMediator"))
+local BattleResultMediator = class("BattleResultMediator", import("..base.ContextMediator"))
 
-var_0_0.ON_BACK_TO_LEVEL_SCENE = "BattleResultMediator.ON_BACK_TO_LEVEL_SCENE"
-var_0_0.ON_BACK_TO_DUEL_SCENE = "BattleResultMediator.ON_BACK_TO_DUEL_SCENE"
-var_0_0.ON_GO_TO_TASK_SCENE = "BattleResultMediator.ON_GO_TO_TASK_SCENE"
-var_0_0.GET_NEW_SHIP = "BattleResultMediator.GET_NEW_SHIP"
-var_0_0.ON_GO_TO_MAIN_SCENE = "BattleResultMediator.ON_GO_TO_MAIN_SCENE"
-var_0_0.ON_NEXT_CHALLENGE = "BattleResultMediator.ON_NEXT_CHALLENGE"
-var_0_0.ON_CHALLENGE_RANK = "BattleResultMediator:ON_CHALLENGE_RANK"
-var_0_0.ON_CHALLENGE_SHARE = "BattleResultMediator:ON_CHALLENGE_SHARE"
-var_0_0.ON_CHALLENGE_DEFEAT_SCENE = "BattleResultMediator:ON_CHALLENGE_DEFEAT_SCENE"
-var_0_0.DIRECT_EXIT = "BattleResultMediator:DIRECT_EXIT"
-var_0_0.REENTER_STAGE = "BattleResultMediator:REENTER_STAGE"
-var_0_0.OPEN_FAIL_TIP_LAYER = "BattleResultMediator:OPEN_FAIL_TIP_LAYER"
-var_0_0.PRE_BATTLE_FAIL_EXIT = "BattleResultMediator:PRE_BATTLE_FAIL_EXIT"
-var_0_0.ON_ENTER_BATTLE_RESULT = "BattleResultMediator:ON_ENTER_BATTLE_RESULT"
-var_0_0.SET_SKIP_FLAG = "BattleResultMediator:SET_SKIP_FLAG"
-var_0_0.ON_COMPLETE_BATTLE_RESULT = "BattleResultMediator:ON_COMPLETE_BATTLE_RESULT"
+BattleResultMediator.ON_BACK_TO_LEVEL_SCENE = "BattleResultMediator.ON_BACK_TO_LEVEL_SCENE"
+BattleResultMediator.ON_BACK_TO_DUEL_SCENE = "BattleResultMediator.ON_BACK_TO_DUEL_SCENE"
+BattleResultMediator.ON_GO_TO_TASK_SCENE = "BattleResultMediator.ON_GO_TO_TASK_SCENE"
+BattleResultMediator.GET_NEW_SHIP = "BattleResultMediator.GET_NEW_SHIP"
+BattleResultMediator.ON_GO_TO_MAIN_SCENE = "BattleResultMediator.ON_GO_TO_MAIN_SCENE"
+BattleResultMediator.ON_NEXT_CHALLENGE = "BattleResultMediator.ON_NEXT_CHALLENGE"
+BattleResultMediator.ON_CHALLENGE_RANK = "BattleResultMediator:ON_CHALLENGE_RANK"
+BattleResultMediator.ON_CHALLENGE_SHARE = "BattleResultMediator:ON_CHALLENGE_SHARE"
+BattleResultMediator.ON_CHALLENGE_DEFEAT_SCENE = "BattleResultMediator:ON_CHALLENGE_DEFEAT_SCENE"
+BattleResultMediator.DIRECT_EXIT = "BattleResultMediator:DIRECT_EXIT"
+BattleResultMediator.REENTER_STAGE = "BattleResultMediator:REENTER_STAGE"
+BattleResultMediator.OPEN_FAIL_TIP_LAYER = "BattleResultMediator:OPEN_FAIL_TIP_LAYER"
+BattleResultMediator.PRE_BATTLE_FAIL_EXIT = "BattleResultMediator:PRE_BATTLE_FAIL_EXIT"
+BattleResultMediator.ON_ENTER_BATTLE_RESULT = "BattleResultMediator:ON_ENTER_BATTLE_RESULT"
+BattleResultMediator.SET_SKIP_FLAG = "BattleResultMediator:SET_SKIP_FLAG"
+BattleResultMediator.ON_COMPLETE_BATTLE_RESULT = "BattleResultMediator:ON_COMPLETE_BATTLE_RESULT"
 
-function var_0_0.register(arg_1_0)
+function BattleResultMediator.register(arg_1_0)
 	local var_1_0 = getProxy(PlayerProxy):getData()
 	local var_1_1 = getProxy(FleetProxy)
 	local var_1_2 = getProxy(BayProxy)
@@ -115,7 +115,7 @@ function var_0_0.register(arg_1_0)
 
 		arg_1_0.viewComponent:SetSkipFlag(var_1_19.isAutoFight)
 	elseif var_1_5 == SYSTEM_CHALLENGE then
-		arg_1_0:bind(var_0_0.ON_CHALLENGE_SHARE, function(arg_4_0)
+		arg_1_0:bind(BattleResultMediator.ON_CHALLENGE_SHARE, function(arg_4_0)
 			arg_1_0:addSubLayers(Context.New({
 				mediator = ChallengeShareMediator,
 				viewComponent = ChallengeShareLayer,
@@ -124,7 +124,7 @@ function var_0_0.register(arg_1_0)
 				}
 			}))
 		end)
-		arg_1_0:bind(var_0_0.ON_CHALLENGE_DEFEAT_SCENE, function(arg_5_0, arg_5_1)
+		arg_1_0:bind(BattleResultMediator.ON_CHALLENGE_DEFEAT_SCENE, function(arg_5_0, arg_5_1)
 			local var_5_0 = arg_5_1.callback
 
 			arg_1_0:addSubLayers(Context.New({
@@ -212,7 +212,7 @@ function var_0_0.register(arg_1_0)
 	end
 
 	arg_1_0.viewComponent:setShips(var_1_12)
-	arg_1_0:bind(var_0_0.ON_BACK_TO_LEVEL_SCENE, function(arg_6_0, arg_6_1)
+	arg_1_0:bind(BattleResultMediator.ON_BACK_TO_LEVEL_SCENE, function(arg_6_0, arg_6_1)
 		local var_6_0 = getProxy(ContextProxy)
 
 		if var_1_5 == SYSTEM_DUEL then
@@ -613,10 +613,10 @@ function var_0_0.register(arg_1_0)
 
 		arg_1_0:sendNotification(GAME.GO_BACK)
 	end)
-	arg_1_0:bind(var_0_0.ON_GO_TO_MAIN_SCENE, function(arg_18_0)
+	arg_1_0:bind(BattleResultMediator.ON_GO_TO_MAIN_SCENE, function(arg_18_0)
 		arg_1_0:sendNotification(GAME.CHANGE_SCENE, SCENE.MAINUI)
 	end)
-	arg_1_0:bind(var_0_0.ON_GO_TO_TASK_SCENE, function(arg_19_0)
+	arg_1_0:bind(BattleResultMediator.ON_GO_TO_TASK_SCENE, function(arg_19_0)
 		local var_19_0 = getProxy(ContextProxy):getContextByMediator(LevelMediator2)
 
 		if var_19_0 then
@@ -627,7 +627,7 @@ function var_0_0.register(arg_1_0)
 
 		arg_1_0:sendNotification(GAME.CHANGE_SCENE, SCENE.TASK)
 	end)
-	arg_1_0:bind(var_0_0.ON_BACK_TO_DUEL_SCENE, function(arg_20_0)
+	arg_1_0:bind(BattleResultMediator.ON_BACK_TO_DUEL_SCENE, function(arg_20_0)
 		local var_20_0 = getProxy(ContextProxy):getContextByMediator(MilitaryExerciseMediator)
 
 		if var_20_0 then
@@ -638,7 +638,7 @@ function var_0_0.register(arg_1_0)
 
 		arg_1_0:sendNotification(GAME.GO_BACK)
 	end)
-	arg_1_0:bind(var_0_0.GET_NEW_SHIP, function(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
+	arg_1_0:bind(BattleResultMediator.GET_NEW_SHIP, function(arg_21_0, arg_21_1, arg_21_2, arg_21_3)
 		arg_1_0:addSubLayers(Context.New({
 			mediator = NewShipMediator,
 			viewComponent = NewShipLayer,
@@ -649,7 +649,7 @@ function var_0_0.register(arg_1_0)
 			onRemoved = arg_21_2
 		}))
 	end)
-	arg_1_0:bind(var_0_0.OPEN_FAIL_TIP_LAYER, function(arg_22_0)
+	arg_1_0:bind(BattleResultMediator.OPEN_FAIL_TIP_LAYER, function(arg_22_0)
 		setActive(arg_1_0.viewComponent._tf, false)
 		arg_1_0:addSubLayers(Context.New({
 			mediator = BattleFailTipMediator,
@@ -663,10 +663,10 @@ function var_0_0.register(arg_1_0)
 			end
 		}))
 	end)
-	arg_1_0:bind(var_0_0.DIRECT_EXIT, function(arg_24_0, arg_24_1)
+	arg_1_0:bind(BattleResultMediator.DIRECT_EXIT, function(arg_24_0, arg_24_1)
 		arg_1_0:sendNotification(GAME.GO_BACK)
 	end)
-	arg_1_0:bind(var_0_0.REENTER_STAGE, function(arg_25_0)
+	arg_1_0:bind(BattleResultMediator.REENTER_STAGE, function(arg_25_0)
 		arg_1_0:sendNotification(GAME.BEGIN_STAGE, {
 			stageId = arg_1_0.contextData.stageId,
 			mainFleetId = arg_1_0.contextData.mainFleetId,
@@ -679,7 +679,7 @@ function var_0_0.register(arg_1_0)
 			useVariableTicket = arg_1_0.contextData.useVariableTicket
 		})
 	end)
-	arg_1_0:bind(var_0_0.PRE_BATTLE_FAIL_EXIT, function(arg_26_0)
+	arg_1_0:bind(BattleResultMediator.PRE_BATTLE_FAIL_EXIT, function(arg_26_0)
 		if var_1_5 == SYSTEM_SCENARIO then
 			getProxy(ChapterProxy):StopAutoFight(ChapterConst.AUTOFIGHT_STOP_REASON.BATTLE_FAILED)
 		end
@@ -724,50 +724,56 @@ function var_0_0.register(arg_1_0)
 		LuaHelper.Vibrate()
 	end
 
-	arg_1_0:sendNotification(var_0_0.ON_ENTER_BATTLE_RESULT)
+	arg_1_0:sendNotification(BattleResultMediator.ON_ENTER_BATTLE_RESULT)
 end
 
-function var_0_0.showExtraChapterActSocre(arg_28_0)
-	local var_28_0 = getProxy(ActivityProxy)
-	local var_28_1 = var_28_0:getActivitiesByType(ActivityConst.ACTIVITY_TYPE_EXTRA_CHAPTER_RANK)
-	local var_28_2 = getProxy(ChapterProxy)
-	local var_28_3 = var_28_2:getActiveChapter()
-	local var_28_4 = var_28_3 and var_28_2:getMapById(var_28_3:getConfig("map"))
+-- note: 计算EXTRA关卡分数
+function BattleResultMediator.showExtraChapterActSocre(self)
+	local activityProxy = getProxy(ActivityProxy)
+	local extraActivities = activityProxy:getActivitiesByType(ActivityConst.ACTIVITY_TYPE_EXTRA_CHAPTER_RANK)
+	local chapterProxy = getProxy(ChapterProxy)
+	local activeChapter = chapterProxy:getActiveChapter()
+	--- @type Map
+	local activeMap = activeChapter and chapterProxy:getMapById(activeChapter:getConfig("map"))
+	-- extraActivity: Activity类型
+	for _, extraActivity in ipairs(extraActivities) do
+		if extraActivity and not extraActivity:isEnd() then
+			local config_data = extraActivity:getConfig("config_data")
+			local stageId = self.contextData.stageId
 
-	for iter_28_0, iter_28_1 in ipairs(var_28_1) do
-		if iter_28_1 and not iter_28_1:isEnd() then
-			local var_28_5 = iter_28_1:getConfig("config_data")
-			local var_28_6 = arg_28_0.contextData.stageId
+			if config_data[1] == stageId and activeMap and activeMap:isActExtra() then
+				-- 计时向下取整
+				-- statistics._totalTime的来源: BattleDataProxyStatistics.CalcSingleDungeonScoreAtEnd
+				local totalTime = math.floor(self.contextData.statistics._totalTime)
+				-- 舰队综合性能
+				-- prefabFleet和oldMainShips的来源: BattleMediator的handleNotification的addSubLayers中
+				local shipsPower = ActivityLevelConst.getShipsPower(self.contextData.prefabFleet or self.contextData.oldMainShips)
+				local score, maxScore = ActivityLevelConst.getExtraChapterSocre(stageId, totalTime, shipsPower, extraActivity)
+				local ifNewHighScore = maxScore < score and i18n("extra_chapter_record_updated") or i18n("extra_chapter_record_not_updated")
 
-			if var_28_5[1] == var_28_6 and var_28_4 and var_28_4:isActExtra() then
-				local var_28_7 = math.floor(arg_28_0.contextData.statistics._totalTime)
-				local var_28_8 = ActivityLevelConst.getShipsPower(arg_28_0.contextData.prefabFleet or arg_28_0.contextData.oldMainShips)
-				local var_28_9, var_28_10 = ActivityLevelConst.getExtraChapterSocre(var_28_6, var_28_7, var_28_8, iter_28_1)
-				local var_28_11 = var_28_10 < var_28_9 and i18n("extra_chapter_record_updated") or i18n("extra_chapter_record_not_updated")
+				if maxScore < score then
+					extraActivity.data1 = score
 
-				if var_28_10 < var_28_9 then
-					iter_28_1.data1 = var_28_9
+					activityProxy:updateActivity(extraActivity)
 
-					var_28_0:updateActivity(iter_28_1)
-
-					var_28_10 = var_28_9
+					maxScore = score
 				end
 
 				pg.MsgboxMgr.GetInstance():ShowMsgBox({
 					hideNo = true,
-					content = i18n("extra_chapter_socre_tip", var_28_9, var_28_10, var_28_11)
+					content = i18n("extra_chapter_socre_tip", score, maxScore, ifNewHighScore)
 				})
 			end
 		end
 	end
 end
 
-function var_0_0.listNotificationInterests(arg_29_0)
+function BattleResultMediator.listNotificationInterests(arg_29_0)
 	return {
 		GAME.BEGIN_STAGE_DONE,
 		GAME.ACT_BOSS_EXCHANGE_TICKET_DONE,
 		ContinuousOperationMediator.CONTINUE_OPERATION,
-		var_0_0.SET_SKIP_FLAG,
+		BattleResultMediator.SET_SKIP_FLAG,
 		GAME.BOSSRUSH_SETTLE_DONE,
 		ContinuousOperationMediator.ON_REENTER,
 		BossSingleContinuousOperationMediator.CONTINUE_OPERATION,
@@ -775,7 +781,7 @@ function var_0_0.listNotificationInterests(arg_29_0)
 	}
 end
 
-function var_0_0.handleNotification(arg_30_0, arg_30_1)
+function BattleResultMediator.handleNotification(arg_30_0, arg_30_1)
 	local var_30_0 = arg_30_1:getName()
 	local var_30_1 = arg_30_1:getBody()
 
@@ -783,7 +789,7 @@ function var_0_0.handleNotification(arg_30_0, arg_30_1)
 		arg_30_0:sendNotification(GAME.CHANGE_SCENE, SCENE.COMBATLOAD, var_30_1)
 	elseif var_30_0 == GAME.ACT_BOSS_EXCHANGE_TICKET_DONE then
 		existCall(arg_30_0.viewComponent.OnActBossExchangeTicket, arg_30_0.viewComponent)
-	elseif var_30_0 == var_0_0.SET_SKIP_FLAG then
+	elseif var_30_0 == BattleResultMediator.SET_SKIP_FLAG then
 		arg_30_0.viewComponent:SetSkipFlag(var_30_1)
 	elseif var_30_0 == ContinuousOperationMediator.CONTINUE_OPERATION then
 		arg_30_0.contextData.continuousBattleTimes = arg_30_0.contextData.continuousBattleTimes - 1
@@ -846,7 +852,7 @@ function var_0_0.handleNotification(arg_30_0, arg_30_1)
 			return
 		end
 
-		arg_30_0.viewComponent:emit(var_0_0.REENTER_STAGE)
+		arg_30_0.viewComponent:emit(BattleResultMediator.REENTER_STAGE)
 	elseif var_30_0 == BossSingleContinuousOperationMediator.CONTINUE_OPERATION then
 		arg_30_0.contextData.continuousBattleTimes = arg_30_0.contextData.continuousBattleTimes - 1
 	elseif var_30_0 == BossSingleContinuousOperationMediator.ON_REENTER then
@@ -856,11 +862,11 @@ function var_0_0.handleNotification(arg_30_0, arg_30_1)
 			return
 		end
 
-		arg_30_0.viewComponent:emit(var_0_0.REENTER_STAGE)
+		arg_30_0.viewComponent:emit(BattleResultMediator.REENTER_STAGE)
 	end
 end
 
-function var_0_0.DisplayTotalReward(arg_31_0, arg_31_1)
+function BattleResultMediator.DisplayTotalReward(arg_31_0, arg_31_1)
 	local var_31_0 = getProxy(ContextProxy):getCurrentContext():getContextByMediator(ContinuousOperationMediator)
 	local var_31_1 = var_31_0 and var_31_0.data.autoFlag or nil
 	local var_31_2 = getProxy(ChapterProxy):PopActBossRewards()
@@ -881,7 +887,7 @@ function var_0_0.DisplayTotalReward(arg_31_0, arg_31_1)
 	}))
 end
 
-function var_0_0.DisplayBossSingleTotalReward(arg_33_0, arg_33_1)
+function BattleResultMediator.DisplayBossSingleTotalReward(arg_33_0, arg_33_1)
 	local var_33_0 = getProxy(ContextProxy):getCurrentContext():getContextByMediator(BossSingleContinuousOperationMediator)
 	local var_33_1 = var_33_0 and var_33_0.data.autoFlag or nil
 	local var_33_2 = getProxy(ChapterProxy):PopBossSingleRewards()
@@ -921,8 +927,8 @@ function var_0_0.DisplayBossSingleTotalReward(arg_33_0, arg_33_1)
 	}))
 end
 
-function var_0_0.GetResultView(arg_36_0)
-	var_0_0.RESULT_VIEW_TRANSFORM = var_0_0.RESULT_VIEW_TRANSFORM or {
+function BattleResultMediator.GetResultView(arg_36_0)
+	BattleResultMediator.RESULT_VIEW_TRANSFORM = BattleResultMediator.RESULT_VIEW_TRANSFORM or {
 		[SYSTEM_CHALLENGE] = BattleChallengeResultLayer,
 		[SYSTEM_DODGEM] = BattleDodgemResultLayer,
 		[SYSTEM_SUBMARINE_RUN] = BattleSubmarineRunResultLayer,
@@ -937,7 +943,7 @@ function var_0_0.GetResultView(arg_36_0)
 		[SYSTEM_CARDPUZZLE] = BattleAirFightResultLayer
 	}
 
-	return var_0_0.RESULT_VIEW_TRANSFORM[arg_36_0] or BattleResultLayer
+	return BattleResultMediator.RESULT_VIEW_TRANSFORM[arg_36_0] or BattleResultLayer
 end
 
-return var_0_0
+return BattleResultMediator

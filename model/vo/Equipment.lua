@@ -127,7 +127,7 @@ local function var_0_4(arg_12_0)
 
 	return var_0_3[arg_12_0]
 end
-
+-- TODO
 function Equipment.GetInfoTrans(arg_13_0, arg_13_1)
 	local var_13_0 = arg_13_0.name
 	local var_13_1 = arg_13_0.value
@@ -803,7 +803,7 @@ function Equipment.GetRevertRewardsStatic(arg_77_0)
 
 	return var_77_0
 end
-
+-- TODO
 function Equipment.GetEquipReloadStatic(arg_78_0)
 	local var_78_0 = Equipment.getConfigData(arg_78_0).weapon_id
 

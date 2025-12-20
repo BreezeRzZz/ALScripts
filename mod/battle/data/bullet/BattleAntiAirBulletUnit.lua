@@ -11,24 +11,24 @@ function BattleAntiAirBulletUnit.Ctor(self, UID, hostIFF)
 	ys.Battle.BattleAntiAirBulletUnit.super.Ctor(self, UID, hostIFF)
 end
 
-function BattleAntiAirBulletUnit.Update(arg_2_0, arg_2_1)
+function BattleAntiAirBulletUnit.Update(self, timeStamp)
 	return
 end
 
-function BattleAntiAirBulletUnit.IsOutRange(arg_3_0)
+function BattleAntiAirBulletUnit.IsOutRange(self)
 	return false
 end
 
-function BattleAntiAirBulletUnit.SetDirectHitUnit(arg_4_0, arg_4_1)
-	arg_4_0._directHitUnit = arg_4_1
+function BattleAntiAirBulletUnit.SetDirectHitUnit(self, directHitUnit)
+	self._directHitUnit = directHitUnit
 end
 
-function BattleAntiAirBulletUnit.GetDirectHitUnit(arg_5_0)
-	return arg_5_0._directHitUnit
+function BattleAntiAirBulletUnit.GetDirectHitUnit(self)
+	return self._directHitUnit
 end
 
-function BattleAntiAirBulletUnit.Dispose(arg_6_0)
-	arg_6_0._directHitUnit = nil
+function BattleAntiAirBulletUnit.Dispose(self)
+	self._directHitUnit = nil
 
-	BattleAntiAirBulletUnit.super.Dispose(arg_6_0)
+	BattleAntiAirBulletUnit.super.Dispose(self)
 end

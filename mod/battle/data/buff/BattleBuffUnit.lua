@@ -78,6 +78,7 @@ function BattleBuffUnit.Attach(arg_4_0, arg_4_1)
 	arg_4_0:SetRemoveTime()
 end
 -- TODO
+-- 新groupLevel <= 原groupLevel时触发
 function BattleBuffUnit.Stack(arg_5_0, arg_5_1)
 	arg_5_0._stack = math.min(arg_5_0._stack + 1, arg_5_0._tempData.stack)
 
@@ -323,6 +324,7 @@ function BattleBuffUnit.onTrigger(self, effectType, owner, args)
 	end
 end
 -- TODO
+-- 重置移除时间
 function BattleBuffUnit.SetRemoveTime(arg_25_0)
 	local var_25_0 = pg.TimeMgr.GetInstance():GetCombatTime()
 

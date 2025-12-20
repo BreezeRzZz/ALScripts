@@ -519,11 +519,12 @@ function BattleDataProxy.InitUserShipsData(self, mainUnitList, vanguardUnitList,
 	}))
 end
 
-function BattleDataProxy.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
-	local var_25_0 = arg_25_0:GetFleetByIFF(arg_25_1)
+-- 同样在BattleDataProxy.InitBattle调用，就在InitUserShipsData之后
+function BattleDataProxy.InitUserSupportShipsData(self, IFF, supportUnitList)
+	local fleet = self:GetFleetByIFF(IFF)
 
-	for iter_25_0, iter_25_1 in ipairs(arg_25_2) do
-		local var_25_1 = arg_25_0:SpawnSupportUnit(iter_25_1, arg_25_1)
+	for _, supportUnitData in ipairs(supportUnitList) do
+		local supportUnit = self:SpawnSupportUnit(supportUnitData, IFF)
 	end
 end
 
@@ -551,7 +552,7 @@ function BattleDataProxy.InitUserAidData(self)
 		self._aidUnitList[aidBattleUnit:GetUniqueID()] = aidBattleUnit
 	end
 end
-
+-- 潜艇的跨队支援还不太一样
 function BattleDataProxy.SetSubmarinAidData(arg_27_0)
 	arg_27_0:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):SetSubAidData(arg_27_0._battleInitData.TotalSubAmmo, arg_27_0._battleInitData.SubFlag)
 end
@@ -1475,6 +1476,8 @@ function BattleDataProxy.SpawnMain(self, arg_69_1, arg_69_2)
 	return var_69_3
 end
 
+-- TODO
+-- 生成潜艇单位
 function BattleDataProxy.SpawnSub(arg_70_0, arg_70_1, arg_70_2)
 	local var_70_0
 	local var_70_1 = arg_70_0:GetFleetByIFF(arg_70_2)
@@ -1522,12 +1525,13 @@ function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
 	return var_71_1
 end
 
-function BattleDataProxy.SpawnSupportUnit(arg_72_0, arg_72_1, arg_72_2)
-	local var_72_0 = arg_72_0:generateSupportPlayerUnit(arg_72_1, arg_72_2)
+-- 被BattleDataProxy.InitUserSupportShipsData调用
+function BattleDataProxy.SpawnSupportUnit(self, supportUnitData, IFF)
+	local supportUnit = self:generateSupportPlayerUnit(supportUnitData, IFF)
 
-	arg_72_0:GetFleetByIFF(arg_72_2):AppendSupportUnit(var_72_0)
+	self:GetFleetByIFF(IFF):AppendSupportUnit(supportUnit)
 
-	return var_72_0
+	return supportUnit
 end
 
 function BattleDataProxy.ShutdownPlayerUnit(arg_73_0, arg_73_1)
@@ -1779,33 +1783,37 @@ function BattleDataProxy.generatePlayerUnit(self, unitData, IFF, spawnPos, comma
 	return playerUnit
 end
 
-function BattleDataProxy.generateSupportPlayerUnit(arg_85_0, arg_85_1, arg_85_2)
-	local var_85_0 = arg_85_0:GenerateUnitID()
-	local var_85_1 = arg_85_1.properties
+-- 生成支援舰队单位，与generatePlayerUnit不同
+-- 被BattleDataProxy.SpawnSupportUnit调用
+function BattleDataProxy.generateSupportPlayerUnit(self, unitData, IFF)
+	local UID = self:GenerateUnitID()
+	local properties = unitData.properties
 
-	var_85_1.level = arg_85_1.level
-	var_85_1.formationID = BattleConfig.FORMATION_ID
-	var_85_1.id = arg_85_1.id
+	properties.level = unitData.level
+	properties.formationID = BattleConfig.FORMATION_ID
+	properties.id = unitData.id
 
-	BattleAttr.AttrFixer(arg_85_0._battleInitData.battleType, var_85_1)
+	BattleAttr.AttrFixer(self._battleInitData.battleType, properties)
 
-	local var_85_2 = arg_85_1.proficiency or {
+	local proficiency = unitData.proficiency or {
 		1,
 		1,
 		1
 	}
-	local var_85_3 = BattleDataFunction.CreateBattleUnitData(var_85_0, BattleConst.UnitType.SUPPORT_UNIT, arg_85_2, arg_85_1.tmpID, arg_85_1.skinId, arg_85_1.equipment, var_85_1, arg_85_1.baseProperties, var_85_2, arg_85_1.baseList, arg_85_1.preloasList)
+	local supportUnit = BattleDataFunction.CreateBattleUnitData(UID, BattleConst.UnitType.SUPPORT_UNIT, IFF, unitData.tmpID, unitData.skinId, unitData.equipment, properties, unitData.baseProperties, proficiency, unitData.baseList, unitData.preloasList)
 
-	var_85_3:InitCurrentHP(1)
-	var_85_3:SetShipName(arg_85_1.name)
+	supportUnit:InitCurrentHP(1)
+	supportUnit:SetShipName(unitData.name)
 
-	arg_85_0._spectreShipList[var_85_0] = var_85_3
+	self._spectreShipList[UID] = supportUnit
 
-	var_85_3:SetPosition(Clone(BattleConfig.AirSupportUnitPos))
+	supportUnit:SetPosition(Clone(BattleConfig.AirSupportUnitPos))
 
-	return var_85_3
+	return supportUnit
 end
 
+-- TODO
+-- 切换幽灵状态
 function BattleDataProxy.SwitchSpectreUnit(arg_86_0, arg_86_1)
 	local var_86_0 = arg_86_1:GetUniqueID()
 	local var_86_1 = arg_86_1:GetIFF() == BattleConfig.FRIENDLY_CODE and arg_86_0._friendlyShipList or arg_86_0._foeShipList
@@ -1862,6 +1870,7 @@ function BattleDataProxy.GetCountDown(arg_94_0)
 	return arg_94_0._countDown
 end
 
+-- 有点没怎么用过，一般都是走通用的SpawnAircraft
 function BattleDataProxy.SpawnAirFighter(arg_95_0, arg_95_1)
 	local var_95_0 = #arg_95_0._airFighterList + 1
 	local var_95_1 = BattleDataFunction.GetFormationTmpDataFromID(arg_95_1.formation).pos_offset
@@ -2006,7 +2015,7 @@ function BattleDataProxy.CreateAircraft(self, host, aircraftId, potential, skinI
 
 	return aircraft
 end
--- TODO
+
 function BattleDataProxy.CreateAirFighter(arg_105_0, arg_105_1)
 	local var_105_0 = arg_105_0:GenerateAircraftID()
 	local var_105_1 = BattleDataFunction.CreateAirFighterUnit(var_105_0, arg_105_1)
@@ -2016,6 +2025,8 @@ function BattleDataProxy.CreateAirFighter(arg_105_0, arg_105_1)
 	return var_105_1
 end
 
+-- TODO
+-- 处理碰撞、摄像机、事件派发等
 function BattleDataProxy.doCreateAirUnit(arg_106_0, arg_106_1, arg_106_2, arg_106_3, arg_106_4)
 	arg_106_0._aircraftList[arg_106_1] = arg_106_2
 
@@ -2186,30 +2197,30 @@ function BattleDataProxy.CLSMinion(arg_116_0)
 	end
 end
 
-function var_0_9.CLSAOE(arg_117_0)
-	for iter_117_0, iter_117_1 in pairs(arg_117_0._AOEList) do
+function var_0_9.CLSAOE(self)
+	for iter_117_0, iter_117_1 in pairs(self._AOEList) do
 		if iter_117_1:GetSource() == iter_117_1.SOURCE_BULLET_9 then
-			arg_117_0:RemoveAreaOfEffect(iter_117_0)
+			self:RemoveAreaOfEffect(iter_117_0)
 		end
 	end
 end
 
-function BattleDataProxy.SpawnColumnArea(arg_117_0, arg_117_1, arg_117_2, arg_117_3, arg_117_4, arg_117_5, arg_117_6, arg_117_7, arg_117_8)
-	arg_117_7 = arg_117_7 or false
+function BattleDataProxy.SpawnColumnArea(self, fieldType, ownerIFF, position, range, lifetime, areaCldFunc, friendly, endFunc)
+	friendly = friendly or false
 
-	local var_117_0 = arg_117_0:GenerateAreaID()
-	local var_117_1 = ys.Battle.BattleAOEData.New(var_117_0, arg_117_2, arg_117_6, arg_117_8)
-	local var_117_2 = Clone(arg_117_3)
+	local aoeID = self:GenerateAreaID()
+	local aoeData = ys.Battle.BattleAOEData.New(aoeID, ownerIFF, areaCldFunc, endFunc)
+	local pos = Clone(position)
 
-	var_117_1:SetPosition(var_117_2)
-	var_117_1:SetRange(arg_117_4)
-	var_117_1:SetAreaType(BattleConst.AreaType.COLUMN)
-	var_117_1:SetLifeTime(arg_117_5)
-	var_117_1:SetFieldType(arg_117_1)
-	var_117_1:SetOpponentAffected(not arg_117_7)
-	arg_117_0:CreateAreaOfEffect(var_117_1)
+	aoeData:SetPosition(pos)
+	aoeData:SetRange(range)
+	aoeData:SetAreaType(BattleConst.AreaType.COLUMN)
+	aoeData:SetLifeTime(lifetime)
+	aoeData:SetFieldType(fieldType)
+	aoeData:SetOpponentAffected(not friendly)
+	self:CreateAreaOfEffect(aoeData)
 
-	return var_117_1
+	return aoeData
 end
 
 function BattleDataProxy.SpawnCubeArea(arg_118_0, arg_118_1, arg_118_2, arg_118_3, arg_118_4, arg_118_5, arg_118_6, arg_118_7, arg_118_8, arg_118_9)

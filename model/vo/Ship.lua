@@ -2199,25 +2199,26 @@ function Ship.getMapAuras(arg_149_0)
 
 	return var_149_0
 end
+-- TODO
+-- 被ChapterFleet.getMapAid调用
+function Ship.getMapAids(self)
+	local shipAidsList = {}
+	-- 这边所有Skill，实际对应的是战斗中的Buff概念
+	for skillID, skillConfig in pairs(self:getAllSkills()) do
+		local benefitID = tonumber(skillID .. string.format("%.2d", skillConfig.level))
+		local benefitTmp = pg.skill_benefit_template[benefitID]
 
-function Ship.getMapAids(arg_150_0)
-	local var_150_0 = {}
-
-	for iter_150_0, iter_150_1 in pairs(arg_150_0:getAllSkills()) do
-		local var_150_1 = tonumber(iter_150_0 .. string.format("%.2d", iter_150_1.level))
-		local var_150_2 = pg.skill_benefit_template[var_150_1]
-
-		if var_150_2 and arg_150_0:IsBenefitSkillActive(var_150_2) and var_150_2.type == Ship.BENEFIT_AID then
-			local var_150_3 = {
-				id = var_150_2.effect[1],
-				level = iter_150_1.level
+		if benefitTmp and self:IsBenefitSkillActive(benefitTmp) and benefitTmp.type == Ship.BENEFIT_AID then
+			local aidConfig = {
+				id = benefitTmp.effect[1],
+				level = skillConfig.level
 			}
 
-			table.insert(var_150_0, var_150_3)
+			table.insert(shipAidsList, aidConfig)
 		end
 	end
 
-	return var_150_0
+	return shipAidsList
 end
 
 Ship.BENEFIT_SKILL = 2
@@ -2324,18 +2325,18 @@ function Ship.GetEquipmentSkills(arg_157_0)
 	return var_157_0
 end
 
-function Ship.getAllSkills(arg_159_0)
-	local var_159_0 = Clone(arg_159_0.skills)
+function Ship.getAllSkills(self)
+	local skills = Clone(self.skills)
 
-	for iter_159_0, iter_159_1 in pairs(arg_159_0:GetEquipmentSkills()) do
-		var_159_0[iter_159_0] = iter_159_1
+	for skillID, skillConfig in pairs(self:GetEquipmentSkills()) do
+		skills[skillID] = skillConfig
 	end
 
-	for iter_159_2, iter_159_3 in pairs(arg_159_0:getTriggerSkills()) do
-		var_159_0[iter_159_2] = iter_159_3
+	for skillID, skillConfig in pairs(self:getTriggerSkills()) do
+		skills[skillID] = skillConfig
 	end
-
-	return var_159_0
+	-- 应当是一个ID->{id=ID, level=LV}的映射表
+	return skills
 end
 
 function Ship.isSameKind(arg_160_0, arg_160_1)
@@ -2502,7 +2503,7 @@ function Ship.fateSkillChange(arg_181_0, arg_181_1)
 
 	return arg_181_1
 end
-
+-- TODO
 function Ship.RemapSkillId(arg_182_0, arg_182_1, arg_182_2)
 	local var_182_0 = arg_182_0:GetSpWeapon()
 
@@ -2853,6 +2854,8 @@ function Ship.getAircraftReloadCD(arg_216_0)
 		if underscore.any(EquipType.AirEquipTypes, function(arg_217_0)
 			return var_216_6 == arg_217_0
 		end) then
+			-- TODO
+			-- 获取的是reload_max
 			var_216_2 = var_216_2 + Equipment.GetEquipReloadStatic(var_216_5) * var_216_0[iter_216_0]
 			var_216_3 = var_216_3 + var_216_0[iter_216_0]
 		end

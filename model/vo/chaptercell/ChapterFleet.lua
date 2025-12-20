@@ -874,22 +874,24 @@ function ChapterFleet.getMapAura(arg_93_0)
 	return var_93_0
 end
 
-function ChapterFleet.getMapAid(arg_94_0)
-	local var_94_0 = {}
+-- TODO
+-- 被ChapterProxy.GetChapterAidBuffs调用
+function ChapterFleet.getMapAid(self)
+	local mapAidsList = {}
+	--- ship: Ship
+	for _, ship in pairs(self.ships) do
+		local shipAidsList = ship:getMapAids()
 
-	for iter_94_0, iter_94_1 in pairs(arg_94_0.ships) do
-		local var_94_1 = iter_94_1:getMapAids()
+		for _, aidConfig in ipairs(shipAidsList) do
+			local shipAidConfigList = mapAidsList[ship] or {}
 
-		for iter_94_2, iter_94_3 in ipairs(var_94_1) do
-			local var_94_2 = var_94_0[iter_94_1] or {}
+			table.insert(shipAidConfigList, aidConfig)
 
-			table.insert(var_94_2, iter_94_3)
-
-			var_94_0[iter_94_1] = var_94_2
+			mapAidsList[ship] = shipAidConfigList
 		end
 	end
-
-	return var_94_0
+	--- @type table<Ship, table<number, table<string, any>>>
+	return mapAidsList
 end
 
 function ChapterFleet.updateCommanderSkills(arg_95_0)

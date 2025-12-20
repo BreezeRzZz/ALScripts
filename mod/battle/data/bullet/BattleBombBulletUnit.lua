@@ -126,9 +126,11 @@ function var_0_3.SetTemplateData(arg_10_0, arg_10_1)
 	if var_10_0.barragePriority then
 		arg_10_0._randomOffset = Vector3.zero
 	else
+		-- TODO: chargeBulletAccuracy的使用
+		-- 此处要用到template中的accuracy，值是一个类型字符串
 		local var_10_1 = var_10_0.accuracy
 		local var_10_2 = 0
-
+		-- 如果有，获取子弹的对应属性值
 		if var_10_1 then
 			var_10_2 = arg_10_0:GetAttrByName(var_10_1)
 		end

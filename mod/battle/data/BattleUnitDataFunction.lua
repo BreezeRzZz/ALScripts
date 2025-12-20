@@ -382,12 +382,18 @@ function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, w
 	return weapon
 end
 
+-- TODO
 function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, potential)
 	local aircraft
 	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(aircraftId)
 
 	assert(aircraftTemplate ~= nil, "找不到飞机配置：id = " .. aircraftId)
-
+	-- 根据类型不同创建不同的飞机单位
+	-- 如果有funnel_behavior字段，则创建FunnelUnit
+		-- 如果存在hover_range字段，则创建UAVUnit
+		-- 如果存在AI字段，则创建PatternFunnelUnit
+		-- 否则创建普通FunnelUnit
+	-- 否则创建普通AircraftUnit
 	if type(aircraftTemplate.funnel_behavior) == "table" then
 		if aircraftTemplate.funnel_behavior.hover_range then
 			aircraft = ys.Battle.BattleUAVUnit.New(aircraftUID)
@@ -647,7 +653,7 @@ function BattleDataFunction.IncreaseAttributes(arg_40_0, arg_40_1, arg_40_2)
 	end
 end
 
--- 飞机单位创建的武器
+-- 舰载机创建的武器
 function BattleDataFunction.CreateAirFighterWeaponUnit(weaponId, aircraft, index, potential)
 	local weapon
 	local weaponTemplate = BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
@@ -691,6 +697,7 @@ function BattleDataFunction.GetWords(arg_42_0, arg_42_1, arg_42_2)
 	return var_42_2
 end
 -- TODO
+-- 演习/大世界技能转换
 function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
 	local var_43_0 = BattleDataFunction.GetSkillDataTemplate(arg_43_1)
 
@@ -706,20 +713,21 @@ function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
 		return var_43_1[arg_43_0]
 	end
 end
+
 -- TODO
-function BattleDataFunction.GenerateHiddenBuff(arg_44_0)
-	local var_44_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_44_0).hide_buff_list
-	local var_44_1 = {}
+function BattleDataFunction.GenerateHiddenBuff(configId)
+	local hide_buff_list = BattleDataFunction.GetPlayerShipModelFromID(configId).hide_buff_list
+	local hideBuffList = {}
 
-	for iter_44_0, iter_44_1 in ipairs(var_44_0) do
-		local var_44_2 = {}
+	for _, hideBuffID in ipairs(hide_buff_list) do
+		local hideBuffData = {}
 
-		var_44_2.level = 1
-		var_44_2.id = iter_44_1
-		var_44_1[iter_44_1] = var_44_2
+		hideBuffData.level = 1
+		hideBuffData.id = hideBuffID
+		hideBuffList[hideBuffID] = hideBuffData
 	end
 
-	return var_44_1
+	return hideBuffList
 end
 
 function BattleDataFunction.GetDivingFilter(arg_45_0)

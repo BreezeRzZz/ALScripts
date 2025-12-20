@@ -710,7 +710,7 @@ function BattleFleetVO.appendScoutUnit(arg_70_0, arg_70_1)
 	table.insert(var_70_4, #arg_70_0._scoutList, var_70_2)
 	arg_70_0:refreshFleetFormation(var_70_4)
 end
-
+-- TODO
 function BattleFleetVO.appendMainUnit(arg_71_0, arg_71_1)
 	if #arg_71_0._mainList == 0 then
 		arg_71_0._flagShip = arg_71_1
@@ -737,6 +737,7 @@ function BattleFleetVO.appendMainUnit(arg_71_0, arg_71_1)
 	end
 
 	if #arg_71_1:GetHiveList() > 0 then
+		-- 此处将Hive->Airassist
 		local var_71_2 = BattleDataFunction.CreateAllInStrike(arg_71_1)
 
 		for iter_71_4, iter_71_5 in ipairs(var_71_2) do

@@ -81,7 +81,7 @@ end
 
 function BattlePlayerUnit.SetTemplate(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
 	BattlePlayerUnit.super.SetTemplate(arg_12_0, arg_12_1)
-
+	-- ship_data_statistics
 	arg_12_0._tmpData = BattleDataFunction.GetPlayerShipTmpDataFromID(arg_12_0._tmpID)
 
 	arg_12_0:configWeaponQueueParallel()
@@ -463,8 +463,8 @@ function BattlePlayerUnit.ShiftWeapon(arg_30_0, arg_30_1)
 	return
 end
 
-function BattlePlayerUnit.GetManualWeaponParallel(arg_31_0)
-	return arg_31_0._tmpData.parallel_max
+function BattlePlayerUnit.GetManualWeaponParallel(self)
+	return self._tmpData.parallel_max
 end
 
 function BattlePlayerUnit.CeaseAllWeapon(self, ceaseFire)
@@ -526,20 +526,21 @@ end
 function BattlePlayerUnit.UpdatePrecastMoveLimit(arg_36_0)
 	return
 end
+-- TODO
+function BattlePlayerUnit.setStandardLabelTag(self)
+	BattlePlayerUnit.super.setStandardLabelTag(self)
+	-- ship_data_statistics.parallel_max
+	local parallel_max = self:GetManualWeaponParallel()
+	local index = #parallel_max
 
-function BattlePlayerUnit.setStandardLabelTag(arg_37_0)
-	BattlePlayerUnit.super.setStandardLabelTag(arg_37_0)
-
-	local var_37_0 = arg_37_0:GetManualWeaponParallel()
-	local var_37_1 = #var_37_0
-
-	while var_37_1 > 0 do
-		if var_37_0[var_37_1] > 1 then
-			print(BattleConst.PARALLEL_LABEL_TAG[var_37_1])
-			arg_37_0:AddLabelTag(BattleConst.PARALLEL_LABEL_TAG[var_37_1])
+	while index > 0 do
+		-- 需要对应位置 > 1
+		if parallel_max[index] > 1 then
+			print(BattleConst.PARALLEL_LABEL_TAG[index])
+			self:AddLabelTag(BattleConst.PARALLEL_LABEL_TAG[index])
 		end
 
-		var_37_1 = var_37_1 - 1
+		index = index - 1
 	end
 end
 

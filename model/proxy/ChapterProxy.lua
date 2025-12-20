@@ -1,15 +1,15 @@
-local var_0_0 = class("ChapterProxy", import(".NetProxy"))
+local ChapterProxy = class("ChapterProxy", import(".NetProxy"))
 
-var_0_0.CHAPTER_UPDATED = "ChapterProxy:CHAPTER_UPDATED"
-var_0_0.CHAPTER_TIMESUP = "ChapterProxy:CHAPTER_TIMESUP"
-var_0_0.CHAPTER_CELL_UPDATED = "ChapterProxy:CHAPTER_CELL_UPDATED"
-var_0_0.CHAPTER_AUTO_FIGHT_FLAG_UPDATED = "CHAPTERPROXY:CHAPTER_AUTO_FIGHT_FLAG_UPDATED"
-var_0_0.CHAPTER_SKIP_PRECOMBAT_UPDATED = "CHAPTERPROXY:CHAPTER_SKIP_PRECOMBAT_UPDATED"
-var_0_0.CHAPTER_REMASTER_INFO_UPDATED = "CHAPTERPROXY:CHAPTER_REMASTER_INFO_UPDATED"
-var_0_0.LAST_MAP_FOR_ACTIVITY = "last_map_for_activity"
-var_0_0.LAST_MAP = "last_map"
+ChapterProxy.CHAPTER_UPDATED = "ChapterProxy:CHAPTER_UPDATED"
+ChapterProxy.CHAPTER_TIMESUP = "ChapterProxy:CHAPTER_TIMESUP"
+ChapterProxy.CHAPTER_CELL_UPDATED = "ChapterProxy:CHAPTER_CELL_UPDATED"
+ChapterProxy.CHAPTER_AUTO_FIGHT_FLAG_UPDATED = "CHAPTERPROXY:CHAPTER_AUTO_FIGHT_FLAG_UPDATED"
+ChapterProxy.CHAPTER_SKIP_PRECOMBAT_UPDATED = "CHAPTERPROXY:CHAPTER_SKIP_PRECOMBAT_UPDATED"
+ChapterProxy.CHAPTER_REMASTER_INFO_UPDATED = "CHAPTERPROXY:CHAPTER_REMASTER_INFO_UPDATED"
+ChapterProxy.LAST_MAP_FOR_ACTIVITY = "last_map_for_activity"
+ChapterProxy.LAST_MAP = "last_map"
 
-function var_0_0.register(arg_1_0)
+function ChapterProxy.register(arg_1_0)
 	arg_1_0:on(13001, function(arg_2_0)
 		arg_1_0.mapEliteFleetCache = {}
 		arg_1_0.mapEliteCommanderCache = {}
@@ -71,8 +71,8 @@ function var_0_0.register(arg_1_0)
 			end
 		end
 
-		Map.lastMap = arg_1_0:getLastMap(var_0_0.LAST_MAP)
-		Map.lastMapForActivity = arg_1_0:getLastMap(var_0_0.LAST_MAP_FOR_ACTIVITY)
+		Map.lastMap = arg_1_0:getLastMap(ChapterProxy.LAST_MAP)
+		Map.lastMapForActivity = arg_1_0:getLastMap(ChapterProxy.LAST_MAP_FOR_ACTIVITY)
 
 		pg.ShipFlagMgr.GetInstance():UpdateFlagShips("inChapter")
 		pg.ShipFlagMgr.GetInstance():UpdateFlagShips("inElite")
@@ -89,7 +89,7 @@ function var_0_0.register(arg_1_0)
 	arg_1_0:buildRemasterInfo()
 end
 
-function var_0_0.timeCall(arg_4_0)
+function ChapterProxy.timeCall(arg_4_0)
 	return {
 		[ProxyRegister.DayCall] = function(arg_5_0)
 			arg_4_0:resetRepairTimes()
@@ -110,7 +110,7 @@ function var_0_0.timeCall(arg_4_0)
 	}
 end
 
-function var_0_0.OnBattleFinished(arg_6_0, arg_6_1, arg_6_2)
+function ChapterProxy.OnBattleFinished(arg_6_0, arg_6_1, arg_6_2)
 	local var_6_0 = arg_6_0:getActiveChapter()
 
 	if var_6_0 then
@@ -233,7 +233,7 @@ function var_0_0.OnBattleFinished(arg_6_0, arg_6_1, arg_6_2)
 	end
 end
 
-function var_0_0.setEliteCache(arg_13_0, arg_13_1)
+function ChapterProxy.setEliteCache(arg_13_0, arg_13_1)
 	arg_13_0.mapEliteFleetCache = {}
 	arg_13_0.mapEliteCommanderCache = {}
 	arg_13_0.mapSupportFleetCache = {}
@@ -275,33 +275,33 @@ function var_0_0.setEliteCache(arg_13_0, arg_13_1)
 	end
 end
 
-function var_0_0.buildMaps(arg_14_0)
+function ChapterProxy.buildMaps(arg_14_0)
 	arg_14_0:initChapters()
 	arg_14_0:buildBaseMaps()
 	arg_14_0:buildRemasterMaps()
 end
 
-function var_0_0.initChapters(arg_15_0)
-	var_0_0.MapToChapters = table.shallowCopy(pg.chapter_template.get_id_list_by_map)
+function ChapterProxy.initChapters(arg_15_0)
+	ChapterProxy.MapToChapters = table.shallowCopy(pg.chapter_template.get_id_list_by_map)
 
 	for iter_15_0, iter_15_1 in pairs(pg.story_group.get_id_list_by_map) do
-		var_0_0.MapToChapters[iter_15_0] = var_0_0.MapToChapters[iter_15_0] or {}
-		var_0_0.MapToChapters[iter_15_0] = table.mergeArray(var_0_0.MapToChapters[iter_15_0], iter_15_1)
+		ChapterProxy.MapToChapters[iter_15_0] = ChapterProxy.MapToChapters[iter_15_0] or {}
+		ChapterProxy.MapToChapters[iter_15_0] = table.mergeArray(ChapterProxy.MapToChapters[iter_15_0], iter_15_1)
 	end
 
-	var_0_0.FormationToChapters = pg.chapter_template.get_id_list_by_formation
+	ChapterProxy.FormationToChapters = pg.chapter_template.get_id_list_by_formation
 end
 
-function var_0_0.buildBaseMaps(arg_16_0)
-	var_0_0.ActToMaps = {}
-	var_0_0.TypeToMaps = {}
+function ChapterProxy.buildBaseMaps(arg_16_0)
+	ChapterProxy.ActToMaps = {}
+	ChapterProxy.TypeToMaps = {}
 
 	local var_16_0 = {}
 
 	for iter_16_0, iter_16_1 in ipairs(pg.expedition_data_by_map.all) do
 		local var_16_1 = Map.New({
 			id = iter_16_1,
-			chapterIds = var_0_0.MapToChapters[iter_16_1]
+			chapterIds = ChapterProxy.MapToChapters[iter_16_1]
 		})
 
 		var_16_0[iter_16_1] = var_16_1
@@ -309,23 +309,23 @@ function var_0_0.buildBaseMaps(arg_16_0)
 		local var_16_2 = var_16_1:getConfig("on_activity")
 
 		if var_16_2 ~= 0 then
-			var_0_0.ActToMaps[var_16_2] = var_0_0.ActToMaps[var_16_2] or {}
+			ChapterProxy.ActToMaps[var_16_2] = ChapterProxy.ActToMaps[var_16_2] or {}
 
-			table.insert(var_0_0.ActToMaps[var_16_2], var_16_1.id)
+			table.insert(ChapterProxy.ActToMaps[var_16_2], var_16_1.id)
 		end
 
 		local var_16_3 = var_16_1:getMapType()
 
-		var_0_0.TypeToMaps[var_16_3] = var_0_0.TypeToMaps[var_16_3] or {}
+		ChapterProxy.TypeToMaps[var_16_3] = ChapterProxy.TypeToMaps[var_16_3] or {}
 
-		table.insert(var_0_0.TypeToMaps[var_16_3], var_16_1.id)
+		table.insert(ChapterProxy.TypeToMaps[var_16_3], var_16_1.id)
 	end
 
 	arg_16_0.baseMaps = var_16_0
 end
 
-function var_0_0.buildRemasterMaps(arg_17_0)
-	var_0_0.RemasterToMaps = {}
+function ChapterProxy.buildRemasterMaps(arg_17_0)
+	ChapterProxy.RemasterToMaps = {}
 
 	local var_17_0 = {}
 
@@ -342,15 +342,15 @@ function var_0_0.buildRemasterMaps(arg_17_0)
 
 				var_19_0:setRemaster(arg_18_0)
 
-				var_0_0.RemasterToMaps[arg_18_0] = var_0_0.RemasterToMaps[arg_18_0] or {}
+				ChapterProxy.RemasterToMaps[arg_18_0] = ChapterProxy.RemasterToMaps[arg_18_0] or {}
 
-				table.insert(var_0_0.RemasterToMaps[arg_18_0], var_19_0.id)
+				table.insert(ChapterProxy.RemasterToMaps[arg_18_0], var_19_0.id)
 			end
 		end)
 	end)
 end
 
-function var_0_0.IsChapterInRemaster(arg_20_0, arg_20_1)
+function ChapterProxy.IsChapterInRemaster(arg_20_0, arg_20_1)
 	return _.detect(pg.re_map_template.all, function(arg_21_0)
 		local var_21_0 = pg.re_map_template[arg_21_0]
 
@@ -360,19 +360,19 @@ function var_0_0.IsChapterInRemaster(arg_20_0, arg_20_1)
 	end)
 end
 
-function var_0_0.getMaxEscortChallengeTimes(arg_23_0)
+function ChapterProxy.getMaxEscortChallengeTimes(arg_23_0)
 	return getProxy(ActivityProxy):getActivityParameter("escort_daily_count") or 0
 end
 
-function var_0_0.getEscortChapterIds(arg_24_0)
+function ChapterProxy.getEscortChapterIds(arg_24_0)
 	return getProxy(ActivityProxy):getActivityParameter("escort_exp_id") or {}
 end
 
-function var_0_0.resetEscortChallengeTimes(arg_25_0)
+function ChapterProxy.resetEscortChallengeTimes(arg_25_0)
 	arg_25_0.escortChallengeTimes = 0
 end
 
-function var_0_0.addChapterListener(arg_26_0, arg_26_1)
+function ChapterProxy.addChapterListener(arg_26_0, arg_26_1)
 	if not arg_26_1.dueTime or not arg_26_0.timers then
 		return
 	end
@@ -389,11 +389,11 @@ function var_0_0.addChapterListener(arg_26_0, arg_26_1)
 		arg_26_0.data[arg_26_1.id].dueTime = nil
 
 		arg_26_0.data[arg_26_1.id]:display("times'up")
-		arg_26_0:sendNotification(var_0_0.CHAPTER_UPDATED, {
+		arg_26_0:sendNotification(ChapterProxy.CHAPTER_UPDATED, {
 			dirty = 0,
 			chapter = arg_26_0.data[arg_26_1.id]:clone()
 		})
-		arg_26_0:sendNotification(var_0_0.CHAPTER_TIMESUP)
+		arg_26_0:sendNotification(ChapterProxy.CHAPTER_TIMESUP)
 	end
 
 	if var_26_0 > 0 then
@@ -410,7 +410,7 @@ function var_0_0.addChapterListener(arg_26_0, arg_26_1)
 	end
 end
 
-function var_0_0.removeChapterListener(arg_29_0, arg_29_1)
+function ChapterProxy.removeChapterListener(arg_29_0, arg_29_1)
 	if arg_29_0.timers[arg_29_1] then
 		arg_29_0.timers[arg_29_1]:Stop()
 
@@ -418,7 +418,7 @@ function var_0_0.removeChapterListener(arg_29_0, arg_29_1)
 	end
 end
 
-function var_0_0.remove(arg_30_0)
+function ChapterProxy.remove(arg_30_0)
 	for iter_30_0, iter_30_1 in pairs(arg_30_0.timers) do
 		iter_30_1:Stop()
 	end
@@ -426,11 +426,11 @@ function var_0_0.remove(arg_30_0)
 	arg_30_0.timers = nil
 end
 
-function var_0_0.GetRawChapterById(arg_31_0, arg_31_1)
+function ChapterProxy.GetRawChapterById(arg_31_0, arg_31_1)
 	return arg_31_0.data[arg_31_1]
 end
 
-function var_0_0.getChapterById(arg_32_0, arg_32_1, arg_32_2)
+function ChapterProxy.getChapterById(arg_32_0, arg_32_1, arg_32_2)
 	local var_32_0 = arg_32_0.data[arg_32_1]
 
 	if not var_32_0 then
@@ -467,7 +467,7 @@ function var_0_0.getChapterById(arg_32_0, arg_32_1, arg_32_2)
 	return arg_32_2 and var_32_0 or var_32_0:clone()
 end
 
-function var_0_0.GetChapterItemById(arg_33_0, arg_33_1)
+function ChapterProxy.GetChapterItemById(arg_33_0, arg_33_1)
 	if Chapter:bindConfigTable()[arg_33_1] then
 		return arg_33_0:getChapterById(arg_33_1, true)
 	elseif ChapterStoryGroup:bindConfigTable()[arg_33_1] then
@@ -484,7 +484,7 @@ function var_0_0.GetChapterItemById(arg_33_0, arg_33_1)
 	end
 end
 
-function var_0_0.updateChapter(arg_34_0, arg_34_1, arg_34_2)
+function ChapterProxy.updateChapter(arg_34_0, arg_34_1, arg_34_2)
 	assert(isa(arg_34_1, Chapter), "should be an instance of Chapter")
 
 	local var_34_0 = arg_34_0.data[arg_34_1.id]
@@ -499,7 +499,7 @@ function var_0_0.updateChapter(arg_34_0, arg_34_1, arg_34_2)
 	arg_34_0:addChapterListener(var_34_1)
 
 	if getProxy(PlayerProxy):getInited() then
-		arg_34_0.facade:sendNotification(var_0_0.CHAPTER_UPDATED, {
+		arg_34_0.facade:sendNotification(ChapterProxy.CHAPTER_UPDATED, {
 			chapter = var_34_1:clone(),
 			dirty = defaultValue(arg_34_2, 0)
 		})
@@ -516,11 +516,11 @@ function var_0_0.updateChapter(arg_34_0, arg_34_1, arg_34_2)
 	end
 end
 
-function var_0_0.getMapById(arg_35_0, arg_35_1)
+function ChapterProxy.getMapById(arg_35_0, arg_35_1)
 	return arg_35_0.baseMaps[arg_35_1]
 end
 
-function var_0_0.getNormalMaps(arg_36_0)
+function ChapterProxy.getNormalMaps(arg_36_0)
 	local var_36_0 = {}
 
 	for iter_36_0, iter_36_1 in ipairs(arg_36_0.baseMaps) do
@@ -530,9 +530,9 @@ function var_0_0.getNormalMaps(arg_36_0)
 	return var_36_0
 end
 
-function var_0_0.getMapsByType(arg_37_0, arg_37_1)
-	if var_0_0.TypeToMaps[arg_37_1] then
-		return _.map(var_0_0.TypeToMaps[arg_37_1], function(arg_38_0)
+function ChapterProxy.getMapsByType(arg_37_0, arg_37_1)
+	if ChapterProxy.TypeToMaps[arg_37_1] then
+		return _.map(ChapterProxy.TypeToMaps[arg_37_1], function(arg_38_0)
 			return arg_37_0:getMapById(arg_38_0)
 		end)
 	else
@@ -540,9 +540,9 @@ function var_0_0.getMapsByType(arg_37_0, arg_37_1)
 	end
 end
 
-function var_0_0.getMapsByActId(arg_39_0, arg_39_1)
-	if var_0_0.ActToMaps[arg_39_1] then
-		return underscore.map(var_0_0.ActToMaps[arg_39_1], function(arg_40_0)
+function ChapterProxy.getMapsByActId(arg_39_0, arg_39_1)
+	if ChapterProxy.ActToMaps[arg_39_1] then
+		return underscore.map(ChapterProxy.ActToMaps[arg_39_1], function(arg_40_0)
 			return arg_39_0:getMapById(arg_40_0)
 		end)
 	else
@@ -550,9 +550,9 @@ function var_0_0.getMapsByActId(arg_39_0, arg_39_1)
 	end
 end
 
-function var_0_0.getRemasterMaps(arg_41_0, arg_41_1)
-	if var_0_0.RemasterToMaps[arg_41_1] then
-		return underscore.map(var_0_0.RemasterToMaps[arg_41_1], function(arg_42_0)
+function ChapterProxy.getRemasterMaps(arg_41_0, arg_41_1)
+	if ChapterProxy.RemasterToMaps[arg_41_1] then
+		return underscore.map(ChapterProxy.RemasterToMaps[arg_41_1], function(arg_42_0)
 			return arg_41_0:getMapById(arg_42_0)
 		end)
 	else
@@ -560,7 +560,7 @@ function var_0_0.getRemasterMaps(arg_41_0, arg_41_1)
 	end
 end
 
-function var_0_0.getMapsByActivities(arg_43_0, arg_43_1)
+function ChapterProxy.getMapsByActivities(arg_43_0, arg_43_1)
 	local var_43_0 = getProxy(ActivityProxy)
 	local var_43_1
 
@@ -592,7 +592,7 @@ function var_0_0.getMapsByActivities(arg_43_0, arg_43_1)
 	end
 end
 
-function var_0_0.getLastUnlockMap(arg_45_0)
+function ChapterProxy.getLastUnlockMap(arg_45_0)
 	local var_45_0
 
 	for iter_45_0, iter_45_1 in ipairs(arg_45_0:getNormalMaps()) do
@@ -606,7 +606,7 @@ function var_0_0.getLastUnlockMap(arg_45_0)
 	return var_45_0
 end
 
-function var_0_0.updateExtraFlag(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
+function ChapterProxy.updateExtraFlag(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
 	local var_46_0 = arg_46_1:updateExtraFlags(arg_46_2, arg_46_3)
 
 	if not arg_46_4 and not var_46_0 then
@@ -624,22 +624,22 @@ function var_0_0.updateExtraFlag(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_
 	return true
 end
 
-function var_0_0.extraFlagUpdated(arg_47_0, arg_47_1)
+function ChapterProxy.extraFlagUpdated(arg_47_0, arg_47_1)
 	arg_47_0:RemoveExtendChapterData(arg_47_1, "extraFlagUpdate")
 end
 
-function var_0_0.getUpdatedExtraFlags(arg_48_0, arg_48_1)
+function ChapterProxy.getUpdatedExtraFlags(arg_48_0, arg_48_1)
 	return arg_48_0:GetExtendChapterData(arg_48_1, "extraFlagUpdate")
 end
 
-function var_0_0.SetExtendChapterData(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
+function ChapterProxy.SetExtendChapterData(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
 	assert(arg_49_1, "Missing Chapter ID")
 
 	arg_49_0.chaptersExtend[arg_49_1] = arg_49_0.chaptersExtend[arg_49_1] or {}
 	arg_49_0.chaptersExtend[arg_49_1][arg_49_2] = arg_49_3
 end
 
-function var_0_0.AddExtendChapterDataArray(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
+function ChapterProxy.AddExtendChapterDataArray(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
 	assert(arg_50_1, "Missing Chapter ID")
 
 	arg_50_0.chaptersExtend[arg_50_1] = arg_50_0.chaptersExtend[arg_50_1] or {}
@@ -654,7 +654,7 @@ function var_0_0.AddExtendChapterDataArray(arg_50_0, arg_50_1, arg_50_2, arg_50_
 	arg_50_0.chaptersExtend[arg_50_1][arg_50_2][arg_50_4] = arg_50_3
 end
 
-function var_0_0.AddExtendChapterDataTable(arg_51_0, arg_51_1, arg_51_2, arg_51_3, arg_51_4)
+function ChapterProxy.AddExtendChapterDataTable(arg_51_0, arg_51_1, arg_51_2, arg_51_3, arg_51_4)
 	assert(arg_51_1, "Missing Chapter ID")
 
 	arg_51_0.chaptersExtend[arg_51_1] = arg_51_0.chaptersExtend[arg_51_1] or {}
@@ -670,7 +670,7 @@ function var_0_0.AddExtendChapterDataTable(arg_51_0, arg_51_1, arg_51_2, arg_51_
 	arg_51_0.chaptersExtend[arg_51_1][arg_51_2][arg_51_3] = arg_51_4
 end
 
-function var_0_0.GetExtendChapterData(arg_52_0, arg_52_1, arg_52_2)
+function ChapterProxy.GetExtendChapterData(arg_52_0, arg_52_1, arg_52_2)
 	assert(arg_52_1, "Missing Chapter ID")
 	assert(arg_52_2, "Requesting Empty key")
 
@@ -681,7 +681,7 @@ function var_0_0.GetExtendChapterData(arg_52_0, arg_52_1, arg_52_2)
 	return arg_52_0.chaptersExtend[arg_52_1][arg_52_2]
 end
 
-function var_0_0.RemoveExtendChapterData(arg_53_0, arg_53_1, arg_53_2)
+function ChapterProxy.RemoveExtendChapterData(arg_53_0, arg_53_1, arg_53_2)
 	assert(arg_53_1, "Missing Chapter ID")
 
 	if not arg_53_2 or not arg_53_0.chaptersExtend[arg_53_1] then
@@ -697,13 +697,13 @@ function var_0_0.RemoveExtendChapterData(arg_53_0, arg_53_1, arg_53_2)
 	arg_53_0:RemoveExtendChapter(arg_53_1)
 end
 
-function var_0_0.GetExtendChapter(arg_54_0, arg_54_1)
+function ChapterProxy.GetExtendChapter(arg_54_0, arg_54_1)
 	assert(arg_54_1, "Missing Chapter ID")
 
 	return arg_54_0.chaptersExtend[arg_54_1]
 end
 
-function var_0_0.RemoveExtendChapter(arg_55_0, arg_55_1)
+function ChapterProxy.RemoveExtendChapter(arg_55_0, arg_55_1)
 	assert(arg_55_1, "Missing Chapter ID")
 
 	if not arg_55_0.chaptersExtend[arg_55_1] then
@@ -713,7 +713,7 @@ function var_0_0.RemoveExtendChapter(arg_55_0, arg_55_1)
 	arg_55_0.chaptersExtend[arg_55_1] = nil
 end
 
-function var_0_0.duplicateEliteFleet(arg_56_0, arg_56_1)
+function ChapterProxy.duplicateEliteFleet(arg_56_0, arg_56_1)
 	if arg_56_1:getConfig("type") ~= Chapter.CustomFleet then
 		return
 	end
@@ -727,7 +727,7 @@ function var_0_0.duplicateEliteFleet(arg_56_0, arg_56_1)
 
 	pg.ShipFlagMgr.GetInstance():UpdateFlagShips("inElite")
 
-	for iter_56_0, iter_56_1 in ipairs(var_0_0.FormationToChapters[var_56_2]) do
+	for iter_56_0, iter_56_1 in ipairs(ChapterProxy.FormationToChapters[var_56_2]) do
 		local var_56_3 = arg_56_0:getChapterById(iter_56_1, true)
 
 		if var_56_3.configId ~= arg_56_1.configId then
@@ -738,7 +738,7 @@ function var_0_0.duplicateEliteFleet(arg_56_0, arg_56_1)
 	end
 end
 
-function var_0_0.duplicateSupportFleet(arg_57_0, arg_57_1)
+function ChapterProxy.duplicateSupportFleet(arg_57_0, arg_57_1)
 	local var_57_0 = arg_57_1:getSupportFleet()
 	local var_57_1 = arg_57_1:getConfig("formation")
 
@@ -748,7 +748,7 @@ function var_0_0.duplicateSupportFleet(arg_57_0, arg_57_1)
 
 	pg.ShipFlagMgr.GetInstance():UpdateFlagShips("inSupport")
 
-	for iter_57_0, iter_57_1 in ipairs(var_0_0.FormationToChapters[var_57_1]) do
+	for iter_57_0, iter_57_1 in ipairs(ChapterProxy.FormationToChapters[var_57_1]) do
 		local var_57_2 = arg_57_0:getChapterById(iter_57_1, true)
 
 		if var_57_2.configId ~= arg_57_1.configId then
@@ -760,7 +760,7 @@ function var_0_0.duplicateSupportFleet(arg_57_0, arg_57_1)
 	end
 end
 
-function var_0_0.CheckUnitInSupportFleet(arg_58_0, arg_58_1)
+function ChapterProxy.CheckUnitInSupportFleet(arg_58_0, arg_58_1)
 	local var_58_0 = {}
 	local var_58_1 = arg_58_1.id
 
@@ -777,14 +777,14 @@ function var_0_0.CheckUnitInSupportFleet(arg_58_0, arg_58_1)
 	return next(var_58_0), var_58_0
 end
 
-function var_0_0.RemoveUnitFromSupportFleet(arg_59_0, arg_59_1)
+function ChapterProxy.RemoveUnitFromSupportFleet(arg_59_0, arg_59_1)
 	arg_59_0:sendNotification(GAME.REMOVE_ELITE_TARGET_SHIP, {
 		shipId = arg_59_1.id,
 		callback = next
 	})
 end
 
-function var_0_0.getActiveChapter(arg_60_0, arg_60_1)
+function ChapterProxy.getActiveChapter(arg_60_0, arg_60_1)
 	for iter_60_0, iter_60_1 in pairs(arg_60_0.data) do
 		if iter_60_1.active then
 			return arg_60_1 and iter_60_1 or iter_60_1:clone()
@@ -792,7 +792,7 @@ function var_0_0.getActiveChapter(arg_60_0, arg_60_1)
 	end
 end
 
-function var_0_0.GetLastNormalMap(arg_61_0)
+function ChapterProxy.GetLastNormalMap(arg_61_0)
 	local var_61_0 = Map.lastMap and arg_61_0:getMapById(Map.lastMap)
 
 	if var_61_0 and var_61_0:isUnlock() and var_61_0:getMapType() == Map.SCENARIO then
@@ -802,7 +802,7 @@ function var_0_0.GetLastNormalMap(arg_61_0)
 	return arg_61_0:getLastUnlockMap().id
 end
 
-function var_0_0.getLastMapForActivity(arg_62_0, arg_62_1)
+function ChapterProxy.getLastMapForActivity(arg_62_0, arg_62_1)
 	local var_62_0
 	local var_62_1
 	local var_62_2 = arg_62_0:getActiveChapter()
@@ -822,13 +822,13 @@ function var_0_0.getLastMapForActivity(arg_62_0, arg_62_1)
 	end
 
 	if Map.lastMapForActivity then
-		arg_62_0:recordLastMap(var_0_0.LAST_MAP_FOR_ACTIVITY, 0)
+		arg_62_0:recordLastMap(ChapterProxy.LAST_MAP_FOR_ACTIVITY, 0)
 	end
 
 	return arg_62_0:getActivityLastUnlockMap(arg_62_1)
 end
 
-function var_0_0.getActivityLastUnlockMap(arg_63_0, arg_63_1)
+function ChapterProxy.getActivityLastUnlockMap(arg_63_0, arg_63_1)
 	local var_63_0 = arg_63_0:getMapsByActivities(arg_63_1)
 
 	if not _.all(var_63_0, function(arg_64_0)
@@ -865,7 +865,7 @@ function var_0_0.getActivityLastUnlockMap(arg_63_0, arg_63_1)
 	end
 end
 
-function var_0_0.updateActiveChapterShips(arg_67_0)
+function ChapterProxy.updateActiveChapterShips(arg_67_0)
 	local var_67_0 = arg_67_0:getActiveChapter(true)
 
 	if var_67_0 then
@@ -876,11 +876,11 @@ function var_0_0.updateActiveChapterShips(arg_67_0)
 	end
 end
 
-function var_0_0.resetRepairTimes(arg_69_0)
+function ChapterProxy.resetRepairTimes(arg_69_0)
 	arg_69_0.repairTimes = 0
 end
 
-function var_0_0.getUseableEliteMap(arg_70_0)
+function ChapterProxy.getUseableEliteMap(arg_70_0)
 	local var_70_0 = {}
 
 	for iter_70_0, iter_70_1 in ipairs(arg_70_0:getMapsByType(Map.ELITE)) do
@@ -892,7 +892,7 @@ function var_0_0.getUseableEliteMap(arg_70_0)
 	return var_70_0
 end
 
-function var_0_0.getUseableMaxEliteMap(arg_71_0)
+function ChapterProxy.getUseableMaxEliteMap(arg_71_0)
 	local var_71_0 = arg_71_0:getUseableEliteMap()
 
 	if #var_71_0 == 0 then
@@ -910,7 +910,7 @@ function var_0_0.getUseableMaxEliteMap(arg_71_0)
 	end
 end
 
-function var_0_0.getHigestClearChapterAndMap(arg_72_0)
+function ChapterProxy.getHigestClearChapterAndMap(arg_72_0)
 	local var_72_0 = arg_72_0.baseMaps[1]
 
 	for iter_72_0, iter_72_1 in ipairs(arg_72_0:getNormalMaps()) do
@@ -934,7 +934,7 @@ function var_0_0.getHigestClearChapterAndMap(arg_72_0)
 	return var_72_1, var_72_0
 end
 
-function var_0_0.SortRecommendLimitation(arg_73_0)
+function ChapterProxy.SortRecommendLimitation(arg_73_0)
 	table.sort(arg_73_0, CompareFuncs({
 		function(arg_74_0)
 			if type(arg_74_0) == "number" then
@@ -952,7 +952,7 @@ function var_0_0.SortRecommendLimitation(arg_73_0)
 	}))
 end
 
-function var_0_0.eliteFleetRecommend(arg_75_0, arg_75_1, arg_75_2)
+function ChapterProxy.eliteFleetRecommend(arg_75_0, arg_75_1, arg_75_2)
 	local var_75_0 = arg_75_1:getEliteFleetList()[arg_75_2]
 	local var_75_1 = arg_75_1:getConfig("limitation")[arg_75_2]
 	local var_75_2 = var_75_1 and Clone(var_75_1[1]) or {
@@ -971,9 +971,9 @@ function var_0_0.eliteFleetRecommend(arg_75_0, arg_75_1, arg_75_2)
 		0
 	}
 
-	var_0_0.SortRecommendLimitation(var_75_2)
-	var_0_0.SortRecommendLimitation(var_75_3)
-	var_0_0.SortRecommendLimitation(var_75_4)
+	ChapterProxy.SortRecommendLimitation(var_75_2)
+	ChapterProxy.SortRecommendLimitation(var_75_3)
+	ChapterProxy.SortRecommendLimitation(var_75_4)
 
 	local var_75_5 = {}
 
@@ -1006,7 +1006,7 @@ function var_0_0.eliteFleetRecommend(arg_75_0, arg_75_1, arg_75_2)
 	table.insertto(var_75_0, var_75_7)
 end
 
-function var_0_0.SupportFleetRecommend(arg_77_0, arg_77_1, arg_77_2)
+function ChapterProxy.SupportFleetRecommend(arg_77_0, arg_77_1, arg_77_2)
 	local var_77_0 = arg_77_1:getSupportFleet()
 	local var_77_1 = {
 		[TeamType.Main] = {
@@ -1026,7 +1026,7 @@ function var_0_0.SupportFleetRecommend(arg_77_0, arg_77_1, arg_77_2)
 	table.insertto(var_77_0, var_77_3)
 end
 
-function var_0_0.FleetRecommend(arg_79_0, arg_79_1, arg_79_2, arg_79_3, arg_79_4)
+function ChapterProxy.FleetRecommend(arg_79_0, arg_79_1, arg_79_2, arg_79_3, arg_79_4)
 	arg_79_1 = table.shallowCopy(arg_79_1)
 	arg_79_2 = table.shallowCopy(arg_79_2)
 
@@ -1079,7 +1079,7 @@ function var_0_0.FleetRecommend(arg_79_0, arg_79_1, arg_79_2, arg_79_3, arg_79_4
 	return arg_79_1
 end
 
-function var_0_0.isClear(arg_82_0, arg_82_1)
+function ChapterProxy.isClear(arg_82_0, arg_82_1)
 	local var_82_0 = arg_82_0:GetChapterItemById(arg_82_1)
 
 	if not var_82_0 then
@@ -1089,13 +1089,13 @@ function var_0_0.isClear(arg_82_0, arg_82_1)
 	return var_82_0:isClear()
 end
 
-function var_0_0.recordLastMap(arg_83_0, arg_83_1, arg_83_2)
+function ChapterProxy.recordLastMap(arg_83_0, arg_83_1, arg_83_2)
 	local var_83_0 = false
 
-	if arg_83_1 == var_0_0.LAST_MAP_FOR_ACTIVITY and arg_83_2 ~= Map.lastMapForActivity then
+	if arg_83_1 == ChapterProxy.LAST_MAP_FOR_ACTIVITY and arg_83_2 ~= Map.lastMapForActivity then
 		Map.lastMapForActivity = arg_83_2
 		var_83_0 = true
-	elseif arg_83_1 == var_0_0.LAST_MAP and arg_83_2 ~= Map.lastMap then
+	elseif arg_83_1 == ChapterProxy.LAST_MAP and arg_83_2 ~= Map.lastMap then
 		Map.lastMap = arg_83_2
 		var_83_0 = true
 	end
@@ -1108,7 +1108,7 @@ function var_0_0.recordLastMap(arg_83_0, arg_83_1, arg_83_2)
 	end
 end
 
-function var_0_0.getLastMap(arg_84_0, arg_84_1)
+function ChapterProxy.getLastMap(arg_84_0, arg_84_1)
 	local var_84_0 = getProxy(PlayerProxy):getRawData()
 	local var_84_1 = PlayerPrefs.GetInt(arg_84_1 .. var_84_0.id)
 
@@ -1117,7 +1117,7 @@ function var_0_0.getLastMap(arg_84_0, arg_84_1)
 	end
 end
 
-function var_0_0.IsActivitySPChapterActive(arg_85_0, arg_85_1)
+function ChapterProxy.IsActivitySPChapterActive(arg_85_0, arg_85_1)
 	local var_85_0 = arg_85_0:getMapsByActivities(arg_85_1)
 	local var_85_1 = _.reduce(var_85_0, {}, function(arg_86_0, arg_86_1)
 		table.insertto(arg_86_0, _.select(arg_86_1:getChapters(), function(arg_87_0)
@@ -1131,8 +1131,8 @@ function var_0_0.IsActivitySPChapterActive(arg_85_0, arg_85_1)
 		return arg_88_0:isUnlock() and arg_88_0:isPlayerLVUnlock() and arg_88_0:enoughTimes2Start()
 	end)
 end
-
-function var_0_0.getSubAidFlag(arg_89_0, arg_89_1)
+-- TODO
+function ChapterProxy.getSubAidFlag(arg_89_0, arg_89_1)
 	local var_89_0 = ys.Battle.BattleConst.SubAidFlag
 	local var_89_1 = arg_89_0.fleet
 	local var_89_2 = false
@@ -1179,7 +1179,7 @@ function var_0_0.getSubAidFlag(arg_89_0, arg_89_1)
 	end
 end
 
-function var_0_0.GetChapterAuraBuffs(arg_92_0)
+function ChapterProxy.GetChapterAuraBuffs(arg_92_0)
 	local var_92_0 = {}
 
 	for iter_92_0, iter_92_1 in ipairs(arg_92_0.fleets) do
@@ -1195,23 +1195,25 @@ function var_0_0.GetChapterAuraBuffs(arg_92_0)
 	return var_92_0
 end
 
-function var_0_0.GetChapterAidBuffs(arg_93_0)
-	local var_93_0 = {}
+-- TODO
+-- 被BattleMediator.GenBattleData调用
+function ChapterProxy.GetChapterAidBuffs(self)
+	local chapterAidsList = {}
+	--- fleet: ChapterFleet
+	for _, fleet in ipairs(self.fleets) do
+		if fleet ~= self.fleet and fleet:getFleetType() ~= FleetType.Support then
+			local mapAidsList = fleet:getMapAid()
 
-	for iter_93_0, iter_93_1 in ipairs(arg_93_0.fleets) do
-		if iter_93_1 ~= arg_93_0.fleet and iter_93_1:getFleetType() ~= FleetType.Support then
-			local var_93_1 = iter_93_1:getMapAid()
-
-			for iter_93_2, iter_93_3 in pairs(var_93_1) do
-				var_93_0[iter_93_2] = iter_93_3
+			for ship, shipAidsConfigList in pairs(mapAidsList) do
+				chapterAidsList[ship] = shipAidsConfigList
 			end
 		end
 	end
-
-	return var_93_0
+	--- @type table<Ship, table<number, table<string, any>>>
+	return chapterAidsList
 end
 
-function var_0_0.RecordComboHistory(arg_94_0, arg_94_1, arg_94_2)
+function ChapterProxy.RecordComboHistory(arg_94_0, arg_94_1, arg_94_2)
 	if arg_94_2 ~= nil then
 		arg_94_0:SetExtendChapterData(arg_94_1, "comboHistoryBuffer", arg_94_2)
 	else
@@ -1219,11 +1221,11 @@ function var_0_0.RecordComboHistory(arg_94_0, arg_94_1, arg_94_2)
 	end
 end
 
-function var_0_0.GetComboHistory(arg_95_0, arg_95_1)
+function ChapterProxy.GetComboHistory(arg_95_0, arg_95_1)
 	return arg_95_0:GetExtendChapterData(arg_95_1, "comboHistoryBuffer")
 end
 
-function var_0_0.RecordJustClearChapters(arg_96_0, arg_96_1, arg_96_2)
+function ChapterProxy.RecordJustClearChapters(arg_96_0, arg_96_1, arg_96_2)
 	if arg_96_2 ~= nil then
 		arg_96_0:SetExtendChapterData(arg_96_1, "justClearChapters", arg_96_2)
 	else
@@ -1231,11 +1233,11 @@ function var_0_0.RecordJustClearChapters(arg_96_0, arg_96_1, arg_96_2)
 	end
 end
 
-function var_0_0.GetJustClearChapters(arg_97_0, arg_97_1)
+function ChapterProxy.GetJustClearChapters(arg_97_0, arg_97_1)
 	return arg_97_0:GetExtendChapterData(arg_97_1, "justClearChapters")
 end
 
-function var_0_0.RecordLastDefeatedEnemy(arg_98_0, arg_98_1, arg_98_2)
+function ChapterProxy.RecordLastDefeatedEnemy(arg_98_0, arg_98_1, arg_98_2)
 	if arg_98_2 ~= nil then
 		arg_98_0:SetExtendChapterData(arg_98_1, "defeatedEnemiesBuffer", arg_98_2)
 	else
@@ -1243,31 +1245,31 @@ function var_0_0.RecordLastDefeatedEnemy(arg_98_0, arg_98_1, arg_98_2)
 	end
 end
 
-function var_0_0.GetLastDefeatedEnemy(arg_99_0, arg_99_1)
+function ChapterProxy.GetLastDefeatedEnemy(arg_99_0, arg_99_1)
 	return arg_99_0:GetExtendChapterData(arg_99_1, "defeatedEnemiesBuffer")
 end
 
-function var_0_0.ifShowRemasterTip(arg_100_0)
+function ChapterProxy.ifShowRemasterTip(arg_100_0)
 	return arg_100_0.remasterTip
 end
 
-function var_0_0.setRemasterTip(arg_101_0, arg_101_1)
+function ChapterProxy.setRemasterTip(arg_101_0, arg_101_1)
 	arg_101_0.remasterTip = arg_101_1
 end
 
-function var_0_0.updateRemasterTicketsNum(arg_102_0, arg_102_1)
+function ChapterProxy.updateRemasterTicketsNum(arg_102_0, arg_102_1)
 	arg_102_0.remasterTickets = arg_102_1
 end
 
-function var_0_0.resetDailyCount(arg_103_0)
+function ChapterProxy.resetDailyCount(arg_103_0)
 	arg_103_0.remasterDailyCount = 0
 end
 
-function var_0_0.updateDailyCount(arg_104_0)
+function ChapterProxy.updateDailyCount(arg_104_0)
 	arg_104_0.remasterDailyCount = arg_104_0.remasterDailyCount + pg.gameset.reactivity_ticket_daily.key_value
 end
 
-function var_0_0.GetSkipPrecombat(arg_105_0)
+function ChapterProxy.GetSkipPrecombat(arg_105_0)
 	if arg_105_0.skipPrecombat == nil then
 		arg_105_0.skipPrecombat = PlayerPrefs.GetInt("chapter_skip_precombat", 0)
 	end
@@ -1275,7 +1277,7 @@ function var_0_0.GetSkipPrecombat(arg_105_0)
 	return arg_105_0.skipPrecombat > 0
 end
 
-function var_0_0.UpdateSkipPrecombat(arg_106_0, arg_106_1)
+function ChapterProxy.UpdateSkipPrecombat(arg_106_0, arg_106_1)
 	arg_106_1 = tobool(arg_106_1) and 1 or 0
 
 	if arg_106_1 ~= arg_106_0:GetSkipPrecombat() then
@@ -1283,15 +1285,15 @@ function var_0_0.UpdateSkipPrecombat(arg_106_0, arg_106_1)
 
 		arg_106_0.skipPrecombat = arg_106_1
 
-		arg_106_0:sendNotification(var_0_0.CHAPTER_SKIP_PRECOMBAT_UPDATED, arg_106_1)
+		arg_106_0:sendNotification(ChapterProxy.CHAPTER_SKIP_PRECOMBAT_UPDATED, arg_106_1)
 	end
 end
 
-function var_0_0.GetChapterAutoFlag(arg_107_0, arg_107_1)
+function ChapterProxy.GetChapterAutoFlag(arg_107_0, arg_107_1)
 	return arg_107_0:GetExtendChapterData(arg_107_1, "AutoFightFlag")
 end
 
-function var_0_0.SetChapterAutoFlag(arg_108_0, arg_108_1, arg_108_2, arg_108_3)
+function ChapterProxy.SetChapterAutoFlag(arg_108_0, arg_108_1, arg_108_2, arg_108_3)
 	arg_108_2 = tobool(arg_108_2)
 
 	if arg_108_2 == (arg_108_0:GetChapterAutoFlag(arg_108_1) == 1) then
@@ -1329,11 +1331,11 @@ function var_0_0.SetChapterAutoFlag(arg_108_0, arg_108_1, arg_108_2, arg_108_3)
 		end
 	end
 
-	arg_108_0.facade:sendNotification(var_0_0.CHAPTER_AUTO_FIGHT_FLAG_UPDATED, arg_108_2 and 1 or 0)
+	arg_108_0.facade:sendNotification(ChapterProxy.CHAPTER_AUTO_FIGHT_FLAG_UPDATED, arg_108_2 and 1 or 0)
 	arg_108_0.facade:sendNotification(PlayerResUI.CHANGE_TOUCH_ABLE, not arg_108_2)
 end
 
-function var_0_0.StopAutoFight(arg_109_0, arg_109_1)
+function ChapterProxy.StopAutoFight(arg_109_0, arg_109_1)
 	local var_109_0 = arg_109_0:getActiveChapter(true)
 
 	if not var_109_0 then
@@ -1343,7 +1345,7 @@ function var_0_0.StopAutoFight(arg_109_0, arg_109_1)
 	arg_109_0:SetChapterAutoFlag(var_109_0.id, false, arg_109_1)
 end
 
-function var_0_0.FinishAutoFight(arg_110_0, arg_110_1)
+function ChapterProxy.FinishAutoFight(arg_110_0, arg_110_1)
 	if arg_110_0:GetChapterAutoFlag(arg_110_1) == 1 then
 		pg.BrightnessMgr.GetInstance():SetScreenNeverSleep(false)
 
@@ -1362,7 +1364,7 @@ function var_0_0.FinishAutoFight(arg_110_0, arg_110_1)
 	return var_110_0
 end
 
-function var_0_0.buildRemasterInfo(arg_111_0)
+function ChapterProxy.buildRemasterInfo(arg_111_0)
 	arg_111_0.remasterInfo = {}
 
 	for iter_111_0, iter_111_1 in ipairs(pg.re_map_template.all) do
@@ -1381,7 +1383,7 @@ function var_0_0.buildRemasterInfo(arg_111_0)
 	end
 end
 
-function var_0_0.checkRemasterInfomation(arg_112_0)
+function ChapterProxy.checkRemasterInfomation(arg_112_0)
 	if not arg_112_0.checkRemaster then
 		arg_112_0.checkRemaster = true
 
@@ -1389,7 +1391,7 @@ function var_0_0.checkRemasterInfomation(arg_112_0)
 	end
 end
 
-function var_0_0.addRemasterPassCount(arg_113_0, arg_113_1)
+function ChapterProxy.addRemasterPassCount(arg_113_0, arg_113_1)
 	if not arg_113_0.remasterInfo[arg_113_1] then
 		return
 	end
@@ -1404,11 +1406,11 @@ function var_0_0.addRemasterPassCount(arg_113_0, arg_113_1)
 	end
 
 	if var_113_0 then
-		arg_113_0:sendNotification(var_0_0.CHAPTER_REMASTER_INFO_UPDATED)
+		arg_113_0:sendNotification(ChapterProxy.CHAPTER_REMASTER_INFO_UPDATED)
 	end
 end
 
-function var_0_0.markRemasterPassReceive(arg_114_0, arg_114_1, arg_114_2)
+function ChapterProxy.markRemasterPassReceive(arg_114_0, arg_114_1, arg_114_2)
 	local var_114_0 = arg_114_0.remasterInfo[arg_114_1][arg_114_2]
 
 	if not arg_114_0.remasterInfo[arg_114_1][arg_114_2] then
@@ -1418,11 +1420,11 @@ function var_0_0.markRemasterPassReceive(arg_114_0, arg_114_1, arg_114_2)
 	if not var_114_0.receive then
 		var_114_0.receive = true
 
-		arg_114_0:sendNotification(var_0_0.CHAPTER_REMASTER_INFO_UPDATED)
+		arg_114_0:sendNotification(ChapterProxy.CHAPTER_REMASTER_INFO_UPDATED)
 	end
 end
 
-function var_0_0.anyRemasterAwardCanReceive(arg_115_0)
+function ChapterProxy.anyRemasterAwardCanReceive(arg_115_0)
 	for iter_115_0, iter_115_1 in pairs(arg_115_0.remasterInfo) do
 		for iter_115_2, iter_115_3 in pairs(iter_115_1) do
 			if not iter_115_3.receive and iter_115_3.count >= iter_115_3.max then
@@ -1434,13 +1436,13 @@ function var_0_0.anyRemasterAwardCanReceive(arg_115_0)
 	return false
 end
 
-function var_0_0.AddActBossRewards(arg_116_0, arg_116_1)
+function ChapterProxy.AddActBossRewards(arg_116_0, arg_116_1)
 	arg_116_0.actBossItems = arg_116_0.actBossItems or {}
 
 	table.insertto(arg_116_0.actBossItems, arg_116_1)
 end
 
-function var_0_0.PopActBossRewards(arg_117_0)
+function ChapterProxy.PopActBossRewards(arg_117_0)
 	local var_117_0 = arg_117_0.actBossItems or {}
 
 	arg_117_0.actBossItems = nil
@@ -1448,13 +1450,13 @@ function var_0_0.PopActBossRewards(arg_117_0)
 	return var_117_0
 end
 
-function var_0_0.AddBossSingleRewards(arg_118_0, arg_118_1)
+function ChapterProxy.AddBossSingleRewards(arg_118_0, arg_118_1)
 	arg_118_0.bossSingleItems = arg_118_0.bossSingleItems or {}
 
 	table.insertto(arg_118_0.bossSingleItems, arg_118_1)
 end
 
-function var_0_0.PopBossSingleRewards(arg_119_0)
+function ChapterProxy.PopBossSingleRewards(arg_119_0)
 	local var_119_0 = arg_119_0.bossSingleItems or {}
 
 	arg_119_0.bossSingleItems = nil
@@ -1462,7 +1464,7 @@ function var_0_0.PopBossSingleRewards(arg_119_0)
 	return var_119_0
 end
 
-function var_0_0.WriteBackOnExitBattleResult(arg_120_0)
+function ChapterProxy.WriteBackOnExitBattleResult(arg_120_0)
 	local var_120_0 = arg_120_0:getActiveChapter()
 
 	if var_120_0 then
@@ -1480,11 +1482,11 @@ function var_0_0.WriteBackOnExitBattleResult(arg_120_0)
 	end
 end
 
-function var_0_0.GetContinuousData(arg_121_0, arg_121_1)
+function ChapterProxy.GetContinuousData(arg_121_0, arg_121_1)
 	return arg_121_0.continuousData[arg_121_1]
 end
 
-function var_0_0.InitContinuousTime(arg_122_0, arg_122_1, arg_122_2)
+function ChapterProxy.InitContinuousTime(arg_122_0, arg_122_1, arg_122_2)
 	local var_122_0 = ContinuousOperationRuntimeData.New({
 		system = arg_122_1,
 		totalBattleTime = arg_122_2,
@@ -1494,7 +1496,7 @@ function var_0_0.InitContinuousTime(arg_122_0, arg_122_1, arg_122_2)
 	arg_122_0.continuousData[arg_122_1] = var_122_0
 end
 
-function var_0_0.StopContinuousOperation(arg_123_0, arg_123_1, arg_123_2)
+function ChapterProxy.StopContinuousOperation(arg_123_0, arg_123_1, arg_123_2)
 	local var_123_0 = arg_123_0:GetContinuousData(arg_123_1)
 
 	if not var_123_0 or not var_123_0:IsActive() then
@@ -1508,7 +1510,7 @@ function var_0_0.StopContinuousOperation(arg_123_0, arg_123_1, arg_123_2)
 	var_123_0:Stop(arg_123_2)
 end
 
-function var_0_0.PopContinuousData(arg_124_0, arg_124_1)
+function ChapterProxy.PopContinuousData(arg_124_0, arg_124_1)
 	local var_124_0 = arg_124_0.continuousData[arg_124_1]
 
 	arg_124_0.continuousData[arg_124_1] = nil
@@ -1516,7 +1518,7 @@ function var_0_0.PopContinuousData(arg_124_0, arg_124_1)
 	return var_124_0
 end
 
-function var_0_0.SetLastFleetIndex(arg_125_0, arg_125_1, arg_125_2)
+function ChapterProxy.SetLastFleetIndex(arg_125_0, arg_125_1, arg_125_2)
 	if arg_125_2 and arg_125_0.lastFleetIndex then
 		return
 	end
@@ -1524,8 +1526,8 @@ function var_0_0.SetLastFleetIndex(arg_125_0, arg_125_1, arg_125_2)
 	arg_125_0.lastFleetIndex = arg_125_1
 end
 
-function var_0_0.GetLastFleetIndex(arg_126_0)
+function ChapterProxy.GetLastFleetIndex(arg_126_0)
 	return arg_126_0.lastFleetIndex
 end
 
-return var_0_0
+return ChapterProxy

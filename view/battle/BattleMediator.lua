@@ -399,140 +399,142 @@ function BattleMediator.guideDispatch(arg_30_0)
 	return
 end
 -- TODO
-local function var_0_1(arg_31_0, arg_31_1, arg_31_2, arg_31_3)
-	local var_31_0 = {}
+local function genSingleShipData(system, ship, commanders, inDuel)
+	local equipmentInfo = {}
 
-	for iter_31_0, iter_31_1 in ipairs(arg_31_1:getActiveEquipments()) do
-		if iter_31_1 then
-			var_31_0[#var_31_0 + 1] = {
-				id = iter_31_1.configId,
-				skin = iter_31_1.skinId,
-				equipmentInfo = iter_31_1
+	for _, activeEquipment in ipairs(ship:getActiveEquipments()) do
+		if activeEquipment then
+			equipmentInfo[#equipmentInfo + 1] = {
+				id = activeEquipment.configId,
+				skin = activeEquipment.skinId,
+				equipmentInfo = activeEquipment
 			}
 		else
-			var_31_0[#var_31_0 + 1] = {
+			equipmentInfo[#equipmentInfo + 1] = {
 				skin = 0,
-				id = iter_31_1,
-				equipmentInfo = iter_31_1
+				id = activeEquipment,
+				equipmentInfo = activeEquipment
 			}
 		end
 	end
 
-	local var_31_1 = {}
+	local buffList = {}
 
-	local function var_31_2(arg_32_0)
-		local var_32_0 = {
-			level = arg_32_0.level
+	-- 根据模式，转换某些技能ID
+	local function remapSkillBySystem(buffData)
+		local remapedBuffData = {
+			level = buffData.level
 		}
-		local var_32_1 = arg_32_0.id
-		local var_32_2 = arg_31_1:RemapSkillId(var_32_1, true)
+		local buffID = buffData.id
+		local remapedBuffID = ship:RemapSkillId(buffID, true)
 
-		var_32_0.id = ys.Battle.BattleDataFunction.SkillTranform(arg_31_0, var_32_2)
+		remapedBuffData.id = ys.Battle.BattleDataFunction.SkillTranform(system, remapedBuffID)
 
-		return var_32_0
+		return remapedBuffData
 	end
 
-	local var_31_3 = ys.Battle.BattleDataFunction.GenerateHiddenBuff(arg_31_1.configId)
+	local hideBuffList = ys.Battle.BattleDataFunction.GenerateHiddenBuff(ship.configId)
 
-	for iter_31_2, iter_31_3 in pairs(var_31_3) do
-		local var_31_4 = var_31_2(iter_31_3)
+	for _, hideBuffData in pairs(hideBuffList) do
+		local buffData = remapSkillBySystem(hideBuffData)
 
-		var_31_1[var_31_4.id] = var_31_4
+		buffList[buffData.id] = buffData
 	end
 
-	for iter_31_4, iter_31_5 in pairs(arg_31_1.skills) do
-		if iter_31_5 and iter_31_5.id == 14900 and not arg_31_1.transforms[16412] then
+	for _, shipBuffData in pairs(ship.skills) do
+		-- 何意味? 这两个特殊处理...
+		if shipBuffData and shipBuffData.id == 14900 and not ship.transforms[16412] then
 			-- block empty
 		else
-			local var_31_5 = var_31_2(iter_31_5)
+			local buffData = remapSkillBySystem(shipBuffData)
 
-			var_31_1[var_31_5.id] = var_31_5
+			buffList[buffData.id] = buffData
 		end
 	end
 
-	local var_31_6 = ys.Battle.BattleDataFunction.GetEquipSkill(var_31_0)
+	local equipBuffList = ys.Battle.BattleDataFunction.GetEquipSkill(equipmentInfo)
 
-	for iter_31_6, iter_31_7 in ipairs(var_31_6) do
-		local var_31_7 = {
-			level = iter_31_7.buffLV,
-			id = ys.Battle.BattleDataFunction.SkillTranform(arg_31_0, iter_31_7.buffID)
+	for _, equipBuffData in ipairs(equipBuffList) do
+		local buffData = {
+			level = equipBuffData.buffLV,
+			id = ys.Battle.BattleDataFunction.SkillTranform(system, equipBuffData.buffID)
 		}
 
-		var_31_1[var_31_7.id] = var_31_7
+		buffList[buffData.id] = buffData
 	end
 
-	local var_31_8
+	local spWeapon
 
 	;(function()
-		var_31_8 = arg_31_1:GetSpWeapon()
+		spWeapon = ship:GetSpWeapon()
 
-		if not var_31_8 then
+		if not spWeapon then
 			return
 		end
 
-		local var_33_0 = var_31_8:GetEffect()
+		local spWeaponEffect = spWeapon:GetEffect()
 
-		if var_33_0 == 0 then
+		if spWeaponEffect == 0 then
 			return
 		end
 
-		local var_33_1 = {}
+		local spWeaponEffectData = {}
 
-		var_33_1.level = 1
-		var_33_1.id = ys.Battle.BattleDataFunction.SkillTranform(arg_31_0, var_33_0)
-		var_31_1[var_33_1.id] = var_33_1
+		spWeaponEffectData.level = 1
+		spWeaponEffectData.id = ys.Battle.BattleDataFunction.SkillTranform(system, spWeaponEffect)
+		buffList[spWeaponEffectData.id] = spWeaponEffectData
 	end)()
 
-	for iter_31_8, iter_31_9 in pairs(arg_31_1:getTriggerSkills()) do
-		local var_31_9 = {
-			level = iter_31_9.level,
-			id = ys.Battle.BattleDataFunction.SkillTranform(arg_31_0, iter_31_9.id)
+	for _, triggerBuffData in pairs(ship:getTriggerSkills()) do
+		local buffData = {
+			level = triggerBuffData.level,
+			id = ys.Battle.BattleDataFunction.SkillTranform(system, triggerBuffData.id)
 		}
 
-		var_31_1[var_31_9.id] = var_31_9
+		buffList[buffData.id] = buffData
 	end
 
-	local var_31_10 = arg_31_0 == SYSTEM_WORLD
-	local var_31_11 = false
+	local inWorld = system == SYSTEM_WORLD
+	local isBrokenInWorld = false
 
-	if var_31_10 then
-		local var_31_12 = WorldConst.FetchWorldShip(arg_31_1.id)
+	if inWorld then
+		local worldShip = WorldConst.FetchWorldShip(ship.id)
 
-		if var_31_12 then
-			var_31_11 = var_31_12:IsBroken()
+		if worldShip then
+			isBrokenInWorld = worldShip:IsBroken()
 		end
 	end
 
-	if var_31_11 then
-		for iter_31_10, iter_31_11 in pairs(var_31_1) do
-			local var_31_13 = pg.skill_data_template[iter_31_10].world_death_mark[1]
-
-			if var_31_13 == ys.Battle.BattleConst.DEATH_MARK_SKILL.DEACTIVE then
-				var_31_1[iter_31_10] = nil
-			elseif var_31_13 == ys.Battle.BattleConst.DEATH_MARK_SKILL.IGNORE then
+	if isBrokenInWorld then
+		for buffID, _ in pairs(buffList) do
+			local deathMark = pg.skill_data_template[buffID].world_death_mark[1]
+			-- 1表示该技能在战损状态下失效，0表示忽略战损状态
+			if deathMark == ys.Battle.BattleConst.DEATH_MARK_SKILL.DEACTIVE then
+				buffList[buffID] = nil
+			elseif deathMark == ys.Battle.BattleConst.DEATH_MARK_SKILL.IGNORE then
 				-- block empty
 			end
 		end
 	end
 	-- 此处连接Ship和BattleDataProxy
 	return {
-		id = arg_31_1.id,
-		tmpID = arg_31_1.configId,
-		skinId = arg_31_1.skinId,
-		level = arg_31_1.level,
-		equipment = var_31_0,
-		properties = arg_31_1:getProperties(arg_31_2, arg_31_3, var_31_10),
-		baseProperties = arg_31_1:getShipProperties(),
-		proficiency = arg_31_1:getEquipProficiencyList(),
-		rarity = arg_31_1:getRarity(),
-		intimacy = arg_31_1:getCVIntimacy(),
-		shipGS = arg_31_1:getShipCombatPower(),
-		skills = var_31_1,
-		baseList = arg_31_1:getBaseList(),
-		preloasList = arg_31_1:getPreLoadCount(),
-		name = arg_31_1:getName(),
-		deathMark = var_31_11,
-		spWeapon = var_31_8
+		id = ship.id,
+		tmpID = ship.configId,
+		skinId = ship.skinId,
+		level = ship.level,
+		equipment = equipmentInfo,
+		properties = ship:getProperties(commanders, inDuel, inWorld),
+		baseProperties = ship:getShipProperties(),
+		proficiency = ship:getEquipProficiencyList(),
+		rarity = ship:getRarity(),
+		intimacy = ship:getCVIntimacy(),
+		shipGS = ship:getShipCombatPower(),
+		skills = buffList,
+		baseList = ship:getBaseList(),
+		preloasList = ship:getPreLoadCount(),
+		name = ship:getName(),
+		deathMark = isBrokenInWorld,
+		spWeapon = spWeapon
 	}
 end
 
@@ -628,104 +630,107 @@ function BattleMediator.GenBattleData(self)
 	-- SCENARIO指的是最常见的模式(Chapter)
 	if system == SYSTEM_SCENARIO then
 		local chapterProxy = getProxy(ChapterProxy)
-		local var_35_10 = chapterProxy:getActiveChapter()
+		--- @type ChapterLevelData
+		local activeChapter = chapterProxy:getActiveChapter()
 
-		battleData.RepressInfo = var_35_10:getRepressInfo()
+		battleData.RepressInfo = activeChapter:getRepressInfo()
 
-		self.viewComponent:setChapter(var_35_10)
+		self.viewComponent:setChapter(activeChapter)
+		--- @type ChapterFleet
+		local chapterFleet = activeChapter.fleet
 
-		local var_35_11 = var_35_10.fleet
-
-		battleData.KizunaJamming = var_35_10.extraFlagList
-		battleData.DefeatCount = var_35_11:getDefeatCount()
-		battleData.ChapterBuffIDs, battleData.CommanderList = var_35_10:getFleetBattleBuffs(var_35_11)
-		battleData.StageWaveFlags = var_35_10:GetStageFlags()
-		battleData.ChapterWeatherIDS = var_35_10:GetWeather(var_35_11.line.row, var_35_11.line.column)
-		battleData.MapAuraSkills = chapterProxy.GetChapterAuraBuffs(var_35_10)
+		battleData.KizunaJamming = activeChapter.extraFlagList
+		battleData.DefeatCount = chapterFleet:getDefeatCount()
+		battleData.ChapterBuffIDs, battleData.CommanderList = activeChapter:getFleetBattleBuffs(chapterFleet)
+		battleData.StageWaveFlags = activeChapter:GetStageFlags()
+		battleData.ChapterWeatherIDS = activeChapter:GetWeather(chapterFleet.line.row, chapterFleet.line.column)
+		battleData.MapAuraSkills = chapterProxy.GetChapterAuraBuffs(activeChapter)
 		battleData.MapAidSkills = {}
-		battleData.ChapterType = var_35_10:getPlayType()
+		battleData.ChapterType = activeChapter:getPlayType()
 
-		local var_35_12 = chapterProxy.GetChapterAidBuffs(var_35_10)
+		local chapterAidBuffs = chapterProxy.GetChapterAidBuffs(activeChapter)
 
-		for iter_35_2, iter_35_3 in pairs(var_35_12) do
-			local var_35_13 = var_35_10:getFleetByShipVO(iter_35_2)
-			local var_35_14 = _.values(var_35_13:getCommanders())
-			local var_35_15 = var_0_1(system, iter_35_2, var_35_14)
+		for ship, shipAidList in pairs(chapterAidBuffs) do
+			local fleet = activeChapter:getFleetByShipVO(ship)
+			-- underscore.values表示获取table中的所有value，返回一个数组
+			local commanders = _.values(fleet:getCommanders())
+			local shipData = genSingleShipData(system, ship, commanders)
 
-			table.insert(battleData.AidUnitList, var_35_15)
+			table.insert(battleData.AidUnitList, shipData)
 
-			for iter_35_4, iter_35_5 in ipairs(iter_35_3) do
-				table.insert(battleData.MapAidSkills, iter_35_5)
+			for _, shipAidData in ipairs(shipAidList) do
+				table.insert(battleData.MapAidSkills, shipAidData)
 			end
 		end
+		
+		local mainShipList = chapterFleet:getShipsByTeam(TeamType.Main, false)
+		local vanguardShipList = chapterFleet:getShipsByTeam(TeamType.Vanguard, false)
+		local subShipList = {}
+		local commanders = _.values(chapterFleet:getCommanders())
+		local subCommanders = {}
+		local subAidFlag, subFleet = chapterProxy.getSubAidFlag(activeChapter, self.contextData.stageId)
 
-		local var_35_16 = var_35_11:getShipsByTeam(TeamType.Main, false)
-		local var_35_17 = var_35_11:getShipsByTeam(TeamType.Vanguard, false)
-		local var_35_18 = {}
-		local var_35_19 = _.values(var_35_11:getCommanders())
-		local var_35_20 = {}
-		local var_35_21, var_35_22 = chapterProxy.getSubAidFlag(var_35_10, self.contextData.stageId)
-
-		if var_35_21 == true or var_35_21 > 0 then
+		if subAidFlag == true or subAidFlag > 0 then
 			battleData.SubFlag = 1
 			battleData.TotalSubAmmo = 1
-			var_35_18 = var_35_22:getShipsByTeam(TeamType.Submarine, false)
-			var_35_20 = _.values(var_35_22:getCommanders())
+			subShipList = subFleet:getShipsByTeam(TeamType.Submarine, false)
+			subCommanders = _.values(subFleet:getCommanders())
 
-			local var_35_23, var_35_24 = var_35_10:getFleetBattleBuffs(var_35_22)
-
-			battleData.SubCommanderList = var_35_24
+			local _, subCommanderList = activeChapter:getFleetBattleBuffs(subFleet)
+			-- ? 具体都是什么数据结构?
+			battleData.SubCommanderList = subCommanderList
 		else
-			battleData.SubFlag = var_35_21
+			battleData.SubFlag = subAidFlag
 
-			if var_35_21 ~= ys.Battle.BattleConst.SubAidFlag.AID_EMPTY then
+			if subAidFlag ~= ys.Battle.BattleConst.SubAidFlag.AID_EMPTY then
 				battleData.TotalSubAmmo = 0
 			end
 		end
 
 		self.mainShips = {}
 
-		local function var_35_25(arg_36_0, arg_36_1, arg_36_2)
-			local var_36_0 = arg_36_0.id
-			local var_36_1 = arg_36_0.hpRant * 0.0001
+		local function insertShipToList(ship, commanders, unitList)
+			local shipID = ship.id
+			-- rant是0~10000的整数表示，所以需要乘以0.0001转换为0~1的小数
+			local hpRate = ship.hpRant * 0.0001
 
-			if table.contains(var_35_8, var_36_0) then
+			if table.contains(var_35_8, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_35_8[#var_35_8 + 1] = var_36_0
+			var_35_8[#var_35_8 + 1] = shipID
 
-			local var_36_2 = var_0_1(system, arg_36_0, arg_36_1)
+			local shipData = genSingleShipData(system, ship, commanders)
 
-			var_36_2.initHPRate = var_36_1
+			shipData.initHPRate = hpRate
 
-			table.insert(self.mainShips, arg_36_0)
-			table.insert(arg_36_2, var_36_2)
+			table.insert(self.mainShips, ship)
+			table.insert(unitList, shipData)
 		end
 
-		for iter_35_6, iter_35_7 in ipairs(var_35_16) do
-			var_35_25(iter_35_7, var_35_19, battleData.MainUnitList)
+		for _, mainShip in ipairs(mainShipList) do
+			insertShipToList(mainShip, commanders, battleData.MainUnitList)
 		end
 
-		for iter_35_8, iter_35_9 in ipairs(var_35_17) do
-			var_35_25(iter_35_9, var_35_19, battleData.VanguardUnitList)
+		for _, vanguardShip in ipairs(vanguardShipList) do
+			insertShipToList(vanguardShip, commanders, battleData.VanguardUnitList)
 		end
 
-		for iter_35_10, iter_35_11 in ipairs(var_35_18) do
-			var_35_25(iter_35_11, var_35_20, battleData.SubUnitList)
+		for _, subShip in ipairs(subShipList) do
+			insertShipToList(subShip, subCommanders, battleData.SubUnitList)
 		end
 
-		local var_35_26 = var_35_10:getChapterSupportFleet()
+		local chapterSupportFleet = activeChapter:getChapterSupportFleet()
 
-		if var_35_26 then
-			local var_35_27 = var_35_26:getShips()
+		if chapterSupportFleet then
+			local supportShips = chapterSupportFleet:getShips()
 
-			for iter_35_12, iter_35_13 in pairs(var_35_27) do
-				var_35_25(iter_35_13, {}, battleData.SupportUnitList)
+			for _, supportShip in pairs(supportShips) do
+				insertShipToList(supportShip, {}, battleData.SupportUnitList)
 			end
 		end
 
-		self.viewComponent:setFleet(var_35_16, var_35_17, var_35_18)
+		self.viewComponent:setFleet(mainShipList, vanguardShipList, subShipList)
 	elseif system == SYSTEM_CHALLENGE then
 		local var_35_28 = self.contextData.mode
 		local var_35_29 = getProxy(ChallengeProxy):getUserChallengeInfo(var_35_28)
@@ -768,7 +773,7 @@ function BattleMediator.GenBattleData(self)
 
 			var_35_8[#var_35_8 + 1] = var_37_0
 
-			local var_37_2 = var_0_1(system, arg_37_0, arg_37_1)
+			local var_37_2 = genSingleShipData(system, arg_37_0, arg_37_1)
 
 			var_37_2.initHPRate = var_37_1
 
@@ -829,7 +834,7 @@ function BattleMediator.GenBattleData(self)
 		for iter_35_20, iter_35_21 in pairs(var_35_44) do
 			local var_35_45 = var_35_40:GetFleet(iter_35_20.fleetId)
 			local var_35_46 = _.values(var_35_45:getCommanders(true))
-			local var_35_47 = var_0_1(system, WorldConst.FetchShipVO(iter_35_20.id), var_35_46)
+			local var_35_47 = genSingleShipData(system, WorldConst.FetchShipVO(iter_35_20.id), var_35_46)
 
 			table.insert(battleData.AidUnitList, var_35_47)
 
@@ -874,7 +879,7 @@ function BattleMediator.GenBattleData(self)
 
 			var_35_8[#var_35_8 + 1] = var_35_57
 
-			local var_35_59 = var_0_1(system, iter_35_23, var_35_51)
+			local var_35_59 = genSingleShipData(system, iter_35_23, var_35_51)
 
 			var_35_59.initHPRate = var_35_58
 
@@ -892,7 +897,7 @@ function BattleMediator.GenBattleData(self)
 
 			var_35_8[#var_35_8 + 1] = var_35_60
 
-			local var_35_62 = var_0_1(system, iter_35_25, var_35_51)
+			local var_35_62 = genSingleShipData(system, iter_35_25, var_35_51)
 
 			var_35_62.initHPRate = var_35_61
 
@@ -910,7 +915,7 @@ function BattleMediator.GenBattleData(self)
 
 			var_35_8[#var_35_8 + 1] = var_35_63
 
-			local var_35_65 = var_0_1(system, iter_35_27, var_35_52)
+			local var_35_65 = genSingleShipData(system, iter_35_27, var_35_52)
 
 			var_35_65.initHPRate = var_35_64
 
@@ -956,7 +961,7 @@ function BattleMediator.GenBattleData(self)
 			var_35_8[#var_35_8 + 1] = iter_35_29
 
 			local var_35_76 = bayProxy:getShipById(iter_35_29)
-			local var_35_77 = var_0_1(system, var_35_76, var_35_71)
+			local var_35_77 = genSingleShipData(system, var_35_76, var_35_71)
 
 			table.insert(var_35_72, var_35_76)
 			table.insert(battleData.MainUnitList, var_35_77)
@@ -972,7 +977,7 @@ function BattleMediator.GenBattleData(self)
 			var_35_8[#var_35_8 + 1] = iter_35_31
 
 			local var_35_79 = bayProxy:getShipById(iter_35_31)
-			local var_35_80 = var_0_1(system, var_35_79, var_35_71)
+			local var_35_80 = genSingleShipData(system, var_35_79, var_35_71)
 
 			table.insert(var_35_73, var_35_79)
 			table.insert(battleData.VanguardUnitList, var_35_80)
@@ -1013,7 +1018,7 @@ function BattleMediator.GenBattleData(self)
 				var_35_8[#var_35_8 + 1] = arg_39_0
 
 				local var_39_0 = bayProxy:getShipById(arg_39_0)
-				local var_39_1 = var_0_1(system, var_39_0, arg_39_1)
+				local var_39_1 = genSingleShipData(system, var_39_0, arg_39_1)
 
 				table.insert(self.mainShips, var_39_0)
 				table.insert(arg_39_3, var_39_0)
@@ -1106,7 +1111,7 @@ function BattleMediator.GenBattleData(self)
 		local var_35_111 = {}
 
 		local function var_35_112(arg_46_0, arg_46_1, arg_46_2, arg_46_3)
-			local var_46_0 = var_0_1(system, arg_46_0, arg_46_1)
+			local var_46_0 = genSingleShipData(system, arg_46_0, arg_46_1)
 
 			table.insert(self.mainShips, arg_46_0)
 			table.insert(arg_46_3, arg_46_0)
@@ -1190,7 +1195,7 @@ function BattleMediator.GenBattleData(self)
 			var_35_8[#var_35_8 + 1] = arg_47_0
 
 			local var_47_0 = bayProxy:getShipById(arg_47_0)
-			local var_47_1 = var_0_1(system, var_47_0, arg_47_1)
+			local var_47_1 = genSingleShipData(system, var_47_0, arg_47_1)
 
 			table.insert(self.mainShips, var_47_0)
 			table.insert(arg_47_3, var_47_0)
@@ -1309,7 +1314,7 @@ function BattleMediator.GenBattleData(self)
 			var_35_8[#var_35_8 + 1] = arg_49_0
 
 			local var_49_0 = bayProxy:getShipById(arg_49_0)
-			local var_49_1 = var_0_1(system, var_49_0, arg_49_1)
+			local var_49_1 = genSingleShipData(system, var_49_0, arg_49_1)
 
 			table.insert(self.mainShips, var_49_0)
 			table.insert(arg_49_3, var_49_0)
@@ -1413,7 +1418,7 @@ function BattleMediator.GenBattleData(self)
 				var_35_8[#var_35_8 + 1] = arg_51_0
 
 				local var_51_0 = bayProxy:getShipById(arg_51_0)
-				local var_51_1 = var_0_1(system, var_51_0, arg_51_1)
+				local var_51_1 = genSingleShipData(system, var_51_0, arg_51_1)
 
 				table.insert(self.mainShips, var_51_0)
 				table.insert(arg_51_3, var_51_0)
@@ -1511,7 +1516,7 @@ function BattleMediator.GenBattleData(self)
 				var_35_8[#var_35_8 + 1] = iter_53_1
 
 				local var_53_0 = bayProxy:getShipById(iter_53_1)
-				local var_53_1 = var_0_1(system, var_53_0, nil, var_35_197)
+				local var_53_1 = genSingleShipData(system, var_53_0, nil, var_35_197)
 
 				table.insert(arg_53_1, var_53_0)
 				table.insert(arg_53_2, var_53_1)
@@ -1541,7 +1546,7 @@ function BattleMediator.GenBattleData(self)
 
 				for iter_35_72, iter_35_73 in ipairs(var_35_210) do
 					local var_35_212 = bayProxy:getShipById(iter_35_73)
-					local var_35_213 = var_0_1(system, var_35_212, var_35_211, var_35_197)
+					local var_35_213 = genSingleShipData(system, var_35_212, var_35_211, var_35_197)
 
 					table.insert(var_35_204, var_35_212)
 					table.insert(battleData.SubUnitList, var_35_213)
@@ -1595,7 +1600,7 @@ function BattleMediator.GenBattleData(self)
 
 		for iter_35_78, iter_35_79 in ipairs(var_35_220.mainShips) do
 			if not iter_35_79.hpRant or iter_35_79.hpRant > 0 then
-				local var_35_223 = var_0_1(system, iter_35_79, nil, true)
+				local var_35_223 = genSingleShipData(system, iter_35_79, nil, true)
 
 				if iter_35_79.hpRant then
 					var_35_223.initHPRate = iter_35_79.hpRant * 0.0001
@@ -1607,7 +1612,7 @@ function BattleMediator.GenBattleData(self)
 
 		for iter_35_80, iter_35_81 in ipairs(var_35_220.vanguardShips) do
 			if not iter_35_81.hpRant or iter_35_81.hpRant > 0 then
-				local var_35_224 = var_0_1(system, iter_35_81, nil, true)
+				local var_35_224 = genSingleShipData(system, iter_35_81, nil, true)
 
 				if iter_35_81.hpRant then
 					var_35_224.initHPRate = iter_35_81.hpRant * 0.0001
@@ -1738,11 +1743,11 @@ function BattleMediator.listNotificationInterests(arg_54_0)
 	}
 end
 
-function BattleMediator.handleNotification(arg_55_0, arg_55_1)
+function BattleMediator.handleNotification(self, arg_55_1)
 	local var_55_0 = arg_55_1:getName()
 	local var_55_1 = arg_55_1:getBody()
 	local var_55_2 = ys.Battle.BattleState.GetInstance()
-	local var_55_3 = arg_55_0.contextData.system
+	local var_55_3 = self.contextData.system
 
 	if var_55_0 == GAME.FINISH_STAGE_DONE then
 		pg.MsgboxMgr.GetInstance():hide()
@@ -1751,10 +1756,10 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 
 		if var_55_4 == SYSTEM_PROLOGUE then
 			ys.Battle.BattleState.GetInstance():Deactive()
-			arg_55_0:sendNotification(GAME.CHANGE_SCENE, SCENE.CREATE_PLAYER)
+			self:sendNotification(GAME.CHANGE_SCENE, SCENE.CREATE_PLAYER)
 		elseif var_55_4 == SYSTEM_PERFORM or var_55_4 == SYSTEM_SIMULATION then
 			ys.Battle.BattleState.GetInstance():Deactive()
-			arg_55_0.viewComponent:exitBattle()
+			self.viewComponent:exitBattle()
 
 			if var_55_1.exitCallback then
 				var_55_1.exitCallback()
@@ -1767,17 +1772,17 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 				var_55_6 = getProxy(ChapterProxy):getActiveChapter().operationBuffList
 			end
 
-			arg_55_0:addSubLayers(Context.New({
+			self:addSubLayers(Context.New({
 				mediator = NewBattleResultMediator,
 				viewComponent = NewBattleResultScene,
 				data = {
 					system = var_55_4,
-					rivalId = arg_55_0.contextData.rivalId,
-					mainFleetId = arg_55_0.contextData.mainFleetId,
-					stageId = arg_55_0.contextData.stageId,
-					oldMainShips = arg_55_0.mainShips or {},
-					oldPlayer = arg_55_0.player,
-					oldRank = arg_55_0.oldRank,
+					rivalId = self.contextData.rivalId,
+					mainFleetId = self.contextData.mainFleetId,
+					stageId = self.contextData.stageId,
+					oldMainShips = self.mainShips or {},
+					oldPlayer = self.player,
+					oldRank = self.oldRank,
 					statistics = var_55_1.statistics,
 					score = var_55_1.score,
 					drops = var_55_1.drops,
@@ -1785,17 +1790,17 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 					name = var_55_1.name,
 					prefabFleet = var_55_1.prefabFleet,
 					commanderExps = var_55_1.commanderExps,
-					actId = arg_55_0.contextData.actId,
+					actId = self.contextData.actId,
 					result = var_55_1.result,
 					extraDrops = var_55_1.extraDrops,
 					extraBuffList = var_55_6,
 					isLastBonus = var_55_1.isLastBonus,
-					continuousBattleTimes = arg_55_0.contextData.continuousBattleTimes,
-					totalBattleTimes = arg_55_0.contextData.totalBattleTimes,
-					mode = arg_55_0.contextData.mode,
-					cmdArgs = arg_55_0.contextData.cmdArgs,
-					variableBuffList = arg_55_0.contextData.variableBuffList,
-					useVariableTicket = arg_55_0.contextData.useVariableTicket
+					continuousBattleTimes = self.contextData.continuousBattleTimes,
+					totalBattleTimes = self.contextData.totalBattleTimes,
+					mode = self.contextData.mode,
+					cmdArgs = self.contextData.cmdArgs,
+					variableBuffList = self.contextData.variableBuffList,
+					useVariableTicket = self.contextData.useVariableTicket
 				}
 			}))
 		end
@@ -1809,7 +1814,7 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 		var_55_2:Resume()
 	elseif var_55_0 == GAME.PAUSE_BATTLE then
 		if not var_55_2:IsPause() then
-			arg_55_0:onPauseBtn()
+			self:onPauseBtn()
 		end
 	elseif var_55_0 == GAME.RESUME_BATTLE then
 		var_55_2:Resume()
@@ -1852,9 +1857,9 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 			end
 		end
 
-		arg_55_0:sendNotification(GAME.GO_BACK)
+		self:sendNotification(GAME.GO_BACK)
 	elseif var_55_0 == BattleMediator.CLOSE_CHAT then
-		arg_55_0.viewComponent:OnCloseChat()
+		self.viewComponent:OnCloseChat()
 	elseif var_55_0 == BattleMediator.HIDE_ALL_BUTTONS then
 		ys.Battle.BattleState.GetInstance():GetProxyByName(ys.Battle.BattleDataProxy.__name):DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.HIDE_INTERACTABLE_BUTTONS, {
 			isActive = var_55_1
@@ -1862,7 +1867,7 @@ function BattleMediator.handleNotification(arg_55_0, arg_55_1)
 	elseif var_55_0 == GAME.QUIT_BATTLE then
 		var_55_2:Stop()
 	elseif var_55_0 == BattleMediator.UPDATE_AUTO_COUNT then
-		arg_55_0:updateAutoCount(var_55_1)
+		self:updateAutoCount(var_55_1)
 	end
 end
 

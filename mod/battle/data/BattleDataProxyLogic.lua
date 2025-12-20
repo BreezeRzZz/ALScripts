@@ -30,6 +30,7 @@ function BattleDataProxy.ClearFormulas(self)
 	self._calculateDamageCrush = nil
 end
 
+-- TODO
 function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 	if not ship then
 		assert(false, "HandleBulletHit, but no vehicleData")
@@ -172,7 +173,7 @@ function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance
 
 	return isMiss, isCri
 end
-
+-- TODO
 function BattleDataProxy.HandleMeteoDamage(arg_8_0, arg_8_1, arg_8_2)
 	local var_8_0 = BattleFormulas.GetMeteoDamageRatio(#arg_8_2)
 
@@ -181,6 +182,7 @@ function BattleDataProxy.HandleMeteoDamage(arg_8_0, arg_8_1, arg_8_2)
 	end
 end
 -- TODO
+-- DOT等使用，似乎是不需要子弹的
 function BattleDataProxy.HandleDirectDamage(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4, arg_9_5)
 	local var_9_0
 

@@ -87,7 +87,7 @@ function var_0_6.SetHost(arg_6_0, arg_6_1)
 	arg_6_0:FlushTotalReload()
 	arg_6_0:FlushReloadMax(1)
 end
-
+-- TODO
 function var_0_6.FlushTotalReload(arg_7_0)
 	arg_7_0._totalReload = var_0_2.CaclulateAirAssistReloadMax(arg_7_0._hiveList)
 end
@@ -139,7 +139,7 @@ end
 function var_0_6.GetType(arg_15_0)
 	return var_0_1.EquipmentType.AIR_ASSIST
 end
-
+-- TODO
 function var_0_6.Fire(arg_16_0)
 	if arg_16_0._host:IsCease() then
 		return false

@@ -101,6 +101,7 @@ function BattleCharacter.insertBondList(self, boneType, boneOffset)
 	end
 end
 
+-- 被BattleCharacter.onCreateBullet调用
 function BattleCharacter.SpawnBullet(self, bullet, spawnBound, fireFXID, position)
 	local bulletfactory = self._bulletFactoryList[bullet:GetTemplate().type]
 	local remoteBoundBone = self._unitData:GetRemoteBoundBone(spawnBound)
@@ -450,7 +451,9 @@ function BattleCharacter.UnregisterWeaponListener(arg_35_0, arg_35_1)
 	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.CREATE_BULLET)
 	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.FIRE)
 end
--- TODO
+
+-- 对应所有CREATE_BULLET事件的回调函数
+-- 来自BattleWeaponUnit.DispatchBulletEvent
 function BattleCharacter.onCreateBullet(self, args)
 	local bullet = args.Data.bullet
 	local spawnBound = args.Data.spawnBound

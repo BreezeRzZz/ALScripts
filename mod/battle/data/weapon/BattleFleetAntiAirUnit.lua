@@ -18,7 +18,7 @@ var_0_8.STATE_PRECAST = "PRECAST"
 var_0_8.STATE_PRECAST_FINISH = "STATE_PRECAST_FINISH"
 var_0_8.STATE_ATTACK = "ATTACK"
 var_0_8.STATE_OVER_HEAT = "OVER_HEAT"
-
+-- TODO
 function var_0_8.Ctor(arg_1_0)
 	arg_1_0:init()
 end
@@ -137,6 +137,7 @@ function var_0_8.AddPreCastTimer(arg_11_0)
 	end
 
 	arg_11_0._currentState = var_0_8.STATE_PRECAST
+	-- 前摇0.25s
 	arg_11_0._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 0, var_0_4.AntiAirConfig.Precast_duration, var_11_0, true)
 end
 
@@ -179,7 +180,7 @@ end
 function var_0_8.getTrackingHost(arg_17_0)
 	return arg_17_0._host
 end
-
+-- TODO
 function var_0_8.Fire(arg_18_0)
 	if arg_18_0._currentState == arg_18_0.DISABLE then
 		return

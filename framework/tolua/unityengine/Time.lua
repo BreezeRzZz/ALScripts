@@ -14,6 +14,7 @@ local var_0_3 = {
 	timeScale = 1,
 	fixedTime = 0
 }
+-- TODO
 local var_0_4 = {
 	fixedDeltaTime = function(arg_1_0)
 		var_0_3.fixedDeltaTime = arg_1_0

@@ -1,27 +1,27 @@
 pg = pg or {}
 -- TODO
-local var_0_0 = pg
+local pg = pg
 
-var_0_0.TimeMgr = singletonClass("TimeMgr")
+pg.TimeMgr = singletonClass("TimeMgr")
 
-local var_0_1 = var_0_0.TimeMgr
+local TimeMgr = pg.TimeMgr
 
-var_0_1._Timer = nil
-var_0_1._BattleTimer = nil
-var_0_1._sAnchorTime = 0
-var_0_1._AnchorDelta = 0
-var_0_1._serverUnitydelta = 0
-var_0_1._isdstClient = false
+TimeMgr._Timer = nil
+TimeMgr._BattleTimer = nil
+TimeMgr._sAnchorTime = 0
+TimeMgr._AnchorDelta = 0
+TimeMgr._serverUnitydelta = 0
+TimeMgr._isdstClient = false
 
-local var_0_2 = 3600
-local var_0_3 = 86400
-local var_0_4 = 604800
+local secondsPerHour = 3600
+local secondsPerDay = 86400
+local secondsPerWeek = 604800
 
-function var_0_1.Ctor(arg_1_0)
+function TimeMgr.Ctor(arg_1_0)
 	arg_1_0._battleTimerList = {}
 end
 
-function var_0_1.Init(arg_2_0)
+function TimeMgr.Init(arg_2_0)
 	print("initializing time manager...")
 
 	arg_2_0._Timer = TimeUtil.NewUnityTimer()
@@ -30,11 +30,11 @@ function var_0_1.Init(arg_2_0)
 	UpdateBeat:Add(arg_2_0.BattleUpdate, arg_2_0)
 end
 
-function var_0_1.Update(arg_3_0)
+function TimeMgr.Update(arg_3_0)
 	arg_3_0._Timer:Schedule()
 end
 
-function var_0_1.BattleUpdate(arg_4_0)
+function TimeMgr.BattleUpdate(arg_4_0)
 	if arg_4_0._stopCombatTime > 0 then
 		arg_4_0._cobTime = arg_4_0._stopCombatTime - arg_4_0._waitTime
 	else
@@ -42,11 +42,11 @@ function var_0_1.BattleUpdate(arg_4_0)
 	end
 end
 
-function var_0_1.AddTimer(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
+function TimeMgr.AddTimer(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
 	return arg_5_0._Timer:SetTimer(arg_5_1, arg_5_2 * 1000, arg_5_3 * 1000, arg_5_4)
 end
 
-function var_0_1.RemoveTimer(arg_6_0, arg_6_1)
+function TimeMgr.RemoveTimer(arg_6_0, arg_6_1)
 	if arg_6_1 == nil or arg_6_1 == 0 then
 		return
 	end
@@ -54,24 +54,24 @@ function var_0_1.RemoveTimer(arg_6_0, arg_6_1)
 	arg_6_0._Timer:DeleteTimer(arg_6_1)
 end
 
-var_0_1._waitTime = 0
-var_0_1._stopCombatTime = 0
-var_0_1._cobTime = 0
+TimeMgr._waitTime = 0
+TimeMgr._stopCombatTime = 0
+TimeMgr._cobTime = 0
 
-function var_0_1.GetCombatTime(arg_7_0)
+function TimeMgr.GetCombatTime(arg_7_0)
 	return arg_7_0._cobTime
 end
 
-function var_0_1.ResetCombatTime(arg_8_0)
+function TimeMgr.ResetCombatTime(arg_8_0)
 	arg_8_0._waitTime = 0
 	arg_8_0._cobTime = Time.time
 end
 
-function var_0_1.GetCombatDeltaTime()
+function TimeMgr.GetCombatDeltaTime()
 	return Time.fixedDeltaTime
 end
 
-function var_0_1.PauseBattleTimer(arg_10_0)
+function TimeMgr.PauseBattleTimer(arg_10_0)
 	arg_10_0._stopCombatTime = Time.time
 
 	for iter_10_0, iter_10_1 in pairs(arg_10_0._battleTimerList) do
@@ -79,7 +79,7 @@ function var_0_1.PauseBattleTimer(arg_10_0)
 	end
 end
 
-function var_0_1.ResumeBattleTimer(arg_11_0)
+function TimeMgr.ResumeBattleTimer(arg_11_0)
 	arg_11_0._waitTime = arg_11_0._waitTime + Time.time - arg_11_0._stopCombatTime
 	arg_11_0._stopCombatTime = 0
 
@@ -88,31 +88,31 @@ function var_0_1.ResumeBattleTimer(arg_11_0)
 	end
 end
 
-function var_0_1.AddBattleTimer(self, name, loop, duration, func, scale, arg_12_6)
+function TimeMgr.AddBattleTimer(self, name, loop, duration, func, scale, prePause)
 	loop = loop or -1
 	scale = scale or false
-	arg_12_6 = arg_12_6 or false
+	prePause = prePause or false
 
-	local var_12_0 = Timer.New(func, duration, loop, scale)
+	local timer = Timer.New(func, duration, loop, scale)
 
-	self._battleTimerList[var_12_0] = true
+	self._battleTimerList[timer] = true
 
-	if not arg_12_6 then
-		var_12_0:Start()
+	if not prePause then
+		timer:Start()
 	end
 
 	if self._stopCombatTime ~= 0 then
-		var_12_0:Pause()
+		timer:Pause()
 	end
 
-	return var_12_0
+	return timer
 end
 
-function var_0_1.ScaleBattleTimer(arg_13_0, arg_13_1)
+function TimeMgr.ScaleBattleTimer(arg_13_0, arg_13_1)
 	Time.timeScale = arg_13_1
 end
 
-function var_0_1.RemoveBattleTimer(arg_14_0, arg_14_1)
+function TimeMgr.RemoveBattleTimer(arg_14_0, arg_14_1)
 	if arg_14_1 then
 		arg_14_0._battleTimerList[arg_14_1] = nil
 
@@ -120,7 +120,7 @@ function var_0_1.RemoveBattleTimer(arg_14_0, arg_14_1)
 	end
 end
 
-function var_0_1.RemoveAllBattleTimer(arg_15_0)
+function TimeMgr.RemoveAllBattleTimer(arg_15_0)
 	for iter_15_0, iter_15_1 in pairs(arg_15_0._battleTimerList) do
 		iter_15_0:Stop()
 	end
@@ -128,15 +128,15 @@ function var_0_1.RemoveAllBattleTimer(arg_15_0)
 	arg_15_0._battleTimerList = {}
 end
 
-function var_0_1.RealtimeSinceStartup(arg_16_0)
+function TimeMgr.RealtimeSinceStartup(arg_16_0)
 	return math.floor(Time.realtimeSinceStartup)
 end
 
-function var_0_1.SetServerTime(arg_17_0, arg_17_1, arg_17_2)
+function TimeMgr.SetServerTime(arg_17_0, arg_17_1, arg_17_2)
 	arg_17_0:_SetServerTime_(arg_17_1, arg_17_2, arg_17_0:RealtimeSinceStartup())
 end
 
-function var_0_1._SetServerTime_(arg_18_0, arg_18_1, arg_18_2, arg_18_3)
+function TimeMgr._SetServerTime_(arg_18_0, arg_18_1, arg_18_2, arg_18_3)
 	if PLATFORM_CODE == PLATFORM_US then
 		SERVER_DAYLIGHT_SAVEING_TIME = false
 	end
@@ -155,63 +155,63 @@ function var_0_1._SetServerTime_(arg_18_0, arg_18_1, arg_18_2, arg_18_3)
 	})
 end
 
-function var_0_1.GetServerTime(arg_19_0)
+function TimeMgr.GetServerTime(arg_19_0)
 	return arg_19_0:RealtimeSinceStartup() + arg_19_0._serverUnitydelta
 end
 
-function var_0_1.GetServerTimeMs(arg_20_0)
+function TimeMgr.GetServerTimeMs(arg_20_0)
 	return math.ceil((Time.realtimeSinceStartup + arg_20_0._serverUnitydelta) * 1000)
 end
 
-function var_0_1.GetServerWeek(arg_21_0)
+function TimeMgr.GetServerWeek(arg_21_0)
 	local var_21_0 = arg_21_0:GetServerTime()
 
 	return arg_21_0:GetServerTimestampWeek(var_21_0)
 end
 
-function var_0_1.GetServerOverWeek(arg_22_0, arg_22_1)
+function TimeMgr.GetServerOverWeek(arg_22_0, arg_22_1)
 	local var_22_0 = arg_22_1 - (arg_22_0:GetServerTimestampWeek(arg_22_1) - 1) * 86400
 
 	return (math.ceil((arg_22_0:GetServerTime() - var_22_0) / 604800))
 end
 
-function var_0_1.GetServerDay(arg_23_0, arg_23_1)
+function TimeMgr.GetServerDay(arg_23_0, arg_23_1)
 	return (math.ceil((arg_23_0:GetServerTime() - arg_23_1) / 86400))
 end
 
-function var_0_1.GetServerTimestampWeek(arg_24_0, arg_24_1)
+function TimeMgr.GetServerTimestampWeek(arg_24_0, arg_24_1)
 	local var_24_0 = arg_24_1 - arg_24_0._sAnchorTime
 
-	return math.ceil((var_24_0 % var_0_4 + 1) / var_0_3)
+	return math.ceil((var_24_0 % secondsPerWeek + 1) / secondsPerDay)
 end
 
-function var_0_1.GetServerHour(arg_25_0)
+function TimeMgr.GetServerHour(arg_25_0)
 	local var_25_0 = arg_25_0:GetServerTime() - arg_25_0._sAnchorTime
 
-	return math.floor(var_25_0 % var_0_3 / var_0_2)
+	return math.floor(var_25_0 % secondsPerDay / secondsPerHour)
 end
 
-function var_0_1.Table2ServerTime(arg_26_0, arg_26_1)
+function TimeMgr.Table2ServerTime(arg_26_0, arg_26_1)
 	arg_26_1.isdst = arg_26_0._isdstClient
 
 	if arg_26_0._isdstClient ~= SERVER_DAYLIGHT_SAVEING_TIME then
 		if SERVER_DAYLIGHT_SAVEING_TIME then
-			return arg_26_0._AnchorDelta + os.time(arg_26_1) - var_0_2
+			return arg_26_0._AnchorDelta + os.time(arg_26_1) - secondsPerHour
 		else
-			return arg_26_0._AnchorDelta + os.time(arg_26_1) + var_0_2
+			return arg_26_0._AnchorDelta + os.time(arg_26_1) + secondsPerHour
 		end
 	else
 		return arg_26_0._AnchorDelta + os.time(arg_26_1)
 	end
 end
 
-function var_0_1.CTimeDescC(arg_27_0, arg_27_1, arg_27_2)
+function TimeMgr.CTimeDescC(arg_27_0, arg_27_1, arg_27_2)
 	arg_27_2 = arg_27_2 or "%Y%m%d%H%M%S"
 
 	return os.date(arg_27_2, arg_27_1)
 end
 
-function var_0_1.STimeDescC(arg_28_0, arg_28_1, arg_28_2, arg_28_3)
+function TimeMgr.STimeDescC(arg_28_0, arg_28_1, arg_28_2, arg_28_3)
 	arg_28_2 = arg_28_2 or "%Y/%m/%d %H:%M:%S"
 
 	if arg_28_3 then
@@ -221,7 +221,7 @@ function var_0_1.STimeDescC(arg_28_0, arg_28_1, arg_28_2, arg_28_3)
 	end
 end
 
-function var_0_1.STimeDescS(arg_29_0, arg_29_1, arg_29_2)
+function TimeMgr.STimeDescS(arg_29_0, arg_29_1, arg_29_2)
 	arg_29_2 = arg_29_2 or "%Y/%m/%d %H:%M:%S"
 
 	local var_29_0 = 0
@@ -233,7 +233,7 @@ function var_0_1.STimeDescS(arg_29_0, arg_29_1, arg_29_2)
 	return os.date(arg_29_2, arg_29_1 - arg_29_0._AnchorDelta + var_29_0)
 end
 
-function var_0_1.CurrentSTimeDesc(arg_30_0, arg_30_1, arg_30_2)
+function TimeMgr.CurrentSTimeDesc(arg_30_0, arg_30_1, arg_30_2)
 	if arg_30_2 then
 		return arg_30_0:STimeDescS(arg_30_0:GetServerTime(), arg_30_1)
 	else
@@ -241,7 +241,7 @@ function var_0_1.CurrentSTimeDesc(arg_30_0, arg_30_1, arg_30_2)
 	end
 end
 
-function var_0_1.ChieseDescTime(arg_31_0, arg_31_1, arg_31_2)
+function TimeMgr.ChieseDescTime(arg_31_0, arg_31_1, arg_31_2)
 	local var_31_0 = "%Y/%m/%d"
 	local var_31_1
 
@@ -256,9 +256,9 @@ function var_0_1.ChieseDescTime(arg_31_0, arg_31_1, arg_31_2)
 	return NumberToChinese(var_31_2[1], false) .. "年" .. NumberToChinese(var_31_2[2], true) .. "月" .. NumberToChinese(var_31_2[3], true) .. "日"
 end
 
-function var_0_1.GetTimeToNextTime(arg_32_0, arg_32_1, arg_32_2, arg_32_3)
+function TimeMgr.GetTimeToNextTime(arg_32_0, arg_32_1, arg_32_2, arg_32_3)
 	arg_32_1 = arg_32_1 or arg_32_0:GetServerTime()
-	arg_32_2 = arg_32_2 or var_0_3
+	arg_32_2 = arg_32_2 or secondsPerDay
 	arg_32_3 = arg_32_3 or 0
 
 	local var_32_0 = arg_32_1 - (arg_32_0._sAnchorTime + arg_32_3)
@@ -266,19 +266,19 @@ function var_0_1.GetTimeToNextTime(arg_32_0, arg_32_1, arg_32_2, arg_32_3)
 	return math.floor(var_32_0 / arg_32_2 + 1) * arg_32_2 + arg_32_0._sAnchorTime + arg_32_3
 end
 
-function var_0_1.GetNextTime(arg_33_0, arg_33_1, arg_33_2, arg_33_3, arg_33_4)
-	return arg_33_0:GetTimeToNextTime(nil, arg_33_4, arg_33_1 * var_0_2 + arg_33_2 * 60 + arg_33_3)
+function TimeMgr.GetNextTime(arg_33_0, arg_33_1, arg_33_2, arg_33_3, arg_33_4)
+	return arg_33_0:GetTimeToNextTime(nil, arg_33_4, arg_33_1 * secondsPerHour + arg_33_2 * 60 + arg_33_3)
 end
 
-function var_0_1.GetNextTimeByTimeStamp(arg_34_0, arg_34_1)
-	return arg_34_0:GetTimeToNextTime(arg_34_1) - var_0_3
+function TimeMgr.GetNextTimeByTimeStamp(arg_34_0, arg_34_1)
+	return arg_34_0:GetTimeToNextTime(arg_34_1) - secondsPerDay
 end
 
-function var_0_1.GetNextWeekTime(arg_35_0, arg_35_1, arg_35_2, arg_35_3, arg_35_4)
-	return arg_35_0:GetNextTime((arg_35_1 - 1) * 24 + arg_35_2, arg_35_3, arg_35_4, var_0_4)
+function TimeMgr.GetNextWeekTime(arg_35_0, arg_35_1, arg_35_2, arg_35_3, arg_35_4)
+	return arg_35_0:GetNextTime((arg_35_1 - 1) * 24 + arg_35_2, arg_35_3, arg_35_4, secondsPerWeek)
 end
 
-function var_0_1.ParseTime(arg_36_0, arg_36_1)
+function TimeMgr.ParseTime(arg_36_0, arg_36_1)
 	local var_36_0 = tonumber(arg_36_1)
 	local var_36_1 = var_36_0 % 100
 	local var_36_2 = var_36_0 / 100
@@ -301,7 +301,7 @@ function var_0_1.ParseTime(arg_36_0, arg_36_1)
 	})
 end
 
-function var_0_1.ParseTimeEx(arg_37_0, arg_37_1, arg_37_2)
+function TimeMgr.ParseTimeEx(arg_37_0, arg_37_1, arg_37_2)
 	if arg_37_2 == nil then
 		arg_37_2 = "(%d+)%-(%d+)%-(%d+)%s(%d+)%:(%d+)%:(%d+)"
 	end
@@ -318,7 +318,7 @@ function var_0_1.ParseTimeEx(arg_37_0, arg_37_1, arg_37_2)
 	})
 end
 
-function var_0_1.parseTimeFromConfig(arg_38_0, arg_38_1)
+function TimeMgr.parseTimeFromConfig(arg_38_0, arg_38_1)
 	return arg_38_0:Table2ServerTime({
 		year = arg_38_1[1][1],
 		month = arg_38_1[1][2],
@@ -329,13 +329,13 @@ function var_0_1.parseTimeFromConfig(arg_38_0, arg_38_1)
 	})
 end
 
-function var_0_1.DescDateFromConfig(arg_39_0, arg_39_1, arg_39_2)
+function TimeMgr.DescDateFromConfig(arg_39_0, arg_39_1, arg_39_2)
 	arg_39_2 = arg_39_2 or "%d.%02d.%02d"
 
 	return string.format(arg_39_2, arg_39_1[1][1], arg_39_1[1][2], arg_39_1[1][3])
 end
 
-function var_0_1.DescCDTime(arg_40_0, arg_40_1)
+function TimeMgr.DescCDTime(arg_40_0, arg_40_1)
 	local var_40_0 = math.floor(arg_40_1 / 3600)
 
 	arg_40_1 = arg_40_1 % 3600
@@ -347,7 +347,7 @@ function var_0_1.DescCDTime(arg_40_0, arg_40_1)
 	return string.format("%02d:%02d:%02d", var_40_0, var_40_1, arg_40_1)
 end
 
-function var_0_1.DescCDTimeForMinute(arg_41_0, arg_41_1)
+function TimeMgr.DescCDTimeForMinute(arg_41_0, arg_41_1)
 	local var_41_0 = math.floor(arg_41_1 / 3600)
 
 	arg_41_1 = arg_41_1 % 3600
@@ -359,8 +359,8 @@ function var_0_1.DescCDTimeForMinute(arg_41_0, arg_41_1)
 	return string.format("%02d:%02d", var_41_1, arg_41_1)
 end
 
-function var_0_1.parseTimeFrom(arg_42_0, arg_42_1)
-	local var_42_0 = math.floor(arg_42_1 / var_0_3)
+function TimeMgr.parseTimeFrom(arg_42_0, arg_42_1)
+	local var_42_0 = math.floor(arg_42_1 / secondsPerDay)
 	local var_42_1 = math.fmod(math.floor(arg_42_1 / 3600), 24)
 	local var_42_2 = math.fmod(math.floor(arg_42_1 / 60), 60)
 	local var_42_3 = math.fmod(arg_42_1, 60)
@@ -368,27 +368,27 @@ function var_0_1.parseTimeFrom(arg_42_0, arg_42_1)
 	return var_42_0, var_42_1, var_42_2, var_42_3
 end
 
-function var_0_1.DiffDay(arg_43_0, arg_43_1, arg_43_2)
-	return math.floor((arg_43_2 - arg_43_0._sAnchorTime) / var_0_3) - math.floor((arg_43_1 - arg_43_0._sAnchorTime) / var_0_3)
+function TimeMgr.DiffDay(arg_43_0, arg_43_1, arg_43_2)
+	return math.floor((arg_43_2 - arg_43_0._sAnchorTime) / secondsPerDay) - math.floor((arg_43_1 - arg_43_0._sAnchorTime) / secondsPerDay)
 end
 
-function var_0_1.IsSameDay(arg_44_0, arg_44_1, arg_44_2)
-	return math.floor((arg_44_1 - arg_44_0._sAnchorTime) / var_0_3) == math.floor((arg_44_2 - arg_44_0._sAnchorTime) / var_0_3)
+function TimeMgr.IsSameDay(arg_44_0, arg_44_1, arg_44_2)
+	return math.floor((arg_44_1 - arg_44_0._sAnchorTime) / secondsPerDay) == math.floor((arg_44_2 - arg_44_0._sAnchorTime) / secondsPerDay)
 end
 
-function var_0_1.IsSameWeek(arg_45_0, arg_45_1, arg_45_2)
-	return math.floor((arg_45_1 - arg_45_0._sAnchorTime) / var_0_4) == math.floor((arg_45_2 - arg_45_0._sAnchorTime) / var_0_4)
+function TimeMgr.IsSameWeek(arg_45_0, arg_45_1, arg_45_2)
+	return math.floor((arg_45_1 - arg_45_0._sAnchorTime) / secondsPerWeek) == math.floor((arg_45_2 - arg_45_0._sAnchorTime) / secondsPerWeek)
 end
 
-function var_0_1.IsPassTimeByZero(arg_46_0, arg_46_1, arg_46_2)
-	return arg_46_2 < math.fmod(arg_46_1 - arg_46_0._sAnchorTime, var_0_3)
+function TimeMgr.IsPassTimeByZero(arg_46_0, arg_46_1, arg_46_2)
+	return arg_46_2 < math.fmod(arg_46_1 - arg_46_0._sAnchorTime, secondsPerDay)
 end
 
-function var_0_1.GetZeroTimeStamp(arg_47_0, arg_47_1)
-	return arg_47_1 - (arg_47_1 - arg_47_0._sAnchorTime) % var_0_3
+function TimeMgr.GetZeroTimeStamp(arg_47_0, arg_47_1)
+	return arg_47_1 - (arg_47_1 - arg_47_0._sAnchorTime) % secondsPerDay
 end
 
-function var_0_1.CalcMonthDays(arg_48_0, arg_48_1, arg_48_2)
+function TimeMgr.CalcMonthDays(arg_48_0, arg_48_1, arg_48_2)
 	local var_48_0 = 30
 
 	if arg_48_2 == 2 then
@@ -408,7 +408,7 @@ function var_0_1.CalcMonthDays(arg_48_0, arg_48_1, arg_48_2)
 	return var_48_0
 end
 
-function var_0_1.inPeriod(arg_49_0, arg_49_1, arg_49_2)
+function TimeMgr.inPeriod(arg_49_0, arg_49_1, arg_49_2)
 	if arg_49_1 and type(arg_49_1) == "string" then
 		return arg_49_1 == "always"
 	end
@@ -418,17 +418,17 @@ function var_0_1.inPeriod(arg_49_0, arg_49_1, arg_49_2)
 	end
 
 	local function var_49_0(arg_50_0)
-		return arg_50_0[1] * var_0_2 + arg_50_0[2] * 60 + arg_50_0[3]
+		return arg_50_0[1] * secondsPerHour + arg_50_0[2] * 60 + arg_50_0[3]
 	end
 
-	local var_49_1 = (arg_49_0:GetServerTime() - arg_49_0._sAnchorTime) % var_0_3
+	local var_49_1 = (arg_49_0:GetServerTime() - arg_49_0._sAnchorTime) % secondsPerDay
 	local var_49_2 = var_49_0(arg_49_1)
 	local var_49_3 = var_49_0(arg_49_2)
 
 	return var_49_2 <= var_49_1 and var_49_1 <= var_49_3
 end
 
-function var_0_1.inTime(arg_51_0, arg_51_1, arg_51_2)
+function TimeMgr.inTime(arg_51_0, arg_51_1, arg_51_2)
 	if not arg_51_1 then
 		return true
 	end
@@ -510,7 +510,7 @@ function var_0_1.inTime(arg_51_0, arg_51_1, arg_51_2)
 	return true, var_51_3
 end
 
-function var_0_1.passTime(arg_53_0, arg_53_1)
+function TimeMgr.passTime(arg_53_0, arg_53_1)
 	if not arg_53_1 then
 		return true
 	end

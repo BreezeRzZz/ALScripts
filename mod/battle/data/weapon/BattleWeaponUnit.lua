@@ -1533,6 +1533,7 @@ end
 --- @param position Vector3
 --- @return nil
 --- 发送子弹生成事件
+--- 在createMajorEmitter和SingleFire中均有使用
 function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 	local position = position
 	local template = self._tmpData
