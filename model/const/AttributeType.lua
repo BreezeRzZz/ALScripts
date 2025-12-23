@@ -1,49 +1,49 @@
-local var_0_0 = class("AttributeType")
+local AttributeType = class("AttributeType")
+-- TODO
+AttributeType.Durability = "durability"
+AttributeType.Cannon = "cannon"
+AttributeType.Torpedo = "torpedo"
+AttributeType.AntiAircraft = "antiaircraft"
+AttributeType.AntiSub = "antisub"
+AttributeType.Air = "air"
+AttributeType.Reload = "reload"
+AttributeType.ArmorType = "armor_type"
+AttributeType.Armor = "armor"
+AttributeType.Hit = "hit"
+AttributeType.Speed = "speed"
+AttributeType.Luck = "luck"
+AttributeType.Dodge = "dodge"
+AttributeType.Expend = "expend"
+AttributeType.Intimacy = "intimacy"
+AttributeType.AirDominate = "AirDominate"
+AttributeType.Damage = "damage"
+AttributeType.CD = "cd"
+AttributeType.Healthy = "healthy"
+AttributeType.Speciality = "speciality"
+AttributeType.Range = "range"
+AttributeType.Angle = "angle"
+AttributeType.Scatter = "scatter"
+AttributeType.Ammo = "ammo"
+AttributeType.HuntingRange = "hunting_range"
+AttributeType.AirDurability = "AirDurability"
+AttributeType.AntiSiren = "anti_siren"
+AttributeType.Corrected = "corrected"
+AttributeType.OxyMax = "oxy_max"
+AttributeType.OxyCost = "oxy_cost"
+AttributeType.OxyRecovery = "oxy_recovery"
+AttributeType.OxyRecoverySurface = "oxy_recovery_surface"
+AttributeType.OxyRecoveryBench = "oxy_recovery_bench"
+AttributeType.OxyAttackDuration = "attack_duration"
+AttributeType.OxyRaidDistance = "raid_distance"
+AttributeType.SonarRange = "sonarRange"
+AttributeType.Tactics = "tactics"
+AttributeType.WorldPower = "world_power"
 
-var_0_0.Durability = "durability"
-var_0_0.Cannon = "cannon"
-var_0_0.Torpedo = "torpedo"
-var_0_0.AntiAircraft = "antiaircraft"
-var_0_0.AntiSub = "antisub"
-var_0_0.Air = "air"
-var_0_0.Reload = "reload"
-var_0_0.ArmorType = "armor_type"
-var_0_0.Armor = "armor"
-var_0_0.Hit = "hit"
-var_0_0.Speed = "speed"
-var_0_0.Luck = "luck"
-var_0_0.Dodge = "dodge"
-var_0_0.Expend = "expend"
-var_0_0.Intimacy = "intimacy"
-var_0_0.AirDominate = "AirDominate"
-var_0_0.Damage = "damage"
-var_0_0.CD = "cd"
-var_0_0.Healthy = "healthy"
-var_0_0.Speciality = "speciality"
-var_0_0.Range = "range"
-var_0_0.Angle = "angle"
-var_0_0.Scatter = "scatter"
-var_0_0.Ammo = "ammo"
-var_0_0.HuntingRange = "hunting_range"
-var_0_0.AirDurability = "AirDurability"
-var_0_0.AntiSiren = "anti_siren"
-var_0_0.Corrected = "corrected"
-var_0_0.OxyMax = "oxy_max"
-var_0_0.OxyCost = "oxy_cost"
-var_0_0.OxyRecovery = "oxy_recovery"
-var_0_0.OxyRecoverySurface = "oxy_recovery_surface"
-var_0_0.OxyRecoveryBench = "oxy_recovery_bench"
-var_0_0.OxyAttackDuration = "attack_duration"
-var_0_0.OxyRaidDistance = "raid_distance"
-var_0_0.SonarRange = "sonarRange"
-var_0_0.Tactics = "tactics"
-var_0_0.WorldPower = "world_power"
-
-function var_0_0.Type2Name(arg_1_0)
+function AttributeType.Type2Name(arg_1_0)
 	return i18n("attribute_" .. arg_1_0)
 end
 
-var_0_0.eliteConditionTip = {
+AttributeType.eliteConditionTip = {
 	cannon = "elite_condition_cannon",
 	air = "elite_condition_air",
 	dodge = "elite_condition_dodge",
@@ -64,15 +64,15 @@ local var_0_1 = {
 	[-2] = "common_compare_not_more_than"
 }
 
-function var_0_0.eliteConditionCompareTip(arg_2_0)
+function AttributeType.eliteConditionCompareTip(arg_2_0)
 	return i18n(var_0_1[arg_2_0])
 end
 
-function var_0_0.EliteCondition2Name(arg_3_0, ...)
-	return i18n(var_0_0.eliteConditionTip[arg_3_0], ...)
+function AttributeType.EliteCondition2Name(arg_3_0, ...)
+	return i18n(AttributeType.eliteConditionTip[arg_3_0], ...)
 end
 
-function var_0_0.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
+function AttributeType.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
 	if arg_4_0 == 0 then
 		return arg_4_1 == arg_4_2
 	elseif arg_4_0 == 1 then
@@ -89,36 +89,36 @@ function var_0_0.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
 end
 -- TODO
 -- 左侧是战斗外属性名，右侧是战斗内属性名
-var_0_0.attrNameTable = {
-	[var_0_0.Durability] = "maxHP",
-	[var_0_0.Cannon] = "cannonPower",
-	[var_0_0.Torpedo] = "torpedoPower",
-	[var_0_0.AntiAircraft] = "antiAirPower",
-	[var_0_0.AntiSub] = "antiSubPower",
-	[var_0_0.Air] = "airPower",
-	[var_0_0.Reload] = "loadSpeed",
-	[var_0_0.Hit] = "attackRating",
-	[var_0_0.Speed] = "speed",
-	[var_0_0.Luck] = "luck",
-	[var_0_0.Dodge] = "dodgeRate",
-	[var_0_0.OxyMax] = "oxyMax",
-	[var_0_0.OxyCost] = "oxyCost",
-	[var_0_0.OxyRecovery] = "oxyRecovery",
-	[var_0_0.OxyRecoveryBench] = "oxyRecoveryBench",
-	[var_0_0.OxyRecoverySurface] = "oxyRecoverySurface",
-	[var_0_0.OxyAttackDuration] = "oxyAtkDuration",
-	[var_0_0.OxyRaidDistance] = "raidDist"
+AttributeType.attrNameTable = {
+	[AttributeType.Durability] = "maxHP",
+	[AttributeType.Cannon] = "cannonPower",
+	[AttributeType.Torpedo] = "torpedoPower",
+	[AttributeType.AntiAircraft] = "antiAirPower",
+	[AttributeType.AntiSub] = "antiSubPower",
+	[AttributeType.Air] = "airPower",
+	[AttributeType.Reload] = "loadSpeed",
+	[AttributeType.Hit] = "attackRating",
+	[AttributeType.Speed] = "speed",
+	[AttributeType.Luck] = "luck",
+	[AttributeType.Dodge] = "dodgeRate",
+	[AttributeType.OxyMax] = "oxyMax",
+	[AttributeType.OxyCost] = "oxyCost",
+	[AttributeType.OxyRecovery] = "oxyRecovery",
+	[AttributeType.OxyRecoveryBench] = "oxyRecoveryBench",
+	[AttributeType.OxyRecoverySurface] = "oxyRecoverySurface",
+	[AttributeType.OxyAttackDuration] = "oxyAtkDuration",
+	[AttributeType.OxyRaidDistance] = "raidDist"
 }
 -- TODO
-function var_0_0.ConvertBattleAttrName(arg_5_0)
-	if var_0_0.attrNameTable[arg_5_0] then
-		return var_0_0.attrNameTable[arg_5_0]
+function AttributeType.ConvertBattleAttrName(arg_5_0)
+	if AttributeType.attrNameTable[arg_5_0] then
+		return AttributeType.attrNameTable[arg_5_0]
 	else
 		return arg_5_0
 	end
 end
 
-var_0_0.PrimalAttr = {
+AttributeType.PrimalAttr = {
 	torpedoPower = true,
 	loadSpeed = true,
 	antiSubPower = true,
@@ -130,8 +130,8 @@ var_0_0.PrimalAttr = {
 	velocity = true
 }
 
-function var_0_0.IsPrimalBattleAttr(arg_6_0)
-	return var_0_0.PrimalAttr[arg_6_0]
+function AttributeType.IsPrimalBattleAttr(arg_6_0)
+	return AttributeType.PrimalAttr[arg_6_0]
 end
 
-return var_0_0
+return AttributeType

@@ -1017,7 +1017,7 @@ end
 
 --- @class BattleWeaponUnit
 --- @return nil
---- 武器准备完毕时的回调
+--- 武器开火时的回调（实际位置在DoAttack的前面，在实际emitter发射前触发）
 function BattleWeaponUnit.TriggerBuffOnSteday(self)
 	self._host:TriggerBuff(BattleConst.BuffEffectType.ON_WEAPON_STEDAY, {
 		equipIndex = self._equipmentIndex
@@ -1026,7 +1026,7 @@ end
 
 --- @class BattleWeaponUnit
 --- @return nil
---- 武器开火时的回调
+--- 武器开火时的回调（实际位置在DoAttack的后面，在实际emitter发射后触发）
 function BattleWeaponUnit.TriggerBuffOnFire(self)
 	self._host:TriggerBuff(BattleConst.BuffEffectType.ON_FIRE, {
 		equipIndex = self._equipmentIndex

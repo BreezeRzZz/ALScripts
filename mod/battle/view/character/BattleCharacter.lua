@@ -454,11 +454,11 @@ end
 
 -- 对应所有CREATE_BULLET事件的回调函数
 -- 来自BattleWeaponUnit.DispatchBulletEvent
-function BattleCharacter.onCreateBullet(self, args)
-	local bullet = args.Data.bullet
-	local spawnBound = args.Data.spawnBound
-	local fireFxID = args.Data.fireFxID
-	local position = args.Data.position
+function BattleCharacter.onCreateBullet(self, payload)
+	local bullet = payload.Data.bullet
+	local spawnBound = payload.Data.spawnBound
+	local fireFxID = payload.Data.fireFxID
+	local position = payload.Data.position
 
 	self:SpawnBullet(bullet, spawnBound, fireFxID, position)
 end
@@ -496,7 +496,7 @@ function BattleCharacter.onCannonFire(arg_37_0, arg_37_1)
 		var_37_0:DoAttack(var_37_1)
 	end
 end
-
+-- TODO
 function BattleCharacter.onSpawnCacheBullet(arg_38_0)
 	if arg_38_0._cacheWeapon then
 		for iter_38_0, iter_38_1 in ipairs(arg_38_0._cacheWeapon) do
@@ -777,7 +777,7 @@ function BattleCharacter.OnActionChange(arg_64_0, arg_64_1)
 
 	arg_64_0:PlayAction(var_64_0)
 end
-
+-- TODO
 function BattleCharacter.PlayAction(arg_65_0, arg_65_1)
 	local var_65_0 = arg_65_1
 	local var_65_1 = false
@@ -1066,7 +1066,7 @@ function BattleCharacter.Dispose(arg_80_0)
 
 	BattleCharacter.super.Dispose(arg_80_0)
 end
-
+-- TODO
 function BattleCharacter.AddModel(arg_81_0, arg_81_1)
 	arg_81_0:SetGO(arg_81_1)
 
@@ -1485,56 +1485,62 @@ function BattleCharacter.AddAimBiasFogFX(arg_117_0)
 	end
 end
 
-function BattleCharacter.OnUpdateHP(arg_118_0, arg_118_1)
-	arg_118_0:_DealHPPop(arg_118_1.Data)
+-- UPDATE_HP
+-- BattleUnit.UpdateHP->BattleUnit.UpdateHPAction
+function BattleCharacter.OnUpdateHP(self, args)
+	self:_DealHPPop(args.Data)
 end
 
-function BattleCharacter._DealHPPop(arg_119_0, arg_119_1)
-	if arg_119_0._hpPopIndex_put == arg_119_0._hpPopIndex_get and arg_119_0._hpPopCount == 0 then
-		arg_119_0:_PlayHPPop(arg_119_1)
+-- TODO
+function BattleCharacter._DealHPPop(self, data)
+	if self._hpPopIndex_put == self._hpPopIndex_get and self._hpPopCount == 0 then
+		self:_PlayHPPop(data)
 
-		arg_119_0._hpPopCount = 1
-	elseif arg_119_0._unitData:IsAlive() then
-		arg_119_0._hpPopCatch[arg_119_0._hpPopIndex_put] = arg_119_1
-		arg_119_0._hpPopIndex_put = arg_119_0._hpPopIndex_put + 1
+		self._hpPopCount = 1
+	elseif self._unitData:IsAlive() then
+		self._hpPopCatch[self._hpPopIndex_put] = data
+		self._hpPopIndex_put = self._hpPopIndex_put + 1
 	else
-		arg_119_0:_PlayHPPop(arg_119_1)
+		self:_PlayHPPop(data)
 	end
 end
 
-function BattleCharacter.UpdateHPPop(arg_120_0)
-	if arg_120_0._hpPopIndex_put == arg_120_0._hpPopIndex_get then
+-- BattleCharacter.Update调用
+function BattleCharacter.UpdateHPPop(self)
+	if self._hpPopIndex_put == self._hpPopIndex_get then
 		return
 	else
-		arg_120_0._hpPopCount = arg_120_0._hpPopCount + 1
+		self._hpPopCount = self._hpPopCount + 1
 
-		if arg_120_0:_CalcHPPopCount() <= arg_120_0._hpPopCount then
-			arg_120_0:_PlayHPPop(arg_120_0._hpPopCatch[arg_120_0._hpPopIndex_get])
+		if self:_CalcHPPopCount() <= self._hpPopCount then
+			self:_PlayHPPop(self._hpPopCatch[self._hpPopIndex_get])
 
-			arg_120_0._hpPopCatch[arg_120_0._hpPopIndex_get] = nil
-			arg_120_0._hpPopIndex_get = arg_120_0._hpPopIndex_get + 1
-			arg_120_0._hpPopCount = 0
+			self._hpPopCatch[self._hpPopIndex_get] = nil
+			self._hpPopIndex_get = self._hpPopIndex_get + 1
+			self._hpPopCount = 0
 		end
 	end
 end
 
-function BattleCharacter._PlayHPPop(arg_121_0, arg_121_1)
-	if arg_121_0._popNumBundle:IsScorePop() then
+-- TODO
+-- 被BattleCharacter._DealHPPop和BattleCharacter.UpdateHPPop调用
+function BattleCharacter._PlayHPPop(self, data)
+	if self._popNumBundle:IsScorePop() then
 		return
 	end
 
-	local var_121_0 = arg_121_1.dHP
-	local var_121_1 = arg_121_1.isCri
-	local var_121_2 = arg_121_1.isMiss
-	local var_121_3 = arg_121_1.isHeal
-	local var_121_4 = arg_121_1.posOffset or Vector3.zero
-	local var_121_5 = arg_121_1.font
-	local var_121_6 = arg_121_0._popNumBundle:GetPop(var_121_3, var_121_1, var_121_2, var_121_0, var_121_5)
+	local dHP = data.dHP
+	local isCri = data.isCri
+	local isMiss = data.isMiss
+	local isHeal = data.isHeal
+	local pos = data.posOffset or Vector3.zero
+	local font = data.font
+	local var_121_6 = self._popNumBundle:GetPop(isHeal, isCri, isMiss, dHP, font)
 
-	var_121_6:SetReferenceCharacter(arg_121_0, var_121_4)
+	var_121_6:SetReferenceCharacter(self, pos)
 	var_121_6:Play()
 end
-
+-- 最多只显示5个伤害数字，超过5个则每次只显示1个
 function BattleCharacter._CalcHPPopCount(arg_122_0)
 	if arg_122_0._hpPopIndex_put - arg_122_0._hpPopIndex_get > 5 then
 		return 1
@@ -1562,8 +1568,8 @@ function BattleCharacter.UpdateHpBar(arg_124_0)
 	end
 end
 
-function BattleCharacter.onChangeSize(arg_125_0, arg_125_1)
-	arg_125_0:doChangeSize(arg_125_1)
+function BattleCharacter.onChangeSize(self, payload)
+	self:doChangeSize(payload)
 end
 
 function BattleCharacter.updateSomkeFX(arg_126_0)
@@ -1607,14 +1613,14 @@ function BattleCharacter.updateSomkeFX(arg_126_0)
 	end
 end
 
-function BattleCharacter.doChangeSize(arg_127_0, arg_127_1)
-	local var_127_0 = arg_127_1.Data.size_ratio
-	local var_127_1 = arg_127_1.Data.size
+function BattleCharacter.doChangeSize(self, payload)
+	local size_ratio = payload.Data.size_ratio
+	local size = payload.Data.size
 
-	if var_127_0 then
-		arg_127_0:setLocalScale(arg_127_0._tf.localScale * var_127_0)
-	elseif var_127_1 then
-		arg_127_0:setLocalScale(Vector3(var_127_1 * arg_127_0._unitData:GetDirection(), var_127_1, var_127_1))
+	if size_ratio then
+		self:setLocalScale(self._tf.localScale * size_ratio)
+	elseif size then
+		self:setLocalScale(Vector3(size * self._unitData:GetDirection(), size, size))
 	end
 end
 
@@ -1797,7 +1803,7 @@ function BattleCharacter.onSwitchShader(arg_152_0, arg_152_1)
 	local var_152_0 = arg_152_1.Data
 	local var_152_1 = var_152_0.shader
 	local var_152_2 = var_152_0.color
-	local var_152_3 = var_152_0.args
+	local var_152_3 = var_152_0.payload
 
 	arg_152_0:SwitchShader(var_152_1, var_152_2, var_152_3)
 end

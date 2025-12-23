@@ -519,7 +519,7 @@ function BattleAttr.SetEnemyAttr(enemy)
 	local growthRatio = (enemyLevel - 1) / 1000
 	-- 注意点：
 		-- 1. 敌人的属性计算中，耐久是向上取整的，而舰船是向下取整的
-		-- 2. 敌人的属性计算中，其他属性都不取整，而舰船都是向下取整的
+		-- 2. 敌人的属性计算中，其他属性都不取整，而舰船都是向下取整的（除了航速）
 	enemyAttr.maxHP = math.ceil(enemyTemplateData.durability + enemyTemplateData.durability_growth * growthRatio)
 	enemyAttr.HPRate = 1
 	enemyAttr.DMGRate = 0
@@ -691,6 +691,8 @@ function BattleAttr.MonsterAttrFixer(battleType, monster)
 	end
 end
 
+-- 设置舰载机属性，从生成者继承
+-- 这是一部分，下面的SetAircraftAttFromTemp是另一部分
 function BattleAttr.SetAircraftAttFromMother(arg_43_0, arg_43_1)
 	local var_43_0 = arg_43_0._attr or {}
 
@@ -938,9 +940,9 @@ function BattleAttr.GetCurrentTags(arg_56_0)
 	return arg_56_0._attr.labelTag or {}
 end
 
-function BattleAttr.Increase(arg_57_0, arg_57_1, arg_57_2)
-	if arg_57_2 then
-		arg_57_0._attr[arg_57_1] = (arg_57_0._attr[arg_57_1] or 0) + arg_57_2
+function BattleAttr.Increase(unit, attrType, number)
+	if number then
+		unit._attr[attrType] = (unit._attr[attrType] or 0) + number
 	end
 end
 
@@ -950,46 +952,46 @@ function BattleAttr.RatioIncrease(arg_58_0, arg_58_1, arg_58_2)
 	end
 end
 
-function BattleAttr.GetTagAttr(arg_59_0, arg_59_1, arg_59_2)
-	local var_59_0 = arg_59_1:GetLabelTag()
-	local var_59_1 = {}
+function BattleAttr.GetTagAttr(bullet, target, inWorld)
+	local labelTagList = target:GetLabelTag()
+	local tagEhcTable = {}
 
-	for iter_59_0, iter_59_1 in ipairs(var_59_0) do
-		var_59_1[BattleAttr.TAG_EHC_KEY .. iter_59_1] = true
+	for _, labelTag in ipairs(labelTagList) do
+		tagEhcTable[BattleAttr.TAG_EHC_KEY .. labelTag] = true
 	end
 
-	local var_59_2 = 1
+	local totalTagEhcValue = 1
 
-	for iter_59_2, iter_59_3 in pairs(var_59_1) do
-		local var_59_3 = BattleAttr.GetCurrent(arg_59_0, iter_59_2)
+	for tagEhcKey, _ in pairs(tagEhcTable) do
+		local tagEhcValue = BattleAttr.GetCurrent(bullet, tagEhcKey)
 
-		if var_59_3 ~= 0 then
-			if arg_59_2 then
-				var_59_3 = ys.Battle.BattleDataFunction.GetLimitAttributeRange(iter_59_2, var_59_3)
+		if tagEhcValue ~= 0 then
+			if inWorld then
+				tagEhcValue = ys.Battle.BattleDataFunction.GetLimitAttributeRange(tagEhcKey, tagEhcValue)
 			end
 
-			var_59_2 = var_59_2 * (1 + var_59_3)
+			totalTagEhcValue = totalTagEhcValue * (1 + tagEhcValue)
 		end
 	end
 
-	if BattleAttr.GetCurrent(arg_59_1, BattleAttr.FROM_TAG_EHC_KEY) > 0 then
-		local var_59_4 = arg_59_0:GetWeaponTempData().attack_attribute
+	if BattleAttr.GetCurrent(target, BattleAttr.FROM_TAG_EHC_KEY) > 0 then
+		local var_59_4 = bullet:GetWeaponTempData().attack_attribute
 		local var_59_5 = BattleAttr.FROM_TAG_EHC_KEY .. var_59_4 .. "_"
-		local var_59_6 = BattleAttr.GetCurrentTags(arg_59_0)
+		local var_59_6 = BattleAttr.GetCurrentTags(bullet)
 
 		for iter_59_4, iter_59_5 in pairs(var_59_6) do
 			if iter_59_5 > 0 then
 				local var_59_7 = var_59_5 .. iter_59_4
-				local var_59_8 = BattleAttr.GetCurrent(arg_59_1, var_59_7)
+				local var_59_8 = BattleAttr.GetCurrent(target, var_59_7)
 
 				if var_59_8 ~= 0 then
-					var_59_2 = var_59_2 * (1 + var_59_8)
+					totalTagEhcValue = totalTagEhcValue * (1 + var_59_8)
 				end
 			end
 		end
 	end
 
-	return var_59_2
+	return totalTagEhcValue
 end
 
 function BattleAttr.GetTagAttrCri(arg_60_0, arg_60_1)

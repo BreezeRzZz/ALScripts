@@ -357,8 +357,8 @@ function BattleBulletUnit.SetAttr(arg_24_0, arg_24_1)
 	ys.Battle.BattleAttr.SetAttr(arg_24_0, arg_24_1)
 end
 
-function BattleBulletUnit.GetAttr(arg_25_0)
-	return ys.Battle.BattleAttr.GetAttr(arg_25_0)
+function BattleBulletUnit.GetAttr(self)
+	return ys.Battle.BattleAttr.GetAttr(self)
 end
 
 function BattleBulletUnit.SetStandHostAttr(arg_26_0, arg_26_1)
@@ -367,28 +367,31 @@ function BattleBulletUnit.SetStandHostAttr(arg_26_0, arg_26_1)
 	ys.Battle.BattleAttr.SetAttr(arg_26_0._standUnit, arg_26_1)
 end
 
-function BattleBulletUnit.GetWeaponHostAttr(arg_27_0)
-	if arg_27_0._standUnit then
-		return ys.Battle.BattleAttr.GetAttr(arg_27_0._standUnit)
+function BattleBulletUnit.GetWeaponHostAttr(self)
+	if self._standUnit then
+		return ys.Battle.BattleAttr.GetAttr(self._standUnit)
 	else
-		return arg_27_0:GetAttr()
+		return self:GetAttr()
 	end
 end
 
-function BattleBulletUnit.GetWeaponAtkAttr(arg_28_0)
-	local var_28_0 = arg_28_0:GetWeaponHostAttr()
-	local var_28_1
-	local var_28_2 = arg_28_0._weapon:GetAtkAttrTrasnform(var_28_0)
+function BattleBulletUnit.GetWeaponAtkAttr(self)
+	-- GetWeaponHostAttr
+	-- 如果有StandHost取StandHost的属性，否则取的是自己的属性
+	-- 自己的属性是继承的发射者的属性
+	local weaponHostAttr = self:GetWeaponHostAttr()
+	local atkAttr
+	local atkAttrTransform = self._weapon:GetAtkAttrTrasnform(weaponHostAttr)
 
-	if var_28_2 then
-		var_28_1 = var_28_2
+	if atkAttrTransform then
+		atkAttr = atkAttrTransform
 	else
-		local var_28_3 = arg_28_0:GetWeaponTempData().attack_attribute
+		local attack_attribute = self:GetWeaponTempData().attack_attribute
 
-		var_28_1 = ys.Battle.BattleAttr.GetAtkAttrByType(var_28_0, var_28_3)
+		atkAttr = ys.Battle.BattleAttr.GetAtkAttrByType(weaponHostAttr, attack_attribute)
 	end
 
-	return var_28_1
+	return atkAttr
 end
 
 function BattleBulletUnit.GetWeaponCardPuzzleEnhance(arg_29_0)

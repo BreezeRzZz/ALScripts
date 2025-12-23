@@ -151,7 +151,7 @@ function BattleDataFunction.InitUnitSkill(arg_2_0, owner, arg_2_2)
 		owner:AddBuff(buff)
 	end
 end
-
+-- TODO
 function BattleDataFunction.GetEquipSkill(arg_3_0, arg_3_1)
 	local var_3_0 = Ship.WEAPON_COUNT
 	local var_3_1 = {}

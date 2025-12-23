@@ -265,6 +265,8 @@ end
 --- @class BattleUnit
 --- @return nil
 --- 发送生成缓存子弹事件?
+--- 这是由AttackState.OnTrigger调用的，对应了Spine攻击动画的action触发点(一般是0.2s)，对应的是"前摇"
+--- 由BattleCharacter.onSpawnCacheBullet作为回调函数
 function BattleUnit.SendAttackTrigger(self)
 	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SPAWN_CACHE_BULLET, {}))
 end
@@ -1582,6 +1584,7 @@ function BattleUnit.IsShowHPBar(arg_181_0)
 	return false
 end
 
+-- 检测单位是否存活：检查一次当前HP是否大于0以及_aliveState标记
 function BattleUnit.IsAlive(arg_182_0)
 	local var_182_0 = arg_182_0:GetCurrentHP()
 

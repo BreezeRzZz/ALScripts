@@ -1129,6 +1129,7 @@ function BattleFleetVO.GetSubUnitData(arg_96_0)
 	return arg_96_0._subUntiDataList
 end
 
+-- TODO
 function BattleFleetVO.AddSubMarine(arg_97_0, arg_97_1)
 	arg_97_1:InitOxygen()
 

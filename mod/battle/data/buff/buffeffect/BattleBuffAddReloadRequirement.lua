@@ -60,7 +60,7 @@ function BattleBuffAddReloadRequirement.onAttach(self, owner, buff)
 		-- 计算全部Buff的装填因子的总效果
 		local reloadFactorList = weapon:GetReloadFactorList()
 		local baseReloadFactor = 1
-
+		-- 均为加算
 		for _, reloadFactor in pairs(reloadFactorList) do
 			baseReloadFactor = baseReloadFactor + reloadFactor
 		end

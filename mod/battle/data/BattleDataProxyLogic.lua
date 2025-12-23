@@ -182,41 +182,41 @@ function BattleDataProxy.HandleMeteoDamage(arg_8_0, arg_8_1, arg_8_2)
 	end
 end
 -- TODO
--- DOT等使用，似乎是不需要子弹的
-function BattleDataProxy.HandleDirectDamage(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4, arg_9_5)
-	local var_9_0
+-- DOT等使用，不需要子弹
+function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect)
+	local srcID
 
-	if arg_9_3 then
-		var_9_0 = arg_9_3:GetAttrByName("id")
+	if caster then
+		srcID = caster:GetAttrByName("id")
 	end
 
-	local var_9_1 = {
+	local extraInfo = {
 		isMiss = false,
 		isCri = false,
 		isHeal = false,
-		damageReason = arg_9_4,
-		srcID = var_9_0,
-		isReflect = arg_9_5
+		damageReason = damageReason,
+		srcID = srcID,
+		isReflect = isReflect
 	}
-	local var_9_2 = arg_9_1:GetAttrByName("id")
-	local var_9_3 = arg_9_1:UpdateHP(arg_9_2 * -1, var_9_1)
-	local var_9_4 = arg_9_1:IsAlive()
+	local targetID = target:GetAttrByName("id")
+	local targetDHP = target:UpdateHP(damage * -1, extraInfo)
+	local isTargetAlive = target:IsAlive()
 
-	arg_9_0:DamageStatistics(var_9_0, var_9_2, -var_9_3)
+	self:DamageStatistics(srcID, targetID, -targetDHP)
 
-	if not var_9_4 and var_9_0 then
-		arg_9_0:KillCountStatistics(var_9_0, var_9_2)
+	if not isTargetAlive and srcID then
+		self:KillCountStatistics(srcID, targetID)
 	end
 
-	if not var_9_4 then
-		local var_9_5 = arg_9_1:GetUnitType()
-		local var_9_6 = true
+	if not isTargetAlive then
+		local targetUnitType = target:GetUnitType()
+		local isAircraft = true
 
-		if var_9_5 ~= BattleConst.UnitType.AIRCRAFT_UNIT and var_9_5 ~= BattleConst.UnitType.AIRFIGHTER_UNIT and var_9_5 ~= BattleConst.UnitType.FUNNEL_UNIT and var_9_5 ~= BattleConst.UnitType.UAV_UNIT then
-			var_9_6 = false
+		if targetUnitType ~= BattleConst.UnitType.AIRCRAFT_UNIT and targetUnitType ~= BattleConst.UnitType.AIRFIGHTER_UNIT and targetUnitType ~= BattleConst.UnitType.FUNNEL_UNIT and targetUnitType ~= BattleConst.UnitType.UAV_UNIT then
+			isAircraft = false
 		end
 
-		arg_9_0:obituary(arg_9_1, var_9_6, arg_9_3)
+		self:obituary(target, isAircraft, caster)
 	end
 end
 

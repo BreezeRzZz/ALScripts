@@ -100,6 +100,7 @@ function var_0_0.SetFlagShipID(arg_7_0, arg_7_1)
 	end
 end
 
+-- TODO
 function var_0_0.DamageStatistics(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
 	if arg_8_0._statistics[arg_8_1] then
 		arg_8_0._statistics[arg_8_1].output = arg_8_0._statistics[arg_8_1].output + arg_8_3

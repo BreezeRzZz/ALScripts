@@ -25,6 +25,7 @@ function BattleDataFunction.CreateBattleBulletData(bulletUID, bulletID, host, we
 	local bullet, bulletCld = BattleDataFunction.generateBulletFuncs[bulletType](bulletUID, bulletTemplate, host, weapon, targetPos)
 
 	bullet:SetTemplateData(bulletTemplate)
+	-- 创建子弹时，将发射者的属性传给子弹
 	bullet:SetAttr(host._attr)
 	bullet:SetBuffTrigger(host)
 	bullet:SetWeapon(weapon)
