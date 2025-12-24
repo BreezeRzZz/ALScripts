@@ -61,11 +61,12 @@ function BattleDataFunction.GetBarrageTmpDataFromID(barrageID)
 	return barrage_template[barrageID]
 end
 
-function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, arg_4_1)
+-- BattleBulletEmitter.Fire
+function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, direction)
 	assert(barrage_template[barrageID] ~= nil, "获取转换弹幕数据失败，找不到弹幕原型配置：id = " .. barrageID)
 
-	if BattleDataFunction.ConvertedBarrageTableList[barrageID] == nil or BattleDataFunction.ConvertedBarrageTableList[barrageID][arg_4_1] == nil then
-		BattleDataFunction.ConvertSpecificBarrage(barrageID, arg_4_1)
+	if BattleDataFunction.ConvertedBarrageTableList[barrageID] == nil or BattleDataFunction.ConvertedBarrageTableList[barrageID][direction] == nil then
+		BattleDataFunction.ConvertSpecificBarrage(barrageID, direction)
 	end
 
 	return BattleDataFunction.ConvertedBarrageTableList[barrageID]
@@ -295,10 +296,11 @@ BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TRIGGER_BOMB] = Ba
 -- AAMissile(17) -> CreateAAMissile
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.AAMissile] = BattleDataFunction._createAAMissile
 
-function BattleDataFunction.ConvertSpecificBarrage(barrageID, arg_21_1)
+-- TODO
+function BattleDataFunction.ConvertSpecificBarrage(barrageID, direction)
 	local var_21_0
 
-	var_21_0[arg_21_1], var_21_0 = BattleDataFunction.barrageInteration(pg.barrage_template[barrageID], arg_21_1), BattleDataFunction.ConvertedBarrageTableList[barrageID] or {}
+	var_21_0[direction], var_21_0 = BattleDataFunction.barrageInteration(pg.barrage_template[barrageID], direction), BattleDataFunction.ConvertedBarrageTableList[barrageID] or {}
 	BattleDataFunction.ConvertedBarrageTableList[barrageID] = var_21_0
 end
 
@@ -306,6 +308,7 @@ function BattleDataFunction.ClearConvertedBarrage()
 	BattleDataFunction.ConvertedBarrageTableList = {}
 end
 
+-- TODO
 function BattleDataFunction.barrageInteration(arg_23_0, arg_23_1)
 	local var_23_0 = 1
 	local var_23_1 = arg_23_0.primal_repeat

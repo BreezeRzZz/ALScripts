@@ -1,162 +1,178 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.WaveTriggerType
-local var_0_2 = class("BattleWaveUpdater")
+local ys = ys
+local WaveTriggerType = ys.Battle.BattleConst.WaveTriggerType
+local BattleWaveUpdater = class("BattleWaveUpdater")
 
-var_0_0.Battle.BattleWaveUpdater = var_0_2
-var_0_2.__name = "BattleWaveUpdater"
-var_0_2.PREWAVES_CONDITION_AND = 0
-var_0_2.PREWAVES_CONDITION_OR = 1
+ys.Battle.BattleWaveUpdater = BattleWaveUpdater
+BattleWaveUpdater.__name = "BattleWaveUpdater"
+BattleWaveUpdater.PREWAVES_CONDITION_AND = 0
+BattleWaveUpdater.PREWAVES_CONDITION_OR = 1
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+-- BattleWaveUpdate一般在各个Command中被初始化
+-- 以最常用的BattleSingleDungeonCommand为例，在BattleSingleDungeonCommand.Init中调用了initWaveModule，再创建了一个BattleWaveUpdater实例
+function BattleWaveUpdater.Ctor(self, spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_1_0._spawnFunc = arg_1_1
-	arg_1_0._airFighterFunc = arg_1_2
-	arg_1_0._clearFunc = arg_1_3
-	arg_1_0._spawnAreaFunc = arg_1_4
+	self._spawnFunc = spawnFunc
+	self._airFighterFunc = airFighterFunc
+	self._clearFunc = clearFunc
+	self._spawnAreaFunc = spawnAreaFunc
 
-	arg_1_0:Init()
+	self:Init()
 end
 
-function var_0_2.Init(arg_2_0)
-	arg_2_0._monsterList = {}
-	arg_2_0._spawnList = {}
-	arg_2_0._airFighter = {}
-	arg_2_0._waveInfos = {}
-	arg_2_0._timerList = {}
-	arg_2_0._waveUnitAliveList = {}
-	arg_2_0._keyList = {}
-	arg_2_0._waveInfoList = {}
+function BattleWaveUpdater.Init(self)
+	self._monsterList = {}
+	self._spawnList = {}
+	self._airFighter = {}
+	self._waveInfos = {}
+	self._timerList = {}
+	self._waveUnitAliveList = {}
+	self._keyList = {}
+	self._waveInfoList = {}
 end
 
-function var_0_2.SetWavesData(arg_3_0, arg_3_1)
-	arg_3_0._waveTmpData = arg_3_1
+-- note: 核心的波次数据设置函数
+--在BattleSingleDungeonCommand.onInitBattle中被调用
+-- waveTmpData来自于BattleDataProxy.GetStageInfo()
+-- 这其中的_currentStageData又对应到具体dungeon的配置数据的某个stage字段
+-- （但普遍是只有一个stage）
+function BattleWaveUpdater.SetWavesData(self, waveTmpData)
+	self._waveTmpData = waveTmpData
+	-- 这里是stage中的waves字段，遍历每一个波次
+	for _, wave in ipairs(waveTmpData.waves) do
+		local triggerType = wave.triggerType
+		--- @type BattleWaveInfo
+		local waveInfo
+		-- 根据不同的triggerType，创建不同类型的波次实例
+		-- 均为BattleWaveInfo的子类
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_1.waves) do
-		local var_3_0 = iter_3_1.triggerType
-		local var_3_1
+		-- NORMAL = 0，对应的是spawn波次，即实际的怪物生成波次
+		-- 是最核心逻辑，为重点关注对象
+		if triggerType == WaveTriggerType.NORMAL then
+			waveInfo = ys.Battle.BattleSpawnWave.New()
 
-		if var_3_0 == var_0_1.NORMAL then
-			var_3_1 = var_0_0.Battle.BattleSpawnWave.New()
+			waveInfo:SetCallback(self._spawnFunc, self._airFighterFunc)
+		-- TIMER = 1，一般就是给定一个timeout，在时间到达后触发
+		-- 这种波次一般作为其他波次的前置波次使用，比如生成怪物前有0.5秒的延时波次
+		elseif triggerType == WaveTriggerType.TIMER then
+			waveInfo = ys.Battle.BattleDelayWave.New()
+		elseif triggerType == WaveTriggerType.RANGE then
+			waveInfo = ys.Battle.BattleRangeWave.New()
 
-			var_3_1:SetCallback(arg_3_0._spawnFunc, arg_3_0._airFighterFunc)
-		elseif var_3_0 == var_0_1.TIMER then
-			var_3_1 = var_0_0.Battle.BattleDelayWave.New()
-		elseif var_3_0 == var_0_1.RANGE then
-			var_3_1 = var_0_0.Battle.BattleRangeWave.New()
-
-			var_3_1:SetCallback(arg_3_0._spawnAreaFunc)
-		elseif var_3_0 == var_0_1.STORY then
-			var_3_1 = var_0_0.Battle.BattleStoryWave.New()
-		elseif var_3_0 == var_0_1.AID then
-			var_3_1 = var_0_0.Battle.BattleAidWave.New()
-		elseif var_3_0 == var_0_1.BGM then
-			var_3_1 = var_0_0.Battle.BattleSwitchBGMWave.New()
-		elseif var_3_0 == var_0_1.GUIDE then
-			var_3_1 = var_0_0.Battle.BattleGuideWave.New()
-		elseif var_3_0 == var_0_1.CAMERA then
-			var_3_1 = var_0_0.Battle.BattleCameraWave.New()
-		elseif var_3_0 == var_0_1.CLEAR then
-			var_3_1 = var_0_0.Battle.BattleClearWave.New()
-		elseif var_3_0 == var_0_1.JAMMING then
-			var_3_1 = var_0_0.Battle.BattleJammingWave.New()
-		elseif var_3_0 == var_0_1.ENVIRONMENT then
-			var_3_1 = var_0_0.Battle.BattleEnvironmentWave.New()
-		elseif var_3_0 == var_0_1.LABEL then
-			var_3_1 = var_0_0.Battle.BattleLabelWave.New()
-		elseif var_3_0 == var_0_1.CARD_PUZZLE then
-			var_3_1 = var_0_0.Battle.BattleCardPuzzleWave.New()
+			waveInfo:SetCallback(self._spawnAreaFunc)
+		elseif triggerType == WaveTriggerType.STORY then
+			waveInfo = ys.Battle.BattleStoryWave.New()
+		elseif triggerType == WaveTriggerType.AID then
+			waveInfo = ys.Battle.BattleAidWave.New()
+		elseif triggerType == WaveTriggerType.BGM then
+			waveInfo = ys.Battle.BattleSwitchBGMWave.New()
+		elseif triggerType == WaveTriggerType.GUIDE then
+			waveInfo = ys.Battle.BattleGuideWave.New()
+		elseif triggerType == WaveTriggerType.CAMERA then
+			waveInfo = ys.Battle.BattleCameraWave.New()
+		elseif triggerType == WaveTriggerType.CLEAR then
+			waveInfo = ys.Battle.BattleClearWave.New()
+		elseif triggerType == WaveTriggerType.JAMMING then
+			waveInfo = ys.Battle.BattleJammingWave.New()
+		elseif triggerType == WaveTriggerType.ENVIRONMENT then
+			waveInfo = ys.Battle.BattleEnvironmentWave.New()
+		elseif triggerType == WaveTriggerType.LABEL then
+			waveInfo = ys.Battle.BattleLabelWave.New()
+		elseif triggerType == WaveTriggerType.CARD_PUZZLE then
+			waveInfo = ys.Battle.BattleCardPuzzleWave.New()
 		end
 
-		var_3_1:SetWaveData(iter_3_1)
-		var_3_1:RegisterEventListener(arg_3_0, var_0_0.Battle.BattleEvent.WAVE_FINISH, arg_3_0.onWaveFinish)
+		waveInfo:SetWaveData(wave)
+		waveInfo:RegisterEventListener(self, ys.Battle.BattleEvent.WAVE_FINISH, self.onWaveFinish)
 
-		arg_3_0._waveInfoList[var_3_1:GetIndex()] = var_3_1
+		self._waveInfoList[waveInfo:GetIndex()] = waveInfo
 
-		if var_3_1:IsKeyWave() then
-			arg_3_0._keyList[#arg_3_0._keyList + 1] = var_3_1
+		if waveInfo:IsKeyWave() then
+			self._keyList[#self._keyList + 1] = waveInfo
 		end
 	end
 
-	for iter_3_2, iter_3_3 in pairs(arg_3_0._waveInfoList) do
-		for iter_3_4, iter_3_5 in ipairs(iter_3_3:GetPreWaveIDs()) do
-			local var_3_2 = arg_3_0._waveInfoList[iter_3_5]
+	for _, waveInfo in pairs(self._waveInfoList) do
+		for _, preWaveID in ipairs(waveInfo:GetPreWaveIDs()) do
+			local preWaveInfo = self._waveInfoList[preWaveID]
 
-			if var_3_2 then
-				iter_3_3:AppendPreWave(var_3_2)
-				var_3_2:AppendPostWave(iter_3_3)
+			if preWaveInfo then
+				waveInfo:AppendPreWave(preWaveInfo)
+				preWaveInfo:AppendPostWave(waveInfo)
 			end
 		end
+		-- 这里是因为branchWaves的原始结构类似：conditionWaves = {[222] = false}，与preWaves不同
+		for branchWaveID, _ in pairs(waveInfo:GetBranchWaveIDs()) do
+			local branchWaveInfo = self._waveInfoList[branchWaveID]
 
-		for iter_3_6, iter_3_7 in pairs(iter_3_3:GetBranchWaveIDs()) do
-			local var_3_3 = arg_3_0._waveInfoList[iter_3_6]
-
-			if var_3_3 then
-				iter_3_3:AppendBranchWave(var_3_3)
+			if branchWaveInfo then
+				waveInfo:AppendBranchWave(branchWaveInfo)
 			end
 		end
 	end
 end
 
-function var_0_2.Start(arg_4_0)
-	arg_4_0._active = true
+function BattleWaveUpdater.Start(self)
+	self._active = true
 
-	for iter_4_0, iter_4_1 in pairs(arg_4_0._waveInfoList) do
-		if iter_4_1:IsReady() then
-			iter_4_1:DoBranch()
+	for _, waveInfo in pairs(self._waveInfoList) do
+		if waveInfo:IsReady() then
+			waveInfo:DoBranch()
 		end
 	end
 end
 
-function var_0_2.AddMonster(arg_5_0, arg_5_1)
-	for iter_5_0, iter_5_1 in pairs(arg_5_0._waveInfoList) do
-		iter_5_1:AddMonster(arg_5_1)
+function BattleWaveUpdater.AddMonster(self, monster)
+	for _, waveInfo in pairs(self._waveInfoList) do
+		-- 只有NORMAL类型对应的BattleSpawnWave才重写了AddMonster方法
+		waveInfo:AddMonster(monster)
 	end
 end
 
-function var_0_2.RemoveMonster(arg_6_0, arg_6_1)
-	for iter_6_0, iter_6_1 in pairs(arg_6_0._waveInfoList) do
-		iter_6_1:RemoveMonster(arg_6_1)
+function BattleWaveUpdater.RemoveMonster(self, monsterUID)
+	for _, waveInfo in pairs(self._waveInfoList) do
+		-- 只有NORMAL类型对应的BattleSpawnWave才重写了RemoveMonster方法
+		waveInfo:RemoveMonster(monsterUID)
 	end
 end
 
-function var_0_2.onWaveFinish(arg_7_0, arg_7_1)
-	if not arg_7_0._active then
+function BattleWaveUpdater.onWaveFinish(self, event)
+	if not self._active then
 		return
 	end
 
-	if arg_7_0:CheckAllKeyWave() then
-		arg_7_0._active = false
+	if self:CheckAllKeyWave() then
+		self._active = false
 
-		arg_7_0._clearFunc()
+		self._clearFunc()
 	end
 
-	local var_7_0 = arg_7_1.Dispatcher:GetPostWaves()
+	local postWaves = event.Dispatcher:GetPostWaves()
 
-	for iter_7_0, iter_7_1 in ipairs(var_7_0) do
-		if iter_7_1:IsReady() and iter_7_1:GetState() == iter_7_1.STATE_DEACTIVE then
-			iter_7_1:DoBranch()
+	for _, waveInfo in ipairs(postWaves) do
+		if waveInfo:IsReady() and waveInfo:GetState() == waveInfo.STATE_DEACTIVE then
+			waveInfo:DoBranch()
 		end
 	end
 end
 
-function var_0_2.GetAllBossWave(arg_8_0)
-	local var_8_0 = {}
+function BattleWaveUpdater.GetAllBossWave(self)
+	local bossWaves = {}
 
-	for iter_8_0, iter_8_1 in pairs(arg_8_0._waveInfoList) do
-		if iter_8_1:GetType() == var_0_1.NORMAL and iter_8_1:IsBossWave() then
-			table.insert(var_8_0, iter_8_1)
+	for _, waveInfo in pairs(self._waveInfoList) do
+		if waveInfo:GetType() == WaveTriggerType.NORMAL and waveInfo:IsBossWave() then
+			table.insert(bossWaves, waveInfo)
 		end
 	end
 
-	return var_8_0
+	return bossWaves
 end
 
-function var_0_2.CheckAllKeyWave(arg_9_0)
-	for iter_9_0, iter_9_1 in ipairs(arg_9_0._keyList) do
-		if not iter_9_1:IsFinish() then
+function BattleWaveUpdater.CheckAllKeyWave(self)
+	for _, keyWaveInfo in ipairs(self._keyList) do
+		if not keyWaveInfo:IsFinish() then
 			return false
 		end
 	end
@@ -164,31 +180,31 @@ function var_0_2.CheckAllKeyWave(arg_9_0)
 	return true
 end
 
-function var_0_2.Clear(arg_10_0)
-	for iter_10_0, iter_10_1 in pairs(arg_10_0._timerList) do
-		arg_10_0:RemoveTimer(iter_10_0)
+function BattleWaveUpdater.Clear(self)
+	for timer, _ in pairs(self._timerList) do
+		self:RemoveTimer(timer)
 	end
 
-	for iter_10_2, iter_10_3 in pairs(arg_10_0._waveInfoList) do
-		iter_10_3:UnregisterEventListener(arg_10_0, var_0_0.Battle.BattleEvent.WAVE_FINISH)
-		iter_10_3:Dispose()
+	for _, waveInfo in pairs(self._waveInfoList) do
+		waveInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.WAVE_FINISH)
+		waveInfo:Dispose()
 	end
 
-	arg_10_0._waveInfoList = nil
-	arg_10_0._keyList = nil
+	self._waveInfoList = nil
+	self._keyList = nil
 
-	arg_10_0:Init()
-	var_0_0.EventListener.DetachEventListener(arg_10_0)
+	self:Init()
+	ys.EventListener.DetachEventListener(self)
 end
 
-function var_0_2.GetUnfinishedWaveCount(arg_11_0)
-	local var_11_0 = 0
+function BattleWaveUpdater.GetUnfinishedWaveCount(self)
+	local unfinishedCount = 0
 
-	for iter_11_0, iter_11_1 in pairs(arg_11_0._waveInfoList) do
-		if not iter_11_1:IsFinish() then
-			var_11_0 = var_11_0 + 1
+	for _, waveInfo in pairs(self._waveInfoList) do
+		if not waveInfo:IsFinish() then
+			unfinishedCount = unfinishedCount + 1
 		end
 	end
 
-	return var_11_0
+	return unfinishedCount
 end

@@ -1,349 +1,358 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSpawnWave = class("BattleSpawnWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleSpawnWave.__name = "BattleSpawnWave"
+ys.Battle.BattleSpawnWave = class("BattleSpawnWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleSpawnWave.__name = "BattleSpawnWave"
 
-local var_0_1 = var_0_0.Battle.BattleSpawnWave
+local BattleSpawnWave = ys.Battle.BattleSpawnWave
 
-var_0_1.ASYNC_TIME_GAP = 0.03
+BattleSpawnWave.ASYNC_TIME_GAP = 0.03
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleSpawnWave.Ctor(self)
+	BattleSpawnWave.super.Ctor(self)
 
-	arg_1_0._spawnUnitList = {}
-	arg_1_0._monsterList = {}
-	arg_1_0._reinforceKillCount = 0
-	arg_1_0._reinforceTotalKillCount = 0
-	arg_1_0._airStrikeTimerList = {}
-	arg_1_0._spawnTimerList = {}
-	arg_1_0._reinforceSpawnTimerList = {}
+	self._spawnUnitList = {}
+	self._monsterList = {}
+	self._reinforceKillCount = 0
+	self._reinforceTotalKillCount = 0
+	self._airStrikeTimerList = {}
+	self._spawnTimerList = {}
+	self._reinforceSpawnTimerList = {}
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
-
-	arg_2_0._sapwnData = arg_2_1.spawn or {}
-	arg_2_0._airStrike = arg_2_1.airFighter or {}
-	arg_2_0._reinforce = arg_2_1.reinforcement or {}
-	arg_2_0._reinforceCount = #arg_2_0._reinforce
-	arg_2_0._spawnCount = #arg_2_0._sapwnData
-	arg_2_0._reinforceDuration = arg_2_0._reinforce.reinforceDuration or 0
-	arg_2_0._reinforeceExpire = false
-	arg_2_0._round = arg_2_0._param.round
+function BattleSpawnWave.SetWaveData(self, waveData)
+	BattleSpawnWave.super.SetWaveData(self, waveData)
+	-- spawnData对应单个wave中的spawn字段
+	self._spawnData = waveData.spawn or {}
+	self._airStrike = waveData.airFighter or {}
+	self._reinforce = waveData.reinforcement or {}
+	self._reinforceCount = #self._reinforce
+	self._spawnCount = #self._spawnData
+	self._reinforceDuration = self._reinforce.reinforceDuration or 0
+	self._reinforeceExpire = false
+	self._round = self._param.round
 end
 
-function var_0_1.IsBossWave(arg_3_0)
-	local var_3_0 = false
-	local var_3_1 = arg_3_0._sapwnData
+function BattleSpawnWave.IsBossWave(self)
+	local isBossWave = false
+	local spawnData = self._spawnData
 
-	for iter_3_0, iter_3_1 in ipairs(var_3_1) do
-		if iter_3_1.bossData then
-			var_3_0 = true
+	for _, spawnItem in ipairs(spawnData) do
+		if spawnItem.bossData then
+			isBossWave = true
 		end
 	end
 
-	return var_3_0
+	return isBossWave
 end
 
-function var_0_1.DoWave(arg_4_0)
-	var_0_1.super.DoWave(arg_4_0)
+-- 核心逻辑
+-- 被BattleWaveInfo.DoBranch调用，这又被BattleWaveUpdater.Start调用
+function BattleSpawnWave.DoWave(self)
+	BattleSpawnWave.super.DoWave(self)
 
-	if arg_4_0._round then
-		local var_4_0 = false
-		local var_4_1 = var_0_0.Battle.BattleDataProxy.GetInstance()
+	-- 不知道拿来干啥的
+	if self._round then
+		local isPass = false
+		local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-		if var_4_1:GetInitData().ChallengeInfo then
-			local var_4_2 = var_4_1:GetInitData().ChallengeInfo:getRound()
+		if battleDataProxy:GetInitData().ChallengeInfo then
+			local roundIndex = battleDataProxy:GetInitData().ChallengeInfo:getRound()
 
-			if arg_4_0._round.less and var_4_2 < arg_4_0._round.less then
-				var_4_0 = true
+			if self._round.less and roundIndex < self._round.less then
+				isPass = true
 			end
 
-			if arg_4_0._round.more and var_4_2 > arg_4_0._round.more then
-				var_4_0 = true
+			if self._round.more and roundIndex > self._round.more then
+				isPass = true
 			end
 
-			if arg_4_0._round.equal and table.contains(arg_4_0._round.equal, var_4_2) then
-				var_4_0 = true
+			if self._round.equal and table.contains(self._round.equal, roundIndex) then
+				isPass = true
 			end
 		end
 
-		if not var_4_0 then
-			arg_4_0:doPass()
+		if not isPass then
+			self:doPass()
 
 			return
 		end
 	end
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._airStrike) do
-		local var_4_3 = iter_4_1.delay + iter_4_0 * var_0_1.ASYNC_TIME_GAP
+	for index, airStrike in ipairs(self._airStrike) do
+		local totalDelay = airStrike.delay + index * BattleSpawnWave.ASYNC_TIME_GAP
 
-		if var_4_3 <= 0 then
-			arg_4_0:doAirStrike(iter_4_1)
+		if totalDelay <= 0 then
+			self:doAirStrike(airStrike)
 		else
-			arg_4_0:airStrikeTimer(iter_4_1, var_4_3)
+			self:airStrikeTimer(airStrike, totalDelay)
 		end
 	end
 
-	local var_4_4 = 0
+	local totalBossCount = 0
 
-	for iter_4_2, iter_4_3 in ipairs(arg_4_0._sapwnData) do
-		if iter_4_3.bossData then
-			var_4_4 = var_4_4 + 1
+	for _, spawnItem in ipairs(self._spawnData) do
+		if spawnItem.bossData then
+			totalBossCount = totalBossCount + 1
 		end
 	end
 
-	local var_4_5 = 0
-	local var_4_6 = 0
+	local bossCount = 0
+	local deltaDelay = 0
 
-	for iter_4_4, iter_4_5 in ipairs(arg_4_0._sapwnData) do
-		if (iter_4_5.chance or 1) >= math.random() then
-			if iter_4_5.bossData and var_4_4 > 1 then
-				var_4_5 = var_4_5 + 1
-				iter_4_5.bossData.bossCount = var_4_5
+	for _, spawnItem in ipairs(self._spawnData) do
+		if (spawnItem.chance or 1) >= math.random() then
+			if spawnItem.bossData and totalBossCount > 1 then
+				bossCount = bossCount + 1
+				spawnItem.bossData.bossCount = bossCount
 			end
 
-			local var_4_7 = iter_4_5.delay + var_4_6
+			local totalDelay = spawnItem.delay + deltaDelay
 
-			if var_4_7 <= 0 then
-				arg_4_0:doSpawn(iter_4_5)
+			if totalDelay <= 0 then
+				self:doSpawn(spawnItem)
 			else
-				arg_4_0:spawnTimer(iter_4_5, var_4_7, arg_4_0._spawnTimerList)
+				self:spawnTimer(spawnItem, totalDelay, self._spawnTimerList)
 			end
 		else
-			arg_4_0._spawnCount = arg_4_0._spawnCount - 1
+			self._spawnCount = self._spawnCount - 1
 		end
-
-		var_4_6 = var_4_6 + var_0_1.ASYNC_TIME_GAP
+		-- 同一波次内的不同spawn之间需要错开时间点，差距为0.03s
+		deltaDelay = deltaDelay + BattleSpawnWave.ASYNC_TIME_GAP
 	end
 
-	if arg_4_0._reinforce then
-		arg_4_0:doReinforce(var_4_6)
+	if self._reinforce then
+		self:doReinforce(deltaDelay)
 	end
 
-	if arg_4_0._spawnCount == 0 and arg_4_0._reinforceDuration == 0 then
-		arg_4_0:doPass()
+	if self._spawnCount == 0 and self._reinforceDuration == 0 then
+		self:doPass()
 	end
 
-	if arg_4_0._reinforceDuration ~= 0 then
-		arg_4_0:reinforceDurationTimer(arg_4_0._reinforceDuration)
+	if self._reinforceDuration ~= 0 then
+		self:reinforceDurationTimer(self._reinforceDuration)
 	end
 
-	var_0_0.Battle.BattleState.GenerateVertifyData(1)
+	ys.Battle.BattleState.GenerateVertifyData(1)
 
-	local var_4_8, var_4_9 = var_0_0.Battle.BattleState.Vertify()
+	local success, reason = ys.Battle.BattleState.Vertify()
 
-	if not var_4_8 then
-		local var_4_10 = 100 + var_4_9
+	if not success then
+		local failReason = 100 + reason
 
-		var_0_0.Battle.BattleState.GetInstance():GetCommandByName(var_0_0.Battle.BattleSingleDungeonCommand.__name):SetVertifyFail(var_4_10)
+		ys.Battle.BattleState.GetInstance():GetCommandByName(ys.Battle.BattleSingleDungeonCommand.__name):SetVertifyFail(failReason)
 	end
 end
 
-function var_0_1.AddMonster(arg_5_0, arg_5_1)
-	if arg_5_1:GetWaveIndex() ~= arg_5_0._index then
+function BattleSpawnWave.AddMonster(self, monster)
+	--- monster: BattleEnemyUnit
+	if monster:GetWaveIndex() ~= self._index then
+		return
+	end
+	--- <UID, BattleEnemyUnit>
+	self._monsterList[monster:GetUniqueID()] = monster
+end
+
+function BattleSpawnWave.RemoveMonster(self, monsterUID)
+	-- 这会触发reinforce相关逻辑
+	self:onWaveUnitDie(monsterUID)
+end
+
+-- 核心逻辑
+-- spawnItem对应的单个spawn字段内容
+function BattleSpawnWave.doSpawn(self, spawnItem)
+	local enemyType = ys.Battle.BattleConst.UnitType.ENEMY_UNIT
+
+	if spawnItem.bossData then
+		enemyType = ys.Battle.BattleConst.UnitType.BOSS_UNIT
+	end
+	-- _spawnFunc是在BattleWaveUpdater中传入的回调函数
+	-- 实际上一般对应到BattleDataProxy.SpawnMonster
+	self._spawnFunc(spawnItem, self._index, enemyType)
+end
+
+function BattleSpawnWave.spawnTimer(self, spawnItem, delay, spawnTimerList)
+	local spawnTimer
+
+	local function onTimerEnds()
+		spawnTimerList[spawnTimer] = nil
+
+		self:doSpawn(spawnItem)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(spawnTimer)
+	end
+
+	spawnTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, delay, onTimerEnds, true)
+	spawnTimerList[spawnTimer] = true
+end
+
+function BattleSpawnWave.doAirStrike(self, airStrike)
+	self._airFunc(airStrike)
+end
+
+function BattleSpawnWave.airStrikeTimer(self, airStrike, delay)
+	local airStrikeTimer
+
+	local function onTimerEnds()
+		self._airStrikeTimerList[airStrikeTimer] = nil
+
+		self:doAirStrike(airStrike)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(airStrikeTimer)
+	end
+
+	airStrikeTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, delay, onTimerEnds, true)
+	self._airStrikeTimerList[airStrikeTimer] = true
+end
+
+function BattleSpawnWave.doReinforce(self, delay)
+	self._reinforceKillCount = 0
+
+	if self._reinforeceExpire then
 		return
 	end
 
-	arg_5_0._monsterList[arg_5_1:GetUniqueID()] = arg_5_1
-end
+	delay = delay or 0
 
-function var_0_1.RemoveMonster(arg_6_0, arg_6_1)
-	arg_6_0:onWaveUnitDie(arg_6_1)
-end
+	for _, reinforceItem in ipairs(self._reinforce) do
+		reinforceItem.reinforce = true
 
-function var_0_1.doSpawn(arg_7_0, arg_7_1)
-	local var_7_0 = var_0_0.Battle.BattleConst.UnitType.ENEMY_UNIT
+		local totalDelay = reinforceItem.delay + delay
 
-	if arg_7_1.bossData then
-		var_7_0 = var_0_0.Battle.BattleConst.UnitType.BOSS_UNIT
-	end
-
-	arg_7_0._spawnFunc(arg_7_1, arg_7_0._index, var_7_0)
-end
-
-function var_0_1.spawnTimer(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	local var_8_0
-
-	local function var_8_1()
-		arg_8_3[var_8_0] = nil
-
-		arg_8_0:doSpawn(arg_8_1)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_8_0)
-	end
-
-	var_8_0 = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, arg_8_2, var_8_1, true)
-	arg_8_3[var_8_0] = true
-end
-
-function var_0_1.doAirStrike(arg_10_0, arg_10_1)
-	arg_10_0._airFunc(arg_10_1)
-end
-
-function var_0_1.airStrikeTimer(arg_11_0, arg_11_1, arg_11_2)
-	local var_11_0
-
-	local function var_11_1()
-		arg_11_0._airStrikeTimerList[var_11_0] = nil
-
-		arg_11_0:doAirStrike(arg_11_1)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_11_0)
-	end
-
-	var_11_0 = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, arg_11_2, var_11_1, true)
-	arg_11_0._airStrikeTimerList[var_11_0] = true
-end
-
-function var_0_1.doReinforce(arg_13_0, arg_13_1)
-	arg_13_0._reinforceKillCount = 0
-
-	if arg_13_0._reinforeceExpire then
-		return
-	end
-
-	arg_13_1 = arg_13_1 or 0
-
-	for iter_13_0, iter_13_1 in ipairs(arg_13_0._reinforce) do
-		iter_13_1.reinforce = true
-
-		local var_13_0 = iter_13_1.delay + arg_13_1
-
-		if var_13_0 <= 0 then
-			arg_13_0:doSpawn(iter_13_1)
+		if totalDelay <= 0 then
+			self:doSpawn(reinforceItem)
 		else
-			arg_13_0:spawnTimer(iter_13_1, var_13_0, arg_13_0._reinforceSpawnTimerList)
+			self:spawnTimer(reinforceItem, totalDelay, self._reinforceSpawnTimerList)
 		end
 
-		arg_13_1 = arg_13_1 + var_0_1.ASYNC_TIME_GAP
+		delay = delay + BattleSpawnWave.ASYNC_TIME_GAP
 	end
 end
 
-function var_0_1.reinforceTimer(arg_14_0, arg_14_1)
-	arg_14_0:clearReinforceTimer()
+function BattleSpawnWave.reinforceTimer(self, time)
+	self:clearReinforceTimer()
 
 	local function var_14_0()
-		arg_14_0:doReinforce()
-		arg_14_0:clearReinforceTimer()
+		self:doReinforce()
+		self:clearReinforceTimer()
 	end
 
-	arg_14_0._reinforceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, arg_14_1, var_14_0, true)
+	self._reinforceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, time, var_14_0, true)
 end
 
-function var_0_1.clearReinforceTimer(arg_16_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_16_0._reinforceTimer)
+function BattleSpawnWave.clearReinforceTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._reinforceTimer)
 
-	arg_16_0._reinforceTimer = nil
+	self._reinforceTimer = nil
 end
 
-function var_0_1.reinforceDurationTimer(arg_17_0, arg_17_1)
-	local function var_17_0()
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_17_0._reinforceDurationTimer)
+function BattleSpawnWave.reinforceDurationTimer(self, time)
+	local function onTimerEnds()
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._reinforceDurationTimer)
 
-		arg_17_0._reinforeceExpire = true
-		arg_17_0._reinforceDuration = nil
+		self._reinforeceExpire = true
+		self._reinforceDuration = nil
 
-		arg_17_0:clearReinforceTimer()
-		arg_17_0.clearTimerList(arg_17_0._reinforceSpawnTimerList)
+		self:clearReinforceTimer()
+		self.clearTimerList(self._reinforceSpawnTimerList)
 
-		if arg_17_0._spawnCount == 0 then
-			arg_17_0:doPass()
+		if self._spawnCount == 0 then
+			self:doPass()
 		end
 	end
 
-	arg_17_0._reinforceDurationTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, arg_17_1, var_17_0, true)
+	self._reinforceDurationTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, time, onTimerEnds, true)
 end
 
-function var_0_1.clearReinforceDurationTimer(arg_19_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_19_0._reinforceDurationTimer)
+function BattleSpawnWave.clearReinforceDurationTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._reinforceDurationTimer)
 
-	arg_19_0._reinforceDurationTimer = nil
+	self._reinforceDurationTimer = nil
 end
 
-function var_0_1.onWaveUnitDie(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_0._monsterList[arg_20_1]
+function BattleSpawnWave.onWaveUnitDie(self, monsterUID)
+	local monster = self._monsterList[monsterUID]
 
-	if var_20_0 == nil then
+	if monster == nil then
 		return
 	end
 
-	local var_20_1
+	local triggerReinforce
 
-	if var_20_0:IsReinforcement() then
-		arg_20_0._reinforceKillCount = arg_20_0._reinforceKillCount + 1
-		arg_20_0._reinforceTotalKillCount = arg_20_0._reinforceTotalKillCount + 1
+	if monster:IsReinforcement() then
+		self._reinforceKillCount = self._reinforceKillCount + 1
+		self._reinforceTotalKillCount = self._reinforceTotalKillCount + 1
 
-		if arg_20_0._reinforceCount ~= 0 and arg_20_0._reinforceCount == arg_20_0._reinforceKillCount then
-			var_20_1 = true
+		if self._reinforceCount ~= 0 and self._reinforceCount == self._reinforceKillCount then
+			triggerReinforce = true
 		end
 	end
 
-	local function var_20_2(arg_21_0)
-		if var_20_1 and arg_21_0 then
-			if arg_21_0 == 0 then
-				arg_20_0:doReinforce()
+	local function delayedReinforcement(reinforceCastTime)
+		if triggerReinforce and reinforceCastTime then
+			if reinforceCastTime == 0 then
+				self:doReinforce()
 			else
-				arg_20_0:reinforceTimer(arg_21_0)
+				self:reinforceTimer(reinforceCastTime)
 			end
 
-			var_20_1 = false
+			triggerReinforce = false
 		end
 	end
 
-	local var_20_3 = 0
-	local var_20_4 = 0
+	local totalKillCount = 0
+	local aliveCount = 0
 
-	for iter_20_0, iter_20_1 in pairs(arg_20_0._monsterList) do
-		if iter_20_1:IsAlive() == false then
-			if not iter_20_1:IsReinforcement() then
-				var_20_3 = var_20_3 + 1
+	for _, _monster in pairs(self._monsterList) do
+		if _monster:IsAlive() == false then
+			if not _monster:IsReinforcement() then
+				-- 不计入reinforce的死亡数量
+				totalKillCount = totalKillCount + 1
 			end
 		else
-			var_20_4 = var_20_4 + 1
+			aliveCount = aliveCount + 1
 
-			var_20_2(iter_20_1:GetReinforceCastTime())
+			delayedReinforcement(_monster:GetReinforceCastTime())
 		end
 	end
 
-	if arg_20_0._reinforceDuration ~= 0 and not arg_20_0._reinforeceExpire then
-		var_20_2(0)
+	if self._reinforceDuration ~= 0 and not self._reinforeceExpire then
+		delayedReinforcement(0)
 	end
-
-	if var_20_4 == 0 and var_20_3 >= arg_20_0._spawnCount and arg_20_0._reinforceTotalKillCount >= arg_20_0._reinforceCount and (arg_20_0._reinforceDuration == 0 or arg_20_0._reinforeceExpire) then
-		arg_20_0:doPass()
-	end
-end
-
-function var_0_1.doPass(arg_22_0)
-	arg_22_0.clearTimerList(arg_22_0._spawnTimerList)
-	arg_22_0.clearTimerList(arg_22_0._reinforceSpawnTimerList)
-	arg_22_0:clearReinforceTimer()
-	arg_22_0:clearReinforceDurationTimer()
-	var_0_0.Battle.BattleDataProxy.GetInstance():KillWaveSummonMonster(arg_22_0._index)
-	var_0_1.super.doPass(arg_22_0)
-end
-
-function var_0_1.clearTimerList(arg_23_0)
-	for iter_23_0, iter_23_1 in pairs(arg_23_0) do
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_23_0)
+	-- 有点复杂，不过只需要知道，场上怪物全部死亡，且spawn和reinforce都刷完了，才会触发波次完成
+	if aliveCount == 0 and totalKillCount >= self._spawnCount and self._reinforceTotalKillCount >= self._reinforceCount and (self._reinforceDuration == 0 or self._reinforeceExpire) then
+		self:doPass()
 	end
 end
 
-function var_0_1.Dispose(arg_24_0)
-	arg_24_0.clearTimerList(arg_24_0._airStrikeTimerList)
+function BattleSpawnWave.doPass(self)
+	self.clearTimerList(self._spawnTimerList)
+	self.clearTimerList(self._reinforceSpawnTimerList)
+	self:clearReinforceTimer()
+	self:clearReinforceDurationTimer()
+	ys.Battle.BattleDataProxy.GetInstance():KillWaveSummonMonster(self._index)
+	BattleSpawnWave.super.doPass(self)
+end
 
-	arg_24_0._airStrikeTimerList = nil
+function BattleSpawnWave.clearTimerList(timerList)
+	for timer, _ in pairs(timerList) do
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
+	end
+end
 
-	arg_24_0.clearTimerList(arg_24_0._spawnTimerList)
+function BattleSpawnWave.Dispose(self)
+	self.clearTimerList(self._airStrikeTimerList)
 
-	arg_24_0._spawnTimerList = nil
+	self._airStrikeTimerList = nil
 
-	arg_24_0.clearTimerList(arg_24_0._reinforceSpawnTimerList)
+	self.clearTimerList(self._spawnTimerList)
 
-	arg_24_0._reinforceSpawnTimerList = nil
+	self._spawnTimerList = nil
 
-	arg_24_0:clearReinforceTimer()
-	arg_24_0:clearReinforceDurationTimer()
-	var_0_1.super.Dispose(arg_24_0)
+	self.clearTimerList(self._reinforceSpawnTimerList)
+
+	self._reinforceSpawnTimerList = nil
+
+	self:clearReinforceTimer()
+	self:clearReinforceDurationTimer()
+	BattleSpawnWave.super.Dispose(self)
 end

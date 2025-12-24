@@ -1,45 +1,49 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.WaveTriggerType
+local ys = ys
+local WaveTriggerType = ys.Battle.BattleConst.WaveTriggerType
 
-var_0_0.Battle.BattleWaveInfo = class("BattleWaveInfo")
-var_0_0.Battle.BattleWaveInfo.__name = "BattleWaveInfo"
+ys.Battle.BattleWaveInfo = class("BattleWaveInfo")
+ys.Battle.BattleWaveInfo.__name = "BattleWaveInfo"
 
-local var_0_2 = var_0_0.Battle.BattleWaveInfo
+local BattleWaveInfo = ys.Battle.BattleWaveInfo
 
-var_0_2.LOGIC_AND = 0
-var_0_2.LGOIC_OR = 1
-var_0_2.STATE_DEACTIVE = "STATE_DEACTIVE"
-var_0_2.STATE_ACTIVE = "STATE_ACTIVE"
-var_0_2.STATE_PASS = "STATE_PASS"
-var_0_2.STATE_FAIL = "STATE_FAIL"
+BattleWaveInfo.LOGIC_AND = 0
+BattleWaveInfo.LGOIC_OR = 1
+BattleWaveInfo.STATE_DEACTIVE = "STATE_DEACTIVE"
+BattleWaveInfo.STATE_ACTIVE = "STATE_ACTIVE"
+BattleWaveInfo.STATE_PASS = "STATE_PASS"
+BattleWaveInfo.STATE_FAIL = "STATE_FAIL"
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+-- BattleWaveInfo类是战斗波次信息的基础类，定义了波次的基本属性和行为。
+-- 其他的，BattleSpawnWave、BattleDelayWave等类继承自此类，并实现了具体的波次逻辑。
+-- 子类中，如BattleSpawnWave这类是最重要的，需要重点关注
+-- 其他的可能就是播放BGM之类非战斗行为的波次，了解即可。
+function BattleWaveInfo.Ctor(self)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0._preWaves = {}
-	arg_1_0._postWaves = {}
-	arg_1_0._branchWaves = {}
+	self._preWaves = {}
+	self._postWaves = {}
+	self._branchWaves = {}
 end
 
-function var_0_2.IsReady(arg_2_0)
-	return arg_2_0:IsPreWavesFinished()
+function BattleWaveInfo.IsReady(self)
+	return self:IsPreWavesFinished()
 end
 
-function var_0_2.IsFlagsPass(arg_3_0)
-	if not arg_3_0._blockFlags or not next(arg_3_0._blockFlags) then
+function BattleWaveInfo.IsFlagsPass(self)
+	if not self._blockFlags or not next(self._blockFlags) then
 		return true
 	end
 
-	local var_3_0 = var_0_0.Battle.BattleDataProxy.GetInstance():GetWaveFlags()
+	local waveFlags = ys.Battle.BattleDataProxy.GetInstance():GetWaveFlags()
 
-	if not var_3_0 or not next(var_3_0) then
+	if not waveFlags or not next(waveFlags) then
 		return false
 	end
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._blockFlags) do
-		if not table.contains(var_3_0, iter_3_1) then
+	for _, blockFlag in ipairs(self._blockFlags) do
+		if not table.contains(waveFlags, blockFlag) then
 			return false
 		end
 	end
@@ -47,148 +51,153 @@ function var_0_2.IsFlagsPass(arg_3_0)
 	return true
 end
 
-function var_0_2.IsPreWavesFinished(arg_4_0)
-	local var_4_0 = #arg_4_0._preWaves
-	local var_4_1
+function BattleWaveInfo.IsPreWavesFinished(self)
+	local preWaves = #self._preWaves
+	local isFinished
 
-	if #arg_4_0._preWaves == 0 then
-		var_4_1 = true
-	elseif arg_4_0._logicType == var_0_2.LOGIC_AND then
-		var_4_1 = true
+	if #self._preWaves == 0 then
+		isFinished = true
+	elseif self._logicType == BattleWaveInfo.LOGIC_AND then
+		-- AND: 需要全部都通过才算
+		isFinished = true
 
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0._preWaves) do
-			if not iter_4_1:IsFinish() then
-				var_4_1 = false
+		for _, preWave in ipairs(self._preWaves) do
+			if not preWave:IsFinish() then
+				isFinished = false
 
 				break
 			end
 		end
-	elseif arg_4_0._logicType == var_0_2.LGOIC_OR then
-		var_4_1 = false
+	elseif self._logicType == BattleWaveInfo.LGOIC_OR then
+		-- OR: 有一个通过就算
+		isFinished = false
 
-		for iter_4_2, iter_4_3 in ipairs(arg_4_0._preWaves) do
-			if iter_4_3:IsFinish() then
-				var_4_1 = true
+		for _, preWave in ipairs(self._preWaves) do
+			if preWave:IsFinish() then
+				isFinished = true
 
 				break
 			end
 		end
 	end
 
-	return var_4_1
+	return isFinished
 end
 
-function var_0_2.IsFinish(arg_5_0)
-	return arg_5_0:GetState() == var_0_2.STATE_PASS or arg_5_0:GetState() == var_0_2.STATE_FAIL
+function BattleWaveInfo.IsFinish(self)
+	return self:GetState() == BattleWaveInfo.STATE_PASS or self:GetState() == BattleWaveInfo.STATE_FAIL
 end
 
-function var_0_2.DoBranch(arg_6_0)
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._branchWaves) do
-		local var_6_0 = arg_6_0._branchWaveIDs[iter_6_1:GetIndex()]
+function BattleWaveInfo.DoBranch(self)
+	for _, branchWave in ipairs(self._branchWaves) do
+		local branchWaveID = self._branchWaveIDs[branchWave:GetIndex()]
 
-		if var_6_0 and iter_6_1:GetState() == var_0_2.STATE_PASS or not var_6_0 and iter_6_1:GetState() == var_0_2.STATE_FAIL then
+		if branchWaveID and branchWave:GetState() == BattleWaveInfo.STATE_PASS or not branchWaveID and branchWave:GetState() == BattleWaveInfo.STATE_FAIL then
 			-- block empty
 		else
-			arg_6_0:doFail()
+			self:doFail()
 
 			return
 		end
 	end
 
-	if not arg_6_0:IsFlagsPass() then
-		arg_6_0:doFail()
+	if not self:IsFlagsPass() then
+		self:doFail()
 
 		return
 	end
 
-	arg_6_0:DoWave()
+	self:DoWave()
 end
 
-function var_0_2.DoWave(arg_7_0)
-	arg_7_0._state = var_0_2.STATE_ACTIVE
+function BattleWaveInfo.DoWave(self)
+	self._state = BattleWaveInfo.STATE_ACTIVE
 end
 
-function var_0_2.AddMonster(arg_8_0)
+function BattleWaveInfo.AddMonster(self)
 	return
 end
 
-function var_0_2.RemoveMonster(arg_9_0)
+function BattleWaveInfo.RemoveMonster(self)
 	return
 end
 
-function var_0_2.SetWaveData(arg_10_0, arg_10_1)
-	arg_10_0._index = arg_10_1.waveIndex
-	arg_10_0._isKeyWave = arg_10_1.key
-	arg_10_0._logicType = arg_10_1.conditionType or var_0_2.LOGIC_AND
-	arg_10_0._param = arg_10_1.triggerParams or {}
-	arg_10_0._preWaveIDs = arg_10_1.preWaves or {}
-	arg_10_0._branchWaveIDs = arg_10_1.conditionWaves or {}
-	arg_10_0._blockFlags = arg_10_1.blockFlags
-	arg_10_0._type = arg_10_1.triggerType
-	arg_10_0._state = var_0_2.STATE_DEACTIVE
+-- 此处设定数据
+-- 在BattleWaveUpdater.SetWavesData中调用
+-- waveData实际对应到dungeon配置文件中的waves字段下的每一个元素
+function BattleWaveInfo.SetWaveData(self, waveData)
+	self._index = waveData.waveIndex
+	self._isKeyWave = waveData.key
+	self._logicType = waveData.conditionType or BattleWaveInfo.LOGIC_AND
+	self._param = waveData.triggerParams or {}
+	self._preWaveIDs = waveData.preWaves or {}
+	self._branchWaveIDs = waveData.conditionWaves or {}
+	self._blockFlags = waveData.blockFlags
+	self._type = waveData.triggerType
+	self._state = BattleWaveInfo.STATE_DEACTIVE
 end
 
-function var_0_2.SetCallback(arg_11_0, arg_11_1, arg_11_2)
-	arg_11_0._spawnFunc = arg_11_1
-	arg_11_0._airFunc = arg_11_2
+function BattleWaveInfo.SetCallback(self, spawnFunc, airFunc)
+	self._spawnFunc = spawnFunc
+	self._airFunc = airFunc
 end
 
-function var_0_2.AppendBranchWave(arg_12_0, arg_12_1)
-	arg_12_0._branchWaves[#arg_12_0._branchWaves + 1] = arg_12_1
+function BattleWaveInfo.AppendBranchWave(self, branchWave)
+	self._branchWaves[#self._branchWaves + 1] = branchWave
 end
 
-function var_0_2.AppendPreWave(arg_13_0, arg_13_1)
-	arg_13_0._preWaves[#arg_13_0._preWaves + 1] = arg_13_1
+function BattleWaveInfo.AppendPreWave(self, preWave)
+	self._preWaves[#self._preWaves + 1] = preWave
 end
 
-function var_0_2.AppendPostWave(arg_14_0, arg_14_1)
-	arg_14_0._postWaves[#arg_14_0._postWaves + 1] = arg_14_1
+function BattleWaveInfo.AppendPostWave(self, postWave)
+	self._postWaves[#self._postWaves + 1] = postWave
 end
 
-function var_0_2.IsKeyWave(arg_15_0)
-	return arg_15_0._isKeyWave
+function BattleWaveInfo.IsKeyWave(self)
+	return self._isKeyWave
 end
 
-function var_0_2.GetPostWaves(arg_16_0)
-	return arg_16_0._postWaves
+function BattleWaveInfo.GetPostWaves(self)
+	return self._postWaves
 end
 
-function var_0_2.GetIndex(arg_17_0)
-	return arg_17_0._index
+function BattleWaveInfo.GetIndex(self)
+	return self._index
 end
 
-function var_0_2.GetType(arg_18_0)
-	return arg_18_0._type
+function BattleWaveInfo.GetType(self)
+	return self._type
 end
 
-function var_0_2.GetState(arg_19_0)
-	return arg_19_0._state
+function BattleWaveInfo.GetState(self)
+	return self._state
 end
 
-function var_0_2.GetPreWaveIDs(arg_20_0)
-	return arg_20_0._preWaveIDs
+function BattleWaveInfo.GetPreWaveIDs(self)
+	return self._preWaveIDs
 end
 
-function var_0_2.GetBranchWaveIDs(arg_21_0)
-	return arg_21_0._branchWaveIDs
+function BattleWaveInfo.GetBranchWaveIDs(self)
+	return self._branchWaveIDs
 end
 
-function var_0_2.Dispose(arg_22_0)
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_22_0)
+function BattleWaveInfo.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
-function var_0_2.doPass(arg_23_0)
-	if not arg_23_0:IsFinish() then
-		arg_23_0._state = var_0_2.STATE_PASS
+function BattleWaveInfo.doPass(self)
+	if not self:IsFinish() then
+		self._state = BattleWaveInfo.STATE_PASS
 
-		arg_23_0:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleEvent.WAVE_FINISH, {}))
+		self:DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.WAVE_FINISH, {}))
 	end
 end
 
-function var_0_2.doFail(arg_24_0)
-	if not arg_24_0:IsFinish() then
-		arg_24_0._state = var_0_2.STATE_FAIL
+function BattleWaveInfo.doFail(self)
+	if not self:IsFinish() then
+		self._state = BattleWaveInfo.STATE_FAIL
 
-		arg_24_0:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleEvent.WAVE_FINISH, {}))
+		self:DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.WAVE_FINISH, {}))
 	end
 end

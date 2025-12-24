@@ -227,7 +227,7 @@ function BattleState.Update(arg_15_0)
 	end
 end
 
-function BattleState.GenerateVertifyData(arg_16_0)
+function BattleState.GenerateVertifyData(self)
 	return
 end
 

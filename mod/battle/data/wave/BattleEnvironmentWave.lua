@@ -16,14 +16,14 @@ end
 function var_0_1.SetWaveData(arg_2_0, arg_2_1)
 	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
 
-	arg_2_0._sapwnData = arg_2_1.spawn or {}
+	arg_2_0._spawnData = arg_2_1.spawn or {}
 	arg_2_0._environWarning = arg_2_1.warning
 end
 
 function var_0_1.DoWave(arg_3_0)
 	var_0_1.super.DoWave(arg_3_0)
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._sapwnData) do
+	for iter_3_0, iter_3_1 in ipairs(arg_3_0._spawnData) do
 		if iter_3_1.delay and iter_3_1.delay > 0 then
 			arg_3_0:spawnTimer(iter_3_1)
 		else

@@ -90,6 +90,7 @@ function var_0_3.onInitBattle(arg_11_0)
 	arg_11_0._waveUpdater:SetWavesData(arg_11_0._dataProxy:GetStageInfo())
 end
 
+-- TODO
 function var_0_3.initWaveModule(arg_12_0)
 	local function var_12_0(arg_13_0, arg_13_1, arg_13_2)
 		arg_12_0._dataProxy:SpawnMonster(arg_13_0, arg_13_1, arg_13_2, var_0_0.Battle.BattleConfig.FOE_CODE)
