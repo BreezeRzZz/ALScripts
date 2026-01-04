@@ -42,7 +42,7 @@ AttributeType.WorldPower = "world_power"
 function AttributeType.Type2Name(arg_1_0)
 	return i18n("attribute_" .. arg_1_0)
 end
-
+-- TODO
 AttributeType.eliteConditionTip = {
 	cannon = "elite_condition_cannon",
 	air = "elite_condition_air",

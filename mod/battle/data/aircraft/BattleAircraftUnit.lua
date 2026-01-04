@@ -287,7 +287,7 @@ function var_0_6.SetMotherUnit(arg_34_0, arg_34_1)
 	arg_34_0:SetAttr(arg_34_1)
 
 	local var_34_1 = arg_34_0._motherUnit:GetWeaponBoundBone()
-
+	-- remote bound的用处：会让飞机生成位置相对于母舰位置有一个偏移
 	if var_34_1.remote then
 		local var_34_2 = var_34_1.remote
 		local var_34_3 = Vector3(var_34_2[1], var_34_2[2], var_34_2[3])

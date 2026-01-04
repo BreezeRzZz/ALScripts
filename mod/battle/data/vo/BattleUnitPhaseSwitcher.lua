@@ -1,221 +1,229 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.BossPhaseSwitchType
-local var_0_2 = var_0_0.Battle.BattleConst
+local ys = ys
+local BossPhaseSwitchType = ys.Battle.BattleConst.BossPhaseSwitchType
+local var_0_2 = ys.Battle.BattleConst
 
-var_0_0.Battle.BattleUnitPhaseSwitcher = class("BattleUnitPhaseSwitcher")
-var_0_0.Battle.BattleUnitPhaseSwitcher.__name = "BattleUnitPhaseSwitcher"
+ys.Battle.BattleUnitPhaseSwitcher = class("BattleUnitPhaseSwitcher")
+ys.Battle.BattleUnitPhaseSwitcher.__name = "BattleUnitPhaseSwitcher"
 
-local var_0_3 = var_0_0.Battle.BattleUnitPhaseSwitcher
+-- 在BattleDataProxy.SpawnMonster和BattleFleetVO.AddSubMarine中用到了这个类
+local BattleUnitPhaseSwitcher = ys.Battle.BattleUnitPhaseSwitcher
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._client = arg_1_1
+--- @class BattleUnitPhaseSwitcher
+--- @param client BattleUnit
+--- @return nil
+function BattleUnitPhaseSwitcher.Ctor(self, client)
+	self._client = client
 
-	arg_1_0._client:AddPhaseSwitcher(arg_1_0)
+	self._client:AddPhaseSwitcher(self)
 
-	arg_1_0._randomWeaponList = {}
+	self._randomWeaponList = {}
 end
 
-function var_0_3.Update(arg_2_0)
-	local var_2_0 = true
-	local var_2_1
+function BattleUnitPhaseSwitcher.Update(self)
+	local satisfied = true
+	local switchTo
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0._currentPhaseSwitchParam) do
-		local var_2_2 = iter_2_1.type
-		local var_2_3 = iter_2_1.param
-		local var_2_4 = iter_2_1.to
-
-		if var_2_2 == var_0_1.DURATION then
-			if var_2_3 < pg.TimeMgr.GetInstance():GetCombatTime() - arg_2_0._phaseStartTime then
-				var_2_1 = iter_2_1.to
-				iter_2_1.andFlag = false
+	for _, phaseSwitchParams in ipairs(self._currentPhaseSwitchParam) do
+		local switchType = phaseSwitchParams.type
+		local switchParam = phaseSwitchParams.param
+		-- DURATION = 1
+		if switchType == BossPhaseSwitchType.DURATION then
+			if switchParam < pg.TimeMgr.GetInstance():GetCombatTime() - self._phaseStartTime then
+				switchTo = phaseSwitchParams.to
+				phaseSwitchParams.andFlag = false
 			end
-		elseif var_2_2 == var_0_1.POSITION_X_GREATER then
-			if var_2_3 < arg_2_0._client:GetPosition().x then
-				var_2_1 = iter_2_1.to
-				iter_2_1.andFlag = false
+		-- POSITION_X_GREATER = 3
+		elseif switchType == BossPhaseSwitchType.POSITION_X_GREATER then
+			if switchParam < self._client:GetPosition().x then
+				switchTo = phaseSwitchParams.to
+				phaseSwitchParams.andFlag = false
 			end
-		elseif var_2_2 == var_0_1.POSITION_X_LESS then
-			if var_2_3 > arg_2_0._client:GetPosition().x then
-				var_2_1 = iter_2_1.to
-				iter_2_1.andFlag = false
+		-- POSITION_X_LESS = 4
+		elseif switchType == BossPhaseSwitchType.POSITION_X_LESS then
+			if switchParam > self._client:GetPosition().x then
+				switchTo = phaseSwitchParams.to
+				phaseSwitchParams.andFlag = false
 			end
-		elseif var_2_2 == var_0_1.OXYGEN and var_2_3 >= arg_2_0._client:GetCuurentOxygen() then
-			var_2_1 = iter_2_1.to
-			iter_2_1.andFlag = false
+		-- OXYGEN = 5
+		elseif switchType == BossPhaseSwitchType.OXYGEN and switchParam >= self._client:GetCuurentOxygen() then
+			switchTo = phaseSwitchParams.to
+			phaseSwitchParams.andFlag = false
 		end
 
-		var_2_0 = var_2_0 and not iter_2_1.andFlag
+		satisfied = satisfied and not phaseSwitchParams.andFlag
 	end
 
-	if var_2_1 and var_2_0 then
-		arg_2_0:switch(var_2_1)
+	if switchTo and satisfied then
+		self:switch(switchTo)
 	end
 end
 
-function var_0_3.UpdateHP(arg_3_0, arg_3_1)
-	local var_3_0 = true
-	local var_3_1
+function BattleUnitPhaseSwitcher.UpdateHP(self, currentHP)
+	local satisfied = true
+	local switchTo
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._currentPhaseSwitchParam) do
-		local var_3_2 = iter_3_1.type
-		local var_3_3 = iter_3_1.param
-		local var_3_4 = iter_3_1.to
+	for _, phaseSwitchParams in ipairs(self._currentPhaseSwitchParam) do
+		local switchType = phaseSwitchParams.type
+		local switchParam = phaseSwitchParams.param
+		local switchTo = phaseSwitchParams.to
 
-		if var_3_2 == var_0_1.HP and arg_3_1 < var_3_3 then
-			var_3_1 = var_3_4
-			iter_3_1.andFlag = false
+		if switchType == BossPhaseSwitchType.HP and currentHP < switchParam then
+			switchTo = switchTo
+			phaseSwitchParams.andFlag = false
 		end
 
-		var_3_0 = var_3_0 and not iter_3_1.andFlag
+		satisfied = satisfied and not phaseSwitchParams.andFlag
 	end
 
-	if var_3_1 and var_3_0 then
-		arg_3_0:switch(var_3_1)
+	if switchTo and satisfied then
+		self:switch(switchTo)
 	end
 end
 
-function var_0_3.SetTemplateData(arg_4_0, arg_4_1)
-	arg_4_0._phaseList = {}
+-- 在BattleDataProxy.SpawnMonster中设置了模板数据
+function BattleUnitPhaseSwitcher.SetTemplateData(self, phaseData)
+	self._phaseList = {}
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_1) do
-		arg_4_0._phaseList[iter_4_1.index] = iter_4_1
+	for _, phase in ipairs(phaseData) do
+		self._phaseList[phase.index] = phase
 	end
 
-	arg_4_0:switch(0)
+	self:switch(0)
 end
 
-function var_0_3.ForceSwitch(arg_5_0, arg_5_1)
-	arg_5_0:switch(arg_5_1)
+function BattleUnitPhaseSwitcher.ForceSwitch(self, index)
+	self:switch(index)
 end
--- TODO
-function var_0_3.switch(arg_6_0, arg_6_1)
-	if arg_6_1 == -1 or arg_6_0._phaseList[arg_6_1] == nil then
+
+function BattleUnitPhaseSwitcher.switch(self, index)
+	if index == -1 or self._phaseList[index] == nil then
 		return
 	end
 
-	local var_6_0 = arg_6_0._phaseList[arg_6_1]
-	local var_6_1 = {}
+	local phase = self._phaseList[index]
+	local removeWeaponList = {}
 
-	if var_6_0.removeWeapon then
-		var_6_1 = Clone(var_6_0.removeWeapon)
+	if phase.removeWeapon then
+		removeWeaponList = Clone(phase.removeWeapon)
 	end
 
-	if var_6_0.removeRandomWeapon then
-		for iter_6_0, iter_6_1 in ipairs(arg_6_0._randomWeaponList) do
-			table.insert(var_6_1, iter_6_1)
+	if phase.removeRandomWeapon then
+		for _, weapon in ipairs(self._randomWeaponList) do
+			table.insert(removeWeaponList, weapon)
 		end
 
-		arg_6_0._randomWeaponList = {}
+		self._randomWeaponList = {}
 	end
 
-	local var_6_2 = {}
+	local addWeaponList = {}
 
-	if var_6_0.addWeapon then
-		var_6_2 = Clone(var_6_0.addWeapon)
+	if phase.addWeapon then
+		addWeaponList = Clone(phase.addWeapon)
 	end
 
-	if var_6_0.addRandomWeapon then
-		local var_6_3 = var_6_0.addRandomWeapon[math.random(#var_6_0.addRandomWeapon)]
+	if phase.addRandomWeapon then
+		local randomWeaponGroup = phase.addRandomWeapon[math.random(#phase.addRandomWeapon)]
 
-		for iter_6_2, iter_6_3 in ipairs(var_6_3) do
-			table.insert(var_6_2, iter_6_3)
-			table.insert(arg_6_0._randomWeaponList, iter_6_3)
-		end
-	end
-
-	arg_6_0._currentPhase = var_6_0
-
-	arg_6_0:packagePhaseSwitchParam(var_6_0)
-	arg_6_0._client:ShiftWeapon(var_6_1, var_6_2)
-
-	if var_6_0.removeBuff then
-		for iter_6_4, iter_6_5 in ipairs(var_6_0.removeBuff) do
-			arg_6_0._client:RemoveBuff(iter_6_5)
+		for _, weapon in ipairs(randomWeaponGroup) do
+			table.insert(addWeaponList, weapon)
+			table.insert(self._randomWeaponList, weapon)
 		end
 	end
 
-	if var_6_0.addBuff then
-		for iter_6_6, iter_6_7 in ipairs(var_6_0.addBuff) do
-			local var_6_4 = var_0_0.Battle.BattleBuffUnit.New(iter_6_7, 1, arg_6_0._client)
+	self._currentPhase = phase
 
-			arg_6_0._client:AddBuff(var_6_4)
+	self:packagePhaseSwitchParam(phase)
+	self._client:ShiftWeapon(removeWeaponList, addWeaponList)
+
+	if phase.removeBuff then
+		for _, buffID in ipairs(phase.removeBuff) do
+			self._client:RemoveBuff(buffID)
 		end
 	end
 
-	if var_6_0.dive then
-		arg_6_0._client:ChangeOxygenState(var_6_0.dive)
+	if phase.addBuff then
+		for _, buffID in ipairs(phase.addBuff) do
+			local buff = ys.Battle.BattleBuffUnit.New(buffID, 1, self._client)
+
+			self._client:AddBuff(buff)
+		end
 	end
 
-	if var_6_0.setAI then
-		arg_6_0._client:SetAI(var_6_0.setAI)
+	if phase.dive then
+		self._client:ChangeOxygenState(phase.dive)
 	end
 
-	if var_6_0.story then
-		pg.NewStoryMgr.GetInstance():Play(var_6_0.story)
+	if phase.setAI then
+		self._client:SetAI(phase.setAI)
 	end
 
-	if not var_6_0.guide or var_6_0.guide.type == 1 and pg.SeriesGuideMgr.GetInstance():isEnd() then
+	if phase.story then
+		pg.NewStoryMgr.GetInstance():Play(phase.story)
+	end
+
+	if not phase.guide or phase.guide.type == 1 and pg.SeriesGuideMgr.GetInstance():isEnd() then
 		-- block empty
-	elseif var_6_0.guide.event == nil then
-		pg.NewGuideMgr.GetInstance():Play(var_6_0.guide.step)
+	elseif phase.guide.event == nil then
+		pg.NewGuideMgr.GetInstance():Play(phase.guide.step)
 	else
-		pg.NewGuideMgr.GetInstance():Play(var_6_0.guide.step, {
-			var_6_0.guide.event
+		pg.NewGuideMgr.GetInstance():Play(phase.guide.step, {
+			phase.guide.event
 		})
 	end
 
-	arg_6_0._phaseStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._phaseStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	if var_6_0.retreat == true then
-		arg_6_0._client:Retreat()
+	if phase.retreat == true then
+		self._client:Retreat()
 	end
 end
--- TODO：IMPORTANT
-function var_0_3.packagePhaseSwitchParam(arg_7_0, arg_7_1)
-	arg_7_0._currentPhaseSwitchParam = {}
 
-	local var_7_0 = type(arg_7_1.switchType)
+-- 通过该函数，将当前阶段切换参数打包到_currentPhaseSwitchParam中
+function BattleUnitPhaseSwitcher.packagePhaseSwitchParam(self, phase)
+	self._currentPhaseSwitchParam = {}
 
-	if var_7_0 == "table" then
-		local var_7_1 = arg_7_1.switchType
-		local var_7_2 = arg_7_1.switchParam
-		local var_7_3 = arg_7_1.switchTo
-		local var_7_4 = type(var_7_3) == "number"
-		local var_7_5 = 1
-		local var_7_6 = #arg_7_1.switchType
+	local switchDataType = type(phase.switchType)
 
-		while var_7_5 <= var_7_6 do
-			local var_7_7 = {
-				type = var_7_1[var_7_5],
-				param = var_7_2[var_7_5]
+	if switchDataType == "table" then
+		local switchType = phase.switchType
+		local switchParam = phase.switchParam
+		local switchTo = phase.switchTo
+		local isSwitchToNumber = type(switchTo) == "number"
+		local index = 1
+		local length = #phase.switchType
+
+		while index <= length do
+			local phaseSwitchParams = {
+				type = switchType[index],
+				param = switchParam[index]
 			}
 
-			if var_7_4 then
-				var_7_7.to = var_7_3
-				var_7_7.andFlag = true
+			if isSwitchToNumber then
+				phaseSwitchParams.to = switchTo
+				phaseSwitchParams.andFlag = true
 			else
-				var_7_7.to = var_7_3[var_7_5]
+				phaseSwitchParams.to = switchTo[index]
 			end
 
-			table.insert(arg_7_0._currentPhaseSwitchParam, var_7_7)
+			table.insert(self._currentPhaseSwitchParam, phaseSwitchParams)
 
-			var_7_5 = var_7_5 + 1
+			index = index + 1
 		end
-	elseif var_7_0 == "number" then
-		local var_7_8 = {
-			type = arg_7_1.switchType
+	elseif switchDataType == "number" then
+		local phaseSwitchParams = {
+			type = phase.switchType
 		}
 
-		if arg_7_1.switchParamFunc then
-			var_7_8.param = arg_7_1.switchParamFunc()
+		if phase.switchParamFunc then
+			phaseSwitchParams.param = phase.switchParamFunc()
 		else
-			var_7_8.param = arg_7_1.switchParam
+			phaseSwitchParams.param = phase.switchParam
 		end
 
-		var_7_8.to = arg_7_1.switchTo
+		phaseSwitchParams.to = phase.switchTo
 
-		table.insert(arg_7_0._currentPhaseSwitchParam, var_7_8)
+		table.insert(self._currentPhaseSwitchParam, phaseSwitchParams)
 	end
 end

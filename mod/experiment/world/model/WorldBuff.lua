@@ -1,5 +1,5 @@
 local var_0_0 = class("WorldBuff", import("...BaseEntity"))
-
+-- TODO
 var_0_0.Fields = {
 	config = "table",
 	floor = "number",

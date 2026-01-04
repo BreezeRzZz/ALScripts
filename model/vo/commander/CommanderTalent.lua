@@ -1,38 +1,38 @@
-local var_0_0 = class("CommanderTalent", import("..BaseVO"))
-local var_0_1 = pg.commander_ability_group
+local CommanderTalent = class("CommanderTalent", import("..BaseVO"))
+local commander_ability_group = pg.commander_ability_group
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
+function CommanderTalent.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.id = arg_1_1.id
 	arg_1_0.configId = arg_1_0.id
 	arg_1_0.groupId = arg_1_0:getConfig("group_id")
 
-	assert(var_0_1[arg_1_0.groupId])
+	assert(commander_ability_group[arg_1_0.groupId])
 
-	arg_1_0.list = var_0_1[arg_1_0.groupId].ability_list
+	arg_1_0.list = commander_ability_group[arg_1_0.groupId].ability_list
 end
 
-function var_0_0.reset(arg_2_0)
+function CommanderTalent.reset(arg_2_0)
 	arg_2_0.id = arg_2_0.list[1]
 	arg_2_0.configId = arg_2_0.id
 end
 
-function var_0_0.setOrigin(arg_3_0, arg_3_1)
+function CommanderTalent.setOrigin(arg_3_0, arg_3_1)
 	arg_3_0.origin = arg_3_1
 end
 
-function var_0_0.isOrigin(arg_4_0)
+function CommanderTalent.isOrigin(arg_4_0)
 	return arg_4_0.origin
 end
 
-function var_0_0.getTalentList(arg_5_0)
+function CommanderTalent.getTalentList(arg_5_0)
 	return arg_5_0.list
 end
 
-function var_0_0.bindConfigTable(arg_6_0)
+function CommanderTalent.bindConfigTable(arg_6_0)
 	return pg.commander_ability_template
 end
 
-function var_0_0.getConsume(arg_7_0)
+function CommanderTalent.getConsume(arg_7_0)
 	local var_7_0 = 0
 	local var_7_1 = table.indexof(arg_7_0.list, arg_7_0.id)
 
@@ -45,7 +45,7 @@ function var_0_0.getConsume(arg_7_0)
 	return var_7_0
 end
 -- TODO: 指挥喵天赋加成
-function var_0_0.getAttrsAddition(arg_8_0)
+function CommanderTalent.getAttrsAddition(arg_8_0)
 	local var_8_0 = {}
 	local var_8_1 = {}
 
@@ -72,7 +72,7 @@ function var_0_0.getAttrsAddition(arg_8_0)
 	return var_8_0, var_8_1
 end
 
-function var_0_0.getBuffsAddition(arg_9_0)
+function CommanderTalent.getBuffsAddition(arg_9_0)
 	local var_9_0 = {}
 
 	for iter_9_0, iter_9_1 in ipairs(arg_9_0:getConfig("add")) do
@@ -84,7 +84,7 @@ function var_0_0.getBuffsAddition(arg_9_0)
 	return var_9_0
 end
 
-function var_0_0.getDestoryExpValue(arg_10_0)
+function CommanderTalent.getDestoryExpValue(arg_10_0)
 	local var_10_0 = 0
 	local var_10_1 = arg_10_0:getConfig("add")
 
@@ -97,7 +97,7 @@ function var_0_0.getDestoryExpValue(arg_10_0)
 	return var_10_0
 end
 
-function var_0_0.getDestoryExpRetio(arg_11_0)
+function CommanderTalent.getDestoryExpRetio(arg_11_0)
 	local var_11_0 = 0
 	local var_11_1 = arg_11_0:getConfig("add")
 
@@ -110,7 +110,7 @@ function var_0_0.getDestoryExpRetio(arg_11_0)
 	return var_11_0
 end
 
-function var_0_0.getDesc(arg_12_0)
+function CommanderTalent.getDesc(arg_12_0)
 	local var_12_0 = {}
 	local var_12_1 = arg_12_0:getConfig("add_desc")
 
@@ -130,4 +130,4 @@ function var_0_0.getDesc(arg_12_0)
 	return var_12_0
 end
 
-return var_0_0
+return CommanderTalent

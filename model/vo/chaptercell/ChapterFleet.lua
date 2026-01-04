@@ -940,6 +940,7 @@ function ChapterFleet.findCommanderBySkillId(arg_104_0, arg_104_1)
 	end
 end
 
+-- TODO
 function ChapterFleet.getFleetAirDominanceValue(arg_107_0)
 	local var_107_0 = 0
 

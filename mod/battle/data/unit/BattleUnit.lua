@@ -1774,6 +1774,7 @@ function BattleUnit.updateCldComponet(arg_206_0, arg_206_1, arg_206_2)
 	arg_206_0._cldComponent:ResetSize(arg_206_1[1], arg_206_1[2], arg_206_1[3])
 end
 
+-- TODO
 function BattleUnit.InitOxygen(arg_207_0)
 	arg_207_0._maxOxy = arg_207_0:GetAttrByName("oxyMax")
 	arg_207_0._currentOxy = arg_207_0:GetAttrByName("oxyMax")

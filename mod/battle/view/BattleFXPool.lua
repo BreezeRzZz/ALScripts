@@ -2,16 +2,16 @@ ys = ys or {}
 
 local var_0_0 = ys
 local var_0_1 = pg.effect_offset
-local var_0_2 = singletonClass("BattleFXPool")
+local BattleFXPool = singletonClass("BattleFXPool")
 
-var_0_0.Battle.BattleFXPool = var_0_2
-var_0_2.__name = "BattleFXPool"
+var_0_0.Battle.BattleFXPool = BattleFXPool
+BattleFXPool.__name = "BattleFXPool"
 
-function var_0_2.Ctor(arg_1_0)
+function BattleFXPool.Ctor(arg_1_0)
 	return
 end
 
-function var_0_2.Init(arg_2_0)
+function BattleFXPool.Init(arg_2_0)
 	arg_2_0._fxContainer = GameObject("fxContainer")
 	arg_2_0._fxContainerTf = arg_2_0._fxContainer.transform
 
@@ -23,7 +23,7 @@ function var_0_2.Init(arg_2_0)
 	arg_2_0._charAttachPointPool = pg.Pool.New(arg_2_0._fxContainerTf, var_2_0, 10, 20, false, true):InitSize()
 end
 
-function var_0_2.Clear(arg_3_0)
+function BattleFXPool.Clear(arg_3_0)
 	arg_3_0._charAttachPointPool:Dispose()
 
 	arg_3_0._charAttachPointPool = nil
@@ -34,7 +34,7 @@ function var_0_2.Clear(arg_3_0)
 	arg_3_0._fxContainerTf = nil
 end
 
-function var_0_2.GetFX(arg_4_0, arg_4_1, arg_4_2)
+function BattleFXPool.GetFX(arg_4_0, arg_4_1, arg_4_2)
 	local var_4_0 = var_0_0.Battle.BattleResourceManager.GetInstance():InstFX(arg_4_1, true)
 
 	LuaHelper.SetGOParentTF(var_4_0, arg_4_2 or arg_4_0._fxContainerTf, false)
@@ -53,7 +53,8 @@ function var_0_2.GetFX(arg_4_0, arg_4_1, arg_4_2)
 	return var_4_0, var_4_1
 end
 
-function var_0_2.GetCharacterFX(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
+-- TODO
+function BattleFXPool.GetCharacterFX(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
 	if arg_5_2 == nil then
 		return arg_5_0:GetFX(arg_5_1)
 	end
@@ -102,10 +103,10 @@ function var_0_2.GetCharacterFX(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg
 	return var_5_0
 end
 
-function var_0_2.PopCharacterAttachPoint(arg_6_0)
+function BattleFXPool.PopCharacterAttachPoint(arg_6_0)
 	return arg_6_0._charAttachPointPool:GetObject()
 end
 
-function var_0_2.PushCharacterAttachPoint(arg_7_0, arg_7_1)
+function BattleFXPool.PushCharacterAttachPoint(arg_7_0, arg_7_1)
 	arg_7_0._charAttachPointPool:Recycle(arg_7_1)
 end

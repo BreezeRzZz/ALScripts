@@ -475,16 +475,18 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 
 	BattleAttr.SetBaseAttr(playerUnit)
 end
--- TODO
-function BattleAttr.AttrFixer(arg_35_0, arg_35_1)
-	if arg_35_0 == SYSTEM_SCENARIO then
-		arg_35_1.repressReduce = ys.Battle.BattleDataProxy.GetInstance():GetRepressReduce()
-	elseif arg_35_0 == SYSTEM_DUEL or arg_35_0 == SYSTEM_SHAM then
-		local var_35_0 = arg_35_1.level
-		local var_35_1 = arg_35_1.durability
-		local var_35_2, var_35_3 = ys.Battle.BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(arg_35_0, var_35_0)
 
-		arg_35_1.durability = var_35_1 * var_35_2 + var_35_3
+-- note: 应用海域压制和演习耐久加成
+-- BattleDataProxy.generatePlayerUnit等使用
+function BattleAttr.AttrFixer(battleType, properties)
+	if battleType == SYSTEM_SCENARIO then
+		properties.repressReduce = ys.Battle.BattleDataProxy.GetInstance():GetRepressReduce()
+	elseif battleType == SYSTEM_DUEL or battleType == SYSTEM_SHAM then
+		local level = properties.level
+		local durability = properties.durability
+		local durabilityRatio, durabilityAdd = ys.Battle.BattleDataFunction.durabilityRatio(battleType, level)
+
+		properties.durability = durability * durabilityRatio + durabilityAdd
 	end
 end
 
@@ -506,6 +508,7 @@ function BattleAttr.InitDOTAttr(attr, templateData)
 end
 -- 计算敌人属性
 -- 第二个参数没用到，删掉了
+-- 在BattleEnemyUnit.SetAttr中调用
 function BattleAttr.SetEnemyAttr(enemy)
 	local enemyTemplateData = enemy._tmpData
 	local enemyLevel = enemy:GetLevel()
@@ -547,34 +550,37 @@ function BattleAttr.SetEnemyAttr(enemy)
 	BattleAttr.SetBaseAttr(enemy)
 end
 
-function BattleAttr.SetEnemyWorldEnhance(arg_38_0)
-	local var_38_0 = arg_38_0._tmpData
-	local var_38_1 = arg_38_0._attr
-	local var_38_2 = var_38_1.level
-	local var_38_3 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_38_4 = var_38_0.world_enhancement
-	local var_38_5 = ys.Battle.BattleFormulas
+-- 大世界敌人的属性增强
+-- 被BattleAttr.MonsterAttrFixer调用
+function BattleAttr.SetEnemyWorldEnhance(monster)
+	local tmpData = monster._tmpData
+	local attr = monster._attr
+	local level = attr.level
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local world_enhancement = tmpData.world_enhancement
+	local BattleFormulas = ys.Battle.BattleFormulas
 
-	var_38_1.maxHP = var_38_1.maxHP * var_38_5.WorldEnemyAttrEnhance(var_38_4[1], var_38_2)
-	var_38_1.cannonPower = var_38_1.cannonPower * var_38_5.WorldEnemyAttrEnhance(var_38_4[2], var_38_2)
-	var_38_1.torpedoPower = var_38_1.torpedoPower * var_38_5.WorldEnemyAttrEnhance(var_38_4[3], var_38_2)
-	var_38_1.antiAirPower = var_38_1.antiAirPower * var_38_5.WorldEnemyAttrEnhance(var_38_4[4], var_38_2)
-	var_38_1.airPower = var_38_1.airPower * var_38_5.WorldEnemyAttrEnhance(var_38_4[5], var_38_2)
-	var_38_1.attackRating = var_38_1.attackRating * var_38_5.WorldEnemyAttrEnhance(var_38_4[6], var_38_2)
-	var_38_1.dodgeRate = var_38_1.dodgeRate * var_38_5.WorldEnemyAttrEnhance(var_38_4[7], var_38_2)
+	attr.maxHP = attr.maxHP * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[1], level)
+	attr.cannonPower = attr.cannonPower * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[2], level)
+	attr.torpedoPower = attr.torpedoPower * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[3], level)
+	attr.antiAirPower = attr.antiAirPower * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[4], level)
+	attr.airPower = attr.airPower * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[5], level)
+	attr.attackRating = attr.attackRating * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[6], level)
+	attr.dodgeRate = attr.dodgeRate * BattleFormulas.WorldEnemyAttrEnhance(world_enhancement[7], level)
 
-	local var_38_6 = var_38_3:GetInitData()
-	local var_38_7, var_38_8, var_38_9 = var_38_5.WorldMapRewardAttrEnhance(var_38_6.EnemyMapRewards, var_38_6.FleetMapRewards)
+	local initData = battleDataProxy:GetInitData()
+	-- 计算适应性压制
+	local attackEnhance, durabilityEnhance, worldBuffResistance = BattleFormulas.WorldMapRewardAttrEnhance(initData.EnemyMapRewards, initData.FleetMapRewards)
 
-	var_38_1.cannonPower = var_38_1.cannonPower * (1 + var_38_7)
-	var_38_1.torpedoPower = var_38_1.torpedoPower * (1 + var_38_7)
-	var_38_1.airPower = var_38_1.airPower * (1 + var_38_7)
-	var_38_1.antiAirPower = var_38_1.antiAirPower * (1 + var_38_7)
-	var_38_1.antiSubPower = var_38_1.antiSubPower * (1 + var_38_7)
-	var_38_1.maxHP = math.ceil(var_38_1.maxHP * (1 + var_38_8))
-	var_38_1.worldBuffResistance = var_38_9
+	attr.cannonPower = attr.cannonPower * (1 + attackEnhance)
+	attr.torpedoPower = attr.torpedoPower * (1 + attackEnhance)
+	attr.airPower = attr.airPower * (1 + attackEnhance)
+	attr.antiAirPower = attr.antiAirPower * (1 + attackEnhance)
+	attr.antiSubPower = attr.antiSubPower * (1 + attackEnhance)
+	attr.maxHP = math.ceil(attr.maxHP * (1 + durabilityEnhance))
+	attr.worldBuffResistance = worldBuffResistance
 
-	BattleAttr.SetBaseAttr(arg_38_0)
+	BattleAttr.SetBaseAttr(monster)
 end
 
 --- @param minion BattleMinionUnit
@@ -738,13 +744,15 @@ function BattleAttr.SetAircraftAttFromTemp(arg_44_0)
 	arg_44_0._attr.velocity = arg_44_0._attr.velocity or ys.Battle.BattleFormulas.ConvertAircraftSpeed(arg_44_0._tmpData.speed)
 
 	local var_44_1 = arg_44_0._attr.level or 1
-
+	-- 己方飞机的耐久计算公式与敌方飞机不同，不取整?
 	arg_44_0._attr.maxHP = arg_44_0._attr.maxHP or arg_44_0._tmpData.max_hp + arg_44_0._tmpData.hp_growth / 1000 * (var_44_1 - 1) + var_44_0
 	arg_44_0._attr.crashDMG = arg_44_0._tmpData.crash_DMG
 	arg_44_0._attr.dodge = arg_44_0._tmpData.dodge
 	arg_44_0._attr.dodgeLimit = arg_44_0._tmpData.dodge_limit
 end
+
 -- TODO
+-- 用于计算敌方飞机的属性
 function BattleAttr.SetAirFighterAttr(arg_45_0, arg_45_1)
 	local var_45_0 = arg_45_0._attr or {}
 
@@ -863,21 +871,27 @@ function BattleAttr.SetFusionAttrFromElement(arg_46_0, arg_46_1, arg_46_2, arg_4
 	BattleAttr.SetBaseAttr(arg_46_0)
 end
 
-function BattleAttr.FlashByBuff(arg_48_0, arg_48_1, arg_48_2)
-	arg_48_0._attr[arg_48_1] = arg_48_2 + (arg_48_0._baseAttr[arg_48_1] or 0)
 
-	if string.find(arg_48_1, BattleAttr.FROM_TAG_EHC_KEY) then
-		local var_48_0 = 0
+-- note: 通过Buff更新属性的主函数
+function BattleAttr.FlashByBuff(owner, attrType, newAttrValue)
+	owner._attr[attrType] = newAttrValue + (owner._baseAttr[attrType] or 0)
+	-- 特殊处理了FROM_TAG_EHC_KEY类属性(前缀)
+	-- 概况的话，如果有任何一个标签增伤属性不为0，那么FROM_TAG_EHC_KEY就设为1，否则设为0
+	-- 注意这里设置的不是任何一种特定的FROM_TAG_EHC_KEY，而是这个前缀本身
+	-- 这相当于一种tag，表示是否存在标签增伤效果
+	-- 这个特性在下面的BattleAttr.GetTagAttr中被使用
+	if string.find(attrType, BattleAttr.FROM_TAG_EHC_KEY) then
+		local fromTagEhcExists = 0
 
-		for iter_48_0, iter_48_1 in pairs(arg_48_0._attr) do
-			if string.find(iter_48_0, BattleAttr.FROM_TAG_EHC_KEY) and iter_48_1 ~= 0 then
-				var_48_0 = 1
+		for _attrType, _attrValue in pairs(owner._attr) do
+			if string.find(_attrType, BattleAttr.FROM_TAG_EHC_KEY) and _attrValue ~= 0 then
+				fromTagEhcExists = 1
 
 				break
 			end
 		end
 
-		BattleAttr.SetCurrent(arg_48_0, BattleAttr.FROM_TAG_EHC_KEY, var_48_0)
+		BattleAttr.SetCurrent(owner, BattleAttr.FROM_TAG_EHC_KEY, fromTagEhcExists)
 	end
 end
 -- TODO
@@ -897,8 +911,8 @@ function BattleAttr.HasSonar(arg_50_0)
 	return ys.Battle.BattleConfig.VAN_SONAR_PROPERTY[var_50_0] ~= nil
 end
 
-function BattleAttr.SetCurrent(arg_51_0, arg_51_1, arg_51_2)
-	arg_51_0._attr[arg_51_1] = arg_51_2
+function BattleAttr.SetCurrent(host, attrType, attrValue)
+	host._attr[attrType] = attrValue
 end
 
 --- @param host any

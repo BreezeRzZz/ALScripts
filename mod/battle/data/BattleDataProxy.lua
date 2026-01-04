@@ -1111,176 +1111,179 @@ function BattleDataProxy.UpdateCountDown(arg_59_0, arg_59_1)
 	arg_59_0._totalTime = arg_59_1 - arg_59_0._startTimeStamp
 	arg_59_0._lastUpdateTime = arg_59_1
 end
--- TODO: 200多行的函数，吓哭了
-function BattleDataProxy.SpawnMonster(arg_60_0, arg_60_1, arg_60_2, arg_60_3, arg_60_4, arg_60_5)
-	local var_60_0 = arg_60_0:GenerateUnitID()
-	local var_60_1 = BattleDataFunction.GetMonsterTmpDataFromID(arg_60_1.monsterTemplateID)
-	local var_60_2 = {}
 
-	for iter_60_0, iter_60_1 in ipairs(var_60_1.equipment_list) do
-		table.insert(var_60_2, {
-			id = iter_60_1
+-- IMPORTANT: 敌人生成主函数逻辑
+-- 被各种command调用，如BattleSingleDungeonCommand.initWaveModule
+function BattleDataProxy.SpawnMonster(self, spawnItem, waveIndex, enemyType, IFF, extraEnhanceFunc)
+	local monsterUID = self:GenerateUnitID()
+	local monsterTmpData = BattleDataFunction.GetMonsterTmpDataFromID(spawnItem.monsterTemplateID)
+	local weaponIDList = {}
+
+	for _, weaponID in ipairs(monsterTmpData.equipment_list) do
+		table.insert(weaponIDList, {
+			id = weaponID
 		})
 	end
+	-- 示例:
+	-- random_equipment_list = {{2021004,2021012}},random_nub = {1}
+	local random_equipment_list = monsterTmpData.random_equipment_list
+	local random_nub = monsterTmpData.random_nub
+	-- 简单来说，就是每次从random_equipment_list的每个子表中，随机选出random_nub对应数量的武器加入weaponIDList，并且不会重复选取
+	for index, randomWeaponIDList in ipairs(random_equipment_list) do
+		local randomWeaponNum = random_nub[index]
+		local _randomWeaponIDList = Clone(randomWeaponIDList)
 
-	local var_60_3 = var_60_1.random_equipment_list
-	local var_60_4 = var_60_1.random_nub
+		for _ = 1, randomWeaponNum do
+			local randomIndex = math.random(#_randomWeaponIDList)
 
-	for iter_60_2, iter_60_3 in ipairs(var_60_3) do
-		local var_60_5 = var_60_4[iter_60_2]
-		local var_60_6 = Clone(iter_60_3)
-
-		for iter_60_4 = 1, var_60_5 do
-			local var_60_7 = math.random(#var_60_6)
-
-			table.insert(var_60_2, {
-				id = var_60_6[var_60_7]
+			table.insert(weaponIDList, {
+				id = _randomWeaponIDList[randomIndex]
 			})
-			table.remove(var_60_6, var_60_7)
+			table.remove(_randomWeaponIDList, randomIndex)
 		end
 	end
 
-	local var_60_8 = BattleDataFunction.CreateBattleUnitData(var_60_0, arg_60_3, arg_60_4, arg_60_1.monsterTemplateID, nil, var_60_2, arg_60_1.extraInfo, nil, nil, nil, nil, arg_60_1.level)
+	local enemyUnit = BattleDataFunction.CreateBattleUnitData(monsterUID, enemyType, IFF, spawnItem.monsterTemplateID, nil, weaponIDList, spawnItem.extraInfo, nil, nil, nil, nil, spawnItem.level)
 
-	BattleAttr.MonsterAttrFixer(arg_60_0._battleInitData.battleType, var_60_8)
+	BattleAttr.MonsterAttrFixer(self._battleInitData.battleType, enemyUnit)
 
-	local var_60_9
+	local currentHP
 
-	if arg_60_1.immuneHPInherit then
-		var_60_9 = var_60_8:GetMaxHP()
+	if spawnItem.immuneHPInherit then
+		currentHP = enemyUnit:GetMaxHP()
 	else
-		var_60_9 = math.ceil(var_60_8:GetMaxHP() * arg_60_0._repressEnemyHpRant)
+		currentHP = math.ceil(enemyUnit:GetMaxHP() * self._repressEnemyHpRant)
 	end
 
-	if var_60_9 <= 0 then
-		var_60_9 = 1
+	if currentHP <= 0 then
+		currentHP = 1
 	end
 
-	var_60_8:SetCurrentHP(var_60_9)
+	enemyUnit:SetCurrentHP(currentHP)
 
-	local var_60_10 = BattleFormulas.RandomPos(arg_60_1.corrdinate)
+	local spawnPos = BattleFormulas.RandomPos(spawnItem.corrdinate)
 
-	var_60_8:SetPosition(var_60_10)
-	var_60_8:SetAI(arg_60_1.pilotAITemplateID or var_60_1.pilot_ai_template_id)
-	arg_60_0:setShipUnitBound(var_60_8)
+	enemyUnit:SetPosition(spawnPos)
+	enemyUnit:SetAI(spawnItem.pilotAITemplateID or monsterTmpData.pilot_ai_template_id)
+	self:setShipUnitBound(enemyUnit)
 
-	if table.contains(TeamType.SubShipType, var_60_1.type) then
-		var_60_8:InitOxygen()
-		arg_60_0:UpdateHostileSubmarine(true)
+	if table.contains(TeamType.SubShipType, monsterTmpData.type) then
+		enemyUnit:InitOxygen()
+		self:UpdateHostileSubmarine(true)
 	end
 
-	BattleDataFunction.AttachWeather(var_60_8, arg_60_0._weahter)
+	BattleDataFunction.AttachWeather(enemyUnit, self._weahter)
 
-	arg_60_0._freeShipList[var_60_0] = var_60_8
-	arg_60_0._unitList[var_60_0] = var_60_8
+	self._freeShipList[monsterUID] = enemyUnit
+	self._unitList[monsterUID] = enemyUnit
 
-	if var_60_8:IsSpectre() then
-		var_60_8:UpdateBlindInvisibleBySpectre()
+	--敌人幽灵不可见，也没有碰撞体
+	if enemyUnit:IsSpectre() then
+		enemyUnit:UpdateBlindInvisibleBySpectre()
 	else
-		arg_60_0._cldSystem:InitShipCld(var_60_8)
+		self._cldSystem:InitShipCld(enemyUnit)
 	end
 
-	local var_60_11 = arg_60_1.sickness or BattleConst.SUMMONING_SICKNESS_DURATION
+	local sicknessDuration = spawnItem.sickness or BattleConst.SUMMONING_SICKNESS_DURATION
 
-	var_60_8:SummonSickness(var_60_11)
-	var_60_8:SetMoveCast(arg_60_1.moveCast == true)
+	enemyUnit:SummonSickness(sicknessDuration)
+	enemyUnit:SetMoveCast(spawnItem.moveCast == true)
 
-	if var_60_8:GetIFF() == BattleConfig.FRIENDLY_CODE then
-		arg_60_0._friendlyShipList[var_60_0] = var_60_8
+	if enemyUnit:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self._friendlyShipList[monsterUID] = enemyUnit
 	else
-		if var_60_8:IsSpectre() then
-			arg_60_0._spectreShipList[var_60_0] = var_60_8
+		if enemyUnit:IsSpectre() then
+			self._spectreShipList[monsterUID] = enemyUnit
 		else
-			arg_60_0._foeShipList[var_60_0] = var_60_8
+			self._foeShipList[monsterUID] = enemyUnit
 		end
 
-		var_60_8:SetWaveIndex(arg_60_2)
+		enemyUnit:SetWaveIndex(waveIndex)
 	end
 
-	if arg_60_1.reinforce then
-		var_60_8:Reinforce()
+	if spawnItem.reinforce then
+		enemyUnit:Reinforce()
 	end
 
-	if arg_60_1.reinforceDelay then
-		var_60_8:SetReinforceCastTime(arg_60_1.reinforceDelay)
+	if spawnItem.reinforceDelay then
+		enemyUnit:SetReinforceCastTime(spawnItem.reinforceDelay)
 	end
 
-	if arg_60_1.team then
-		arg_60_0:GetNPCTeam(arg_60_1.team):AppendUnit(var_60_8)
+	if spawnItem.team then
+		self:GetNPCTeam(spawnItem.team):AppendUnit(enemyUnit)
 	end
 
-	if arg_60_1.phase then
-		ys.Battle.BattleUnitPhaseSwitcher.New(var_60_8):SetTemplateData(arg_60_1.phase)
+	if spawnItem.phase then
+		ys.Battle.BattleUnitPhaseSwitcher.New(enemyUnit):SetTemplateData(spawnItem.phase)
+	end
+	-- 目前，只有BattleSingleChallengeCommand会传入这个参数
+	if extraEnhanceFunc then
+		extraEnhanceFunc(enemyUnit)
 	end
 
-	if arg_60_5 then
-		arg_60_5(var_60_8)
-	end
-
-	local var_60_12 = {
-		type = arg_60_3,
-		unit = var_60_8,
-		bossData = arg_60_1.bossData,
-		extraInfo = arg_60_1.extraInfo
+	local addUnitArgs = {
+		type = enemyType,
+		unit = enemyUnit,
+		bossData = spawnItem.bossData,
+		extraInfo = spawnItem.extraInfo
 	}
 
-	arg_60_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_60_12))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, addUnitArgs))
 
-	local function var_60_13(arg_61_0)
-		for iter_61_0, iter_61_1 in ipairs(arg_61_0) do
-			local var_61_0
-			local var_61_1
-			local var_61_2
+	local function generateBuffList(buffList)
+		for _, buffInfo in ipairs(buffList) do
+			local buffID
+			local buffLevel
 
-			if type(iter_61_1) == "number" then
-				var_61_1 = iter_61_1
-				var_61_2 = 1
+			if type(buffInfo) == "number" then
+				buffID = buffInfo
+				buffLevel = 1
 			else
-				var_61_1 = iter_61_1.ID
-				var_61_2 = iter_61_1.LV or 1
+				buffID = buffInfo.ID
+				buffLevel = buffInfo.LV or 1
 			end
 
-			local var_61_3 = ys.Battle.BattleBuffUnit.New(var_61_1, var_61_2, var_60_8)
+			local buff = ys.Battle.BattleBuffUnit.New(buffID, buffLevel, enemyUnit)
 
-			var_60_8:AddBuff(var_61_3)
+			enemyUnit:AddBuff(buff)
 		end
 	end
 
-	local var_60_14 = var_60_8:GetTemplate().buff_list
-	local var_60_15 = arg_60_1.buffList or {}
-	local var_60_16 = arg_60_0._battleInitData.ExtraBuffList or {}
-	local var_60_17 = arg_60_0._battleInitData.AffixBuffList or {}
+	local tmpBuffList = enemyUnit:GetTemplate().buff_list
+	local spawnBuffList = spawnItem.buffList or {}
+	local extraBuffList = self._battleInitData.ExtraBuffList or {}
+	local affixBuffList = self._battleInitData.AffixBuffList or {}
 
-	var_60_13(var_60_14)
-	var_60_13(var_60_16)
-	var_60_13(var_60_15)
+	generateBuffList(tmpBuffList)
+	generateBuffList(extraBuffList)
+	generateBuffList(spawnBuffList)
 
-	if arg_60_1.affix then
-		var_60_13(var_60_17)
+	if spawnItem.affix then
+		generateBuffList(affixBuffList)
 	end
 
-	local var_60_18 = arg_60_1.summonWaveIndex
+	local summonWaveIndex = spawnItem.summonWaveIndex
 
-	if var_60_18 then
-		arg_60_0._waveSummonList[var_60_18] = arg_60_0._waveSummonList[var_60_18] or {}
-		arg_60_0._waveSummonList[var_60_18][var_60_8] = true
+	if summonWaveIndex then
+		self._waveSummonList[summonWaveIndex] = self._waveSummonList[summonWaveIndex] or {}
+		self._waveSummonList[summonWaveIndex][enemyUnit] = true
 	end
 
-	var_60_8:CheckWeaponInitial()
+	enemyUnit:CheckWeaponInitial()
 
-	if arg_60_0._battleInitData.CMDArgs and var_60_8:GetTemplateID() == arg_60_0._battleInitData.CMDArgs then
-		arg_60_0:InitSpecificEnemyStatistics(var_60_8)
+	if self._battleInitData.CMDArgs and enemyUnit:GetTemplateID() == self._battleInitData.CMDArgs then
+		self:InitSpecificEnemyStatistics(enemyUnit)
 	end
 
-	var_60_8:OverrideDeadFX(arg_60_1.deadFX)
+	enemyUnit:OverrideDeadFX(spawnItem.deadFX)
 
-	if BATTLE_ENEMY_AIMBIAS_RANGE and var_60_8:GetAimBias() then
-		arg_60_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
-			aimBias = var_60_8:GetAimBias()
+	if BATTLE_ENEMY_AIMBIAS_RANGE and enemyUnit:GetAimBias() then
+		self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
+			aimBias = enemyUnit:GetAimBias()
 		}))
 	end
 
-	return var_60_8
+	return enemyUnit
 end
 
 function BattleDataProxy.UpdateHostileSubmarine(arg_62_0, arg_62_1)
@@ -1439,6 +1442,7 @@ function BattleDataProxy.SpawnVanguard(self, vanguardData, IFF)
 	return vanguardUnit
 end
 
+-- TODO: 生成主力单位
 function BattleDataProxy.SpawnMain(self, arg_69_1, arg_69_2)
 	local var_69_0
 	local var_69_1 = self:GetFleetByIFF(arg_69_2)
@@ -1476,35 +1480,36 @@ function BattleDataProxy.SpawnMain(self, arg_69_1, arg_69_2)
 	return var_69_3
 end
 
--- TODO
 -- 生成潜艇单位
-function BattleDataProxy.SpawnSub(arg_70_0, arg_70_1, arg_70_2)
-	local var_70_0
-	local var_70_1 = arg_70_0:GetFleetByIFF(arg_70_2)
-	local var_70_2 = #var_70_1:GetSubList() + 1
-	local var_70_3 = BattleConfig.SUB_UNIT_OFFSET_X + (BattleDataFunction.GetPlayerShipTmpDataFromID(arg_70_1.tmpID).summon_offset or 0)
+-- 被BattleDataProxy.SubmarineStrike调用
+function BattleDataProxy.SpawnSub(self, subUnitData, IFF)
+	local spawnPos
+	local fleet = self:GetFleetByIFF(IFF)
+	local newIndex = #fleet:GetSubList() + 1
+	-- SUB_UNIT_OFFSET_X = -5
+	local spawnOffsetX = BattleConfig.SUB_UNIT_OFFSET_X + (BattleDataFunction.GetPlayerShipTmpDataFromID(subUnitData.tmpID).summon_offset or 0)
 
-	if arg_70_2 == BattleConfig.FRIENDLY_CODE then
-		var_70_0 = Vector3(var_70_3 + arg_70_0._totalLeftBound, 0, BattleConfig.SUB_UNIT_POS_Z[var_70_2])
+	if IFF == BattleConfig.FRIENDLY_CODE then
+		spawnPos = Vector3(spawnOffsetX + self._totalLeftBound, 0, BattleConfig.SUB_UNIT_POS_Z[newIndex])
 	else
-		var_70_0 = Vector3(arg_70_0._totalRightBound - var_70_3, 0, BattleConfig.SUB_UNIT_POS_Z[var_70_2])
+		spawnPos = Vector3(self._totalRightBound - spawnOffsetX, 0, BattleConfig.SUB_UNIT_POS_Z[newIndex])
 	end
 
-	local var_70_4 = arg_70_0:generatePlayerUnit(arg_70_1, arg_70_2, var_70_0, arg_70_0._subCommanderBuff)
+	local subUnit = self:generatePlayerUnit(subUnitData, IFF, spawnPos, self._subCommanderBuff)
 
-	var_70_1:AddSubMarine(var_70_4)
-	arg_70_0:setShipUnitBound(var_70_4)
-	BattleDataFunction.AttachWeather(var_70_4, arg_70_0._weahter)
-	arg_70_0._cldSystem:InitShipCld(var_70_4)
+	fleet:AddSubMarine(subUnit)
+	self:setShipUnitBound(subUnit)
+	BattleDataFunction.AttachWeather(subUnit, self._weahter)
+	self._cldSystem:InitShipCld(subUnit)
 
-	local var_70_5 = {
+	local args = {
 		type = BattleConst.UnitType.PLAYER_UNIT,
-		unit = var_70_4
+		unit = subUnit
 	}
 
-	arg_70_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_70_5))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, args))
 
-	return var_70_4
+	return subUnit
 end
 
 function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
@@ -1871,6 +1876,7 @@ function BattleDataProxy.GetCountDown(arg_94_0)
 end
 
 -- 有点没怎么用过，一般都是走通用的SpawnAircraft
+-- 这是敌方飞机的生成，没有Mother Unit的
 function BattleDataProxy.SpawnAirFighter(arg_95_0, arg_95_1)
 	local var_95_0 = #arg_95_0._airFighterList + 1
 	local var_95_1 = BattleDataFunction.GetFormationTmpDataFromID(arg_95_1.formation).pos_offset
@@ -2583,49 +2589,52 @@ function BattleDataProxy.JamManualCast(arg_150_0, arg_150_1)
 	}))
 end
 
-function BattleDataProxy.SubmarineStrike(arg_151_0, arg_151_1)
-	local var_151_0 = arg_151_0:GetFleetByIFF(arg_151_1)
-	local var_151_1 = var_151_0:GetSubAidVO()
+-- TODO
+-- 潜艇出击逻辑
+-- 被BattleControllerWeaponCommand.TryAutoSub(自律召唤潜艇)或BattleSkillView的_subStriveBtn的callback调用
+function BattleDataProxy.SubmarineStrike(self, IFF)
+	local fleet = self:GetFleetByIFF(IFF)
+	local subAidVO = fleet:GetSubAidVO()
 
-	if var_152_0:GetWeaponBlock() or var_152_1:GetCurrent() < 1 then
+	if fleet:GetWeaponBlock() or subAidVO:GetCurrent() < 1 then
 		return
 	end
 
-	local var_152_2 = var_152_0:GetSubUnitData()
+	local subUnitList = fleet:GetSubUnitData()
 
-	for iter_152_0, iter_152_1 in ipairs(var_152_2) do
-		local var_152_3 = arg_152_0:SpawnSub(iter_152_1, arg_152_1)
+	for _, subUnitData in ipairs(subUnitList) do
+		local subUnit = self:SpawnSub(subUnitData, IFF)
 
-		arg_152_0:InitAidUnitStatistics(var_152_3)
+		self:InitAidUnitStatistics(subUnit)
 	end
 
-	var_152_0:SubWarcry()
+	fleet:SubWarcry()
 
-	local var_152_4 = var_152_0:GetSubList()
+	local subList = fleet:GetSubList()
 
-	for iter_151_2, iter_151_3 in ipairs(var_151_4) do
-		if iter_151_2 == 1 then
-			iter_151_3:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_LEADER)
-		elseif iter_151_2 == 2 then
-			iter_151_3:TriggerBuff(BattleConst.BuffEffectType.ON_UPPER_SUB_CONSORT)
-		elseif iter_151_2 == 3 then
-			iter_151_3:TriggerBuff(BattleConst.BuffEffectType.ON_LOWER_SUB_CONSORT)
+	for index, subUnit in ipairs(subList) do
+		if index == 1 then
+			subUnit:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_LEADER)
+		elseif index == 2 then
+			subUnit:TriggerBuff(BattleConst.BuffEffectType.ON_UPPER_SUB_CONSORT)
+		elseif index == 3 then
+			subUnit:TriggerBuff(BattleConst.BuffEffectType.ON_LOWER_SUB_CONSORT)
 		end
 
-		if iter_151_3:GetAimBias() then
-			arg_151_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
-				aimBias = iter_151_3:GetAimBias()
+		if subUnit:GetAimBias() then
+			self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
+				aimBias = subUnit:GetAimBias()
 			}))
 		end
 	end
 
-	local var_152_5 = var_152_4[1]
+	local subLeader = subList[1]
 
-	var_152_1:Cast()
+	subAidVO:Cast()
 end
 
-function BattleDataProxy.GetWaveFlags(arg_152_0)
-	return arg_152_0._waveFlags
+function BattleDataProxy.GetWaveFlags(self)
+	return self._waveFlags
 end
 
 function BattleDataProxy.AddWaveFlag(arg_153_0, arg_153_1)

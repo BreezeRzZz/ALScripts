@@ -188,6 +188,7 @@ function BattleCharacter.PlayFX(arg_14_0, arg_14_1)
 	pg.EffectMgr.GetInstance():PlayBattleEffect(var_14_0, arg_14_0:GetPosition(), true)
 end
 
+-- TODO
 function BattleCharacter.AddFX(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
 	local var_15_0 = arg_15_0:GetFactory():GetFXPool():GetCharacterFX(arg_15_1, arg_15_0, not arg_15_2, function(arg_16_0)
 		if arg_15_4 then

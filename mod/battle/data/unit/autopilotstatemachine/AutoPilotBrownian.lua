@@ -1,78 +1,83 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotBrownian", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotBrownian = class("AutoPilotBrownian", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotBrownian = var_0_1
-var_0_1.__name = "AutoPilotBrownian"
+ys.Battle.AutoPilotBrownian = AutoPilotBrownian
+AutoPilotBrownian.__name = "AutoPilotBrownian"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotBrownian.Ctor(self, ...)
+	AutoPilotBrownian.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotBrownian.SetParameter(self, paramList, toIndex)
+	AutoPilotBrownian.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._randomPoint = {
-		X1 = arg_2_1.X1,
-		X2 = arg_2_1.X2,
-		Z1 = arg_2_1.Z1,
-		Z2 = arg_2_1.Z2
+	self._randomPoint = {
+		X1 = paramList.X1,
+		X2 = paramList.X2,
+		Z1 = paramList.Z1,
+		Z2 = paramList.Z2
 	}
-	arg_2_0._stop = arg_2_1.stopCount
-	arg_2_0._move = arg_2_1.moveCount
-	arg_2_0._random = arg_2_1.randomCount or 30
+	self._stop = paramList.stopCount
+	self._move = paramList.moveCount
+	self._random = paramList.randomCount or 30
 end
 
-function var_0_1.Active(arg_3_0, arg_3_1)
-	arg_3_0._stopCount = arg_3_0._stop
-	arg_3_0._moveCount = 0
-	arg_3_0._randomCount = 0
-	arg_3_0._referencePoint = var_0_0.Battle.BattleFormulas.RandomPos(arg_3_0._randomPoint)
+function AutoPilotBrownian.Active(self, target)
+	self._stopCount = self._stop
+	self._moveCount = 0
+	self._randomCount = 0
+	-- 这里取的referencePoint为[X1,X2],[Z1,Z2]范围内的一个随机点，注意是整数随机（均匀分布整数），不会生成浮点数坐标
+	self._referencePoint = ys.Battle.BattleFormulas.RandomPos(self._randomPoint)
 
-	var_0_1.super.Active(arg_3_0, arg_3_1)
+	AutoPilotBrownian.super.Active(self, target)
 end
 
-function var_0_1.GetDirection(arg_4_0, arg_4_1)
-	if arg_4_0:IsExpired() then
-		arg_4_0:Finish()
+function AutoPilotBrownian.GetDirection(self, position)
+	if self:IsExpired() then
+		self:Finish()
 
 		return Vector3.zero
 	end
 
-	arg_4_0._moveCount = arg_4_0._moveCount or 0
-
-	if arg_4_0._stop > arg_4_0._stopCount then
-		arg_4_0._stopCount = arg_4_0._stopCount + 1
+	self._moveCount = self._moveCount or 0
+	-- 如果处于停止状态，则增加停止计数器并返回零向量
+	-- 这个计数器的逻辑稍有区别，退出的要求是stopCount >= stop，而不是其他的 >
+	if self._stop > self._stopCount then
+		self._stopCount = self._stopCount + 1
 
 		return Vector3.zero
 	end
 
-	local var_4_0 = arg_4_0._referencePoint - arg_4_1
-
-	if var_4_0.magnitude < 0.4 or arg_4_0._randomCount > arg_4_0._random then
-		if arg_4_0._move < arg_4_0._moveCount then
-			arg_4_0._stopCount = 0
-			arg_4_0._moveCount = 0
+	local direction = self._referencePoint - position
+	-- 当距离目标点小于0.4或者随机帧数达到设定值时，进行下列判断
+	if direction.magnitude < 0.4 or self._randomCount > self._random then
+		-- 如果运动帧数达到了设定的最大值，则进入停止状态，计数器归零
+		if self._move < self._moveCount then
+			self._stopCount = 0
+			self._moveCount = 0
+		-- 否则，说明
 		else
-			arg_4_0._randomCount = 0
-
-			local var_4_1 = var_0_0.Battle.BattleFormulas.RandomPos(arg_4_0._randomPoint)
-			local var_4_2 = 0
-
-			while Vector3.SqrDistance(var_4_1, arg_4_1) < 5 do
-				var_4_1 = var_0_0.Battle.BattleFormulas.RandomPos(arg_4_0._randomPoint)
-				var_4_2 = var_4_2 + 1
+			self._randomCount = 0
+			-- 再次用完全一样的方式生成一个新的随机目标点
+			local newReferencePoint = ys.Battle.BattleFormulas.RandomPos(self._randomPoint)
+			-- 这个attempts没啥用啊
+			local attempts = 0
+			-- 新随机点与当前位置距离不能小于5，否则重新生成，直到满足条件为止
+			while Vector3.SqrDistance(newReferencePoint, position) < 5 do
+				newReferencePoint = ys.Battle.BattleFormulas.RandomPos(self._randomPoint)
+				attempts = attempts + 1
 			end
 
-			arg_4_0._referencePoint = var_4_1
+			self._referencePoint = newReferencePoint
 		end
 
 		return Vector3.zero
 	else
-		arg_4_0._randomCount = arg_4_0._randomCount + 1
-		arg_4_0._moveCount = arg_4_0._moveCount + 1
+		self._randomCount = self._randomCount + 1
+		self._moveCount = self._moveCount + 1
 
-		return var_4_0:SetNormalize()
+		return direction:SetNormalize()
 	end
 end

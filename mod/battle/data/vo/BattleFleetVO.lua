@@ -22,7 +22,7 @@ function BattleFleetVO.Ctor(arg_1_0, arg_1_1)
 
 	arg_1_0:init()
 end
-
+-- TODO，舰队的位置
 function BattleFleetVO.UpdateMotion(arg_2_0)
 	if arg_2_0._motionReferenceUnit then
 		arg_2_0._motionVO:UpdatePos(arg_2_0._motionReferenceUnit)
@@ -269,17 +269,18 @@ function BattleFleetVO.UpdateScoutUnitBound(arg_22_0)
 	end
 end
 
-function BattleFleetVO.CalcSubmarineBaseLine(arg_23_0, arg_23_1)
-	local var_23_0 = (arg_23_0._totalRightBound + arg_23_0._totalLeftBound) * 0.5
+-- note: 计算潜艇攻击和撤退基准线
+function BattleFleetVO.CalcSubmarineBaseLine(self, battleType)
+	local subAttackBaseLine = (self._totalRightBound + self._totalLeftBound) * 0.5
 
-	if arg_23_0._IFF == BattleConfig.FRIENDLY_CODE then
-		if arg_23_1 == SYSTEM_DUEL then
+	if self._IFF == BattleConfig.FRIENDLY_CODE then
+		if battleType == SYSTEM_DUEL then
 			-- block empty
 		else
-			arg_23_0._subAttackBaseLine = var_23_0
-			arg_23_0._subRetreatBaseLine = arg_23_0._leftBound - 10
+			self._subAttackBaseLine = subAttackBaseLine
+			self._subRetreatBaseLine = self._leftBound - 10
 		end
-	elseif arg_23_0._IFF == BattleConfig.FOE_CODE and arg_23_1 == SYSTEM_DUEL then
+	elseif self._IFF == BattleConfig.FOE_CODE and battleType == SYSTEM_DUEL then
 		-- block empty
 	end
 end
@@ -1130,26 +1131,30 @@ function BattleFleetVO.GetSubUnitData(arg_96_0)
 end
 
 -- TODO
-function BattleFleetVO.AddSubMarine(arg_97_0, arg_97_1)
-	arg_97_1:InitOxygen()
+-- 添加潜艇单位函数
+-- 被BattleDataProxy.SpawnSub调用
+-- template数据来自BattleDataFunction.GeneratePlayerSubmarinPhase
+function BattleFleetVO.AddSubMarine(self, subUnit)
+	subUnit:InitOxygen()
 
-	local var_97_0 = arg_97_1:GetTemplate()
-	local var_97_1 = ys.Battle.BattleUnitPhaseSwitcher.New(arg_97_1)
+	local subTemplate = subUnit:GetTemplate()
+	local subPhaseSwitcher = ys.Battle.BattleUnitPhaseSwitcher.New(subUnit)
 
-	local function var_97_2()
-		return arg_97_1:GetRaidDuration()
+	local function raidDuration()
+		return subUnit:GetRaidDuration()
 	end
+	-- 攻击和撤退基准线的计算：BattleFleetVO.CalcSubmarineBaseLine
+	local subAttackBaseLine = self._fixedSubRefLine or self._subAttackBaseLine
+	-- raidDist来自舰船属性，又来自模板数据的raid_distance
+	-- 因为在GeneratePlayerSubmarinPhase中的处理方式，实际上如果是负数raidDist则为基准线更向前，正数则更向后
+	subPhaseSwitcher:SetTemplateData(BattleDataFunction.GeneratePlayerSubmarinPhase(subAttackBaseLine, self._subRetreatBaseLine, subUnit:GetAttrByName("raidDist"), raidDuration, subUnit:GetAttrByName("oxyAtkDuration")))
 
-	local var_97_3 = arg_97_0._fixedSubRefLine or arg_97_0._subAttackBaseLine
+	self._unitList[#self._unitList + 1] = subUnit
+	self._subList[#self._subList + 1] = subUnit
 
-	var_97_1:SetTemplateData(BattleDataFunction.GeneratePlayerSubmarinPhase(var_97_3, arg_97_0._subRetreatBaseLine, arg_97_1:GetAttrByName("raidDist"), var_97_2, arg_97_1:GetAttrByName("oxyAtkDuration")))
-
-	arg_97_0._unitList[#arg_97_0._unitList + 1] = arg_97_1
-	arg_97_0._subList[#arg_97_0._subList + 1] = arg_97_1
-
-	arg_97_1:SetFleetVO(arg_97_0)
-	arg_97_1:RegisterEventListener(arg_97_0, BattleUnitEvent.UPDATE_HP, arg_97_0.onUnitUpdateHP)
-	arg_97_1:RegisterEventListener(arg_97_0, BattleUnitEvent.UPDATE_CLOAK_STATE, arg_97_0.onUnitCloakUpdate)
+	subUnit:SetFleetVO(self)
+	subUnit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUnitUpdateHP)
+	subUnit:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE, self.onUnitCloakUpdate)
 end
 
 function BattleFleetVO.AddManualSubmarine(arg_99_0, arg_99_1)

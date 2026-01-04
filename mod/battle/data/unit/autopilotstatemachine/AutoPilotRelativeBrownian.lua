@@ -1,87 +1,87 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotRelativeBrownian", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotRelativeBrownian = class("AutoPilotRelativeBrownian", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotRelativeBrownian = var_0_1
-var_0_1.__name = "AutoPilotRelativeBrownian"
+ys.Battle.AutoPilotRelativeBrownian = AutoPilotRelativeBrownian
+AutoPilotRelativeBrownian.__name = "AutoPilotRelativeBrownian"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotRelativeBrownian.Ctor(self, ...)
+	AutoPilotRelativeBrownian.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotRelativeBrownian.SetParameter(self, paramList, toIndex)
+	AutoPilotRelativeBrownian.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._randomPoint = {
-		X1 = arg_2_1.X1,
-		X2 = arg_2_1.X2,
-		Z1 = arg_2_1.Z1,
-		Z2 = arg_2_1.Z2
+	self._randomPoint = {
+		X1 = paramList.X1,
+		X2 = paramList.X2,
+		Z1 = paramList.Z1,
+		Z2 = paramList.Z2
 	}
-	arg_2_0._stop = arg_2_1.stopCount
-	arg_2_0._move = arg_2_1.moveCount
-	arg_2_0._random = arg_2_1.randomCount or 30
+	self._stop = paramList.stopCount
+	self._move = paramList.moveCount
+	self._random = paramList.randomCount or 30
 end
 
-function var_0_1.Active(arg_3_0, arg_3_1)
-	arg_3_0._stopCount = arg_3_0._stop
-	arg_3_0._moveCount = 0
-	arg_3_0._randomCount = 0
+function AutoPilotRelativeBrownian.Active(self, target)
+	self._stopCount = self._stop
+	self._moveCount = 0
+	self._randomCount = 0
 
-	local var_3_0 = Clone(arg_3_1:GetPosition())
-
-	arg_3_0._relativePoint = {
-		X1 = arg_3_0._randomPoint.X1 + var_3_0.x,
-		X2 = arg_3_0._randomPoint.X2 + var_3_0.x,
-		Z1 = arg_3_0._randomPoint.Z1 + var_3_0.z,
-		Z2 = arg_3_0._randomPoint.Z2 + var_3_0.z
+	local position = Clone(target:GetPosition())
+	-- 和Brownian的区别就是随机点的选取是基于当前位置的偏移量，其余逻辑相同
+	self._relativePoint = {
+		X1 = self._randomPoint.X1 + position.x,
+		X2 = self._randomPoint.X2 + position.x,
+		Z1 = self._randomPoint.Z1 + position.z,
+		Z2 = self._randomPoint.Z2 + position.z
 	}
-	arg_3_0._referencePoint = var_0_0.Battle.BattleFormulas.RandomPos(arg_3_0._relativePoint)
+	self._referencePoint = ys.Battle.BattleFormulas.RandomPos(self._relativePoint)
 
-	var_0_1.super.Active(arg_3_0, arg_3_1)
+	AutoPilotRelativeBrownian.super.Active(self, target)
 end
 
-function var_0_1.GetDirection(arg_4_0, arg_4_1)
-	if arg_4_0:IsExpired() then
-		arg_4_0:Finish()
+function AutoPilotRelativeBrownian.GetDirection(self, position)
+	if self:IsExpired() then
+		self:Finish()
 
 		return Vector3.zero
 	end
 
-	arg_4_0._moveCount = arg_4_0._moveCount or 0
+	self._moveCount = self._moveCount or 0
 
-	if arg_4_0._stop > arg_4_0._stopCount then
-		arg_4_0._stopCount = arg_4_0._stopCount + 1
+	if self._stop > self._stopCount then
+		self._stopCount = self._stopCount + 1
 
 		return Vector3.zero
 	end
 
-	local var_4_0 = arg_4_0._referencePoint - arg_4_1
+	local direction = self._referencePoint - position
 
-	if var_4_0.magnitude < 0.4 or arg_4_0._randomCount > arg_4_0._random then
-		if arg_4_0._move < arg_4_0._moveCount then
-			arg_4_0._stopCount = 0
-			arg_4_0._moveCount = 0
+	if direction.magnitude < 0.4 or self._randomCount > self._random then
+		if self._move < self._moveCount then
+			self._stopCount = 0
+			self._moveCount = 0
 		else
-			arg_4_0._randomCount = 0
+			self._randomCount = 0
 
-			local var_4_1 = var_0_0.Battle.BattleFormulas.RandomPos(arg_4_0._relativePoint)
-			local var_4_2 = 0
+			local newReferencePoint = ys.Battle.BattleFormulas.RandomPos(self._relativePoint)
+			local attempts = 0
 
-			while Vector3.SqrDistance(var_4_1, arg_4_1) < 5 do
-				var_4_1 = var_0_0.Battle.BattleFormulas.RandomPos(arg_4_0._relativePoint)
-				var_4_2 = var_4_2 + 1
+			while Vector3.SqrDistance(newReferencePoint, position) < 5 do
+				newReferencePoint = ys.Battle.BattleFormulas.RandomPos(self._relativePoint)
+				attempts = attempts + 1
 			end
 
-			arg_4_0._referencePoint = var_4_1
+			self._referencePoint = newReferencePoint
 		end
 
 		return Vector3.zero
 	else
-		arg_4_0._randomCount = arg_4_0._randomCount + 1
-		arg_4_0._moveCount = arg_4_0._moveCount + 1
+		self._randomCount = self._randomCount + 1
+		self._moveCount = self._moveCount + 1
 
-		return var_4_0.normalized
+		return direction.normalized
 	end
 end

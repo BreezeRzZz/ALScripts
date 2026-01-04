@@ -1937,25 +1937,27 @@ function Ship.setIntimacy(arg_123_0, arg_123_1)
 		arg_123_1 = 10000
 	end
 
-	arg_124_0.intimacy = arg_124_1
+	self.intimacy = level
 
-	if not arg_124_0:isActivityNpc() then
-		getProxy(CollectionProxy).shipGroups[arg_124_0.groupId]:updateMaxIntimacy(arg_124_0:getIntimacy())
+	if not self:isActivityNpc() then
+		getProxy(CollectionProxy).shipGroups[self.groupId]:updateMaxIntimacy(self:getIntimacy())
 	end
 end
 
-function Ship.getLevelExpConfig(arg_124_0, arg_124_1)
-	if arg_124_0:getConfig("rarity") == ShipRarity.SSR then
-		local var_124_0 = Clone(getConfigFromLevel1(ship_level, arg_124_1 or arg_124_0.level))
+-- 等级相关
+function Ship.getLevelExpConfig(self, level)
+	if self:getConfig("rarity") == ShipRarity.SSR then
+		-- ship_level这个表拿信息
+		local levelConfig = Clone(getConfigFromLevel1(ship_level, level or self.level))
 
-		var_125_0.exp = var_125_0.exp_ur
-		var_125_0.exp_start = var_125_0.exp_ur_start
-		var_125_0.exp_interval = var_125_0.exp_ur_interval
-		var_125_0.exp_end = var_125_0.exp_ur_end
+		levelConfig.exp = levelConfig.exp_ur
+		levelConfig.exp_start = levelConfig.exp_ur_start
+		levelConfig.exp_interval = levelConfig.exp_ur_interval
+		levelConfig.exp_end = levelConfig.exp_ur_end
 
-		return var_125_0
+		return levelConfig
 	else
-		return getConfigFromLevel1(ship_level, arg_124_1 or arg_124_0.level)
+		return getConfigFromLevel1(ship_level, level or self.level)
 	end
 end
 
@@ -2135,19 +2137,26 @@ function Ship.getTotalExp(arg_143_0)
 	return arg_143_0:getLevelExpConfig().exp_start + arg_143_0.exp
 end
 
-function Ship.getStartBattleExpend(arg_144_0)
-	if table.contains(TeamType.SubShipType, arg_144_0:getShipType()) then
+-- 计算入场油耗("门票")
+function Ship.getStartBattleExpend(self)
+	-- 潜艇/潜母/风帆S不耗油
+	if table.contains(TeamType.SubShipType, self:getShipType()) then
 		return 0
 	else
-		return pg.ship_data_template[arg_145_0.configId].oil_at_start
+		-- 返回oil_at_start字段
+		-- 从模板的数据来看，只有0和1两种值，为0的也本身就是潜艇
+		return pg.ship_data_template[self.configId].oil_at_start
 	end
 end
 
-function Ship.getEndBattleExpend(arg_145_0)
-	local var_145_0 = pg.ship_data_template[arg_145_0.configId]
-	local var_145_1 = arg_145_0:getLevelExpConfig()
-
-	return (math.floor(var_146_0.oil_at_end * var_146_1.fight_oil_ratio / 10000))
+-- 计算战斗结算油耗
+function Ship.getEndBattleExpend(self)
+	local tmpData = pg.ship_data_template[self.configId]
+	local levelExpConfig = self:getLevelExpConfig()
+	-- fight_oil_ratio字段在ship_level表里，为方便直接总结公式为：
+	-- 1: 5050, 2: 5100, ..., 98: 9900, 99: 9950, 再往后都是9950
+	-- 因此公式为: fight_oil_ratio = 5000 + min(level, 99) * 50
+	return (math.floor(tmpData.oil_at_end * levelExpConfig.fight_oil_ratio / 10000))
 end
 
 function Ship.getBattleTotalExpend(arg_146_0)

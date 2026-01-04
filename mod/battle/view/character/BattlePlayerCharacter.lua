@@ -5,17 +5,17 @@ local var_0_1 = var_0_0.Battle.BattleUnitEvent
 local var_0_2 = var_0_0.Battle.BattleConfig
 local var_0_3 = var_0_0.Battle.BattleConst
 local var_0_4 = var_0_0.Battle.BattleCardPuzzleEvent
-local var_0_5 = class("BattlePlayerCharacter", var_0_0.Battle.BattleCharacter)
+local BattlePlayerCharacter = class("BattlePlayerCharacter", var_0_0.Battle.BattleCharacter)
 
-var_0_0.Battle.BattlePlayerCharacter = var_0_5
-var_0_5.__name = "BattlePlayerCharacter"
+var_0_0.Battle.BattlePlayerCharacter = BattlePlayerCharacter
+BattlePlayerCharacter.__name = "BattlePlayerCharacter"
 
-function var_0_5.Ctor(arg_1_0)
-	var_0_5.super.Ctor(arg_1_0)
+function BattlePlayerCharacter.Ctor(arg_1_0)
+	BattlePlayerCharacter.super.Ctor(arg_1_0)
 end
 
-function var_0_5.SetUnitData(arg_2_0, arg_2_1)
-	var_0_5.super.SetUnitData(arg_2_0, arg_2_1)
+function BattlePlayerCharacter.SetUnitData(arg_2_0, arg_2_1)
+	BattlePlayerCharacter.super.SetUnitData(arg_2_0, arg_2_1)
 
 	arg_2_0._chargeWeaponList = {}
 
@@ -42,8 +42,8 @@ function var_0_5.SetUnitData(arg_2_0, arg_2_1)
 	arg_2_0._weaponSectorList = {}
 end
 
-function var_0_5.AddUnitEvent(arg_3_0)
-	var_0_5.super.AddUnitEvent(arg_3_0)
+function BattlePlayerCharacter.AddUnitEvent(arg_3_0)
+	BattlePlayerCharacter.super.AddUnitEvent(arg_3_0)
 	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.WILL_DIE, arg_3_0.onWillDie)
 	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.INIT_COOL_DOWN, arg_3_0.onInitWeaponCD)
 	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.WEAPON_SECTOR, arg_3_0.onActiveWeaponSector)
@@ -54,7 +54,7 @@ function var_0_5.AddUnitEvent(arg_3_0)
 	end
 end
 
-function var_0_5.RemoveUnitEvent(arg_4_0)
+function BattlePlayerCharacter.RemoveUnitEvent(arg_4_0)
 	if arg_4_0._unitData:GetFleetRangeAAWeapon() then
 		arg_4_0:UnregisterWeaponListener(arg_4_0._unitData:GetFleetRangeAAWeapon())
 	end
@@ -80,11 +80,11 @@ function var_0_5.RemoveUnitEvent(arg_4_0)
 	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.WILL_DIE)
 	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.INIT_COOL_DOWN)
 	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.CREATE_POINT_AIR_STRIKE)
-	var_0_5.super.RemoveUnitEvent(arg_4_0)
+	BattlePlayerCharacter.super.RemoveUnitEvent(arg_4_0)
 end
 
-function var_0_5.Update(arg_5_0)
-	var_0_5.super.Update(arg_5_0)
+function BattlePlayerCharacter.Update(arg_5_0)
+	BattlePlayerCharacter.super.Update(arg_5_0)
 	arg_5_0:UpdatePosition()
 	arg_5_0:UpdateMatrix()
 
@@ -106,8 +106,8 @@ function var_0_5.Update(arg_5_0)
 	end
 end
 
-function var_0_5.UpdateArrowBarPosition(arg_6_0)
-	var_0_5.super.UpdateArrowBarPosition(arg_6_0)
+function BattlePlayerCharacter.UpdateArrowBarPosition(arg_6_0)
+	BattlePlayerCharacter.super.UpdateArrowBarPosition(arg_6_0)
 
 	local var_6_0 = arg_6_0._unitData:GetFleetVO():GetLeftBoundDistance()
 
@@ -134,26 +134,26 @@ function var_0_5.UpdateArrowBarPosition(arg_6_0)
 	end
 end
 
-function var_0_5.UpdateHpBar(arg_7_0)
-	var_0_5.super.UpdateHpBar(arg_7_0)
+function BattlePlayerCharacter.UpdateHpBar(arg_7_0)
+	BattlePlayerCharacter.super.UpdateHpBar(arg_7_0)
 
 	if arg_7_0._unitData.__name == var_0_0.Battle.BattleCardPuzzlePlayerUnit.__name then
 		arg_7_0:UpdateVectorBar()
 	end
 end
 
-function var_0_5.UpdateOxygenBar(arg_8_0)
+function BattlePlayerCharacter.UpdateOxygenBar(arg_8_0)
 	arg_8_0._oxygenSlider.value = arg_8_0._unitData:GetOxygenProgress()
 end
 
-function var_0_5.UpdateVectorBar(arg_9_0)
+function BattlePlayerCharacter.UpdateVectorBar(arg_9_0)
 	local var_9_0 = arg_9_0._unitData:GetHPRate()
 
 	arg_9_0._vectorProgress.fillAmount = var_9_0
 end
 
-function var_0_5.UpdateUIComponentPosition(arg_10_0)
-	var_0_5.super.UpdateUIComponentPosition(arg_10_0)
+function BattlePlayerCharacter.UpdateUIComponentPosition(arg_10_0)
+	BattlePlayerCharacter.super.UpdateUIComponentPosition(arg_10_0)
 
 	local var_10_0 = arg_10_0._unitData:GetBornPosition()
 
@@ -168,8 +168,8 @@ function var_0_5.UpdateUIComponentPosition(arg_10_0)
 	end
 end
 
-function var_0_5.AddArrowBar(arg_11_0, arg_11_1)
-	var_0_5.super.AddArrowBar(arg_11_0, arg_11_1)
+function BattlePlayerCharacter.AddArrowBar(arg_11_0, arg_11_1)
+	BattlePlayerCharacter.super.AddArrowBar(arg_11_0, arg_11_1)
 
 	arg_11_0._arrowCG = GetOrAddComponent(arg_11_0._arrowBarTf, typeof(CanvasGroup))
 	arg_11_0._vectorProgress = arg_11_0._arrowBarTf:Find("HPBar/HPProgress"):GetComponent(typeof(Image))
@@ -185,28 +185,28 @@ function var_0_5.AddArrowBar(arg_11_0, arg_11_1)
 	arg_11_0:UpdateVectorBar()
 end
 
-function var_0_5.GetReferenceVector(arg_12_0, arg_12_1)
+function BattlePlayerCharacter.GetReferenceVector(arg_12_0, arg_12_1)
 	if arg_12_0._inViewArea then
-		return var_0_5.super.GetReferenceVector(arg_12_0, arg_12_1)
+		return BattlePlayerCharacter.super.GetReferenceVector(arg_12_0, arg_12_1)
 	else
 		return arg_12_0._arrowVector
 	end
 end
 
-function var_0_5.DisableWeaponTrack(arg_13_0)
+function BattlePlayerCharacter.DisableWeaponTrack(arg_13_0)
 	if arg_13_0._torpedoTrack then
 		arg_13_0._torpedoTrack:SetActive(false)
 	end
 end
 
-function var_0_5.SonarAcitve(arg_14_0, arg_14_1)
+function BattlePlayerCharacter.SonarAcitve(arg_14_0, arg_14_1)
 	if var_0_0.Battle.BattleAttr.HasSonar(arg_14_0._unitData) then
 		arg_14_0._sonar:GetComponent(typeof(Animator)).enabled = arg_14_1
 	end
 end
 
-function var_0_5.UpdateDiveInvisible(arg_15_0)
-	var_0_5.super.UpdateDiveInvisible(arg_15_0)
+function BattlePlayerCharacter.UpdateDiveInvisible(arg_15_0)
+	BattlePlayerCharacter.super.UpdateDiveInvisible(arg_15_0)
 
 	local var_15_0 = arg_15_0._unitData:GetDiveInvisible()
 
@@ -217,7 +217,7 @@ function var_0_5.UpdateDiveInvisible(arg_15_0)
 	SetActive(arg_15_0._oxygenBar, var_15_1)
 end
 
-function var_0_5.Dispose(arg_16_0)
+function BattlePlayerCharacter.Dispose(arg_16_0)
 	arg_16_0._torpedoIcons = nil
 	arg_16_0._renderer = nil
 	arg_16_0._sonar = nil
@@ -233,35 +233,36 @@ function var_0_5.Dispose(arg_16_0)
 
 	arg_16_0._weaponSectorList = nil
 
-	var_0_5.super.Dispose(arg_16_0)
+	BattlePlayerCharacter.super.Dispose(arg_16_0)
 end
 
-function var_0_5.GetModleID(arg_17_0)
+function BattlePlayerCharacter.GetModleID(arg_17_0)
 	return arg_17_0._unitData:GetTemplate().prefab
 end
 
-function var_0_5.OnUpdateHP(arg_18_0, arg_18_1)
-	var_0_5.super.OnUpdateHP(arg_18_0, arg_18_1)
+function BattlePlayerCharacter.OnUpdateHP(arg_18_0, arg_18_1)
+	BattlePlayerCharacter.super.OnUpdateHP(arg_18_0, arg_18_1)
 	arg_18_0:UpdateVectorBar()
 end
 
-function var_0_5.onInitWeaponCD(arg_19_0, arg_19_1)
+function BattlePlayerCharacter.onInitWeaponCD(arg_19_0, arg_19_1)
 	arg_19_0:onTorepedoReady()
 end
 
-function var_0_5.onCastBlink(arg_20_0, arg_20_1)
+-- TODO
+function BattlePlayerCharacter.onCastBlink(arg_20_0, arg_20_1)
 	local var_20_0 = arg_20_1.Data.callbackFunc
 	local var_20_1 = arg_20_1.Data.timeScale
 
 	arg_20_0:AddFX("jineng", false, var_20_1, var_20_0)
 end
 
-function var_0_5.onTorpedoWeaponFire(arg_21_0, arg_21_1)
+function BattlePlayerCharacter.onTorpedoWeaponFire(arg_21_0, arg_21_1)
 	arg_21_0._torpedoTrack:SetActive(false)
 	arg_21_0:onTorepedoReady()
 end
 
-function var_0_5.onTorpedoPrepar(arg_22_0, arg_22_1)
+function BattlePlayerCharacter.onTorpedoPrepar(arg_22_0, arg_22_1)
 	arg_22_0._torpedoTrack:SetActive(true)
 
 	local var_22_0 = var_0_0.Battle.BattleDataFunction.GetBulletTmpDataFromID(arg_22_1.Dispatcher:GetTemplateData().bullet_ID[1])
@@ -269,11 +270,11 @@ function var_0_5.onTorpedoPrepar(arg_22_0, arg_22_1)
 	arg_22_0._torpedoTrack:SetScale(Vector3(var_22_0.range / var_0_2.SPINE_SCALE, var_22_0.cld_box[3] / var_0_2.SPINE_SCALE, 1))
 end
 
-function var_0_5.onTorpedoCancel(arg_23_0, arg_23_1)
+function BattlePlayerCharacter.onTorpedoCancel(arg_23_0, arg_23_1)
 	arg_23_0._torpedoTrack:SetActive(false)
 end
 
-function var_0_5.onTorepedoReady(arg_24_0, arg_24_1)
+function BattlePlayerCharacter.onTorepedoReady(arg_24_0, arg_24_1)
 	local var_24_0 = 0
 
 	for iter_24_0, iter_24_1 in ipairs(arg_24_0._torpedoWeaponList) do
@@ -287,11 +288,11 @@ function var_0_5.onTorepedoReady(arg_24_0, arg_24_1)
 	end
 end
 
-function var_0_5.onAAMissileWeaponFire(arg_25_0, arg_25_1)
+function BattlePlayerCharacter.onAAMissileWeaponFire(arg_25_0, arg_25_1)
 	arg_25_0:onAAMissileReady()
 end
 
-function var_0_5.onWillDie(arg_26_0, arg_26_1)
+function BattlePlayerCharacter.onWillDie(arg_26_0, arg_26_1)
 	for iter_26_0, iter_26_1 in ipairs(arg_26_0._smokeList) do
 		if iter_26_1.active == true then
 			iter_26_1.active = false
@@ -309,8 +310,8 @@ function var_0_5.onWillDie(arg_26_0, arg_26_1)
 	end
 end
 
-function var_0_5.AddHPBar(arg_27_0, arg_27_1)
-	var_0_5.super.AddHPBar(arg_27_0, arg_27_1)
+function BattlePlayerCharacter.AddHPBar(arg_27_0, arg_27_1)
+	BattlePlayerCharacter.super.AddHPBar(arg_27_0, arg_27_1)
 
 	arg_27_0._torpedoIcons = arg_27_0._HPBarTf:Find("torpedoIcons")
 
@@ -334,24 +335,24 @@ function var_0_5.AddHPBar(arg_27_0, arg_27_1)
 	arg_27_0:onTorepedoReady()
 end
 
-function var_0_5.AddModel(arg_28_0, arg_28_1)
-	var_0_5.super.AddModel(arg_28_0, arg_28_1)
+function BattlePlayerCharacter.AddModel(arg_28_0, arg_28_1)
+	BattlePlayerCharacter.super.AddModel(arg_28_0, arg_28_1)
 
 	arg_28_0._renderer = arg_28_0:GetTf():GetComponent(typeof(Renderer))
 end
 
-function var_0_5.AddChargeArea(arg_29_0, arg_29_1)
+function BattlePlayerCharacter.AddChargeArea(arg_29_0, arg_29_1)
 	arg_29_0._chargeWeaponArea = var_0_0.Battle.BattleChargeArea.New(arg_29_1)
 end
 
-function var_0_5.AddTorpedoTrack(arg_30_0, arg_30_1)
+function BattlePlayerCharacter.AddTorpedoTrack(arg_30_0, arg_30_1)
 	arg_30_0._torpedoTrack = var_0_0.Battle.BossSkillAlert.New(arg_30_1)
 
 	arg_30_0._torpedoTrack:SetActive(false)
 end
 
-function var_0_5.AddCloakBar(arg_31_0, arg_31_1)
-	var_0_5.super.AddCloakBar(arg_31_0, arg_31_1)
+function BattlePlayerCharacter.AddCloakBar(arg_31_0, arg_31_1)
+	BattlePlayerCharacter.super.AddCloakBar(arg_31_0, arg_31_1)
 
 	local var_31_0 = arg_31_0._HPBarTf:Find("cloakBar")
 
@@ -362,31 +363,31 @@ function var_0_5.AddCloakBar(arg_31_0, arg_31_1)
 	arg_31_0._hpCloakBar:SetActive(true)
 end
 
-function var_0_5.onUpdateCloakConfig(arg_32_0, arg_32_1)
-	var_0_5.super.onUpdateCloakConfig(arg_32_0, arg_32_1)
+function BattlePlayerCharacter.onUpdateCloakConfig(arg_32_0, arg_32_1)
+	BattlePlayerCharacter.super.onUpdateCloakConfig(arg_32_0, arg_32_1)
 	arg_32_0._hpCloakBar:UpdateCloakConfig()
 end
 
-function var_0_5.onUpdateCloakLock(arg_33_0, arg_33_1)
-	var_0_5.super.onUpdateCloakLock(arg_33_0, arg_33_1)
+function BattlePlayerCharacter.onUpdateCloakLock(arg_33_0, arg_33_1)
+	BattlePlayerCharacter.super.onUpdateCloakLock(arg_33_0, arg_33_1)
 	arg_33_0._hpCloakBar:UpdateCloakLock()
 end
 
-function var_0_5.InitChargeWeapon(arg_34_0, arg_34_1)
+function BattlePlayerCharacter.InitChargeWeapon(arg_34_0, arg_34_1)
 	arg_34_0._chargeWeaponList[#arg_34_0._chargeWeaponList + 1] = arg_34_1
 
 	arg_34_0:RegisterWeaponListener(arg_34_1)
 	arg_34_1:RegisterEventListener(arg_34_0, var_0_1.CHARGE_WEAPON_FINISH, arg_34_0.onCastBlink)
 end
 
-function var_0_5.InitAirAssit(arg_35_0, arg_35_1)
+function BattlePlayerCharacter.InitAirAssit(arg_35_0, arg_35_1)
 	arg_35_0._airAssistList[#arg_35_0._airAssistList + 1] = arg_35_1
 
 	arg_35_1:RegisterEventListener(arg_35_0, var_0_1.CHARGE_WEAPON_FINISH, arg_35_0.onCastBlink)
 	arg_35_1:RegisterEventListener(arg_35_0, var_0_1.FIRE, arg_35_0.onCannonFire)
 end
 
-function var_0_5.InitTorpedoWeapon(arg_36_0, arg_36_1)
+function BattlePlayerCharacter.InitTorpedoWeapon(arg_36_0, arg_36_1)
 	arg_36_0._torpedoWeaponList[#arg_36_0._torpedoWeaponList + 1] = arg_36_1
 
 	arg_36_0:RegisterWeaponListener(arg_36_1)
@@ -396,7 +397,7 @@ function var_0_5.InitTorpedoWeapon(arg_36_0, arg_36_1)
 	arg_36_1:RegisterEventListener(arg_36_0, var_0_1.TORPEDO_WEAPON_READY, arg_36_0.onTorepedoReady)
 end
 
-function var_0_5.onActiveWeaponSector(arg_37_0, arg_37_1)
+function BattlePlayerCharacter.onActiveWeaponSector(arg_37_0, arg_37_1)
 	local var_37_0 = arg_37_1.Data
 	local var_37_1 = var_37_0.isActive
 	local var_37_2 = var_37_0.weapon
@@ -415,20 +416,20 @@ function var_0_5.onActiveWeaponSector(arg_37_0, arg_37_1)
 	end
 end
 
-function var_0_5.onCreatePointAirStrike(arg_38_0, arg_38_1)
+function BattlePlayerCharacter.onCreatePointAirStrike(arg_38_0, arg_38_1)
 	local var_38_0 = arg_38_1.Data.weapon
 
 	arg_38_0:InitChargeWeapon(var_38_0)
 end
 
-function var_0_5.OnAnimatorTrigger(arg_39_0)
+function BattlePlayerCharacter.OnAnimatorTrigger(arg_39_0)
 	arg_39_0._unitData:CharacterActionTriggerCallback()
 end
 
-function var_0_5.OnAnimatorEnd(arg_40_0)
+function BattlePlayerCharacter.OnAnimatorEnd(arg_40_0)
 	arg_40_0._unitData:CharacterActionEndCallback()
 end
 
-function var_0_5.OnAnimatorStart(arg_41_0)
+function BattlePlayerCharacter.OnAnimatorStart(arg_41_0)
 	arg_41_0._unitData:CharacterActionStartCallback()
 end

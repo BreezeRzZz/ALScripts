@@ -1,112 +1,123 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBulletEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleBombBulletUnit = class("BattleBombBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleBombBulletUnit.__name = "BattleBombBulletUnit"
+ys.Battle.BattleBombBulletUnit = class("BattleBombBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleBombBulletUnit.__name = "BattleBombBulletUnit"
 
-local var_0_3 = var_0_0.Battle.BattleBombBulletUnit
+local BattleBombBulletUnit = ys.Battle.BattleBombBulletUnit
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattleBombBulletUnit.Ctor(self, UID, IFF)
+	BattleBombBulletUnit.super.Ctor(self, UID, IFF)
 
-	arg_1_0._randomOffset = Vector3.zero
+	self._randomOffset = Vector3.zero
 end
 
-function var_0_3.InitSpeed(arg_2_0)
-	if arg_2_0._barrageLowPriority then
-		arg_2_0._yAngle = arg_2_0._baseAngle + arg_2_0._barrageAngle
+function BattleBombBulletUnit.InitSpeed(self)
+	if self._barrageLowPriority then
+		-- 基础角度(+弹幕角度)
+		self._yAngle = self._baseAngle + self._barrageAngle
 	else
-		arg_2_0._yAngle = math.rad2Deg * math.atan2(arg_2_0._explodePos.z - arg_2_0._spawnPos.z, arg_2_0._explodePos.x - arg_2_0._spawnPos.x)
+		-- 指向目标点的角度
+		self._yAngle = math.rad2Deg * math.atan2(self._explodePos.z - self._spawnPos.z, self._explodePos.x - self._spawnPos.x)
 	end
 
-	arg_2_0:calcSpeed()
+	self:calcSpeed()
 
-	arg_2_0.updateSpeed = var_0_3.doNothing
+	self.updateSpeed = BattleBombBulletUnit.doNothing
 end
 
-function var_0_3.Update(arg_3_0)
-	if arg_3_0._exist then
-		var_0_3.super.Update(arg_3_0)
+function BattleBombBulletUnit.Update(self)
+	if self._exist then
+		BattleBombBulletUnit.super.Update(self)
 	end
 end
 
-function var_0_3.GetPierceCount(arg_4_0)
+function BattleBombBulletUnit.GetPierceCount(self)
 	return 1
 end
 
-function var_0_3.IsOutRange(arg_5_0, arg_5_1)
-	if not arg_5_0._exist then
+function BattleBombBulletUnit.IsOutRange(self, timeStamp)
+	if not self._exist then
 		return false
 	end
-
-	if arg_5_0._explodeTime and arg_5_1 >= arg_5_0._explodeTime then
+	-- 如果有explodeTime，在时间到达时引爆
+	if self._explodeTime and timeStamp >= self._explodeTime then
 		return true
 	end
-
-	if arg_5_0._reachDestFlag and not arg_5_0._explodeTime then
+	-- 如果没有，到达目标点时引爆
+	-- reachDestFlag的设置，在BattleBulletUnit.Update中
+	if self._reachDestFlag and not self._explodeTime then
 		return true
 	else
 		return false
 	end
 end
 
-function var_0_3.OutRange(arg_6_0)
-	local var_6_0 = {
+function BattleBombBulletUnit.OutRange(self)
+	local explodeArgs = {
 		UID = unitUniqueID
 	}
 
-	arg_6_0:DispatchEvent(var_0_0.Event.New(var_0_1.EXPLODE, var_6_0))
-	var_0_3.super.OutRange(arg_6_0)
+	self:DispatchEvent(ys.Event.New(BattleBulletEvent.EXPLODE, explodeArgs))
+	BattleBombBulletUnit.super.OutRange(self)
 end
 
-function var_0_3.SetSpawnPosition(self, pos)
-	var_0_3.super.SetSpawnPosition(self, pos)
-
+-- IMPORTANT: 炸弹类子弹的出生点设置
+function BattleBombBulletUnit.SetSpawnPosition(self, pos)
+	BattleBombBulletUnit.super.SetSpawnPosition(self, pos)
+	-- 如果Bullet的extra_param中有barragePriority = true
 	if self._barragePriority then
+		-- 加上固定偏移部分
 		self._explodePos = self._explodePos + Vector3(self._offsetX, 0, self._offsetZ)
 
-		local var_7_0 = Quaternion.Euler(0, self._barrageAngle, 0)
-		local var_7_1 = pg.Tool.FilterY(self._spawnPos)
+		-- 下面实际是spawnPos绕y轴旋转barrageAngle度后的结果，作为最终的explodePos
+		local barrageAngle = Quaternion.Euler(0, self._barrageAngle, 0)
+		local spawnPos = pg.Tool.FilterY(self._spawnPos)
 
-		self._explodePos = var_7_0 * (self._explodePos - var_7_1) + var_7_1
+		self._explodePos = barrageAngle * (self._explodePos - spawnPos) + spawnPos
 	end
-
+	-- 有fixToRange的话，限制explodePos到最大射程范围内(与原爆炸点、出生点在同一条直线上)
 	if self._fixToRange and Vector3.BattleDistance(self._explodePos, self._spawnPos) > self._range then
 		local direction = pg.Tool.FilterY(self._explodePos - self._spawnPos)
 
 		self._explodePos = Vector3.Normalize(direction) * self._range + self._spawnPos
 	end
-
+	-- 下面是根据水平速度，反推垂直速度
+	-- 让子弹看起来是抛物线运动的
 	if self._convertedVelocity ~= 0 then
-		local var_7_3 = pg.Tool.FilterY(self._spawnPos)
-		local var_7_4 = Vector3.Distance(var_7_3, self._explodePos) / self._convertedVelocity
-		local var_7_5 = self._explodePos.y - self._spawnPos.y
-
-		self._verticalSpeed = self:GetTemplate().extra_param.launchVrtSpeed or var_7_5 / var_7_4 - 0.5 * self._gravity * var_7_4
+		local spawnPos = pg.Tool.FilterY(self._spawnPos)
+		-- 这里其实有点怪，因为explodePos的y已经被设定为1.2了，但spawnPos的y刚被过滤为0了，所以这里本来是想计算水平距离，但实际是多算了一个1.2^2的距离平方（不过影响非常小就是了）
+		local flyTime = Vector3.Distance(spawnPos, self._explodePos) / self._convertedVelocity
+		local dy = self._explodePos.y - self._spawnPos.y
+		-- 因为dy = 1/2 * g * t^2 + v0 * t
+		-- 所以 v0 = (dy - 1/2 * g * t^2) / t = dy / t - 1/2 * g * t
+		-- 如果模板中有指定launchVrtSpeed，则使用指定值(会使动画对不上吗？有可能...)
+		self._verticalSpeed = self:GetTemplate().extra_param.launchVrtSpeed or dy / flyTime - 0.5 * self._gravity * flyTime
 	end
 end
 
-function var_0_3.SetExplodePosition(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_0:GetTemplate().extra_param
-
-	if var_8_0.targetFixX and var_8_0.targetFixZ then
-		arg_8_0._explodePos = Vector3(var_8_0.targetFixX, 0, var_8_0.targetFixZ)
+-- important: 炸弹类子弹的爆炸点设置
+function BattleBombBulletUnit.SetExplodePosition(self, pos)
+	local extra_param = self:GetTemplate().extra_param
+	-- 如果指定了固定爆炸点坐标，则使用该坐标
+	if extra_param.targetFixX and extra_param.targetFixZ then
+		self._explodePos = Vector3(extra_param.targetFixX, 0, extra_param.targetFixZ)
 	else
-		arg_8_0._explodePos = arg_8_1:Clone()
+		self._explodePos = pos:Clone()
+	end
+	-- 如果没有barragePriority，则加上随机偏移
+	if not self._barragePriority then
+		self._explodePos = self._explodePos + self._randomOffset
 	end
 
-	if not arg_8_0._barragePriority then
-		arg_8_0._explodePos = arg_8_0._explodePos + arg_8_0._randomOffset
-	end
-
-	arg_8_0._explodePos.y = var_0_2.BombDetonateHeight
+	self._explodePos.y = BattleConfig.BombDetonateHeight
 end
 
-function var_0_3.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
-	var_0_3.super.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
+function BattleBombBulletUnit.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
+	BattleBombBulletUnit.super.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
 
 	if arg_9_0:GetTemplate().extra_param.currentdrop then
 		arg_9_0._explodePos.x = arg_9_0._explodePos.x + arg_9_0._offsetX
@@ -114,76 +125,79 @@ function var_0_3.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
 	end
 end
 
-function var_0_3.SetTemplateData(arg_10_0, arg_10_1)
-	var_0_3.super.SetTemplateData(arg_10_0, arg_10_1)
+-- Important: 炸弹类子弹的模板数据设置(大量数据预处理)
+function BattleBombBulletUnit.SetTemplateData(self, tmpData)
+	BattleBombBulletUnit.super.SetTemplateData(self, tmpData)
 
-	local var_10_0 = arg_10_0:GetTemplate().extra_param
+	local extra_param = self:GetTemplate().extra_param
 
-	arg_10_0._barragePriority = var_10_0.barragePriority
-	arg_10_0._barrageLowPriority = var_10_0.barrageLowPriority
-	arg_10_0._fixToRange = var_10_0.fixToRange
-
-	if var_10_0.barragePriority then
-		arg_10_0._randomOffset = Vector3.zero
+	self._barragePriority = extra_param.barragePriority
+	self._barrageLowPriority = extra_param.barrageLowPriority
+	self._fixToRange = extra_param.fixToRange
+	-- barragePriority没有随机偏移
+	if extra_param.barragePriority then
+		self._randomOffset = Vector3.zero
 	else
 		-- TODO: chargeBulletAccuracy的使用
 		-- 此处要用到template中的accuracy，值是一个类型字符串
-		local var_10_1 = var_10_0.accuracy
-		local var_10_2 = 0
-		-- 如果有，获取子弹的对应属性值
-		if var_10_1 then
-			var_10_2 = arg_10_0:GetAttrByName(var_10_1)
+		-- 一般只有装备的主炮会带这种子弹
+		local accuracyType = extra_param.accuracy
+		local accuracyBias = 0
+		-- 如果有，获取子弹的对应属性值(散布减小)
+		if accuracyType then
+			accuracyBias = self:GetAttrByName(accuracyType)
 		end
 
-		local var_10_3 = var_10_0.randomOffsetX or 0
-		local var_10_4 = var_10_0.randomOffsetZ or 0
-		local var_10_5 = math.max(0, var_10_3 - var_10_2)
-		local var_10_6 = math.max(0, var_10_4 - var_10_2)
-		local var_10_7 = var_10_0.offsetX or 0
-		local var_10_8 = var_10_0.offsetZ or 0
+		local randomOffsetX = extra_param.randomOffsetX or 0
+		local randomOffsetZ = extra_param.randomOffsetZ or 0
+		local realRandomOffsetX = math.max(0, randomOffsetX - accuracyBias)
+		local realRandomOffsetZ = math.max(0, randomOffsetZ - accuracyBias)
+		local offsetX = extra_param.offsetX or 0
+		local offsetZ = extra_param.offsetZ or 0
 
-		if var_10_5 ~= 0 then
-			var_10_5 = var_10_5 * (math.random() - 0.5) + var_10_7
+		if realRandomOffsetX ~= 0 then
+			realRandomOffsetX = realRandomOffsetX * (math.random() - 0.5) + offsetX
 		end
 
-		if var_10_6 ~= 0 then
-			var_10_6 = var_10_6 * (math.random() - 0.5) + var_10_8
+		if realRandomOffsetZ ~= 0 then
+			realRandomOffsetZ = realRandomOffsetZ * (math.random() - 0.5) + offsetZ
 		end
 
-		local var_10_9 = var_10_0.targetOffsetX or 0
-		local var_10_10 = var_10_0.targetOffsetZ or 0
-
-		arg_10_0._randomOffset = Vector3(var_10_5 + var_10_9, 0, var_10_6 + var_10_10)
+		local targetOffsetX = extra_param.targetOffsetX or 0
+		local targetOffsetZ = extra_param.targetOffsetZ or 0
+		-- 总的来说三部分：随机偏移((-0.5,0.5)的分布)、固定偏移、目标偏移
+		self._randomOffset = Vector3(realRandomOffsetX + targetOffsetX, 0, realRandomOffsetZ + targetOffsetZ)
 	end
 
-	if var_10_0.timeToExplode then
-		arg_10_0._explodeTime = pg.TimeMgr.GetInstance():GetCombatTime() + var_10_0.timeToExplode
+	if extra_param.timeToExplode then
+		self._explodeTime = pg.TimeMgr.GetInstance():GetCombatTime() + extra_param.timeToExplode
 	end
 
-	arg_10_0._gravity = var_10_0.gravity or var_0_0.Battle.BattleConfig.GRAVITY
-	arg_10_0._hitInterval = arg_10_1.hit_type.interval or 0.2
+	self._gravity = extra_param.gravity or ys.Battle.BattleConfig.GRAVITY
+	-- hitInterval是判定两次伤害的时间间隔(很少用)
+	self._hitInterval = tmpData.hit_type.interval or 0.2
 end
 
-function var_0_3.DealDamage(arg_11_0)
-	arg_11_0._nextDamageTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_11_0._hitInterval
+function BattleBombBulletUnit.DealDamage(self)
+	self._nextDamageTime = pg.TimeMgr.GetInstance():GetCombatTime() + self._hitInterval
 end
 
-function var_0_3.CanDealDamage(arg_12_0)
-	if not arg_12_0._nextDamageTime then
-		arg_12_0._nextDamageTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_12_0._tempData.extra_param.alert_duration
+function BattleBombBulletUnit.CanDealDamage(self)
+	if not self._nextDamageTime then
+		self._nextDamageTime = pg.TimeMgr.GetInstance():GetCombatTime() + self._tempData.extra_param.alert_duration
 
 		return false
 	else
-		return arg_12_0._nextDamageTime < pg.TimeMgr.GetInstance():GetCombatTime()
+		return self._nextDamageTime < pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 end
 
-function var_0_3.HideBullet(arg_13_0)
-	arg_13_0._position.x = 0
-	arg_13_0._position.y = 100
-	arg_13_0._position.z = 0
+function BattleBombBulletUnit.HideBullet(self)
+	self._position.x = 0
+	self._position.y = 100
+	self._position.z = 0
 end
 
-function var_0_3.GetExplodePostion(arg_14_0)
-	return arg_14_0._explodePos
+function BattleBombBulletUnit.GetExplodePostion(self)
+	return self._explodePos
 end

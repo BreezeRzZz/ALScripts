@@ -1,101 +1,102 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.AIStepType
-local var_0_2 = class("AutoPilot")
+local ys = ys
+local AIStepType = ys.Battle.BattleConst.AIStepType
+local AutoPilot = class("AutoPilot")
 
-var_0_0.Battle.AutoPilot = var_0_2
-var_0_2.__name = "AutoPilot"
-var_0_2.PILOT_VALVE = 0.5
+ys.Battle.AutoPilot = AutoPilot
+AutoPilot.__name = "AutoPilot"
+AutoPilot.PILOT_VALVE = 0.5
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._aiCfg = arg_1_2
-	arg_1_0._target = arg_1_1
+function AutoPilot.Ctor(self, target, aiCfg)
+	self._aiCfg = aiCfg
+	self._target = target
 
-	arg_1_1._move:SetAutoMoveAI(arg_1_0, arg_1_1)
-	arg_1_0:generateList()
+	target._move:SetAutoMoveAI(self, target)
+	self:generateList()
 
-	arg_1_0._currentStep = arg_1_0._stepList[arg_1_0._aiCfg.default]
+	self._currentStep = self._stepList[self._aiCfg.default]
 
-	arg_1_0._currentStep:Active(arg_1_0._target)
+	self._currentStep:Active(self._target)
 end
 
-function var_0_2.GetDirection(arg_2_0)
-	local var_2_0 = arg_2_0._target:GetPosition()
+function AutoPilot.GetDirection(self)
+	local position = self._target:GetPosition()
 
-	return (arg_2_0._currentStep:GetDirection(var_2_0))
+	return (self._currentStep:GetDirection(position))
 end
 
-function var_0_2.GetTarget(arg_3_0)
-	return arg_3_0._target
+function AutoPilot.GetTarget(self)
+	return self._target
 end
 
-function var_0_2.InputWeaponStateChange(arg_4_0)
+function AutoPilot.InputWeaponStateChange(self)
 	return
 end
 
-function var_0_2.SetHiveUnit(arg_5_0, arg_5_1)
-	arg_5_0._hiveUnit = arg_5_1
+function AutoPilot.SetHiveUnit(self, hiveunit)
+	self._hiveUnit = hiveunit
 end
 
-function var_0_2.GetHiveUnit(arg_6_0)
-	return arg_6_0._hiveUnit
+function AutoPilot.GetHiveUnit(self)
+	return self._hiveUnit
 end
 
-function var_0_2.OnHiveUnitDead(arg_7_0)
-	arg_7_0._target:OnMotherDead()
+function AutoPilot.OnHiveUnitDead(self)
+	self._target:OnMotherDead()
 end
 
-function var_0_2.NextStep(arg_8_0)
-	local var_8_0 = arg_8_0._currentStep:GetToIndex()
-
-	if arg_8_0._stepList[var_8_0] == nil then
-		var_8_0 = arg_8_0._aiCfg.default
+function AutoPilot.NextStep(self)
+	local toIndex = self._currentStep:GetToIndex()
+	-- 没有就到Default Step
+	if self._stepList[toIndex] == nil then
+		toIndex = self._aiCfg.default
 	end
 
-	arg_8_0._currentStep = arg_8_0._stepList[var_8_0]
+	self._currentStep = self._stepList[toIndex]
 
-	arg_8_0._currentStep:Active(arg_8_0._target)
+	self._currentStep:Active(self._target)
 end
 
-function var_0_2.generateList(arg_9_0)
-	arg_9_0._stepList = {}
+-- note: AutoPilot主要逻辑部分，对auto_pilot_template的每个配置列表的step进行解析，生成对应的AutoPilotStep对象
+function AutoPilot.generateList(self)
+	self._stepList = {}
 
-	for iter_9_0, iter_9_1 in ipairs(arg_9_0._aiCfg.list) do
-		local var_9_0
-		local var_9_1 = iter_9_1.index
-		local var_9_2 = iter_9_1.to
-		local var_9_3 = iter_9_1.type
-		local var_9_4 = iter_9_1.param
+	for _, step in ipairs(self._aiCfg.list) do
+		local aiStep
+		local index = step.index
+		local to = step.to
+		local type = step.type
+		local param = step.param
 
-		if var_9_3 == var_0_1.STAY then
-			var_9_0 = var_0_0.Battle.AutoPilotStay.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.MOVE_TO then
-			var_9_0 = var_0_0.Battle.AutoPilotMoveTo.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.MOVE then
-			var_9_0 = var_0_0.Battle.AutoPilotMove.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.MOVE_RELATIVE then
-			var_9_0 = var_0_0.Battle.AutoPilotMoveRelative.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.BROWNIAN then
-			var_9_0 = var_0_0.Battle.AutoPilotBrownian.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.CIRCLE then
-			var_9_0 = var_0_0.Battle.AutoPilotCircle.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.RELATIVE_BROWNIAN then
-			var_9_0 = var_0_0.Battle.AutoPilotRelativeBrownian.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.RELATIVE_FLEET_MOVE_TO then
-			var_9_0 = var_0_0.Battle.AutoPilotRelativeFleetMoveTo.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.HIVE_STAY then
-			var_9_0 = var_0_0.Battle.AutoPilotHiveRelativeStay.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.HIVE_CIRCLE then
-			var_9_0 = var_0_0.Battle.AutoPilotHiveRelativeCircle.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.MINION_STAY then
-			var_9_0 = var_0_0.Battle.AutoPilotMinionRelativeStay.New(var_9_1, arg_9_0)
-		elseif var_9_3 == var_0_1.MINION_CIRCLE then
-			var_9_0 = var_0_0.Battle.AutoPilotMinionRelativeCircle.New(var_9_1, arg_9_0)
+		if type == AIStepType.STAY then
+			aiStep = ys.Battle.AutoPilotStay.New(index, self)
+		elseif type == AIStepType.MOVE_TO then
+			aiStep = ys.Battle.AutoPilotMoveTo.New(index, self)
+		elseif type == AIStepType.MOVE then
+			aiStep = ys.Battle.AutoPilotMove.New(index, self)
+		elseif type == AIStepType.MOVE_RELATIVE then
+			aiStep = ys.Battle.AutoPilotMoveRelative.New(index, self)
+		elseif type == AIStepType.BROWNIAN then
+			aiStep = ys.Battle.AutoPilotBrownian.New(index, self)
+		elseif type == AIStepType.CIRCLE then
+			aiStep = ys.Battle.AutoPilotCircle.New(index, self)
+		elseif type == AIStepType.RELATIVE_BROWNIAN then
+			aiStep = ys.Battle.AutoPilotRelativeBrownian.New(index, self)
+		elseif type == AIStepType.RELATIVE_FLEET_MOVE_TO then
+			aiStep = ys.Battle.AutoPilotRelativeFleetMoveTo.New(index, self)
+		elseif type == AIStepType.HIVE_STAY then
+			aiStep = ys.Battle.AutoPilotHiveRelativeStay.New(index, self)
+		elseif type == AIStepType.HIVE_CIRCLE then
+			aiStep = ys.Battle.AutoPilotHiveRelativeCircle.New(index, self)
+		elseif type == AIStepType.MINION_STAY then
+			aiStep = ys.Battle.AutoPilotMinionRelativeStay.New(index, self)
+		elseif type == AIStepType.MINION_CIRCLE then
+			aiStep = ys.Battle.AutoPilotMinionRelativeCircle.New(index, self)
 		end
 
-		var_9_0:SetParameter(var_9_4, var_9_2)
+		aiStep:SetParameter(param, to)
 
-		arg_9_0._stepList[var_9_0:GetIndex()] = var_9_0
+		self._stepList[aiStep:GetIndex()] = aiStep
 	end
 end

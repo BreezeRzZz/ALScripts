@@ -83,7 +83,7 @@ function BattleHiveUnit.createMajorEmitter(self, barrageID, index, emitterType, 
 
 	BattleHiveUnit.super.createMajorEmitter(self, barrageID, index, nil, spawnFunc, nil)
 end
-
+-- TODO
 function BattleHiveUnit.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
 	arg_7_0._tempEmitterList = {}
 

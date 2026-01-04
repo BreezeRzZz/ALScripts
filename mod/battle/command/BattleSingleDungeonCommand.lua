@@ -1,11 +1,11 @@
 ys = ys or {}
+-- 对应进入单个Dungeon战斗的指令处理（主要涉及战斗初始化、波次管理、战斗结束等逻辑）
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local var_0_2 = ys.Battle.BattleEvent
+local var_0_3 = class("BattleSingleDungeonCommand", ys.MVC.Command)
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleSingleDungeonCommand", var_0_0.MVC.Command)
-
-var_0_0.Battle.BattleSingleDungeonCommand = var_0_3
+ys.Battle.BattleSingleDungeonCommand = var_0_3
 var_0_3.__name = "BattleSingleDungeonCommand"
 
 function var_0_3.Ctor(arg_1_0)
@@ -15,7 +15,7 @@ end
 function var_0_3.Initialize(arg_2_0)
 	var_0_3.super.Initialize(arg_2_0)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
+	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
 	arg_2_0._uiMediator = arg_2_0._state:GetUIMediator()
 
 	arg_2_0:Init()
@@ -32,17 +32,17 @@ function var_0_3.DoPrologue(arg_3_0)
 		arg_3_0._uiMediator:OpeningEffect(function()
 			arg_3_0._uiMediator:ShowAutoBtn()
 			arg_3_0._uiMediator:ShowTimer()
-			arg_3_0._state:GetCommandByName(var_0_0.Battle.BattleControllerWeaponCommand.__name):TryAutoSub()
-			arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
+			arg_3_0._state:GetCommandByName(ys.Battle.BattleControllerWeaponCommand.__name):TryAutoSub()
+			arg_3_0._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
 			arg_3_0._waveUpdater:Start()
 
 			if arg_3_0._dataProxy:GetInitData().hideAllButtons then
-				arg_3_0._dataProxy:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleEvent.HIDE_INTERACTABLE_BUTTONS, {
+				arg_3_0._dataProxy:DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.HIDE_INTERACTABLE_BUTTONS, {
 					isActive = false
 				}))
 			end
 		end)
-		arg_3_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
+		arg_3_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
 		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
 		arg_3_0._dataProxy:TirggerBattleStartBuffs()
 	end
@@ -85,7 +85,7 @@ function var_0_3.SetVertifyFail(arg_10_0, arg_10_1)
 end
 
 function var_0_3.onInitBattle(arg_11_0)
-	arg_11_0._userFleet = arg_11_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+	arg_11_0._userFleet = arg_11_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 
 	arg_11_0._waveUpdater:SetWavesData(arg_11_0._dataProxy:GetStageInfo())
 end
@@ -93,7 +93,7 @@ end
 -- TODO
 function var_0_3.initWaveModule(arg_12_0)
 	local function var_12_0(arg_13_0, arg_13_1, arg_13_2)
-		arg_12_0._dataProxy:SpawnMonster(arg_13_0, arg_13_1, arg_13_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+		arg_12_0._dataProxy:SpawnMonster(arg_13_0, arg_13_1, arg_13_2, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
 	local function var_12_1(arg_14_0)
@@ -115,10 +115,10 @@ function var_0_3.initWaveModule(arg_12_0)
 	end
 
 	local function var_12_3(arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
-		arg_12_0._dataProxy:SpawnCubeArea(var_0_0.Battle.BattleConst.AOEField.SURFACE, -1, arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
+		arg_12_0._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
 	end
 
-	arg_12_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_12_0, var_12_1, var_12_2, var_12_3)
+	arg_12_0._waveUpdater = ys.Battle.BattleWaveUpdater.New(var_12_0, var_12_1, var_12_2, var_12_3)
 end
 
 function var_0_3.InitProtocol(arg_17_0)
@@ -149,7 +149,7 @@ function var_0_3.onAddUnit(arg_20_0, arg_20_1)
 
 	arg_20_0._unitDataList[var_20_1:GetUniqueID()] = var_20_1
 
-	if var_20_0 == var_0_0.Battle.BattleConst.UnitType.ENEMY_UNIT or var_20_0 == var_0_0.Battle.BattleConst.UnitType.BOSS_UNIT then
+	if var_20_0 == ys.Battle.BattleConst.UnitType.ENEMY_UNIT or var_20_0 == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
 		arg_20_0._waveUpdater:AddMonster(var_20_1)
 	end
 end
@@ -157,23 +157,23 @@ end
 function var_0_3.RegisterUnitEvent(arg_21_0, arg_21_1)
 	local var_21_0 = arg_21_1:GetUnitType()
 
-	if var_21_0 ~= var_0_0.Battle.BattleConst.UnitType.MINION_UNIT then
-		arg_21_1:RegisterEventListener(arg_21_0, var_0_1.WILL_DIE, arg_21_0.onWillDie)
+	if var_21_0 ~= ys.Battle.BattleConst.UnitType.MINION_UNIT then
+		arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.WILL_DIE, arg_21_0.onWillDie)
 	end
 
-	arg_21_1:RegisterEventListener(arg_21_0, var_0_1.DYING, arg_21_0.onUnitDying)
+	arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.DYING, arg_21_0.onUnitDying)
 
-	if var_21_0 == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_21_1:RegisterEventListener(arg_21_0, var_0_1.SHUT_DOWN_PLAYER, arg_21_0.onShutDownPlayer)
+	if var_21_0 == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.SHUT_DOWN_PLAYER, arg_21_0.onShutDownPlayer)
 	end
 end
 
 function var_0_3.UnregisterUnitEvent(arg_22_0, arg_22_1)
-	arg_22_1:UnregisterEventListener(arg_22_0, var_0_1.WILL_DIE)
-	arg_22_1:UnregisterEventListener(arg_22_0, var_0_1.DYING)
+	arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.WILL_DIE)
+	arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.DYING)
 
-	if arg_22_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_22_1:UnregisterEventListener(arg_22_0, var_0_1.SHUT_DOWN_PLAYER)
+	if arg_22_1:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.SHUT_DOWN_PLAYER)
 	end
 end
 
@@ -229,11 +229,11 @@ end
 
 function var_0_3.onWillDie(arg_27_0, arg_27_1)
 	local var_27_0 = arg_27_1.Dispatcher
-	local var_27_1 = var_0_0.Battle.BattleConst.UnitDeathReason
+	local var_27_1 = ys.Battle.BattleConst.UnitDeathReason
 	local var_27_2 = var_27_0:GetDeathReason()
 
 	if var_27_2 == var_27_1.LEAVE then
-		if var_27_0:GetIFF() == var_0_0.Battle.BattleConfig.FRIENDLY_CODE then
+		if var_27_0:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
 			arg_27_0._dataProxy:CalcBPWhenPlayerLeave(var_27_0)
 		end
 	elseif var_27_2 == var_27_1.DESTRUCT then

@@ -237,7 +237,7 @@ function BattleBullet.SetSpawn(self, position)
 
 	if targetPos then
 		local angle
-
+		-- IMPORTANT: 是否计入zExtraOffset
 		if self._bulletData:GetOffsetPriority() then
 			angle = math.rad2Deg * math.atan2(targetPos.z - offset.z, targetPos.x - _offset.x)
 		else

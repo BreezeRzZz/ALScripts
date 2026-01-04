@@ -1391,6 +1391,7 @@ function var_0_0.GetChapterAidBuffs(arg_105_0)
 	return var_105_0
 end
 
+-- TODO
 function var_0_0.getFleetBattleBuffs(arg_106_0, arg_106_1, arg_106_2)
 	local var_106_0 = {}
 

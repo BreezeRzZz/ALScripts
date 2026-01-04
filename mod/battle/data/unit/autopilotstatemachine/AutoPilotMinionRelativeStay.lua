@@ -1,48 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotMinionRelativeStay", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotMinionRelativeStay = class("AutoPilotMinionRelativeStay", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotMinionRelativeStay = var_0_1
-var_0_1.__name = "AutoPilotMinionRelativeStay"
+ys.Battle.AutoPilotMinionRelativeStay = AutoPilotMinionRelativeStay
+AutoPilotMinionRelativeStay.__name = "AutoPilotMinionRelativeStay"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotMinionRelativeStay.Ctor(self, ...)
+	AutoPilotMinionRelativeStay.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotMinionRelativeStay.SetParameter(self, paramList, toIndex)
+	AutoPilotMinionRelativeStay.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._distX = arg_2_1.x
-	arg_2_0._distZ = arg_2_1.z
-	arg_2_0._nextBuffID = arg_2_1.buffID
+	self._distX = paramList.x
+	self._distZ = paramList.z
+	self._nextBuffID = paramList.buffID
 end
+-- 这种AIStep是给minion用的，目标点是相对于其master的位置的一个偏移量
+function AutoPilotMinionRelativeStay.GetDirection(self, position)
+	local master = self._pilot:GetTarget():GetMaster()
+	-- 如果master死了，则给minion加一个buff然后不动(实现亡语效果)
+	if not master:IsAlive() then
+		if self._nextBuffID then
+			local buff = ys.Battle.BattleBuffUnit.New(self._nextBuffID)
 
-function var_0_1.GetDirection(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0._pilot:GetTarget():GetMaster()
-
-	if not var_3_0:IsAlive() then
-		if arg_3_0._nextBuffID then
-			local var_3_1 = var_0_0.Battle.BattleBuffUnit.New(arg_3_0._nextBuffID)
-
-			arg_3_0._pilot:GetTarget():AddBuff(var_3_1)
+			self._pilot:GetTarget():AddBuff(buff)
 		end
 
 		return Vector3.zero
 	end
 
-	local var_3_2 = var_3_0:GetPosition()
-	local var_3_3 = Vector3(var_3_2.x + arg_3_0._distX, arg_3_1.y, var_3_2.z + arg_3_0._distZ) - arg_3_1
+	local masterPosition = master:GetPosition()
+	local direction = Vector3(masterPosition.x + self._distX, position.y, masterPosition.z + self._distZ) - position
 
-	if arg_3_0:IsExpired() then
-		arg_3_0:Finish()
+	if self:IsExpired() then
+		self:Finish()
 	end
 
-	if var_3_3.magnitude < 0.4 then
+	if direction.magnitude < 0.4 then
 		return Vector3.zero
 	else
-		var_3_3.y = 0
+		direction.y = 0
 
-		return var_3_3:SetNormalize()
+		return direction:SetNormalize()
 	end
 end

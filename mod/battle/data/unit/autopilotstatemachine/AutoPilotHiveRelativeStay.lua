@@ -1,43 +1,44 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotHiveRelativeStay", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotHiveRelativeStay = class("AutoPilotHiveRelativeStay", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotHiveRelativeStay = var_0_1
-var_0_1.__name = "AutoPilotHiveRelativeStay"
+ys.Battle.AutoPilotHiveRelativeStay = AutoPilotHiveRelativeStay
+AutoPilotHiveRelativeStay.__name = "AutoPilotHiveRelativeStay"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotHiveRelativeStay.Ctor(self, ...)
+	AutoPilotHiveRelativeStay.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotHiveRelativeStay.SetParameter(self, paramList, toIndex)
+	AutoPilotHiveRelativeStay.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._distX = arg_2_1.x
-	arg_2_0._distZ = arg_2_1.z
+	self._distX = paramList.x
+	self._distZ = paramList.z
 end
 
-function var_0_1.GetDirection(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0._pilot:GetHiveUnit()
+function AutoPilotHiveRelativeStay.GetDirection(self, position)
+	local hiveUnit = self._pilot:GetHiveUnit()
 
-	if not var_3_0:IsAlive() then
-		arg_3_0._pilot:OnHiveUnitDead()
+	if not hiveUnit:IsAlive() then
+		self._pilot:OnHiveUnitDead()
 
 		return Vector3.zero
 	end
+	-- 这类是基于hive（创建舰载机的单位）位置，朝向(hive位置加上偏移量)移动
+	-- 吐槽：那这里的RelativeStay有点容易误导，想表达的是“相对Hive保持位置”的意思(minion那边也是类似的)
+	local hivePosition = hiveUnit:GetPosition()
+	local direction = Vector3(hivePosition.x + self._distX, position.y, hivePosition.z + self._distZ) - position
 
-	local var_3_1 = var_3_0:GetPosition()
-	local var_3_2 = Vector3(var_3_1.x + arg_3_0._distX, arg_3_1.y, var_3_1.z + arg_3_0._distZ) - arg_3_1
-
-	if arg_3_0:IsExpired() then
-		arg_3_0:Finish()
+	if self:IsExpired() then
+		self:Finish()
 	end
 
-	if var_3_2.magnitude < 0.4 then
+	if direction.magnitude < 0.4 then
 		return Vector3.zero
 	else
-		var_3_2.y = 0
+		direction.y = 0
 
-		return var_3_2:SetNormalize()
+		return direction:SetNormalize()
 	end
 end

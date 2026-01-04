@@ -153,42 +153,44 @@ function BattleBulletUnit.doNothing(arg_6_0)
 	end
 end
 
-function BattleBulletUnit.Ctor(arg_7_0, arg_7_1, arg_7_2)
-	ys.EventDispatcher.AttachEventDispatcher(arg_7_0)
+function BattleBulletUnit.Ctor(self, UID, IFF)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_7_0._battleProxy = ys.Battle.BattleDataProxy.GetInstance()
-	arg_7_0._uniqueID = arg_7_1
-	arg_7_0._speedExemptKey = "bullet_" .. arg_7_1
-	arg_7_0._IFF = arg_7_2
-	arg_7_0._collidedList = {}
-	arg_7_0._speed = Vector3.zero
-	arg_7_0._exist = true
-	arg_7_0._timeStamp = 0
-	arg_7_0._dmgEnhanceRate = 1
-	arg_7_0._frame = 0
-	arg_7_0._reachDestFlag = false
-	arg_7_0._verticalSpeed = 0
-	arg_7_0._damageList = {}
+	self._battleProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._uniqueID = UID
+	self._speedExemptKey = "bullet_" .. UID
+	self._IFF = IFF
+	self._collidedList = {}
+	self._speed = Vector3.zero
+	self._exist = true
+	self._timeStamp = 0
+	self._dmgEnhanceRate = 1
+	self._frame = 0
+	self._reachDestFlag = false
+	self._verticalSpeed = 0
+	self._damageList = {}
 end
 
-function BattleBulletUnit.Update(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_0:GetSpeedRatio()
+function BattleBulletUnit.Update(self, timeStamp)
+	local bulletSpeedRatio = self:GetSpeedRatio()
 
-	arg_8_0:updateSpeed(arg_8_1)
-	arg_8_0:updateBarrageTransform(arg_8_1)
-	arg_8_0._position:Set(arg_8_0._position.x + arg_8_0._speed.x * var_8_0, arg_8_0._position.y + arg_8_0._speed.y * var_8_0, arg_8_0._position.z + arg_8_0._speed.z * var_8_0)
-
-	arg_8_0._position.y = arg_8_0._position.y + arg_8_0._verticalSpeed * var_8_0
-
-	if arg_8_0._gravity == 0 then
-		arg_8_0._reachDestFlag = Vector3.SqrDistance(arg_8_0._spawnPos, arg_8_0._position) > arg_8_0._sqrRange
+	self:updateSpeed(timeStamp)
+	self:updateBarrageTransform(timeStamp)
+	-- 更新本帧位置
+	self._position:Set(self._position.x + self._speed.x * bulletSpeedRatio, self._position.y + self._speed.y * bulletSpeedRatio, self._position.z + self._speed.z * bulletSpeedRatio)
+	-- 这算是更新两次Y轴位置吗？可能speed本身就不包含Y轴分量吧
+	self._position.y = self._position.y + self._verticalSpeed * bulletSpeedRatio
+	-- 如果没有重力，那么判定“到达”是基于超出射程
+	if self._gravity == 0 then
+		self._reachDestFlag = Vector3.SqrDistance(self._spawnPos, self._position) > self._sqrRange
 	else
+		-- 如果有重力
 		-- 用于改变fieldType
-		if arg_8_0._fieldSwitchHeight ~= 0 and arg_8_0._position.y <= arg_8_0._fieldSwitchHeight then
-			arg_8_0._field = BattleConst.BulletField.SURFACE
+		if self._fieldSwitchHeight ~= 0 and self._position.y <= self._fieldSwitchHeight then
+			self._field = BattleConst.BulletField.SURFACE
 		end
-
-		arg_8_0._reachDestFlag = arg_8_0._position.y <= BattleConfig.BombDetonateHeight
+		-- y <= 1.2时认为到达(引爆)
+		self._reachDestFlag = self._position.y <= BattleConfig.BombDetonateHeight
 	end
 end
 
@@ -932,20 +934,21 @@ function BattleBulletUnit.OutRange(arg_110_0)
 	arg_110_0._outRangeFunc(arg_110_0)
 end
 
-function BattleBulletUnit.FixRange(arg_111_0, arg_111_1, arg_111_2)
-	arg_111_1 = arg_111_1 or arg_111_0._tempData.range
-	arg_111_2 = arg_111_2 or 0
+function BattleBulletUnit.FixRange(self, range, fixRange)
+	range = range or self._tempData.range
+	fixRange = fixRange or 0
 
-	local var_111_0 = arg_111_0._tempData.range_offset
+	local range_offset = self._tempData.range_offset
 
-	if var_111_0 == 0 then
-		arg_111_0._range = arg_111_1
+	if range_offset == 0 then
+		self._range = range
 	else
-		arg_111_0._range = arg_111_1 + var_111_0 * (math.random() - 0.5)
+		-- 最终的射程 = [range - 0.5 * range_offset, range + 0.5 * range_offset] 之间的随机值
+		self._range = range + range_offset * (math.random() - 0.5)
 	end
-
-	arg_111_0._range = math.max(0, arg_111_0._range + arg_111_2)
-	arg_111_0._sqrRange = arg_111_0._range * arg_111_0._range
+	-- 随机完，再加上固定的修正值，作为最终判定的射程
+	self._range = math.max(0, self._range + fixRange)
+	self._sqrRange = self._range * self._range
 end
 
 function BattleBulletUnit.ImmuneBombCLS(arg_112_0)

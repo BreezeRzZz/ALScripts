@@ -7,7 +7,7 @@ local var_0_3 = class("BattleFleetBuffUnit")
 
 var_0_0.Battle.BattleFleetBuffUnit = var_0_3
 var_0_3.__name = "BattleFleetBuffUnit"
-
+-- TODO
 function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
 	arg_1_2 = arg_1_2 or 1
 	arg_1_0._id = arg_1_1

@@ -135,6 +135,7 @@ function BattleState.SetBattleUI(arg_8_0, arg_8_1)
 end
 
 -- note: 被BattleMediator.register调用
+-- 决定战斗的command和mediator
 function BattleState.EnterBattle(self, battleData, prePause)
 	pg.TimeMgr.GetInstance():ResetCombatTime()
 	self:Active()

@@ -129,6 +129,7 @@ end
 --- @param stopFunc function
 --- @return BattleBulletEmitter
 --- 创建主要发射器
+--- 来自BattleWeaponUnit.ShiftBarrage
 function BattleWeaponUnit.createMajorEmitter(self, barrageID, index, emitterType, spawnFunc, stopFunc)
 	--- @param offsetX number
 	--- @param offsetZ number
@@ -833,6 +834,7 @@ function BattleWeaponUnit.FilterSquare(self, list)
 		-- 这里是计算出正方形的边界线位置
 		-- 对于己方，是左边界线；对于敌方，是右边界线
 	local direction = self:GetDirection()
+	-- backRange = axis_angle参数
 	local lineX = self._host:GetPosition().x + self._backRange * direction * -1
 	local areaArgs = {
 		lineX = lineX,
@@ -1549,6 +1551,10 @@ function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 	-- spawn_bound是一个table的情况
 	-- 一般都是一个字符串，table比较少见
 	-- 字符串的情况下，position一般是nil，因为大多数时候调用这个函数的时候并没有传position参数
+
+	-- 是table的例子：例如，狮的15s弹幕有spawn_bound={1}
+	-- 这种情况下，spawn_bound指定了这个武器/弹幕从后排哪个位置生成子弹
+	-- 也就实现了：与自己所在位置无关的子弹生成位置(这就是居中弹幕的实现原理)
 	if type(template.spawn_bound) == "table" and not position then
 		local mainUnitPosition = self._dataProxy:GetStageInfo().mainUnitPosition
 

@@ -733,16 +733,22 @@ end
 function BattleDataFunction.GetDivingFilter(arg_45_0)
 	return map_data[arg_45_0].diving_filter
 end
--- TODO
-function BattleDataFunction.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_46_2, arg_46_3, arg_46_4)
-	local var_46_0 = arg_46_0 - arg_46_2
 
+-- Important: 潜艇PhaseList生成
+function BattleDataFunction.GeneratePlayerSubmarinPhase(subAttackBaseLine, subRetreatBaseLine, raidDist, raidDuration, oxyAtkDuration)
+	local subAttackLine = subAttackBaseLine - raidDist
+
+	-- Phase 0: SwitchType = POSITION_X_GREATER: 若X > switchParam, to Phase 1
+	-- Phase 1: SwitchType = OXYGEN: 若氧气值 < switchParam, to Phase 2
+	-- Phase 2: SwitchType = DURATION: 潜艇浮出水面, to Phase 3 after switchParam时间(对应oxyAtkDuration，又对应到模板的attack_duration字段)
+	-- Phase 3: SwitchType = POSITION_X_LESSER: 若X < switchParam, to Phase 4
+	-- Phase 4: 视为撤退
 	return {
 		{
 			index = 0,
 			switchType = 3,
 			switchTo = 1,
-			switchParam = var_46_0
+			switchParam = subAttackLine
 		},
 		{
 			switchParam = 0,
@@ -756,14 +762,14 @@ function BattleDataFunction.GeneratePlayerSubmarinPhase(arg_46_0, arg_46_1, arg_
 			switchType = 1,
 			switchTo = 3,
 			dive = "STATE_FLOAT",
-			switchParam = arg_46_4
+			switchParam = oxyAtkDuration
 		},
 		{
 			index = 3,
 			switchType = 4,
 			switchTo = 4,
 			dive = "STATE_RETREAT",
-			switchParam = arg_46_1
+			switchParam = subRetreatBaseLine
 		},
 		{
 			index = 4,

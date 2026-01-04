@@ -1,22 +1,22 @@
 ys = ys or {}
-
+-- TODO
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleDataFunction
 local var_0_2 = var_0_0.Battle.BattleConst
 local var_0_3 = var_0_0.Battle.BattleConfig
 local var_0_4 = require("Mgr/Pool/PoolUtil")
-local var_0_5 = singletonClass("BattleResourceManager")
+local BattleResourceManager = singletonClass("BattleResourceManager")
 
-var_0_0.Battle.BattleResourceManager = var_0_5
-var_0_5.__name = "BattleResourceManager"
+var_0_0.Battle.BattleResourceManager = BattleResourceManager
+BattleResourceManager.__name = "BattleResourceManager"
 
-function var_0_5.Ctor(arg_1_0)
+function BattleResourceManager.Ctor(arg_1_0)
 	arg_1_0.rotateScriptMap = setmetatable({}, {
 		__mode = "kv"
 	})
 end
 
-function var_0_5.Init(arg_2_0)
+function BattleResourceManager.Init(arg_2_0)
 	arg_2_0._preloadList = {}
 	arg_2_0._resCacheList = {}
 	arg_2_0._allPool = {}
@@ -33,16 +33,16 @@ function var_0_5.Init(arg_2_0)
 	arg_2_0._battleCVList = {}
 end
 
-function var_0_5.Clear(arg_3_0)
+function BattleResourceManager.Clear(arg_3_0)
 	for iter_3_0, iter_3_1 in pairs(arg_3_0._allPool) do
 		iter_3_1:Dispose()
 	end
 
 	for iter_3_2, iter_3_3 in pairs(arg_3_0._resCacheList) do
 		if string.find(iter_3_2, "Char/") then
-			var_0_5.ClearCharRes(iter_3_2, iter_3_3)
+			BattleResourceManager.ClearCharRes(iter_3_2, iter_3_3)
 		elseif string.find(iter_3_2, "painting/") then
-			var_0_5.ClearPaintingRes(iter_3_2, iter_3_3)
+			BattleResourceManager.ClearPaintingRes(iter_3_2, iter_3_3)
 		else
 			var_0_4.Destroy(iter_3_3)
 		end
@@ -72,67 +72,67 @@ function var_0_5.Clear(arg_3_0)
 	var_0_0.Battle.BattleDataFunction.ClearConvertedBarrage()
 end
 
-function var_0_5.GetBulletPath(arg_4_0)
+function BattleResourceManager.GetBulletPath(arg_4_0)
 	return "Item/" .. arg_4_0
 end
 
-function var_0_5.GetOrbitPath(arg_5_0)
+function BattleResourceManager.GetOrbitPath(arg_5_0)
 	return "orbit/" .. arg_5_0
 end
 
-function var_0_5.GetCharacterPath(arg_6_0)
+function BattleResourceManager.GetCharacterPath(arg_6_0)
 	return "Char/" .. arg_6_0
 end
 
-function var_0_5.GetCharacterGoPath(arg_7_0)
+function BattleResourceManager.GetCharacterGoPath(arg_7_0)
 	return "chargo/" .. arg_7_0
 end
 
-function var_0_5.GetAircraftIconPath(arg_8_0)
+function BattleResourceManager.GetAircraftIconPath(arg_8_0)
 	return "AircraftIcon/" .. arg_8_0
 end
 
-function var_0_5.GetFXPath(arg_9_0)
+function BattleResourceManager.GetFXPath(arg_9_0)
 	return "Effect/" .. arg_9_0
 end
 
-function var_0_5.GetPaintingPath(arg_10_0)
+function BattleResourceManager.GetPaintingPath(arg_10_0)
 	return "painting/" .. arg_10_0
 end
 
-function var_0_5.GetHrzIcon(arg_11_0)
+function BattleResourceManager.GetHrzIcon(arg_11_0)
 	return "herohrzicon/" .. arg_11_0
 end
 
-function var_0_5.GetSquareIcon(arg_12_0)
+function BattleResourceManager.GetSquareIcon(arg_12_0)
 	return "squareicon/" .. arg_12_0
 end
 
-function var_0_5.GetQIcon(arg_13_0)
+function BattleResourceManager.GetQIcon(arg_13_0)
 	return "qicon/" .. arg_13_0
 end
 
-function var_0_5.GetCommanderHrzIconPath(arg_14_0)
+function BattleResourceManager.GetCommanderHrzIconPath(arg_14_0)
 	return "commanderhrz/" .. arg_14_0
 end
 
-function var_0_5.GetCommanderIconPath(arg_15_0)
+function BattleResourceManager.GetCommanderIconPath(arg_15_0)
 	return "commandericon/" .. arg_15_0
 end
 
-function var_0_5.GetShipTypeIconPath(arg_16_0)
+function BattleResourceManager.GetShipTypeIconPath(arg_16_0)
 	return "shiptype/" .. arg_16_0
 end
 
-function var_0_5.GetMapPath(arg_17_0)
+function BattleResourceManager.GetMapPath(arg_17_0)
 	return "Map/" .. arg_17_0
 end
 
-function var_0_5.GetUIPath(arg_18_0)
+function BattleResourceManager.GetUIPath(arg_18_0)
 	return "UI/" .. arg_18_0
 end
 
-function var_0_5.GetResName(arg_19_0)
+function BattleResourceManager.GetResName(arg_19_0)
 	local var_19_0 = arg_19_0
 	local var_19_1 = string.find(var_19_0, "%/")
 
@@ -144,8 +144,8 @@ function var_0_5.GetResName(arg_19_0)
 	return var_19_0
 end
 
-function var_0_5.ClearCharRes(arg_20_0, arg_20_1)
-	local var_20_0 = var_0_5.GetResName(arg_20_0)
+function BattleResourceManager.ClearCharRes(arg_20_0, arg_20_1)
+	local var_20_0 = BattleResourceManager.GetResName(arg_20_0)
 	local var_20_1 = arg_20_1:GetComponent("SkeletonRenderer").skeletonDataAsset
 
 	if not PoolMgr.GetInstance():IsSpineSkelCached(var_20_0) then
@@ -155,13 +155,13 @@ function var_0_5.ClearCharRes(arg_20_0, arg_20_1)
 	var_0_4.Destroy(arg_20_1)
 end
 
-function var_0_5.ClearPaintingRes(arg_21_0, arg_21_1)
-	local var_21_0 = var_0_5.GetResName(arg_21_0)
+function BattleResourceManager.ClearPaintingRes(arg_21_0, arg_21_1)
+	local var_21_0 = BattleResourceManager.GetResName(arg_21_0)
 
-	PoolMgr.GetInstance():ReturnPainting(var_0_5.GetPaintingName(var_21_0), arg_21_1)
+	PoolMgr.GetInstance():ReturnPainting(BattleResourceManager.GetPaintingName(var_21_0), arg_21_1)
 end
 
-function var_0_5.DestroyOb(arg_22_0, arg_22_1)
+function BattleResourceManager.DestroyOb(arg_22_0, arg_22_1)
 	local var_22_0 = arg_22_0._ob2Pool[arg_22_1]
 
 	if var_22_0 then
@@ -171,7 +171,7 @@ function var_0_5.DestroyOb(arg_22_0, arg_22_1)
 	end
 end
 
-function var_0_5.popPool(arg_23_0, arg_23_1, arg_23_2)
+function BattleResourceManager.popPool(arg_23_0, arg_23_1, arg_23_2)
 	local var_23_0 = arg_23_1:GetObject()
 
 	if not arg_23_2 then
@@ -183,7 +183,7 @@ function var_0_5.popPool(arg_23_0, arg_23_1, arg_23_2)
 	return var_23_0
 end
 
-function var_0_5.InstCharacter(arg_24_0, arg_24_1, arg_24_2)
+function BattleResourceManager.InstCharacter(arg_24_0, arg_24_1, arg_24_2)
 	local var_24_0 = arg_24_0.GetCharacterPath(arg_24_1)
 	local var_24_1 = arg_24_0._allPool[var_24_0]
 
@@ -202,7 +202,7 @@ function var_0_5.InstCharacter(arg_24_0, arg_24_1, arg_24_2)
 	else
 		arg_24_0:LoadSpineAsset(arg_24_1, function(arg_25_0)
 			if not arg_24_0._poolRoot then
-				var_0_5.ClearCharRes(var_24_0, arg_25_0)
+				BattleResourceManager.ClearCharRes(var_24_0, arg_25_0)
 
 				return
 			end
@@ -223,7 +223,7 @@ function var_0_5.InstCharacter(arg_24_0, arg_24_1, arg_24_2)
 	end
 end
 
-function var_0_5.LoadSpineAsset(arg_26_0, arg_26_1, arg_26_2)
+function BattleResourceManager.LoadSpineAsset(arg_26_0, arg_26_1, arg_26_2)
 	local var_26_0 = arg_26_0.GetCharacterPath(arg_26_1)
 
 	if not PoolMgr.GetInstance():IsSpineSkelCached(arg_26_1) then
@@ -235,7 +235,7 @@ function var_0_5.LoadSpineAsset(arg_26_0, arg_26_1, arg_26_2)
 	end
 end
 
-function var_0_5.InstAirCharacter(arg_28_0, arg_28_1, arg_28_2)
+function BattleResourceManager.InstAirCharacter(arg_28_0, arg_28_1, arg_28_2)
 	local var_28_0 = arg_28_0.GetCharacterGoPath(arg_28_1)
 	local var_28_1 = arg_28_0._allPool[var_28_0]
 
@@ -271,7 +271,7 @@ function var_0_5.InstAirCharacter(arg_28_0, arg_28_1, arg_28_2)
 	end
 end
 
-function var_0_5.InstBullet(arg_30_0, arg_30_1, arg_30_2)
+function BattleResourceManager.InstBullet(arg_30_0, arg_30_1, arg_30_2)
 	local var_30_0 = arg_30_0.GetBulletPath(arg_30_1)
 	local var_30_1 = arg_30_0._allPool[var_30_0]
 
@@ -329,7 +329,7 @@ function var_0_5.InstBullet(arg_30_0, arg_30_1, arg_30_2)
 	end
 end
 
-function var_0_5.InstFX(arg_32_0, arg_32_1, arg_32_2)
+function BattleResourceManager.InstFX(arg_32_0, arg_32_1, arg_32_2)
 	local var_32_0 = arg_32_0.GetFXPath(arg_32_1)
 	local var_32_1
 	local var_32_2 = arg_32_0._allPool[var_32_0]
@@ -378,7 +378,7 @@ function var_0_5.InstFX(arg_32_0, arg_32_1, arg_32_2)
 	return var_32_1
 end
 
-function var_0_5.InstOrbit(arg_34_0, arg_34_1)
+function BattleResourceManager.InstOrbit(arg_34_0, arg_34_1)
 	local var_34_0 = arg_34_0.GetOrbitPath(arg_34_1)
 	local var_34_1
 	local var_34_2 = arg_34_0._allPool[var_34_0]
@@ -413,7 +413,7 @@ function var_0_5.InstOrbit(arg_34_0, arg_34_1)
 	return var_34_1
 end
 
-function var_0_5.InstSkillPaintingUI(arg_36_0)
+function BattleResourceManager.InstSkillPaintingUI(arg_36_0)
 	local var_36_0 = arg_36_0._allPool["UI/SkillPainting"]
 	local var_36_1 = var_36_0:GetObject()
 
@@ -422,7 +422,7 @@ function var_0_5.InstSkillPaintingUI(arg_36_0)
 	return var_36_1
 end
 
-function var_0_5.InstSkillPaintingDALUI(arg_37_0)
+function BattleResourceManager.InstSkillPaintingDALUI(arg_37_0)
 	local var_37_0 = arg_37_0._allPool["UI/SkillPaintingDAL"]
 	local var_37_1 = var_37_0:GetObject()
 
@@ -431,7 +431,7 @@ function var_0_5.InstSkillPaintingDALUI(arg_37_0)
 	return var_37_1
 end
 
-function var_0_5.InstBossWarningUI(arg_38_0)
+function BattleResourceManager.InstBossWarningUI(arg_38_0)
 	local var_38_0 = arg_38_0._allPool["UI/MonsterAppearUI"]
 	local var_38_1 = var_38_0:GetObject()
 
@@ -440,7 +440,7 @@ function var_0_5.InstBossWarningUI(arg_38_0)
 	return var_38_1
 end
 
-function var_0_5.InstGridmanSkillUI(arg_39_0)
+function BattleResourceManager.InstGridmanSkillUI(arg_39_0)
 	local var_39_0 = arg_39_0._allPool["UI/combatgridmanskillfloat"]
 	local var_39_1 = var_39_0:GetObject()
 
@@ -449,7 +449,7 @@ function var_0_5.InstGridmanSkillUI(arg_39_0)
 	return var_39_1
 end
 
-function var_0_5.InstReisalinAPUI(arg_40_0)
+function BattleResourceManager.InstReisalinAPUI(arg_40_0)
 	local var_40_0 = arg_40_0._allPool["UI/combatreisalinapui"]
 	local var_40_1 = var_40_0:GetObject()
 
@@ -458,7 +458,7 @@ function var_0_5.InstReisalinAPUI(arg_40_0)
 	return var_40_1
 end
 
-function var_0_5.InstYumiaManaUI(arg_41_0)
+function BattleResourceManager.InstYumiaManaUI(arg_41_0)
 	local var_41_0 = arg_41_0._allPool["UI/combatyumiamanaui"]
 	local var_41_1 = var_41_0:GetObject()
 
@@ -467,7 +467,7 @@ function var_0_5.InstYumiaManaUI(arg_41_0)
 	return var_41_1
 end
 
-function var_0_5.InstPainting(arg_42_0, arg_42_1)
+function BattleResourceManager.InstPainting(arg_42_0, arg_42_1)
 	local var_42_0 = arg_42_0.GetPaintingPath(arg_42_1)
 	local var_42_1
 	local var_42_2 = arg_42_0._allPool[var_42_0]
@@ -484,7 +484,7 @@ function var_0_5.InstPainting(arg_42_0, arg_42_1)
 	return var_42_1
 end
 
-function var_0_5.InstMap(arg_43_0, arg_43_1)
+function BattleResourceManager.InstMap(arg_43_0, arg_43_1)
 	local var_43_0 = arg_43_0.GetMapPath(arg_43_1)
 	local var_43_1
 	local var_43_2 = arg_43_0._allPool[var_43_0]
@@ -503,7 +503,7 @@ function var_0_5.InstMap(arg_43_0, arg_43_1)
 	return var_43_1
 end
 
-function var_0_5.InstCardPuzzleCard(arg_44_0)
+function BattleResourceManager.InstCardPuzzleCard(arg_44_0)
 	local var_44_0 = arg_44_0._allPool["UI/CardTowerCardCombat"]
 	local var_44_1 = var_44_0:GetObject()
 
@@ -512,39 +512,39 @@ function var_0_5.InstCardPuzzleCard(arg_44_0)
 	return var_44_1
 end
 
-function var_0_5.GetCharacterIcon(arg_45_0, arg_45_1)
-	return arg_45_0._resCacheList[var_0_5.GetHrzIcon(arg_45_1)]
+function BattleResourceManager.GetCharacterIcon(arg_45_0, arg_45_1)
+	return arg_45_0._resCacheList[BattleResourceManager.GetHrzIcon(arg_45_1)]
 end
 
-function var_0_5.GetCharacterSquareIcon(arg_46_0, arg_46_1)
-	return arg_46_0._resCacheList[var_0_5.GetSquareIcon(arg_46_1)]
+function BattleResourceManager.GetCharacterSquareIcon(arg_46_0, arg_46_1)
+	return arg_46_0._resCacheList[BattleResourceManager.GetSquareIcon(arg_46_1)]
 end
 
-function var_0_5.GetCharacterQIcon(arg_47_0, arg_47_1)
-	return arg_47_0._resCacheList[var_0_5.GetQIcon(arg_47_1)]
+function BattleResourceManager.GetCharacterQIcon(arg_47_0, arg_47_1)
+	return arg_47_0._resCacheList[BattleResourceManager.GetQIcon(arg_47_1)]
 end
 
-function var_0_5.GetAircraftIcon(arg_48_0, arg_48_1)
-	return arg_48_0._resCacheList[var_0_5.GetAircraftIconPath(arg_48_1)]
+function BattleResourceManager.GetAircraftIcon(arg_48_0, arg_48_1)
+	return arg_48_0._resCacheList[BattleResourceManager.GetAircraftIconPath(arg_48_1)]
 end
 
-function var_0_5.GetShipTypeIcon(arg_49_0, arg_49_1)
-	return arg_49_0._resCacheList[var_0_5.GetShipTypeIconPath(arg_49_1)]
+function BattleResourceManager.GetShipTypeIcon(arg_49_0, arg_49_1)
+	return arg_49_0._resCacheList[BattleResourceManager.GetShipTypeIconPath(arg_49_1)]
 end
 
-function var_0_5.GetCommanderHrzIcon(arg_50_0, arg_50_1)
-	return arg_50_0._resCacheList[var_0_5.GetCommanderHrzIconPath(arg_50_1)]
+function BattleResourceManager.GetCommanderHrzIcon(arg_50_0, arg_50_1)
+	return arg_50_0._resCacheList[BattleResourceManager.GetCommanderHrzIconPath(arg_50_1)]
 end
 
-function var_0_5.GetCommanderIcon(arg_51_0, arg_51_1)
-	return arg_51_0._resCacheList[var_0_5.GetCommanderIconPath(arg_51_1)]
+function BattleResourceManager.GetCommanderIcon(arg_51_0, arg_51_1)
+	return arg_51_0._resCacheList[BattleResourceManager.GetCommanderIconPath(arg_51_1)]
 end
 
-function var_0_5.GetShader(arg_52_0, arg_52_1)
+function BattleResourceManager.GetShader(arg_52_0, arg_52_1)
 	return (pg.ShaderMgr.GetInstance():GetShader(var_0_3.BATTLE_SHADER[arg_52_1]))
 end
 
-function var_0_5.AddPreloadResource(arg_53_0, arg_53_1)
+function BattleResourceManager.AddPreloadResource(arg_53_0, arg_53_1)
 	if type(arg_53_1) == "string" then
 		arg_53_0._preloadList[arg_53_1] = false
 	elseif type(arg_53_1) == "table" then
@@ -554,7 +554,7 @@ function var_0_5.AddPreloadResource(arg_53_0, arg_53_1)
 	end
 end
 
-function var_0_5.AddPreloadCV(arg_54_0, arg_54_1)
+function BattleResourceManager.AddPreloadCV(arg_54_0, arg_54_1)
 	local var_54_0 = ShipWordHelper.RawGetCVKey(arg_54_1)
 
 	if var_54_0 > 0 then
@@ -562,7 +562,7 @@ function var_0_5.AddPreloadCV(arg_54_0, arg_54_1)
 	end
 end
 
-function var_0_5.StartPreload(arg_55_0, arg_55_1, arg_55_2)
+function BattleResourceManager.StartPreload(arg_55_0, arg_55_1, arg_55_2)
 	local var_55_0 = 0
 	local var_55_1 = 0
 
@@ -646,12 +646,12 @@ function var_0_5.StartPreload(arg_55_0, arg_55_1, arg_55_2)
 				var_55_2()
 			end)
 		elseif string.find(iter_55_6, "painting/") then
-			PoolMgr.GetInstance():GetPainting(var_0_5.GetPaintingName(var_55_3), true, function(arg_59_0)
+			PoolMgr.GetInstance():GetPainting(BattleResourceManager.GetPaintingName(var_55_3), true, function(arg_59_0)
 				if arg_59_0 == nil then
 					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
 				else
 					if not arg_55_0._poolRoot then
-						var_0_5.ClearPaintingRes(iter_55_6, arg_59_0)
+						BattleResourceManager.ClearPaintingRes(iter_55_6, arg_59_0)
 
 						return
 					end
@@ -674,7 +674,7 @@ function var_0_5.StartPreload(arg_55_0, arg_55_1, arg_55_2)
 					arg_60_0 = SpineAnim.AnimChar(var_55_3, arg_60_0)
 
 					if not arg_55_0._poolRoot then
-						var_0_5.ClearCharRes(iter_55_6, arg_60_0)
+						BattleResourceManager.ClearCharRes(iter_55_6, arg_60_0)
 
 						return
 					end
@@ -735,7 +735,7 @@ function var_0_5.StartPreload(arg_55_0, arg_55_1, arg_55_2)
 	return var_55_1
 end
 
-function var_0_5.GetPaintingName(arg_63_0)
+function BattleResourceManager.GetPaintingName(arg_63_0)
 	local var_63_0 = false
 
 	if PlayerPrefs.GetInt(BATTLE_HIDE_BG, 1) > 0 then
@@ -749,15 +749,15 @@ end
 
 local var_0_6 = Vector3(0, 10000, 0)
 
-function var_0_5.HideBullet(arg_64_0)
+function BattleResourceManager.HideBullet(arg_64_0)
 	arg_64_0.transform.position = var_0_6
 end
 
-function var_0_5.InitParticleSystemCB(arg_65_0)
+function BattleResourceManager.InitParticleSystemCB(arg_65_0)
 	pg.EffectMgr.GetInstance():CommonEffectEvent(arg_65_0)
 end
 
-function var_0_5.InitPool(arg_66_0, arg_66_1, arg_66_2)
+function BattleResourceManager.InitPool(arg_66_0, arg_66_1, arg_66_2)
 	local var_66_0 = arg_66_0._poolRoot.transform
 
 	if string.find(arg_66_1, "Item/") then
@@ -766,7 +766,7 @@ function var_0_5.InitPool(arg_66_0, arg_66_1, arg_66_2)
 		else
 			local var_66_1 = pg.Pool.New(arg_66_0._bulletContainer.transform, arg_66_2, 20, 20, true, true)
 
-			var_66_1:SetRecycleFuncs(var_0_5.HideBullet)
+			var_66_1:SetRecycleFuncs(BattleResourceManager.HideBullet)
 			var_66_1:InitSize()
 
 			arg_66_0._allPool[arg_66_1] = var_66_1
@@ -783,7 +783,7 @@ function var_0_5.InitPool(arg_66_0, arg_66_1, arg_66_2)
 
 			local var_66_3 = pg.Pool.New(var_66_0, arg_66_2, var_66_2, 20, false, false)
 
-			var_66_3:SetInitFuncs(var_0_5.InitParticleSystemCB)
+			var_66_3:SetInitFuncs(BattleResourceManager.InitParticleSystemCB)
 			var_66_3:InitSize()
 
 			arg_66_0._allPool[arg_66_1] = var_66_3
@@ -811,7 +811,7 @@ function var_0_5.InitPool(arg_66_0, arg_66_1, arg_66_2)
 
 		local var_66_7 = pg.Pool.New(var_66_0, arg_66_2, var_66_6, 20, false, false):InitSize()
 
-		var_66_7:SetRecycleFuncs(var_0_5.ResetSpineAction)
+		var_66_7:SetRecycleFuncs(BattleResourceManager.ResetSpineAction)
 
 		arg_66_0._allPool[arg_66_1] = var_66_7
 	elseif string.find(arg_66_1, "chargo/") then
@@ -839,7 +839,7 @@ function var_0_5.InitPool(arg_66_0, arg_66_1, arg_66_2)
 	end
 end
 
-function var_0_5.GetRotateScript(arg_67_0, arg_67_1, arg_67_2)
+function BattleResourceManager.GetRotateScript(arg_67_0, arg_67_1, arg_67_2)
 	local var_67_0 = arg_67_0.rotateScriptMap
 
 	if var_67_0[arg_67_1] then
@@ -853,42 +853,42 @@ function var_0_5.GetRotateScript(arg_67_0, arg_67_1, arg_67_2)
 	return var_67_1
 end
 
-function var_0_5.GetCommonResource()
+function BattleResourceManager.GetCommonResource()
 	return {
-		var_0_5.GetMapPath("visionLine"),
-		var_0_5.GetMapPath("exposeLine"),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleBossCharacterFactory.BOMB_FX_NAME),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleAircraftCharacterFactory.BOMB_FX_NAME),
-		var_0_5.GetFXPath("AlertArea"),
-		var_0_5.GetFXPath("TorAlert"),
-		var_0_5.GetFXPath("SquareAlert"),
-		var_0_5.GetFXPath("AntiAirArea"),
-		var_0_5.GetFXPath("AntiSubArea"),
-		var_0_5.GetFXPath("AimBiasArea"),
-		var_0_5.GetFXPath("shock"),
-		var_0_5.GetFXPath("qianting_chushui"),
-		var_0_5.GetFXPath(var_0_3.PLAYER_SUB_BUBBLE_FX),
-		var_0_5.GetFXPath("weaponrange"),
-		var_0_5.GetUIPath("SkillPainting"),
-		var_0_5.GetUIPath("MonsterAppearUI"),
-		var_0_5.GetUIPath("combatreisalinapui"),
-		var_0_5.GetUIPath("combatyumiamanaui"),
-		var_0_5.GetUIPath("CombatHPBar" .. var_0_0.Battle.BattleState.GetCombatSkinKey()),
-		var_0_5.GetUIPath("CombatHPPop" .. var_0_0.Battle.BattleState.GetCombatSkinKey())
+		BattleResourceManager.GetMapPath("visionLine"),
+		BattleResourceManager.GetMapPath("exposeLine"),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleBossCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleAircraftCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath("AlertArea"),
+		BattleResourceManager.GetFXPath("TorAlert"),
+		BattleResourceManager.GetFXPath("SquareAlert"),
+		BattleResourceManager.GetFXPath("AntiAirArea"),
+		BattleResourceManager.GetFXPath("AntiSubArea"),
+		BattleResourceManager.GetFXPath("AimBiasArea"),
+		BattleResourceManager.GetFXPath("shock"),
+		BattleResourceManager.GetFXPath("qianting_chushui"),
+		BattleResourceManager.GetFXPath(var_0_3.PLAYER_SUB_BUBBLE_FX),
+		BattleResourceManager.GetFXPath("weaponrange"),
+		BattleResourceManager.GetUIPath("SkillPainting"),
+		BattleResourceManager.GetUIPath("MonsterAppearUI"),
+		BattleResourceManager.GetUIPath("combatreisalinapui"),
+		BattleResourceManager.GetUIPath("combatyumiamanaui"),
+		BattleResourceManager.GetUIPath("CombatHPBar" .. var_0_0.Battle.BattleState.GetCombatSkinKey()),
+		BattleResourceManager.GetUIPath("CombatHPPop" .. var_0_0.Battle.BattleState.GetCombatSkinKey())
 	}
 end
 
-function var_0_5.GetDisplayCommonResource()
+function BattleResourceManager.GetDisplayCommonResource()
 	return {
-		var_0_5.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
-		var_0_5.GetFXPath(var_0_0.Battle.BattleCharacterFactory.DANCHUAN_MOVE_WAVE_FX_NAME)
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.DANCHUAN_MOVE_WAVE_FX_NAME)
 	}
 end
 
-function var_0_5.GetMapResource(arg_70_0)
+function BattleResourceManager.GetMapResource(arg_70_0)
 	local var_70_0 = {}
 	local var_70_1 = var_0_0.Battle.BattleMap
 
@@ -896,25 +896,25 @@ function var_0_5.GetMapResource(arg_70_0)
 		local var_70_2 = var_70_1.GetMapResNames(arg_70_0, iter_70_1)
 
 		for iter_70_2, iter_70_3 in ipairs(var_70_2) do
-			var_70_0[#var_70_0 + 1] = var_0_5.GetMapPath(iter_70_3)
+			var_70_0[#var_70_0 + 1] = BattleResourceManager.GetMapPath(iter_70_3)
 		end
 	end
 
 	return var_70_0
 end
 
-function var_0_5.GetBuffResource()
+function BattleResourceManager.GetBuffResource()
 	local var_71_0 = {}
 	local var_71_1 = require("buffFXPreloadList")
 
 	for iter_71_0, iter_71_1 in ipairs(var_71_1) do
-		var_71_0[#var_71_0 + 1] = var_0_5.GetFXPath(iter_71_1)
+		var_71_0[#var_71_0 + 1] = BattleResourceManager.GetFXPath(iter_71_1)
 	end
 
 	return var_71_0
 end
 
-function var_0_5.GetShipResource(arg_72_0, arg_72_1, arg_72_2)
+function BattleResourceManager.GetShipResource(arg_72_0, arg_72_1, arg_72_2)
 	local var_72_0 = {}
 	local var_72_1 = var_0_1.GetPlayerShipTmpDataFromID(arg_72_0)
 
@@ -924,24 +924,24 @@ function var_0_5.GetShipResource(arg_72_0, arg_72_1, arg_72_2)
 
 	local var_72_2 = var_0_1.GetPlayerShipSkinDataFromID(arg_72_1)
 
-	var_72_0[#var_72_0 + 1] = var_0_5.GetCharacterPath(var_72_2.prefab)
-	var_72_0[#var_72_0 + 1] = var_0_5.GetHrzIcon(var_72_2.painting)
-	var_72_0[#var_72_0 + 1] = var_0_5.GetQIcon(var_72_2.painting)
+	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetCharacterPath(var_72_2.prefab)
+	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetHrzIcon(var_72_2.painting)
+	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetQIcon(var_72_2.painting)
 
 	if table.contains(var_0_3.MIRROR_QICON_SHIP_GROUP, var_72_2.ship_group) then
-		var_72_0[#var_72_0 + 1] = var_0_5.GetQIcon(var_72_2.painting .. var_0_3.MIRROR_QICON_KEY)
+		var_72_0[#var_72_0 + 1] = BattleResourceManager.GetQIcon(var_72_2.painting .. var_0_3.MIRROR_QICON_KEY)
 	end
 
-	var_72_0[#var_72_0 + 1] = var_0_5.GetSquareIcon(var_72_2.painting)
+	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetSquareIcon(var_72_2.painting)
 
 	if arg_72_2 and var_0_1.GetShipTypeTmp(var_72_1.type).team_type == TeamType.Main then
-		var_72_0[#var_72_0 + 1] = var_0_5.GetPaintingPath(var_72_2.painting)
+		var_72_0[#var_72_0 + 1] = BattleResourceManager.GetPaintingPath(var_72_2.painting)
 	end
 
 	return var_72_0
 end
 
-function var_0_5.GetEnemyResource(arg_73_0)
+function BattleResourceManager.GetEnemyResource(arg_73_0)
 	local var_73_0 = {}
 	local var_73_1 = arg_73_0.monsterTemplateID
 	local var_73_2 = arg_73_0.bossData ~= nil
@@ -949,31 +949,31 @@ function var_0_5.GetEnemyResource(arg_73_0)
 	local var_73_4 = arg_73_0.phase or {}
 	local var_73_5 = var_0_1.GetMonsterTmpDataFromID(var_73_1)
 
-	var_73_0[#var_73_0 + 1] = var_0_5.GetCharacterPath(var_73_5.prefab)
-	var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(var_73_5.wave_fx)
+	var_73_0[#var_73_0 + 1] = BattleResourceManager.GetCharacterPath(var_73_5.prefab)
+	var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(var_73_5.wave_fx)
 
 	if var_73_5.fog_fx then
-		var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(var_73_5.fog_fx)
+		var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(var_73_5.fog_fx)
 	end
 
 	for iter_73_0, iter_73_1 in ipairs(var_73_5.appear_fx) do
-		var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(iter_73_1)
+		var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(iter_73_1)
 	end
 
 	for iter_73_2, iter_73_3 in ipairs(var_73_5.smoke) do
 		local var_73_6 = iter_73_3[2]
 
 		for iter_73_4, iter_73_5 in ipairs(var_73_6) do
-			var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(iter_73_5[1])
+			var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(iter_73_5[1])
 		end
 	end
 
 	if arg_73_0.deadFX then
-		var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(arg_73_0.deadFX)
+		var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(arg_73_0.deadFX)
 	end
 
 	if type(var_73_5.bubble_fx) == "table" then
-		var_73_0[#var_73_0 + 1] = var_0_5.GetFXPath(var_73_5.bubble_fx[1])
+		var_73_0[#var_73_0 + 1] = BattleResourceManager.GetFXPath(var_73_5.bubble_fx[1])
 	end
 
 	local function var_73_7(arg_74_0)
@@ -986,11 +986,11 @@ function var_0_5.GetEnemyResource(arg_73_0)
 				local var_74_2 = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(var_74_1).painting
 
 				if var_74_2 == 1 then
-					var_73_0[#var_73_0 + 1] = var_0_5.GetHrzIcon(var_73_5.icon)
-					var_73_0[#var_73_0 + 1] = var_0_5.GetSquareIcon(var_73_5.icon)
+					var_73_0[#var_73_0 + 1] = BattleResourceManager.GetHrzIcon(var_73_5.icon)
+					var_73_0[#var_73_0 + 1] = BattleResourceManager.GetSquareIcon(var_73_5.icon)
 				elseif type(var_74_2) == "string" then
-					var_73_0[#var_73_0 + 1] = var_0_5.GetHrzIcon(var_74_2)
-					var_73_0[#var_73_0 + 1] = var_0_5.GetSquareIcon(var_74_2)
+					var_73_0[#var_73_0 + 1] = BattleResourceManager.GetHrzIcon(var_74_2)
+					var_73_0[#var_73_0 + 1] = BattleResourceManager.GetSquareIcon(var_74_2)
 				end
 			end
 
@@ -1015,13 +1015,13 @@ function var_0_5.GetEnemyResource(arg_73_0)
 	end
 
 	if var_73_2 then
-		var_73_0[#var_73_0 + 1] = var_0_5.GetSquareIcon(var_73_5.icon)
+		var_73_0[#var_73_0 + 1] = BattleResourceManager.GetSquareIcon(var_73_5.icon)
 	end
 
 	return var_73_0
 end
 
-function var_0_5.GetWeaponResource(arg_75_0, arg_75_1)
+function BattleResourceManager.GetWeaponResource(arg_75_0, arg_75_1)
 	local var_75_0 = {}
 
 	if arg_75_0 == -1 then
@@ -1032,22 +1032,22 @@ function var_0_5.GetWeaponResource(arg_75_0, arg_75_1)
 
 	if var_75_1.type == var_0_2.EquipmentType.MAIN_CANNON or var_75_1.type == var_0_2.EquipmentType.SUB_CANNON or var_75_1.type == var_0_2.EquipmentType.TORPEDO or var_75_1.type == var_0_2.EquipmentType.ANTI_AIR or var_75_1.type == var_0_2.EquipmentType.ANTI_SEA or var_75_1.type == var_0_2.EquipmentType.POINT_HIT_AND_LOCK or var_75_1.type == var_0_2.EquipmentType.MANUAL_METEOR or var_75_1.type == var_0_2.EquipmentType.BOMBER_PRE_CAST_ALERT or var_75_1.type == var_0_2.EquipmentType.DEPTH_CHARGE or var_75_1.type == var_0_2.EquipmentType.MANUAL_TORPEDO or var_75_1.type == var_0_2.EquipmentType.DISPOSABLE_TORPEDO or var_75_1.type == var_0_2.EquipmentType.MANUAL_AAMISSILE or var_75_1.type == var_0_2.EquipmentType.BEAM or var_75_1.type == var_0_2.EquipmentType.SPACE_LASER or var_75_1.type == var_0_2.EquipmentType.FLEET_RANGE_ANTI_AIR or var_75_1.type == var_0_2.EquipmentType.MANUAL_MISSILE or var_75_1.type == var_0_2.EquipmentType.AUTO_MISSILE or var_75_1.type == var_0_2.EquipmentType.MISSILE then
 		for iter_75_0, iter_75_1 in ipairs(var_75_1.bullet_ID) do
-			local var_75_2 = var_0_5.GetBulletResource(iter_75_1, arg_75_1)
+			local var_75_2 = BattleResourceManager.GetBulletResource(iter_75_1, arg_75_1)
 
 			for iter_75_2, iter_75_3 in ipairs(var_75_2) do
 				var_75_0[#var_75_0 + 1] = iter_75_3
 			end
 		end
 	elseif var_75_1.type == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or var_75_1.type == var_0_2.EquipmentType.STRIKE_AIRCRAFT then
-		var_75_0 = var_0_5.GetAircraftResource(arg_75_0, nil, arg_75_1)
+		var_75_0 = BattleResourceManager.GetAircraftResource(arg_75_0, nil, arg_75_1)
 	elseif var_75_1.type == var_0_2.EquipmentType.PREVIEW_ARICRAFT then
 		for iter_75_4, iter_75_5 in ipairs(var_75_1.bullet_ID) do
-			var_75_0 = var_0_5.GetAircraftResource(iter_75_5, nil, arg_75_1)
+			var_75_0 = BattleResourceManager.GetAircraftResource(iter_75_5, nil, arg_75_1)
 		end
 	end
 
 	if var_75_1.type == var_0_2.EquipmentType.FLEET_RANGE_ANTI_AIR then
-		local var_75_3 = var_0_5.GetBulletResource(var_0_3.AntiAirConfig.RangeBulletID)
+		local var_75_3 = BattleResourceManager.GetBulletResource(var_0_3.AntiAirConfig.RangeBulletID)
 
 		for iter_75_6, iter_75_7 in ipairs(var_75_3) do
 			var_75_0[#var_75_0 + 1] = iter_75_7
@@ -1061,27 +1061,27 @@ function var_0_5.GetWeaponResource(arg_75_0, arg_75_1)
 	end
 
 	if var_75_4 and var_75_4.fire_fx_name ~= "" then
-		var_75_0[#var_75_0 + 1] = var_0_5.GetFXPath(var_75_4.fire_fx_name)
+		var_75_0[#var_75_0 + 1] = BattleResourceManager.GetFXPath(var_75_4.fire_fx_name)
 	else
-		var_75_0[#var_75_0 + 1] = var_0_5.GetFXPath(var_75_1.fire_fx)
+		var_75_0[#var_75_0 + 1] = BattleResourceManager.GetFXPath(var_75_1.fire_fx)
 	end
 
 	if var_75_1.precast_param.fx then
-		var_75_0[#var_75_0 + 1] = var_0_5.GetFXPath(var_75_1.precast_param.fx)
+		var_75_0[#var_75_0 + 1] = BattleResourceManager.GetFXPath(var_75_1.precast_param.fx)
 	end
 
 	if var_75_4 then
 		local var_75_5 = var_75_4.orbit_combat
 
 		if var_75_5 ~= "" then
-			var_75_0[#var_75_0 + 1] = var_0_5.GetOrbitPath(var_75_5)
+			var_75_0[#var_75_0 + 1] = BattleResourceManager.GetOrbitPath(var_75_5)
 		end
 	end
 
 	return var_75_0
 end
 
-function var_0_5.GetEquipResource(arg_76_0, arg_76_1, arg_76_2)
+function BattleResourceManager.GetEquipResource(arg_76_0, arg_76_1, arg_76_2)
 	local var_76_0 = {}
 
 	if arg_76_1 ~= 0 then
@@ -1091,13 +1091,13 @@ function var_0_5.GetEquipResource(arg_76_0, arg_76_1, arg_76_2)
 		if var_76_2 ~= 0 then
 			local var_76_3 = var_0_0.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(var_76_2)
 
-			var_76_0[#var_76_0 + 1] = var_0_5.GetCharacterPath(var_76_3.prefab)
+			var_76_0[#var_76_0 + 1] = BattleResourceManager.GetCharacterPath(var_76_3.prefab)
 		end
 
 		local var_76_4 = var_76_1.orbit_combat
 
 		if var_76_4 ~= "" then
-			var_76_0[#var_76_0 + 1] = var_0_5.GetOrbitPath(var_76_4)
+			var_76_0[#var_76_0 + 1] = BattleResourceManager.GetOrbitPath(var_76_4)
 		end
 	end
 
@@ -1105,7 +1105,7 @@ function var_0_5.GetEquipResource(arg_76_0, arg_76_1, arg_76_2)
 	local var_76_6 = var_76_5.weapon_id
 
 	for iter_76_0, iter_76_1 in ipairs(var_76_6) do
-		local var_76_7 = var_0_5.GetWeaponResource(iter_76_1)
+		local var_76_7 = BattleResourceManager.GetWeaponResource(iter_76_1)
 
 		for iter_76_2, iter_76_3 in ipairs(var_76_7) do
 			var_76_0[#var_76_0 + 1] = iter_76_3
@@ -1127,7 +1127,7 @@ function var_0_5.GetEquipResource(arg_76_0, arg_76_1, arg_76_2)
 	return var_76_0
 end
 
-function var_0_5.GetBulletResource(arg_77_0, arg_77_1)
+function BattleResourceManager.GetBulletResource(arg_77_0, arg_77_1)
 	local var_77_0 = {}
 	local var_77_1
 
@@ -1142,20 +1142,20 @@ function var_0_5.GetBulletResource(arg_77_0, arg_77_1)
 		var_77_3 = var_77_1.bullet_name
 
 		if var_77_1.mirror == 1 then
-			var_77_0[#var_77_0 + 1] = var_0_5.GetBulletPath(var_77_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+			var_77_0[#var_77_0 + 1] = BattleResourceManager.GetBulletPath(var_77_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
 		end
 	else
 		var_77_3 = var_77_2.modle_ID
 	end
 
 	if var_77_2.type == var_0_2.BulletType.BEAM or var_77_2.type == var_0_2.BulletType.SPACE_LASER or var_77_2.type == var_0_2.BulletType.MISSILE or var_77_2.type == var_0_2.BulletType.ELECTRIC_ARC then
-		var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(var_77_2.modle_ID)
+		var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(var_77_2.modle_ID)
 	else
-		var_77_0[#var_77_0 + 1] = var_0_5.GetBulletPath(var_77_3)
+		var_77_0[#var_77_0 + 1] = BattleResourceManager.GetBulletPath(var_77_3)
 	end
 
 	if var_77_2.extra_param.mirror then
-		var_77_0[#var_77_0 + 1] = var_0_5.GetBulletPath(var_77_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+		var_77_0[#var_77_0 + 1] = BattleResourceManager.GetBulletPath(var_77_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
 	end
 
 	local var_77_4
@@ -1166,17 +1166,17 @@ function var_0_5.GetBulletResource(arg_77_0, arg_77_1)
 		var_77_4 = var_77_2.hit_fx
 	end
 
-	var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(var_77_4)
-	var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(var_77_2.miss_fx)
-	var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(var_77_2.alert_fx)
+	var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(var_77_4)
+	var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(var_77_2.miss_fx)
+	var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(var_77_2.alert_fx)
 
 	if var_77_2.extra_param.area_FX then
-		var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(var_77_2.extra_param.area_FX)
+		var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(var_77_2.extra_param.area_FX)
 	end
 
 	if var_77_2.extra_param.shrapnel then
 		for iter_77_0, iter_77_1 in ipairs(var_77_2.extra_param.shrapnel) do
-			local var_77_5 = var_0_5.GetBulletResource(iter_77_1.bullet_ID)
+			local var_77_5 = BattleResourceManager.GetBulletResource(iter_77_1.bullet_ID)
 
 			for iter_77_2, iter_77_3 in ipairs(var_77_5) do
 				var_77_0[#var_77_0 + 1] = iter_77_3
@@ -1186,7 +1186,7 @@ function var_0_5.GetBulletResource(arg_77_0, arg_77_1)
 
 	for iter_77_4, iter_77_5 in ipairs(var_77_2.attach_buff) do
 		if iter_77_5.effect_id then
-			var_77_0[#var_77_0 + 1] = var_0_5.GetFXPath(iter_77_5.effect_id)
+			var_77_0[#var_77_0 + 1] = BattleResourceManager.GetFXPath(iter_77_5.effect_id)
 		end
 
 		if iter_77_5.buff_id then
@@ -1201,7 +1201,7 @@ function var_0_5.GetBulletResource(arg_77_0, arg_77_1)
 	return var_77_0
 end
 
-function var_0_5.GetAircraftResource(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
+function BattleResourceManager.GetAircraftResource(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
 	local var_78_0 = {}
 
 	arg_78_2 = arg_78_2 or 0
@@ -1218,38 +1218,38 @@ function var_0_5.GetAircraftResource(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
 		var_78_2, var_78_6, var_78_7, var_78_8 = var_0_1.GetEquipSkin(arg_78_2)
 
 		if var_78_6 ~= "" then
-			var_78_0[#var_78_0 + 1] = var_0_5.GetBulletPath(var_78_6)
+			var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_6)
 		end
 
 		if var_78_7 ~= "" then
-			var_78_0[#var_78_0 + 1] = var_0_5.GetBulletPath(var_78_7)
+			var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_7)
 		end
 
 		if var_78_8 ~= "" then
-			var_78_0[#var_78_0 + 1] = var_0_5.GetBulletPath(var_78_8)
+			var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_8)
 		end
 	else
 		var_78_2 = var_78_1.model_ID
 	end
 
-	var_78_0[#var_78_0 + 1] = var_0_5.GetCharacterGoPath(var_78_2)
+	var_78_0[#var_78_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_78_2)
 
 	if arg_78_3 then
-		var_78_0[#var_78_0 + 1] = var_0_5.GetAircraftIconPath(var_78_1.model_ID)
+		var_78_0[#var_78_0 + 1] = BattleResourceManager.GetAircraftIconPath(var_78_1.model_ID)
 	end
 
 	local var_78_9 = arg_78_1 or var_78_1.weapon_ID
 
 	if type(var_78_9) == "table" then
 		for iter_78_0, iter_78_1 in ipairs(var_78_9) do
-			local var_78_10 = var_0_5.GetWeaponResource(iter_78_1)
+			local var_78_10 = BattleResourceManager.GetWeaponResource(iter_78_1)
 
 			for iter_78_2, iter_78_3 in ipairs(var_78_10) do
 				var_78_0[#var_78_0 + 1] = iter_78_3
 			end
 		end
 	else
-		local var_78_11 = var_0_5.GetWeaponResource(var_78_9)
+		local var_78_11 = BattleResourceManager.GetWeaponResource(var_78_9)
 
 		for iter_78_4, iter_78_5 in ipairs(var_78_11) do
 			var_78_0[#var_78_0 + 1] = iter_78_5
@@ -1259,12 +1259,12 @@ function var_0_5.GetAircraftResource(arg_78_0, arg_78_1, arg_78_2, arg_78_3)
 	return var_78_0
 end
 
-function var_0_5.GetCommanderResource(arg_79_0)
+function BattleResourceManager.GetCommanderResource(arg_79_0)
 	local var_79_0 = {}
 	local var_79_1 = arg_79_0[1]
 
-	var_79_0[#var_79_0 + 1] = var_0_5.GetCommanderHrzIconPath(var_79_1:getPainting())
-	var_79_0[#var_79_0 + 1] = var_0_5.GetCommanderIconPath(var_79_1:getPainting())
+	var_79_0[#var_79_0 + 1] = BattleResourceManager.GetCommanderHrzIconPath(var_79_1:getPainting())
+	var_79_0[#var_79_0 + 1] = BattleResourceManager.GetCommanderIconPath(var_79_1:getPainting())
 
 	local var_79_2 = var_79_1:getSkills()[1]:getLevel()
 
@@ -1279,7 +1279,7 @@ function var_0_5.GetCommanderResource(arg_79_0)
 	return var_79_0
 end
 
-function var_0_5.GetStageResource(arg_80_0)
+function BattleResourceManager.GetStageResource(arg_80_0)
 	local var_80_0 = var_0_0.Battle.BattleDataFunction.GetDungeonTmpDataByID(arg_80_0)
 	local var_80_1 = {}
 	local var_80_2 = {}
@@ -1298,7 +1298,7 @@ function var_0_5.GetStageResource(arg_80_0)
 		for iter_80_6, iter_80_7 in ipairs(iter_80_1.waves) do
 			if iter_80_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.NORMAL then
 				for iter_80_8, iter_80_9 in ipairs(iter_80_7.spawn) do
-					local var_80_4 = var_0_5.GetMonsterRes(iter_80_9)
+					local var_80_4 = BattleResourceManager.GetMonsterRes(iter_80_9)
 
 					for iter_80_10, iter_80_11 in ipairs(var_80_4) do
 						table.insert(var_80_1, iter_80_11)
@@ -1307,7 +1307,7 @@ function var_0_5.GetStageResource(arg_80_0)
 
 				if iter_80_7.reinforcement then
 					for iter_80_12, iter_80_13 in ipairs(iter_80_7.reinforcement) do
-						local var_80_5 = var_0_5.GetMonsterRes(iter_80_13)
+						local var_80_5 = BattleResourceManager.GetMonsterRes(iter_80_13)
 
 						for iter_80_14, iter_80_15 in ipairs(var_80_5) do
 							table.insert(var_80_1, iter_80_15)
@@ -1320,7 +1320,7 @@ function var_0_5.GetStageResource(arg_80_0)
 				local var_80_8 = iter_80_7.triggerParams.sub_unitList
 
 				local function var_80_9(arg_81_0)
-					local var_81_0 = var_0_5.GetAidUnitsRes(arg_81_0)
+					local var_81_0 = BattleResourceManager.GetAidUnitsRes(arg_81_0)
 
 					for iter_81_0, iter_81_1 in ipairs(var_81_0) do
 						table.insert(var_80_1, iter_81_1)
@@ -1344,7 +1344,7 @@ function var_0_5.GetStageResource(arg_80_0)
 				end
 			elseif iter_80_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.ENVIRONMENT then
 				for iter_80_16, iter_80_17 in ipairs(iter_80_7.spawn) do
-					var_0_5.GetEnvironmentRes(var_80_1, iter_80_17)
+					BattleResourceManager.GetEnvironmentRes(var_80_1, iter_80_17)
 				end
 			elseif iter_80_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.CARD_PUZZLE then
 				local var_80_10 = var_0_0.Battle.BattleDataFunction.GetCardRes(iter_80_7.triggerParams.card_id)
@@ -1356,7 +1356,7 @@ function var_0_5.GetStageResource(arg_80_0)
 
 			if iter_80_7.airFighter ~= nil then
 				for iter_80_20, iter_80_21 in pairs(iter_80_7.airFighter) do
-					local var_80_11 = var_0_5.GetAircraftResource(iter_80_21.templateID, iter_80_21.weaponID, nil, true)
+					local var_80_11 = BattleResourceManager.GetAircraftResource(iter_80_21.templateID, iter_80_21.weaponID, nil, true)
 
 					for iter_80_22, iter_80_23 in ipairs(var_80_11) do
 						var_80_1[#var_80_1 + 1] = iter_80_23
@@ -1369,8 +1369,8 @@ function var_0_5.GetStageResource(arg_80_0)
 	return var_80_1, var_80_2
 end
 
-function var_0_5.GetEnvironmentRes(arg_82_0, arg_82_1)
-	table.insert(arg_82_0, arg_82_1.prefab and var_0_5.GetFXPath(arg_82_1.prefab))
+function BattleResourceManager.GetEnvironmentRes(arg_82_0, arg_82_1)
+	table.insert(arg_82_0, arg_82_1.prefab and BattleResourceManager.GetFXPath(arg_82_1.prefab))
 
 	local var_82_0 = arg_82_1.behaviours
 	local var_82_1 = var_0_0.Battle.BattleDataFunction.GetEnvironmentBehaviour(var_82_0).behaviour_list
@@ -1387,22 +1387,22 @@ function var_0_5.GetEnvironmentRes(arg_82_0, arg_82_1)
 		elseif var_82_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.SPAWN then
 			local var_82_4 = iter_82_1.content and iter_82_1.content.alert and iter_82_1.content.alert.alert_fx
 
-			table.insert(arg_82_0, var_82_4 and var_0_5.GetFXPath(var_82_4))
+			table.insert(arg_82_0, var_82_4 and BattleResourceManager.GetFXPath(var_82_4))
 
 			local var_82_5 = iter_82_1.content and iter_82_1.content.child_prefab
 
 			if var_82_5 then
-				var_0_5.GetEnvironmentRes(arg_82_0, var_82_5)
+				BattleResourceManager.GetEnvironmentRes(arg_82_0, var_82_5)
 			end
 		elseif var_82_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.PLAY_FX then
-			arg_82_0[#arg_82_0 + 1] = var_0_5.GetFXPath(iter_82_1.FX_ID)
+			arg_82_0[#arg_82_0 + 1] = BattleResourceManager.GetFXPath(iter_82_1.FX_ID)
 		end
 	end
 end
 
-function var_0_5.GetMonsterRes(arg_83_0)
+function BattleResourceManager.GetMonsterRes(arg_83_0)
 	local var_83_0 = {}
-	local var_83_1 = var_0_5.GetEnemyResource(arg_83_0)
+	local var_83_1 = BattleResourceManager.GetEnemyResource(arg_83_0)
 
 	for iter_83_0, iter_83_1 in ipairs(var_83_1) do
 		var_83_0[#var_83_0 + 1] = iter_83_1
@@ -1458,7 +1458,7 @@ function var_0_5.GetMonsterRes(arg_83_0)
 			local var_83_9 = iter_83_21.arg_list.skill_id
 
 			if var_83_9 and var_0_0.Battle.BattleDataFunction.NeedSkillPainting(var_83_9) then
-				var_83_0[#var_83_0 + 1] = var_0_5.GetPaintingPath(var_0_1.GetMonsterTmpDataFromID(arg_83_0.monsterTemplateID).icon)
+				var_83_0[#var_83_0 + 1] = BattleResourceManager.GetPaintingPath(var_0_1.GetMonsterTmpDataFromID(arg_83_0.monsterTemplateID).icon)
 
 				break
 			end
@@ -1466,7 +1466,7 @@ function var_0_5.GetMonsterRes(arg_83_0)
 	end
 
 	for iter_83_22, iter_83_23 in ipairs(var_83_3) do
-		local var_83_10 = var_0_5.GetWeaponResource(iter_83_23)
+		local var_83_10 = BattleResourceManager.GetWeaponResource(iter_83_23)
 
 		for iter_83_24, iter_83_25 in ipairs(var_83_10) do
 			var_83_0[#var_83_0 + 1] = iter_83_25
@@ -1476,12 +1476,12 @@ function var_0_5.GetMonsterRes(arg_83_0)
 	return var_83_0
 end
 
-function var_0_5.GetEquipSkinPreviewRes(arg_84_0)
+function BattleResourceManager.GetEquipSkinPreviewRes(arg_84_0)
 	local var_84_0 = {}
 	local var_84_1 = var_0_1.GetEquipSkinDataFromID(arg_84_0)
 
 	for iter_84_0, iter_84_1 in ipairs(var_84_1.weapon_ids) do
-		local var_84_2 = var_0_5.GetWeaponResource(iter_84_1)
+		local var_84_2 = BattleResourceManager.GetWeaponResource(iter_84_1)
 
 		for iter_84_2, iter_84_3 in ipairs(var_84_2) do
 			var_84_0[#var_84_0 + 1] = iter_84_3
@@ -1490,7 +1490,7 @@ function var_0_5.GetEquipSkinPreviewRes(arg_84_0)
 
 	local function var_84_3(arg_85_0)
 		if arg_85_0 ~= "" then
-			var_84_0[#var_84_0 + 1] = var_0_5.GetBulletPath(arg_85_0)
+			var_84_0[#var_84_0 + 1] = BattleResourceManager.GetBulletPath(arg_85_0)
 		end
 	end
 
@@ -1499,9 +1499,9 @@ function var_0_5.GetEquipSkinPreviewRes(arg_84_0)
 	if _.any(EquipType.AirProtoEquipTypes, function(arg_86_0)
 		return table.contains(var_84_1.equip_type, arg_86_0)
 	end) then
-		var_84_0[#var_84_0 + 1] = var_0_5.GetCharacterGoPath(var_84_4)
+		var_84_0[#var_84_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_84_4)
 	else
-		var_84_0[#var_84_0 + 1] = var_0_5.GetBulletPath(var_84_4)
+		var_84_0[#var_84_0 + 1] = BattleResourceManager.GetBulletPath(var_84_4)
 	end
 
 	var_84_3(var_84_5)
@@ -1509,23 +1509,23 @@ function var_0_5.GetEquipSkinPreviewRes(arg_84_0)
 	var_84_3(var_84_7)
 
 	if var_84_8 and var_84_8 ~= "" then
-		var_84_0[#var_84_0 + 1] = var_0_5.GetFXPath(var_84_8)
+		var_84_0[#var_84_0 + 1] = BattleResourceManager.GetFXPath(var_84_8)
 	end
 
 	if var_84_9 and var_84_9 ~= "" then
-		var_84_0[#var_84_0 + 1] = var_0_5.GetFXPath(var_84_9)
+		var_84_0[#var_84_0 + 1] = BattleResourceManager.GetFXPath(var_84_9)
 	end
 
 	return var_84_0
 end
 
-function var_0_5.GetEquipSkinBulletRes(arg_87_0)
+function BattleResourceManager.GetEquipSkinBulletRes(arg_87_0)
 	local var_87_0 = {}
 	local var_87_1, var_87_2, var_87_3, var_87_4 = var_0_1.GetEquipSkin(arg_87_0)
 
 	local function var_87_5(arg_88_0)
 		if arg_88_0 ~= "" then
-			var_87_0[#var_87_0 + 1] = var_0_5.GetBulletPath(arg_88_0)
+			var_87_0[#var_87_0 + 1] = BattleResourceManager.GetBulletPath(arg_88_0)
 		end
 	end
 
@@ -1540,13 +1540,13 @@ function var_0_5.GetEquipSkinBulletRes(arg_87_0)
 
 	if var_87_7 then
 		if var_87_1 ~= "" then
-			var_87_0[#var_87_0 + 1] = var_0_5.GetCharacterGoPath(var_87_1)
+			var_87_0[#var_87_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_87_1)
 		end
 	else
 		var_87_5(var_87_1)
 
 		if var_0_1.GetEquipSkinDataFromID(arg_87_0).mirror == 1 then
-			var_87_0[#var_87_0 + 1] = var_0_5.GetBulletPath(var_87_1 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+			var_87_0[#var_87_0 + 1] = BattleResourceManager.GetBulletPath(var_87_1 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
 		end
 	end
 
@@ -1557,11 +1557,11 @@ function var_0_5.GetEquipSkinBulletRes(arg_87_0)
 	return var_87_0
 end
 
-function var_0_5.GetAidUnitsRes(arg_89_0)
+function BattleResourceManager.GetAidUnitsRes(arg_89_0)
 	local var_89_0 = {}
 
 	for iter_89_0, iter_89_1 in ipairs(arg_89_0) do
-		local var_89_1 = var_0_5.GetShipResource(iter_89_1.tmpID, nil, true)
+		local var_89_1 = BattleResourceManager.GetShipResource(iter_89_1.tmpID, nil, true)
 
 		for iter_89_2, iter_89_3 in ipairs(iter_89_1.equipment) do
 			if iter_89_3 ~= 0 then
@@ -1569,14 +1569,14 @@ function var_0_5.GetAidUnitsRes(arg_89_0)
 					local var_89_2 = var_0_1.GetWeaponDataFromID(iter_89_3).weapon_id
 
 					for iter_89_4, iter_89_5 in ipairs(var_89_2) do
-						local var_89_3 = var_0_5.GetWeaponResource(iter_89_5)
+						local var_89_3 = BattleResourceManager.GetWeaponResource(iter_89_5)
 
 						for iter_89_6, iter_89_7 in ipairs(var_89_3) do
 							table.insert(var_89_1, iter_89_7)
 						end
 					end
 				else
-					local var_89_4 = var_0_5.GetEquipResource(iter_89_3)
+					local var_89_4 = BattleResourceManager.GetEquipResource(iter_89_3)
 
 					for iter_89_8, iter_89_9 in ipairs(var_89_4) do
 						table.insert(var_89_1, iter_89_9)
@@ -1593,7 +1593,7 @@ function var_0_5.GetAidUnitsRes(arg_89_0)
 	return var_89_0
 end
 
-function var_0_5.GetSpWeaponResource(arg_90_0, arg_90_1)
+function BattleResourceManager.GetSpWeaponResource(arg_90_0, arg_90_1)
 	local var_90_0 = {}
 	local var_90_1 = var_0_0.Battle.BattleDataFunction.GetSpWeaponDataFromID(arg_90_0).effect_id
 

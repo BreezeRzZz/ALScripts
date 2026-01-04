@@ -372,6 +372,7 @@ function var_0_0.IsEliteFleetLegal(arg_37_0)
 	return true, var_37_5
 end
 
+-- TODO: 是否满足困难图属性要求
 function var_0_0.IsPropertyLimitationSatisfy(arg_38_0)
 	local var_38_0 = getProxy(BayProxy):getRawData()
 	local var_38_1 = arg_38_0:getConfig("property_limitation")

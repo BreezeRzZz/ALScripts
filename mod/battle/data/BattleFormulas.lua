@@ -503,9 +503,10 @@ function BattleFormulas.RollRepeaterHitDice(repeater, target)
 	-- aircraftDodgeRateBeforeLimit
 		-- AnitAirRepeaterConfig.const_C = 220
 	local airPowerFactor = targetAirPower / AnitAirRepeaterConfig.const_A + AnitAirRepeaterConfig.const_B
+	-- (舰载机航空/32 + 12) / (防空舰防空 * 舰载机回避系数 + 舰载机航空/32 + 12 + 220) < 1
 	local aircraftDodgeRateBeforeLimit = airPowerFactor / (hostAntiAirPower * targetDodge + airPowerFactor + AnitAirRepeaterConfig.const_C)
 	local aircraftDodgeRate = math.min(targetDodgeLimit, aircraftDodgeRateBeforeLimit)
-
+	-- ? 
 	return BattleFormulas.IsHappen(aircraftDodgeRate * bfConsts.NUM10000)
 end
 
@@ -604,6 +605,7 @@ function BattleFormulas.RollSubmarineDualDice(target)
 		-- MONSTER_SUB_KAMIKAZE_DUAL_K = 50
 		-- MONSTER_SUB_KAMIKAZE_DUAL_P = 0.15
 	local targetDodgeRate = BattleAttr.GetCurrent(target, "dodgeRate")
+	-- 机动/(机动 + 50) * 0.15 < 0.15
 	local targetDodgeProbability = targetDodgeRate / (targetDodgeRate + BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_K) * BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_P
 
 	return BattleFormulas.IsHappen(targetDodgeProbability * bfConsts.NUM10000)
@@ -955,6 +957,8 @@ end
 function BattleFormulas.WorldEnemyAttrEnhance(enemyEnhancement, enemyLevel)
 	-- WORLD_ENEMY_ENHANCEMENT_CONST_C = 1.1
 	-- WORLD_ENEMY_ENHANCEMENT_CONST_B = 80
+	-- 也即 1 + enemyEnhancement / (1 + 1.1 ^ (80 - enemyLevel))
+	-- 敌人的等级越高，属性提高倍率越接近于1 + enemyEnhancement
 	return 1 + enemyEnhancement / (1 + BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_C^(BattleConfig.WORLD_ENEMY_ENHANCEMENT_CONST_B - enemyLevel))
 end
 
@@ -1250,7 +1254,7 @@ end
 function BattleFormulas.RandomPosXYZ(point, coordLeft, coordRight)
 	coordLeft = point[coordLeft]
 	coordRight = point[coordRight]
-
+	-- 注意，由于lua的random特性，这里就隐含了coordLeft和coordRight必须是整数的要求，且这两个边界值是闭区间的（包括边界值本身）
 	if coordLeft and coordRight then
 		return math.random(coordLeft, coordRight)
 	else

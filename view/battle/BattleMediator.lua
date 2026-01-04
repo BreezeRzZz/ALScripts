@@ -794,6 +794,7 @@ function BattleMediator.GenBattleData(self)
 		end
 
 		self.viewComponent:setFleet(var_35_33, var_35_34, var_35_37)
+	-- from here, TODO
 	elseif system == SYSTEM_WORLD then
 		local var_35_39 = nowWorld()
 		local var_35_40 = var_35_39:GetActiveMap()

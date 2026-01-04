@@ -1,42 +1,42 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotMoveRelative", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotMoveRelative = class("AutoPilotMoveRelative", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotMoveRelative = var_0_1
-var_0_1.__name = "AutoPilotMoveRelative"
+ys.Battle.AutoPilotMoveRelative = AutoPilotMoveRelative
+AutoPilotMoveRelative.__name = "AutoPilotMoveRelative"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotMoveRelative.Ctor(self, ...)
+	AutoPilotMoveRelative.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotMoveRelative.SetParameter(self, paramList, toIndex)
+	AutoPilotMoveRelative.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._distX = arg_2_1.x
-	arg_2_0._distZ = arg_2_1.z
+	self._distX = paramList.x
+	self._distZ = paramList.z
+end
+-- MoveRelative类比Move多了一个根据单位朝向调整X偏移的步骤，其余逻辑与Move相同
+function AutoPilotMoveRelative.Active(self, target)
+	local distX = self._distX * target:GetDirection()
+
+	self._targetPos = Vector3(distX, 0, self._distZ):Add(target:GetPosition())
+
+	AutoPilotMoveRelative.super.Active(self, target)
 end
 
-function var_0_1.Active(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0._distX * arg_3_1:GetDirection()
+function AutoPilotMoveRelative.GetDirection(self, position)
+	local direction = self._targetPos - position
 
-	arg_3_0._targetPos = Vector3(var_3_0, 0, arg_3_0._distZ):Add(arg_3_1:GetPosition())
+	direction.y = 0
 
-	var_0_1.super.Active(arg_3_0, arg_3_1)
-end
+	if direction.magnitude < self._valve then
+		direction = Vector3.zero
 
-function var_0_1.GetDirection(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0._targetPos - arg_4_1
-
-	var_4_0.y = 0
-
-	if var_4_0.magnitude < arg_4_0._valve then
-		var_4_0 = Vector3.zero
-
-		if arg_4_0._duration == -1 or arg_4_0:IsExpired() then
-			arg_4_0:Finish()
+		if self._duration == -1 or self:IsExpired() then
+			self:Finish()
 		end
 	end
 
-	return var_4_0:SetNormalize()
+	return direction:SetNormalize()
 end

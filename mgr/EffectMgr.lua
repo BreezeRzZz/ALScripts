@@ -1,11 +1,11 @@
 pg = pg or {}
 
 local var_0_0 = pg
-local var_0_1 = singletonClass("EffectMgr")
+local EffectMgr = singletonClass("EffectMgr")
 
-var_0_0.EffectMgr = var_0_1
+var_0_0.EffectMgr = EffectMgr
 
-function var_0_1.Ctor(arg_1_0)
+function EffectMgr.Ctor(arg_1_0)
 	local var_1_0 = ys.Battle.BattleResourceManager.GetInstance()
 
 	arg_1_0.effectCbMap = setmetatable({}, {
@@ -37,17 +37,17 @@ function var_0_1.Ctor(arg_1_0)
 	end
 end
 
-function var_0_1.ClearBattleEffectMap(arg_3_0)
+function EffectMgr.ClearBattleEffectMap(arg_3_0)
 	arg_3_0.effectCbMap = setmetatable({}, {
 		__mode = "k"
 	})
 end
 
-function var_0_1.CommonEffectEvent(arg_4_0, arg_4_1)
+function EffectMgr.CommonEffectEvent(arg_4_0, arg_4_1)
 	LuaHelper.SetParticleEndEvent(arg_4_1, arg_4_0.commonEffectEvent)
 end
 
-function var_0_1.PlayBattleEffect(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
+function EffectMgr.PlayBattleEffect(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
 	arg_5_1.transform.localPosition = arg_5_2
 
 	arg_5_1:SetActive(true)
@@ -62,7 +62,7 @@ function var_0_1.PlayBattleEffect(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, a
 	}
 end
 
-function var_0_1.BattleUIEffect(arg_6_0, arg_6_1, arg_6_2)
+function EffectMgr.BattleUIEffect(arg_6_0, arg_6_1, arg_6_2)
 	assert(string.sub(arg_6_1, -2, -1) == "UI", "UI效果不是以UI结尾，请检查")
 	LoadAndInstantiateAsync("UI", arg_6_1, function(arg_7_0)
 		local var_7_0 = ys.Battle.BattleState.GetInstance()
@@ -81,7 +81,7 @@ function var_0_1.BattleUIEffect(arg_6_0, arg_6_1, arg_6_2)
 	end)
 end
 
-function var_0_1.EndEffect(arg_8_0, arg_8_1)
+function EffectMgr.EndEffect(arg_8_0, arg_8_1)
 	local var_8_0 = arg_8_0._effectMap[arg_8_1]
 
 	if var_8_0 ~= nil then

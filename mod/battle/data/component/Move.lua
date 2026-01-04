@@ -200,7 +200,7 @@ end
 function var_0_1.SetStaticState(arg_20_0, arg_20_1)
 	arg_20_0._staticState = arg_20_1
 end
-
+-- 被AutoPilot.Ctor调用
 function var_0_1.SetAutoMoveAI(arg_21_0, arg_21_1, arg_21_2)
 	function arg_21_0._autoMoveAi()
 		return arg_21_1:GetDirection():Mul(arg_21_2:GetAttrByName("velocity"))

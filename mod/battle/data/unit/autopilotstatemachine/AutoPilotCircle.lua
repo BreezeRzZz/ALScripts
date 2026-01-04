@@ -1,61 +1,64 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = Vector3.up
-local var_0_2 = class("AutoPilotCircle", var_0_0.Battle.IPilot)
+local ys = ys
+local up = Vector3.up
+local AutoPilotCircle = class("AutoPilotCircle", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotCircle = var_0_2
-var_0_2.__name = "AutoPilotCircle"
+ys.Battle.AutoPilotCircle = AutoPilotCircle
+AutoPilotCircle.__name = "AutoPilotCircle"
 
-function var_0_2.Ctor(arg_1_0, ...)
-	var_0_2.super.Ctor(arg_1_0, ...)
+function AutoPilotCircle.Ctor(self, ...)
+	AutoPilotCircle.super.Ctor(self, ...)
 end
 
-function var_0_2.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_2.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+-- 这类运动大致是以给定的(X, Z)坐标为圆心，radius为半径，围绕圆心做圆周运动
+function AutoPilotCircle.SetParameter(self, paramList, toIndex)
+	AutoPilotCircle.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._referencePoint = Vector3(arg_2_1.x, 0, arg_2_1.z)
-	arg_2_0._radius = arg_2_1.radius
-
-	if arg_2_1.antiClockWise == true then
-		arg_2_0.GetDirection = var_0_2._antiClockWise
+	self._referencePoint = Vector3(paramList.x, 0, paramList.z)
+	self._radius = paramList.radius
+	-- 逆时针or顺时针
+	if paramList.antiClockWise == true then
+		self.GetDirection = AutoPilotCircle._antiClockWise
 	else
-		arg_2_0.GetDirection = var_0_2._clockWise
+		self.GetDirection = AutoPilotCircle._clockWise
 	end
 end
 
-function var_0_2._clockWise(arg_3_0, arg_3_1)
-	if arg_3_0:IsExpired() then
-		arg_3_0:Finish()
+function AutoPilotCircle._clockWise(self, position)
+	if self:IsExpired() then
+		self:Finish()
+
+		return Vector3.zero
+	end
+	-- 超出圆圈半径则先回到圆圈上(朝向圆心)
+	if (position - self._referencePoint).magnitude > self._radius then
+		return (self._referencePoint - position).normalized
+	else
+		-- 否则沿切线方向前进，这可由简单的旋转矩阵计算得到(或者斜率相乘为-1)
+		local direction = (self._referencePoint - position).normalized
+		local dx = -direction.z
+		local dz = direction.x
+
+		return Vector3(dx, 0, dz)
+	end
+end
+
+function AutoPilotCircle._antiClockWise(self, position)
+	if self._duration > 0 and pg.TimeMgr.GetInstance():GetCombatTime() - self._startTime > self._duration then
+		self:Finish()
 
 		return Vector3.zero
 	end
 
-	if (arg_3_1 - arg_3_0._referencePoint).magnitude > arg_3_0._radius then
-		return (arg_3_0._referencePoint - arg_3_1).normalized
+	if (position - self._referencePoint).magnitude > self._radius then
+		return (self._referencePoint - position).normalized
 	else
-		local var_3_0 = (arg_3_0._referencePoint - arg_3_1).normalized
-		local var_3_1 = -var_3_0.z
-		local var_3_2 = var_3_0.x
+		-- 这里有区别，是一个反方向的切线
+		local direction = (self._referencePoint - position).normalized
+		local dx = direction.z
+		local dz = -direction.x
 
-		return Vector3(var_3_1, 0, var_3_2)
-	end
-end
-
-function var_0_2._antiClockWise(arg_4_0, arg_4_1)
-	if arg_4_0._duration > 0 and pg.TimeMgr.GetInstance():GetCombatTime() - arg_4_0._startTime > arg_4_0._duration then
-		arg_4_0:Finish()
-
-		return Vector3.zero
-	end
-
-	if (arg_4_1 - arg_4_0._referencePoint).magnitude > arg_4_0._radius then
-		return (arg_4_0._referencePoint - arg_4_1).normalized
-	else
-		local var_4_0 = (arg_4_0._referencePoint - arg_4_1).normalized
-		local var_4_1 = var_4_0.z
-		local var_4_2 = -var_4_0.x
-
-		return Vector3(var_4_1, 0, var_4_2)
+		return Vector3(dx, 0, dz)
 	end
 end

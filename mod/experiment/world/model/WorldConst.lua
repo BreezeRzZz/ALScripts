@@ -495,16 +495,17 @@ function WorldConst.IsWorldGuideEnemyId(arg_29_0)
 	return table.contains(var_29_0, arg_29_0)
 end
 
-function WorldConst.WorldLevelCorrect(arg_30_0, arg_30_1)
-	for iter_30_0, iter_30_1 in ipairs(pg.gameset.world_expedition_level.description) do
-		for iter_30_2, iter_30_3 in ipairs(iter_30_1[1]) do
-			if arg_30_1 == iter_30_3 then
-				arg_30_0 = arg_30_0 + iter_30_1[2]
+-- note: 大型作战等级修正
+function WorldConst.WorldLevelCorrect(expeditionLevel, expeditionType)
+	for _, worldExpeditionItem in ipairs(pg.gameset.world_expedition_level.description) do
+		for _, targetExpeditionType in ipairs(worldExpeditionItem[1]) do
+			if expeditionType == targetExpeditionType then
+				expeditionLevel = expeditionLevel + worldExpeditionItem[2]
 			end
 		end
 	end
 
-	return math.max(arg_30_0, 1)
+	return math.max(expeditionLevel, 1)
 end
 
 function WorldConst.GetAreaFocusPos(arg_31_0)

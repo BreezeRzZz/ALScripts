@@ -1,59 +1,62 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotRelativeFleetMoveTo", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotRelativeFleetMoveTo = class("AutoPilotRelativeFleetMoveTo", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotRelativeFleetMoveTo = var_0_1
-var_0_1.__name = "AutoPilotRelativeFleetMoveTo"
+ys.Battle.AutoPilotRelativeFleetMoveTo = AutoPilotRelativeFleetMoveTo
+AutoPilotRelativeFleetMoveTo.__name = "AutoPilotRelativeFleetMoveTo"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotRelativeFleetMoveTo.Ctor(self, ...)
+	AutoPilotRelativeFleetMoveTo.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotRelativeFleetMoveTo.SetParameter(self, paramList, toIndex)
+	AutoPilotRelativeFleetMoveTo.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._offsetX = arg_2_1.offsetX
-	arg_2_0._offsetZ = arg_2_1.offsetZ
-	arg_2_0._fixX = arg_2_1.X
-	arg_2_0._fixZ = arg_2_1.Z
-	arg_2_0._targetFleetVO = var_0_0.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+	self._offsetX = paramList.offsetX
+	self._offsetZ = paramList.offsetZ
+	self._fixX = paramList.X
+	self._fixZ = paramList.Z
+	self._targetFleetVO = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 end
 
-function var_0_1.GetDirection(arg_3_0, arg_3_1)
-	if arg_3_0:IsExpired() then
-		arg_3_0:Finish()
+function AutoPilotRelativeFleetMoveTo.GetDirection(self, position)
+	if self:IsExpired() then
+		self:Finish()
 
 		return Vector3.zero
 	end
 
-	local var_3_0
-	local var_3_1
-	local var_3_2 = arg_3_0._targetFleetVO:GetMotion():GetPos()
-
-	if arg_3_0._offsetX then
-		var_3_0 = var_3_2.x + arg_3_0._offsetX
-	elseif arg_3_0._fixX then
-		var_3_0 = arg_3_0._fixX
+	local refenceX
+	local refenceZ
+	-- 这里提到了舰队的位置，这是个抽象概念，只从游戏逻辑上存在，并没有实体化在地图上
+	-- 参考BattleFleetVO.UpdateMotion
+	-- 简单看了下逻辑，基本来讲是按照前排领舰的位置更新（就是前排领舰的位置）
+	local fleetPos = self._targetFleetVO:GetMotion():GetPos()
+	-- offset: 相对偏移量，fix: 绝对坐标
+	if self._offsetX then
+		refenceX = fleetPos.x + self._offsetX
+	elseif self._fixX then
+		refenceX = self._fixX
 	else
-		var_3_0 = arg_3_1.x
+		refenceX = position.x
 	end
 
-	if arg_3_0._offsetZ then
-		var_3_1 = var_3_2.z + arg_3_0._offsetZ
-	elseif arg_3_0._fixZ then
-		var_3_1 = arg_3_0._fixZ
+	if self._offsetZ then
+		refenceZ = fleetPos.z + self._offsetZ
+	elseif self._fixZ then
+		refenceZ = self._fixZ
 	else
-		var_3_1 = arg_3_1.z
+		refenceZ = position.z
 	end
 
-	local var_3_3 = Vector3.New(var_3_0, 0, var_3_1) - arg_3_1
+	local direction = Vector3.New(refenceX, 0, refenceZ) - position
 
-	var_3_3.y = 0
+	direction.y = 0
 
-	if var_3_3.magnitude < arg_3_0._valve then
-		var_3_3 = Vector3.zero
+	if direction.magnitude < self._valve then
+		direction = Vector3.zero
 	end
 
-	return var_3_3.normalized
+	return direction.normalized
 end

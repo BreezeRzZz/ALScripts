@@ -27,6 +27,9 @@ function var_0_2.ActiveBot(arg_3_0, arg_3_1, arg_3_2)
 	arg_3_0._joyStickAutoBot:SetActive(arg_3_1)
 end
 
+-- TODO
+-- 尝试自律召唤潜艇
+-- 被BattleSingleDungeonCommand.DoPrologue调用
 function var_0_2.TryAutoSub(arg_4_0)
 	local var_4_0 = arg_4_0:GetState():GetBattleType()
 

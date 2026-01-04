@@ -61,7 +61,7 @@ function BattleDataFunction.GetBarrageTmpDataFromID(barrageID)
 	return barrage_template[barrageID]
 end
 
--- BattleBulletEmitter.Fire
+-- 被BattleBulletEmitter.Fire调用
 function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, direction)
 	assert(barrage_template[barrageID] ~= nil, "获取转换弹幕数据失败，找不到弹幕原型配置：id = " .. barrageID)
 
@@ -72,6 +72,7 @@ function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, direction)
 	return BattleDataFunction.ConvertedBarrageTableList[barrageID]
 end
 
+-- TODO
 function BattleDataFunction.GenerateTransBarrage(arg_5_0, arg_5_1, arg_5_2)
 	local var_5_0 = {}
 	local var_5_1 = BattleDataFunction.GetBarrageTmpDataFromID(arg_5_0)
@@ -296,49 +297,50 @@ BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TRIGGER_BOMB] = Ba
 -- AAMissile(17) -> CreateAAMissile
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.AAMissile] = BattleDataFunction._createAAMissile
 
--- TODO
+-- 用于处理弹幕的重复发射逻辑
+-- 被BattleDataFunction.GetConvertedBarrageTableFromID调用
 function BattleDataFunction.ConvertSpecificBarrage(barrageID, direction)
-	local var_21_0
+	local barrageIterationTable
 
-	var_21_0[direction], var_21_0 = BattleDataFunction.barrageInteration(pg.barrage_template[barrageID], direction), BattleDataFunction.ConvertedBarrageTableList[barrageID] or {}
-	BattleDataFunction.ConvertedBarrageTableList[barrageID] = var_21_0
+	barrageIterationTable[direction], barrageIterationTable = BattleDataFunction.barrageInteration(pg.barrage_template[barrageID], direction), BattleDataFunction.ConvertedBarrageTableList[barrageID] or {}
+	BattleDataFunction.ConvertedBarrageTableList[barrageID] = barrageIterationTable
 end
 
 function BattleDataFunction.ClearConvertedBarrage()
 	BattleDataFunction.ConvertedBarrageTableList = {}
 end
 
--- TODO
-function BattleDataFunction.barrageInteration(arg_23_0, arg_23_1)
-	local var_23_0 = 1
-	local var_23_1 = arg_23_0.primal_repeat
-	local var_23_2 = {}
-	local var_23_3 = arg_23_0.offset_x
-	local var_23_4 = arg_23_0.offset_z
-	local var_23_5 = arg_23_0.angle
-	local var_23_6 = arg_23_0.delay
-	local var_23_7 = arg_23_0.delta_offset_x
-	local var_23_8 = arg_23_0.delta_offset_z
-	local var_23_9 = arg_23_0.delta_angle
-	local var_23_10 = arg_23_0.delta_delay
+-- 用于处理弹幕的重复发射逻辑
+-- 被BattleDataFunction.ConvertSpecificBarrage调用
+function BattleDataFunction.barrageInteration(barrageTmpData, direction)
+	local primal_repeat = barrageTmpData.primal_repeat
+	local barrageIterationTable = {}
+	local offset_x = barrageTmpData.offset_x
+	local offset_z = barrageTmpData.offset_z
+	local angle = barrageTmpData.angle
+	local delay = barrageTmpData.delay
+	local delta_offset_x = barrageTmpData.delta_offset_x
+	local delta_offset_z = barrageTmpData.delta_offset_z
+	local delta_angle = barrageTmpData.delta_angle
+	local delta_delay = barrageTmpData.delta_delay
 
-	for iter_23_0 = 0, var_23_1 do
-		local var_23_11 = {
-			OffsetX = var_23_3 * arg_23_1,
-			OffsetZ = var_23_4,
-			Angle = var_23_5,
-			Delay = var_23_6
+	for _ = 0, primal_repeat do
+		local primalIterationParams = {
+			OffsetX = offset_x * direction,
+			OffsetZ = offset_z,
+			Angle = angle,
+			Delay = delay
 		}
 
-		table.insert(var_23_2, var_23_11)
+		table.insert(barrageIterationTable, primalIterationParams)
 
-		var_23_3 = var_23_3 + var_23_7
-		var_23_4 = var_23_4 + var_23_8
-		var_23_5 = var_23_5 + var_23_9
-		var_23_6 = var_23_6 + var_23_10
+		offset_x = offset_x + delta_offset_x
+		offset_z = offset_z + delta_offset_z
+		angle = angle + delta_angle
+		delay = delay + delta_delay
 	end
 
-	return var_23_2
+	return barrageIterationTable
 end
 
 BattleDataFunction.ClearConvertedBarrage()

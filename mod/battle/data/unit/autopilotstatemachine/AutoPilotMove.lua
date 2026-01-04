@@ -1,40 +1,42 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("AutoPilotMove", var_0_0.Battle.IPilot)
+local ys = ys
+local AutoPilotMove = class("AutoPilotMove", ys.Battle.IPilot)
 
-var_0_0.Battle.AutoPilotMove = var_0_1
-var_0_1.__name = "AutoPilotMove"
+ys.Battle.AutoPilotMove = AutoPilotMove
+AutoPilotMove.__name = "AutoPilotMove"
 
-function var_0_1.Ctor(arg_1_0, ...)
-	var_0_1.super.Ctor(arg_1_0, ...)
+function AutoPilotMove.Ctor(self, ...)
+	AutoPilotMove.super.Ctor(self, ...)
 end
 
-function var_0_1.SetParameter(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetParameter(arg_2_0, arg_2_1, arg_2_2)
+function AutoPilotMove.SetParameter(self, paramList, toIndex)
+	AutoPilotMove.super.SetParameter(self, paramList, toIndex)
 
-	arg_2_0._distX = arg_2_1.x
-	arg_2_0._distZ = arg_2_1.z
+	self._distX = paramList.x
+	self._distZ = paramList.z
 end
 
-function var_0_1.Active(arg_3_0, arg_3_1)
-	arg_3_0._targetPos = Vector3(arg_3_0._distX, 0, arg_3_0._distZ):Add(arg_3_1:GetPosition())
+-- 与MoveTo不同，这个Step的目标点是相对于单位当前位置的一个偏移量
+-- 例如，X=10,Z=0，对于Move来说，是相当于当前位置向右移动10个单位，而对于MoveTo，是移动到坐标点(10,0)
+function AutoPilotMove.Active(self, target)
+	self._targetPos = Vector3(self._distX, 0, self._distZ):Add(target:GetPosition())
 
-	var_0_1.super.Active(arg_3_0, arg_3_1)
+	AutoPilotMove.super.Active(self, target)
 end
 
-function var_0_1.GetDirection(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0._targetPos - arg_4_1
+function AutoPilotMove.GetDirection(self, position)
+	local direction = self._targetPos - position
 
-	var_4_0.y = 0
+	direction.y = 0
 
-	if var_4_0.magnitude < arg_4_0._valve then
-		var_4_0 = Vector3.zero
+	if direction.magnitude < self._valve then
+		direction = Vector3.zero
 
-		if arg_4_0._duration == -1 or arg_4_0:IsExpired() then
-			arg_4_0:Finish()
+		if self._duration == -1 or self:IsExpired() then
+			self:Finish()
 		end
 	end
 
-	return var_4_0:SetNormalize()
+	return direction:SetNormalize()
 end

@@ -799,6 +799,7 @@ function Fleet.EnergyCheck(arg_50_0, arg_50_1, arg_50_2, arg_50_3, arg_50_4)
 	end
 end
 
+-- TODO
 function Fleet.getFleetAirDominanceValue(arg_54_0)
 	local var_54_0 = getProxy(BayProxy)
 	local var_54_1 = arg_54_0:getCommanders()

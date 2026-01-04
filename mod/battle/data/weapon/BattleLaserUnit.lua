@@ -205,6 +205,11 @@ function BattleLaserUnit.doBeamDamage(self, beam)
 	-- 未设置目标则设定targetPos = Vector3.zero
 	-- 路径：BattleWeaponUnit.Spawn -> BattleDataProxy.CreateBulletUnit -> BattleDataFunction.CreateBattleBulletData
 	-- 实际创建的是BattleAntiAirBulletUnit
+	-- 可以看出，激光的伤害机制是：每隔一段时间对碰撞到的单位进行一次伤害计算，不是对每个单位单独维护一个计时器
+	-- 例：某激光每0.5秒对碰撞单位造成一次伤害，碰撞单位有A、B、C三个
+	-- 机制1：如果A、B、C分别在0.4s、0.5s、0.6s时刻进入碰撞范围，则A、B都在0.5s时刻受到伤害，C在1.0s时刻受到伤害
+	-- 机制2：如果A、B、C分别在0.4s、0.5s、0.6s时刻进入碰撞范围，则A在0.4s、0.9s时刻受到伤害，B在0.5s、1.0s时刻受到伤害，C在0.6s、1.1s时刻受到伤害
+	-- 激光的实际机制是机制1，不是机制2，容易混淆特此说明
 	local bullet = self:Spawn(beam:GetBulletID())
 	local cldUnitList = beam:GetCldUnitList()
 
