@@ -662,7 +662,8 @@ end
 function BattleUnit.IsMoveCast(arg_58_0)
 	return arg_58_0._moveCast
 end
--- TODO
+
+-- TODO: 舰船碰撞时的处理逻辑
 function BattleUnit.SetCrash(arg_59_0, arg_59_1)
 	arg_59_0._isCrash = arg_59_1
 
@@ -1190,7 +1191,8 @@ function BattleUnit.UpdateMoveLimit(arg_133_0)
 
 	arg_133_0._move:SetStaticState(not var_133_0)
 end
--- TODO
+
+-- TODO：单位添加Buff主逻辑
 function BattleUnit.AddBuff(self, buff, ifStock)
 	local buffID = buff:GetID()
 	local args = {
@@ -1302,6 +1304,7 @@ function BattleUnit.ConsumeBuffStack(arg_137_0, arg_137_1, arg_137_2)
 	end
 end
 
+-- TODO: 单位移除Buff逻辑
 function BattleUnit.RemoveBuff(arg_138_0, arg_138_1, arg_138_2)
 	if arg_138_2 and arg_138_0._buffStockList[arg_138_1] then
 		local var_138_0 = table.remove(arg_138_0._buffStockList[arg_138_1])

@@ -61,7 +61,7 @@ function BattleDataProxy.Start(self)
 	self._startTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
--- 在updateInit中调用
+-- 在BattleDataProxy.updateInit中调用
 function BattleDataProxy.TriggerBattleInitBuffs(self)
 	for _, fleet in pairs(self._fleetList) do
 		local unitList = fleet:GetUnitList()
@@ -71,7 +71,7 @@ function BattleDataProxy.TriggerBattleInitBuffs(self)
 end
 
 -- 触发战斗开始Buff
-function BattleDataProxy.TirggerBattleStartBuffs(self)
+function BattleDataProxy.TriggerBattleStartBuffs(self)
 	for _, fleet in pairs(self._fleetList) do
 		local unitList = fleet:GetUnitList()
 		local scoutList = fleet:GetScoutList()
@@ -277,8 +277,11 @@ function BattleDataProxy.InitData(self, battleData)
 	-- expedition相关数据
 	self._weahter = battleData.ChapterWeatherIDS or {}
 	self._exposeSpeed = self._expeditionTmp.expose_speed
+	-- 用于BattleDataProxy.HandleAircraftMissDamage，为舰载机撞线的暴露值
 	self._airExpose = self._expeditionTmp.aircraft_expose[1]
+	-- 如果最近的单位是轻母/航母/导驱M，这个单位的额外暴露值
 	self._airExposeEX = self._expeditionTmp.aircraft_expose[2]
+	-- 用于BattleDataProxy.HandleShipMissDamage，为舰船撞线的暴露值
 	self._shipExpose = self._expeditionTmp.ship_expose[1]
 	self._shipExposeEX = self._expeditionTmp.ship_expose[2]
 	-- 指挥喵相关数据
@@ -2055,45 +2058,45 @@ function BattleDataProxy.doCreateAirUnit(arg_106_0, arg_106_1, arg_106_2, arg_10
 	end
 end
 
-function BattleDataProxy.KillAircraft(arg_107_0, arg_107_1)
-	local var_107_0 = arg_107_0._aircraftList[arg_107_1]
+function BattleDataProxy.KillAircraft(self, aircraftID)
+	local aircraft = self._aircraftList[aircraftID]
 
-	if var_107_0 == nil then
+	if aircraft == nil then
 		return
 	end
 
-	var_107_0:Clear()
-	arg_107_0._cldSystem:DeleteAircraftCld(var_107_0)
+	aircraft:Clear()
+	self._cldSystem:DeleteAircraftCld(aircraft)
 
-	if var_107_0:IsUndefeated() and var_107_0:GetCurrentState() ~= var_107_0.STRIKE_STATE_RECYCLE then
-		local var_107_1 = var_107_0:GetIFF() * -1
+	if aircraft:IsUndefeated() and aircraft:GetCurrentState() ~= aircraft.STRIKE_STATE_RECYCLE then
+		local opponentIFF = aircraft:GetIFF() * -1
 
-		arg_107_0:HandleAircraftMissDamage(var_107_0, arg_107_0._fleetList[var_107_1])
+		self:HandleAircraftMissDamage(aircraft, self._fleetList[opponentIFF])
 	end
 
-	var_107_0._aliveState = false
-	arg_107_0._aircraftList[arg_107_1] = nil
-	arg_107_0._foeAircraftList[arg_107_1] = nil
+	aircraft._aliveState = false
+	self._aircraftList[aircraftID] = nil
+	self._foeAircraftList[aircraftID] = nil
 
 	local var_107_2 = true
 
-	for iter_107_0, iter_107_1 in pairs(arg_107_0._foeAircraftList) do
+	for iter_107_0, iter_107_1 in pairs(self._foeAircraftList) do
 		var_107_2 = false
 
 		break
 	end
 
 	if var_107_2 then
-		arg_107_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
+		self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
 			isShow = false
 		}))
 	end
 
 	local var_107_3 = {
-		UID = arg_107_1
+		UID = aircraftID
 	}
 
-	arg_107_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_107_3))
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_107_3))
 end
 
 function BattleDataProxy.GetAircraftList(arg_108_0)
@@ -2761,9 +2764,9 @@ function BattleDataProxy.GetFleetLegal(arg_161_0, arg_161_1, arg_161_2)
 	if arg_161_2 == SYSTEM_DUEL or arg_161_2 == SYSTEM_PERFORM or arg_161_2 == SYSTEM_SUB_ROUTINE or arg_161_2 == SYSTEM_CARDPUZZLE or arg_161_2 == SYSTEM_PROLOGUE or arg_161_2 == SYSTEM_DODGEM or arg_161_2 == SYSTEM_SIMULATION or arg_161_2 == SYSTEM_SUBMARINE_RUN or arg_161_2 == SYSTEM_DEBUG or arg_161_2 == SYSTEM_AIRFIGHT then
 		return true
 	else
-		local var_162_0 = arg_162_0:GetFleetByIFF(arg_162_1)
+		local unitList = self:GetFleetByIFF(arg_162_1)
 
-		if #var_162_0:GetScoutList() == 0 or not var_162_0:GetFlagShip():IsAlive() then
+		if #unitList:GetScoutList() == 0 or not unitList:GetFlagShip():IsAlive() then
 			return false
 		else
 			return true
@@ -2771,16 +2774,17 @@ function BattleDataProxy.GetFleetLegal(arg_161_0, arg_161_1, arg_161_2)
 	end
 end
 
-function BattleDataProxy.TriggerFinishBattle(arg_162_0)
-	for iter_162_0, iter_162_1 in pairs(arg_162_0._fleetList) do
-		local var_162_0 = iter_162_1:GetUnitList()
+-- 战斗结算时触发的内容
+function BattleDataProxy.TriggerFinishBattle(self)
+	for _, fleet in pairs(self._fleetList) do
+		local unitList = fleet:GetUnitList()
 
-		for iter_162_2, iter_162_3 in ipairs(var_162_0) do
-			iter_162_3:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
+		for _, unit in ipairs(unitList) do
+			unit:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
 		end
 	end
 
-	for iter_162_4, iter_162_5 in pairs(arg_162_0._minionShipList) do
-		iter_162_5:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
+	for _, minion in pairs(self._minionShipList) do
+		minion:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
 	end
 end

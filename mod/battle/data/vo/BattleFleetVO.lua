@@ -179,25 +179,26 @@ function BattleFleetVO.RandomMainVictim(self, attrList)
 	return victim
 end
 
-function BattleFleetVO.NearestUnitByType(arg_13_0, arg_13_1, arg_13_2)
-	local var_13_0 = 999
-	local var_13_1
+function BattleFleetVO.NearestUnitByType(self, pos, shipTypeList)
+	local minDistance = 999
+	local target
 
-	for iter_13_0, iter_13_1 in ipairs(arg_13_0._unitList) do
-		local var_13_2 = iter_13_1:GetTemplate().type
+	for _, unit in ipairs(self._unitList) do
+		local shipType = unit:GetTemplate().type
 
-		if table.contains(arg_13_2, var_13_2) then
-			local var_13_3 = iter_13_1:GetPosition()
-			local var_13_4 = Vector3.BattleDistance(var_13_3, arg_13_1)
+		if table.contains(shipTypeList, shipType) then
+			local unitPos = unit:GetPosition()
+			-- 只计算XZ平面距离
+			local distance = Vector3.BattleDistance(unitPos, pos)
 
-			if var_13_4 < var_13_0 then
-				var_13_0 = var_13_4
-				var_13_1 = iter_13_1
+			if distance < minDistance then
+				minDistance = distance
+				target = unit
 			end
 		end
 	end
 
-	return var_13_1
+	return target
 end
 
 function BattleFleetVO.SetMotionSource(arg_14_0, arg_14_1)
@@ -786,7 +787,8 @@ function BattleFleetVO.FleetWarcry(arg_73_0)
 	var_73_0:DispatchVoice(var_73_4)
 	var_73_0:DispatchChat(var_73_6, 2.5, var_73_4)
 end
--- TODO
+
+-- TODO: 计算舰队总战力，并设置到每个unit的fleetGS属性中（用于一些武器的伤害计算）
 function BattleFleetVO.FleetUnitSpwanFinish(self)
 	local gearScore = 0
 
@@ -1399,10 +1401,11 @@ function BattleFleetVO.UpdateHorizon(arg_116_0)
 	arg_116_0:DispatchEvent(ys.Event.New(BattleEvent.FLEET_HORIZON_UPDATE, {}))
 end
 
-function BattleFleetVO.AutoBotUpdated(arg_117_0, arg_117_1)
-	local var_117_0 = arg_117_1 and BattleConst.BuffEffectType.ON_AUTOBOT or BattleConst.BuffEffectType.ON_MANUAL
+-- 对应触发ON_AUTOBOT和ON_MANUAL的buffEffect
+function BattleFleetVO.AutoBotUpdated(self, isAutoBotActive)
+	local effectType = isAutoBotActive and BattleConst.BuffEffectType.ON_AUTOBOT or BattleConst.BuffEffectType.ON_MANUAL
 
-	arg_117_0:FleetBuffTrigger(var_117_0)
+	self:FleetBuffTrigger(effectType)
 end
 
 function BattleFleetVO.CloakFatalExpose(arg_118_0)

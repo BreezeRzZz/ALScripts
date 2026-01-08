@@ -32,7 +32,7 @@ function var_0_3.DoPrologue(arg_3_0)
 			arg_3_0._waveUpdater:Start()
 		end, SYSTEM_CARDPUZZLE)
 		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TirggerBattleStartBuffs()
+		arg_3_0._dataProxy:TriggerBattleStartBuffs()
 		arg_3_0._dataProxy:StartCardPuzzle()
 
 		local var_4_0 = arg_3_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)

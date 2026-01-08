@@ -30,7 +30,7 @@ function var_0_3.DoPrologue(arg_3_0)
 			arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
 		end, SYSTEM_DEBUG)
 		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TirggerBattleStartBuffs()
+		arg_3_0._dataProxy:TriggerBattleStartBuffs()
 	end)()
 end
 

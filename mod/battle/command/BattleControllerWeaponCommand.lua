@@ -22,6 +22,7 @@ function var_0_2.Initialize(arg_2_0)
 	arg_2_0._focusBlockCast = false
 end
 
+-- 开启或关闭自律状态
 function var_0_2.ActiveBot(arg_3_0, arg_3_1, arg_3_2)
 	arg_3_0._manualWeaponAutoBot:SetActive(arg_3_1, arg_3_2)
 	arg_3_0._joyStickAutoBot:SetActive(arg_3_1)

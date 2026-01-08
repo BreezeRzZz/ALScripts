@@ -47,6 +47,7 @@ function var_0_3.IsActive(arg_4_0)
 	return arg_4_0._active
 end
 
+-- 触发自动/手动状态切换
 function var_0_3.SetActive(arg_5_0, arg_5_1, arg_5_2)
 	if arg_5_0._active ~= arg_5_1 and arg_5_1 == true then
 		arg_5_0._lastActiveTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()

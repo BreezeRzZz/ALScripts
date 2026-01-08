@@ -34,7 +34,7 @@ function var_0_4.DoPrologue(arg_3_0)
 		var_4_0:ChangeSubmarineState(var_0_0.Battle.OxyState.STATE_FREE_DIVE)
 		var_4_0:GetSubBoostVO():ResetCurrent()
 		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TirggerBattleStartBuffs()
+		arg_3_0._dataProxy:TriggerBattleStartBuffs()
 	end
 
 	arg_3_0._dataProxy:AutoStatistics(0)

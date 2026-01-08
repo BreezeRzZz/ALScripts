@@ -83,7 +83,7 @@ function var_0_3.DoPrologue(arg_4_0)
 
 	arg_4_0._uiMediator:EnableWeaponButton(false)
 	arg_4_0._dataProxy:InitAllFleetUnitsWeaponCD()
-	arg_4_0._dataProxy:TirggerBattleStartBuffs()
+	arg_4_0._dataProxy:TriggerBattleStartBuffs()
 
 	local var_4_8 = arg_4_0._userFleet:GetUnitList()
 

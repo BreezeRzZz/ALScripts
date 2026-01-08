@@ -85,7 +85,7 @@ function var_0_4.DoPrologue(arg_10_0)
 		end)
 		arg_10_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
 		arg_10_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_10_0._dataProxy:TirggerBattleStartBuffs()
+		arg_10_0._dataProxy:TriggerBattleStartBuffs()
 
 		arg_10_0._challengeStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 	end

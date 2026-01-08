@@ -1007,6 +1007,7 @@ function ChapterLevelData.getFleetBattleBuffs(arg_74_0, arg_74_1)
 	return var_74_0, var_74_1
 end
 
+-- TODO: BattleBuffRegisterWaveFlags涉及
 function ChapterLevelData.GetStageFlags(arg_77_0)
 	local var_77_0 = arg_77_0.fleet.line.row
 	local var_77_1 = arg_77_0.fleet.line.column

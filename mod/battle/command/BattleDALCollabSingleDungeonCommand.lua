@@ -31,7 +31,7 @@ function BattleDALCollabSingleDungeonCommand.DoPrologue(self)
 		end)
 		self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
 		self._dataProxy:InitAllFleetUnitsWeaponCD()
-		self._dataProxy:TirggerBattleStartBuffs()
+		self._dataProxy:TriggerBattleStartBuffs()
 		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._shiftTimer)
 
 		self._shiftTimer = nil

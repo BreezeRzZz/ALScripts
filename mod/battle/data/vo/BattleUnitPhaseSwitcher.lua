@@ -2,7 +2,7 @@ ys = ys or {}
 
 local ys = ys
 local BossPhaseSwitchType = ys.Battle.BattleConst.BossPhaseSwitchType
-local var_0_2 = ys.Battle.BattleConst
+local BattleConst = ys.Battle.BattleConst
 
 ys.Battle.BattleUnitPhaseSwitcher = class("BattleUnitPhaseSwitcher")
 ys.Battle.BattleUnitPhaseSwitcher.__name = "BattleUnitPhaseSwitcher"

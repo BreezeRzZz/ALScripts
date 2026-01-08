@@ -69,6 +69,7 @@ function BattleBuffUnit.SetTemplate(arg_3_0, arg_3_1, arg_3_2)
 	arg_3_0._tempData = ys.Battle.BattleDataFunction.GetBuffTemplate(arg_3_1, arg_3_2)
 end
 
+-- 附加Buff逻辑。注意会重置持续时间
 function BattleBuffUnit.Attach(arg_4_0, arg_4_1)
 	arg_4_0._owner = arg_4_1
 	arg_4_0._stack = 1
@@ -77,6 +78,7 @@ function BattleBuffUnit.Attach(arg_4_0, arg_4_1)
 	arg_4_0:onTrigger(BuffEffectType.ON_ATTACH, arg_4_1)
 	arg_4_0:SetRemoveTime()
 end
+
 -- TODO
 -- 新groupLevel <= 原groupLevel时触发
 function BattleBuffUnit.Stack(arg_5_0, arg_5_1)
@@ -166,6 +168,7 @@ function BattleBuffUnit.Remove(arg_16_0, arg_16_1)
 	var_16_0:GetBuffList()[var_16_1] = nil
 end
 
+-- Buff更新接口，检查是否到达移除时间，触发ON_UPDATE
 function BattleBuffUnit.Update(arg_17_0, arg_17_1, arg_17_2)
 	if arg_17_0:IsTimeToRemove(arg_17_2) then
 		arg_17_0:Remove(arg_17_2)

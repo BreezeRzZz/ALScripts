@@ -250,36 +250,43 @@ function BattleDataProxy.obituary(arg_10_0, arg_10_1, arg_10_2, arg_10_3)
 	end
 end
 
-function BattleDataProxy.HandleAircraftMissDamage(arg_11_0, arg_11_1, arg_11_2)
-	if arg_11_2 == nil then
+
+--- @class BattleDataProxy
+--- @param aircraft BattleAircraftUnit
+--- @param fleet BattleFleetVO
+--- @return nil
+--- 舰载机触底伤害主逻辑
+function BattleDataProxy.HandleAircraftMissDamage(self, aircraft, fleet)
+	if fleet == nil then
 		return
 	end
+	-- 只包含轻航/正航/导驱M
+	local cloakList = fleet:GetCloakList()
 
-	local var_11_0 = arg_11_2:GetCloakList()
-
-	for iter_11_0, iter_11_1 in ipairs(var_11_0) do
-		iter_11_1:CloakExpose(arg_11_0._airExpose)
+	for _, cloakUnit in ipairs(cloakList) do
+		cloakUnit:CloakExpose(self._airExpose)
 	end
 
-	local var_11_1 = arg_11_1:GetPosition()
-	local var_11_2 = arg_11_2:NearestUnitByType(var_11_1, ShipType.CloakShipTypeList)
+	local aircraftPos = aircraft:GetPosition()
+	local nearestUnit = fleet:NearestUnitByType(aircraftPos, ShipType.CloakShipTypeList)
 
-	if var_11_2 then
-		var_11_2:CloakExpose(arg_11_0._airExposeEX)
+	if nearestUnit then
+		nearestUnit:CloakExpose(self._airExposeEX)
 	end
 
-	local var_11_3 = arg_11_2:RandomMainVictim({
+	local victim = fleet:RandomMainVictim({
 		"immuneDirectHit"
 	})
 
-	if var_11_3 then
-		local var_11_4 = arg_11_0._calculateDamageKamikazeAir(arg_11_1, var_11_3)
+	if victim then
+		local damage = self._calculateDamageKamikazeAir(aircraft, victim)
 
-		var_11_3:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
-		arg_11_0:HandleDirectDamage(var_11_3, var_11_4, arg_11_1)
+		victim:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
+		self:HandleDirectDamage(victim, damage, aircraft)
 	end
 end
 
+-- 舰船触底伤害主逻辑(又可细分为潜艇和水面舰船)
 function BattleDataProxy.HandleShipMissDamage(arg_12_0, arg_12_1, arg_12_2)
 	if arg_12_2 == nil then
 		return
@@ -332,7 +339,8 @@ function BattleDataProxy.HandleCrashDamage(arg_13_0, arg_13_1, arg_13_2)
 	arg_13_0:HandleDirectDamage(arg_13_1, var_13_0, arg_13_2, BattleConst.UnitDeathReason.CRUSH)
 	arg_13_0:HandleDirectDamage(arg_13_2, var_13_1, arg_13_1, BattleConst.UnitDeathReason.CRUSH)
 end
--- TODO
+
+-- TODO: 触发Buff添加逻辑
 function BattleDataProxy.HandleBuffPlacer(arg_14_0, arg_14_1, arg_14_2)
 	local var_14_0 = BattleDataFunction.GetBuffTemplate(arg_14_0.buff_id).effect_list
 	local var_14_1 = false
