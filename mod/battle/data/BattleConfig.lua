@@ -43,6 +43,12 @@ BattleConfig.AntiAirConfig.RangeBulletID = 2001
 BattleConfig.AntiAirConfig.RangeBarrageID = 1
 BattleConfig.AntiAirConfig.RangeAntiAirBone = "rangeantiaircraft"
 BattleConfig.AirSupportUnitPos = Vector3(-105, 0, 58)
+BattleConfig.SubSupportUnitPosList = {
+	Vector3(-36, 0, 58),
+	Vector3(-30, 0, 78),
+	Vector3(-30, 0, 38)
+}
+BattleConfig.SubSupportDelay = 5
 BattleConfig.AnitAirRepeaterConfig = {}
 BattleConfig.AnitAirRepeaterConfig.const_A = 32
 BattleConfig.AnitAirRepeaterConfig.const_B = 12

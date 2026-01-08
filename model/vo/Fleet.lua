@@ -70,6 +70,12 @@ Fleet.DEFAULT_NAME_BOSS_SINGLE_VARIABLE_ACT = {
 	i18n("ship_formationUI_fleetName_12"),
 	(i18n("ship_formationUI_fleetName_13"))
 }
+Fleet.DEFAULT_ELITE_NAME = {
+	i18n("ship_formationUI_fleetName1"),
+	i18n("ship_formationUI_fleetName2"),
+	i18n("ship_formationUI_fleetName11"),
+	(i18n("ship_formationUI_fleetName13"))
+}
 Fleet.REGULAR_FLEET_ID = 1
 Fleet.REGULAR_FLEET_NUMS = 6
 Fleet.SUBMARINE_FLEET_ID = 11
@@ -92,6 +98,8 @@ function Fleet.Ctor(arg_1_0, arg_1_1)
 	arg_1_0.skills = {}
 
 	arg_1_0:updateCommanderSkills()
+
+	arg_1_0.fleetType = arg_1_1.fleetType
 end
 
 function Fleet.isUnlock(arg_2_0)
@@ -915,8 +923,8 @@ function Fleet.GetFleetSonarRange(self)
 				sonarRange = math.max(sonarRange, Mathf.Clamp(baseSonarRange, sonarProperty.minRange, sonarProperty.maxRange))
 			end
 
-			if table.contains(TeamType.MainShipType, shipType) then
-				mainAntiSub = mainAntiSub + (ship:getShipProperties()[AttributeType.AntiSub] or 0)
+			if table.contains(ShipType.MainShipType, var_59_7) then
+				var_59_4 = var_59_4 + (var_59_6:getShipProperties()[AttributeType.AntiSub] or 0)
 			end
 
 			for _, equipment in ipairs(ship:getActiveEquipments()) do

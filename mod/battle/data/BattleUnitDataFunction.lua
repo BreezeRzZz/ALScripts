@@ -199,15 +199,15 @@ function BattleDataFunction.AttachWeather(arg_4_0, arg_4_1)
 		if arg_4_0:GetFleetVO() then
 			local var_4_1 = arg_4_0:GetFleetVO()
 
-			if table.contains(TeamType.VanguardShipType, var_4_0) then
+			if table.contains(ShipType.VanguardShipType, var_4_0) then
 				local var_4_2 = var_4_1:GetFleetBias()
 				local var_4_3 = var_4_2:GetCrewCount() + 1
 
 				var_4_2:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SCOUT[var_4_3])
 				var_4_2:AppendCrew(arg_4_0)
-			elseif table.contains(TeamType.MainShipType, var_4_0) then
+			elseif table.contains(ShipType.MainShipType, var_4_0) then
 				var_4_1:AttachCloak(arg_4_0)
-			elseif table.contains(TeamType.SubShipType, var_4_0) then
+			elseif table.contains(ShipType.SubShipType, var_4_0) then
 				local var_4_4 = ys.Battle.BattleUnitAimBiasComponent.New()
 
 				var_4_4:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeSub, ys.Battle.BattleFormulas.CalculateBiasDecay)
@@ -220,7 +220,7 @@ function BattleDataFunction.AttachWeather(arg_4_0, arg_4_1)
 
 			var_4_5:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonster)
 
-			if table.contains(TeamType.SubShipType, var_4_0) then
+			if table.contains(ShipType.SubShipType, var_4_0) then
 				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
 				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
@@ -251,7 +251,7 @@ function BattleDataFunction.AttachSmoke(arg_5_0)
 
 			var_5_3:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
 
-			if table.contains(TeamType.SubShipType, shipType) then
+			if table.contains(ShipType.SubShipType, shipType) then
 				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
 				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)

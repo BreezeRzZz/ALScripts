@@ -115,8 +115,14 @@ end
 function BattlePointHitWeaponUnit.Update(arg_12_0, arg_12_1)
 	arg_12_0:UpdateReload()
 end
--- TODO
+
 function BattlePointHitWeaponUnit.Fire(self, targetPos)
+	if self._host:IsCease() then
+		self:CancelQuickTag()
+
+		return false
+	end
+
 	if self._currentState ~= self.STATE_PRECAST then
 		return
 	end

@@ -1845,70 +1845,49 @@ function BattleWeaponUnit.FlushRequireByInverse(self, loadSpeed)
 	return elapsedTime + BattleFormulas.CalculateReloadTime(remainingReload, BattleAttr.GetCurrent(self._host, "loadSpeed"))
 end
 
---- @class BattleWeaponUnit
---- @param enhance number
---- @return nil
---- CardPuzzle相关都是废案，不用管
-function BattleWeaponUnit.SetCardPuzzleDamageEnhance(self, enhance)
-	self._cardPuzzleEnhance = enhance
+function var_0_9.SetSupportWeapon(arg_128_0)
+	arg_128_0._isSupportWeapon = true
 end
 
---- @class BattleWeaponUnit
---- @return nil
---- CardPuzzle相关都是废案，不用管
-function BattleWeaponUnit.GetCardPuzzleDamageEnhance(self)
-	return self._cardPuzzleEnhance or 1
+function var_0_9.SetCardPuzzleDamageEnhance(arg_129_0, arg_129_1)
+	arg_129_0._cardPuzzleEnhance = arg_129_1
 end
 
---- @class BattleWeaponUnit
---- @return number
---- 获取武器的装填进度
-function BattleWeaponUnit.GetReloadRate(self)
-	if self._currentState == self.STATE_READY then
+function var_0_9.GetCardPuzzleDamageEnhance(arg_130_0)
+	return arg_130_0._cardPuzzleEnhance or 1
+end
+
+function var_0_9.GetReloadRate(arg_131_0)
+	if arg_131_0._currentState == arg_131_0.STATE_READY then
 		return 0
-	elseif self._CDstartTime then
-		return (self:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / self._reloadRequire
+	elseif arg_131_0._CDstartTime then
+		return (arg_131_0:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / arg_131_0._reloadRequire
 	else
 		return 1
 	end
 end
 
---- @class BattleWeaponUnit
---- @param damage number
---- @param isCri boolean
---- @param isMiss boolean
---- @return nil
---- 记录武器的统计数据
-function BattleWeaponUnit.WeaponStatistics(self, damage, isCri, isMiss)
-	self._CLDCount = self._CLDCount + 1
-	self._damageSum = damage + self._damageSum
+function var_0_9.WeaponStatistics(arg_132_0, arg_132_1, arg_132_2, arg_132_3)
+	arg_132_0._CLDCount = arg_132_0._CLDCount + 1
+	arg_132_0._damageSum = arg_132_1 + arg_132_0._damageSum
 
-	if isCri then
-		self._CTSum = self._CTSum + 1
+	if arg_132_2 then
+		arg_132_0._CTSum = arg_132_0._CTSum + 1
 	end
 
-	if not isMiss then
-		self._ACCSum = self._ACCSum + 1
+	if not arg_132_3 then
+		arg_132_0._ACCSum = arg_132_0._ACCSum + 1
 	end
 end
 
---- @class BattleWeaponUnit
---- @return number
---- 获取武器的总伤害
-function BattleWeaponUnit.GetDamageSUM(self)
-	return self._damageSum
+function var_0_9.GetDamageSUM(arg_133_0)
+	return arg_133_0._damageSum
 end
 
---- @class BattleWeaponUnit
---- @return number
---- 获取(统计)暴击率
-function BattleWeaponUnit.GetCTRate(self)
-	return self._CTSum / self._CLDCount
+function var_0_9.GetCTRate(arg_134_0)
+	return arg_134_0._CTSum / arg_134_0._CLDCount
 end
 
---- @class BattleWeaponUnit
---- @return number
---- 获取(统计)命中率
-function BattleWeaponUnit.GetACCRate(self)
-	return self._ACCSum / self._CLDCount
+function var_0_9.GetACCRate(arg_135_0)
+	return arg_135_0._ACCSum / arg_135_0._CLDCount
 end

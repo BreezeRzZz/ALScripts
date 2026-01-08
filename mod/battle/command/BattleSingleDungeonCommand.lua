@@ -44,7 +44,8 @@ function var_0_3.DoPrologue(arg_3_0)
 		end)
 		arg_3_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
 		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TriggerBattleStartBuffs()
+		arg_3_0._dataProxy:TirggerBattleStartBuffs()
+		arg_3_0._dataProxy:ChapterSupportBarrage(var_0_0.Battle.BattleConfig.FRIENDLY_CODE, var_0_0.Battle.BattleConfig.SubSupportDelay)
 	end
 
 	arg_3_0._uiMediator:SeaSurfaceShift(45, 0, nil, var_3_0)

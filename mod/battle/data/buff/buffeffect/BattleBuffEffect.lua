@@ -1015,7 +1015,7 @@ function BattleBuffEffect.commanderRequire(self, owner)
 		local CMDbuffs
 		local shipType = owner:GetTemplate().type
 
-		if table.contains(TeamType.SubShipType, shipType) then
+		if table.contains(ShipType.SubShipType, shipType) then
 			CMDbuffs = subCommanderBuff
 		else
 			CMDbuffs = commanderBuff

@@ -312,7 +312,7 @@ function BattleDataProxy.HandleShipMissDamage(arg_12_0, arg_12_1, arg_12_2)
 	if var_12_3 then
 		local var_12_4 = arg_12_1:GetTemplate().type
 
-		if table.contains(TeamType.SubShipType, var_12_4) then
+		if table.contains(ShipType.SubShipType, var_12_4) then
 			local var_12_5 = BattleFormulas.CalculateDamageFromSubmarinToMainShip(arg_12_1, var_12_3)
 
 			var_12_3:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})

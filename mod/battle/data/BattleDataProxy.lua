@@ -140,13 +140,14 @@ function BattleDataProxy.TriggerBattleStartBuffs(self)
 
 		local supportUnitList = fleet:GetSupportUnitList()
 
-		for _, supportUnit in ipairs(supportUnitList) do
-			underscore.each(self._battleInitData.ChapterBuffIDs or {}, function(buffID)
-				-- 支援舰队可添加制空权Buff
-				if BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(buffID).type == ChapterConst.AirDominanceStrategyBuffType then
-					local buff = ys.Battle.BattleBuffUnit.New(buffID)
+		for iter_6_10, iter_6_11 in ipairs(var_6_12) do
+			underscore.each(arg_6_0._battleInitData.ChapterBuffIDs or {}, function(arg_9_0)
+				local var_9_0 = var_0_5.GetSLGStrategyBuffByCombatBuffID(arg_9_0)
 
-					supportUnit:AddBuff(buff)
+				if var_9_0 and var_9_0.type == ChapterConst.AirDominanceStrategyBuffType then
+					local var_9_1 = var_0_0.Battle.BattleBuffUnit.New(arg_9_0)
+
+					iter_6_11:AddBuff(var_9_1)
 				end
 			end)
 		end
@@ -522,12 +523,13 @@ function BattleDataProxy.InitUserShipsData(self, mainUnitList, vanguardUnitList,
 	}))
 end
 
--- 同样在BattleDataProxy.InitBattle调用，就在InitUserShipsData之后
-function BattleDataProxy.InitUserSupportShipsData(self, IFF, supportUnitList)
-	local fleet = self:GetFleetByIFF(IFF)
+function var_0_9.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
+	for iter_25_0, iter_25_1 in ipairs(arg_25_2) do
+		local var_25_0 = var_0_5.GetPlayerShipTmpDataFromID(iter_25_1.tmpID).type
 
-	for _, supportUnitData in ipairs(supportUnitList) do
-		local supportUnit = self:SpawnSupportUnit(supportUnitData, IFF)
+		if table.contains(ShipType.BundleList.hang, var_25_0) then
+			local var_25_1 = arg_25_0:SpawnSupportUnit(iter_25_1, arg_25_1)
+		end
 	end
 end
 
@@ -1170,9 +1172,9 @@ function BattleDataProxy.SpawnMonster(self, spawnItem, waveIndex, enemyType, IFF
 	enemyUnit:SetAI(spawnItem.pilotAITemplateID or monsterTmpData.pilot_ai_template_id)
 	self:setShipUnitBound(enemyUnit)
 
-	if table.contains(TeamType.SubShipType, monsterTmpData.type) then
-		enemyUnit:InitOxygen()
-		self:UpdateHostileSubmarine(true)
+	if table.contains(ShipType.SubShipType, var_60_1.type) then
+		var_60_8:InitOxygen()
+		arg_60_0:UpdateHostileSubmarine(true)
 	end
 
 	BattleDataFunction.AttachWeather(enemyUnit, self._weahter)
@@ -1329,8 +1331,8 @@ function BattleDataProxy.SpawnNPC(self, spawnData, caster)
 	unit:SetAI(spawnData.pilotAITemplateID or monsterTemplate.pilot_ai_template_id)
 	self:setShipUnitBound(unit)
 
-	if table.contains(TeamType.SubShipType, monsterTemplate.type) then
-		unit:InitOxygen()
+	if table.contains(ShipType.SubShipType, var_63_2.type) then
+		var_63_4:InitOxygen()
 
 		if unit:GetIFF() ~= BattleConfig.FRIENDLY_CODE then
 			self:UpdateHostileSubmarine(true)
@@ -1533,11 +1535,26 @@ function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
 	return var_71_1
 end
 
--- 被BattleDataProxy.InitUserSupportShipsData调用
-function BattleDataProxy.SpawnSupportUnit(self, supportUnitData, IFF)
-	local supportUnit = self:generateSupportPlayerUnit(supportUnitData, IFF)
+function var_0_9.SpawnSupportUnit(arg_72_0, arg_72_1, arg_72_2)
+	local var_72_0 = arg_72_0:generateSupportPlayerUnit(arg_72_1, arg_72_2)
+	local var_72_1 = arg_72_0:GetFleetByIFF(arg_72_2)
 
-	self:GetFleetByIFF(IFF):AppendSupportUnit(supportUnit)
+	var_72_1:AppendSupportUnit(var_72_0)
+
+	local var_72_2 = var_72_0:GetTemplate().type
+
+	if table.contains(ShipType.BundleList.qian, var_72_2) then
+		var_72_0:SetPosition(Clone(var_0_4.SubSupportUnitPosList[#var_72_1:GetSupportUnitList()]))
+	else
+		var_72_0:SetPosition(Clone(var_0_4.AirSupportUnitPos))
+	end
+
+	local var_72_3 = {
+		type = var_0_3.UnitType.SUPPORT_UNIT,
+		unit = var_72_0
+	}
+
+	arg_72_0:DispatchEvent(var_0_0.Event.New(var_0_1.ADD_UNIT, var_72_3))
 
 	return supportUnit
 end
@@ -1620,7 +1637,7 @@ function BattleDataProxy.KillUnit(arg_75_0, arg_75_1)
 
 			local var_75_5 = var_75_0:GetTemplate().type
 
-			if table.contains(TeamType.SubShipType, var_75_5) then
+			if table.contains(ShipType.SubShipType, var_75_5) then
 				arg_75_0:UpdateHostileSubmarine(false)
 			end
 
@@ -1655,7 +1672,7 @@ end
 
 function BattleDataProxy.KillSubmarineByIFF(arg_77_0, arg_77_1)
 	for iter_77_0, iter_77_1 in pairs(arg_77_0._unitList) do
-		if iter_77_1:GetIFF() == arg_77_1 and iter_77_1:IsAlive() and table.contains(TeamType.SubShipType, iter_77_1:GetTemplate().type) and not iter_77_1:IsBoss() then
+		if iter_77_1:GetIFF() == arg_77_1 and iter_77_1:IsAlive() and table.contains(ShipType.SubShipType, iter_77_1:GetTemplate().type) and not iter_77_1:IsBoss() then
 			iter_77_1:DeadAction()
 		end
 	end
@@ -1813,9 +1830,7 @@ function BattleDataProxy.generateSupportPlayerUnit(self, unitData, IFF)
 	supportUnit:InitCurrentHP(1)
 	supportUnit:SetShipName(unitData.name)
 
-	self._spectreShipList[UID] = supportUnit
-
-	supportUnit:SetPosition(Clone(BattleConfig.AirSupportUnitPos))
+	arg_85_0._spectreShipList[var_85_0] = var_85_3
 
 	return supportUnit
 end
@@ -2599,7 +2614,7 @@ function BattleDataProxy.SubmarineStrike(self, IFF)
 	local fleet = self:GetFleetByIFF(IFF)
 	local subAidVO = fleet:GetSubAidVO()
 
-	if fleet:GetWeaponBlock() or subAidVO:GetCurrent() < 1 then
+	if arg_152_0._battleInitData.battleType ~= SYSTEM_SCENARIO_SUB_STRIKE and (var_152_0:GetWeaponBlock() or var_152_1:GetCurrent() < 1) then
 		return
 	end
 
@@ -2760,8 +2775,8 @@ function BattleDataProxy.ActiveFreezeUnit(arg_160_0, arg_160_1)
 	end
 end
 
-function BattleDataProxy.GetFleetLegal(arg_161_0, arg_161_1, arg_161_2)
-	if arg_161_2 == SYSTEM_DUEL or arg_161_2 == SYSTEM_PERFORM or arg_161_2 == SYSTEM_SUB_ROUTINE or arg_161_2 == SYSTEM_CARDPUZZLE or arg_161_2 == SYSTEM_PROLOGUE or arg_161_2 == SYSTEM_DODGEM or arg_161_2 == SYSTEM_SIMULATION or arg_161_2 == SYSTEM_SUBMARINE_RUN or arg_161_2 == SYSTEM_DEBUG or arg_161_2 == SYSTEM_AIRFIGHT then
+function var_0_9.GetFleetLegal(arg_162_0, arg_162_1, arg_162_2)
+	if arg_162_2 == SYSTEM_DUEL or arg_162_2 == SYSTEM_PERFORM or arg_162_2 == SYSTEM_SUB_ROUTINE or arg_162_2 == SYSTEM_CARDPUZZLE or arg_162_2 == SYSTEM_PROLOGUE or arg_162_2 == SYSTEM_DODGEM or arg_162_2 == SYSTEM_SIMULATION or arg_162_2 == SYSTEM_SUBMARINE_RUN or arg_162_2 == SYSTEM_SCENARIO_SUB_STRIKE or arg_162_2 == SYSTEM_DEBUG or arg_162_2 == SYSTEM_AIRFIGHT then
 		return true
 	else
 		local unitList = self:GetFleetByIFF(arg_162_1)
@@ -2784,7 +2799,31 @@ function BattleDataProxy.TriggerFinishBattle(self)
 		end
 	end
 
-	for _, minion in pairs(self._minionShipList) do
-		minion:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
+	for iter_163_4, iter_163_5 in pairs(arg_163_0._minionShipList) do
+		iter_163_5:TriggerBuff(var_0_3.BuffEffectType.ON_FINISH_GAME)
+	end
+end
+
+function var_0_9.ChapterSupportBarrage(arg_164_0, arg_164_1, arg_164_2)
+	local var_164_0
+
+	local function var_164_1(...)
+		for iter_165_0, iter_165_1 in ipairs(arg_164_0._battleInitData.SupportUnitList) do
+			local var_165_0 = var_0_5.GetPlayerShipTmpDataFromID(iter_165_1.tmpID).type
+
+			if table.contains(ShipType.BundleList.qian, var_165_0) then
+				local var_165_1 = arg_164_0:SpawnSupportUnit(iter_165_1, arg_164_1)
+
+				var_0_6.SetCurrent(var_165_1, "loadSpeed", 0)
+			end
+		end
+
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_164_0)
+	end
+
+	if arg_164_2 then
+		var_164_0 = pg.TimeMgr.GetInstance():AddBattleTimer("supportBarrageTimer", -1, arg_164_2, var_164_1)
+	else
+		var_164_1()
 	end
 end
