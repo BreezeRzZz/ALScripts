@@ -79,34 +79,35 @@ function ChapterFleet.setup(arg_6_0, arg_6_1)
 	arg_6_0:UpdateVisible()
 end
 
-function var_0_0.UpdateVisible(arg_7_0)
+function ChapterFleet.UpdateVisible(arg_7_0)
 	if arg_7_0:getFleetType() == FleetType.Normal then
 		arg_7_0.chapter:UpdateCellsVisible(arg_7_0)
 	end
 end
 
-function var_0_0.GetFogVisibleLV(arg_8_0)
-	local var_8_0 = #pg.chapter_model_fog.all
+function ChapterFleet.GetFogVisibleLV(self)
+	local totalVisibleLevel = #pg.chapter_model_fog.all
 
-	return arg_8_0.visibleLevel, pg.chapter_model_fog[math.min(arg_8_0.visibleLevel, var_8_0)]
+	return self.visibleLevel, pg.chapter_model_fog[math.min(self.visibleLevel, totalVisibleLevel)]
 end
 
-function var_0_0.GetVisibleRange(arg_9_0, arg_9_1)
-	arg_9_1 = arg_9_1 or arg_9_0.line
+-- 获取视野等级
+function ChapterFleet.GetVisibleRange(self, line)
+	line = line or self.line
 
-	local var_9_0, var_9_1 = arg_9_0:GetFogVisibleLV()
+	local visibleLevel, fogConfig = self:GetFogVisibleLV()
 
-	return underscore.map(var_9_1.vision_range, function(arg_10_0)
-		local var_10_0, var_10_1 = unpack(arg_10_0)
+	return underscore.map(fogConfig.vision_range, function(range)
+		local offsetRow, offsetCol = unpack(range)
 
 		return {
-			row = arg_9_1.row + var_10_0,
-			column = arg_9_1.column + var_10_1
+			row = line.row + offsetRow,
+			column = line.column + offsetCol
 		}
 	end)
 end
 
-function var_0_0.fetchShipVO(arg_11_0, arg_11_1)
+function ChapterFleet.fetchShipVO(arg_11_0, arg_11_1)
 	local var_11_0
 
 	if arg_11_0.npcShipList[arg_11_1] then
@@ -122,7 +123,7 @@ function var_0_0.fetchShipVO(arg_11_0, arg_11_1)
 	return var_11_0
 end
 
-function var_0_0.updateNpcShipList(arg_12_0, arg_12_1)
+function ChapterFleet.updateNpcShipList(arg_12_0, arg_12_1)
 	arg_12_0.npcShipList = {}
 
 	for iter_12_0, iter_12_1 in ipairs(arg_12_1) do
@@ -130,11 +131,11 @@ function var_0_0.updateNpcShipList(arg_12_0, arg_12_1)
 	end
 end
 
-function var_0_0.GetLine(arg_13_0)
+function ChapterFleet.GetLine(arg_13_0)
 	return arg_13_0.line
 end
 
-function var_0_0.SetLine(arg_14_0, arg_14_1)
+function ChapterFleet.SetLine(arg_14_0, arg_14_1)
 	arg_14_0.line = {
 		row = arg_14_1.row,
 		column = arg_14_1.column
@@ -143,7 +144,7 @@ function var_0_0.SetLine(arg_14_0, arg_14_1)
 	arg_14_0:UpdateVisible()
 end
 
-function var_0_0.updateCommanders(arg_15_0, arg_15_1)
+function ChapterFleet.updateCommanders(arg_15_0, arg_15_1)
 	arg_15_0.commanders = {}
 
 	local var_15_0 = getProxy(CommanderProxy)
@@ -158,11 +159,11 @@ function var_0_0.updateCommanders(arg_15_0, arg_15_1)
 	end
 end
 
-function var_0_0.getCommanders(arg_16_0)
+function ChapterFleet.getCommanders(arg_16_0)
 	return arg_16_0.commanders or {}
 end
 
-function var_0_0.prepareShips(arg_17_0, arg_17_1)
+function ChapterFleet.prepareShips(arg_17_0, arg_17_1)
 	arg_17_0.statics = {}
 	arg_17_0.statics[TeamType.Vanguard] = {
 		count = 0
@@ -187,7 +188,7 @@ function var_0_0.prepareShips(arg_17_0, arg_17_1)
 	arg_17_0.staticsReady = true
 end
 
-function var_0_0.updateShips(arg_19_0, arg_19_1)
+function ChapterFleet.updateShips(arg_19_0, arg_19_1)
 	arg_19_0[TeamType.Vanguard] = {}
 	arg_19_0[TeamType.Main] = {}
 	arg_19_0[TeamType.Submarine] = {}
@@ -206,7 +207,7 @@ function var_0_0.updateShips(arg_19_0, arg_19_1)
 	arg_19_0:ResortShips()
 end
 
-function var_0_0.ResortShips(arg_21_0)
+function ChapterFleet.ResortShips(arg_21_0)
 	local var_21_0 = {
 		TeamType.Vanguard,
 		TeamType.Main,
@@ -231,7 +232,7 @@ function var_0_0.ResortShips(arg_21_0)
 	end)
 end
 
-function var_0_0.getTeamByName(arg_26_0, arg_26_1)
+function ChapterFleet.getTeamByName(arg_26_0, arg_26_1)
 	local var_26_0 = {}
 	local var_26_1 = arg_26_0[arg_26_1]
 
@@ -242,7 +243,7 @@ function var_0_0.getTeamByName(arg_26_0, arg_26_1)
 	return var_26_0
 end
 
-function var_0_0.flushShips(arg_27_0)
+function ChapterFleet.flushShips(arg_27_0)
 	local var_27_0 = getProxy(FleetProxy):getFleetById(arg_27_0.fleetId)
 
 	arg_27_0.name = var_27_0 and var_27_0.name ~= "" and var_27_0.name or Fleet.DEFAULT_NAME[arg_27_0.fleetId] or Fleet.DEFAULT_NAME[arg_27_0.id]
@@ -290,7 +291,7 @@ function var_0_0.flushShips(arg_27_0)
 	arg_27_0[TeamType.Submarine] = var_27_5
 end
 
-function var_0_0.updateShipHp(arg_31_0, arg_31_1, arg_31_2)
+function ChapterFleet.updateShipHp(arg_31_0, arg_31_1, arg_31_2)
 	local var_31_0 = arg_31_0.ships[arg_31_1]
 
 	if var_31_0 then
@@ -301,11 +302,11 @@ function var_0_0.updateShipHp(arg_31_0, arg_31_1, arg_31_2)
 	end
 end
 
-function var_0_0.getShip(arg_32_0, arg_32_1)
+function ChapterFleet.getShip(arg_32_0, arg_32_1)
 	return arg_32_0.ships[arg_32_1]
 end
 
-function var_0_0.getShips(arg_33_0, arg_33_1)
+function ChapterFleet.getShips(arg_33_0, arg_33_1)
 	local var_33_0 = {}
 	local var_33_1 = arg_33_0:getFleetType()
 
@@ -544,7 +545,7 @@ function ChapterFleet.getAntiAircraftSums(arg_51_0)
 	return (_.reduce(arg_51_0:getShips(false), 0, var_51_0))
 end
 
-function var_0_0.getAirSums(arg_53_0, arg_53_1)
+function ChapterFleet.getAirSums(arg_53_0, arg_53_1)
 	local function var_53_0(arg_54_0, arg_54_1)
 		return arg_54_0 + arg_54_1:getProperties(arg_53_0:getCommanders())[AttributeType.Air]
 	end
@@ -552,7 +553,7 @@ function var_0_0.getAirSums(arg_53_0, arg_53_1)
 	return (_.reduce(arg_53_0:getShips(arg_53_1), 0, var_53_0))
 end
 
-function var_0_0.getShipAmmo(arg_55_0)
+function ChapterFleet.getShipAmmo(arg_55_0)
 	local var_55_0 = 0
 
 	if arg_55_0:getFleetType() == FleetType.Normal then
@@ -570,13 +571,13 @@ function var_0_0.getShipAmmo(arg_55_0)
 	return var_55_0
 end
 
-function var_0_0.clearShipHpChange(arg_56_0)
+function ChapterFleet.clearShipHpChange(arg_56_0)
 	for iter_56_0, iter_56_1 in pairs(arg_56_0.ships) do
 		arg_56_0.ships[iter_56_1.id].hpChange = 0
 	end
 end
 
-function var_0_0.getEquipAmbushRateReduce(arg_57_0)
+function ChapterFleet.getEquipAmbushRateReduce(arg_57_0)
 	local var_57_0 = 0
 
 	for iter_57_0, iter_57_1 in pairs(arg_57_0.ships) do
@@ -590,7 +591,7 @@ function var_0_0.getEquipAmbushRateReduce(arg_57_0)
 	return var_57_0 / 10000
 end
 
-function var_0_0.getEquipDodgeRateUp(arg_58_0)
+function ChapterFleet.getEquipDodgeRateUp(arg_58_0)
 	local var_58_0 = 0
 
 	for iter_58_0, iter_58_1 in pairs(arg_58_0.ships) do
@@ -604,7 +605,7 @@ function var_0_0.getEquipDodgeRateUp(arg_58_0)
 	return var_58_0 / 10000
 end
 
-function var_0_0.isFormationDiffWith(arg_59_0, arg_59_1)
+function ChapterFleet.isFormationDiffWith(arg_59_0, arg_59_1)
 	local var_59_0 = {
 		TeamType.Main,
 		TeamType.Vanguard,
@@ -625,7 +626,7 @@ function var_0_0.isFormationDiffWith(arg_59_0, arg_59_1)
 	return false
 end
 
-function var_0_0.getShipIds(arg_60_0)
+function ChapterFleet.getShipIds(arg_60_0)
 	local var_60_0 = {}
 	local var_60_1 = arg_60_0:getFleetType()
 
@@ -649,23 +650,23 @@ function var_0_0.getShipIds(arg_60_0)
 	return var_60_0
 end
 
-function var_0_0.containsSameKind(arg_64_0, arg_64_1)
+function ChapterFleet.containsSameKind(arg_64_0, arg_64_1)
 	return arg_64_1 and _.any(_.values(arg_64_0.ships), function(arg_65_0)
 		return arg_64_1:isSameKind(arg_65_0)
 	end)
 end
 
-function var_0_0.increaseSlowSpeedFactor(arg_66_0)
+function ChapterFleet.increaseSlowSpeedFactor(arg_66_0)
 	arg_66_0.slowSpeedFactor = arg_66_0.slowSpeedFactor + 1
 end
 
-function var_0_0.getSpeed(arg_67_0)
+function ChapterFleet.getSpeed(arg_67_0)
 	local var_67_0 = arg_67_0:triggerSkill(FleetSkill.TypeMoveSpeed) or 0
 
 	return math.max(arg_67_0.baseSpeed + var_67_0 - arg_67_0.slowSpeedFactor, 1)
 end
 
-function var_0_0.calcBaseSpeed(arg_68_0)
+function ChapterFleet.calcBaseSpeed(arg_68_0)
 	local var_68_0 = arg_68_0:getShips(true)
 	local var_68_1 = _.reduce(var_68_0, 0, function(arg_69_0, arg_69_1)
 		return arg_69_0 + arg_69_1:getProperties()[AttributeType.Speed]
@@ -694,11 +695,11 @@ function var_0_0.calcBaseSpeed(arg_68_0)
 	end
 end
 
-function var_0_0.getDefeatCount(arg_70_0)
+function ChapterFleet.getDefeatCount(arg_70_0)
 	return arg_70_0.defeatEnemies
 end
 
-function var_0_0.getStrategies(arg_71_0)
+function ChapterFleet.getStrategies(arg_71_0)
 	local var_71_0 = arg_71_0:getOwnStrategies()
 
 	for iter_71_0, iter_71_1 in pairs(arg_71_0.stgPicked) do
@@ -729,7 +730,7 @@ function var_0_0.getStrategies(arg_71_0)
 	end)
 end
 
-function var_0_0.getOwnStrategies(arg_73_0)
+function ChapterFleet.getOwnStrategies(arg_73_0)
 	local var_73_0 = {}
 	local var_73_1 = arg_73_0:getShips(true)
 
@@ -752,11 +753,11 @@ function var_0_0.getOwnStrategies(arg_73_0)
 	return var_73_0
 end
 
-function var_0_0.achievedStrategy(arg_77_0, arg_77_1, arg_77_2)
+function ChapterFleet.achievedStrategy(arg_77_0, arg_77_1, arg_77_2)
 	arg_77_0.stgPicked[arg_77_1] = (arg_77_0.stgPicked[arg_77_1] or 0) + arg_77_2
 end
 
-function var_0_0.consumeOneStrategy(arg_78_0, arg_78_1)
+function ChapterFleet.consumeOneStrategy(arg_78_0, arg_78_1)
 	local var_78_0 = arg_78_0:getOwnStrategies()
 
 	if var_78_0[arg_78_1] and var_78_0[arg_78_1] > 0 then
@@ -772,7 +773,7 @@ function var_0_0.consumeOneStrategy(arg_78_0, arg_78_1)
 	end
 end
 
-function var_0_0.GetStrategyCount(arg_79_0, arg_79_1)
+function ChapterFleet.GetStrategyCount(arg_79_0, arg_79_1)
 	local var_79_0 = arg_79_0:getStrategies()
 	local var_79_1 = _.detect(var_79_0, function(arg_80_0)
 		return arg_80_0.id == arg_79_1
@@ -781,11 +782,11 @@ function var_0_0.GetStrategyCount(arg_79_0, arg_79_1)
 	return var_79_1 and var_79_1.count or 0
 end
 
-function var_0_0.getFormationStg(arg_81_0)
+function ChapterFleet.getFormationStg(arg_81_0)
 	return PlayerPrefs.GetInt("team_formation_" .. arg_81_0.id, 1)
 end
 
-function var_0_0.canUseStrategy(arg_82_0, arg_82_1)
+function ChapterFleet.canUseStrategy(arg_82_0, arg_82_1)
 	local var_82_0 = pg.strategy_data_template[arg_82_1.id]
 
 	if var_82_0.type == ChapterConst.StgTypeForm then
@@ -813,21 +814,21 @@ function var_0_0.canUseStrategy(arg_82_0, arg_82_1)
 	return true
 end
 
-function var_0_0.getNextStgUser(arg_84_0, arg_84_1)
+function ChapterFleet.getNextStgUser(arg_84_0, arg_84_1)
 	return arg_84_0.id
 end
 
-function var_0_0.GetStatusStrategy(arg_85_0)
+function ChapterFleet.GetStatusStrategy(arg_85_0)
 	return arg_85_0.stgIds
 end
 
-function var_0_0.getFleetType(arg_86_0)
+function ChapterFleet.getFleetType(arg_86_0)
 	assert(arg_86_0.fleetType)
 
 	return arg_86_0.fleetType
 end
 
-function var_0_0.canClearTorpedo(arg_87_0)
+function ChapterFleet.canClearTorpedo(arg_87_0)
 	local var_87_0 = arg_87_0:getShipsByTeam(TeamType.Vanguard, true)
 
 	return _.any(var_87_0, function(arg_88_0)
@@ -835,7 +836,7 @@ function var_0_0.canClearTorpedo(arg_87_0)
 	end)
 end
 
-function var_0_0.getHuntingRange(arg_89_0, arg_89_1)
+function ChapterFleet.getHuntingRange(arg_89_0, arg_89_1)
 	if arg_89_0:getFleetType() ~= FleetType.Submarine then
 		assert(false)
 
@@ -855,13 +856,13 @@ function var_0_0.getHuntingRange(arg_89_0, arg_89_1)
 	end))
 end
 
-function var_0_0.inHuntingRange(arg_91_0, arg_91_1, arg_91_2)
+function ChapterFleet.inHuntingRange(arg_91_0, arg_91_1, arg_91_2)
 	return _.any(arg_91_0:getHuntingRange(), function(arg_92_0)
 		return arg_92_0.row == arg_91_1 and arg_92_0.column == arg_91_2
 	end)
 end
 
-function var_0_0.getSummonCost(arg_93_0)
+function ChapterFleet.getSummonCost(arg_93_0)
 	local var_93_0 = arg_93_0:getShips(false)
 
 	return _.reduce(var_93_0, 0, function(arg_94_0, arg_94_1)
@@ -869,7 +870,7 @@ function var_0_0.getSummonCost(arg_93_0)
 	end)
 end
 
-function var_0_0.getMapAura(arg_95_0)
+function ChapterFleet.getMapAura(arg_95_0)
 	local var_95_0 = {}
 
 	for iter_95_0, iter_95_1 in pairs(arg_95_0.ships) do
@@ -883,7 +884,7 @@ function var_0_0.getMapAura(arg_95_0)
 	return var_95_0
 end
 
-function var_0_0.getMapAid(arg_96_0)
+function ChapterFleet.getMapAid(arg_96_0)
 	local var_96_0 = {}
 
 	for iter_96_0, iter_96_1 in pairs(arg_96_0.ships) do
@@ -901,7 +902,7 @@ function var_0_0.getMapAid(arg_96_0)
 	return var_96_0
 end
 
-function var_0_0.updateCommanderSkills(arg_97_0)
+function ChapterFleet.updateCommanderSkills(arg_97_0)
 	local var_97_0 = arg_97_0:getCommanders()
 
 	for iter_97_0, iter_97_1 in pairs(var_97_0) do
@@ -913,27 +914,27 @@ function var_0_0.updateCommanderSkills(arg_97_0)
 	end
 end
 
-function var_0_0.getSkills(arg_100_0)
+function ChapterFleet.getSkills(arg_100_0)
 	return arg_100_0.skills
 end
 
-function var_0_0.getSkill(arg_101_0, arg_101_1)
+function ChapterFleet.getSkill(arg_101_0, arg_101_1)
 	return _.detect(arg_101_0:getSkills(), function(arg_102_0)
 		return arg_102_0.id == arg_101_1
 	end)
 end
 
-function var_0_0.findSkills(arg_103_0, arg_103_1)
+function ChapterFleet.findSkills(arg_103_0, arg_103_1)
 	return _.filter(arg_103_0:getSkills(), function(arg_104_0)
 		return arg_104_0:GetType() == arg_103_1
 	end)
 end
 
-function var_0_0.triggerSkill(arg_105_0, arg_105_1)
+function ChapterFleet.triggerSkill(arg_105_0, arg_105_1)
 	return arg_105_0.chapter:triggerSkill(arg_105_0, arg_105_1)
 end
 
-function var_0_0.findCommanderBySkillId(arg_106_0, arg_106_1)
+function ChapterFleet.findCommanderBySkillId(arg_106_0, arg_106_1)
 	local var_106_0 = arg_106_0:getCommanders()
 
 	for iter_106_0, iter_106_1 in pairs(var_106_0) do
@@ -947,7 +948,7 @@ function var_0_0.findCommanderBySkillId(arg_106_0, arg_106_1)
 	end
 end
 
-function var_0_0.getFleetAirDominanceValue(arg_109_0)
+function ChapterFleet.getFleetAirDominanceValue(arg_109_0)
 	local var_109_0 = 0
 
 	for iter_109_0, iter_109_1 in ipairs(arg_109_0:getShips(false)) do
@@ -957,7 +958,7 @@ function var_0_0.getFleetAirDominanceValue(arg_109_0)
 	return var_109_0
 end
 
-function var_0_0.StaticTransformChapterFleet2Fleet(arg_110_0, arg_110_1)
+function ChapterFleet.StaticTransformChapterFleet2Fleet(arg_110_0, arg_110_1)
 	local var_110_0 = _.pluck(arg_110_0:getShipsByTeam(TeamType.Vanguard, arg_110_1), "id")
 
 	table.insertto(var_110_0, _.pluck(arg_110_0:getShipsByTeam(TeamType.Main, arg_110_1), "id"))

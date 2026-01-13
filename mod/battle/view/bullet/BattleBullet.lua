@@ -223,18 +223,21 @@ function BattleBullet.AddTrack(arg_22_0, arg_22_1)
 
 	LuaHelper.SetGOParentTF(arg_22_1, arg_22_0._tf, false)
 end
--- TODO
+
+-- 被各子弹的BulletFactory.MakeModel调用
+-- 处理子弹生成时的视觉相关逻辑(位置、朝向、速度初始化等)
 function BattleBullet.SetSpawn(self, position)
 	local offset, zExtraOffset = self:getHeightAdjust(position)
 	local _offset = offset:Clone()
 
 	_offset.z = _offset.z + zExtraOffset
 	self._tf.localPosition = _offset
-	-- note
+	-- note: 这里对应到实际的数据实体(BattleBulletUnit)的SetSpawnPosition
 	self._bulletData:SetSpawnPosition(_offset)
 
 	local targetPos, _, _ = self._bulletData:GetRotateInfo()
 
+	-- 如果有目标点，会设定一个初始角度(根据getHeightAdjust计算出来的offset和zExtraOffset)
 	if targetPos then
 		local angle
 		-- IMPORTANT: 是否计入zExtraOffset

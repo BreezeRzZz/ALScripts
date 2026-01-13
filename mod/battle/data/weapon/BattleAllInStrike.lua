@@ -1,270 +1,282 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleUnitEvent
-local var_0_4 = var_0_0.Battle.BattleDataFunction
-local var_0_5 = var_0_0.Battle.BattleAttr
 
-var_0_0.Battle.BattleAllInStrike = class("BattleAllInStrike")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
 
-local var_0_6 = var_0_0.Battle.BattleAllInStrike
+ys.Battle.BattleAllInStrike = class("BattleAllInStrike")
 
-var_0_6.__name = "BattleAllInStrike"
-var_0_6.EMITTER_NORMAL = "BattleBulletEmitter"
-var_0_6.EMITTER_SHOTGUN = "BattleShotgunEmitter"
-var_0_6.STATE_DISABLE = "DISABLE"
-var_0_6.STATE_READY = "READY"
-var_0_6.STATE_PRECAST = "PRECAST"
-var_0_6.STATE_PRECAST_FINISH = "STATE_PRECAST_FINISH"
-var_0_6.STATE_ATTACK = "ATTACK"
-var_0_6.STATE_OVER_HEAT = "OVER_HEAT"
+local BattleAllInStrike = ys.Battle.BattleAllInStrike
 
-function var_0_6.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+BattleAllInStrike.__name = "BattleAllInStrike"
+BattleAllInStrike.EMITTER_NORMAL = "BattleBulletEmitter"
+BattleAllInStrike.EMITTER_SHOTGUN = "BattleShotgunEmitter"
+BattleAllInStrike.STATE_DISABLE = "DISABLE"
+BattleAllInStrike.STATE_READY = "READY"
+BattleAllInStrike.STATE_PRECAST = "PRECAST"
+BattleAllInStrike.STATE_PRECAST_FINISH = "STATE_PRECAST_FINISH"
+BattleAllInStrike.STATE_ATTACK = "ATTACK"
+BattleAllInStrike.STATE_OVER_HEAT = "OVER_HEAT"
 
-	arg_1_0._skill = var_0_0.Battle.BattleSkillUnit.New(arg_1_1)
-	arg_1_0._skillID = arg_1_1
-	arg_1_0._reloadFacotrList = {}
-	arg_1_0._reloadBoostList = {}
-	arg_1_0._jammingTime = 0
+-- AllInStrike是一个抽象概念
+-- 有些时候会直接关联到Skill
+function BattleAllInStrike.Ctor(self, skillID)
+	ys.EventDispatcher.AttachEventDispatcher(self)
+
+	self._skill = ys.Battle.BattleSkillUnit.New(skillID)
+	self._skillID = skillID
+	self._reloadFacotrList = {}
+	self._reloadBoostList = {}
+	self._jammingTime = 0
 end
 
-function var_0_6.Update(arg_2_0)
-	arg_2_0:UpdateReload()
+function BattleAllInStrike.Update(self)
+	self:UpdateReload()
 end
 
-function var_0_6.UpdateReload(arg_3_0)
-	if arg_3_0._CDstartTime and not arg_3_0._jammingStartTime then
-		if arg_3_0:GetReloadFinishTimeStamp() <= pg.TimeMgr.GetInstance():GetCombatTime() then
-			arg_3_0:handleCoolDown()
+function BattleAllInStrike.UpdateReload(self)
+	if self._CDstartTime and not self._jammingStartTime then
+		if self:GetReloadFinishTimeStamp() <= pg.TimeMgr.GetInstance():GetCombatTime() then
+			self:handleCoolDown()
 		else
 			return
 		end
 	end
 end
 
-function var_0_6.Clear(arg_4_0)
-	arg_4_0._skill:Clear()
+function BattleAllInStrike.Clear(self)
+	self._skill:Clear()
 end
 
-function var_0_6.Dispose(arg_5_0)
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_5_0)
+function BattleAllInStrike.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
-function var_0_6.SetHost(arg_6_0, arg_6_1)
-	arg_6_0._host = arg_6_1
+-- BattleDataFunction.CreateAllInStrike调用
+function BattleAllInStrike.SetHost(self, host)
+	self._host = host
 
-	local var_6_0
+	local boom
 
-	arg_6_0._hiveList = arg_6_1:GetHiveList()
+	self._hiveList = host:GetHiveList()
 
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._hiveList) do
-		local var_6_1 = iter_6_1:GetSkinID()
+	for _, hive in ipairs(self._hiveList) do
+		local hiveSkinID = hive:GetSkinID()
 
-		if var_6_1 then
-			local var_6_2, var_6_3, var_6_4, var_6_5 = var_0_4.GetEquipSkin(var_6_1)
+		if hiveSkinID then
+			local bullet_name, derivate_bullet, derivate_torpedo, derivate_boom = BattleDataFunction.GetEquipSkin(hiveSkinID)
 
-			if var_6_5 then
-				var_6_0 = var_6_5
+			if derivate_boom then
+				boom = derivate_boom
 
 				break
 			end
 		end
 	end
 
-	if var_6_0 and var_6_0 ~= "" then
-		local var_6_6 = arg_6_0._skill:GetSkillEffectList()
+	if boom and boom ~= "" then
+		local skillEffectList = self._skill:GetSkillEffectList()
 
-		for iter_6_2, iter_6_3 in ipairs(var_6_6) do
-			if iter_6_3.__name == var_0_0.Battle.BattleSkillFire.__name then
-				iter_6_3:SetWeaponSkin(var_6_0)
+		for _, skillEffect in ipairs(skillEffectList) do
+			if skillEffect.__name == ys.Battle.BattleSkillFire.__name then
+				skillEffect:SetWeaponSkin(boom)
 			end
 		end
 	end
 
-	arg_6_0:FlushTotalReload()
-	arg_6_0:FlushReloadMax(1)
-end
--- TODO
-function var_0_6.FlushTotalReload(arg_7_0)
-	arg_7_0._totalReload = var_0_2.CaclulateAirAssistReloadMax(arg_7_0._hiveList)
+	self:FlushTotalReload()
+	self:FlushReloadMax(1)
 end
 
-function var_0_6.FlushReloadMax(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_0._totalReload
+-- 计算一次“空袭”所对应的总装填时间
+-- "空袭"是对多个Hive构成的一次攻击的抽象概念
+function BattleAllInStrike.FlushTotalReload(self)
+	self._totalReload = BattleFormulas.CaclulateAirAssistReloadMax(self._hiveList)
+end
 
-	arg_8_1 = arg_8_1 or 1
-	arg_8_0._reloadMax = var_8_0 * arg_8_1
+function BattleAllInStrike.FlushReloadMax(self, reloadFactor)
+	local totalReload = self._totalReload
 
-	if not arg_8_0._CDstartTime or arg_8_0._reloadRequire == 0 then
+	reloadFactor = reloadFactor or 1
+	self._reloadMax = totalReload * reloadFactor
+
+	if not self._CDstartTime or self._reloadRequire == 0 then
 		return true
 	end
 
-	local var_8_1 = var_0_5.GetCurrent(arg_8_0._host, "loadSpeed")
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
 
-	arg_8_0._reloadRequire = var_0_0.Battle.BattleWeaponUnit.FlushRequireByInverse(arg_8_0, var_8_1)
+	self._reloadRequire = ys.Battle.BattleWeaponUnit.FlushRequireByInverse(self, loadSpeed)
 
-	arg_8_0._allInWeaponVo:RefreshReloadingBar()
+	self._allInWeaponVo:RefreshReloadingBar()
 end
 
-function var_0_6.AppendReloadFactor(arg_9_0, arg_9_1, arg_9_2)
+function BattleAllInStrike.AppendReloadFactor(arg_9_0, arg_9_1, arg_9_2)
 	arg_9_0._reloadFacotrList[arg_9_1] = arg_9_2
 end
 
-function var_0_6.RemoveReloadFactor(arg_10_0, arg_10_1)
+function BattleAllInStrike.RemoveReloadFactor(arg_10_0, arg_10_1)
 	if arg_10_0._reloadFacotrList[arg_10_1] then
 		arg_10_0._reloadFacotrList[arg_10_1] = nil
 	end
 end
 
-function var_0_6.GetReloadFactorList(arg_11_0)
+function BattleAllInStrike.GetReloadFactorList(arg_11_0)
 	return arg_11_0._reloadFacotrList
 end
 
-function var_0_6.SetAllInWeaponVO(arg_12_0, arg_12_1)
+function BattleAllInStrike.SetAllInWeaponVO(arg_12_0, arg_12_1)
 	arg_12_0._allInWeaponVo = arg_12_1
-	arg_12_0._currentState = var_0_6.STATE_READY
+	arg_12_0._currentState = BattleAllInStrike.STATE_READY
 end
 
-function var_0_6.GetCurrentState(arg_13_0)
+function BattleAllInStrike.GetCurrentState(arg_13_0)
 	return arg_13_0._currentState
 end
 
-function var_0_6.GetHost(arg_14_0)
+function BattleAllInStrike.GetHost(arg_14_0)
 	return arg_14_0._host
 end
 
-function var_0_6.GetType(arg_15_0)
-	return var_0_1.EquipmentType.AIR_ASSIST
+function BattleAllInStrike.GetType(arg_15_0)
+	return BattleConst.EquipmentType.AIR_ASSIST
 end
--- TODO
-function var_0_6.Fire(arg_16_0)
-	if arg_16_0._host:IsCease() then
+
+-- AllInStrike的Fire函数(持续输出, 对应常驻武器)
+-- 实际上可以看到，AllInStrike的Fire函数只是触发了各个Hive的SingleFire(因为本身是个抽象概念, 没有对应具体的武器, 也不是BattleWeaponUnit的子类)
+function BattleAllInStrike.Fire(self)
+	if self._host:IsCease() then
 		return false
 	else
-		arg_16_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE_STEADY, {})
+		-- onAllInStrikeSteady: 已经Fire，但还没有实际进行SingleFire
+		-- 这类BuffEffect的增益，本次攻击可以享受
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE_STEADY, {})
 
-		for iter_16_0, iter_16_1 in ipairs(arg_16_0._hiveList) do
-			iter_16_1:SingleFire()
+		for _, hive in ipairs(self._hiveList) do
+			hive:SingleFire()
 		end
 
-		arg_16_0._skill:Cast(arg_16_0._host)
-		arg_16_0._host:StrikeExpose()
-		arg_16_0._host:StateChange(var_0_0.Battle.UnitState.STATE_ATTACK, "attack")
-		arg_16_0:DispatchEvent(var_0_0.Event.New(var_0_3.MANUAL_WEAPON_FIRE, {}))
-		arg_16_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE, {})
+		self._skill:Cast(self._host)
+		self._host:StrikeExpose()
+		self._host:StateChange(ys.Battle.UnitState.STATE_ATTACK, "attack")
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
+		-- onAllInStrike: 在实际SingleFire之后触发
+		-- 这类BuffEffect的增益，本次攻击不享受
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE, {})
 	end
 
 	return true
 end
 
-function var_0_6.TriggerBuffOnReady(arg_17_0)
-	arg_17_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_AIR_ASSIST_READY, {})
+function BattleAllInStrike.TriggerBuffOnReady(self)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_AIR_ASSIST_READY, {})
 end
 
-function var_0_6.SingleFire(arg_18_0)
-	for iter_18_0, iter_18_1 in ipairs(arg_18_0._hiveList) do
-		iter_18_1:SingleFire()
+function BattleAllInStrike.SingleFire(self)
+	-- 和Fire很接近，但没有触发onAllInStrikeSteady
+	for _, hive in ipairs(self._hiveList) do
+		hive:SingleFire()
 	end
 
-	arg_18_0._skill:Cast(arg_18_0._host)
-	arg_18_0._host:StrikeExpose()
-	arg_18_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE, {})
+	self._skill:Cast(self._host)
+	self._host:StrikeExpose()
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_ALL_IN_STRIKE, {})
 end
 
-function var_0_6.GetReloadTime(arg_19_0)
-	local var_19_0 = var_0_5.GetCurrent(arg_19_0._host, "loadSpeed")
+function BattleAllInStrike.GetReloadTime(self)
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
 
-	if arg_19_0._reloadMax ~= arg_19_0._cacheReloadMax or var_19_0 ~= arg_19_0._cacheHostReload then
-		arg_19_0._cacheReloadMax = arg_19_0._reloadMax
-		arg_19_0._cacheHostReload = var_19_0
-		arg_19_0._cacheReloadTime = var_0_2.CalculateReloadTime(arg_19_0._reloadMax, var_0_5.GetCurrent(arg_19_0._host, "loadSpeed"))
+	if self._reloadMax ~= self._cacheReloadMax or loadSpeed ~= self._cacheHostReload then
+		self._cacheReloadMax = self._reloadMax
+		self._cacheHostReload = loadSpeed
+		self._cacheReloadTime = BattleFormulas.CalculateReloadTime(self._reloadMax, BattleAttr.GetCurrent(self._host, "loadSpeed"))
 	end
 
-	return arg_19_0._cacheReloadTime
+	return self._cacheReloadTime
 end
 
-function var_0_6.GetReloadTimeByRate(arg_20_0, arg_20_1)
-	local var_20_0 = var_0_5.GetCurrent(arg_20_0._host, "loadSpeed")
-	local var_20_1 = arg_20_0._cacheReloadMax * arg_20_1
+function BattleAllInStrike.GetReloadTimeByRate(self, reloadRate)
+	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
+	local reloadMax = self._cacheReloadMax * reloadRate
 
-	return (var_0_2.CalculateReloadTime(var_20_1, var_20_0))
+	return (BattleFormulas.CalculateReloadTime(reloadMax, loadSpeed))
 end
 
-function var_0_6.SetModifyInitialCD(arg_21_0)
-	arg_21_0._modInitCD = true
+function BattleAllInStrike.SetModifyInitialCD(self)
+	self._modInitCD = true
 end
 
-function var_0_6.GetModifyInitialCD(arg_22_0)
-	return arg_22_0._modInitCD
+function BattleAllInStrike.GetModifyInitialCD(self)
+	return self._modInitCD
 end
 
-function var_0_6.InitialCD(arg_23_0)
-	arg_23_0:AddCDTimer(arg_23_0:GetReloadTime())
-	arg_23_0._allInWeaponVo:InitialDeduct(arg_23_0)
-	arg_23_0._allInWeaponVo:Charge(arg_23_0)
+function BattleAllInStrike.InitialCD(self)
+	self:AddCDTimer(self:GetReloadTime())
+	self._allInWeaponVo:InitialDeduct(self)
+	self._allInWeaponVo:Charge(self)
 end
 
-function var_0_6.EnterCoolDown(arg_24_0)
-	arg_24_0:AddCDTimer(arg_24_0:GetReloadTime())
-	arg_24_0._allInWeaponVo:Charge(arg_24_0)
+function BattleAllInStrike.EnterCoolDown(self)
+	self:AddCDTimer(self:GetReloadTime())
+	self._allInWeaponVo:Charge(self)
 end
 
-function var_0_6.OverHeat(arg_25_0)
-	arg_25_0._currentState = arg_25_0.STATE_OVER_HEAT
+function BattleAllInStrike.OverHeat(self)
+	self._currentState = self.STATE_OVER_HEAT
 
-	arg_25_0._allInWeaponVo:Deduct(arg_25_0)
+	self._allInWeaponVo:Deduct(self)
 end
 
-function var_0_6.AddCDTimer(arg_26_0, arg_26_1)
-	arg_26_0._currentState = var_0_6.STATE_OVER_HEAT
-	arg_26_0._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_26_0._reloadRequire = arg_26_1
+function BattleAllInStrike.AddCDTimer(self, reloadRequire)
+	self._currentState = BattleAllInStrike.STATE_OVER_HEAT
+	self._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._reloadRequire = reloadRequire
 end
 
-function var_0_6.GetCDStartTimeStamp(arg_27_0)
-	return arg_27_0._CDstartTime
+function BattleAllInStrike.GetCDStartTimeStamp(self)
+	return self._CDstartTime
 end
 
-function var_0_6.handleCoolDown(arg_28_0)
-	arg_28_0._currentState = var_0_6.STATE_READY
+function BattleAllInStrike.handleCoolDown(self)
+	self._currentState = BattleAllInStrike.STATE_READY
 
-	arg_28_0._allInWeaponVo:Plus(arg_28_0)
-	arg_28_0:DispatchEvent(var_0_0.Event.New(var_0_3.MANUAL_WEAPON_READY, {}))
-	arg_28_0:TriggerBuffOnReady()
+	self._allInWeaponVo:Plus(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_READY, {}))
+	self:TriggerBuffOnReady()
 
-	arg_28_0._CDstartTime = nil
-	arg_28_0._jammingTime = 0
-	arg_28_0._reloadBoostList = {}
+	self._CDstartTime = nil
+	self._jammingTime = 0
+	self._reloadBoostList = {}
 end
 
-function var_0_6.FlushReloadRequire(arg_29_0)
+function BattleAllInStrike.FlushReloadRequire(arg_29_0)
 	if not arg_29_0._CDstartTime or arg_29_0._reloadRequire == 0 then
 		return true
 	end
 
-	local var_29_0 = var_0_2.CaclulateReloadAttr(arg_29_0._reloadMax, arg_29_0._reloadRequire)
+	local var_29_0 = BattleFormulas.CaclulateReloadAttr(arg_29_0._reloadMax, arg_29_0._reloadRequire)
 
-	arg_29_0._reloadRequire = var_0_0.Battle.BattleWeaponUnit.FlushRequireByInverse(arg_29_0, var_29_0)
+	arg_29_0._reloadRequire = ys.Battle.BattleWeaponUnit.FlushRequireByInverse(arg_29_0, var_29_0)
 
 	arg_29_0._allInWeaponVo:RefreshReloadingBar()
 end
 
-function var_0_6.QuickCoolDown(arg_30_0)
+function BattleAllInStrike.QuickCoolDown(arg_30_0)
 	if arg_30_0._currentState == arg_30_0.STATE_OVER_HEAT then
-		arg_30_0._currentState = var_0_6.STATE_READY
+		arg_30_0._currentState = BattleAllInStrike.STATE_READY
 
 		arg_30_0._allInWeaponVo:InstantCoolDown(arg_30_0)
-		arg_30_0:DispatchEvent(var_0_0.Event.New(var_0_3.MANUAL_WEAPON_INSTANT_READY, {}))
+		arg_30_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, {}))
 
 		arg_30_0._CDstartTime = nil
 		arg_30_0._reloadBoostList = {}
 	end
 end
 
-function var_0_6.ReloadBoost(arg_31_0, arg_31_1)
+function BattleAllInStrike.ReloadBoost(arg_31_0, arg_31_1)
 	local var_31_0 = 0
 
 	for iter_31_0, iter_31_1 in ipairs(arg_31_0._reloadBoostList) do
@@ -286,13 +298,13 @@ function var_0_6.ReloadBoost(arg_31_0, arg_31_1)
 	table.insert(arg_31_0._reloadBoostList, fixValue)
 end
 
-function var_0_6.AppendReloadBoost(arg_32_0, arg_32_1)
+function BattleAllInStrike.AppendReloadBoost(arg_32_0, arg_32_1)
 	if arg_32_0._currentState == arg_32_0.STATE_OVER_HEAT then
 		arg_32_0._allInWeaponVo:ReloadBoost(arg_32_0, arg_32_1)
 	end
 end
 
-function var_0_6.GetReloadFinishTimeStamp(arg_33_0)
+function BattleAllInStrike.GetReloadFinishTimeStamp(arg_33_0)
 	local var_33_0 = 0
 
 	for iter_33_0, iter_33_1 in ipairs(arg_33_0._reloadBoostList) do
@@ -302,11 +314,11 @@ function var_0_6.GetReloadFinishTimeStamp(arg_33_0)
 	return arg_33_0._reloadRequire + arg_33_0._CDstartTime + arg_33_0._jammingTime + var_33_0
 end
 
-function var_0_6.StartJamming(arg_34_0)
+function BattleAllInStrike.StartJamming(arg_34_0)
 	arg_34_0._jammingStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function var_0_6.JammingEliminate(arg_35_0)
+function BattleAllInStrike.JammingEliminate(arg_35_0)
 	if not arg_35_0._jammingStartTime then
 		return
 	end
@@ -315,23 +327,23 @@ function var_0_6.JammingEliminate(arg_35_0)
 	arg_35_0._jammingStartTime = nil
 end
 
-function var_0_6.CLSBullet(arg_36_0)
+function BattleAllInStrike.CLSBullet(arg_36_0)
 	local var_36_0 = arg_36_0._host:GetIFF() * -1
 
-	var_0_0.Battle.BattleDataProxy.GetInstance():CLSBullet(var_36_0, true)
+	ys.Battle.BattleDataProxy.GetInstance():CLSBullet(var_36_0, true)
 end
 
-function var_0_6.DispatchBlink(arg_37_0, arg_37_1)
+function BattleAllInStrike.DispatchBlink(arg_37_0, arg_37_1)
 	local var_37_0 = {
 		callbackFunc = arg_37_1,
-		timeScale = var_0_0.Battle.BattleConfig.FOCUS_MAP_RATE
+		timeScale = ys.Battle.BattleConfig.FOCUS_MAP_RATE
 	}
-	local var_37_1 = var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CHARGE_WEAPON_FINISH, var_37_0)
+	local var_37_1 = ys.Event.New(ys.Battle.BattleUnitEvent.CHARGE_WEAPON_FINISH, var_37_0)
 
 	arg_37_0:DispatchEvent(var_37_1)
 end
 
-function var_0_6.GetReloadRate(arg_38_0)
+function BattleAllInStrike.GetReloadRate(arg_38_0)
 	if arg_38_0._currentState == arg_38_0.STATE_READY then
 		return 0
 	elseif arg_38_0._CDstartTime then
@@ -341,7 +353,7 @@ function var_0_6.GetReloadRate(arg_38_0)
 	end
 end
 
-function var_0_6.GetDamageSUM(arg_39_0)
+function BattleAllInStrike.GetDamageSUM(arg_39_0)
 	local var_39_0 = 0
 	local var_39_1 = 0
 
@@ -368,6 +380,6 @@ function var_0_6.GetDamageSUM(arg_39_0)
 	return var_39_0, var_39_1
 end
 
-function var_0_6.GetStrikeSkillID(arg_40_0)
+function BattleAllInStrike.GetStrikeSkillID(arg_40_0)
 	return arg_40_0._skillID
 end

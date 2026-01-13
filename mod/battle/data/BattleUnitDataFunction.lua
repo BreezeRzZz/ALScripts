@@ -233,33 +233,34 @@ function BattleDataFunction.AttachWeather(arg_4_0, arg_4_1)
 	end
 end
 
-function BattleDataFunction.AttachSmoke(arg_5_0)
-	local var_5_0 = arg_5_0:GetUnitType()
+-- 被BattleBuffSmokeAimBias.onAttach调用
+function BattleDataFunction.AttachSmoke(unit)
+	local unitType = unit:GetUnitType()
+	-- 这里只对敌方单位生效
+	if unitType == BattleConst.UnitType.ENEMY_UNIT or unitType == BattleConst.UnitType.BOSS_UNIT then
+		if unit:GetAimBias() then
+			local aimBias = unit:GetAimBias()
+			local aimBiasState = aimBias:GetCurrentState()
 
-	if var_5_0 == BattleConst.UnitType.ENEMY_UNIT or var_5_0 == BattleConst.UnitType.BOSS_UNIT then
-		if arg_5_0:GetAimBias() then
-			local var_5_1 = arg_5_0:GetAimBias()
-			local var_5_2 = var_5_1:GetCurrentState()
-
-			if var_5_2 == var_5_1.STATE_SKILL_EXPOSE then
-				var_5_1:SomkeExitResume()
-			elseif var_5_2 == var_5_1.STATE_ACTIVITING or var_5_2 == var_5_1.STATE_TOTAL_EXPOSE then
-				var_5_1:SmokeRecover()
+			if aimBiasState == aimBias.STATE_SKILL_EXPOSE then
+				aimBias:SomkeExitResume()
+			elseif aimBiasState == aimBias.STATE_ACTIVITING or aimBiasState == aimBias.STATE_TOTAL_EXPOSE then
+				aimBias:SmokeRecover()
 			end
 		else
-			local var_5_3 = ys.Battle.BattleUnitAimBiasComponent.New()
+			local aimBiasComponent = ys.Battle.BattleUnitAimBiasComponent.New()
 
-			var_5_3:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
+			aimBiasComponent:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
 
 			if table.contains(ShipType.SubShipType, shipType) then
-				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
+				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
-				var_5_3:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
+				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
 			end
 
-			var_5_3:AppendCrew(arg_5_0)
-			var_5_3:SetHostile()
-			var_5_3:Active(var_5_3.STATE_ACTIVITING)
+			aimBiasComponent:AppendCrew(unit)
+			aimBiasComponent:SetHostile()
+			aimBiasComponent:Active(aimBiasComponent.STATE_ACTIVITING)
 		end
 	end
 end
@@ -382,7 +383,8 @@ function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, w
 	return weapon
 end
 
--- TODO
+-- 创建舰载机主要逻辑
+-- 被BattleDataProxy.CreateAircraft调用
 function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, potential)
 	local aircraft
 	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(aircraftId)
@@ -413,12 +415,13 @@ function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, 
 	return aircraft
 end
 
+-- 被BattleFleetVO.appendScoutUnit/appendMainUnit调用
 function BattleDataFunction.CreateAllInStrike(unit)
 	local templateID = unit:GetTemplateID()
 	-- ship_data_template
 	local shipTemplate = BattleDataFunction.GetPlayerShipModelFromID(templateID)
 	local airAssistList = {}
-
+	-- 添加魔法空袭
 	for index, skillID in ipairs(shipTemplate.airassist_time) do
 		local allInStrike = ys.Battle.BattleAllInStrike.New(skillID)
 
@@ -449,17 +452,20 @@ function BattleDataFunction.ExpandAllinStrike(unit)
 	end
 end
 
-function BattleDataFunction.CreateAirFighterUnit(aircraftUID, args)
-	local var_12_0
+-- 用于将模板数据转换为飞机单位
+-- 被BattleDataProxy.CreateAirFighter调用
+function BattleDataFunction.CreateAirFighterUnit(aircraftUID, tmpData)
 	-- aircraft_template
-	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(args.templateID)
-	local aircraft = ys.Battle.BattleAirFighterUnit.New(aircraftUID)
+	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(tmpData.templateID)
+	-- 敌方用的是BattleAirFighterUnit, 是BattleAircraftUnit的子类
+	-- (我方用的一般就是BattleAircraftUnit, 不是子类)
+	local airFighter = ys.Battle.BattleAirFighterUnit.New(aircraftUID)
 
-	aircraft:SetWeaponTemplateID(args.weaponID)
-	aircraft:SetBackwardWeaponID(args.backwardWeaponID)
-	aircraft:SetTemplate(aircraftTemplate)
+	airFighter:SetWeaponTemplateID(tmpData.weaponID)
+	airFighter:SetBackwardWeaponID(tmpData.backwardWeaponID)
+	airFighter:SetTemplate(aircraftTemplate)
 
-	return aircraft
+	return airFighter
 end
 
 function BattleDataFunction.GetPlayerShipTmpDataFromID(arg_13_0)
@@ -548,6 +554,8 @@ function BattleDataFunction.GetEnemyTypeDataByType(arg_26_0)
 	return enemy_data_by_type[arg_26_0]
 end
 
+-- 演习场，根据舰种不同获得不同的Buff
+-- 从ship_data_by_type的arena_buff字段获得
 function BattleDataFunction.GetArenaBuffByShipType(arg_27_0)
 	return BattleDataFunction.GetShipTypeTmp(arg_27_0).arena_buff
 end

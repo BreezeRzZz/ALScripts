@@ -523,7 +523,7 @@ function BattleDataProxy.InitUserShipsData(self, mainUnitList, vanguardUnitList,
 	}))
 end
 
-function var_0_9.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
+function BattleDataProxy.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
 	for iter_25_0, iter_25_1 in ipairs(arg_25_2) do
 		local var_25_0 = var_0_5.GetPlayerShipTmpDataFromID(iter_25_1.tmpID).type
 
@@ -595,7 +595,6 @@ function BattleDataProxy.CelebrateVictory(arg_30_0, arg_30_1)
 	end
 end
 
--- TODO
 -- 初始化关卡数据，主要是边界相关
 function BattleDataProxy.InitStageData(self)
 	self._currentStageData = self._dungeonInfo.stages[self._currentStageIndex]
@@ -1023,6 +1022,7 @@ function BattleDataProxy.UpdateAutoComponent(self, timeStamp)
 	end
 end
 
+-- TODO: 如夜战天气等的更新
 function BattleDataProxy.UpdateWeather(arg_57_0, arg_57_1)
 	for iter_57_0, iter_57_1 in ipairs(arg_57_0._weahter) do
 		if iter_57_1 == BattleConst.WEATHER.NIGHT then
@@ -1447,42 +1447,43 @@ function BattleDataProxy.SpawnVanguard(self, vanguardData, IFF)
 	return vanguardUnit
 end
 
--- TODO: 生成主力单位
-function BattleDataProxy.SpawnMain(self, arg_69_1, arg_69_2)
-	local var_69_0
-	local var_69_1 = self:GetFleetByIFF(arg_69_2)
-	local var_69_2 = #var_69_1:GetMainList() + 1
+-- 生成主力单位
+-- 被BattleDataProxy.InitUserShipsData调用
+function BattleDataProxy.SpawnMain(self, mainUnitData, IFF)
+	local spawnPos
+	local fleet = self:GetFleetByIFF(IFF)
+	local mainIndex = #fleet:GetMainList() + 1
 
-	if self._currentStageData.mainUnitPosition and self._currentStageData.mainUnitPosition[arg_69_2] then
-		var_69_0 = Clone(self._currentStageData.mainUnitPosition[arg_69_2][var_69_2])
+	if self._currentStageData.mainUnitPosition and self._currentStageData.mainUnitPosition[IFF] then
+		spawnPos = Clone(self._currentStageData.mainUnitPosition[IFF][mainIndex])
 	else
-		var_69_0 = Clone(BattleConfig.MAIN_UNIT_POS[arg_69_2][var_69_2])
+		spawnPos = Clone(BattleConfig.MAIN_UNIT_POS[IFF][mainIndex])
 	end
 
-	local var_69_3 = self:generatePlayerUnit(arg_69_1, arg_69_2, var_69_0, self._commanderBuff)
+	local mainUnit = self:generatePlayerUnit(mainUnitData, IFF, spawnPos, self._commanderBuff)
 
-	var_69_3:SetBornPosition(var_69_0)
-	var_69_3:SetMainFleetUnit()
+	mainUnit:SetBornPosition(spawnPos)
+	mainUnit:SetMainFleetUnit()
 
-	local var_69_4 = var_69_0.x
-
-	if var_69_4 < self._totalLeftBound or var_69_4 > self._totalRightBound then
-		var_69_3:SetImmuneCommonBulletCLD()
+	local spawnPosX = spawnPos.x
+	-- 一般来说，主力舰队是免疫普通子弹碰撞的(基本都在totalLeftBound之外)
+	if spawnPosX < self._totalLeftBound or spawnPosX > self._totalRightBound then
+		mainUnit:SetImmuneCommonBulletCLD()
 	end
 
-	var_69_1:AppendPlayerUnit(var_69_3)
-	self:setShipUnitBound(var_69_3)
-	BattleDataFunction.AttachWeather(var_69_3, self._weahter)
-	self._cldSystem:InitShipCld(var_69_3)
+	fleet:AppendPlayerUnit(mainUnit)
+	self:setShipUnitBound(mainUnit)
+	BattleDataFunction.AttachWeather(mainUnit, self._weahter)
+	self._cldSystem:InitShipCld(mainUnit)
 
-	local var_69_5 = {
+	local addUnitArgs = {
 		type = BattleConst.UnitType.PLAYER_UNIT,
-		unit = var_69_3
+		unit = mainUnit
 	}
 
-	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_69_5))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, addUnitArgs))
 
-	return var_69_3
+	return mainUnit
 end
 
 -- 生成潜艇单位
@@ -1517,6 +1518,7 @@ function BattleDataProxy.SpawnSub(self, subUnitData, IFF)
 	return subUnit
 end
 
+-- 破交作战生成潜艇
 function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
 	local var_71_0 = arg_71_0:GetVanguardBornCoordinate(arg_71_2)
 	local var_71_1 = arg_71_0:generatePlayerUnit(arg_71_1, arg_71_2, BuildVector3(var_71_0), arg_71_0._commanderBuff)
@@ -1535,7 +1537,9 @@ function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
 	return var_71_1
 end
 
-function var_0_9.SpawnSupportUnit(arg_72_0, arg_72_1, arg_72_2)
+-- 支援单位生成(包括潜艇支援和航空支援)
+-- 被BattleDataProxy.InitUserSupportShipsData调用
+function BattleDataProxy.SpawnSupportUnit(arg_72_0, arg_72_1, arg_72_2)
 	local var_72_0 = arg_72_0:generateSupportPlayerUnit(arg_72_1, arg_72_2)
 	local var_72_1 = arg_72_0:GetFleetByIFF(arg_72_2)
 
@@ -1893,77 +1897,82 @@ function BattleDataProxy.GetCountDown(arg_94_0)
 	return arg_94_0._countDown
 end
 
--- 有点没怎么用过，一般都是走通用的SpawnAircraft
--- 这是敌方飞机的生成，没有Mother Unit的
-function BattleDataProxy.SpawnAirFighter(arg_95_0, arg_95_1)
-	local var_95_0 = #arg_95_0._airFighterList + 1
-	local var_95_1 = BattleDataFunction.GetFormationTmpDataFromID(arg_95_1.formation).pos_offset
-	local var_95_2 = {
+-- note: 这是敌方飞机的生成，没有Mother Unit
+-- 在各种Command的initWaveModule中，作为回调注册到WaveInfo中
+-- 对应到波次配置文件中的airFighter
+function BattleDataProxy.SpawnAirFighter(self, tmpData)
+	-- 新增Index
+	local airFighterIndex = #self._airFighterList + 1
+	-- formation_template中定义的阵型偏移
+	local formationOffset = BattleDataFunction.GetFormationTmpDataFromID(tmpData.formation).pos_offset
+	local spawnArgs = {
 		currentNumber = 0,
-		templateID = arg_95_1.templateID,
-		totalNumber = arg_95_1.totalNumber or 0,
-		onceNumber = arg_95_1.onceNumber,
-		timeDelay = arg_95_1.interval or 3,
-		maxTotalNumber = arg_95_1.maxTotalNumber or 15
+		templateID = tmpData.templateID,
+		totalNumber = tmpData.totalNumber or 0,
+		onceNumber = tmpData.onceNumber,
+		timeDelay = tmpData.interval or 3,
+		-- 这玩意没用啊，也不删了...
+		maxTotalNumber = tmpData.maxTotalNumber or 15
 	}
 
-	local function var_95_3(arg_96_0)
-		local var_96_0 = var_95_2.currentNumber
+	local function generateOneFighter(formationIndex)
+		local currentNumber = spawnArgs.currentNumber
 
-		if var_96_0 < var_95_2.totalNumber then
-			var_95_2.currentNumber = var_96_0 + 1
+		if currentNumber < spawnArgs.totalNumber then
+			spawnArgs.currentNumber = currentNumber + 1
 
-			local var_96_1 = arg_95_0:CreateAirFighter(arg_95_1)
+			local airFighter = self:CreateAirFighter(tmpData)
+			-- 从formation_template来看，每波的onceNumber不会超过对应阵型的飞机数量
+			airFighter:SetFormationOffset(formationOffset[formationIndex])
+			airFighter:SetFormationIndex(formationIndex)
+			-- 死亡时的回调
+			airFighter:SetDeadCallBack(function()
+				spawnArgs.totalNumber = spawnArgs.totalNumber - 1
+				spawnArgs.currentNumber = spawnArgs.currentNumber - 1
 
-			var_96_1:SetFormationOffset(var_95_1[arg_96_0])
-			var_96_1:SetFormationIndex(arg_96_0)
-			var_96_1:SetDeadCallBack(function()
-				var_95_2.totalNumber = var_95_2.totalNumber - 1
-				var_95_2.currentNumber = var_95_2.currentNumber - 1
-
-				arg_95_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_FIGHTER_ICON, {
-					index = var_95_0
+				self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_FIGHTER_ICON, {
+					index = airFighterIndex
 				}))
-				arg_95_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_AIR_SUPPORT_LABEL, {}))
+				self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_AIR_SUPPORT_LABEL, {}))
 			end)
-			var_96_1:SetLiveCallBack(function()
-				var_95_2.currentNumber = var_95_2.currentNumber - 1
+			airFighter:SetLiveCallBack(function()
+				spawnArgs.currentNumber = spawnArgs.currentNumber - 1
 			end)
 		end
 	end
 
-	local function var_95_4()
-		local var_99_0 = var_95_2.onceNumber
+	local function generateOnce()
+		local onceNumber = spawnArgs.onceNumber
 
-		if var_95_2.totalNumber > 0 then
-			for iter_99_0 = 1, var_99_0 do
-				var_95_3(iter_99_0)
+		if spawnArgs.totalNumber > 0 then
+			for i = 1, onceNumber do
+				generateOneFighter(i)
 			end
 		else
-			pg.TimeMgr.GetInstance():RemoveBattleTimer(var_95_2.timer)
+			pg.TimeMgr.GetInstance():RemoveBattleTimer(spawnArgs.timer)
 
-			var_95_2.timer = nil
+			spawnArgs.timer = nil
 		end
 	end
 
-	arg_95_0._airFighterList[var_95_0] = var_95_2
+	self._airFighterList[airFighterIndex] = spawnArgs
 
-	arg_95_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIR_FIGHTER_ICON, {
-		index = var_95_0
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIR_FIGHTER_ICON, {
+		index = airFighterIndex
 	}))
-	arg_95_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_AIR_SUPPORT_LABEL, {}))
-
-	var_95_2.timer = pg.TimeMgr.GetInstance():AddBattleTimer("striker", -1, arg_95_1.interval, var_95_4)
+	self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_AIR_SUPPORT_LABEL, {}))
+	-- 每波之间有Interval秒的间隔
+	spawnArgs.timer = pg.TimeMgr.GetInstance():AddBattleTimer("striker", -1, tmpData.interval, generateOnce)
 end
 
-function BattleDataProxy.ClearAirFighterTimer(arg_100_0)
-	for iter_100_0, iter_100_1 in ipairs(arg_100_0._airFighterList) do
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_100_1.timer)
+function BattleDataProxy.ClearAirFighterTimer(self)
+	for _, airFighter in ipairs(self._airFighterList) do
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(airFighter.timer)
 
-		iter_100_1.timer = nil
+		airFighter.timer = nil
 	end
 
-	arg_100_0._airFighterList = {}
+	self._airFighterList = {}
 end
 
 function BattleDataProxy.KillAllAirStrike(arg_101_0)
@@ -2019,6 +2028,8 @@ function BattleDataProxy.GetAirFighterList(arg_103_0)
 	return arg_103_0._airFighterList
 end
 
+-- 创建舰载机单位主逻辑
+-- 被BattleHiveUnit/BattleSupportHiveUnit.SpawnAircraft调用
 function BattleDataProxy.CreateAircraft(self, host, aircraftId, potential, skinId)
 	local aircraftUID = self:GenerateAircraftID()
 	local aircraft = BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, host, potential)
@@ -2040,34 +2051,37 @@ function BattleDataProxy.CreateAircraft(self, host, aircraftId, potential, skinI
 	return aircraft
 end
 
-function BattleDataProxy.CreateAirFighter(arg_105_0, arg_105_1)
-	local var_105_0 = arg_105_0:GenerateAircraftID()
-	local var_105_1 = BattleDataFunction.CreateAirFighterUnit(var_105_0, arg_105_1)
+-- AirFighter一般指的是敌方的舰载机，与己方的区分开（但也有不少共用逻辑）
+-- 被BattleDataProxy.SpawnAirFighter调用
+function BattleDataProxy.CreateAirFighter(self, tmpData)
+	local aircraftUID = self:GenerateAircraftID()
+	local airFighter = BattleDataFunction.CreateAirFighterUnit(aircraftUID, tmpData)
+	-- airFighter一定是敌方的(最后一个参数isEnemy传true)
+	self:doCreateAirUnit(aircraftUID, airFighter, BattleConst.UnitType.AIRFIGHTER_UNIT, true)
 
-	arg_105_0:doCreateAirUnit(var_105_0, var_105_1, BattleConst.UnitType.AIRFIGHTER_UNIT, true)
-
-	return var_105_1
+	return airFighter
 end
 
--- TODO
--- 处理碰撞、摄像机、事件派发等
-function BattleDataProxy.doCreateAirUnit(arg_106_0, arg_106_1, arg_106_2, arg_106_3, arg_106_4)
-	arg_106_0._aircraftList[arg_106_1] = arg_106_2
+-- 舰载机相关：处理碰撞、摄像机、事件派发, 设置边界等
+function BattleDataProxy.doCreateAirUnit(self, aircraftUID, aircraft, unitType, isEnemy)
+	self._aircraftList[aircraftUID] = aircraft
 
-	arg_106_0._cldSystem:InitAircraftCld(arg_106_2)
-	arg_106_2:SetBound(arg_106_0._leftZoneUpperBound, arg_106_0._leftZoneLowerBound)
-	arg_106_2:SetViewBoundData(arg_106_0._cameraTop, arg_106_0._cameraBottom, arg_106_0._cameraLeft, arg_106_0._cameraRight)
-	arg_106_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, {
-		unit = arg_106_2,
-		type = arg_106_3
+	self._cldSystem:InitAircraftCld(aircraft)
+	-- self._leftZoneUpperBound = playerArea[2] + playerArea[4]
+	-- self._leftZoneLowerBound = playerArea[2]
+	aircraft:SetBound(self._leftZoneUpperBound, self._leftZoneLowerBound)
+	aircraft:SetViewBoundData(self._cameraTop, self._cameraBottom, self._cameraLeft, self._cameraRight)
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, {
+		unit = aircraft,
+		type = unitType
 	}))
 
-	arg_106_4 = arg_106_4 or false
+	isEnemy = isEnemy or false
 
-	if arg_106_4 then
-		arg_106_0._foeAircraftList[arg_106_1] = arg_106_2
+	if isEnemy then
+		self._foeAircraftList[aircraftUID] = aircraft
 
-		arg_106_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
+		self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
 			isShow = true
 		}))
 	end
@@ -2221,7 +2235,7 @@ function BattleDataProxy.CLSMinion(arg_116_0)
 	end
 end
 
-function var_0_9.CLSAOE(self)
+function BattleDataProxy.CLSAOE(self)
 	for iter_117_0, iter_117_1 in pairs(self._AOEList) do
 		if iter_117_1:GetSource() == iter_117_1.SOURCE_BULLET_9 then
 			self:RemoveAreaOfEffect(iter_117_0)
@@ -2614,7 +2628,7 @@ function BattleDataProxy.SubmarineStrike(self, IFF)
 	local fleet = self:GetFleetByIFF(IFF)
 	local subAidVO = fleet:GetSubAidVO()
 
-	if arg_152_0._battleInitData.battleType ~= SYSTEM_SCENARIO_SUB_STRIKE and (var_152_0:GetWeaponBlock() or var_152_1:GetCurrent() < 1) then
+	if self._battleInitData.battleType ~= SYSTEM_SCENARIO_SUB_STRIKE and (fleet:GetWeaponBlock() or subAidVO:GetCurrent() < 1) then
 		return
 	end
 
@@ -2775,7 +2789,7 @@ function BattleDataProxy.ActiveFreezeUnit(arg_160_0, arg_160_1)
 	end
 end
 
-function var_0_9.GetFleetLegal(arg_162_0, arg_162_1, arg_162_2)
+function BattleDataProxy.GetFleetLegal(arg_162_0, arg_162_1, arg_162_2)
 	if arg_162_2 == SYSTEM_DUEL or arg_162_2 == SYSTEM_PERFORM or arg_162_2 == SYSTEM_SUB_ROUTINE or arg_162_2 == SYSTEM_CARDPUZZLE or arg_162_2 == SYSTEM_PROLOGUE or arg_162_2 == SYSTEM_DODGEM or arg_162_2 == SYSTEM_SIMULATION or arg_162_2 == SYSTEM_SUBMARINE_RUN or arg_162_2 == SYSTEM_SCENARIO_SUB_STRIKE or arg_162_2 == SYSTEM_DEBUG or arg_162_2 == SYSTEM_AIRFIGHT then
 		return true
 	else
@@ -2804,7 +2818,8 @@ function BattleDataProxy.TriggerFinishBattle(self)
 	end
 end
 
-function var_0_9.ChapterSupportBarrage(arg_164_0, arg_164_1, arg_164_2)
+-- TODO: 潜艇支援舰队弹幕
+function BattleDataProxy.ChapterSupportBarrage(arg_164_0, arg_164_1, arg_164_2)
 	local var_164_0
 
 	local function var_164_1(...)

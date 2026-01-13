@@ -554,6 +554,7 @@ end
 --- @param target BattlePlayerUnit
 --- @return number
 --- 用于计算敌方自爆船触底时对我方主力舰的伤害
+--- 被BattleDataProxy.HandleShipMissDamage调用
 function BattleFormulas.CalculateDamageFromShipToMainShip(attacker, target)
 	local attackerCannonPower = BattleAttr.GetCurrent(attacker, "cannonPower")
 	local attackerTorpedoPower = BattleAttr.GetCurrent(attacker, "torpedoPower")

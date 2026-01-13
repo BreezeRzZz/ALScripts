@@ -17,139 +17,171 @@ ys.Battle.BattleBulletUnit.__name = "BattleBulletUnit"
 
 local BattleBulletUnit = ys.Battle.BattleBulletUnit
 
+-- 30帧, 每帧计算一次加速度
 BattleBulletUnit.ACC_INTERVAL = BattleConfig.calcInterval
+-- 追踪角度大于10度(对应的弧度余弦值)才进行追踪调整
 BattleBulletUnit.TRACKER_ANGLE = math.cos(math.deg2Rad * 10)
 BattleBulletUnit.MIRROR_RES = "_mirror"
 
-function BattleBulletUnit.doAccelerate(arg_1_0, arg_1_1)
-	local var_1_0, var_1_1 = arg_1_0:GetAcceleration(arg_1_1)
+-- 子弹的加速主逻辑
+-- 作为BattleBulletUnit.updateSpeed之一(在BattleBulletUnit.InitSpeed中设定)
+-- 被BattleBulletUnit.Update调用
+function BattleBulletUnit.doAccelerate(self, timeStamp)
+	local accU, accV = self:GetAcceleration(timeStamp)
 
-	if var_1_0 == 0 and var_1_1 == 0 then
+	if accU == 0 and accV == 0 then
 		return
 	end
+	-- 如果u方向加速度导致速度反向，则反转加速度的u方向(x方向)
+	if accU < 0 and self._speedLength + accU < 0 then
+		self:reverseAcceleration()
+	end
+	-- 速度差向量 = 加速度u方向分量 + 加速度v方向分量
+	-- 加速度u方向分量 = 原速度方向单位向量 * accU
+	-- 加速度v方向分量 = 速度法线向量(垂直于速度方向) * accV
+	self._speed:Set(self._speed.x + self._speedNormal.x * accU + self._speedCross.x * accV, self._speed.y + self._speedNormal.y * accU + self._speedCross.y * accV, self._speed.z + self._speedNormal.z * accU + self._speedCross.z * accV)
 
-	if var_1_0 < 0 and arg_1_0._speedLength + var_1_0 < 0 then
-		arg_1_0:reverseAcceleration()
+	-- 以下重新计算速度大小、速度方向单位向量、速度法线向量
+	self._speedLength = self._speed:Magnitude()
+
+	if self._speedLength ~= 0 then
+		self._speedNormal:Copy(self._speed):Div(self._speedLength)
 	end
 
-	arg_1_0._speed:Set(arg_1_0._speed.x + arg_1_0._speedNormal.x * var_1_0 + arg_1_0._speedCross.x * var_1_1, arg_1_0._speed.y + arg_1_0._speedNormal.y * var_1_0 + arg_1_0._speedCross.y * var_1_1, arg_1_0._speed.z + arg_1_0._speedNormal.z * var_1_0 + arg_1_0._speedCross.z * var_1_1)
-
-	arg_1_0._speedLength = arg_1_0._speed:Magnitude()
-
-	if arg_1_0._speedLength ~= 0 then
-		arg_1_0._speedNormal:Copy(arg_1_0._speed):Div(arg_1_0._speedLength)
-	end
-
-	arg_1_0._speedCross:Copy(arg_1_0._speedNormal):Cross2(vector3Up)
+	self._speedCross:Copy(self._speedNormal):Cross2(vector3Up)
 end
 
-function BattleBulletUnit.doTrack(arg_2_0)
-	if arg_2_0:getTrackingTarget() == nil then
-		local var_2_0 = BattleTargetChoise.TargetHarmNearest(arg_2_0)[1]
-
-		if var_2_0 ~= nil and arg_2_0:GetDistance(var_2_0) <= arg_2_0._trackRange then
-			arg_2_0:setTrackingTarget(var_2_0)
+-- 子弹的追踪主逻辑(涉及一些比较复杂的数学向量运算)
+-- 作为BattleBulletUnit.updateSpeed之一(在BattleBulletUnit.InitSpeed中设定)
+-- 被BattleBulletUnit.Update调用
+function BattleBulletUnit.doTrack(self)
+	if self:getTrackingTarget() == nil then
+		-- 如果原本没有追踪目标，尝试寻找一个最近的目标进行追踪(初始化的时候也是寻找目标这个逻辑)
+		local nearestTarget = BattleTargetChoise.TargetHarmNearest(self)[1]
+		-- 且应该在追踪范围内
+		if nearestTarget ~= nil and self:GetDistance(nearestTarget) <= self._trackRange then
+			self:setTrackingTarget(nearestTarget)
 		end
 	end
 
-	local var_2_1 = arg_2_0:getTrackingTarget()
+	local target = self:getTrackingTarget()
 
-	if var_2_1 == nil or var_2_1 == -1 then
+	if target == nil or target == -1 then
 		return
-	elseif not var_2_1:IsAlive() then
-		arg_2_0:setTrackingTarget(-1)
-
-		return
-	elseif arg_2_0:GetDistance(var_2_1) > arg_2_0._trackRange then
-		arg_2_0:setTrackingTarget(-1)
+	elseif not target:IsAlive() then
+		self:setTrackingTarget(-1)
 
 		return
-	end
+	elseif self:GetDistance(target) > self._trackRange then
+		self:setTrackingTarget(-1)
 
-	local var_2_2 = var_2_1:GetBeenAimedPosition()
-
-	if not var_2_2 then
 		return
 	end
 
-	local var_2_3 = var_2_2 - arg_2_0:GetPosition()
+	local aimPosition = target:GetBeenAimedPosition()
 
-	var_2_3:SetNormalize()
-
-	local var_2_4 = Vector3.Normalize(arg_2_0._speed)
-	local var_2_5 = Vector3.Dot(var_2_4, var_2_3)
-	local var_2_6 = var_2_4.z * var_2_3.x - var_2_4.x * var_2_3.z
-
-	if var_2_5 >= BattleBulletUnit.TRACKER_ANGLE then
+	if not aimPosition then
 		return
 	end
 
-	local var_2_7 = arg_2_0:GetSpeedRatio()
-	local var_2_8 = math.cos(arg_2_0._cosAngularSpeed * var_2_7)
-	local var_2_9 = math.sin(arg_2_0._sinAngularSpeed * var_2_7)
-	local var_2_10 = var_2_5
-	local var_2_11 = var_2_6
+	local direction = aimPosition - self:GetPosition()
 
-	if var_2_5 < var_2_8 then
-		var_2_10 = var_2_8
-		var_2_11 = var_2_9 * (var_2_11 >= 0 and 1 or -1)
+	direction:SetNormalize()
+
+	local speedDir = Vector3.Normalize(self._speed)
+	-- 计算原速度方向和目标方向的夹角余弦值及大小(点乘)
+	-- 数学基础知识：两个向量的点乘 = |A|*|B|*cosθ = cosθ (A,B均为单位向量时)
+	local cosAngle = Vector3.Dot(speedDir, direction)
+	-- 叉乘，得到正弦值(因为speedDir和direction均为单位向量，所以叉乘结果的模长即为sinθ)
+	local sinAngle = speedDir.z * direction.x - speedDir.x * direction.z
+	-- TRACKER_ANGLE = cos10度，即夹角小于10度才进行追踪调整(否则就按原速度前进)
+	if cosAngle >= BattleBulletUnit.TRACKER_ANGLE then
+		return
+	end
+	-- speedRatio是涉及子弹时间时的速度倍率，与逻辑计算本质无关
+	local speedRatio = self:GetSpeedRatio()
+	local cosAngular = math.cos(self._cosAngularSpeed * speedRatio)
+	local sinAngular = math.sin(self._sinAngularSpeed * speedRatio)
+	local cosAngularActual = cosAngle
+	local sinAngularActual = sinAngle
+
+	-- 如果夹角余弦值小于角加速度的余弦值->说明夹角比角加速度大
+	-- 则实际调整角度为角加速度
+	if cosAngle < cosAngular then
+		cosAngularActual = cosAngular
+		sinAngularActual = sinAngular * (sinAngularActual >= 0 and 1 or -1)
 	end
 
-	local var_2_12 = arg_2_0._speed.x * var_2_10 + arg_2_0._speed.z * var_2_11
-	local var_2_13 = arg_2_0._speed.z * var_2_10 - arg_2_0._speed.x * var_2_11
+	-- 否则，实际调整角度为夹角本身(调整到目标方向)
+	-- 这里也是一个叉乘的变形运算
+	local speedX = self._speed.x * cosAngularActual + self._speed.z * sinAngularActual
+	local speedZ = self._speed.z * cosAngularActual - self._speed.x * sinAngularActual
 
-	arg_2_0._speed:Set(var_2_12, 0, var_2_13)
+	self._speed:Set(speedX, 0, speedZ)
 end
 
-function BattleBulletUnit.doOrbit(arg_3_0)
-	local var_3_0 = pg.Tool.FilterY(arg_3_0._weapon:GetPosition())
-	local var_3_1 = pg.Tool.FilterY(arg_3_0:GetPosition())
-	local var_3_2 = (var_3_1 - var_3_0).magnitude
-	local var_3_3 = (var_3_0 - var_3_1).normalized
-	local var_3_4
+-- 子弹的环绕主逻辑(从逻辑来看，是子弹绕武器位置环绕. 武器位置一般就是发射者位置)
+-- 这个函数是废弃的，没有被任何地方调用到(可能是doCircle的原型)
+function BattleBulletUnit.doOrbit(self)
+	local weaponPos = pg.Tool.FilterY(self._weapon:GetPosition())
+	local bulletPos = pg.Tool.FilterY(self:GetPosition())
+	local distance = (bulletPos - weaponPos).magnitude
+	local direction = (weaponPos - bulletPos).normalized
+	local newSpeed
 
-	if var_3_2 > 10 then
-		var_3_4 = (var_3_3 + arg_3_0._speed.normalized).normalized
+	if distance > 10 then
+		newSpeed = (direction + self._speed.normalized).normalized
 	else
-		var_3_4 = (Vector3(-var_3_3.z, 0, var_3_3.x) + arg_3_0._speed.normalized).normalized
+		-- 一个简单的垂直于direction和up向量的向量，用来产生环绕效果
+		newSpeed = (Vector3(-direction.z, 0, direction.x) + self._speed.normalized).normalized
 	end
 
-	arg_3_0._speed = var_3_4
+	self._speed = newSpeed
 end
 
-function BattleBulletUnit.RotateY(arg_4_0, arg_4_1)
-	local var_4_0 = math.cos(arg_4_1)
-	local var_4_1 = math.sin(arg_4_1)
-
-	return Vector3(arg_4_0.x * var_4_0 + arg_4_0.z * var_4_1, arg_4_0.y, arg_4_0.z * var_4_0 - arg_4_0.x * var_4_1)
+-- 一个工具函数，用于绕Y轴旋转(等价于二维平面XZ上的旋转)
+-- 被doCircle调用
+function BattleBulletUnit.RotateY(vec1, vec2)
+	local cosVec2 = math.cos(vec2)
+	local sinVec2 = math.sin(vec2)
+	-- 相当于vec1绕Y轴旋转vec2角度后的新向量
+	return Vector3(vec1.x * cosVec2 + vec1.z * sinVec2, vec1.y, vec1.z * cosVec2 - vec1.x * sinVec2)
 end
 
-function BattleBulletUnit.doCircle(arg_5_0)
-	if not arg_5_0._originPos then
+-- 子弹的环绕主逻辑
+-- 作为BattleBulletUnit.updateSpeed之一(在BattleBulletUnit.InitSpeed中设定)
+-- 被BattleBulletUnit.Update调用
+function BattleBulletUnit.doCircle(self)
+	if not self._originPos then
 		return
 	end
 
-	local var_5_0 = arg_5_0:GetSpeedRatio() * (1 + ys.Battle.BattleAttr.GetCurrent(arg_5_0, "bulletSpeedRatio"))
-	local var_5_1 = pg.Tool.FilterY(arg_5_0._position - arg_5_0._originPos)
-	local var_5_2 = arg_5_0._convertedVelocity
-	local var_5_3 = var_5_1:Magnitude()
-	local var_5_4 = var_5_3 - arg_5_0._centripetalSpeed * var_5_0 * arg_5_0._inverseFlag
+	local bulletSpeedRatio = self:GetSpeedRatio() * (1 + ys.Battle.BattleAttr.GetCurrent(self, "bulletSpeedRatio"))
+	local vec = pg.Tool.FilterY(self._position - self._originPos)
+	-- 在BattleBulletUnit.ResetVelocity中计算
+	local convertedVelocity = self._convertedVelocity
+	local distance = vec:Magnitude()
+	-- 用向心加速度计算
+	local ifInverse = distance - self._centripetalSpeed * bulletSpeedRatio * self._inverseFlag
 
-	arg_5_0._inverseFlag = var_5_4 < 0 and -arg_5_0._inverseFlag or arg_5_0._inverseFlag
+	self._inverseFlag = ifInverse < 0 and -self._inverseFlag or self._inverseFlag
 
-	if var_5_3 <= 1e-05 then
+	if distance <= 1e-05 then
 		return
 	end
 
-	local var_5_5 = arg_5_0._circleAntiClockwise
-	local var_5_6 = var_5_2 / var_5_3 * (var_5_5 and 1 or -1) * var_5_0
+	-- 顺时针(0)/逆时针(1)
+	local circleAntiClockWise = self._circleAntiClockwise
+	local rotateAngle = convertedVelocity / distance * (circleAntiClockWise and 1 or -1) * bulletSpeedRatio
 
-	arg_5_0._speed = arg_5_0.RotateY(var_5_1, var_5_6):Mul(var_5_4 / var_5_3):Sub(var_5_1)
+	self._speed = self.RotateY(vec, rotateAngle):Mul(ifInverse / distance):Sub(vec)
 end
 
-function BattleBulletUnit.doNothing(arg_6_0)
-	if arg_6_0._gravity ~= 0 then
-		arg_6_0._verticalSpeed = arg_6_0._verticalSpeed + arg_6_0._gravity * arg_6_0:GetSpeedRatio()
+-- 一个空函数，用于替代updateSpeed
+-- 实际会做的是处理重力对垂直速度的影响(但不影响水平速度)
+function BattleBulletUnit.doNothing(self)
+	if self._gravity ~= 0 then
+		self._verticalSpeed = self._verticalSpeed + self._gravity * self:GetSpeedRatio()
 	end
 end
 
@@ -185,7 +217,7 @@ function BattleBulletUnit.Update(self, timeStamp)
 		self._reachDestFlag = Vector3.SqrDistance(self._spawnPos, self._position) > self._sqrRange
 	else
 		-- 如果有重力
-		-- 用于改变fieldType
+		-- 用于改变fieldType: y <= 5时
 		if self._fieldSwitchHeight ~= 0 and self._position.y <= self._fieldSwitchHeight then
 			self._field = BattleConst.BulletField.SURFACE
 		end
@@ -205,16 +237,17 @@ end
 function BattleBulletUnit.SetStartTimeStamp(arg_11_0, arg_11_1)
 	arg_11_0._timeStamp = arg_11_1
 end
--- TODO
-function BattleBulletUnit.Hit(arg_12_0, arg_12_1, arg_12_2)
-	arg_12_0._collidedList[arg_12_1] = true
 
-	local var_12_0 = {
-		UID = arg_12_1,
-		type = arg_12_2
+-- 被BattleDataProxy.HandleBulletHit调用
+function BattleBulletUnit.Hit(self, shipUID, shipUnitType)
+	self._collidedList[shipUID] = true
+
+	local hitArgs = {
+		UID = shipUID,
+		type = shipUnitType
 	}
-
-	arg_12_0:DispatchEvent(ys.Event.New(BattleBulletEvent.HIT, var_12_0))
+	-- 对应的回调是BattleBullet.onBulletHit
+	self:DispatchEvent(ys.Event.New(BattleBulletEvent.HIT, hitArgs))
 end
 
 function BattleBulletUnit.Intercepted(arg_13_0)
@@ -225,53 +258,61 @@ function BattleBulletUnit.Reflected(arg_14_0)
 	arg_14_0._speed.x = -arg_14_0._speed.x
 end
 
-function BattleBulletUnit.ResetVelocity(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_0._tempData
-	local var_15_1 = arg_15_0:GetTemplate().extra_param
+-- 被BattleBulletUnit.SetTemplateData调用(用于初始化速度)
+-- 此外还被一些子弹(BattleMissileUnit)等，用于重置速度
+function BattleBulletUnit.ResetVelocity(self, velocity)
+	local tempData = self._tempData
+	local extra_param = self:GetTemplate().extra_param
 
-	if not arg_15_1 then
-		arg_15_1 = var_15_0.velocity
-		-- TODO
-		if var_15_1.velocity_offset then
-			arg_15_1 = math.random(arg_15_1 - var_15_1.velocity_offset, arg_15_1 + var_15_1.velocity_offset)
-		elseif var_15_1.velocity_offsetF then
-			arg_15_1 = arg_15_1 + math.random() * 2 * var_15_1.velocity_offsetF - var_15_1.velocity_offsetF
+	-- 如果没有给定要
+	if not velocity then
+		velocity = tempData.velocity
+
+		if extra_param.velocity_offset then
+			-- 速度偏移在(-offset, +offset)范围内随机(lua的random要求里面的velocity和offset都是整数)
+			velocity = math.random(velocity - extra_param.velocity_offset, velocity + extra_param.velocity_offset)
+		elseif extra_param.velocity_offsetF then
+			-- offsetF则是在(-offsetF, +offsetF)范围内随机浮点数
+			velocity = velocity + math.random() * 2 * extra_param.velocity_offsetF - extra_param.velocity_offsetF
 		end
 	end
 
-	arg_15_0._velocity = arg_15_1
-	arg_15_0._convertedVelocity = BattleFormulas.ConvertBulletSpeed(arg_15_0._velocity)
+	self._velocity = velocity
+	self._convertedVelocity = BattleFormulas.ConvertBulletSpeed(self._velocity)
 end
 
-function BattleBulletUnit.SetTemplateData(arg_16_0, arg_16_1)
-	arg_16_0._tempData = setmetatable({}, {
-		__index = arg_16_1
+-- 被BattleDataFunction.CreateBattleBulletData(和一些creatBulletFunc)调用
+-- 初始化的一部分，设置子弹数据实体的各种数据
+function BattleBulletUnit.SetTemplateData(self, tempData)
+	self._tempData = setmetatable({}, {
+		__index = tempData
 	})
 
-	local var_16_0 = arg_16_0:GetTemplate().extra_param
+	local extra_param = self:GetTemplate().extra_param
 
-	arg_16_0:SetModleID(arg_16_1.modle_ID, BattleBulletUnit.ORIGNAL_RES)
-	arg_16_0:SetSFXID(arg_16_0._tempData.hit_sfx, arg_16_0._tempData.miss_sfx)
-	arg_16_0:ResetVelocity()
+	self:SetModleID(tempData.modle_ID, BattleBulletUnit.ORIGNAL_RES)
+	self:SetSFXID(self._tempData.hit_sfx, self._tempData.miss_sfx)
+	-- 初始化速度
+	self:ResetVelocity()
 
-	arg_16_0._pierceCount = arg_16_1.pierce_count
-
-	arg_16_0:FixRange()
-	arg_16_0:InitCldComponent()
-
-	arg_16_0._accTable = Clone(arg_16_0._tempData.acceleration)
-
-	table.sort(arg_16_0._accTable, function(arg_17_0, arg_17_1)
-		return arg_17_0.t < arg_17_1.t
+	self._pierceCount = tempData.pierce_count
+	-- 初始化射程
+	self:FixRange()
+	self:InitCldComponent()
+	-- 设置加速度表
+	self._accTable = Clone(self._tempData.acceleration)
+	-- 按照时间排序加速度表
+	table.sort(self._accTable, function(phase1, phase2)
+		return phase1.t < phase2.t
 	end)
 
-	arg_16_0._field = arg_16_1.effect_type
-	arg_16_0._gravity = var_16_0.gravity or 0
-	arg_16_0._fieldSwitchHeight = var_16_0.effectSwitchHeight or 0
-	arg_16_0._ignoreShield = arg_16_0._tempData.extra_param.ignoreShield == true
-	arg_16_0._autoRotate = arg_16_0._tempData.extra_param.dontRotate ~= true
-
-	arg_16_0:SetDiverFilter()
+	self._field = tempData.effect_type
+	self._gravity = extra_param.gravity or 0
+	self._fieldSwitchHeight = extra_param.effectSwitchHeight or 0
+	self._ignoreShield = self._tempData.extra_param.ignoreShield == true
+	self._autoRotate = self._tempData.extra_param.dontRotate ~= true
+	-- 初始化DiveFilter
+	self:SetDiverFilter()
 end
 
 function BattleBulletUnit.GetModleID(arg_18_0)
@@ -486,48 +527,53 @@ function BattleBulletUnit.DamageUnitListWriteback(arg_45_0)
 	arg_45_0._weapon:UpdateCombo(arg_45_0._damageList)
 end
 
-function BattleBulletUnit.HasAcceleration(arg_46_0)
-	return #arg_46_0._accTable ~= 0
+function BattleBulletUnit.HasAcceleration(self)
+	return #self._accTable ~= 0
 end
 
-function BattleBulletUnit.IsTracker(arg_47_0)
-	return arg_47_0._accTable.tracker
+function BattleBulletUnit.IsTracker(self)
+	return self._accTable.tracker
 end
 
-function BattleBulletUnit.IsOrbit(arg_48_0)
-	return arg_48_0._accTable.orbit
+function BattleBulletUnit.IsOrbit(self)
+	return self._accTable.orbit
 end
 
-function BattleBulletUnit.IsCircle(arg_49_0)
-	return arg_49_0._accTable.circle
+function BattleBulletUnit.IsCircle(self)
+	return self._accTable.circle
 end
 
-function BattleBulletUnit.GetAcceleration(arg_50_0, arg_50_1)
-	arg_50_0._lastAccTime = arg_50_0._lastAccTime or arg_50_0._timeStamp
+-- 被BattleBulletUnit.doAccelerate调用
+function BattleBulletUnit.GetAcceleration(self, timeStamp)
+	self._lastAccTime = self._lastAccTime or self._timeStamp
+	-- 计算自上次计算加速度以来经过了多少个加速度计算间隔(帧)
+	local accCounts = math.modf((timeStamp - self._lastAccTime) / BattleBulletUnit.ACC_INTERVAL)
 
-	local var_50_0 = math.modf((arg_50_1 - arg_50_0._lastAccTime) / BattleBulletUnit.ACC_INTERVAL)
+	self._lastAccTime = self._lastAccTime + BattleBulletUnit.ACC_INTERVAL * accCounts
+	-- 开始加速后，经过的总时间
+	local elapsedAccTime = timeStamp - self._timeStamp
+	local accPhaseIndex = #self._accTable
 
-	arg_50_0._lastAccTime = arg_50_0._lastAccTime + BattleBulletUnit.ACC_INTERVAL * var_50_0
-
-	local var_50_1 = arg_50_1 - arg_50_0._timeStamp
-	local var_50_2 = #arg_50_0._accTable
-
-	while var_50_2 > 0 do
-		local var_50_3 = arg_50_0._accTable[var_50_2]
-
-		if var_50_1 + BattleBulletUnit.ACC_INTERVAL < var_50_3.t then
-			var_50_2 = var_50_2 - 1
+	while accPhaseIndex > 0 do
+		local accPhase = self._accTable[accPhaseIndex]
+		-- 找到对应符合当前时间戳的加速度阶段
+		if elapsedAccTime + BattleBulletUnit.ACC_INTERVAL < accPhase.t then
+			accPhaseIndex = accPhaseIndex - 1
 		else
-			return var_50_3.u * var_50_0, var_50_3.v * var_50_0
+			-- 返回的对应加速度值是每帧的加速度乘以经过的帧数，分别是u方向和v方向(x轴和z轴方向)
+			return accPhase.u * accCounts, accPhase.v * accCounts
 		end
 	end
 
 	return 0, 0
 end
 
-function BattleBulletUnit.reverseAcceleration(arg_51_0)
-	for iter_51_0, iter_51_1 in ipairs(arg_51_0._accTable) do
-		iter_51_1.u = iter_51_1.u * -1
+-- 被BattleBulletUnit.doAccelerate调用
+-- 该函数在加速度导致速度反向时调用
+-- 将所有加速度阶段的u方向(x方向)加速度取反
+function BattleBulletUnit.reverseAcceleration(self)
+	for _, accPhase in ipairs(self._accTable) do
+		accPhase.u = accPhase.u * -1
 	end
 end
 
@@ -562,12 +608,12 @@ function BattleBulletUnit.backupDistance(arg_53_0, arg_53_1, arg_53_2)
 	arg_53_0._distanceBackup[arg_53_1] = arg_53_2
 end
 
-function BattleBulletUnit.getTrackingTarget(arg_54_0)
-	return arg_54_0._tarckingTarget
+function BattleBulletUnit.getTrackingTarget(self)
+	return self._tarckingTarget
 end
 
-function BattleBulletUnit.setTrackingTarget(arg_55_0, arg_55_1)
-	arg_55_0._tarckingTarget = arg_55_1
+function BattleBulletUnit.setTrackingTarget(self, target)
+	self._tarckingTarget = target
 end
 
 function BattleBulletUnit.SetWeapon(arg_56_0, arg_56_1)
@@ -836,44 +882,57 @@ function BattleBulletUnit.GetSpeed(arg_102_0)
 	return arg_102_0._speed
 end
 
-function BattleBulletUnit.GetSpeedRatio(arg_103_0)
-	return BattleVariable.GetSpeedRatio(arg_103_0._speedExemptKey, arg_103_0._IFF)
+function BattleBulletUnit.GetSpeedRatio(self)
+	return BattleVariable.GetSpeedRatio(self._speedExemptKey, self._IFF)
 end
 
-function BattleBulletUnit.InitSpeed(arg_104_0, arg_104_1)
-	if arg_104_0._yAngle == nil then
-		arg_104_0._yAngle = (arg_104_1 or arg_104_0._baseAngle) + arg_104_0._barrageAngle
+-- 速度参数初始化
+-- 根据加速度参数，设置updateSpeed函数
+-- 被BattleBullet.SetSpawn调用
+function BattleBulletUnit.InitSpeed(self, angle)
+	if self._yAngle == nil then
+		self._yAngle = (angle or self._baseAngle) + self._barrageAngle
 	end
+	-- 此处计算速度向量到self._speed
+	self:calcSpeed()
 
-	arg_104_0:calcSpeed()
+	-- 情况1: 有加速度(数组形式)
+	if self:HasAcceleration() then
+		self._speedLength = self._speed:Magnitude()
 
-	if arg_104_0:HasAcceleration() then
-		arg_104_0._speedLength = arg_104_0._speed:Magnitude()
+		local yAngle = math.deg2Rad * self._yAngle
 
-		local var_104_0 = math.deg2Rad * arg_104_0._yAngle
+		self._speedNormal = Vector3(math.cos(yAngle), 0, math.sin(yAngle))
+		-- 将速度方向与Y轴正方向做叉乘，得到垂直于速度方向的向量
+		-- speedNormal和speedCross都与Y轴正方向垂直(也即都在XZ平面上，且互相垂直)
+		self._speedCross = Vector3.Cross(self._speedNormal, vector3Up)
+		self.updateSpeed = BattleBulletUnit.doAccelerate
+	-- 情况2: 追踪型子弹
+	elseif self:IsTracker() then
+		local tracker = self._accTable.tracker
+		-- 追踪范围(半径)
+		self._trackRange = tracker.range
+		-- angular是角加速度
+		-- 实际上这两个值是一样的(只是分别用在cos和sin计算上)，只是为了代码可读性才分开写的
+		self._cosAngularSpeed = math.deg2Rad * tracker.angular
+		self._sinAngularSpeed = math.deg2Rad * tracker.angular
+		-- 这两个实际没用到
+		self._negativeCosAngularSpeed = math.deg2Rad * tracker.angular * -1
+		self._negativeSinAngularSpeed = math.deg2Rad * tracker.angular * -1
+		self.updateSpeed = BattleBulletUnit.doTrack
+	-- 情况3: 环绕型子弹(少见)
+	elseif self:IsCircle() then
+		local circle = self._accTable.circle
 
-		arg_104_0._speedNormal = Vector3(math.cos(var_104_0), 0, math.sin(var_104_0))
-		arg_104_0._speedCross = Vector3.Cross(arg_104_0._speedNormal, vector3Up)
-		arg_104_0.updateSpeed = BattleBulletUnit.doAccelerate
-	elseif arg_104_0:IsTracker() then
-		local var_104_1 = arg_104_0._accTable.tracker
-
-		arg_104_0._trackRange = var_104_1.range
-		arg_104_0._cosAngularSpeed = math.deg2Rad * var_104_1.angular
-		arg_104_0._sinAngularSpeed = math.deg2Rad * var_104_1.angular
-		arg_104_0._negativeCosAngularSpeed = math.deg2Rad * var_104_1.angular * -1
-		arg_104_0._negativeSinAngularSpeed = math.deg2Rad * var_104_1.angular * -1
-		arg_104_0.updateSpeed = BattleBulletUnit.doTrack
-	elseif arg_104_0:IsCircle() then
-		local var_104_2 = arg_104_0._accTable.circle
-
-		arg_104_0._originPos = var_104_2.center or arg_104_0._targetPos
-		arg_104_0._circleAntiClockwise = tobool(var_104_2.antiClockWise)
-		arg_104_0._centripetalSpeed = (var_104_2.centripetalSpeed or 0) * viewInterval
-		arg_104_0._inverseFlag = 1
-		arg_104_0.updateSpeed = BattleBulletUnit.doCircle
+		self._originPos = circle.center or self._targetPos
+		self._circleAntiClockwise = tobool(circle.antiClockWise)
+		-- 每帧的向心加速度
+		self._centripetalSpeed = (circle.centripetalSpeed or 0) * viewInterval
+		self._inverseFlag = 1
+		self.updateSpeed = BattleBulletUnit.doCircle
 	else
-		arg_104_0.updateSpeed = BattleBulletUnit.doNothing
+		-- 如都没有，则不更新速度(最常见的情况)
+		self.updateSpeed = BattleBulletUnit.doNothing
 	end
 end
 
@@ -882,17 +941,19 @@ function BattleBulletUnit.InheritSpeed(arg_105_0, arg_105_1)
 	arg_105_0._speedInited = true
 end
 
-function BattleBulletUnit.calcSpeed(arg_106_0)
-	if arg_106_0._speedInited then
+-- 计算速度的大小和方向，得到速度向量
+-- 被BattleBulletUnit.InitSpeed调用
+function BattleBulletUnit.calcSpeed(self)
+	if self._speedInited then
 		return
 	end
 
-	local var_106_0 = 1 + ys.Battle.BattleAttr.GetCurrent(arg_106_0, "bulletSpeedRatio")
-	local var_106_1 = arg_106_0._velocity * var_106_0
-	local var_106_2 = BattleFormulas.ConvertBulletSpeed(var_106_1)
-	local var_106_3 = math.deg2Rad * arg_106_0._yAngle
+	local bulletSpeedRatio = 1 + ys.Battle.BattleAttr.GetCurrent(self, "bulletSpeedRatio")
+	local bulletSpeed = self._velocity * bulletSpeedRatio
+	local bulletVelocity = BattleFormulas.ConvertBulletSpeed(bulletSpeed)
+	local yAngle = math.deg2Rad * self._yAngle
 
-	arg_106_0._speed = Vector3(var_106_2 * math.cos(var_106_3), 0, var_106_2 * math.sin(var_106_3))
+	self._speed = Vector3(bulletVelocity * math.cos(yAngle), 0, bulletVelocity * math.sin(yAngle))
 end
 
 function BattleBulletUnit.updateBarrageTransform(arg_107_0, arg_107_1)
@@ -934,6 +995,7 @@ function BattleBulletUnit.OutRange(arg_110_0)
 	arg_110_0._outRangeFunc(arg_110_0)
 end
 
+-- 被BattleBulletUnit.SetTemplateData和BattleDataProxy.CreateBulletUnit调用
 function BattleBulletUnit.FixRange(self, range, fixRange)
 	range = range or self._tempData.range
 	fixRange = fixRange or 0

@@ -1,90 +1,94 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleAOEScaleableComponent")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAOEScaleableComponent = class("BattleAOEScaleableComponent")
 
-var_0_0.Battle.BattleAOEScaleableComponent = var_0_3
-var_0_3.__name = "BattleAOEScaleableComponent"
-var_0_3.FILL = 1
-var_0_3.EXPEND = 2
+ys.Battle.BattleAOEScaleableComponent = BattleAOEScaleableComponent
+BattleAOEScaleableComponent.__name = "BattleAOEScaleableComponent"
+BattleAOEScaleableComponent.FILL = 1
+BattleAOEScaleableComponent.EXPEND = 2
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._area = arg_1_1
+function BattleAOEScaleableComponent.Ctor(self, aoe)
+	self._area = aoe
 
-	arg_1_0._area:AppendComponent(arg_1_0)
+	self._area:AppendComponent(self)
 
-	local var_1_0 = arg_1_0._area.Settle
-
-	function arg_1_0._area.Settle()
-		arg_1_0:updateScale()
-		var_1_0(arg_1_0._area)
+	local settleFunc = self._area.Settle
+	-- 与普通AOE相比，每次更新的时候还会调整区域大小
+	function self._area.Settle()
+		self:updateScale()
+		settleFunc(self._area)
 	end
 end
 
-function var_0_3.Dispose(arg_3_0)
-	arg_3_0._area = nil
-	arg_3_0._referenceUnit = nil
+function BattleAOEScaleableComponent.Dispose(self)
+	self._area = nil
+	self._referenceUnit = nil
 end
 
-function var_0_3.SetReferenceUnit(arg_4_0, arg_4_1)
-	arg_4_0._referenceUnit = arg_4_1
-	arg_4_0._referencePoint = Clone(arg_4_1:GetPosition())
+-- 保存参考单位当时的快照位置
+function BattleAOEScaleableComponent.SetReferenceUnit(self, unit)
+	self._referenceUnit = unit
+	self._referencePoint = Clone(unit:GetPosition())
 end
 
-function var_0_3.ConfigData(arg_5_0, arg_5_1, arg_5_2)
-	if arg_5_1 == var_0_3.FILL then
-		arg_5_0.updateScale = var_0_3.doFill
-		arg_5_0._upperBound = arg_5_2.upperBound
-		arg_5_0._lowerBound = arg_5_2.lowerBound
-		arg_5_0._rearBound = arg_5_2.rearBound
-		arg_5_0._frontOffset = arg_5_2.frontOffset
-	elseif arg_5_1 == var_0_3.EXPEND then
-		arg_5_0._area:SetFXStatic(false)
+function BattleAOEScaleableComponent.ConfigData(self, scaleType, configData)
+	if scaleType == BattleAOEScaleableComponent.FILL then
+		self.updateScale = BattleAOEScaleableComponent.doFill
+		self._upperBound = configData.upperBound
+		self._lowerBound = configData.lowerBound
+		self._rearBound = configData.rearBound
+		self._frontOffset = configData.frontOffset
+	elseif scaleType == BattleAOEScaleableComponent.EXPEND then
+		self._area:SetFXStatic(false)
 
-		arg_5_0.updateScale = var_0_3.doExpend
-		arg_5_0._expendDuration = arg_5_2.expendDuration
-		arg_5_0._widthExpendSpeed = arg_5_2.widthSpeed
-		arg_5_0._heightExpendSpeed = arg_5_2.heightSpeed
-		arg_5_0._expendStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_5_0._lastExpendTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self.updateScale = BattleAOEScaleableComponent.doExpend
+		self._expendDuration = configData.expendDuration
+		self._widthExpendSpeed = configData.widthSpeed
+		self._heightExpendSpeed = configData.heightSpeed
+		self._expendStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._lastExpendTime = pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 end
 
-function var_0_3.doFill(arg_6_0)
-	local var_6_0 = setmetatable({}, {
-		__index = arg_6_0._referenceUnit:GetPosition()
+-- 这类ScaleableComponent会根据参考单位位置调整区域大小和位置
+-- 相当于跟随参考单位移动，并且根据参考单位位置调整区域大小
+function BattleAOEScaleableComponent.doFill(self)
+	local centerPos = setmetatable({}, {
+		__index = self._referenceUnit:GetPosition()
 	})
-	local var_6_1 = arg_6_0._area:GetIFF()
-	local var_6_2 = math.abs(arg_6_0._upperBound - arg_6_0._lowerBound)
-	local var_6_3 = arg_6_0._frontOffset * 2
+	local areaIFF = self._area:GetIFF()
+	local height = math.abs(self._upperBound - self._lowerBound)
+	local width = self._frontOffset * 2
 
-	arg_6_0._area:SetWidth(var_6_3)
-	arg_6_0._area:SetHeight(var_6_2)
-	arg_6_0._area:GetCldComponent():ResetSize(var_6_3, 5, var_6_2)
+	self._area:SetWidth(width)
+	self._area:SetHeight(height)
+	self._area:GetCldComponent():ResetSize(width, 5, height)
 
-	local var_6_4 = var_6_2 * 0.5 + arg_6_0._lowerBound
-	local var_6_5 = var_6_0.x
+	local newZ = height * 0.5 + self._lowerBound
+	local newX = centerPos.x
 
-	arg_6_0._referencePoint.x = var_6_5
-	arg_6_0._referencePoint.z = var_6_4
+	self._referencePoint.x = newX
+	self._referencePoint.z = newZ
 
-	arg_6_0._area:SetPosition(arg_6_0._referencePoint)
+	self._area:SetPosition(self._referencePoint)
 end
 
-function var_0_3.doExpend(arg_7_0)
-	local var_7_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleAOEScaleableComponent.doExpend(self)
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	-- 在expendDuration时间内，持续调整区域大小
+	if currentTime - self._expendStartTime < self._expendDuration then
+		local areaWidth = self._area:GetWidth()
+		local areaHeight = self._area:GetHeight()
+		local deltaTime = currentTime - self._lastExpendTime
+		-- speed实际是每秒变化量，所以要乘以deltaTime(每帧的秒数)
+		local newWidth = areaWidth + self._widthExpendSpeed * deltaTime
+		local newHeight = areaHeight + self._heightExpendSpeed * deltaTime
 
-	if var_7_0 - arg_7_0._expendStartTime < arg_7_0._expendDuration then
-		local var_7_1 = arg_7_0._area:GetWidth()
-		local var_7_2 = arg_7_0._area:GetHeight()
-		local var_7_3 = var_7_0 - arg_7_0._lastExpendTime
-		local var_7_4 = var_7_1 + arg_7_0._widthExpendSpeed * var_7_3
-		local var_7_5 = var_7_2 + arg_7_0._heightExpendSpeed * var_7_3
-
-		arg_7_0._area:SetWidth(var_7_4)
-		arg_7_0._area:SetHeight(var_7_5)
-		arg_7_0._area:GetCldComponent():ResetSize(var_7_1, 5, var_7_2)
+		self._area:SetWidth(newWidth)
+		self._area:SetHeight(newHeight)
+		self._area:GetCldComponent():ResetSize(areaWidth, 5, areaHeight)
 	end
 end

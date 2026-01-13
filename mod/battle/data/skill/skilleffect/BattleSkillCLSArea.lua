@@ -1,256 +1,264 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleEvent
-local var_0_4 = class("BattleSkillCLSArea", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEvent = ys.Battle.BattleEvent
+local BattleSkillCLSArea = class("BattleSkillCLSArea", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillCLSArea = var_0_4
-var_0_4.__name = "BattleSkillCLSArea"
-var_0_4.TYPE_BULLET = 1
-var_0_4.TYPE_AIRCRAFT = 2
-var_0_4.TYPE_MINION = 3
+ys.Battle.BattleSkillCLSArea = BattleSkillCLSArea
+BattleSkillCLSArea.__name = "BattleSkillCLSArea"
+BattleSkillCLSArea.TYPE_BULLET = 1
+BattleSkillCLSArea.TYPE_AIRCRAFT = 2
+BattleSkillCLSArea.TYPE_MINION = 3
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1, lv)
+function BattleSkillCLSArea.Ctor(self, effectData)
+	BattleSkillCLSArea.super.Ctor(self, effectData, lv)
 
-	arg_1_0._range = arg_1_0._tempData.arg_list.range
-	arg_1_0._width = arg_1_0._tempData.arg_list.width
-	arg_1_0._height = arg_1_0._tempData.arg_list.height
-	arg_1_0._minRange = arg_1_0._tempData.arg_list.minRange or 0
-	arg_1_0._angle = arg_1_0._tempData.arg_list.angle
-	arg_1_0._lifeTime = arg_1_0._tempData.arg_list.life_time
-	arg_1_0._fx = arg_1_0._tempData.arg_list.effect
-	arg_1_0._moveType = arg_1_0._tempData.arg_list.move_type
-	arg_1_0._speed = arg_1_0._tempData.arg_list.speed_x
-	arg_1_0._finaleFX = arg_1_0._tempData.arg_list.finale_effect
-	arg_1_0._delayCLS = arg_1_0._tempData.arg_list.cld_delay
-	arg_1_0._bulletType = arg_1_0._tempData.arg_list.bullet_type_list
-	arg_1_0._damageSrcUnitTag = arg_1_0._tempData.arg_list.damage_tag_list
-	arg_1_0._damageParamA = arg_1_0._tempData.arg_list.damage_param_a
-	arg_1_0._damageParamB = arg_1_0._tempData.arg_list.damage_param_b
-	arg_1_0._damageSFX = arg_1_0._tempData.arg_list.damage_sfx or ""
-	arg_1_0._damageBuffID = arg_1_0._tempData.arg_list.buff_id
-	arg_1_0._damageBuffLV = arg_1_0._tempData.arg_list.buff_lv
-	arg_1_0._damageDiveFilter = arg_1_0._tempData.arg_list.diveFilter or {
+	self._range = self._tempData.arg_list.range
+	self._width = self._tempData.arg_list.width
+	self._height = self._tempData.arg_list.height
+	self._minRange = self._tempData.arg_list.minRange or 0
+	self._angle = self._tempData.arg_list.angle
+	self._lifeTime = self._tempData.arg_list.life_time
+	self._fx = self._tempData.arg_list.effect
+	self._moveType = self._tempData.arg_list.move_type
+	self._speed = self._tempData.arg_list.speed_x
+	self._finaleFX = self._tempData.arg_list.finale_effect
+	self._delayCLS = self._tempData.arg_list.cld_delay
+	self._bulletType = self._tempData.arg_list.bullet_type_list
+	self._damageSrcUnitTag = self._tempData.arg_list.damage_tag_list
+	self._damageParamA = self._tempData.arg_list.damage_param_a
+	self._damageParamB = self._tempData.arg_list.damage_param_b
+	self._damageSFX = self._tempData.arg_list.damage_sfx or ""
+	self._damageBuffID = self._tempData.arg_list.buff_id
+	self._damageBuffLV = self._tempData.arg_list.buff_lv
+	self._damageDiveFilter = self._tempData.arg_list.diveFilter or {
 		2
 	}
-	arg_1_0._damageDiveDMGRate = arg_1_0._tempData.arg_list.diveDamageRate or {
+	self._damageDiveDMGRate = self._tempData.arg_list.diveDamageRate or {
 		1,
 		1
 	}
-	arg_1_0._delayCLSTimerList = {}
+	self._delayCLSTimerList = {}
 end
 
-function var_0_4.DoDataEffect(arg_2_0, arg_2_1)
-	arg_2_0:doCLS(arg_2_1)
+function BattleSkillCLSArea.DoDataEffect(self, caster)
+	self:doCLS(caster)
 end
 
-function var_0_4.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:doCLS(arg_3_1)
+function BattleSkillCLSArea.DoDataEffectWithoutTarget(self, caster)
+	self:doCLS(caster)
 end
 
-function var_0_4.doCLS(arg_4_0, arg_4_1)
-	if arg_4_0._angle then
-		arg_4_0:cacheSectorData(arg_4_1)
+function BattleSkillCLSArea.doCLS(self, caster)
+	if self._angle then
+		self:cacheSectorData(caster)
 	end
 
-	local var_4_0 = var_0_0.Battle.BattleDataProxy.GetInstance()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-	local function var_4_1(arg_5_0)
-		for iter_5_0, iter_5_1 in ipairs(arg_5_0) do
-			local var_5_0 = iter_5_1.UID
-			local var_5_1 = var_4_0:GetBulletList()[iter_5_1.UID]
+	-- 会消除掉所有在区域内的符合条件的子弹
+	local function areaCldFunc(cldObjList)
+		for _, cldObj in ipairs(cldObjList) do
+			local cldObjUID = cldObj.UID
+			local bullet = battleDataProxy:GetBulletList()[cldObj.UID]
+			-- 子弹存在
+			-- 子弹类型符合参数
+			-- ImmuneCLS: BattleBulletDataFunction中的各种子弹的create方法，预定义了EffectBullet、GravitationBullet、SpaceLaser、Missile是免疫CLS的
+			-- ImmuneBombCLS：看子弹的ignoreB参数
+			-- isEnterBlind: 判断子弹是否超出range
+			-- isOutOfAngle: 判断子弹是否在扇形范围内
+			if bullet:GetExist() and self:checkBulletType(bullet) and not bullet:ImmuneCLS() and not bullet:ImmuneBombCLS() and not self:isEnterBlind(bullet) and not self:isOutOfAngle(bullet) then
+				-- 如果有delayCLS，则延时销毁
+				if self._delayCLS then
+					local clsBulletTimer
 
-			if var_5_1:GetExist() and arg_4_0:checkBulletType(var_5_1) and not var_5_1:ImmuneCLS() and not var_5_1:ImmuneBombCLS() and not arg_4_0:isEnterBlind(var_5_1) and not arg_4_0:isOutOfAngle(var_5_1) then
-				if arg_4_0._delayCLS then
-					local var_5_2
-
-					local function var_5_3()
-						if var_5_1:GetExist() then
-							var_4_0:RemoveBulletUnit(var_5_0)
+					local function clsFunc()
+						if bullet:GetExist() then
+							battleDataProxy:RemoveBulletUnit(cldObjUID)
 						end
 
-						pg.TimeMgr.GetInstance():RemoveBattleTimer(var_5_2)
+						pg.TimeMgr.GetInstance():RemoveBattleTimer(clsBulletTimer)
 
-						arg_4_0._delayCLSTimerList[var_5_2] = nil
+						self._delayCLSTimerList[clsBulletTimer] = nil
 					end
 
-					var_5_2 = pg.TimeMgr.GetInstance():AddBattleTimer("clsBullet", -1, arg_4_0._delayCLS, var_5_3, true)
-					arg_4_0._delayCLSTimerList[var_5_2] = true
+					clsBulletTimer = pg.TimeMgr.GetInstance():AddBattleTimer("clsBullet", -1, self._delayCLS, clsFunc, true)
+					self._delayCLSTimerList[clsBulletTimer] = true
 				else
-					var_4_0:RemoveBulletUnit(var_5_0)
+					battleDataProxy:RemoveBulletUnit(cldObjUID)
 				end
 			end
 		end
 	end
 
-	local function var_4_2()
-		for iter_7_0, iter_7_1 in pairs(arg_4_0._delayCLSTimerList) do
-			iter_7_0.func()
-			pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_7_0)
+	local function endFunc()
+		for delayCLSTimer, _ in pairs(self._delayCLSTimerList) do
+			delayCLSTimer.func()
+			pg.TimeMgr.GetInstance():RemoveBattleTimer(delayCLSTimer)
 
-			arg_4_0._delayCLSTimerList[iter_7_0] = nil
+			self._delayCLSTimerList[delayCLSTimer] = nil
 		end
 
-		arg_4_0._delayCLSTimerList = {}
+		self._delayCLSTimerList = {}
 
-		if arg_4_0._finaleFX then
-			var_4_0:SpawnEffect(arg_4_0._finaleFX, arg_4_0._cldArea:GetPosition(), 1)
+		if self._finaleFX then
+			battleDataProxy:SpawnEffect(self._finaleFX, self._cldArea:GetPosition(), 1)
 		end
 	end
 
-	arg_4_0._cldArea = arg_4_0:generateArea(arg_4_1, var_0_1.AOEField.BULLET, var_4_1, var_4_2, arg_4_0._fx)
+	self._cldArea = self:generateArea(caster, BattleConst.AOEField.BULLET, areaCldFunc, endFunc, self._fx)
 
-	if arg_4_0._damageSrcUnitTag then
-		local var_4_3 = var_0_0.Battle.BattleTargetChoise.TargetAllHelp(arg_4_1)
-		local var_4_4 = var_0_0.Battle.BattleTargetChoise.TargetShipTag(arg_4_1, {
-			ship_tag_list = arg_4_0._damageSrcUnitTag
-		}, var_4_3)
-		local var_4_5 = #var_4_4
+	if self._damageSrcUnitTag then
+		-- 以下涉及特殊兵装的消弹斩击伤害计算逻辑
+		local candidateList1 = ys.Battle.BattleTargetChoise.TargetAllHelp(caster)
+		local candidateList2 = ys.Battle.BattleTargetChoise.TargetShipTag(caster, {
+			ship_tag_list = self._damageSrcUnitTag
+		}, candidateList1)
+		-- 上面两步计算友方单位中，符合tag条件的单位列表
+		-- 一般就是分类别统计，分远程(sp_far)和近程(sp_near)两种
+		local satisfiedNum = #candidateList2
 
-		if var_4_5 <= 0 then
+		if satisfiedNum <= 0 then
 			return
 		end
 
-		local var_4_6 = 0
+		local formulaLevelSum = 0
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_4) do
-			var_4_6 = var_4_6 + iter_4_1:GetAttrByName("formulaLevel")
+		for _, unit in ipairs(candidateList2) do
+			formulaLevelSum = formulaLevelSum + unit:GetAttrByName("formulaLevel")
 		end
+		-- 伤害计算公式
+		local averageLevel = math.floor(formulaLevelSum / satisfiedNum)
+		local baseDamage = self._damageParamA + averageLevel * self._damageParamB
 
-		local var_4_7 = math.floor(var_4_6 / var_4_5)
-		local var_4_8 = arg_4_0._damageParamA + var_4_7 * arg_4_0._damageParamB
+		local function areaCldDamageFunc(cldObjList)
+			for _, cldObj in ipairs(cldObjList) do
+				if cldObj.Active then
+					local cldObjUID = cldObj.UID
+					local cldUnit = battleDataProxy:GetUnitList()[cldObjUID]
+					local cldUnitOxyState = cldUnit:GetCurrentOxyState()
+					-- 这没用到，实际上单位的OxyState就不重要了
+					local diveDamage = math.floor(self._damageDiveDMGRate[cldUnitOxyState] * baseDamage)
 
-		local function var_4_9(arg_8_0)
-			for iter_8_0, iter_8_1 in ipairs(arg_8_0) do
-				if iter_8_1.Active then
-					local var_8_0 = iter_8_1.UID
-					local var_8_1 = var_4_0:GetUnitList()[var_8_0]
-					local var_8_2 = var_8_1:GetCurrentOxyState()
-					local var_8_3 = math.floor(arg_4_0._damageDiveDMGRate[var_8_2] * var_4_8)
+					battleDataProxy:HandleDirectDamage(cldUnit, baseDamage)
+					ys.Battle.PlayBattleSFX(self._damageSFX)
 
-					var_4_0:HandleDirectDamage(var_8_1, var_4_8)
-					var_0_0.Battle.PlayBattleSFX(arg_4_0._damageSFX)
+					if self._damageBuffID and cldUnit:IsAlive() then
+						local damageBuff = ys.Battle.BattleBuffUnit.New(self._damageBuffID, nil, caster)
 
-					if arg_4_0._damageBuffID and var_8_1:IsAlive() then
-						local var_8_4 = var_0_0.Battle.BattleBuffUnit.New(arg_4_0._damageBuffID, nil, arg_4_1)
-
-						var_8_4:SetOrb(arg_4_1, arg_4_0._damageBuffLV or 1)
-						var_8_1:AddBuff(var_8_4)
+						damageBuff:SetOrb(caster, self._damageBuffLV or 1)
+						cldUnit:AddBuff(damageBuff)
 					end
 				end
 			end
 		end
 
-		local function var_4_10()
+		local function endDamageFunc()
 			return
 		end
 
-		local function var_4_11()
-			return
-		end
-
-		arg_4_0:generateArea(arg_4_1, var_0_1.AOEField.SURFACE, var_4_9, var_4_10):SetDiveFilter(arg_4_0._damageDiveFilter)
+		self:generateArea(caster, BattleConst.AOEField.SURFACE, areaCldDamageFunc, endDamageFunc):SetDiveFilter(self._damageDiveFilter)
 	end
 end
 
-function var_0_4.generateArea(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4, arg_11_5)
-	local function var_11_0()
+function BattleSkillCLSArea.generateArea(self, caster, fieldType, areaCldFunc, endFunc, fx)
+	local function exitCldFunc()
 		return
 	end
 
-	local var_11_1 = var_0_0.Battle.BattleDataProxy.GetInstance()
-	local var_11_2 = arg_11_1:GetIFF()
-	local var_11_3
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local casterIFF = caster:GetIFF()
+	local lastingAOEData
 
-	if arg_11_0._range then
-		var_11_3 = var_11_1:SpawnLastingColumnArea(arg_11_2, var_11_2, arg_11_1:GetPosition(), arg_11_0._range, arg_11_0._lifeTime, arg_11_3, var_11_0, false, arg_11_5, arg_11_4)
+	if self._range then
+		lastingAOEData = battleDataProxy:SpawnLastingColumnArea(fieldType, casterIFF, caster:GetPosition(), self._range, self._lifeTime, areaCldFunc, exitCldFunc, false, fx, endFunc)
 	else
-		var_11_3 = var_11_1:SpawnLastingCubeArea(arg_11_2, var_11_2, arg_11_1:GetPosition(), arg_11_0._width, arg_11_0._height, arg_11_0._lifeTime, arg_11_3, var_11_0, false, arg_11_5, arg_11_4)
+		lastingAOEData = battleDataProxy:SpawnLastingCubeArea(fieldType, casterIFF, caster:GetPosition(), self._width, self._height, self._lifeTime, areaCldFunc, exitCldFunc, false, fx, endFunc)
 
-		if var_11_2 == var_0_2.FRIENDLY_CODE then
-			var_11_3:SetAnchorPointAlignment(var_11_3.ALIGNMENT_LEFT)
-		elseif var_11_2 == var_0_2.FOE_CODE then
-			var_11_3:SetAnchorPointAlignment(var_11_3.ALIGNMENT_RIGHT)
+		if casterIFF == BattleConfig.FRIENDLY_CODE then
+			lastingAOEData:SetAnchorPointAlignment(lastingAOEData.ALIGNMENT_LEFT)
+		elseif casterIFF == BattleConfig.FOE_CODE then
+			lastingAOEData:SetAnchorPointAlignment(lastingAOEData.ALIGNMENT_RIGHT)
 		end
 	end
 
-	local var_11_4 = var_0_0.Battle.BattleAOEMobilizedComponent.New(var_11_3)
+	local mobilizedComponent = ys.Battle.BattleAOEMobilizedComponent.New(lastingAOEData)
 
-	var_11_4:SetReferenceUnit(arg_11_1)
+	mobilizedComponent:SetReferenceUnit(caster)
 
-	local var_11_5 = arg_11_0._speed * var_11_2
+	local speedX = self._speed * casterIFF
 
-	var_11_4:ConfigData(arg_11_0._moveType, {
-		speedX = var_11_5
+	mobilizedComponent:ConfigData(self._moveType, {
+		speedX = speedX
 	})
 
-	return var_11_3
+	return lastingAOEData
 end
 
-function var_0_4.cacheSectorData(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1:GetIFF()
-	local var_13_1 = arg_13_0._angle / 2
+-- 跟BattleWeaponUnit.cacheSectorData基本是一样的逻辑
+function BattleSkillCLSArea.cacheSectorData(self, caster)
+	local casterIFF = caster:GetIFF()
+	local halfAngle = self._angle / 2
 
-	arg_13_0._upperEdge = math.deg2Rad * var_13_1
-	arg_13_0._lowerEdge = -1 * arg_13_0._upperEdge
+	self._upperEdge = math.deg2Rad * halfAngle
+	self._lowerEdge = -1 * self._upperEdge
 
-	if var_13_0 == var_0_2.FRIENDLY_CODE then
-		arg_13_0._normalizeOffset = 0
-	elseif var_13_0 == var_0_2.FOE_CODE then
-		arg_13_0._normalizeOffset = math.pi
+	if casterIFF == BattleConfig.FRIENDLY_CODE then
+		self._normalizeOffset = 0
+	elseif casterIFF == BattleConfig.FOE_CODE then
+		self._normalizeOffset = math.pi
 	end
 
-	arg_13_0._wholeCircle = math.pi - arg_13_0._normalizeOffset
-	arg_13_0._negativeCircle = -math.pi - arg_13_0._normalizeOffset
-	arg_13_0._wholeCircleNormalizeOffset = arg_13_0._normalizeOffset - math.pi * 2
-	arg_13_0._negativeCircleNormalizeOffset = arg_13_0._normalizeOffset + math.pi * 2
+	self._wholeCircle = math.pi - self._normalizeOffset
+	self._negativeCircle = -math.pi - self._normalizeOffset
+	self._wholeCircleNormalizeOffset = self._normalizeOffset - math.pi * 2
+	self._negativeCircleNormalizeOffset = self._normalizeOffset + math.pi * 2
 end
 
-function var_0_4.isOutOfAngle(arg_14_0, arg_14_1)
-	if not arg_14_0._angle then
+function BattleSkillCLSArea.isOutOfAngle(self, bullet)
+	if not self._angle then
 		return false
 	end
 
-	local var_14_0 = arg_14_1:GetPosition()
-	local var_14_1 = arg_14_0._cldArea:GetPosition()
-	local var_14_2 = math.atan2(var_14_0.z - var_14_1.z, var_14_0.x - var_14_1.x)
+	local bulletPos = bullet:GetPosition()
+	local cldAreaPos = self._cldArea:GetPosition()
+	local angle = math.atan2(bulletPos.z - cldAreaPos.z, bulletPos.x - cldAreaPos.x)
 
-	if var_14_2 > arg_14_0._wholeCircle then
-		var_14_2 = var_14_2 + arg_14_0._wholeCircleNormalizeOffset
-	elseif var_14_2 < arg_14_0._negativeCircle then
-		var_14_2 = var_14_2 + arg_14_0._negativeCircleNormalizeOffset
+	if angle > self._wholeCircle then
+		angle = angle + self._wholeCircleNormalizeOffset
+	elseif angle < self._negativeCircle then
+		angle = angle + self._negativeCircleNormalizeOffset
 	else
-		var_14_2 = var_14_2 + arg_14_0._normalizeOffset
+		angle = angle + self._normalizeOffset
 	end
 
-	if var_14_2 > arg_14_0._lowerEdge and var_14_2 < arg_14_0._upperEdge then
+	if angle > self._lowerEdge and angle < self._upperEdge then
 		return false
 	else
 		return true
 	end
 end
 
-function var_0_4.isEnterBlind(arg_15_0, arg_15_1)
-	if arg_15_0._minRange == 0 then
+function BattleSkillCLSArea.isEnterBlind(self, bullet)
+	if self._minRange == 0 then
 		return false
 	end
 
-	local var_15_0 = arg_15_1:GetPosition()
-	local var_15_1 = arg_15_0._cldArea:GetPosition()
+	local bulletPos = bullet:GetPosition()
+	local cldAreaPos = self._cldArea:GetPosition()
 
-	return Vector3.BattleDistance(var_15_1, var_15_0) < arg_15_0._minRange
+	return Vector3.BattleDistance(cldAreaPos, bulletPos) < self._minRange
 end
 
-function var_0_4.checkBulletType(arg_16_0, arg_16_1)
-	if not arg_16_0._bulletType then
+function BattleSkillCLSArea.checkBulletType(self, bullet)
+	if not self._bulletType then
 		return true
 	else
-		local var_16_0 = arg_16_1:GetType()
-
-		if table.contains(arg_16_0._bulletType, var_16_0) then
+		local bulletType = bullet:GetType()
+		-- SkillEffect的参数_bulletType中，需要包含子弹的类型，才返回true
+		if table.contains(self._bulletType, bulletType) then
 			return true
 		else
 			return false

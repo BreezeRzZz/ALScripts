@@ -9,7 +9,7 @@ local var_0_0 = {
 	y = pg.gameset.air_dominance_y.key_value
 }
 
--- TODO
+-- TODO: 计算制空值
 function calcAirDominanceValue(arg_1_0, arg_1_1)
 	local var_1_0 = arg_1_0:getAircraftCount()
 	local var_1_1 = arg_1_0:getEquipmentProperties()

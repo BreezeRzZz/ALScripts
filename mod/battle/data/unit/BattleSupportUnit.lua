@@ -38,26 +38,26 @@ function BattleSupportUnit.setWeapon(self, equipmentList)
 			local proficiency = proficiencyList[equipIndex]
 			local preloadCount = preload_count[equipIndex]
 
-			local function var_2_6(arg_3_0, arg_3_1, arg_3_2)
-				local var_3_0 = var_0_1.GetWeaponPropertyDataFromID(arg_3_0).type
+			local function configWeapon(weaponID, equipLabels, equipSkin)
+				local weaponType = BattleDataFunction.GetWeaponPropertyDataFromID(weaponID).type
 
-				if var_3_0 == var_0_4.EquipmentType.INTERCEPT_AIRCRAFT or var_3_0 == var_0_4.EquipmentType.TORPEDO then
-					local var_3_1 = var_2_1[iter_2_0]
+				if weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == BattleConst.EquipmentType.TORPEDO then
+					local baseCount = base_list[equipIndex]
 
-					for iter_3_0 = 1, var_3_1 do
-						local var_3_2 = arg_2_0:AddWeapon(arg_3_0, arg_3_1, arg_3_2, var_2_4, iter_2_0)
-						local var_3_3 = var_3_2:GetTemplateData().type
+					for _ = 1, baseCount do
+						local weapon = self:AddWeapon(weaponID, equipLabels, equipSkin, proficiency, equipIndex)
+						local _ = weapon:GetTemplateData().type
 
-						if iter_2_1.equipment then
-							var_3_2:SetSrcEquipmentID(iter_2_1.equipment.id)
+						if equipmentInfo.equipment then
+							weapon:SetSrcEquipmentID(equipmentInfo.equipment.id)
 						end
 					end
 				end
 			end
 
-			if iter_2_1.equipment and #iter_2_1.equipment.weapon_id > 0 then
-				if iter_2_1.equipment.type == EquipType.FighterAircraft or iter_2_1.equipment.type == EquipType.SubmarineTorpedo then
-					local var_2_7 = iter_2_1.equipment.weapon_id
+			if equipmentInfo.equipment and #equipmentInfo.equipment.weapon_id > 0 then
+				if equipmentInfo.equipment.type == EquipType.FighterAircraft or equipmentInfo.equipment.type == EquipType.SubmarineTorpedo then
+					local _ = equipmentInfo.equipment.weapon_id
 
 					for _, weaponID in ipairs(weaponIDList) do
 						-- 从weapon_property里拿
@@ -79,8 +79,8 @@ function BattleSupportUnit.setWeapon(self, equipmentList)
 				-- equip_data_statistics
 				local equipment = BattleDataFunction.GetWeaponDataFromID(equipID)
 
-				if var_2_11.type == EquipType.FighterAircraft or var_2_11.type == EquipType.SubmarineTorpedo then
-					var_2_6(var_2_10, var_2_11.label)
+				if equipment.type == EquipType.FighterAircraft or equipment.type == EquipType.SubmarineTorpedo then
+					configWeapon(equipID, equipment.label)
 				end
 			end
 		end
@@ -92,14 +92,14 @@ function BattleSupportUnit.setWeapon(self, equipmentList)
 	-- 固定装备(魔法装备)
 	local fix_equip_list = self._tmpData.fix_equip_list
 
-	for iter_2_4, iter_2_5 in ipairs(var_2_13) do
-		if iter_2_5 and iter_2_5 ~= -1 then
-			local var_2_14 = var_0_1.GetWeaponPropertyDataFromID(iter_2_5).type
+	for fixIndex, fixEquipID in ipairs(fix_equip_list) do
+		if fixEquipID and fixEquipID ~= -1 then
+			local fixEquipType = BattleDataFunction.GetWeaponPropertyDataFromID(fixEquipID).type
 
-			if var_2_14 == var_0_4.EquipmentType.INTERCEPT_AIRCRAFT or var_2_14 == var_0_4.EquipmentType.TORPEDO then
-				local var_2_15 = var_2_2[iter_2_4 + var_2_12] or 1
+			if fixEquipType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or fixEquipType == BattleConst.EquipmentType.TORPEDO then
+				local fixProficiency = proficiencyList[fixIndex + defaultEquipNum] or 1
 
-				arg_2_0:AddWeapon(iter_2_5, nil, nil, var_2_15, iter_2_4 + var_2_12):SetFixedFlag()
+				self:AddWeapon(fixEquipID, nil, nil, fixProficiency, fixIndex + defaultEquipNum):SetFixedFlag()
 			end
 		end
 	end
@@ -115,8 +115,8 @@ function BattleSupportUnit.AddWeapon(self, weaponID, equipLabels, equipSkin, pot
 		weapon:SetEquipmentLabel(equipLabels)
 	end
 
-	var_4_0:SetSupportWeapon()
-	arg_4_0:AddAutoWeapon(var_4_0)
+	weapon:SetSupportWeapon()
+	self:AddAutoWeapon(weapon)
 
 	if equipSkin and equipSkin ~= 0 then
 		weapon:SetSkinData(equipSkin)

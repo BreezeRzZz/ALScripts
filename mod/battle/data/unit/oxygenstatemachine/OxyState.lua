@@ -34,6 +34,7 @@ function OxyState.Ctor(arg_1_0, arg_1_1)
 	local var_1_0 = ys.Battle.BattleBuffUnit.New(8520)
 
 	arg_1_0._target:AddBuff(var_1_0)
+	-- 初始状态为Idle
 	arg_1_0:OnIdleState()
 end
 
@@ -76,7 +77,9 @@ end
 function OxyState.FlashBubbleStamp(arg_8_0, arg_8_1)
 	arg_8_0._bubbleTimpStamp = arg_8_1 + arg_8_0._bubbleInterval
 end
+
 -- TODO
+-- 潜艇状态切换
 function OxyState.ChangeState(self, newState, arg_9_2)
 	if newState == OxyState.STATE_IDLE then
 		self:OnIdleState()
@@ -152,23 +155,28 @@ function OxyState.OnFloatState(arg_14_0)
 	arg_14_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnRaidState(arg_15_0)
-	local var_15_0 = arg_15_0._currentState:UpdateDive()
-	local var_15_1 = arg_15_0._currentState
+-- 潜艇攻击阶段
+-- 一般来讲，是从Idle切换而来
+function OxyState.OnRaidState(self)
+	local var_15_0 = self._currentState:UpdateDive()
+	local originalState = self._currentState
 
-	arg_15_0._currentState = arg_15_0._raidState
+	self._currentState = self._raidState
 
-	arg_15_0._currentState:UpdateCldData(arg_15_0._target, var_15_1)
-	arg_15_0._target:ChangeWeaponDiveState()
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
 
 	if var_15_0 then
-		arg_15_0._target:SetDiveInvisible(true)
+		self._target:SetDiveInvisible(true)
 	end
 
-	arg_15_0._target:SetAI(BattleConfig.SUB_DEFAULT_STAY_AI)
-	arg_15_0._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_RAID, {})
-	arg_15_0._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
-	arg_15_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
+	-- AI 10006
+	self._target:SetAI(BattleConfig.SUB_DEFAULT_STAY_AI)
+	self._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_RAID, {})
+	-- Buff 315
+	self._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
+	-- Buff 314
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
 end
 -- TODO
 function OxyState.OnRetreatState(self)

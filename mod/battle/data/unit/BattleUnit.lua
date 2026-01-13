@@ -14,7 +14,7 @@ local BattleUnit = class("BattleUnit")
 ys.Battle.BattleUnit = BattleUnit
 BattleUnit.__name = "BattleUnit"
 
---- @class BattleUnit的
+--- @class BattleUnit
 --- @param uid number: Unit的唯一ID
 --- @param iff number: 友方(1)/敌方(-1)
 --- @return nil
@@ -546,6 +546,7 @@ function BattleUnit.GetSkinAttachmentInfo(arg_41_0)
 	return arg_41_0._orbitSkinIDList
 end
 
+-- 获取武器绑定点信息: 影响子弹的生成点
 function BattleUnit.GetWeaponBoundBone(arg_42_0)
 	return arg_42_0._tmpData.bound_bone
 end

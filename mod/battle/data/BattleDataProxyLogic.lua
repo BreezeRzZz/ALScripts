@@ -30,7 +30,8 @@ function BattleDataProxy.ClearFormulas(self)
 	self._calculateDamageCrush = nil
 end
 
--- TODO
+-- 处理子弹命中(仅碰撞系统相关)
+-- 被BattleCldSystem.HandleBulletCldWithAircraft和BattleCldSystem.HandleBulletCldWithShip调用
 function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 	if not ship then
 		assert(false, "HandleBulletHit, but no vehicleData")
@@ -46,10 +47,11 @@ function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 		return false
 	end
 	-- 只判定未碰撞过的，仅一次
+	-- 因此不会重复触发碰撞判定
 	if bullet:IsCollided(ship:GetUniqueID()) == true then
 		return
 	end
-
+	-- 调用子弹的命中(碰撞)函数
 	bullet:Hit(ship:GetUniqueID(), ship:GetUnitType())
 
 	local args = {
@@ -66,8 +68,12 @@ function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 
 	return true
 end
--- note: 常规伤害处理函数
+
+-- 常规伤害处理函数(核心逻辑)
+-- 常规伤害指的是，需要用子弹实体参与计算的伤害
+	-- 与之相对的就是下面的HandleDirectDamage，不需要子弹实体参与计算
 -- 举例：在BattleDataProxy.updateLoop中被调用，在各子弹工厂的onBulletHitFunc中也有调用
+-- 被很多地方调用，主要的调用点是各个BulletFactory的onBulletHitFunc(典型的cannonBulletFactory/TorpedoBulletFactory)或OutRangeFunc(典型的BombBulletFactory)
 function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance, meteoDamageRatio)
 	-- isShowHPBar的本质是BattleEnemyUnit.IsShowHPBar, 需要IFF不为友方
 	if target:GetIFF() == BattleConfig.FOE_CODE and target:IsShowHPBar() then
@@ -173,16 +179,20 @@ function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance
 
 	return isMiss, isCri
 end
--- TODO
-function BattleDataProxy.HandleMeteoDamage(arg_8_0, arg_8_1, arg_8_2)
-	local var_8_0 = BattleFormulas.GetMeteoDamageRatio(#arg_8_2)
 
-	for iter_8_0, iter_8_1 in ipairs(arg_8_2) do
-		arg_8_0:HandleDamage(arg_8_1, iter_8_1, nil, var_8_0[iter_8_0])
+-- 处理防空伤害(分配)
+-- 主要是AntiAirBulletFactory调用
+-- 值得注意的是本质是依赖子弹的HandleDamage，尽管这类子弹全是隐形的，总之逻辑上是常规伤害
+function BattleDataProxy.HandleMeteoDamage(self, bullet, candidateList)
+	local meteoDamageRatio = BattleFormulas.GetMeteoDamageRatio(#candidateList)
+
+	for index, candidate in ipairs(candidateList) do
+		self:HandleDamage(bullet, candidate, nil, meteoDamageRatio[index])
 	end
 end
--- TODO
+
 -- DOT等使用，不需要子弹
+-- 如下面的各种ShipMissDamage和AircraftMissDamage也是DirectDamage
 function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect)
 	local srcID
 
@@ -220,30 +230,32 @@ function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damage
 	end
 end
 
-function BattleDataProxy.obituary(arg_10_0, arg_10_1, arg_10_2, arg_10_3)
-	for iter_10_0, iter_10_1 in pairs(arg_10_0._unitList) do
-		if iter_10_1 ~= arg_10_1 then
-			if iter_10_1:GetIFF() == arg_10_1:GetIFF() then
-				if arg_10_2 then
-					iter_10_1:TriggerBuff(BattleConst.BuffEffectType.ON_FRIENDLY_AIRCRAFT_DYING, {
-						unit = arg_10_1,
-						killer = arg_10_3
+-- 亡语，主要是触发各种死亡时的BuffEffect
+function BattleDataProxy.obituary(self, unit, isAircraft, caster)
+	for _, _unit in pairs(self._unitList) do
+		-- 对于每个不是unit本身的单位，都触发相应的BuffEffect
+		if _unit ~= unit then
+			if _unit:GetIFF() == unit:GetIFF() then
+				if isAircraft then
+					_unit:TriggerBuff(BattleConst.BuffEffectType.ON_FRIENDLY_AIRCRAFT_DYING, {
+						unit = unit,
+						killer = caster
 					})
-				elseif not arg_10_1:GetWorldDeathMark() then
-					iter_10_1:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_SHIP_DYING, {
-						unit = arg_10_1,
-						killer = arg_10_3
+				elseif not unit:GetWorldDeathMark() then
+					_unit:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_SHIP_DYING, {
+						unit = unit,
+						killer = caster
 					})
 				end
-			elseif arg_10_2 then
-				iter_10_1:TriggerBuff(BattleConst.BuffEffectType.ON_FOE_AIRCRAFT_DYING, {
-					unit = arg_10_1,
-					killer = arg_10_3
+			elseif isAircraft then
+				_unit:TriggerBuff(BattleConst.BuffEffectType.ON_FOE_AIRCRAFT_DYING, {
+					unit = unit,
+					killer = caster
 				})
 			else
-				iter_10_1:TriggerBuff(BattleConst.BuffEffectType.ON_FOE_DYING, {
-					unit = arg_10_1,
-					killer = arg_10_3
+				_unit:TriggerBuff(BattleConst.BuffEffectType.ON_FOE_DYING, {
+					unit = unit,
+					killer = caster
 				})
 			end
 		end
@@ -262,18 +274,18 @@ function BattleDataProxy.HandleAircraftMissDamage(self, aircraft, fleet)
 	end
 	-- 只包含轻航/正航/导驱M
 	local cloakList = fleet:GetCloakList()
-
+	-- 对全体轻航/正航/导驱M添加暴露值
 	for _, cloakUnit in ipairs(cloakList) do
 		cloakUnit:CloakExpose(self._airExpose)
 	end
 
 	local aircraftPos = aircraft:GetPosition()
 	local nearestUnit = fleet:NearestUnitByType(aircraftPos, ShipType.CloakShipTypeList)
-
+	-- 对离舰载机最近的轻航/正航/导驱M添加额外的暴露值
 	if nearestUnit then
 		nearestUnit:CloakExpose(self._airExposeEX)
 	end
-
+	-- 等概率随机选择一个后排造成伤害
 	local victim = fleet:RandomMainVictim({
 		"immuneDirectHit"
 	})
@@ -287,6 +299,7 @@ function BattleDataProxy.HandleAircraftMissDamage(self, aircraft, fleet)
 end
 
 -- 舰船触底伤害主逻辑(又可细分为潜艇和水面舰船)
+-- 被BattleDataProxy.updateLoop调用
 function BattleDataProxy.HandleShipMissDamage(arg_12_0, arg_12_1, arg_12_2)
 	if arg_12_2 == nil then
 		return
@@ -340,29 +353,34 @@ function BattleDataProxy.HandleCrashDamage(arg_13_0, arg_13_1, arg_13_2)
 	arg_13_0:HandleDirectDamage(arg_13_2, var_13_1, arg_13_1, BattleConst.UnitDeathReason.CRUSH)
 end
 
--- TODO: 触发Buff添加逻辑
-function BattleDataProxy.HandleBuffPlacer(arg_14_0, arg_14_1, arg_14_2)
-	local var_14_0 = BattleDataFunction.GetBuffTemplate(arg_14_0.buff_id).effect_list
-	local var_14_1 = false
-
-	if var_14_0[1].type == "BattleBuffDOT" then
-		if BattleFormulas.CaclulateDOTPlace(arg_14_0.rant, var_14_0[1], arg_14_1, arg_14_2) then
-			var_14_1 = true
+-- 处理子弹附加Buff的触发
+-- 被BattleDataProxy.HandleDamage调用
+-- 注意点是，附加Buff是在伤害结算之后
+-- 所以这颗上Buff的子弹自己吃不到附加Buff的效果
+-- 另外，这是个类静态函数(从调用方式上看)，不依赖于BattleDataProxy实例
+function BattleDataProxy.HandleBuffPlacer(attachBuff, bullet, target)
+	local buffEffectList = BattleDataFunction.GetBuffTemplate(attachBuff.buff_id).effect_list
+	local rantHappened = false
+	-- 所以DOT一定是第一个效果(不然逻辑就有问题了)
+	if buffEffectList[1].type == "BattleBuffDOT" then
+		if BattleFormulas.CaclulateDOTPlace(attachBuff.rant, buffEffectList[1], bullet, target) then
+			rantHappened = true
 		end
-	elseif BattleFormulas.IsHappen(arg_14_0.rant or 10000) then
-		var_14_1 = true
+	elseif BattleFormulas.IsHappen(attachBuff.rant or 10000) then
+		rantHappened = true
 	end
 
-	if var_14_1 then
-		local var_14_2 = arg_14_0.buff_level or arg_14_0.level
-		local var_14_3 = ys.Battle.BattleBuffUnit.New(arg_14_0.buff_id, var_14_2, arg_14_1)
+	if rantHappened then
+		local buffLevel = attachBuff.buff_level or attachBuff.level
+		local buff = ys.Battle.BattleBuffUnit.New(attachBuff.buff_id, buffLevel, bullet)
 
-		var_14_3:SetGroupLevel(arg_14_0.group_level)
-		var_14_3:SetOrb(arg_14_1, arg_14_0.level)
-		arg_14_2:AddBuff(var_14_3)
+		buff:SetGroupLevel(attachBuff.group_level)
+		buff:SetOrb(bullet, attachBuff.level)
+		target:AddBuff(buff)
 	end
 end
 
+-- 这个函数没用过，应该是BattleFormulas.CaclulateDOTPlace的旧版，不管了
 function BattleDataProxy.HandleDOTPlace(arg_15_0, arg_15_1, arg_15_2)
 	local var_15_0 = arg_15_0.arg_list
 	local var_15_1 = BattleConfig.DOT_CONFIG[var_15_0.dotType]
@@ -374,7 +392,10 @@ function BattleDataProxy.HandleDOTPlace(arg_15_0, arg_15_1, arg_15_2)
 
 	return false
 end
+
 -- TODO
+-- 处理舰船碰撞的伤害分配
+-- 被BattleCldSystem.HandlePlayerShipCld调用
 function BattleDataProxy.HandleShipCrashDamageList(arg_16_0, arg_16_1, arg_16_2)
 	local var_16_0 = arg_16_1:GetHostileCldList()
 

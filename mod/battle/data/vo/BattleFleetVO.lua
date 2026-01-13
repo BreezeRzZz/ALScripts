@@ -851,6 +851,7 @@ function BattleFleetVO.CancelChargeWeapon(arg_79_0)
 	end
 end
 
+-- 释放跨射武器逻辑
 function BattleFleetVO.UnleashChrageWeapon(arg_80_0)
 	if arg_80_0:GetWeaponBlock() then
 		arg_80_0:CancelChargeWeapon()

@@ -1,342 +1,383 @@
 ys = ys or {}
 -- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = var_0_0.Battle.BattleVariable
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = class("BattleAircraftUnit")
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAircraftUnit = class("BattleAircraftUnit")
 
-var_0_0.Battle.BattleAircraftUnit = var_0_6
-var_0_6.__name = "BattleAircraftUnit"
-var_0_6.STATE_CREATE = "Create"
-var_0_6.STATE_ATTACK = "Attack"
-var_0_6.STATE_DESTORY = "Destory"
-var_0_6.HEIGHT = var_0_3.AircraftHeight + 5
+ys.Battle.BattleAircraftUnit = BattleAircraftUnit
+BattleAircraftUnit.__name = "BattleAircraftUnit"
+BattleAircraftUnit.STATE_CREATE = "Create"
+BattleAircraftUnit.STATE_ATTACK = "Attack"
+BattleAircraftUnit.STATE_DESTORY = "Destory"
+-- BattleConfig.AircraftHeight = 10
+BattleAircraftUnit.HEIGHT = BattleConfig.AircraftHeight + 5
 
-function var_0_6.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+function BattleAircraftUnit.Ctor(self, UID)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0._uniqueID = arg_1_1
-	arg_1_0._speedExemptKey = "air_" .. arg_1_1
-	arg_1_0._dir = var_0_0.Battle.BattleConst.UnitDir.RIGHT
-	arg_1_0._type = var_0_2.UnitType.AIRCRAFT_UNIT
-	arg_1_0._currentState = arg_1_0.STATE_CREATE
-	arg_1_0._distanceBackup = {}
-	arg_1_0._battleProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
-	arg_1_0._frame = 0
-	arg_1_0._weaponPotential = 1
+	self._uniqueID = UID
+	self._speedExemptKey = "air_" .. UID
+	self._dir = ys.Battle.BattleConst.UnitDir.RIGHT
+	self._type = BattleConst.UnitType.AIRCRAFT_UNIT
+	self._currentState = self.STATE_CREATE
+	self._distanceBackup = {}
+	self._battleProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._frame = 0
+	self._weaponPotential = 1
 
-	arg_1_0:Init()
+	self:Init()
 end
 
-function var_0_6.SetBound(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._top = arg_2_1
-	arg_2_0._bottom = arg_2_2
+-- 被BattleDataProxy.doCreateAirUnit调用
+function BattleAircraftUnit.SetBound(self, top, bottom)
+	-- 从上层调用来看，一般top和bottom分别对应playerArea的上边界和下边界
+	-- 绝大多数图都是：top = 88, bottom = 20
+	self._top = top
+	self._bottom = bottom
 
-	if arg_2_0._tmpData.spawn_brownian == -1 then
-		arg_2_0._speedZ = 0
+	-- 是否有布朗运动
+	if self._tmpData.spawn_brownian == -1 then
+		self._speedZ = 0
 	else
-		arg_2_0._speedZ = (math.random() - 0.5) * 0.5
+		-- 范围是 -0.25 到 0.25
+		self._speedZ = (math.random() - 0.5) * 0.5
+	end
+	-- 设置目标Z轴位置
+	self:SetTargetZ()
+end
+
+-- 被BattleDataProxy.doCreateAirUnit调用
+function BattleAircraftUnit.SetViewBoundData(self, cameraTop, cameraBottom, cameraLeft, cameraRight)
+	self._cameraTop = cameraTop + 3
+	self._cameraBottom = cameraBottom - 23
+	self._cameraLeft = cameraLeft - 3
+	self._cameraRight = cameraRight + 10
+end
+
+-- Aircraft的Update函数: 主要就是更新位置、更新速度和更新武器
+function BattleAircraftUnit.Update(self, timeStamp)
+	self._pos:Add(self._speed)
+	self:UpdateSpeed()
+	self:UpdateWeapon()
+end
+
+-- BattleAircraftCharacter.AddModel调用
+function BattleAircraftUnit.ActiveCldBox(self)
+	self._cldComponent:SetActive(true)
+end
+
+-- BattleCldSystem.DeleteAircraftCld调用
+function BattleAircraftUnit.DeactiveCldBox(self)
+	self._cldComponent:SetActive(false)
+end
+
+-- BattleBuffDeactiveCLDBox.onAttach/onRemove调用
+function BattleAircraftUnit.SetCldBoxImmune(self, isImmune)
+	self._cldComponent:SetImmuneCLD(isImmune)
+end
+
+-- 被BattleAircraftUnit.Ctor调用
+function BattleAircraftUnit.Init(self)
+	self._aliveState = true
+	self._speed = Vector3.zero
+	self._pos = Vector3.zero
+	self._undefeated = false
+	self._labelTagList = {}
+end
+
+function BattleAircraftUnit.Clear(self)
+	if self._createTimer then
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._createTimer)
+
+		self._createTimer = nil
 	end
 
-	arg_2_0:SetTargetZ()
+	self:ShutdownWeapon()
+
+	self._distanceBackup = {}
 end
 
-function var_0_6.SetViewBoundData(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4)
-	arg_3_0._cameraTop = arg_3_1 + 3
-	arg_3_0._cameraBottom = arg_3_2 - 23
-	arg_3_0._cameraLeft = arg_3_3 - 3
-	arg_3_0._cameraRight = arg_3_4 + 10
-end
-
-function var_0_6.Update(arg_4_0, arg_4_1)
-	arg_4_0._pos:Add(arg_4_0._speed)
-	arg_4_0:UpdateSpeed()
-	arg_4_0:UpdateWeapon()
-end
-
-function var_0_6.ActiveCldBox(arg_5_0)
-	arg_5_0._cldComponent:SetActive(true)
-end
-
-function var_0_6.DeactiveCldBox(arg_6_0)
-	arg_6_0._cldComponent:SetActive(false)
-end
-
-function var_0_6.SetCldBoxImmune(arg_7_0, arg_7_1)
-	arg_7_0._cldComponent:SetImmuneCLD(arg_7_1)
-end
-
-function var_0_6.Init(arg_8_0)
-	arg_8_0._aliveState = true
-	arg_8_0._speed = Vector3.zero
-	arg_8_0._pos = Vector3.zero
-	arg_8_0._undefeated = false
-	arg_8_0._labelTagList = {}
-end
-
-function var_0_6.Clear(arg_9_0)
-	if arg_9_0._createTimer then
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_9_0._createTimer)
-
-		arg_9_0._createTimer = nil
-	end
-
-	arg_9_0:ShutdownWeapon()
-
-	arg_9_0._distanceBackup = {}
-end
-
-function var_0_6.SetWeaponPreCastBound(arg_10_0)
+function BattleAircraftUnit.SetWeaponPreCastBound(self)
 	return
 end
 
-function var_0_6.EnterGCD(arg_11_0)
+function BattleAircraftUnit.EnterGCD(self)
 	return
 end
 
-function var_0_6.CreateWeapon(arg_12_0)
+-- 被BattleAircraftUnit.SetTemplate调用
+function BattleAircraftUnit.CreateWeapon(self)
 	local var_12_0 = {}
 
-	for iter_12_0, iter_12_1 in ipairs(arg_12_0._tmpData.weapon_ID) do
-		var_12_0[iter_12_0] = var_0_0.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(iter_12_1, arg_12_0, iter_12_0, arg_12_0._weaponPotential)
+	for iter_12_0, iter_12_1 in ipairs(self._tmpData.weapon_ID) do
+		var_12_0[iter_12_0] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(iter_12_1, self, iter_12_0, self._weaponPotential)
 	end
 
 	return var_12_0
 end
 
-function var_0_6.ShutdownWeapon(arg_13_0)
-	for iter_13_0, iter_13_1 in ipairs(arg_13_0:GetWeapon()) do
-		iter_13_1:Clear()
+function BattleAircraftUnit.ShutdownWeapon(self)
+	for _, weapon in ipairs(self:GetWeapon()) do
+		weapon:Clear()
 	end
 end
 
-function var_0_6.UpdateWeapon(arg_14_0)
-	if arg_14_0._currentState == arg_14_0.STATE_ATTACK then
-		for iter_14_0, iter_14_1 in ipairs(arg_14_0:GetWeapon()) do
-			iter_14_1:Update()
+function BattleAircraftUnit.UpdateWeapon(self)
+	if self._currentState == self.STATE_ATTACK then
+		for _, weapon in ipairs(self:GetWeapon()) do
+			weapon:Update()
 		end
 	end
 end
 
-function var_0_6.SetStrikePoint(arg_15_0, arg_15_1)
-	arg_15_0._strikePoint = arg_15_1
+-- BattleHiveUnit.SpawnAircraft或BattlePointAirStrikeUnit.DoAttack调用
+function BattleAircraftUnit.SetStrikePoint(self, strikePoint)
+	self._strikePoint = strikePoint
 
-	arg_15_0:SetPosition(Vector3(arg_15_0._pos.x, arg_15_0._pos.y, arg_15_1.z))
+	self:SetPosition(Vector3(self._pos.x, self._pos.y, strikePoint.z))
 end
 
-function var_0_6.GetStrikePoint(arg_16_0)
-	return arg_16_0._strikePoint
+function BattleAircraftUnit.GetStrikePoint(self)
+	return self._strikePoint
 end
 
-function var_0_6.GetWeapon(arg_17_0)
-	return arg_17_0._weapon
+function BattleAircraftUnit.GetWeapon(self)
+	return self._weapon
 end
 
-function var_0_6.GetCurrentHP(arg_18_0)
-	return arg_18_0._currentHP
+function BattleAircraftUnit.GetCurrentHP(self)
+	return self._currentHP
 end
 
-function var_0_6.GetMaxHP(arg_19_0)
-	return var_0_0.Battle.BattleAttr.GetCurrent(arg_19_0, "maxHP")
+function BattleAircraftUnit.GetMaxHP(self)
+	return ys.Battle.BattleAttr.GetCurrent(self, "maxHP")
 end
 
-function var_0_6.IsUndefeated(arg_20_0)
-	return arg_20_0._undefeated
+function BattleAircraftUnit.IsUndefeated(self)
+	return self._undefeated
 end
 
-function var_0_6.IsAlive(arg_21_0)
-	return arg_21_0._aliveState
+function BattleAircraftUnit.IsAlive(self)
+	return self._aliveState
 end
 
-function var_0_6.IsCease(arg_22_0)
+function BattleAircraftUnit.IsCease(self)
 	return false
 end
 
-function var_0_6.GetOxyState(arg_23_0)
+function BattleAircraftUnit.GetOxyState(self)
 	return nil
 end
 
-function var_0_6.IsBoss(arg_24_0)
+function BattleAircraftUnit.IsBoss(self)
 	return nil
 end
 
-function var_0_6.HandleDamageToDeath(arg_25_0)
-	arg_25_0:UpdateHP(-arg_25_0._currentHP, {
+function BattleAircraftUnit.HandleDamageToDeath(self)
+	self:UpdateHP(-self._currentHP, {
 		isMiss = false,
 		isCri = false,
 		isHeal = false
 	})
 end
 
-function var_0_6.UpdateHP(arg_26_0, arg_26_1, arg_26_2)
-	local var_26_0 = arg_26_2.isMiss
-	local var_26_1 = arg_26_2.isCri
-	local var_26_2 = arg_26_2.isHeal
+-- 舰载机的耐久更新主逻辑
+-- 相比BattleUnit.UpdateHP，简单非常多
+function BattleAircraftUnit.UpdateHP(self, dHP, extraInfo)
+	local isMiss = extraInfo.isMiss
+	local isCri = extraInfo.isCri
+	local isHeal = extraInfo.isHeal
 
-	arg_26_0._currentHP = arg_26_0._currentHP + arg_26_1
+	self._currentHP = self._currentHP + dHP
 
-	local var_26_3 = arg_26_0:GetMaxHP()
+	local maxHP = self:GetMaxHP()
 
-	if var_26_3 < arg_26_0._currentHP then
-		arg_26_0._currentHP = var_26_3
+	if maxHP < self._currentHP then
+		self._currentHP = maxHP
 	end
 
-	if arg_26_0._currentHP < 0 then
-		arg_26_0._currentHP = 0
+	if self._currentHP < 0 then
+		self._currentHP = 0
 	end
 
-	local var_26_4 = {
-		dHP = arg_26_1,
-		isMiss = var_26_0,
-		isCri = var_26_1,
-		isHeal = var_26_2
+	local updateAircraftHPArgs = {
+		dHP = dHP,
+		isMiss = isMiss,
+		isCri = isCri,
+		isHeal = isHeal
 	}
 
-	arg_26_0:DispatchEvent(var_0_0.Event.New(var_0_1.UPDATE_AIR_CRAFT_HP, var_26_4))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_AIR_CRAFT_HP, updateAircraftHPArgs))
 
-	if arg_26_0._currentHP <= 0 and arg_26_0:IsAlive() then
-		arg_26_0:onDead()
+	if self._currentHP <= 0 and self:IsAlive() then
+		self:onDead()
 	end
 
-	return arg_26_1
+	return dHP
 end
 
-function var_0_6.onDead(arg_27_0)
-	arg_27_0._currentState = arg_27_0.STATE_DESTORY
-	arg_27_0._aliveState = false
+function BattleAircraftUnit.onDead(self)
+	self._currentState = self.STATE_DESTORY
+	self._aliveState = false
 end
 
-function var_0_6.UpdateSpeed(arg_28_0)
-	local var_28_0 = arg_28_0._speedDir
-	local var_28_1 = arg_28_0._velocity * arg_28_0:GetSpeedRatio()
+-- 舰载机速度计算
+function BattleAircraftUnit.UpdateSpeed(self)
+	-- 从AddCreateTimer来看，初始速度是只在X轴方向的
+	local speedDir = self._speedDir
+	local speed = self._velocity * self:GetSpeedRatio()
 
-	arg_28_0._speed:Copy(var_28_0)
-	arg_28_0._speed:Mul(var_28_1)
+	self._speed:Copy(speedDir)
+	self._speed:Mul(speed)
 
-	local var_28_2 = arg_28_0:GetPosition()
-
-	if var_28_2.y < var_0_6.HEIGHT then
-		arg_28_0._speed.y = math.max(0.4, 1 - var_28_2.y / var_0_3.AircraftHeight)
+	local position = self:GetPosition()
+	-- y < 10时，速度会受到影响，y越小，速度越慢
+	-- (但y轴本来也没啥用，只是动画效果而已)
+	if position.y < BattleAircraftUnit.HEIGHT then
+		self._speed.y = math.max(0.4, 1 - position.y / BattleConfig.AircraftHeight)
 	end
-
-	arg_28_0._speed.z = var_28_1 * arg_28_0._speedZ
-
-	if arg_28_0._tmpData.spawn_brownian == 1 then
-		local var_28_3 = arg_28_0._targetZ - var_28_2.z
-
-		if var_28_1 < var_28_3 then
-			arg_28_0._speed.z = var_28_1 * 0.5
-		elseif var_28_3 < -var_28_1 then
-			arg_28_0._speed.z = -var_28_1 * 0.5
+	-- 从上面可知，_speedZ 在 -0.25 到 0.25 之间变化
+	-- 这实际就是下面触发SetTargetZ时的Z轴速度（没有被覆盖)
+	self._speed.z = speed * self._speedZ
+	-- 如果设定了随机运动, 则根据目标Z轴位置调整Z轴速度
+	if self._tmpData.spawn_brownian == 1 then
+		local dz = self._targetZ - position.z
+		if speed < dz then
+			self._speed.z = speed * 0.5
+		elseif dz < -speed then
+			self._speed.z = -speed * 0.5
 		else
-			arg_28_0:SetTargetZ()
+			-- 当dz在-speed到speed之间时，说明已经接近目标位置了
+			-- 设定一次新的目标Z轴位置
+			self:SetTargetZ()
 		end
 	end
 end
 
-function var_0_6.OutBound(arg_29_0)
-	arg_29_0._undefeated = true
+function BattleAircraftUnit.OutBound(self)
+	self._undefeated = true
 
-	arg_29_0:onDead()
+	self:onDead()
 end
 
-function var_0_6.GetSize(arg_30_0)
-	if arg_30_0._currentState == arg_30_0.STATE_CREATE then
-		return Mathf.Clamp(arg_30_0:GetPosition().y / var_0_6.HEIGHT, 0.1, arg_30_0._scale)
+function BattleAircraftUnit.GetSize(self)
+	-- 创建状态下，随着Y轴位置的上升，大小逐渐变大
+	-- 是与y轴位置成正比的，当y轴位置达到HEIGHT时，大小为_scale
+	-- 最小为0.1倍
+	-- (但不影响任何碰撞箱大小和相关判定，仅是视觉效果)
+	if self._currentState == self.STATE_CREATE then
+		return Mathf.Clamp(self:GetPosition().y / BattleAircraftUnit.HEIGHT, 0.1, self._scale)
 	else
-		return arg_30_0._scale
+		return self._scale
 	end
 end
 
-function var_0_6.SetTemplate(arg_31_0, arg_31_1)
-	arg_31_0._tmpData = arg_31_1
+-- 被BattleDataFunction.CreateAircraftUnit调用
+function BattleAircraftUnit.SetTemplate(self, tmpData)
+	self._tmpData = tmpData
 
-	arg_31_0:InitCldComponent()
-	var_0_0.Battle.BattleAttr.SetAircraftAttFromTemp(arg_31_0)
+	self:InitCldComponent()
+	-- 从模板设置属性，只涉及部分属性(如耐久、速度、crashDMG等)
+	ys.Battle.BattleAttr.SetAircraftAttFromTemp(self)
 
-	arg_31_0._currentHP = arg_31_0:GetMaxHP()
-	arg_31_0._weapon = arg_31_0:CreateWeapon()
-	arg_31_0._modelID = arg_31_1.model_ID
+	self._currentHP = self:GetMaxHP()
+	self._weapon = self:CreateWeapon()
+	self._modelID = tmpData.model_ID
 
-	local var_31_0 = arg_31_1.speed + arg_31_0:GetAttrByName("aircraftBooster")
+	local speed = tmpData.speed + self:GetAttrByName("aircraftBooster")
 
-	arg_31_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(var_31_0)
-	arg_31_0._scale = arg_31_1.scale or 1
+	self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(speed)
+	self._scale = tmpData.scale or 1
 end
 
-function var_0_6.SetWeanponPotential(arg_32_0, arg_32_1)
-	arg_32_0._weaponPotential = arg_32_1
+-- 被BattleDataFunction.CreateAircraftUnit调用
+function BattleAircraftUnit.SetWeanponPotential(self, weaponPotential)
+	self._weaponPotential = weaponPotential
 end
 
-function var_0_6.SetTargetZ(arg_33_0)
-	local var_33_0 = arg_33_0._bottom
-	local var_33_1 = arg_33_0._top
-
-	arg_33_0._targetZ = (var_33_0 + var_33_1) * 0.5 + (var_33_1 - var_33_0) * (math.random() - 0.5) * 0.6
+-- BattleAircraftUnit.SetBound和BattleAircraftUnit.UpdateSpeed调用
+function BattleAircraftUnit.SetTargetZ(self)
+	-- 上面说到，top一般是88，bottom一般是20
+	local bottom = self._bottom
+	local top = self._top
+	-- 以中线为基准，+-0.3范围内随机
+	-- 那么中线是54, +-20.4的范围，也就是33.6到74.4之间
+	-- 所以，舰载机的Z轴范围只会在33.6到74.4之间波动, 十分影响武器的投放
+	self._targetZ = (bottom + top) * 0.5 + (top - bottom) * (math.random() - 0.5) * 0.6
 end
 
-function var_0_6.SetMotherUnit(arg_34_0, arg_34_1)
-	arg_34_0._motherUnit = arg_34_1
+-- 被BattleDataFunction.CreateAircraftUnit调用
+-- 一般来讲，mother是创建该舰载机的BattleHiveUnit/BattleSupportHiveUnit
+-- 而(Support)HiveUnit又是由BattleUnit创建的一种WeaponUnit
+-- 这里的mother实际上是WeaponUnit的宿主单位(即BattleUnit),因为BattleHiveUnit.SpawnAircraft传入的是其host作为mother参数
+function BattleAircraftUnit.SetMotherUnit(self, mother)
+	self._motherUnit = mother
 
-	local var_34_0 = arg_34_0._motherUnit:GetIFF()
+	local IFF = self._motherUnit:GetIFF()
 
-	arg_34_0:SetIFF(var_34_0)
-	arg_34_0:SetAttr(arg_34_1)
-
-	local var_34_1 = arg_34_0._motherUnit:GetWeaponBoundBone()
+	self:SetIFF(IFF)
+	-- 舰载机的SetAttr有重载
+	-- 一般情况下，SetAttr是设置了一个元表来"引用"母单位的属性(例如，子弹引用武器宿主的属性)
+	-- 但舰载机的SetAttr则是直接从母单位复制属性(是真正创建了一份新的属性表，不是引用)
+	-- 因此体现出"快照"的效果(两者从创建的时间点开始属性就不再联动)
+	self:SetAttr(mother)
+	-- 从motherUnit获取bound_bone
+	local motherWeaponBoundBone = self._motherUnit:GetWeaponBoundBone()
 	-- remote bound的用处：会让飞机生成位置相对于母舰位置有一个偏移
-	if var_34_1.remote then
-		local var_34_2 = var_34_1.remote
-		local var_34_3 = Vector3(var_34_2[1], var_34_2[2], var_34_2[3])
+	if motherWeaponBoundBone.remote then
+		local remote = motherWeaponBoundBone.remote
+		local remoteVector = Vector3(remote[1], remote[2], remote[3])
 
-		var_34_3.x = var_34_3.x * var_34_0
+		remoteVector.x = remoteVector.x * IFF
 
-		local var_34_4 = arg_34_0._battleProxy:GetStageInfo().mainUnitPosition
-		local var_34_5
-
-		if var_34_4 and var_34_4[var_34_0] then
-			var_34_5 = var_34_4[var_34_0][1]
+		local mainUnitPosition = self._battleProxy:GetStageInfo().mainUnitPosition
+		local flagShipPos
+		-- 用到remote，则总是基于旗舰位置来计算飞机位置
+		if mainUnitPosition and mainUnitPosition[IFF] then
+			flagShipPos = mainUnitPosition[IFF][1]
 		else
-			var_34_5 = var_0_3.MAIN_UNIT_POS[var_34_0][1]
+			flagShipPos = BattleConfig.MAIN_UNIT_POS[IFF][1]
 		end
 
-		local var_34_6 = var_34_5 + var_34_3
+		local spawnPos = flagShipPos + remoteVector
 
-		arg_34_0:SetPosition(var_34_6)
+		self:SetPosition(spawnPos)
 	else
-		arg_34_0:SetPosition(arg_34_0._motherUnit:GetPosition())
+		-- 否则，直接就是母单位位置
+		self:SetPosition(self._motherUnit:GetPosition())
 	end
 
-	if arg_34_1:GetIFF() == var_0_3.FRIENDLY_CODE then
-		arg_34_0._dir = var_0_2.UnitDir.RIGHT
-		arg_34_0._isPlayerAircraft = true
+	if mother:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self._dir = BattleConst.UnitDir.RIGHT
+		self._isPlayerAircraft = true
 	else
-		arg_34_0._dir = var_0_2.UnitDir.LEFT
+		self._dir = BattleConst.UnitDir.LEFT
 	end
 end
 
-function var_0_6.GetLabelTag(arg_35_0)
-	return arg_35_0._labelTagList
+function BattleAircraftUnit.GetLabelTag(self)
+	return self._labelTagList
 end
 
-function var_0_6.AddLabelTag(arg_36_0, arg_36_1)
-	table.insert(arg_36_0._labelTagList, arg_36_1)
+function BattleAircraftUnit.AddLabelTag(self, labelTag)
+	table.insert(self._labelTagList, labelTag)
 
-	local var_36_0 = arg_36_0:GetAttrByName("labelTag")
+	local labelTagList = self:GetAttrByName("labelTag")
 
-	var_36_0[arg_36_1] = (var_36_0[arg_36_1] or 0) + 1
+	labelTagList[labelTag] = (labelTagList[labelTag] or 0) + 1
 end
 
-function var_0_6.ContainsLabelTag(arg_37_0, arg_37_1)
-	if arg_37_0._labelTagList == nil then
+function BattleAircraftUnit.ContainsLabelTag(self, labelTags)
+	if self._labelTagList == nil then
 		return false
 	end
 
-	for iter_37_0, iter_37_1 in ipairs(arg_37_1) do
-		if table.contains(arg_37_0._labelTagList, iter_37_1) then
+	for _, labelTag in ipairs(labelTags) do
+		if table.contains(self._labelTagList, labelTag) then
 			return true
 		end
 	end
@@ -344,282 +385,294 @@ function var_0_6.ContainsLabelTag(arg_37_0, arg_37_1)
 	return false
 end
 
-function var_0_6.SetIFF(arg_38_0, arg_38_1)
-	arg_38_0._IFF = arg_38_1
+function BattleAircraftUnit.SetIFF(self, IFF)
+	self._IFF = IFF
 end
 
-function var_0_6.SetPosition(arg_39_0, arg_39_1)
-	arg_39_0._pos:Set(arg_39_1.x, arg_39_1.y, arg_39_1.z)
+function BattleAircraftUnit.SetPosition(self, pos)
+	self._pos:Set(pos.x, pos.y, pos.z)
 end
 
-function var_0_6.IsOutViewBound(arg_40_0)
-	local var_40_0 = arg_40_0:GetPosition()
-	local var_40_1 = var_40_0.x
-	local var_40_2 = var_40_0.z
+-- 视界范围限制
+function BattleAircraftUnit.IsOutViewBound(self)
+	local pos = self:GetPosition()
+	local x = pos.x
+	local z = pos.z
 
-	if var_40_1 > arg_40_0._cameraRight or var_40_2 > arg_40_0._cameraTop or var_40_2 < arg_40_0._cameraBottom then
+	if x > self._cameraRight or z > self._cameraTop or z < self._cameraBottom then
 		return true
 	end
 end
 
-function var_0_6.GetDistance(arg_41_0, arg_41_1)
-	local var_41_0 = arg_41_0._battleProxy.FrameIndex
+function BattleAircraftUnit.GetDistance(self, otherUnit)
+	local frameIndex = self._battleProxy.FrameIndex
 
-	if arg_41_0._frame ~= var_41_0 then
-		arg_41_0._distanceBackup = {}
-		arg_41_0._frame = var_41_0
+	if self._frame ~= frameIndex then
+		self._distanceBackup = {}
+		self._frame = frameIndex
+	end
+	-- 先从缓存中取距离，没有的话就计算并缓存
+	local distance = self._distanceBackup[otherUnit]
+
+	if distance == nil then
+		distance = Vector3.Distance(pg.Tool.FilterY(self:GetPosition()), pg.Tool.FilterY(otherUnit:GetPosition()))
+		self._distanceBackup[otherUnit] = distance
+
+		otherUnit:backupDistance(self, distance)
 	end
 
-	local var_41_1 = arg_41_0._distanceBackup[arg_41_1]
+	return distance
+end
 
-	if var_41_1 == nil then
-		var_41_1 = Vector3.Distance(pg.Tool.FilterY(arg_41_0:GetPosition()), pg.Tool.FilterY(arg_41_1:GetPosition()))
-		arg_41_0._distanceBackup[arg_41_1] = var_41_1
+-- 到本单位的距离缓存
+function BattleAircraftUnit.backupDistance(self, unit, distance)
+	local frameIndex = self._battleProxy.FrameIndex
 
-		arg_41_1:backupDistance(arg_41_0, var_41_1)
+	if self._frame ~= frameIndex then
+		self._distanceBackup = {}
+		self._frame = frameIndex
 	end
 
-	return var_41_1
+	self._distanceBackup[unit] = distance
 end
 
-function var_0_6.backupDistance(arg_42_0, arg_42_1, arg_42_2)
-	local var_42_0 = arg_42_0._battleProxy.FrameIndex
-
-	if arg_42_0._frame ~= var_42_0 then
-		arg_42_0._distanceBackup = {}
-		arg_42_0._frame = var_42_0
-	end
-
-	arg_42_0._distanceBackup[arg_42_1] = arg_42_2
+function BattleAircraftUnit.GetSkinID(self)
+	return self._modelID
 end
 
-function var_0_6.GetSkinID(arg_43_0)
-	return arg_43_0._modelID
-end
+function BattleAircraftUnit.SetSkinID(self, skinID)
+	self._skinID = skinID
+	self._modelID = BattleDataFunction.GetEquipSkin(self._skinID)
 
-function var_0_6.SetSkinID(arg_44_0, arg_44_1)
-	arg_44_0._skinID = arg_44_1
-	arg_44_0._modelID = var_0_5.GetEquipSkin(arg_44_0._skinID)
-
-	for iter_44_0, iter_44_1 in ipairs(arg_44_0._weapon) do
-		iter_44_1:SetDerivateSkin(arg_44_1)
+	for _, weapon in ipairs(self._weapon) do
+		weapon:SetDerivateSkin(skinID)
 	end
 end
 
-function var_0_6.SetSkinData(arg_45_0, arg_45_1)
+function BattleAircraftUnit.SetSkinData(self, skinData)
 	return
 end
 
-function var_0_6.SetAttr(arg_46_0, arg_46_1)
-	var_0_0.Battle.BattleAttr.SetAircraftAttFromMother(arg_46_0, arg_46_1)
+-- 注意舰载机的属性重载
+function BattleAircraftUnit.SetAttr(self, mother)
+	ys.Battle.BattleAttr.SetAircraftAttFromMother(self, mother)
 end
 
-function var_0_6.GetAttr(arg_47_0)
-	return var_0_0.Battle.BattleAttr.GetAttr(arg_47_0)
+function BattleAircraftUnit.GetAttr(self)
+	return ys.Battle.BattleAttr.GetAttr(self)
 end
 
-function var_0_6.GetAttrByName(arg_48_0, arg_48_1)
-	return var_0_0.Battle.BattleAttr.GetCurrent(arg_48_0, arg_48_1)
+function BattleAircraftUnit.GetAttrByName(self, attrType)
+	return ys.Battle.BattleAttr.GetCurrent(self, attrType)
 end
 
-function var_0_6.GetMotherUnit(arg_49_0)
-	return arg_49_0._motherUnit
+function BattleAircraftUnit.GetMotherUnit(self)
+	return self._motherUnit
 end
 
-function var_0_6.GetUniqueID(arg_50_0)
-	return arg_50_0._uniqueID
+function BattleAircraftUnit.GetUniqueID(self)
+	return self._uniqueID
 end
 
-function var_0_6.GetIFF(arg_51_0)
-	return arg_51_0._IFF
+function BattleAircraftUnit.GetIFF(self)
+	return self._IFF
 end
 
-function var_0_6.GetCurrentState(arg_52_0)
-	return arg_52_0._currentState
+function BattleAircraftUnit.GetCurrentState(self)
+	return self._currentState
 end
 
-function var_0_6.GetVelocity(arg_53_0)
-	return arg_53_0._velocity
+function BattleAircraftUnit.GetVelocity(self)
+	return self._velocity
 end
 
-function var_0_6.GetSpeed(arg_54_0)
-	return arg_54_0._speed
+function BattleAircraftUnit.GetSpeed(self)
+	return self._speed
 end
 
-function var_0_6.GetPosition(arg_55_0)
-	return arg_55_0._pos
+function BattleAircraftUnit.GetPosition(self)
+	return self._pos
 end
 
-function var_0_6.GetBornPosition(arg_56_0)
+function BattleAircraftUnit.GetBornPosition(self)
 	return nil
 end
 
-function var_0_6.GetCLDZCenterPosition(arg_57_0)
-	local var_57_0 = arg_57_0:GetBoxSize()
+function BattleAircraftUnit.GetCLDZCenterPosition(self)
+	local boxSize = self:GetBoxSize()
 
-	return Vector3(arg_57_0._pos.x, arg_57_0._pos.y, arg_57_0._pos.z + var_57_0.z)
+	return Vector3(self._pos.x, self._pos.y, self._pos.z + boxSize.z)
 end
 
-function var_0_6.GetBeenAimedPosition(arg_58_0)
-	local var_58_0 = arg_58_0:GetTemplate().aim_offset
-	local var_58_1 = arg_58_0:GetCLDZCenterPosition()
+-- 被瞄准点加上aim_offset
+function BattleAircraftUnit.GetBeenAimedPosition(self)
+	local aim_offset = self:GetTemplate().aim_offset
+	local centerPosition = self:GetCLDZCenterPosition()
 
-	if not var_58_0 then
-		return var_58_1
+	if not aim_offset then
+		return centerPosition
 	end
 
-	return Vector3(var_58_1.x + var_58_0[1], var_58_1.y + var_58_0[2], var_58_1.z + var_58_0[3])
+	return Vector3(centerPosition.x + aim_offset[1], centerPosition.y + aim_offset[2], centerPosition.z + aim_offset[3])
 end
 
-function var_0_6.GetDirection(arg_59_0)
-	return arg_59_0._dir
+function BattleAircraftUnit.GetDirection(self)
+	return self._dir
 end
 
-function var_0_6.GetTemplate(arg_60_0)
-	return arg_60_0._tmpData
+function BattleAircraftUnit.GetTemplate(self)
+	return self._tmpData
 end
 
-function var_0_6.GetTemplateID(arg_61_0)
-	return arg_61_0._tmpData.id
+function BattleAircraftUnit.GetTemplateID(self)
+	return self._tmpData.id
 end
 
-function var_0_6.GetUnitType(arg_62_0)
-	return arg_62_0._type
+function BattleAircraftUnit.GetUnitType(self)
+	return self._type
 end
 
-function var_0_6.GetHPRate(arg_63_0)
-	return arg_63_0._currentHP / arg_63_0:GetMaxHP()
+function BattleAircraftUnit.GetHPRate(self)
+	return self._currentHP / self:GetMaxHP()
 end
 
-function var_0_6.GetBoxSize(arg_64_0)
-	return arg_64_0._cldComponent:GetCldBoxSize()
+function BattleAircraftUnit.GetBoxSize(self)
+	return self._cldComponent:GetCldBoxSize()
 end
 
-function var_0_6.GetSpeedRatio(arg_65_0)
-	return var_0_4.GetSpeedRatio(arg_65_0:GetSpeedExemptKey(), arg_65_0._IFF)
+function BattleAircraftUnit.GetSpeedRatio(self)
+	return BattleVariable.GetSpeedRatio(self:GetSpeedExemptKey(), self._IFF)
 end
 
-function var_0_6.GetSpeedExemptKey(arg_66_0)
-	return arg_66_0._speedExemptKey
+-- speedExemptKey的格式统一为类型+UID
+-- 例如aircraft的就是"air_"..UID
+function BattleAircraftUnit.GetSpeedExemptKey(self)
+	return self._speedExemptKey
 end
 
-function var_0_6.IsPlayerAircraft(arg_67_0)
-	return arg_67_0._isPlayerAircraft
+function BattleAircraftUnit.IsPlayerAircraft(self)
+	return self._isPlayerAircraft
 end
 
-function var_0_6.IsShowHPBar(arg_68_0)
+function BattleAircraftUnit.IsShowHPBar(self)
 	return false
 end
 
-function var_0_6.SetUnVisitable(arg_69_0)
-	var_0_0.Battle.BattleAttr.UnVisitable(arg_69_0)
+function BattleAircraftUnit.SetUnVisitable(self)
+	ys.Battle.BattleAttr.UnVisitable(self)
 end
 
-function var_0_6.SetVisitable(arg_70_0)
-	var_0_0.Battle.BattleAttr.Visitable(arg_70_0)
+function BattleAircraftUnit.SetVisitable(self)
+	ys.Battle.BattleAttr.Visitable(self)
 end
 
-function var_0_6.IsVisitable(arg_71_0)
-	return var_0_0.Battle.BattleAttr.IsVisitable(arg_71_0)
+function BattleAircraftUnit.IsVisitable(self)
+	return ys.Battle.BattleAttr.IsVisitable(self)
 end
 
-function var_0_6.OverrideDeadFX(arg_72_0, arg_72_1)
-	arg_72_0._deadFX = arg_72_1
+function BattleAircraftUnit.OverrideDeadFX(self, deadFX)
+	self._deadFX = deadFX
 end
 
-function var_0_6.GetDeadFX(arg_73_0)
-	return arg_73_0._deadFX
+function BattleAircraftUnit.GetDeadFX(self)
+	return self._deadFX
 end
 
-var_0_6.AIRCRAFT_TRIGGER = {
-	var_0_0.Battle.BattleConst.BuffEffectType.ON_BULLET_COLLIDE_BEFORE,
-	var_0_0.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG,
-	var_0_0.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_BANG
+BattleAircraftUnit.AIRCRAFT_TRIGGER = {
+	ys.Battle.BattleConst.BuffEffectType.ON_BULLET_COLLIDE_BEFORE,
+	ys.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG,
+	ys.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_BANG
 }
 
-function var_0_6.TriggerBuff(arg_74_0, arg_74_1, arg_74_2)
-	if table.contains(var_0_6.AIRCRAFT_TRIGGER, arg_74_1) and arg_74_0._motherUnit and arg_74_0._motherUnit:IsAlive() then
-		arg_74_0._motherUnit:TriggerBuff(arg_74_1, arg_74_2)
+-- 舰载机单位的Buff触发
+-- 会传递到motherUnit触发
+function BattleAircraftUnit.TriggerBuff(self, effectType, args)
+	if table.contains(BattleAircraftUnit.AIRCRAFT_TRIGGER, effectType) and self._motherUnit and self._motherUnit:IsAlive() then
+		self._motherUnit:TriggerBuff(effectType, args)
 	end
 end
 
-function var_0_6.AddCreateTimer(arg_75_0, arg_75_1, arg_75_2)
-	arg_75_0._currentState = arg_75_0.STATE_CREATE
-	arg_75_0._speedDir = arg_75_1
-	arg_75_2 = arg_75_2 or 1.5
+-- BattleHiveUnit.createMajorEmitter/SingleFire调用
+function BattleAircraftUnit.AddCreateTimer(self, direction, delay)
+	self._currentState = self.STATE_CREATE
+	self._speedDir = direction
+	delay = delay or 1.5
+	-- 创建后delay(默认1.5)秒内，不能攻击
+	-- 从HiveUnit传过来的参数来看，createMajorEmitter传入的delay是1.5
+	-- 而SingleFire传入的delay是1
+	local function onTimerEnds()
+		-- STATE_ATTACK关联到BattleAircraftUnit.UpdateWeapon
+		self._currentState = self.STATE_ATTACK
+		self._speedDir = Vector3(self._dir, 0, 0)
 
-	local function var_75_0()
-		arg_75_0._currentState = arg_75_0.STATE_ATTACK
-		arg_75_0._speedDir = Vector3(arg_75_0._dir, 0, 0)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._createTimer)
 
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_75_0._createTimer)
-
-		arg_75_0._createTimer = nil
+		self._createTimer = nil
 	end
 
-	arg_75_0._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, arg_75_2, var_75_0)
+	self._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, delay, onTimerEnds)
 end
 
-function var_0_6.Dispose(arg_77_0)
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_77_0)
+function BattleAircraftUnit.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
-function var_0_6.InitCldComponent(arg_78_0)
-	local var_78_0 = arg_78_0:GetTemplate().cld_box
-	local var_78_1 = arg_78_0:GetTemplate().cld_offset
-	local var_78_2 = var_78_1[1]
+function BattleAircraftUnit.InitCldComponent(self)
+	local cld_box = self:GetTemplate().cld_box
+	local cld_offset = self:GetTemplate().cld_offset
+	local cldOffsetX = cld_offset[1]
 
-	if arg_78_0:GetDirection() == var_0_0.Battle.BattleConst.UnitDir.LEFT then
-		var_78_2 = var_78_2 * -1
+	if self:GetDirection() == ys.Battle.BattleConst.UnitDir.LEFT then
+		cldOffsetX = cldOffsetX * -1
 	end
+	-- X和Z轴需要应用cld_offset偏移
+	self._cldComponent = ys.Battle.BattleCubeCldComponent.New(cld_box[1], cld_box[2], cld_box[3], cldOffsetX, cld_offset[3])
 
-	arg_78_0._cldComponent = var_0_0.Battle.BattleCubeCldComponent.New(var_78_0[1], var_78_0[2], var_78_0[3], var_78_2, var_78_1[3])
-
-	local var_78_3 = {
-		type = var_0_2.CldType.AIRCRAFT,
-		IFF = arg_78_0:GetIFF(),
-		UID = arg_78_0:GetUniqueID()
+	local cldData = {
+		type = BattleConst.CldType.AIRCRAFT,
+		IFF = self:GetIFF(),
+		UID = self:GetUniqueID()
 	}
 
-	arg_78_0._cldComponent:SetCldData(var_78_3)
+	self._cldComponent:SetCldData(cldData)
 end
 
-function var_0_6.GetCldBox(arg_79_0)
-	return arg_79_0._cldComponent:GetCldBox(arg_79_0:GetPosition())
+function BattleAircraftUnit.GetCldBox(self)
+	return self._cldComponent:GetCldBox(self:GetPosition())
 end
 
-function var_0_6.GetCldData(arg_80_0)
-	return arg_80_0._cldComponent:GetCldData()
+function BattleAircraftUnit.GetCldData(self)
+	return self._cldComponent:GetCldData()
 end
 
-function var_0_6.AddBuff(arg_81_0)
+function BattleAircraftUnit.AddBuff(self)
 	return
 end
 
-function var_0_6.SetBuffStack(arg_82_0)
+function BattleAircraftUnit.SetBuffStack(self)
 	return
 end
 
-function var_0_6.RemoveBuff(arg_83_0)
+function BattleAircraftUnit.RemoveBuff(self)
 	return
 end
 
-function var_0_6.CloakExpose(arg_84_0)
+function BattleAircraftUnit.CloakExpose(self)
 	return
 end
 
-function var_0_6.GetCurrentOxyState(arg_85_0)
+function BattleAircraftUnit.GetCurrentOxyState(self)
 	return nil
 end
 
-function var_0_6.RemoveRemoteBoundBone(arg_86_0)
+function BattleAircraftUnit.RemoveRemoteBoundBone(self)
 	return
 end
 
-function var_0_6.SetRemoteBoundBone(arg_87_0)
+function BattleAircraftUnit.SetRemoteBoundBone(self)
 	return
 end
 
-function var_0_6.GetRemoteBoundBone(arg_88_0)
+function BattleAircraftUnit.GetRemoteBoundBone(self)
 	return
 end

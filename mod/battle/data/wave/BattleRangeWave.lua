@@ -1,32 +1,34 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleRangeWave = class("BattleRangeWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleRangeWave.__name = "BattleRangeWave"
+ys.Battle.BattleRangeWave = class("BattleRangeWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleRangeWave.__name = "BattleRangeWave"
 
-local var_0_1 = var_0_0.Battle.BattleRangeWave
+local BattleRangeWave = ys.Battle.BattleRangeWave
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleRangeWave.Ctor(self)
+	BattleRangeWave.super.Ctor(self)
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
+function BattleRangeWave.SetWaveData(self, waveData)
+	BattleRangeWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._pos = Vector3(arg_2_0._param.rect[1], 0, arg_2_0._param.rect[2])
-	arg_2_0._width = arg_2_0._param.rect[3]
-	arg_2_0._height = arg_2_0._param.rect[4]
-	arg_2_0._lifeTime = 99999
+	self._pos = Vector3(self._param.rect[1], 0, self._param.rect[2])
+	self._width = self._param.rect[3]
+	self._height = self._param.rect[4]
+	self._lifeTime = 99999
 end
 
-function var_0_1.DoWave(arg_3_0)
-	var_0_1.super.DoWave(arg_3_0)
-	arg_3_0._spawnFunc(arg_3_0._pos, arg_3_0._width, arg_3_0._height, arg_3_0._lifeTime, function(arg_4_0, arg_4_1)
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-			if iter_4_1.IFF ~= arg_4_1:GetCldData().IFF then
-				arg_4_1:SetActiveFlag(false)
-				arg_3_0:doPass()
+-- RangeWave的意思是，到了这个区域内就可以了?
+-- 但我没看到有使用过这类wave的关卡
+function BattleRangeWave.DoWave(self)
+	BattleRangeWave.super.DoWave(self)
+	self._spawnFunc(self._pos, self._width, self._height, self._lifeTime, function(unitList, aoe)
+		for _, unit in ipairs(unitList) do
+			if unit.IFF ~= aoe:GetCldData().IFF then
+				aoe:SetActiveFlag(false)
+				self:doPass()
 
 				break
 			end

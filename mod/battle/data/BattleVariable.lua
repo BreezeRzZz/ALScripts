@@ -172,10 +172,11 @@ function BattleVariable.GetSpeedRatio(arg_11_0, arg_11_1)
 	return BattleVariable.focusExemptList[arg_11_0] or BattleVariable.speedRatioByIFF[arg_11_1]
 end
 
-function BattleVariable.AddExempt(arg_12_0, arg_12_1, arg_12_2)
-	local var_12_0 = BattleVariable.IFFFactorList[arg_12_1][arg_12_2]
+-- 应该是用于子弹时间时，时间流速变慢，动画速度不变之类的
+function BattleVariable.AddExempt(exemptKey, IFF, speedFactor)
+	local speed = BattleVariable.IFFFactorList[IFF][speedFactor]
 
-	if var_12_0 ~= nil then
-		BattleVariable.focusExemptList[arg_12_0] = BattleVariable.speedRatioByIFF[arg_12_1] / var_12_0
+	if speed ~= nil then
+		BattleVariable.focusExemptList[exemptKey] = BattleVariable.speedRatioByIFF[IFF] / speed
 	end
 end

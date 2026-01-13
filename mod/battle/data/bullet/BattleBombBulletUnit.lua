@@ -25,7 +25,7 @@ function BattleBombBulletUnit.InitSpeed(self)
 	end
 
 	self:calcSpeed()
-
+	-- 炸弹类子弹没有加速表配置来控制速度变化，速度恒定
 	self.updateSpeed = BattleBombBulletUnit.doNothing
 end
 

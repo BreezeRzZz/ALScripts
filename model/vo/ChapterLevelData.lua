@@ -976,7 +976,7 @@ function ChapterLevelData.updateExtraFlags(arg_71_0, arg_71_1, arg_71_2)
 	return var_71_0
 end
 
-function var_0_0.getExtraFlags(arg_72_0)
+function ChapterLevelData.getExtraFlags(arg_72_0)
 	return arg_72_0.extraFlagList
 end
 
@@ -992,6 +992,9 @@ function ChapterLevelData.UpdateBuffList(arg_73_0, arg_73_1)
 	end
 end
 
+-- TODO
+-- 被Battlemediator.GenBattleData调用
+-- 从而可说明指挥喵技能的条件检查在战斗开始之前
 function ChapterLevelData.getFleetBattleBuffs(arg_74_0, arg_74_1)
 	local var_74_0 = table.shallowCopy(arg_74_0.buff_list)
 
@@ -1071,6 +1074,8 @@ function ChapterLevelData.GetEventTemplateByKey(arg_79_0, arg_79_1)
 	return var_79_1
 end
 
+-- TODO: 如指挥喵Buff等涉及
+-- 被ChapterLevelData.getFleetBattleBuffs调用
 function ChapterLevelData.buildBattleBuffList(arg_80_0, arg_80_1)
 	local var_80_0 = {}
 	local var_80_1, var_80_2 = arg_80_0:triggerSkill(arg_80_1, FleetSkill.TypeBattleBuff)
@@ -2370,6 +2375,7 @@ end
 --- @param skillType number
 --- @return any, table<number, FleetSkill>
 --- 触发舰队的场外技能
+--- 被ChapterLevelData.buildBattleBuffList调用
 function ChapterLevelData.triggerSkill(self, fleet, skillType)
 	-- underscore.filter: 返回通过函数测试的所有元素组成的表
 	--- @param skill FleetSkill
@@ -2968,11 +2974,12 @@ function ChapterLevelData.GetRegularFleetIds(arg_212_0)
 	end))
 end
 
-function var_0_0.NeedSupportSubmarineStage(arg_215_0)
+function ChapterLevelData.NeedSupportSubmarineStage(arg_215_0)
 	return arg_215_0:IsSupportSubmarineStage() and not table.contains(arg_215_0:getExtraFlags(), ChapterConst.StatusSupportSubmarineFinish)
 end
 
-function var_0_0.UpdateCellsVisible(arg_216_0, arg_216_1, arg_216_2)
+-- 计算可见格变化与视野等级
+function ChapterLevelData.UpdateCellsVisible(arg_216_0, arg_216_1, arg_216_2)
 	if not arg_216_0:IsFogStage() then
 		return
 	end
@@ -3020,24 +3027,24 @@ function var_0_0.UpdateCellsVisible(arg_216_0, arg_216_1, arg_216_2)
 	return var_216_1
 end
 
-function var_0_0.GetFogStageStrategy(arg_219_0)
-	local var_219_0 = arg_219_0.cellsVisibleCount * 100 / arg_219_0.cellsCount
-	local var_219_1
+function ChapterLevelData.GetFogStageStrategy(self)
+	local visiblePercent = self.cellsVisibleCount * 100 / self.cellsCount
+	local fogStgID
 
-	for iter_219_0, iter_219_1 in ipairs(arg_219_0:getConfigMiscArg("fog_visible_buff")) do
-		local var_219_2, var_219_3 = unpack(iter_219_1)
+	for _, fogVisibleBuffArgs in ipairs(self:getConfigMiscArg("fog_visible_buff")) do
+		local percent, stgID = unpack(fogVisibleBuffArgs)
 
-		var_219_1 = var_219_3
+		fogStgID = stgID
 
-		if var_219_0 <= var_219_2 then
+		if visiblePercent <= percent then
 			break
 		end
 	end
 
-	return var_219_1
+	return fogStgID
 end
 
-function var_0_0.retreatFleet(arg_220_0, arg_220_1)
+function ChapterLevelData.retreatFleet(arg_220_0, arg_220_1)
 	local var_220_0
 
 	for iter_220_0, iter_220_1 in ipairs(arg_220_0.fleets) do
@@ -3057,4 +3064,4 @@ function var_0_0.retreatFleet(arg_220_0, arg_220_1)
 	var_220_0:UpdateVisible()
 end
 
-return var_0_0
+return ChapterLevelData

@@ -1,74 +1,78 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.BattleBuffSmokeAimBias = class("BattleBuffSmokeAimBias", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffSmokeAimBias.__name = "BattleBuffSmokeAimBias"
+ys.Battle.BattleBuffSmokeAimBias = class("BattleBuffSmokeAimBias", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffSmokeAimBias.__name = "BattleBuffSmokeAimBias"
 
-local var_0_4 = var_0_0.Battle.BattleBuffSmokeAimBias
-local var_0_5 = var_0_0.Battle.BattleAttr
+local BattleBuffSmokeAimBias = ys.Battle.BattleBuffSmokeAimBias
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_4.ATTR_SMOKE = "smoke_aim_bias"
+BattleBuffSmokeAimBias.ATTR_SMOKE = "smoke_aim_bias"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffSmokeAimBias.Ctor(self, effectData)
+	BattleBuffSmokeAimBias.super.Ctor(self, effectData)
 end
 
-function var_0_4.SetArgs(arg_2_0, arg_2_1, arg_2_2)
+function BattleBuffSmokeAimBias.SetArgs(self, owner, buff)
 	return
 end
 
-function var_0_4.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	var_0_5.SetCurrent(arg_3_1, var_0_4.ATTR_SMOKE, 1)
-	var_0_1.AttachSmoke(arg_3_1)
+function BattleBuffSmokeAimBias.onAttach(self, owner, buff)
+	-- 设置属性，标记为在烟雾中
+	-- 在烟雾中的敌人，获得夜战隐蔽相关效果（被敌方瞄准偏移）
+	BattleAttr.SetCurrent(owner, BattleBuffSmokeAimBias.ATTR_SMOKE, 1)
+	BattleDataFunction.AttachSmoke(owner)
 
 	if BATTLE_ENEMY_AIMBIAS_RANGE then
-		var_0_0.Battle.BattleDataProxy.GetInstance():DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleEvent.ADD_AIM_BIAS, {
-			aimBias = arg_3_1:GetAimBias()
+		ys.Battle.BattleDataProxy.GetInstance():DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.ADD_AIM_BIAS, {
+			aimBias = owner:GetAimBias()
 		}))
 	end
 end
 
-function var_0_4.onUpdate(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	local var_4_0 = {
-		[var_0_2.FRIENDLY_CODE] = 0,
-		[var_0_2.FOE_CODE] = 0
+function BattleBuffSmokeAimBias.onUpdate(self, owner, buff, effectArgs)
+	local baseDecaySpeed = {
+		[BattleConfig.FRIENDLY_CODE] = 0,
+		[BattleConfig.FOE_CODE] = 0
 	}
-	local var_4_1 = {
-		[var_0_2.FRIENDLY_CODE] = 0,
-		[var_0_2.FOE_CODE] = 0
+	local extraDecaySpeed = {
+		[BattleConfig.FRIENDLY_CODE] = 0,
+		[BattleConfig.FOE_CODE] = 0
 	}
-	local var_4_2 = var_0_0.Battle.BattleDataProxy.GetInstance():GetUnitList()
+	local unitList = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
 
-	for iter_4_0, iter_4_1 in pairs(var_4_2) do
-		local var_4_3 = iter_4_1:GetIFF()
-		local var_4_4 = var_4_0[var_4_3]
-		local var_4_5 = var_0_3.GetCurrent(iter_4_1, "attackRating")
-		local var_4_6 = var_0_3.GetCurrent(iter_4_1, "aimBiasExtraACC")
-
-		var_4_0[var_4_3] = math.max(var_4_4, var_4_5)
-		var_4_1[var_4_3] = var_4_1[var_4_3] + var_4_6
+	for _, unit in pairs(unitList) do
+		local unitIFF = unit:GetIFF()
+		local _baseDecaySpeed = baseDecaySpeed[unitIFF]
+		-- 命中属性值
+		local attackRating = BattleAttr.GetCurrent(unit, "attackRating")
+		-- (敌方)的隐蔽强度额外降低速度
+		local aimBiasExtraACC = BattleAttr.GetCurrent(unit, "aimBiasExtraACC")
+		-- 这里也是根据己方的命中值，来计算敌方的基础隐蔽衰减速度
+		baseDecaySpeed[unitIFF] = math.max(_baseDecaySpeed, attackRating)
+		extraDecaySpeed[unitIFF] = extraDecaySpeed[unitIFF] + aimBiasExtraACC
 	end
 
-	local var_4_7 = arg_4_1:GetAimBias()
+	local aimBias = owner:GetAimBias()
 
-	var_4_7:SetDecayFactor(var_4_0[var_0_2.FRIENDLY_CODE], var_4_1[var_0_2.FRIENDLY_CODE])
+	aimBias:SetDecayFactor(baseDecaySpeed[BattleConfig.FRIENDLY_CODE], extraDecaySpeed[BattleConfig.FRIENDLY_CODE])
 
-	local var_4_8 = arg_4_3.timeStamp
+	local timeStamp = effectArgs.timeStamp
 
-	var_4_7:Update(var_4_8)
+	aimBias:Update(timeStamp)
 end
 
-function var_0_4.onRemove(arg_5_0, arg_5_1, arg_5_2)
+function BattleBuffSmokeAimBias.onRemove(self, owner, buff)
 	if BATTLE_ENEMY_AIMBIAS_RANGE then
-		var_0_0.Battle.BattleDataProxy.GetInstance():DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleEvent.REMOVE_AIM_BIAS, {
-			aimBias = arg_5_1:GetAimBias()
+		ys.Battle.BattleDataProxy.GetInstance():DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.REMOVE_AIM_BIAS, {
+			aimBias = owner:GetAimBias()
 		}))
 	end
 
-	var_0_5.SetCurrent(arg_5_1, var_0_4.ATTR_SMOKE, 0)
-	arg_5_1:ExitSmokeArea()
+	BattleAttr.SetCurrent(owner, BattleBuffSmokeAimBias.ATTR_SMOKE, 0)
+	owner:ExitSmokeArea()
 end

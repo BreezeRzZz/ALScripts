@@ -14,7 +14,7 @@ BattleAttr.AttrListInheritance = {
 	"antiAirPower", 				-- 防空值
 	"airPower",     				-- 航空值
 	"antiSubPower",					-- 反潜值
-	"fleetGS",						-- 舰队实力
+	"fleetGS",						-- 该舰队综合性能之和(不计算指挥喵)
 	"loadSpeed",					-- 装填值
 	"attackRating",					-- 命中值
 	"dodgeRate",				    -- 机动值
@@ -699,101 +699,112 @@ end
 
 -- 设置舰载机属性，从生成者继承
 -- 这是一部分，下面的SetAircraftAttFromTemp是另一部分
-function BattleAttr.SetAircraftAttFromMother(arg_43_0, arg_43_1)
-	local var_43_0 = arg_43_0._attr or {}
+-- 注意调用的实际顺序是，先SetMotherUnit，然后SetTemplate
+-- 因此部分在SetMotherUnit的属性会被Template覆盖掉
+	-- 例如，舰载机的航速最终是模板的值，而不是母舰的值
+	-- 另外，注意属性继承表中没有最大耐久，所以耐久总是用的模板计算的值
+-- 被BattleAircraftUnit.SetAttr调用(重载)
+function BattleAttr.SetAircraftAttFromMother(aircraft, mother)
+	local attr = aircraft._attr or {}
 
-	arg_43_0._attr = var_43_0
-	var_43_0.battleUID = arg_43_0:GetUniqueID()
-	var_43_0.hostUID = arg_43_1:GetUniqueID()
+	aircraft._attr = attr
+	attr.battleUID = aircraft:GetUniqueID()
+	attr.hostUID = mother:GetUniqueID()
 
-	if not type(arg_43_1._attr.id) == "string" or string.find(arg_43_1._attr.id, "enemy_") == nil then
-		var_43_0.id = arg_43_1._attr.id
+	if not type(mother._attr.id) == "string" or string.find(mother._attr.id, "enemy_") == nil then
+		attr.id = mother._attr.id
 	end
 
-	local var_43_1 = BattleAttr.GetAttr(arg_43_1)
-
-	for iter_43_0, iter_43_1 in ipairs(BattleAttr.AttrListInheritance) do
-		var_43_0[iter_43_1] = var_43_1[iter_43_1]
+	local motherAttr = BattleAttr.GetAttr(mother)
+	-- 以下按照属性继承表继承属性(全新赋值，不是引用)
+	for _, attrType in ipairs(BattleAttr.AttrListInheritance) do
+		attr[attrType] = motherAttr[attrType]
 	end
 
-	for iter_43_2, iter_43_3 in pairs(var_43_1) do
-		if string.find(iter_43_2, BattleAttr.TAG_EHC_KEY) then
-			var_43_0[iter_43_2] = iter_43_3
+	for attrType, attrValue in pairs(motherAttr) do
+		if string.find(attrType, BattleAttr.TAG_EHC_KEY) then
+			attr[attrType] = attrValue
 		end
 	end
 
-	for iter_43_4, iter_43_5 in pairs(var_43_1) do
-		if string.find(iter_43_4, BattleAttr.TAG_CRI_EHC_KEY) then
-			var_43_0[iter_43_4] = iter_43_5
+	for attrType, attrValue in pairs(motherAttr) do
+		if string.find(attrType, BattleAttr.TAG_CRI_EHC_KEY) then
+			attr[attrType] = attrValue
 		end
 	end
-
-	var_43_0.armorType = 0
-	var_43_0.velocity = BattleAttr.GetCurrent(arg_43_1, "baseVelocity")
-	var_43_0.labelTag = {}
-	var_43_0.TargetChoise = {}
-	var_43_0.guardian = {}
-	var_43_0.comboTag = "combo_" .. var_43_0.hostUID
+	-- 己方舰载机的护甲类型为无甲
+	attr.armorType = 0
+	attr.velocity = BattleAttr.GetCurrent(mother, "baseVelocity")
+	attr.labelTag = {}
+	attr.TargetChoise = {}
+	attr.guardian = {}
+	attr.comboTag = "combo_" .. attr.hostUID
 end
 
-function BattleAttr.SetAircraftAttFromTemp(arg_44_0)
-	arg_44_0._attr = arg_44_0._attr or {}
+-- 从模板设置舰载机属性
+-- 由于BattleAirFighterUnit是从BattleAircraftUnit继承的
+-- 所以BattleAirFighterUnit.SetTemplate -> BattleAircraftUnit.SetTemplate -> BattleAttr.SetAircraftAttFromTemp?
+-- (这又会产生属性覆盖了...主要是耐久就总是不取整了) 
+function BattleAttr.SetAircraftAttFromTemp(aircraft)
+	aircraft._attr = aircraft._attr or {}
 
-	local var_44_0 = BattleAttr.GetCurrent(arg_44_0, "hiveExtraHP")
+	local hiveExtraHP = BattleAttr.GetCurrent(aircraft, "hiveExtraHP")
 
-	arg_44_0._attr.velocity = arg_44_0._attr.velocity or ys.Battle.BattleFormulas.ConvertAircraftSpeed(arg_44_0._tmpData.speed)
+	aircraft._attr.velocity = aircraft._attr.velocity or ys.Battle.BattleFormulas.ConvertAircraftSpeed(aircraft._tmpData.speed)
 
-	local var_44_1 = arg_44_0._attr.level or 1
+	local level = aircraft._attr.level or 1
 	-- 己方飞机的耐久计算公式与敌方飞机不同，不取整?
-	arg_44_0._attr.maxHP = arg_44_0._attr.maxHP or arg_44_0._tmpData.max_hp + arg_44_0._tmpData.hp_growth / 1000 * (var_44_1 - 1) + var_44_0
-	arg_44_0._attr.crashDMG = arg_44_0._tmpData.crash_DMG
-	arg_44_0._attr.dodge = arg_44_0._tmpData.dodge
-	arg_44_0._attr.dodgeLimit = arg_44_0._tmpData.dodge_limit
+	aircraft._attr.maxHP = aircraft._attr.maxHP or aircraft._tmpData.max_hp + aircraft._tmpData.hp_growth / 1000 * (level - 1) + hiveExtraHP
+	aircraft._attr.crashDMG = aircraft._tmpData.crash_DMG
+	-- dodge(闪避系数)和dodgeRate(机动)是两个不同的东西，不要搞混
+	aircraft._attr.dodge = aircraft._tmpData.dodge
+	aircraft._attr.dodgeLimit = aircraft._tmpData.dodge_limit
 end
 
--- TODO
 -- 用于计算敌方飞机的属性
-function BattleAttr.SetAirFighterAttr(arg_45_0, arg_45_1)
-	local var_45_0 = arg_45_0._attr or {}
+-- 被BattleAirFighterUnit.SetAttr调用(重载)
+function BattleAttr.SetAirFighterAttr(airFighter, tmpData)
+	local attr = airFighter._attr or {}
 
-	arg_45_0._attr = var_45_0
+	airFighter._attr = attr
 
-	local var_45_1 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_45_2 = var_45_1:GetDungeonLevel()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local dungeonLevel = battleDataProxy:GetDungeonLevel()
 
-	var_45_0.battleUID = arg_45_0:GetUniqueID()
-	var_45_0.hostUID = 0
-	var_45_0.id = 0
-	var_45_0.level = var_45_2
-	var_45_0.formulaLevel = var_45_2
+	attr.battleUID = airFighter:GetUniqueID()
+	attr.hostUID = 0
+	attr.id = 0
+	attr.level = dungeonLevel
+	attr.formulaLevel = dungeonLevel
 
-	if var_45_1:IsCompletelyRepress() then
-		var_45_0.formulaLevel = math.max(var_45_0.formulaLevel - 10, 1)
+	-- 敌方飞机也会受到海域压制影响
+	if battleDataProxy:IsCompletelyRepress() then
+		attr.formulaLevel = math.max(attr.formulaLevel - 10, 1)
 	end
 
-	local var_45_3 = (var_45_2 - 1) / 1000
+	local growthFactor = (dungeonLevel - 1) / 1000
 
-	var_45_0.maxHP = math.floor(arg_45_1.max_hp + arg_45_1.hp_growth * var_45_3)
-	var_45_0.attackRating = arg_45_1.accuracy + arg_45_1.ACC_growth * var_45_3
+	attr.maxHP = math.floor(tmpData.max_hp + tmpData.hp_growth * growthFactor)
+	attr.attackRating = tmpData.accuracy + tmpData.ACC_growth * growthFactor
 
-	local var_45_4 = arg_45_1.attack_power + arg_45_1.AP_growth * var_45_3
+	local attackPower = tmpData.attack_power + tmpData.AP_growth * growthFactor
 
-	var_45_0.dodge = arg_45_1.dodge
-	var_45_0.dodgeLimit = arg_45_1.dodge_limit
-	var_45_0.cannonPower = var_45_4
-	var_45_0.torpedoPower = var_45_4
-	var_45_0.antiAirPower = var_45_4
-	var_45_0.antiSubPower = var_45_4
-	var_45_0.airPower = var_45_4
-	var_45_0.loadSpeed = 0
-	var_45_0.armorType = 1
-	var_45_0.dodgeRate = 0
-	var_45_0.luck = 50
-	var_45_0.velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(arg_45_1.speed)
-	var_45_0.repressReduce = 1
-	var_45_0.TargetChoise = {}
-	var_45_0.guardian = {}
-	var_45_0.crashDMG = arg_45_1.crash_DMG
+	attr.dodge = tmpData.dodge
+	attr.dodgeLimit = tmpData.dodge_limit
+	attr.cannonPower = attackPower
+	attr.torpedoPower = attackPower
+	attr.antiAirPower = attackPower
+	attr.antiSubPower = attackPower
+	attr.airPower = attackPower
+	attr.loadSpeed = 0
+	attr.armorType = 1
+	attr.dodgeRate = 0
+	attr.luck = 50
+	attr.velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(tmpData.speed)
+	attr.repressReduce = 1
+	attr.TargetChoise = {}
+	attr.guardian = {}
+	attr.crashDMG = tmpData.crash_DMG
 end
 
 function BattleAttr.SetFusionAttrFromElement(arg_46_0, arg_46_1, arg_46_2, arg_46_3)
@@ -894,7 +905,8 @@ function BattleAttr.FlashByBuff(owner, attrType, newAttrValue)
 		BattleAttr.SetCurrent(owner, BattleAttr.FROM_TAG_EHC_KEY, fromTagEhcExists)
 	end
 end
--- TODO
+
+-- 重新计算航速
 -- 航速上限1.8倍，下限0.2倍
 function BattleAttr.FlashVelocity(unit, mulValue, addValue)
 	local maxVelocity = BattleAttr.GetBase(unit, "velocity") * 1.8

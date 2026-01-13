@@ -72,35 +72,39 @@ function BattleDataFunction.GetConvertedBarrageTableFromID(barrageID, direction)
 	return BattleDataFunction.ConvertedBarrageTableList[barrageID]
 end
 
--- TODO
-function BattleDataFunction.GenerateTransBarrage(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = {}
-	local var_5_1 = BattleDataFunction.GetBarrageTmpDataFromID(arg_5_0)
+-- 处理弹幕形式变换(barrage_template中的trans_ID)
+-- 被BattleBulletEmitter.GenerateBullet调用
+function BattleDataFunction.GenerateTransBarrage(barrageID, dir, primalCounter)
+	local transBarrage = {}
+	local barrageTmpData = BattleDataFunction.GetBarrageTmpDataFromID(barrageID)
 
-	while var_5_1.trans_ID ~= -1 do
-		local var_5_2 = var_5_1.trans_ID
+	-- 持续取trans_ID，直到为-1为止
+	while barrageTmpData.trans_ID ~= -1 do
+		local trans_ID = barrageTmpData.trans_ID
 
-		var_5_1 = BattleDataFunction.GetBarrageTmpDataFromID(var_5_2)
+		barrageTmpData = BattleDataFunction.GetBarrageTmpDataFromID(trans_ID)
 
-		local var_5_3 = {
-			transStartDelay = var_5_1.first_delay + var_5_1.delay * arg_5_2 + var_5_1.delta_delay * arg_5_2
+		-- trans弹幕的primalCounter是继承自原弹幕的primalCounter(不会重置为0)
+		local transArgs = {
+			transStartDelay = barrageTmpData.first_delay + barrageTmpData.delay * primalCounter + barrageTmpData.delta_delay * primalCounter
 		}
-
-		if var_5_1.offset_prioritise then
-			var_5_3.transAimPosX = var_5_1.offset_x + var_5_1.delta_offset_x * arg_5_2
-			var_5_3.transAimPosZ = var_5_1.offset_z + var_5_1.delta_offset_z * arg_5_2
+		-- 对应offset_prioritise字段
+		-- 如果为true，则用offset_x/offset_z，否则用angle
+		if barrageTmpData.offset_prioritise then
+			transArgs.transAimPosX = barrageTmpData.offset_x + barrageTmpData.delta_offset_x * primalCounter
+			transArgs.transAimPosZ = barrageTmpData.offset_z + barrageTmpData.delta_offset_z * primalCounter
 		else
-			var_5_3.transAimAngle = var_5_1.angle + var_5_1.delta_angle * arg_5_2
+			transArgs.transAimAngle = barrageTmpData.angle + barrageTmpData.delta_angle * primalCounter
 
-			if arg_5_1 == -1 then
-				var_5_3.transAimAngle = var_5_3.transAimAngle + 180
+			if dir == -1 then
+				transArgs.transAimAngle = transArgs.transAimAngle + 180
 			end
 		end
 
-		var_5_0[#var_5_0 + 1] = var_5_3
+		transBarrage[#transBarrage + 1] = transArgs
 	end
 
-	return var_5_0
+	return transBarrage
 end
 
 function BattleDataFunction._createCannonBullet(bulletUID, bulletTemplate, host, weapon, targetPos)

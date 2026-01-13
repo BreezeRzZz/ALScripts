@@ -83,56 +83,62 @@ function BattleHiveUnit.createMajorEmitter(self, barrageID, index, emitterType, 
 
 	BattleHiveUnit.super.createMajorEmitter(self, barrageID, index, nil, spawnFunc, nil)
 end
--- TODO
-function BattleHiveUnit.SingleFire(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-	arg_7_0._tempEmitterList = {}
 
-	local function var_7_0(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-		local var_8_0, var_8_1 = arg_7_0:SpawnAircraft(arg_8_2)
+-- BattleAllInStrike这类技能武器最终调用此函数进行单次发射(不具有持续输出)
+-- 此外还有特例是BattlePointAirStrikeUnit的DoAttack会调用此函数进行单次发射
+function BattleHiveUnit.SingleFire(self, target, emitterType, extraStopFunc)
+	self._tempEmitterList = {}
 
-		ys.Battle.BattleVariable.AddExempt(var_8_0:GetSpeedExemptKey(), var_8_0:GetIFF(), BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
-		var_8_0:AddCreateTimer(var_8_1, 1)
+	local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority, target)
+		local aircraft, direction = self:SpawnAircraft(barrageAngle)
 
-		if arg_7_0._debugRecordATKAircraft then
-			table.insert(arg_7_0._debugRecordATKAircraft, var_8_0)
+		ys.Battle.BattleVariable.AddExempt(aircraft:GetSpeedExemptKey(), aircraft:GetIFF(), BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
+		aircraft:AddCreateTimer(direction, 1)
+
+		if self._debugRecordATKAircraft then
+			table.insert(self._debugRecordATKAircraft, aircraft)
 		end
 	end
 
-	local function var_7_1()
-		for iter_9_0, iter_9_1 in ipairs(arg_7_0._tempEmitterList) do
-			if iter_9_1:GetState() ~= iter_9_1.STATE_STOP then
+	local function stopFunc()
+		for _, emitter in ipairs(self._tempEmitterList) do
+			if emitter:GetState() ~= emitter.STATE_STOP then
 				return
 			end
 		end
 
-		for iter_9_2, iter_9_3 in ipairs(arg_7_0._tempEmitterList) do
-			iter_9_3:Destroy()
+		for _, emitter in ipairs(self._tempEmitterList) do
+			emitter:Destroy()
 		end
 
-		arg_7_0._tempEmitterList = nil
+		self._tempEmitterList = nil
 
-		if arg_7_3 then
-			arg_7_3()
+		if extraStopFunc then
+			extraStopFunc()
 		end
 	end
 
-	arg_7_2 = arg_7_2 or BattleHiveUnit.EMITTER_SHOTGUN
+	-- 默认是BattleShotgunEmitter
+	emitterType = emitterType or BattleHiveUnit.EMITTER_SHOTGUN
 
-	for iter_7_0, iter_7_1 in ipairs(arg_7_0._tmpData.barrage_ID) do
-		local var_7_2 = ys.Battle[arg_7_2].New(var_7_0, var_7_1, iter_7_1)
+	for _, barrageID in ipairs(self._tmpData.barrage_ID) do
+		local emitter = ys.Battle[emitterType].New(spawnFunc, stopFunc, barrageID)
 
-		arg_7_0._tempEmitterList[#arg_7_0._tempEmitterList + 1] = var_7_2
+		self._tempEmitterList[#self._tempEmitterList + 1] = emitter
 	end
 
-	for iter_7_2, iter_7_3 in ipairs(arg_7_0._tempEmitterList) do
-		iter_7_3:Ready()
-		iter_7_3:Fire(arg_7_1, arg_7_0:GetDirection(), arg_7_0:GetAttackAngle())
-		iter_7_3:SetTimeScale(false)
+	for _, emitter in ipairs(self._tempEmitterList) do
+		emitter:Ready()
+		emitter:Fire(target, self:GetDirection(), self:GetAttackAngle())
+		emitter:SetTimeScale(false)
 	end
 
-	arg_7_0._host:CloakExpose(arg_7_0._tmpData.expose)
+	self._host:CloakExpose(self._tmpData.expose)
 end
 
+-- BattleHiveUnit.createMajorEmitter/SingleFire最终调用此函数生成舰载机
+-- (实际是注册到BattleBulletEmitter中的spawnFunc)
+-- 相当于，其他武器是用来生成子弹，这里对应的是生成舰载机
 function BattleHiveUnit.SpawnAircraft(self, barrageAngle)
 	local aircraft = self._dataProxy:CreateAircraft(self._host, self._tmpData.id, self:GetPotential(), self._skinID)
 

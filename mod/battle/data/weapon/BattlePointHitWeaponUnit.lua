@@ -31,52 +31,58 @@ function BattlePointHitWeaponUnit.RemoveAllLock(arg_3_0)
 	arg_3_0._lockList = {}
 end
 
-function BattlePointHitWeaponUnit.createMajorEmitter(arg_4_0, arg_4_1, arg_4_2)
-	local function var_4_0(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
-		local var_5_0
-		local var_5_1
-		local var_5_2 = arg_4_0._emitBulletIDList[arg_4_2]
+function BattlePointHitWeaponUnit.createMajorEmitter(self, barrageID, index)
+	local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority)
+		local bullet
+		local targetPos
+		local bulletID = self._emitBulletIDList[index]
 
-		if arg_4_0._strikePoint then
-			var_5_1 = arg_4_0._strikePoint
-			var_5_0 = arg_4_0:SpawnPointBullet(var_5_2, arg_4_0._strikePoint)
+		-- 如果是手动模式，指定了一个点，就打这个点
+		if self._strikePoint then
+			targetPos = self._strikePoint
+			bullet = self:SpawnPointBullet(bulletID, self._strikePoint)
 		else
-			local var_5_3 = arg_4_0._lockList[1]
+			-- 如果是自律模式，从锁定列表里选第一个目标
+			-- 从上面来看，用的是BattleWeaponUnit.Tracking方法选出的目标
+			-- 也就是没有特殊处理, 对于跨射武器来说一般就是扇形索敌
+			-- (但由于后排位置原因，这个通用方法一般选不到任何敌人，除非是敌方船触底之类的情况)
+			-- (因此一般实际是走的后面的TrackingRandom逻辑)
+			local target = self._lockList[1]
 
-			var_5_0 = arg_4_0:Spawn(var_5_2, var_5_3, arg_4_0.INTERNAL)
-			var_5_1 = var_5_3:GetBeenAimedPosition() or var_5_3:GetPosition()
+			bullet = self:Spawn(bulletID, target, self.INTERNAL)
+			targetPos = target:GetBeenAimedPosition() or target:GetPosition()
 		end
 
-		var_5_0:SetOffsetPriority(arg_5_3)
-		var_5_0:SetShiftInfo(arg_5_0, arg_5_1)
-		var_5_0:SetRotateInfo(var_5_1, 0, 0)
-		ys.Battle.BattleVariable.AddExempt(var_5_0:GetSpeedExemptKey(), var_5_0:GetIFF(), ys.Battle.BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
-		arg_4_0:DispatchBulletEvent(var_5_0)
+		bullet:SetOffsetPriority(isOffsetPriority)
+		bullet:SetShiftInfo(offsetX, offsetZ)
+		bullet:SetRotateInfo(targetPos, 0, 0)
+		ys.Battle.BattleVariable.AddExempt(bullet:GetSpeedExemptKey(), bullet:GetIFF(), ys.Battle.BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
+		self:DispatchBulletEvent(bullet)
 	end
 
-	local function var_4_1()
-		arg_4_0._strikePoint = nil
+	local function stopFunc()
+		self._strikePoint = nil
 
-		arg_4_0:RemoveAllLock()
+		self:RemoveAllLock()
 	end
 
-	BattlePointHitWeaponUnit.super.createMajorEmitter(arg_4_0, arg_4_1, arg_4_2, BattlePointHitWeaponUnit.EMITTER_NORMAL, var_4_0, var_4_1)
+	BattlePointHitWeaponUnit.super.createMajorEmitter(self, barrageID, index, BattlePointHitWeaponUnit.EMITTER_NORMAL, spawnFunc, stopFunc)
 end
 
-function BattlePointHitWeaponUnit.SetPlayerChargeWeaponVO(arg_7_0, arg_7_1)
-	arg_7_0._playerChargeWeaponVo = arg_7_1
+function BattlePointHitWeaponUnit.SetPlayerChargeWeaponVO(self, playerChargeWeaponVo)
+	self._playerChargeWeaponVo = playerChargeWeaponVo
 end
 
-function BattlePointHitWeaponUnit.Charge(arg_8_0)
-	arg_8_0._currentState = arg_8_0.STATE_PRECAST
-	arg_8_0._lockList = {}
+function BattlePointHitWeaponUnit.Charge(self)
+	self._currentState = self.STATE_PRECAST
+	self._lockList = {}
 
-	local var_8_0 = {}
-	local var_8_1 = ys.Event.New(BattleUnitEvent.POINT_HIT_CHARGE, var_8_0)
+	local chargeArgs = {}
+	local chargeEvent = ys.Event.New(BattleUnitEvent.POINT_HIT_CHARGE, chargeArgs)
 
-	arg_8_0:DispatchEvent(var_8_1)
+	self:DispatchEvent(chargeEvent)
 
-	arg_8_0._strikeMode = true
+	self._strikeMode = true
 end
 
 function BattlePointHitWeaponUnit.CancelCharge(arg_9_0)
@@ -101,7 +107,8 @@ function BattlePointHitWeaponUnit.QuickTag(self)
 	self._lockList = {}
 
 	self:updateMovementInfo()
-
+	-- 自律模式下，通过Tracking选择一个目标，加入到lockList里
+	-- (后续emmiter的spawnFunc发射时会从lockList里选第一个目标进行攻击)
 	local target = self:Tracking()
 
 	self._lockList[#self._lockList + 1] = target
@@ -170,36 +177,38 @@ function BattlePointHitWeaponUnit.TriggerBuffOnReady(arg_15_0)
 	end
 end
 
-function BattlePointHitWeaponUnit.Spawn(arg_16_0, arg_16_1, arg_16_2, arg_16_3)
-	local var_16_0
+-- 跨射武器的子弹生成主逻辑
+function BattlePointHitWeaponUnit.Spawn(self, bulletID, target, bulletInType)
+	local targetPos
 
-	if arg_16_2 == nil then
-		arg_16_0:updateMovementInfo()
+	if target == nil then
+		self:updateMovementInfo()
+		-- 如果传入的target为空，则通过TrackingRandom从筛选后的列表里随机选一个目标
+		target = self:TrackingRandom(self:GetFilteredList())
 
-		arg_16_2 = arg_16_0:TrackingRandom(arg_16_0:GetFilteredList())
-
-		if arg_16_2 == nil then
-			var_16_0 = Vector3.zero
+		if target == nil then
+			-- 没有目标，目标点为0，在后续处理会处理为瞄准武器的最大索敌范围处
+			targetPos = Vector3.zero
 		else
-			var_16_0 = arg_16_2:GetBeenAimedPosition() or arg_16_2:GetPosition()
+			targetPos = target:GetBeenAimedPosition() or target:GetPosition()
 		end
 	else
-		var_16_0 = arg_16_2:GetBeenAimedPosition() or arg_16_2:GetPosition()
+		targetPos = target:GetBeenAimedPosition() or target:GetPosition()
 	end
 
-	local var_16_1 = arg_16_0._dataProxy:CreateBulletUnit(arg_16_1, arg_16_0._host, arg_16_0, var_16_0)
+	local bullet = self._dataProxy:CreateBulletUnit(bulletID, self._host, self, targetPos)
 
-	arg_16_0:setBulletSkin(var_16_1, arg_16_1)
-	arg_16_0:TriggerBuffWhenSpawn(var_16_1)
+	self:setBulletSkin(bullet, bulletID)
+	self:TriggerBuffWhenSpawn(bullet)
 
-	if arg_16_3 == arg_16_0.INTERNAL then
-		local var_16_2 = arg_16_0._host:GetAttrByName("initialEnhancement")
+	if bulletInType == self.INTERNAL then
+		local initialEnhancement = self._host:GetAttrByName("initialEnhancement")
 
-		var_16_1:SetDamageEnhance(1 + var_16_2)
-		arg_16_0:TriggerBuffWhenSpawn(var_16_1, BattleConst.BuffEffectType.ON_INTERNAL_BULLET_CREATE)
+		bullet:SetDamageEnhance(1 + initialEnhancement)
+		self:TriggerBuffWhenSpawn(bullet, BattleConst.BuffEffectType.ON_INTERNAL_BULLET_CREATE)
 	end
 
-	return var_16_1
+	return bullet
 end
 
 function BattlePointHitWeaponUnit.SpawnPointBullet(arg_17_0, arg_17_1, arg_17_2)
@@ -249,36 +258,37 @@ function BattlePointHitWeaponUnit.GetLockList(arg_23_0)
 	return arg_23_0._lockList
 end
 
-function BattlePointHitWeaponUnit.GetFilteredList(arg_24_0)
-	local var_24_0 = BattlePointHitWeaponUnit.super.GetFilteredList(arg_24_0)
+function BattlePointHitWeaponUnit.GetFilteredList(self)
+	local filteredList = BattlePointHitWeaponUnit.super.GetFilteredList(self)
 
-	return (arg_24_0:filterEnemyUnitType(var_24_0))
+	return (self:filterEnemyUnitType(filteredList))
 end
 
-function BattlePointHitWeaponUnit.filterEnemyUnitType(arg_25_0, arg_25_1)
-	local var_25_0 = {}
-	local var_25_1 = {}
-	local var_25_2 = -9999
+function BattlePointHitWeaponUnit.filterEnemyUnitType(self, filteredList)
+	local filteredPriorityList = {}
+	local candidateList = {}
+	local maxPriority = -9999
 
-	for iter_25_0, iter_25_1 in ipairs(arg_25_1) do
-		local var_25_3 = iter_25_1:GetTargetedPriority()
+	for _, candidate in ipairs(filteredList) do
+		-- 每个候选的被索敌优先级
+		local targetedPriority = candidate:GetTargetedPriority()
 
-		if var_25_3 == nil then
-			var_25_1[#var_25_1 + 1] = iter_25_1
-		elseif var_25_2 < var_25_3 then
-			var_25_2 = var_25_3
-			var_25_0 = {}
-			var_25_0[#var_25_0 + 1] = iter_25_1
-		elseif var_25_2 == var_25_3 then
-			var_25_0[#var_25_0 + 1] = iter_25_1
+		if targetedPriority == nil then
+			candidateList[#candidateList + 1] = candidate
+		elseif maxPriority < targetedPriority then
+			maxPriority = targetedPriority
+			filteredPriorityList = {}
+			filteredPriorityList[#filteredPriorityList + 1] = candidate
+		elseif maxPriority == targetedPriority then
+			filteredPriorityList[#filteredPriorityList + 1] = candidate
 		end
 	end
-
-	for iter_25_2, iter_25_3 in ipairs(var_25_1) do
-		var_25_0[#var_25_0 + 1] = iter_25_3
+	-- 总的来说，选出被索敌优先级最高的单位（以及加入了没有优先级的单位?）
+	for _, candidate in ipairs(candidateList) do
+		filteredPriorityList[#filteredPriorityList + 1] = candidate
 	end
 
-	return var_25_0
+	return filteredPriorityList
 end
 
 function BattlePointHitWeaponUnit.handleCoolDown(arg_26_0)

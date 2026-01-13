@@ -73,7 +73,8 @@ function BattleCharacter.SetBoneList(self)
 	self._posMatrix = nil
 
 	local initScale = self:GetInitScale()
-
+	-- bound_bone中，remote的使用要另外处理
+	-- remote在BattleAircraftUnit.SetMotherUnit中使用
 	for weaponBone, boneOffset in pairs(self._unitData:GetTemplate().bound_bone) do
 		if weaponBone ~= "remote" then
 			self:insertBondList(weaponBone, boneOffset)
