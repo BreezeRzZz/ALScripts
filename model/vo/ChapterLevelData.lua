@@ -992,7 +992,8 @@ function ChapterLevelData.UpdateBuffList(arg_73_0, arg_73_1)
 	end
 end
 
--- TODO
+
+-- 主要是指挥喵的BattleBuff构建使用?
 -- 被Battlemediator.GenBattleData调用
 -- 从而可说明指挥喵技能的条件检查在战斗开始之前
 function ChapterLevelData.getFleetBattleBuffs(arg_74_0, arg_74_1)

@@ -1693,28 +1693,29 @@ function Ship.getEquipmentProperties(self)
 	return equipProperties, equipRates
 end
 
-function Ship.getSkillEffects(arg_108_0)
-	local var_108_0 = arg_108_0:getShipSkillEffects()
+-- 被Ship.getTriggerSkills调用
+function Ship.getSkillEffects(self)
+	local shipSkillEffects = self:getShipSkillEffects()
 
-	_.each(arg_109_0:getEquipmentSkillEffects(), function(arg_110_0)
-		table.insert(var_109_0, arg_110_0)
+	_.each(self:getEquipmentSkillEffects(), function(effect)
+		table.insert(shipSkillEffects, effect)
 	end)
 
-	return var_109_0
+	return shipSkillEffects
 end
 
-function Ship.getShipSkillEffects(arg_110_0)
-	local var_110_0 = {}
-	local var_110_1 = arg_110_0:getSkillList()
+-- 被Ship.getSkillEffects调用
+function Ship.getShipSkillEffects(self)
+	local shipSkillEffects = {}
+	local skillList = self:getSkillList()
+	for _, skill in ipairs(skillList) do
+		local mapedBuffID = self:RemapSkillId(skill, true)
+		local buffConfig = pg.buffCfg["buff_" .. mapedBuffID]
 
-	for iter_111_0, iter_111_1 in ipairs(var_111_1) do
-		local var_111_2 = arg_111_0:RemapSkillId(iter_111_1, true)
-		local var_111_3 = pg.buffCfg["buff_" .. var_111_2]
-
-		arg_111_0:FilterActiveSkill(var_111_0, var_111_3, arg_111_0.skills[iter_111_1])
+		self:FilterActiveSkill(shipSkillEffects, buffConfig, self.skills[skill])
 	end
 
-	return var_111_0
+	return shipSkillEffects
 end
 
 function Ship.getEquipmentSkillEffects(arg_111_0)
@@ -2232,13 +2233,15 @@ function Ship.getMapAuras(arg_149_0)
 
 	return (math.min(var_149_0, arg_149_0:getMaxHuntingLv()))
 end
--- TODO
+
+-- 获取单个舰船提供的跨队增益
 -- 被ChapterFleet.getMapAid调用
 function Ship.getMapAids(self)
 	local shipAidsList = {}
 	-- 这边所有Skill，实际对应的是战斗中的Buff概念
 	for skillID, skillConfig in pairs(self:getAllSkills()) do
 		local benefitID = tonumber(skillID .. string.format("%.2d", skillConfig.level))
+		-- 从skill_benefit_template表里拿增益信息
 		local benefitTmp = pg.skill_benefit_template[benefitID]
 
 		if benefitTmp and self:IsBenefitSkillActive(benefitTmp) and benefitTmp.type == Ship.BENEFIT_AID then
@@ -2310,27 +2313,28 @@ function Ship.getHuntingRange(arg_153_0, arg_153_1)
 	return var_154_1
 end
 
-function Ship.getTriggerSkills(arg_155_0)
-	local var_155_0 = {}
-	local var_155_1 = arg_155_0:getSkillEffects()
+-- 被BattleMediator.GenBattleData调用
+function Ship.getTriggerSkills(self)
+	local triggerSkills = {}
+	local skillEffects = self:getSkillEffects()
 
-	_.each(var_156_1, function(arg_157_0)
-		if arg_157_0.type == "AddBuff" and arg_157_0.arg_list and arg_157_0.arg_list.buff_id then
-			local var_157_0 = arg_157_0.arg_list.buff_id
+	_.each(skillEffects, function(effect)
+		if effect.type == "AddBuff" and effect.arg_list and effect.arg_list.buff_id then
+			local buffID = effect.arg_list.buff_id
 
-			var_156_0[var_157_0] = {
-				id = var_157_0,
-				level = arg_157_0.level
+			triggerSkills[buffID] = {
+				id = buffID,
+				level = effect.level
 			}
 		end
 	end)
 
-	return var_156_0
+	return triggerSkills
 end
 
-function Ship.GetEquipmentSkills(arg_157_0)
+function Ship.GetEquipmentSkills(effect)
 	local var_157_0 = {}
-	local var_157_1 = arg_157_0:getActiveEquipments()
+	local var_157_1 = effect:getActiveEquipments()
 
 	for iter_158_0, iter_158_1 in ipairs(var_158_1) do
 		if iter_158_1 and iter_158_1:getConfig("skill_id")[1] then
@@ -2528,69 +2532,77 @@ function Ship.fateSkillChange(arg_181_0, arg_181_1)
 		arg_181_0.skillChangeList = arg_181_0:isBluePrintShip() and arg_181_0:getBluePrint():getChangeSkillList() or {}
 	end
 
-	for iter_182_0, iter_182_1 in ipairs(arg_182_0.skillChangeList) do
-		if iter_182_1[1] == arg_182_1 and arg_182_0.skills[iter_182_1[2]] then
+	for iter_182_0, iter_182_1 in ipairs(self.skillChangeList) do
+		if iter_182_1[1] == arg_182_1 and self.skills[iter_182_1[2]] then
 			return iter_182_1[2]
 		end
 	end
 
 	return arg_182_1
 end
--- TODO
-function Ship.RemapSkillId(arg_182_0, arg_182_1, arg_182_2)
-	local var_182_0 = arg_182_0:GetSpWeapon()
 
-	if var_183_0 then
-		if table.contains(pg.ship_data_template[arg_183_0.configId].hide_buff_list, arg_183_1) then
-			return var_183_0:RemapHiddenSkillId(arg_183_1)
-		elseif arg_183_2 then
-			local var_183_1 = var_183_0:RemapHiddenSkillId(arg_183_1)
 
-			if var_183_1 == arg_183_1 then
-				var_183_1 = var_183_0:RemapSkillId(arg_183_1)
+-- Buff ID的映射
+-- 似乎只用于专武技能升级的映射
+-- 这个函数多次使用，是递归调用的
+-- 被BattleMediator.GenBattleData调用
+function Ship.RemapSkillId(self, buffID, needMapHidden)
+	local spWeapon = self:GetSpWeapon()
+
+	if spWeapon then
+		-- 如果属于隐藏技能，用隐藏技能映射表
+		if table.contains(pg.ship_data_template[self.configId].hide_buff_list, buffID) then
+			return spWeapon:RemapHiddenSkillId(buffID)
+		elseif needMapHidden then
+			local mapedHiddenBuffID = spWeapon:RemapHiddenSkillId(buffID)
+
+			if mapedHiddenBuffID == buffID then
+				mapedHiddenBuffID = spWeapon:RemapSkillId(buffID)
 			end
 
-			return var_183_1
+			return mapedHiddenBuffID
 		else
-			return var_183_0:RemapSkillId(arg_183_1)
+			return spWeapon:RemapSkillId(buffID)
 		end
 	end
 
-	return arg_183_1
+	return buffID
 end
 
-function Ship.getSkillList(arg_183_0)
-	local var_183_0 = pg.ship_data_template[arg_183_0.configId]
-	local var_183_1 = Clone(var_183_0.buff_list_display)
-	local var_183_2 = Clone(var_183_0.buff_list)
-	local var_183_3 = pg.ship_data_trans[arg_183_0.groupId]
-	local var_183_4 = 0
+-- Ship.getShipSkillEffects调用
+function Ship.getSkillList(self)
+	local shipTmpData = pg.ship_data_template[self.configId]
+	local buff_list_display = Clone(shipTmpData.buff_list_display)
+	local buff_list = Clone(shipTmpData.buff_list)
+	local transData = pg.ship_data_trans[self.groupId]
 
-	if var_184_3 and var_184_3.skill_id ~= 0 then
-		local var_184_5 = var_184_3.skill_id
-		local var_184_6 = pg.transform_data_template[var_184_5]
+	-- 改造技能
+	if transData and transData.skill_id ~= 0 then
+		local transSkillID = transData.skill_id
+		local transDataTmp = pg.transform_data_template[transSkillID]
 
-		if arg_184_0.transforms[var_184_5] and var_184_6.skill_id ~= 0 then
-			table.insert(var_184_2, var_184_6.skill_id)
+		if self.transforms[transSkillID] and transDataTmp.skill_id ~= 0 then
+			table.insert(buff_list, transDataTmp.skill_id)
 		end
 	end
 
-	local var_184_7 = {}
+	local actualSkillList = {}
 
-	for iter_184_0, iter_184_1 in ipairs(var_184_1) do
-		for iter_184_2, iter_184_3 in ipairs(var_184_2) do
-			if iter_184_1 == iter_184_3 then
-				table.insert(var_184_7, arg_184_0:fateSkillChange(iter_184_1))
+	for _, displayBuff in ipairs(buff_list_display) do
+		for _, buff in ipairs(buff_list) do
+			if displayBuff == buff then
+				-- 天运拟合技能替换
+				table.insert(actualSkillList, self:fateSkillChange(displayBuff))
 			end
 		end
 	end
 
-	return var_184_7
+	return actualSkillList
 end
 
-function Ship.getModAttrTopLimit(arg_184_0, arg_184_1)
+function Ship.getModAttrTopLimit(self, arg_184_1)
 	local var_184_0 = ShipModAttr.ATTR_TO_INDEX[arg_184_1]
-	local var_184_1 = pg.ship_data_template[arg_184_0.configId].strengthen_id
+	local var_184_1 = pg.ship_data_template[self.configId].strengthen_id
 	local var_184_2 = pg.ship_data_strengthen[var_184_1].durability[var_184_0]
 
 	return calcFloor((3 + 7 * (math.min(arg_185_0.level, 100) / 100)) * var_185_2 * 0.1)
@@ -2935,8 +2947,8 @@ function Ship.getSpecificType(arg_223_0)
 	return pg.ship_data_template[arg_223_0.configId].specific_type
 end
 
-function Ship.GetSpWeapon(arg_224_0)
-	return arg_224_0.spWeapon
+function Ship.GetSpWeapon(self)
+	return self.spWeapon
 end
 
 function Ship.UpdateSpWeapon(arg_225_0, arg_225_1)

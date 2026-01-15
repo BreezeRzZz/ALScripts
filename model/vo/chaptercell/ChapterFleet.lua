@@ -328,23 +328,25 @@ function ChapterFleet.getShips(arg_33_0, arg_33_1)
 	return var_33_0
 end
 
-function ChapterFleet.getShipsByTeam(arg_34_0, arg_34_1, arg_34_2)
-	local var_34_0 = {}
-	local var_34_1 = {}
+-- 根据队伍类型获取舰船列表
+-- 被BattleMediator.GenBattleData调用
+function ChapterFleet.getShipsByTeam(self, teamType, includingDead)
+	local allShips = {}
+	local deadShips = {}
 
-	for iter_34_0, iter_34_1 in ipairs(arg_34_0[arg_34_1]) do
-		if iter_34_1.hpRant > 0 then
-			table.insert(var_34_0, iter_34_1)
+	for _, ship in ipairs(self[teamType]) do
+		if ship.hpRant > 0 then
+			table.insert(allShips, ship)
 		else
-			table.insert(var_34_1, iter_34_1)
+			table.insert(deadShips, ship)
 		end
 	end
 
-	if arg_34_2 then
-		table.insertto(var_34_0, var_34_1)
+	if includingDead then
+		table.insertto(allShips, deadShips)
 	end
 
-	return var_34_0
+	return allShips
 end
 
 function ChapterFleet.containsShip(arg_35_0, arg_35_1)
@@ -884,22 +886,24 @@ function ChapterFleet.getMapAura(arg_95_0)
 	return var_95_0
 end
 
-function ChapterFleet.getMapAid(arg_96_0)
-	local var_96_0 = {}
+-- 获取该舰队提供的跨队增益
+-- 被ChapterProxy.GetChapterAidBuffs调用
+function ChapterFleet.getMapAid(self)
+	local fleetAids = {}
 
-	for iter_96_0, iter_96_1 in pairs(arg_96_0.ships) do
-		local var_96_1 = iter_96_1:getMapAids()
+	for _, ship in pairs(self.ships) do
+		local shipAids = ship:getMapAids()
 
-		for iter_96_2, iter_96_3 in ipairs(var_96_1) do
-			local var_96_2 = var_96_0[iter_96_1] or {}
+		for _, shipAid in ipairs(shipAids) do
+			local shipAidList = fleetAids[ship] or {}
 
-			table.insert(var_96_2, iter_96_3)
+			table.insert(shipAidList, shipAid)
 
-			var_96_0[iter_96_1] = var_96_2
+			fleetAids[ship] = shipAidList
 		end
 	end
 
-	return var_96_0
+	return fleetAids
 end
 
 function ChapterFleet.updateCommanderSkills(arg_97_0)

@@ -142,10 +142,10 @@ function BattleDataProxy.TriggerBattleStartBuffs(self)
 
 		for iter_6_10, iter_6_11 in ipairs(var_6_12) do
 			underscore.each(arg_6_0._battleInitData.ChapterBuffIDs or {}, function(arg_9_0)
-				local var_9_0 = var_0_5.GetSLGStrategyBuffByCombatBuffID(arg_9_0)
+				local var_9_0 = BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(arg_9_0)
 
 				if var_9_0 and var_9_0.type == ChapterConst.AirDominanceStrategyBuffType then
-					local var_9_1 = var_0_0.Battle.BattleBuffUnit.New(arg_9_0)
+					local var_9_1 = ys.Battle.BattleBuffUnit.New(arg_9_0)
 
 					iter_6_11:AddBuff(var_9_1)
 				end
@@ -523,17 +523,17 @@ function BattleDataProxy.InitUserShipsData(self, mainUnitList, vanguardUnitList,
 	}))
 end
 
-function BattleDataProxy.InitUserSupportShipsData(arg_25_0, arg_25_1, arg_25_2)
-	for iter_25_0, iter_25_1 in ipairs(arg_25_2) do
-		local var_25_0 = var_0_5.GetPlayerShipTmpDataFromID(iter_25_1.tmpID).type
+-- 被BattleDataProxy.InitBattle调用
+function BattleDataProxy.InitUserSupportShipsData(self, IFF, supportUnitList)
+	local fleet = self:GetFleetByIFF(IFF)
 
-		if table.contains(ShipType.BundleList.hang, var_25_0) then
-			local var_25_1 = arg_25_0:SpawnSupportUnit(iter_25_1, arg_25_1)
-		end
+	for _, supportUnitData in ipairs(supportUnitList) do
+		local supportUnit = self:SpawnSupportUnit(supportUnitData, IFF)
 	end
 end
 
 -- BattleTargetChoise.TargetPlayerAidUnit会使用
+-- 被BattleDataProxy.InitBattle调用
 function BattleDataProxy.InitUserAidData(self)
 	for _, aidUnit in ipairs(self._battleInitData.AidUnitList) do
 		local aidUnitUID = self:GenerateUnitID()
@@ -546,7 +546,7 @@ function BattleDataProxy.InitUserAidData(self)
 		templateData.id = aidUnit.id
 
 		BattleFormulas.AttrFixer(self._battleInitData.battleType, templateData)
-		-- 效率没什么用，跨队武器不会用到，一般都是1
+		-- 效率没什么用，跨队武器不会用到(因为都是技能武器，对不上槽位)，一般都是1
 		local proficiencyList = aidUnit.proficiency or {
 			1,
 			1,
@@ -1539,26 +1539,26 @@ end
 
 -- 支援单位生成(包括潜艇支援和航空支援)
 -- 被BattleDataProxy.InitUserSupportShipsData调用
-function BattleDataProxy.SpawnSupportUnit(arg_72_0, arg_72_1, arg_72_2)
-	local var_72_0 = arg_72_0:generateSupportPlayerUnit(arg_72_1, arg_72_2)
-	local var_72_1 = arg_72_0:GetFleetByIFF(arg_72_2)
+function BattleDataProxy.SpawnSupportUnit(self, supportUnitData, IFF)
+	local supportUnit = self:generateSupportPlayerUnit(supportUnitData, IFF)
+	local fleet = self:GetFleetByIFF(IFF)
 
-	var_72_1:AppendSupportUnit(var_72_0)
+	fleet:AppendSupportUnit(supportUnit)
 
-	local var_72_2 = var_72_0:GetTemplate().type
-
-	if table.contains(ShipType.BundleList.qian, var_72_2) then
-		var_72_0:SetPosition(Clone(var_0_4.SubSupportUnitPosList[#var_72_1:GetSupportUnitList()]))
+	local supportUnitShipType = supportUnit:GetTemplate().type
+	-- qian: 潜艇/潜母/风帆S
+	if table.contains(ShipType.BundleList.qian, supportUnitShipType) then
+		supportUnit:SetPosition(Clone(BattleConfig.SubSupportUnitPosList[#fleet:GetSupportUnitList()]))
 	else
-		var_72_0:SetPosition(Clone(var_0_4.AirSupportUnitPos))
+		supportUnit:SetPosition(Clone(BattleConfig.AirSupportUnitPos))
 	end
 
-	local var_72_3 = {
-		type = var_0_3.UnitType.SUPPORT_UNIT,
-		unit = var_72_0
+	local addUnitArgs = {
+		type = BattleConst.UnitType.SUPPORT_UNIT,
+		unit = supportUnit
 	}
 
-	arg_72_0:DispatchEvent(var_0_0.Event.New(var_0_1.ADD_UNIT, var_72_3))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, addUnitArgs))
 
 	return supportUnit
 end
@@ -1833,14 +1833,14 @@ function BattleDataProxy.generateSupportPlayerUnit(self, unitData, IFF)
 
 	supportUnit:InitCurrentHP(1)
 	supportUnit:SetShipName(unitData.name)
-
-	arg_85_0._spectreShipList[var_85_0] = var_85_3
+	-- 本质上supportUnit是作为幽灵单位存在的(因此没有模型，没有碰撞体)
+	self._spectreShipList[UID] = supportUnit
 
 	return supportUnit
 end
 
 -- TODO
--- 切换幽灵状态
+-- 根据battle_unit_type，切换幽灵状态
 function BattleDataProxy.SwitchSpectreUnit(arg_86_0, arg_86_1)
 	local var_86_0 = arg_86_1:GetUniqueID()
 	local var_86_1 = arg_86_1:GetIFF() == BattleConfig.FRIENDLY_CODE and arg_86_0._friendlyShipList or arg_86_0._foeShipList
@@ -2814,31 +2814,32 @@ function BattleDataProxy.TriggerFinishBattle(self)
 	end
 
 	for iter_163_4, iter_163_5 in pairs(arg_163_0._minionShipList) do
-		iter_163_5:TriggerBuff(var_0_3.BuffEffectType.ON_FINISH_GAME)
+		iter_163_5:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
 	end
 end
 
--- TODO: 潜艇支援舰队弹幕
-function BattleDataProxy.ChapterSupportBarrage(arg_164_0, arg_164_1, arg_164_2)
-	local var_164_0
+-- 潜艇支援舰队弹幕
+-- 被BattleSingleDungeonCommand.DoPrologue调用
+function BattleDataProxy.ChapterSupportBarrage(self, IFF, delay)
+	local supportBarrageTimer
 
-	local function var_164_1(...)
-		for iter_165_0, iter_165_1 in ipairs(arg_164_0._battleInitData.SupportUnitList) do
-			local var_165_0 = var_0_5.GetPlayerShipTmpDataFromID(iter_165_1.tmpID).type
+	local function afterDelay(...)
+		for _, supportUnitData in ipairs(self._battleInitData.SupportUnitList) do
+			local supportUnitShipType = BattleDataFunction.GetPlayerShipTmpDataFromID(supportUnitData.tmpID).type
 
-			if table.contains(ShipType.BundleList.qian, var_165_0) then
-				local var_165_1 = arg_164_0:SpawnSupportUnit(iter_165_1, arg_164_1)
-
-				var_0_6.SetCurrent(var_165_1, "loadSpeed", 0)
+			if table.contains(ShipType.BundleList.qian, supportUnitShipType) then
+				local supportUnit = self:SpawnSupportUnit(supportUnitData, IFF)
+				-- 装填为0，只会打一轮
+				BattleAttr.SetCurrent(supportUnit, "loadSpeed", 0)
 			end
 		end
 
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_164_0)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(supportBarrageTimer)
 	end
-
-	if arg_164_2 then
-		var_164_0 = pg.TimeMgr.GetInstance():AddBattleTimer("supportBarrageTimer", -1, arg_164_2, var_164_1)
+	-- 这个delay目前都是5s(计时器1.5+5=6.5s时间点触发)
+	if delay then
+		supportBarrageTimer = pg.TimeMgr.GetInstance():AddBattleTimer("supportBarrageTimer", -1, delay, afterDelay)
 	else
-		var_164_1()
+		afterDelay()
 	end
 end

@@ -1,16 +1,16 @@
-local var_0_0 = class("SpWeapon", import(".BaseVO"))
+local SpWeapon = class("SpWeapon", import(".BaseVO"))
 
-var_0_0.type = DROP_TYPE_SPWEAPON
-var_0_0.CONFIRM_OP_DISCARD = 0
-var_0_0.CONFIRM_OP_EXCHANGE = 1
+SpWeapon.type = DROP_TYPE_SPWEAPON
+SpWeapon.CONFIRM_OP_DISCARD = 0
+SpWeapon.CONFIRM_OP_EXCHANGE = 1
 
-function var_0_0.Ctor(arg_1_0, arg_1_1)
-	var_0_0.super.Ctor(arg_1_0, arg_1_1)
+function SpWeapon.Ctor(arg_1_0, arg_1_1)
+	SpWeapon.super.Ctor(arg_1_0, arg_1_1)
 
 	arg_1_0.configId = arg_1_1.id
 end
 
-function var_0_0.CreateByNet(arg_2_0)
+function SpWeapon.CreateByNet(arg_2_0)
 	if arg_2_0.template_id == 0 then
 		return
 	end
@@ -25,100 +25,100 @@ function var_0_0.CreateByNet(arg_2_0)
 		pt = arg_2_0.pt
 	}
 
-	return var_0_0.New(var_2_0)
+	return SpWeapon.New(var_2_0)
 end
 
-function var_0_0.bindConfigTable(arg_3_0)
+function SpWeapon.bindConfigTable(arg_3_0)
 	return pg.spweapon_data_statistics
 end
 
-function var_0_0.GetUID(arg_4_0)
+function SpWeapon.GetUID(arg_4_0)
 	return arg_4_0.uid
 end
 
-function var_0_0.IsReal(arg_5_0)
+function SpWeapon.IsReal(arg_5_0)
 	return tobool(arg_5_0:GetUID())
 end
 
-function var_0_0.GetConfigID(arg_6_0)
+function SpWeapon.GetConfigID(arg_6_0)
 	return arg_6_0.configId
 end
 
-function var_0_0.GetOriginID(arg_7_0)
+function SpWeapon.GetOriginID(arg_7_0)
 	return arg_7_0:getConfig("base") or arg_7_0:GetConfigID()
 end
 
-function var_0_0.IsImportant(arg_8_0)
+function SpWeapon.IsImportant(arg_8_0)
 	return arg_8_0:getConfig("important") == 2
 end
 
-function var_0_0.IsUnique(arg_9_0)
+function SpWeapon.IsUnique(arg_9_0)
 	return arg_9_0:getConfig("unique") ~= 0
 end
 
-function var_0_0.GetUniqueGroup(arg_10_0)
+function SpWeapon.GetUniqueGroup(arg_10_0)
 	return arg_10_0:getConfig("unique")
 end
 
-function var_0_0.GetType(arg_11_0)
+function SpWeapon.GetType(arg_11_0)
 	return arg_11_0:getConfig("type")
 end
 
-function var_0_0.GetName(arg_12_0)
+function SpWeapon.GetName(arg_12_0)
 	return arg_12_0:getConfig("name")
 end
 
-function var_0_0.GetLevel(arg_13_0)
+function SpWeapon.GetLevel(arg_13_0)
 	return arg_13_0:getConfig("level")
 end
 
-function var_0_0.GetTechTier(arg_14_0)
+function SpWeapon.GetTechTier(arg_14_0)
 	return arg_14_0:getConfig("tech")
 end
 
-function var_0_0.GetIconPath(arg_15_0)
+function SpWeapon.GetIconPath(arg_15_0)
 	return "SpWeapon/" .. arg_15_0:getConfig("icon")
 end
 
-function var_0_0.GetRarity(arg_16_0)
+function SpWeapon.GetRarity(arg_16_0)
 	return arg_16_0:getConfig("rarity")
 end
 
-function var_0_0.GetPt(arg_17_0)
+function SpWeapon.GetPt(arg_17_0)
 	return arg_17_0:IsReal() and arg_17_0.pt or 0
 end
 
-function var_0_0.SetPt(arg_18_0, arg_18_1)
+function SpWeapon.SetPt(arg_18_0, arg_18_1)
 	assert(arg_18_1)
 
 	arg_18_0.pt = arg_18_1 or 0
 end
 
-function var_0_0.GetEffect(arg_19_0)
+function SpWeapon.GetEffect(arg_19_0)
 	return arg_19_0:getConfig("effect_id")
 end
 
-function var_0_0.GetDisplayEffect(arg_20_0)
+function SpWeapon.GetDisplayEffect(arg_20_0)
 	return arg_20_0:getConfig("effect_id_display")
 end
 
-function var_0_0.GetUpgradableSkillIds(arg_21_0)
+function SpWeapon.GetUpgradableSkillIds(arg_21_0)
 	return arg_21_0:getConfig("skill_upgrade")
 end
 
-function var_0_0.GetUpgradableHiddenSkillIds(arg_22_0)
+function SpWeapon.GetUpgradableHiddenSkillIds(arg_22_0)
 	return arg_22_0:getConfig("hide_buff_upgrade")
 end
 
-function var_0_0.GetNextUpgradeID(arg_23_0)
+function SpWeapon.GetNextUpgradeID(arg_23_0)
 	return arg_23_0:getConfig("next")
 end
 
-function var_0_0.GetPrevUpgradeID(arg_24_0)
+function SpWeapon.GetPrevUpgradeID(arg_24_0)
 	return arg_24_0:getConfig("prev")
 end
 
-function var_0_0.MigrateTo(arg_25_0, arg_25_1)
+function SpWeapon.MigrateTo(arg_25_0, arg_25_1)
 	local var_25_0 = Clone(arg_25_0)
 
 	var_25_0.id = arg_25_1
@@ -128,25 +128,25 @@ function var_0_0.MigrateTo(arg_25_0, arg_25_1)
 	return var_25_0
 end
 
-function var_0_0.GetLabel(arg_26_0)
+function SpWeapon.GetLabel(arg_26_0)
 	return arg_26_0:getConfig("label")
 end
 
-function var_0_0.SetShipId(arg_27_0, arg_27_1)
+function SpWeapon.SetShipId(arg_27_0, arg_27_1)
 	arg_27_0.shipId = arg_27_1
 end
 
-function var_0_0.GetShipId(arg_28_0)
+function SpWeapon.GetShipId(arg_28_0)
 	return arg_28_0.shipId
 end
 
-function var_0_0.GetSkill(arg_29_0)
+function SpWeapon.GetSkill(arg_29_0)
 	local var_29_0 = arg_29_0:GetEffect()
 
 	return var_29_0 > 0 and getSkillConfig(var_29_0) or nil
 end
 
-function var_0_0.GetSkillInfo(arg_30_0)
+function SpWeapon.GetSkillInfo(arg_30_0)
 	local var_30_0 = {
 		lv = 1,
 		skillId = arg_30_0:GetDisplayEffect()
@@ -157,7 +157,7 @@ function var_0_0.GetSkillInfo(arg_30_0)
 	return var_30_0
 end
 
-function var_0_0.GetUpgradableSkillInfo(arg_31_0)
+function SpWeapon.GetUpgradableSkillInfo(arg_31_0)
 	local var_31_0 = arg_31_0:GetShipId()
 	local var_31_1 = {}
 	local var_31_2
@@ -198,7 +198,7 @@ function var_0_0.GetUpgradableSkillInfo(arg_31_0)
 	return var_31_1
 end
 
-function var_0_0.GetActiveUpgradableSkillList(arg_32_0, arg_32_1)
+function SpWeapon.GetActiveUpgradableSkillList(arg_32_0, arg_32_1)
 	local var_32_0 = {}
 
 	for iter_32_0, iter_32_1 in ipairs(arg_32_1:getSkillList()) do
@@ -228,48 +228,49 @@ function var_0_0.GetActiveUpgradableSkillList(arg_32_0, arg_32_1)
 	return var_32_0
 end
 
-function var_0_0.RemapSkillId(arg_33_0, arg_33_1)
-	for iter_33_0, iter_33_1 in ipairs(arg_33_0:GetUpgradableSkillIds()) do
-		if iter_33_1[1] == arg_33_1 then
-			return iter_33_1[2], true
+-- 这两个都是将舰船原有的技能映射到专武升级后的技能ID上
+function SpWeapon.RemapSkillId(self, buffID)
+	for _, upgradableBuffID in ipairs(self:GetUpgradableSkillIds()) do
+		if upgradableBuffID[1] == buffID then
+			return upgradableBuffID[2], true
 		end
 	end
 
-	return arg_33_1, false
+	return buffID, false
 end
 
-function var_0_0.RemapHiddenSkillId(arg_34_0, arg_34_1)
-	for iter_34_0, iter_34_1 in ipairs(arg_34_0:GetUpgradableHiddenSkillIds()) do
-		if iter_34_1[1] == arg_34_1 then
-			return iter_34_1[2], true
+function SpWeapon.RemapHiddenSkillId(self, buffID)
+	for _, upgradableBuffID in ipairs(self:GetUpgradableHiddenSkillIds()) do
+		if upgradableBuffID[1] == buffID then
+			return upgradableBuffID[2], true
 		end
 	end
 
-	return arg_34_1, false
+	return buffID, false
 end
 
-function var_0_0.GetSkillGroup(arg_35_0)
+function SpWeapon.GetSkillGroup(arg_35_0)
 	return {
 		arg_35_0:GetSkillInfo(),
 		(arg_35_0:GetUpgradableSkillInfo())
 	}
 end
 
-function var_0_0.GetConfigAttributes(arg_36_0)
+function SpWeapon.GetConfigAttributes(arg_36_0)
 	return {
 		arg_36_0:getConfig("value_1"),
 		arg_36_0:getConfig("value_2")
 	}
 end
 
-function var_0_0.GetAttributesRange(arg_37_0)
+function SpWeapon.GetAttributesRange(arg_37_0)
 	return {
 		arg_37_0:getConfig("value_1_random"),
 		arg_37_0:getConfig("value_2_random")
 	}
 end
 
-function var_0_0.GetAttributes(arg_38_0)
+function SpWeapon.GetAttributes(arg_38_0)
 	local var_38_0 = arg_38_0:GetConfigAttributes()
 
 	if arg_38_0:IsReal() then
@@ -280,31 +281,31 @@ function var_0_0.GetAttributes(arg_38_0)
 	return var_38_0
 end
 
-function var_0_0.GetBaseAttributes(arg_39_0)
+function SpWeapon.GetBaseAttributes(arg_39_0)
 	return {
 		arg_39_0.attr1 or 0,
 		arg_39_0.attr2 or 0
 	}
 end
 
-function var_0_0.SetBaseAttributes(arg_40_0, arg_40_1)
+function SpWeapon.SetBaseAttributes(arg_40_0, arg_40_1)
 	arg_40_0.attr1 = arg_40_1[1]
 	arg_40_0.attr2 = arg_40_1[2]
 end
 
-function var_0_0.GetAttributeOptions(arg_41_0)
+function SpWeapon.GetAttributeOptions(arg_41_0)
 	return {
 		arg_41_0.attrTemp1 or 0,
 		arg_41_0.attrTemp2 or 0
 	}
 end
 
-function var_0_0.SetAttributeOptions(arg_42_0, arg_42_1)
+function SpWeapon.SetAttributeOptions(arg_42_0, arg_42_1)
 	arg_42_0.attrTemp1 = arg_42_1[1]
 	arg_42_0.attrTemp2 = arg_42_1[2]
 end
 
-function var_0_0.GetPropertiesInfo(arg_43_0)
+function SpWeapon.GetPropertiesInfo(arg_43_0)
 	local var_43_0 = {
 		attrs = {}
 	}
@@ -336,7 +337,7 @@ function var_0_0.GetPropertiesInfo(arg_43_0)
 	return var_43_0
 end
 
-function var_0_0.GetWearableShipTypes(arg_44_0)
+function SpWeapon.GetWearableShipTypes(arg_44_0)
 	local var_44_0 = arg_44_0:getConfig("usability")
 
 	if var_44_0 and #var_44_0 > 0 then
@@ -346,21 +347,21 @@ function var_0_0.GetWearableShipTypes(arg_44_0)
 	return pg.spweapon_type[arg_44_0:GetType()].ship_type
 end
 
-function var_0_0.IsCraftable(arg_45_0)
+function SpWeapon.IsCraftable(arg_45_0)
 	return not arg_45_0:IsUnCraftable() and arg_45_0:GetUpgradeConfig().create_use_gold > 0
 end
 
-function var_0_0.GetUpgradeConfig(arg_46_0)
+function SpWeapon.GetUpgradeConfig(arg_46_0)
 	local var_46_0 = arg_46_0:getConfig("upgrade_id")
 
 	return pg.spweapon_upgrade[var_46_0]
 end
 
-function var_0_0.IsUnCraftable(arg_47_0)
+function SpWeapon.IsUnCraftable(arg_47_0)
 	return arg_47_0:getConfig("uncraftable") == 1
 end
 
-function var_0_0.CalculateHistoryPt(arg_48_0, arg_48_1)
+function SpWeapon.CalculateHistoryPt(arg_48_0, arg_48_1)
 	local var_48_0 = _.reduce(arg_48_0, 0, function(arg_49_0, arg_49_1)
 		return arg_49_0 + Item.getConfigData(arg_49_1.id).usage_arg[1] * arg_49_1.count
 	end)
@@ -370,7 +371,7 @@ function var_0_0.CalculateHistoryPt(arg_48_0, arg_48_1)
 	end))
 end
 
-function var_0_0.IsMatchKey(arg_51_0, arg_51_1)
+function SpWeapon.IsMatchKey(arg_51_0, arg_51_1)
 	local var_51_0 = {
 		arg_51_0:getConfig("name")
 	}
@@ -378,4 +379,4 @@ function var_0_0.IsMatchKey(arg_51_0, arg_51_1)
 	return EquipmentTools.IsMatchKey(var_51_0, arg_51_1)
 end
 
-return var_0_0
+return SpWeapon

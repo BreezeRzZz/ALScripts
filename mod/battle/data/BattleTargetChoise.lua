@@ -133,7 +133,7 @@ end
 function BattleTargetChoise.getShipListByIFF(IFF)
 	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 	local candidateList
-	-- TODO 到底哪些属于friendlyList，比如召唤出的单位算不算？
+	-- 到底哪些属于friendlyList，比如召唤出的单位算不算？
 	-- 粗看下来不算
 	-- 潜艇也计入
 	if IFF == BattleConfig.FRIENDLY_CODE then

@@ -140,10 +140,12 @@ function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemp
 
 	return unit
 end
--- TODO
+
+-- 初始化单位Buff
+-- unitData.skills的来源是BattleMediator.GenBattleData里的skills字段
 -- 被BattleDataProxy.generatePlayerUnit调用
-function BattleDataFunction.InitUnitSkill(arg_2_0, owner, arg_2_2)
-	local skills = arg_2_0.skills or {}
+function BattleDataFunction.InitUnitSkill(unitData, owner, battleType)
+	local skills = unitData.skills or {}
 
 	for _, skill in pairs(skills) do
 		local buff = ys.Battle.BattleBuffUnit.New(skill.id, skill.level, owner)
@@ -704,25 +706,28 @@ function BattleDataFunction.GetWords(arg_42_0, arg_42_1, arg_42_2)
 
 	return var_42_2
 end
--- TODO
--- 演习/大世界技能转换
-function BattleDataFunction.SkillTranform(arg_43_0, arg_43_1)
-	local var_43_0 = BattleDataFunction.GetSkillDataTemplate(arg_43_1)
 
-	if not var_43_0 then
-		return arg_43_1
+-- 对Buff ID，根据实际的system进行转换
+-- 被BattleMediator.GenBattleData调用
+function BattleDataFunction.SkillTranform(system, buffID)
+	-- 从skill_data_template的system_transform字段获得转换后的Buff ID
+	local skillDataTmp = BattleDataFunction.GetSkillDataTemplate(buffID)
+
+	if not skillDataTmp then
+		return buffID
 	end
 
-	local var_43_1 = var_43_0.system_transform
+	local system_transform = skillDataTmp.system_transform
 
-	if var_43_1[arg_43_0] == nil then
-		return arg_43_1
+	if system_transform[system] == nil then
+		return buffID
 	else
-		return var_43_1[arg_43_0]
+		return system_transform[system]
 	end
 end
 
--- TODO
+-- 从ship_data_template的hide_buff_list字段生成隐藏Buff列表
+-- 被BattleMediator.GenBattleData调用
 function BattleDataFunction.GenerateHiddenBuff(configId)
 	local hide_buff_list = BattleDataFunction.GetPlayerShipModelFromID(configId).hide_buff_list
 	local hideBuffList = {}

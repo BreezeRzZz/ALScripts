@@ -1187,6 +1187,8 @@ function BattleCharacter.SwitchModel(arg_84_0, arg_84_1, arg_84_2)
 	BattleResourceManager.GetInstance():DestroyOb(var_84_0)
 end
 
+-- TODO: 与equip_skin_template有关
+-- orbit_combat_bound是否会影响到实际位置
 function BattleCharacter.AddOrbit(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
 	local var_86_0 = arg_86_2.orbit_combat_bound[1]
 
