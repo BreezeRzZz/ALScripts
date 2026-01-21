@@ -1,255 +1,265 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleSkillView = class("BattleSkillView")
+ys.Battle.BattleSkillView = class("BattleSkillView")
 
-local var_0_2 = var_0_0.Battle.BattleSkillView
+local BattleSkillView = ys.Battle.BattleSkillView
 
-var_0_2.__name = "BattleSkillView"
+BattleSkillView.__name = "BattleSkillView"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+-- 主要是管理右下角的几个按钮(按照逻辑会对应到几个武器VO)
+-- 在BattleUIMediator.onCommonInit中初始化
+function BattleSkillView.Ctor(self, mediator)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_1_0._mediator = arg_1_1
-	arg_1_0._ui = arg_1_1._ui
+	self._mediator = mediator
+	self._ui = mediator._ui
 
-	arg_1_0:InitBtns()
-	arg_1_0:EnableWeaponButton(false)
+	self:InitBtns()
+	self:EnableWeaponButton(false)
 end
 
-function var_0_2.EnableWeaponButton(arg_2_0, arg_2_1)
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0._skillBtnList) do
-		iter_2_1:Enabled(arg_2_1)
+function BattleSkillView.EnableWeaponButton(self, enabled)
+	for _, skillBtn in ipairs(self._skillBtnList) do
+		-- skillBtn: BattleWeaponButton
+		skillBtn:Enabled(enabled)
 	end
 end
 
-function var_0_2.DisableWeapnButton(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._skillBtnList) do
-		iter_3_1:Disable()
+function BattleSkillView.DisableWeaponButton(self)
+	for _, skillBtn in ipairs(self._skillBtnList) do
+		skillBtn:Disable()
 	end
 end
 
-function var_0_2.JamSkillButton(arg_4_0, arg_4_1)
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._skillBtnList) do
-		iter_4_1:SetJam(arg_4_1)
+function BattleSkillView.JamSkillButton(self, isJam)
+	for _, skillBtn in ipairs(self._skillBtnList) do
+		skillBtn:SetJam(isJam)
 	end
 end
 
-function var_0_2.ShiftSubmarineManualButton(arg_5_0, arg_5_1)
-	if arg_5_1 == var_0_0.Battle.OxyState.STATE_FREE_FLOAT then
-		arg_5_0._diveBtn:SetActive(true)
-		arg_5_0._floatBtn:SetActive(false)
-	elseif arg_5_1 == var_0_0.Battle.OxyState.STATE_FREE_DIVE then
-		arg_5_0._diveBtn:SetActive(false)
-		arg_5_0._floatBtn:SetActive(true)
+-- 被BattleUIMediator.onManualSubShift调用
+-- 这个按钮只用在破交作战中
+function BattleSkillView.ShiftSubmarineManualButton(self, state)
+	if state == ys.Battle.OxyState.STATE_FREE_FLOAT then
+		self._diveBtn:SetActive(true)
+		self._floatBtn:SetActive(false)
+	elseif state == ys.Battle.OxyState.STATE_FREE_DIVE then
+		self._diveBtn:SetActive(false)
+		self._floatBtn:SetActive(true)
 	end
 end
 
-function var_0_2.InitBtns(arg_6_0)
-	arg_6_0._skillBtnList = {}
-	arg_6_0._activeBtnList = {}
-	arg_6_0._delayAnimaList = {}
-	arg_6_0._fleetVO = arg_6_0._mediator._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-	arg_6_0._buttonContainer = arg_6_0._ui._tf:Find("Weapon_button_container")
-	arg_6_0._buttonRes = arg_6_0._ui._tf:Find("Weapon_button_Resource")
+-- 所有主要按钮的初始化, 以及回调函数的配置
+-- 主要逻辑在这里
+function BattleSkillView.InitBtns(self)
+	self._skillBtnList = {}
+	self._activeBtnList = {}
+	self._delayAnimaList = {}
+	self._fleetVO = self._mediator._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+	self._buttonContainer = self._ui._tf:Find("Weapon_button_container")
+	self._buttonRes = self._ui._tf:Find("Weapon_button_Resource")
 
-	local function var_6_0()
+	local function ButtonEmptyTips()
 		pg.TipsMgr.GetInstance():ShowTips(i18n("battle_emptyBlock"))
 	end
 
-	local function var_6_1()
+	local function doNothing()
 		return
 	end
 
-	local function var_6_2()
-		if arg_6_0._main_cannon_sound then
-			arg_6_0._main_cannon_sound:Stop(true)
+	local function onChargeButtonDown()
+		if self._main_cannon_sound then
+			self._main_cannon_sound:Stop(true)
 		end
 
-		arg_6_0._main_cannon_sound = pg.CriMgr.GetInstance():PlaySE_V3("battle-cannon-main-prepared")
+		self._main_cannon_sound = pg.CriMgr.GetInstance():PlaySE_V3("battle-cannon-main-prepared")
 
-		arg_6_0._fleetVO:CastChargeWeapon()
+		self._fleetVO:CastChargeWeapon()
 	end
 
-	local function var_6_3()
-		arg_6_0._fleetVO:UnleashChrageWeapon()
+	local function onChargeButtonUp()
+		self._fleetVO:UnleashChrageWeapon()
 	end
 
-	local function var_6_4()
-		if arg_6_0._main_cannon_sound then
-			arg_6_0._main_cannon_sound:Stop(true)
+	local function onChargeButtonCancel()
+		if self._main_cannon_sound then
+			self._main_cannon_sound:Stop(true)
 		end
 
-		arg_6_0._fleetVO:CancelChargeWeapon()
+		self._fleetVO:CancelChargeWeapon()
+	end
+	-- 跨射按钮
+	self._chargeBtn = self:generateCommonButton(1)
+	-- 对应BattleWeaponButton.ConfigCallback
+	-- 四个函数分别对应: 按下, 抬起, 取消, 空按钮提示
+	self._chargeBtn:ConfigCallback(onChargeButtonDown, onChargeButtonUp, onChargeButtonCancel, ButtonEmptyTips)
+
+	local chargeWeaponVO = self._fleetVO:GetChargeWeaponVO()
+
+	self._chargeBtn:SetProgressInfo(chargeWeaponVO)
+
+	local function onTorpedoButtonDown()
+		self._fleetVO:CastTorpedo()
 	end
 
-	arg_6_0._chargeBtn = arg_6_0:generateCommonButton(1)
-
-	arg_6_0._chargeBtn:ConfigCallback(var_6_2, var_6_3, var_6_4, var_6_0)
-
-	local var_6_5 = arg_6_0._fleetVO:GetChargeWeaponVO()
-
-	arg_6_0._chargeBtn:SetProgressInfo(var_6_5)
-
-	local function var_6_6()
-		arg_6_0._fleetVO:CastTorpedo()
+	local function onTorpedoButtonUp()
+		self._fleetVO:UnleashTorpedo()
 	end
 
-	local function var_6_7()
-		arg_6_0._fleetVO:UnleashTorpedo()
+	local function onTorpedoButtonCancel()
+		self._fleetVO:CancelTorpedo()
 	end
 
-	local function var_6_8()
-		arg_6_0._fleetVO:CancelTorpedo()
+	self._torpedoBtn = self:generateCommonButton(2)
+
+	self._torpedoBtn:ConfigCallback(onTorpedoButtonDown, onTorpedoButtonUp, onTorpedoButtonCancel, ButtonEmptyTips)
+
+	local torpedoWeaponVO = self._fleetVO:GetTorpedoWeaponVO()
+
+	self._torpedoBtn:SetProgressInfo(torpedoWeaponVO)
+
+	local function onAirStrikeUp()
+		self._fleetVO:UnleashAllInStrike(true)
 	end
 
-	arg_6_0._torpedoBtn = arg_6_0:generateCommonButton(2)
+	self._airStrikeBtn = self:generateCommonButton(3)
 
-	arg_6_0._torpedoBtn:ConfigCallback(var_6_6, var_6_7, var_6_8, var_6_0)
+	self._airStrikeBtn:ConfigCallback(doNothing, onAirStrikeUp, doNothing, ButtonEmptyTips)
 
-	local var_6_9 = arg_6_0._fleetVO:GetTorpedoWeaponVO()
+	local airAssistVO = self._fleetVO:GetAirAssistVO()
 
-	arg_6_0._torpedoBtn:SetProgressInfo(var_6_9)
+	self._airStrikeBtn:SetProgressInfo(airAssistVO)
 
-	local function var_6_10()
-		arg_6_0._fleetVO:UnleashAllInStrike(true)
+	local function onDiveButtonUp()
+		self._fleetVO:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_DIVE, true)
 	end
+	-- 这个是破交模式下的下潜按钮
+	self._diveBtn = self:generateSubmarineFuncButton(5)
 
-	arg_6_0._airStrikeBtn = arg_6_0:generateCommonButton(3)
+	self._diveBtn:ConfigCallback(doNothing, onDiveButtonUp, doNothing, ButtonEmptyTips)
 
-	arg_6_0._airStrikeBtn:ConfigCallback(var_6_1, var_6_10, var_6_1, var_6_0)
+	local subFreeDiveVO = self._fleetVO:GetSubFreeDiveVO()
 
-	local var_6_11 = arg_6_0._fleetVO:GetAirAssistVO()
+	self._diveBtn:SetProgressInfo(subFreeDiveVO)
+	self._diveBtn:SetActive(false)
 
-	arg_6_0._airStrikeBtn:SetProgressInfo(var_6_11)
-
-	local function var_6_12()
-		arg_6_0._fleetVO:ChangeSubmarineState(var_0_0.Battle.OxyState.STATE_FREE_DIVE, true)
+	local function onFloatButtonUp()
+		self._fleetVO:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_FLOAT, true)
 	end
+	-- 破交模式下的上浮按钮
+	self._floatBtn = self:generateSubmarineFuncButton(6)
 
-	arg_6_0._diveBtn = arg_6_0:generateSubmarineFuncButton(5)
+	self._floatBtn:ConfigCallback(doNothing, onFloatButtonUp, doNothing, ButtonEmptyTips)
 
-	arg_6_0._diveBtn:ConfigCallback(var_6_1, var_6_12, var_6_1, var_6_0)
+	local subFleetFloatVO = self._fleetVO:GetSubFreeFloatVO()
 
-	local var_6_13 = arg_6_0._fleetVO:GetSubFreeDiveVO()
+	self._floatBtn:SetProgressInfo(subFleetFloatVO)
+	self._floatBtn:SetActive(false)
 
-	arg_6_0._diveBtn:SetProgressInfo(var_6_13)
-	arg_6_0._diveBtn:SetActive(false)
-
-	local function var_6_14()
-		arg_6_0._fleetVO:ChangeSubmarineState(var_0_0.Battle.OxyState.STATE_FREE_FLOAT, true)
+	local function onSubBoostButtonUp()
+		self._fleetVO:SubmarinBoost()
 	end
+	-- 从回调来看，是加速按钮(但从来没出现过这个按钮)
+	self._boostBtn = self:generateSubmarineFuncButton(7)
 
-	arg_6_0._floatBtn = arg_6_0:generateSubmarineFuncButton(6)
+	self._boostBtn:ConfigCallback(doNothing, onSubBoostButtonUp, doNothing, ButtonEmptyTips)
 
-	arg_6_0._floatBtn:ConfigCallback(var_6_1, var_6_14, var_6_1, var_6_0)
+	local subBoostVO = self._fleetVO:GetSubBoostVO()
 
-	local var_6_15 = arg_6_0._fleetVO:GetSubFreeFloatVO()
+	self._boostBtn:SetProgressInfo(subBoostVO)
 
-	arg_6_0._floatBtn:SetProgressInfo(var_6_15)
-	arg_6_0._floatBtn:SetActive(false)
-
-	local function var_6_16()
-		arg_6_0._fleetVO:SubmarinBoost()
+	local function onSubSpecialButtonUp()
+		self._fleetVO:UnleashSubmarineSpecial()
 	end
+	-- 破交作战中的潜艇弹幕发射按钮
+	self._specialBtn = self:generateSubmarineButton(9)
 
-	arg_6_0._boostBtn = arg_6_0:generateSubmarineFuncButton(7)
+	self._specialBtn:ConfigCallback(doNothing, onSubSpecialButtonUp, doNothing, ButtonEmptyTips)
 
-	arg_6_0._boostBtn:ConfigCallback(var_6_1, var_6_16, var_6_1, var_6_0)
+	local subSpecialVO = self._fleetVO:GetSubSpecialVO()
 
-	local var_6_17 = arg_6_0._fleetVO:GetSubBoostVO()
+	self._specialBtn:SetProgressInfo(subSpecialVO)
 
-	arg_6_0._boostBtn:SetProgressInfo(var_6_17)
-
-	local function var_6_18()
-		arg_6_0._fleetVO:UnleashSubmarineSpecial()
+	local function onShiftSubButtonUp()
+		self._fleetVO:ShiftManualSub()
 	end
+	-- 破交作战中的交换潜艇按钮
+	self._shiftBtn = self:generateSubmarineFuncButton(8)
 
-	arg_6_0._specialBtn = arg_6_0:generateSubmarineButton(9)
+	self._shiftBtn:ConfigCallback(doNothing, onShiftSubButtonUp, doNothing, ButtonEmptyTips)
 
-	arg_6_0._specialBtn:ConfigCallback(var_6_1, var_6_18, var_6_1, var_6_0)
+	local subShiftVO = self._fleetVO:GetSubShiftVO()
 
-	local var_6_19 = arg_6_0._fleetVO:GetSubSpecialVO()
+	self._shiftBtn:SetProgressInfo(subShiftVO)
 
-	arg_6_0._specialBtn:SetProgressInfo(var_6_19)
+	local submarineVO = self._fleetVO._submarineVO
 
-	local function var_6_20()
-		arg_6_0._fleetVO:ShiftManualSub()
-	end
-
-	arg_6_0._shiftBtn = arg_6_0:generateSubmarineFuncButton(8)
-
-	arg_6_0._shiftBtn:ConfigCallback(var_6_1, var_6_20, var_6_1, var_6_0)
-
-	local var_6_21 = arg_6_0._fleetVO:GetSubShiftVO()
-
-	arg_6_0._shiftBtn:SetProgressInfo(var_6_21)
-
-	local var_6_22 = arg_6_0._fleetVO._submarineVO
-
-	if var_6_22:GetUseable() and var_6_22:GetCount() > 0 then
-		local function var_6_23()
-			arg_6_0._mediator._dataProxy:SubmarineStrike(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+	if submarineVO:GetUseable() and submarineVO:GetCount() > 0 then
+		local function onSubStriveButtonUp()
+			self._mediator._dataProxy:SubmarineStrike(ys.Battle.BattleConfig.FRIENDLY_CODE)
 		end
 
-		arg_6_0._subStriveBtn = arg_6_0:generateSubmarineButton(4)
+		self._subStriveBtn = self:generateSubmarineButton(4)
 
-		local var_6_24 = arg_6_0._subStriveBtn:GetSkin()
+		local subStriveButtonSkin = self._subStriveBtn:GetSkin()
 
-		arg_6_0.SetSkillButtonPreferences(var_6_24, 4)
-		arg_6_0._subStriveBtn:ConfigCallback(var_6_1, var_6_23, var_6_1, var_6_0)
-		arg_6_0._subStriveBtn:SetProgressInfo(var_6_22)
-		table.insert(arg_6_0._activeBtnList, arg_6_0._subStriveBtn)
+		self.SetSkillButtonPreferences(subStriveButtonSkin, 4)
+		self._subStriveBtn:ConfigCallback(doNothing, onSubStriveButtonUp, doNothing, ButtonEmptyTips)
+		self._subStriveBtn:SetProgressInfo(submarineVO)
+		table.insert(self._activeBtnList, self._subStriveBtn)
 	end
+	-- 这里又重新生成了一个鱼雷按钮, 是什么意思？无法理解(上面已经生成过了)
+	local torpedoButton = ys.Battle.BattleWeaponButton.New()
+	local buttonSkin = cloneTplTo(self._progressSkin, self._buttonContainer)
 
-	local var_6_25 = var_0_0.Battle.BattleWeaponButton.New()
-	local var_6_26 = cloneTplTo(arg_6_0._progressSkin, arg_6_0._buttonContainer)
-
-	arg_6_0.SetSkillButtonPreferences(var_6_26, 2)
-	var_6_25:ConfigSkin(var_6_26)
-	var_6_25:SwitchIcon(10)
-	var_6_25:SwitchIconEffect(2)
-	var_6_25:ConfigCallback(var_6_6, var_6_7, var_6_8, var_6_0)
-	table.insert(arg_6_0._skillBtnList, var_6_25)
-	var_6_25:SetProgressInfo(var_6_9)
-	var_6_25:SetActive(false)
-	arg_6_0._boostBtn:SetActive(false)
-	arg_6_0._diveBtn:SetActive(false)
-	arg_6_0._floatBtn:SetActive(false)
-	arg_6_0._specialBtn:SetActive(false)
-	arg_6_0._shiftBtn:SetActive(false)
+	self.SetSkillButtonPreferences(buttonSkin, 2)
+	torpedoButton:ConfigSkin(buttonSkin)
+	torpedoButton:SwitchIcon(10)
+	torpedoButton:SwitchIconEffect(2)
+	torpedoButton:ConfigCallback(onTorpedoButtonDown, onTorpedoButtonUp, onTorpedoButtonCancel, ButtonEmptyTips)
+	table.insert(self._skillBtnList, torpedoButton)
+	torpedoButton:SetProgressInfo(torpedoWeaponVO)
+	torpedoButton:SetActive(false)
+	self._boostBtn:SetActive(false)
+	self._diveBtn:SetActive(false)
+	self._floatBtn:SetActive(false)
+	self._specialBtn:SetActive(false)
+	self._shiftBtn:SetActive(false)
 end
 
-function var_0_2.generateCommonButton(arg_22_0, arg_22_1)
-	local var_22_0 = var_0_0.Battle.BattleState.GetCombatSkinKey()
-	local var_22_1
-
-	if var_0_0.Battle["BattleWeaponButton" .. var_22_0] then
-		var_22_1 = var_0_0.Battle["BattleWeaponButton" .. var_22_0].New()
+-- 生成普通按钮
+function BattleSkillView.generateCommonButton(self, index)
+	-- 作战主题
+	local combatSkinKey = ys.Battle.BattleState.GetCombatSkinKey()
+	local button
+	-- 有些主题重写了整个按钮, 因此是可能存在逻辑变化的
+	if ys.Battle["BattleWeaponButton" .. combatSkinKey] then
+		button = ys.Battle["BattleWeaponButton" .. combatSkinKey].New()
 	else
-		var_22_1 = var_0_0.Battle.BattleWeaponButton.New()
+		button = ys.Battle.BattleWeaponButton.New()
 	end
+	-- 进度条皮肤
+	self._progressSkin = self._progressSkin or self._ui._tf:Find("Weapon_button_progress")
+	-- 
+	local buttonSkin = cloneTplTo(self._progressSkin, self._buttonContainer)
 
-	arg_22_0._progressSkin = arg_22_0._progressSkin or arg_22_0._ui._tf:Find("Weapon_button_progress")
+	buttonSkin.name = "Skill_" .. index
 
-	local var_22_2 = cloneTplTo(arg_22_0._progressSkin, arg_22_0._buttonContainer)
+	self.SetSkillButtonPreferences(buttonSkin, index)
+	button:ConfigSkin(buttonSkin)
+	button:SwitchIcon(index)
+	button:SwitchIconEffect(index)
+	button:SetTextActive(true)
+	table.insert(self._skillBtnList, button)
 
-	var_22_2.name = "Skill_" .. arg_22_1
-
-	arg_22_0.SetSkillButtonPreferences(var_22_2, arg_22_1)
-	var_22_1:ConfigSkin(var_22_2)
-	var_22_1:SwitchIcon(arg_22_1)
-	var_22_1:SwitchIconEffect(arg_22_1)
-	var_22_1:SetTextActive(true)
-	table.insert(arg_22_0._skillBtnList, var_22_1)
-
-	return var_22_1
+	return button
 end
 
-function var_0_2.generateSubmarineFuncButton(arg_23_0, arg_23_1)
-	local var_23_0 = var_0_0.Battle.BattleSubmarineFuncButton.New()
+function BattleSkillView.generateSubmarineFuncButton(arg_23_0, arg_23_1)
+	local var_23_0 = ys.Battle.BattleSubmarineFuncButton.New()
 
 	arg_23_0._progressSkin = arg_23_0._progressSkin or arg_23_0._ui._tf:Find("Weapon_button_progress")
 
@@ -263,8 +273,8 @@ function var_0_2.generateSubmarineFuncButton(arg_23_0, arg_23_1)
 	return var_23_0
 end
 
-function var_0_2.generateSubmarineButton(arg_24_0, arg_24_1)
-	local var_24_0 = var_0_0.Battle.BattleSubmarineButton.New()
+function BattleSkillView.generateSubmarineButton(arg_24_0, arg_24_1)
+	local var_24_0 = ys.Battle.BattleSubmarineButton.New()
 
 	arg_24_0._disposableSkin = arg_24_0._disposableSkin or arg_24_0._ui._tf:Find("Weapon_button")
 
@@ -277,13 +287,13 @@ function var_0_2.generateSubmarineButton(arg_24_0, arg_24_1)
 	return var_24_0
 end
 
-function var_0_2.CustomButton(arg_25_0, arg_25_1)
+function BattleSkillView.CustomButton(arg_25_0, arg_25_1)
 	for iter_25_0, iter_25_1 in ipairs(arg_25_1) do
 		arg_25_0._skillBtnList[iter_25_1]:SetActive(false)
 	end
 end
 
-function var_0_2.NormalButton(arg_26_0)
+function BattleSkillView.NormalButton(arg_26_0)
 	arg_26_0._chargeBtn:SetActive(true)
 	arg_26_0._torpedoBtn:SetActive(true)
 	arg_26_0._airStrikeBtn:SetActive(true)
@@ -304,7 +314,7 @@ function var_0_2.NormalButton(arg_26_0)
 	end
 end
 
-function var_0_2.SubmarineButton(arg_27_0)
+function BattleSkillView.SubmarineButton(arg_27_0)
 	arg_27_0._chargeBtn:SetActive(false)
 	arg_27_0._torpedoBtn:SetActive(true)
 	arg_27_0._airStrikeBtn:SetActive(false)
@@ -320,13 +330,13 @@ function var_0_2.SubmarineButton(arg_27_0)
 	table.insert(arg_27_0._delayAnimaList, arg_27_0._boostBtn)
 
 	local var_27_0 = arg_27_0._torpedoBtn:GetSkin().transform
-	local var_27_1 = var_0_1.SKILL_BUTTON_DEFAULT_PREFERENCE[2]
+	local var_27_1 = BattleConfig.SKILL_BUTTON_DEFAULT_PREFERENCE[2]
 
 	var_27_0.anchorMin = Vector2(var_27_1.x, var_27_1.y)
 	var_27_0.anchorMax = Vector2(var_27_1.x, var_27_1.y)
 end
 
-function var_0_2.SubRoutineButton(arg_28_0)
+function BattleSkillView.SubRoutineButton(arg_28_0)
 	arg_28_0._chargeBtn:SetActive(false)
 	arg_28_0._torpedoBtn:SetActive(true)
 	arg_28_0._airStrikeBtn:SetActive(false)
@@ -351,7 +361,7 @@ function var_0_2.SubRoutineButton(arg_28_0)
 	arg_28_0.SetSkillButtonPreferences(arg_28_0._specialBtn:GetSkin(), 4)
 end
 
-function var_0_2.AirFightButton(arg_29_0)
+function BattleSkillView.AirFightButton(arg_29_0)
 	local var_29_0 = {
 		9
 	}
@@ -368,13 +378,13 @@ function var_0_2.AirFightButton(arg_29_0)
 	end
 end
 
-function var_0_2.ButtonInitialAnima(arg_30_0)
+function BattleSkillView.ButtonInitialAnima(arg_30_0)
 	for iter_30_0, iter_30_1 in ipairs(arg_30_0._delayAnimaList) do
 		iter_30_1:InitialAnima(iter_30_0 * 0.2)
 	end
 end
 
-function var_0_2.CardPuzzleButton(arg_31_0)
+function BattleSkillView.CardPuzzleButton(arg_31_0)
 	arg_31_0._chargeBtn:SetActive(false)
 	arg_31_0._torpedoBtn:SetActive(false)
 	arg_31_0._airStrikeBtn:SetActive(false)
@@ -385,13 +395,13 @@ function var_0_2.CardPuzzleButton(arg_31_0)
 	arg_31_0._shiftBtn:SetActive(false)
 end
 
-function var_0_2.HideSkillButton(arg_32_0, arg_32_1)
+function BattleSkillView.HideSkillButton(arg_32_0, arg_32_1)
 	for iter_32_0, iter_32_1 in ipairs(arg_32_0._activeBtnList) do
 		iter_32_1:SetActive(not arg_32_1)
 	end
 end
 
-function var_0_2.OnSkillCd(arg_33_0, arg_33_1)
+function BattleSkillView.OnSkillCd(arg_33_0, arg_33_1)
 	local var_33_0 = arg_33_1.Data.skillID
 	local var_33_1 = arg_33_1.Data.coolDownTime
 
@@ -402,7 +412,7 @@ function var_0_2.OnSkillCd(arg_33_0, arg_33_1)
 	arg_33_0._skillCd[var_33_0] = var_33_1
 end
 
-function var_0_2.Dispose(arg_34_0)
+function BattleSkillView.Dispose(arg_34_0)
 	arg_34_0._delayAnimaList = nil
 	arg_34_0._activeBtnList = nil
 
@@ -418,17 +428,17 @@ function var_0_2.Dispose(arg_34_0)
 		arg_34_0._main_cannon_sound = nil
 	end
 
-	var_0_0.EventListener.DetachEventListener(arg_34_0)
+	ys.EventListener.DetachEventListener(arg_34_0)
 end
 
-function var_0_2.Update(arg_35_0)
+function BattleSkillView.Update(arg_35_0)
 	for iter_35_0, iter_35_1 in ipairs(arg_35_0._skillBtnList) do
 		iter_35_1:Update()
 	end
 end
 
-function var_0_2.SetSkillButtonPreferences(arg_36_0, arg_36_1)
-	local var_36_0 = var_0_1.SKILL_BUTTON_DEFAULT_PREFERENCE[arg_36_1]
+function BattleSkillView.SetSkillButtonPreferences(arg_36_0, arg_36_1)
+	local var_36_0 = BattleConfig.SKILL_BUTTON_DEFAULT_PREFERENCE[arg_36_1]
 	local var_36_1 = PlayerPrefs.GetFloat("skill_" .. arg_36_1 .. "_scale", var_36_0.scale)
 	local var_36_2 = PlayerPrefs.GetFloat("skill_" .. arg_36_1 .. "_anchorX", var_36_0.x)
 	local var_36_3 = PlayerPrefs.GetFloat("skill_" .. arg_36_1 .. "_anchorY", var_36_0.y)

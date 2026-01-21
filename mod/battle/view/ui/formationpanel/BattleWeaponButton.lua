@@ -1,11 +1,12 @@
 ys = ys or {}
---TODO
-local var_0_0 = ys
-local var_0_1 = class("BattleWeaponButton")
 
-var_0_0.Battle.BattleWeaponButton = var_0_1
-var_0_1.__name = "BattleWeaponButton"
-var_0_1.ICON_BY_INDEX = {
+local ys = ys
+local BattleWeaponButton = class("BattleWeaponButton")
+
+ys.Battle.BattleWeaponButton = BattleWeaponButton
+BattleWeaponButton.__name = "BattleWeaponButton"
+-- 武器与对应的Icon索引的映射表
+BattleWeaponButton.ICON_BY_INDEX = {
 	"cannon",
 	"torpedo",
 	"aircraft",
@@ -20,34 +21,36 @@ var_0_1.ICON_BY_INDEX = {
 	"pointairstrike"
 }
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+-- 在BattleSkillView.InitBtns中初始化
+function BattleWeaponButton.Ctor(self)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_1_0.eventTriggers = {}
+	self.eventTriggers = {}
 end
 
-function var_0_1.ConfigCallback(arg_2_0, arg_2_1, arg_2_2, arg_2_3, arg_2_4)
-	arg_2_0._downFunc = arg_2_1
-	arg_2_0._upFunc = arg_2_2
-	arg_2_0._cancelFunc = arg_2_3
-	arg_2_0._emptyFunc = arg_2_4
+-- 配置按键回调
+function BattleWeaponButton.ConfigCallback(self, downFunc, upFunc, cancelFunc, emptyFunc)
+	self._downFunc = downFunc
+	self._upFunc = upFunc
+	self._cancelFunc = cancelFunc
+	self._emptyFunc = emptyFunc
 end
 
-function var_0_1.SetActive(arg_3_0, arg_3_1)
+function BattleWeaponButton.SetActive(arg_3_0, arg_3_1)
 	SetActive(arg_3_0._skin, arg_3_1)
 end
 
-function var_0_1.SetJam(arg_4_0, arg_4_1)
+function BattleWeaponButton.SetJam(arg_4_0, arg_4_1)
 	SetActive(arg_4_0._jam, arg_4_1)
 	SetActive(arg_4_0._icon, not arg_4_1)
 	SetActive(arg_4_0._progress, not arg_4_1)
 end
 
-function var_0_1.SwitchIcon(arg_5_0, arg_5_1, arg_5_2)
+function BattleWeaponButton.SwitchIcon(arg_5_0, arg_5_1, arg_5_2)
 	arg_5_0._iconIndex = arg_5_1
 
-	local var_5_0 = var_0_1.ICON_BY_INDEX[arg_5_1]
-	local var_5_1 = arg_5_2 or var_0_0.Battle.BattleState.GetCombatSkinKey()
+	local var_5_0 = BattleWeaponButton.ICON_BY_INDEX[arg_5_1]
+	local var_5_1 = arg_5_2 or ys.Battle.BattleState.GetCombatSkinKey()
 
 	if var_5_1 ~= "Standard" then
 		var_5_1 = ""
@@ -57,9 +60,9 @@ function var_0_1.SwitchIcon(arg_5_0, arg_5_1, arg_5_2)
 	setImageSprite(arg_5_0._filled, LoadSprite("ui/CombatUI" .. var_5_1 .. "_atlas", "filled_combined_" .. var_5_0))
 end
 
-function var_0_1.SwitchIconEffect(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = var_0_1.ICON_BY_INDEX[arg_6_1]
-	local var_6_1 = arg_6_2 or var_0_0.Battle.BattleState.GetCombatSkinKey()
+function BattleWeaponButton.SwitchIconEffect(arg_6_0, arg_6_1, arg_6_2)
+	local var_6_0 = BattleWeaponButton.ICON_BY_INDEX[arg_6_1]
+	local var_6_1 = arg_6_2 or ys.Battle.BattleState.GetCombatSkinKey()
 
 	if var_6_1 ~= "Standard" then
 		var_6_1 = ""
@@ -69,7 +72,7 @@ function var_0_1.SwitchIconEffect(arg_6_0, arg_6_1, arg_6_2)
 	setImageSprite(arg_6_0._jam, LoadSprite("ui/CombatUI" .. var_6_1 .. "_atlas", "skill_jam_" .. var_6_0), true)
 end
 
-function var_0_1.ConfigSkin(arg_7_0, arg_7_1)
+function BattleWeaponButton.ConfigSkin(arg_7_0, arg_7_1)
 	arg_7_0._skin = arg_7_1
 	arg_7_0._btn = arg_7_1:Find("ActCtl")
 	arg_7_0._block = arg_7_1:Find("ActCtl/block").gameObject
@@ -103,11 +106,12 @@ function var_0_1.ConfigSkin(arg_7_0, arg_7_1)
 	arg_7_0._fullChargeEff = arg_7_1:Find("ActCtl/gizmos_xue")
 end
 
-function var_0_1.GetSkin(arg_9_0)
+function BattleWeaponButton.GetSkin(arg_9_0)
 	return arg_9_0._skin
 end
 
-function var_0_1.Enabled(arg_10_0, arg_10_1)
+-- 被BattleSkillView.EnableWeaponButton调用
+function BattleWeaponButton.Enabled(arg_10_0, arg_10_1)
 	local var_10_0 = GetComponent(arg_10_0._btn, "EventTriggerListener")
 	local var_10_1 = GetComponent(arg_10_0._block, "EventTriggerListener")
 
@@ -117,7 +121,7 @@ function var_0_1.Enabled(arg_10_0, arg_10_1)
 	var_10_1.enabled = arg_10_1
 end
 
-function var_0_1.Disable(arg_11_0)
+function BattleWeaponButton.Disable(arg_11_0)
 	if arg_11_0._cancelFunc then
 		arg_11_0._cancelFunc()
 	end
@@ -131,31 +135,31 @@ function var_0_1.Disable(arg_11_0)
 	var_11_1.enabled = false
 end
 
-function var_0_1.OnSelected(arg_12_0)
+function BattleWeaponButton.OnSelected(arg_12_0)
 	SetActive(arg_12_0._unSelect, false)
 	SetActive(arg_12_0._selected, true)
 end
 
-function var_0_1.OnUnSelect(arg_13_0)
+function BattleWeaponButton.OnUnSelect(arg_13_0)
 	SetActive(arg_13_0._selected, false)
 	SetActive(arg_13_0._unSelect, true)
 end
 
-function var_0_1.OnFilled(arg_14_0)
+function BattleWeaponButton.OnFilled(arg_14_0)
 	SetActive(arg_14_0._filled, true)
 	SetActive(arg_14_0._unfill, false)
 end
 
-function var_0_1.OnUnfill(arg_15_0)
+function BattleWeaponButton.OnUnfill(arg_15_0)
 	SetActive(arg_15_0._filled, false)
 	SetActive(arg_15_0._unfill, true)
 end
 
-function var_0_1.OnfilledEffect(arg_16_0)
+function BattleWeaponButton.OnfilledEffect(arg_16_0)
 	SetActive(arg_16_0._filledEffect, true)
 end
 
-function var_0_1.OnOverLoadChange(arg_17_0, arg_17_1)
+function BattleWeaponButton.OnOverLoadChange(arg_17_0, arg_17_1)
 	if arg_17_0._progressInfo:IsOverLoad() then
 		arg_17_0._block:SetActive(true)
 		arg_17_0:OnUnfill()
@@ -185,26 +189,26 @@ function var_0_1.OnOverLoadChange(arg_17_0, arg_17_1)
 	end
 end
 
-function var_0_1.SetProgressActive(arg_18_0, arg_18_1)
+function BattleWeaponButton.SetProgressActive(arg_18_0, arg_18_1)
 	arg_18_0._progress.gameObject:SetActive(arg_18_1)
 end
 
-function var_0_1.SetTextActive(arg_19_0, arg_19_1)
+function BattleWeaponButton.SetTextActive(arg_19_0, arg_19_1)
 	SetActive(arg_19_0._count, arg_19_1)
 end
 
-function var_0_1.SetProgressInfo(arg_20_0, arg_20_1)
+function BattleWeaponButton.SetProgressInfo(arg_20_0, arg_20_1)
 	arg_20_0._progressInfo = arg_20_1
 
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, var_0_0.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, arg_20_0.OnTotalChange)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, var_0_0.Battle.BattleEvent.WEAPON_COUNT_PLUS, arg_20_0.OnfilledEffect)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE, arg_20_0.OnOverLoadChange)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, var_0_0.Battle.BattleEvent.COUNT_CHANGE, arg_20_0.OnCountChange)
+	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, arg_20_0.OnTotalChange)
+	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS, arg_20_0.OnfilledEffect)
+	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.OVER_LOAD_CHANGE, arg_20_0.OnOverLoadChange)
+	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.COUNT_CHANGE, arg_20_0.OnCountChange)
 	arg_20_0:OnTotalChange()
 	arg_20_0:OnOverLoadChange()
 end
 
-function var_0_1.OnCountChange(arg_21_0)
+function BattleWeaponButton.OnCountChange(arg_21_0)
 	local var_21_0 = arg_21_0._progressInfo:GetCount()
 	local var_21_1 = arg_21_0._progressInfo:GetTotal()
 
@@ -223,7 +227,7 @@ function var_0_1.OnCountChange(arg_21_0)
 	end
 end
 
-function var_0_1.OnTotalChange(arg_22_0, arg_22_1)
+function BattleWeaponButton.OnTotalChange(arg_22_0, arg_22_1)
 	if arg_22_0._progressInfo:GetTotal() <= 0 then
 		arg_22_0._block:SetActive(true)
 
@@ -252,7 +256,7 @@ function var_0_1.OnTotalChange(arg_22_0, arg_22_1)
 	end
 end
 
-function var_0_1.SetControllerActive(arg_23_0, arg_23_1)
+function BattleWeaponButton.SetControllerActive(arg_23_0, arg_23_1)
 	if arg_23_0._isActive == arg_23_1 then
 		return
 	end
@@ -305,7 +309,7 @@ function var_0_1.SetControllerActive(arg_23_0, arg_23_1)
 	end
 end
 
-function var_0_1.InitialAnima(arg_27_0, arg_27_1)
+function BattleWeaponButton.InitialAnima(arg_27_0, arg_27_1)
 	SetActive(arg_27_0._btn, false)
 
 	arg_27_0._leanID = LeanTween.delayedCall(arg_27_1, System.Action(function()
@@ -314,7 +318,7 @@ function var_0_1.InitialAnima(arg_27_0, arg_27_1)
 	end))
 end
 
-function var_0_1.Update(arg_29_0)
+function BattleWeaponButton.Update(arg_29_0)
 	local var_29_0 = arg_29_0._progressInfo:GetCurrent()
 	local var_29_1 = arg_29_0._progressInfo:GetMax()
 
@@ -323,7 +327,7 @@ function var_0_1.Update(arg_29_0)
 	end
 end
 
-function var_0_1.SetToCombatUIPreview(arg_30_0, arg_30_1)
+function BattleWeaponButton.SetToCombatUIPreview(arg_30_0, arg_30_1)
 	if arg_30_1 then
 		SetActive(arg_30_0._filled, true)
 		SetActive(arg_30_0._unfill, false)
@@ -359,7 +363,7 @@ function var_0_1.SetToCombatUIPreview(arg_30_0, arg_30_1)
 	end
 end
 
-function var_0_1.updateProgressBar(arg_31_0)
+function BattleWeaponButton.updateProgressBar(arg_31_0)
 	local var_31_0 = arg_31_0._progressInfo:GetCurrent() / arg_31_0._progressInfo:GetMax()
 
 	arg_31_0._progressBar.fillAmount = var_31_0
@@ -373,7 +377,7 @@ function var_0_1.updateProgressBar(arg_31_0)
 	end
 end
 
-function var_0_1.Dispose(arg_32_0)
+function BattleWeaponButton.Dispose(arg_32_0)
 	if arg_32_0.eventTriggers then
 		for iter_32_0, iter_32_1 in pairs(arg_32_0.eventTriggers) do
 			ClearEventTrigger(iter_32_0)
@@ -385,9 +389,9 @@ function var_0_1.Dispose(arg_32_0)
 	arg_32_0._progress = nil
 	arg_32_0._progressBar = nil
 
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleEvent.WEAPON_TOTAL_CHANGE)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleEvent.WEAPON_COUNT_PLUS)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, var_0_0.Battle.BattleEvent.COUNT_CHANGE)
-	var_0_0.EventListener.DetachEventListener(arg_32_0)
+	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.OVER_LOAD_CHANGE)
+	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE)
+	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
+	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.COUNT_CHANGE)
+	ys.EventListener.DetachEventListener(arg_32_0)
 end

@@ -27,8 +27,8 @@ function BattlePointHitWeaponUnit.DispatchBlink(arg_2_0, arg_2_1)
 	arg_2_0:DispatchEvent(var_2_1)
 end
 
-function BattlePointHitWeaponUnit.RemoveAllLock(arg_3_0)
-	arg_3_0._lockList = {}
+function BattlePointHitWeaponUnit.RemoveAllLock(self)
+	self._lockList = {}
 end
 
 function BattlePointHitWeaponUnit.createMajorEmitter(self, barrageID, index)
@@ -73,6 +73,7 @@ function BattlePointHitWeaponUnit.SetPlayerChargeWeaponVO(self, playerChargeWeap
 	self._playerChargeWeaponVo = playerChargeWeaponVo
 end
 
+-- BattleFleetVO.CastChargeWeapon调用
 function BattlePointHitWeaponUnit.Charge(self)
 	self._currentState = self.STATE_PRECAST
 	self._lockList = {}
@@ -85,42 +86,48 @@ function BattlePointHitWeaponUnit.Charge(self)
 	self._strikeMode = true
 end
 
-function BattlePointHitWeaponUnit.CancelCharge(arg_9_0)
-	if arg_9_0._currentState ~= arg_9_0.STATE_PRECAST then
+-- BattleFleetVO.CancelChargeWeapon调用
+function BattlePointHitWeaponUnit.CancelCharge(self)
+	-- 也只处理PRECAST状态
+	if self._currentState ~= self.STATE_PRECAST then
 		return
 	end
+	-- 清空lockList
+	self:RemoveAllLock()
 
-	arg_9_0:RemoveAllLock()
+	self._currentState = self.STATE_READY
 
-	arg_9_0._currentState = arg_9_0.STATE_READY
+	local cancelArgs = {}
+	local cancelEvent = ys.Event.New(BattleUnitEvent.POINT_HIT_CANCEL, cancelArgs)
 
-	local var_9_0 = {}
-	local var_9_1 = ys.Event.New(BattleUnitEvent.POINT_HIT_CANCEL, var_9_0)
+	self:DispatchEvent(cancelEvent)
 
-	arg_9_0:DispatchEvent(var_9_1)
-
-	arg_9_0._strikeMode = nil
+	self._strikeMode = nil
 end
+
 -- 被BattleFleetVO.QuickTagChrageWeapon调用
+-- 也就是自律模式下的跨射武器瞄准
 function BattlePointHitWeaponUnit.QuickTag(self)
 	self._currentState = self.STATE_PRECAST
 	self._lockList = {}
 
 	self:updateMovementInfo()
 	-- 自律模式下，通过Tracking选择一个目标，加入到lockList里
+	-- 因为BattlePointHitWeaponUnit没有重载Tracking方法，所以用的就是父类的方法
 	-- (后续emmiter的spawnFunc发射时会从lockList里选第一个目标进行攻击)
 	local target = self:Tracking()
 
 	self._lockList[#self._lockList + 1] = target
 end
 
-function BattlePointHitWeaponUnit.CancelQuickTag(arg_11_0)
-	arg_11_0._currentState = arg_11_0.STATE_READY
-	arg_11_0._lockList = {}
+function BattlePointHitWeaponUnit.CancelQuickTag(self)
+	-- 清空lockList，并将状态重置为READY
+	self._currentState = self.STATE_READY
+	self._lockList = {}
 end
 
-function BattlePointHitWeaponUnit.Update(arg_12_0, arg_12_1)
-	arg_12_0:UpdateReload()
+function BattlePointHitWeaponUnit.Update(self, timeStamp)
+	self:UpdateReload()
 end
 
 function BattlePointHitWeaponUnit.Fire(self, targetPos)

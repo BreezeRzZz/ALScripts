@@ -1,19 +1,19 @@
-local var_0_0 = class("Chapter", import(".BaseVO"))
+local Chapter = class("Chapter", import(".BaseVO"))
 
-var_0_0.SelectFleet = 1
-var_0_0.CustomFleet = 2
-var_0_0.CHAPTER_STATE = {
+Chapter.SelectFleet = 1
+Chapter.CustomFleet = 2
+Chapter.CHAPTER_STATE = {
 	i18n("level_chapter_state_high_risk"),
 	i18n("level_chapter_state_risk"),
 	i18n("level_chapter_state_low_risk"),
 	i18n("level_chapter_state_safety")
 }
 
-function var_0_0.bindConfigTable(arg_1_0)
+function Chapter.bindConfigTable(arg_1_0)
 	return pg.chapter_template
 end
 
-function var_0_0.Ctor(arg_2_0, arg_2_1)
+function Chapter.Ctor(arg_2_0, arg_2_1)
 	arg_2_0.configId = arg_2_1.id
 	arg_2_0.id = arg_2_0.configId
 	arg_2_0.active = false
@@ -58,19 +58,19 @@ function var_0_0.Ctor(arg_2_0, arg_2_1)
 	end
 end
 
-function var_0_0.getConfigMiscArg(arg_3_0, arg_3_1)
+function Chapter.getConfigMiscArg(arg_3_0, arg_3_1)
 	return arg_3_0.miscArgDic[arg_3_1]
 end
 
-function var_0_0.BuildEliteFleetInfo(arg_4_0)
+function Chapter.BuildEliteFleetInfo(arg_4_0)
 	return {
-		[FleetType.Normal] = var_0_0.BuildEliteTeamInfo(arg_4_0.main_team),
-		[FleetType.Submarine] = var_0_0.BuildEliteTeamInfo(arg_4_0.submarine_team),
-		[FleetType.Support] = var_0_0.BuildEliteTeamInfo(arg_4_0.support_team)
+		[FleetType.Normal] = Chapter.BuildEliteTeamInfo(arg_4_0.main_team),
+		[FleetType.Submarine] = Chapter.BuildEliteTeamInfo(arg_4_0.submarine_team),
+		[FleetType.Support] = Chapter.BuildEliteTeamInfo(arg_4_0.support_team)
 	}
 end
 
-function var_0_0.BuildEliteTeamInfo(arg_5_0)
+function Chapter.BuildEliteTeamInfo(arg_5_0)
 	return underscore.map(arg_5_0, function(arg_6_0)
 		return {
 			[TeamType.FormShips] = underscore.to_array(arg_6_0.ship_list),
@@ -82,22 +82,22 @@ function var_0_0.BuildEliteTeamInfo(arg_5_0)
 	end)
 end
 
-function var_0_0.PackEliteFleetInfo(arg_7_0)
+function Chapter.PackEliteFleetInfo(arg_7_0)
 	return {
 		id = 0,
 		main_team = underscore.map(arg_7_0[FleetType.Normal], function(arg_8_0)
-			return var_0_0.PackEliteTeamInfo(arg_8_0)
+			return Chapter.PackEliteTeamInfo(arg_8_0)
 		end),
 		submarine_team = underscore.map(arg_7_0[FleetType.Submarine], function(arg_9_0)
-			return var_0_0.PackEliteTeamInfo(arg_9_0)
+			return Chapter.PackEliteTeamInfo(arg_9_0)
 		end),
 		support_team = underscore.map(arg_7_0[FleetType.Support], function(arg_10_0)
-			return var_0_0.PackEliteTeamInfo(arg_10_0)
+			return Chapter.PackEliteTeamInfo(arg_10_0)
 		end)
 	}
 end
 
-function var_0_0.PackEliteTeamInfo(arg_11_0)
+function Chapter.PackEliteTeamInfo(arg_11_0)
 	return {
 		id = arg_11_0.id or 0,
 		ship_list = underscore.to_array(arg_11_0[TeamType.FormShips]),
@@ -106,7 +106,7 @@ function var_0_0.PackEliteTeamInfo(arg_11_0)
 	}
 end
 
-function var_0_0.getMaxCount(arg_12_0)
+function Chapter.getMaxCount(arg_12_0)
 	local var_12_0 = arg_12_0:getConfig("risk_levels")
 
 	if #var_12_0 == 0 then
@@ -116,7 +116,7 @@ function var_0_0.getMaxCount(arg_12_0)
 	return var_12_0[1][1]
 end
 
-function var_0_0.hasMitigation(arg_13_0)
+function Chapter.hasMitigation(arg_13_0)
 	if not LOCK_MITIGATION then
 		return arg_13_0:getConfig("mitigation_level") > 0
 	else
@@ -124,13 +124,13 @@ function var_0_0.hasMitigation(arg_13_0)
 	end
 end
 
-function var_0_0.getRemainPassCount(arg_14_0)
+function Chapter.getRemainPassCount(arg_14_0)
 	local var_14_0 = arg_14_0:getMaxCount()
 
 	return math.max(var_14_0 - arg_14_0.passCount, 0)
 end
 
-function var_0_0.getRiskLevel(arg_15_0)
+function Chapter.getRiskLevel(arg_15_0)
 	local var_15_0 = arg_15_0:getRemainPassCount()
 	local var_15_1 = arg_15_0:getConfig("risk_levels")
 
@@ -143,48 +143,50 @@ function var_0_0.getRiskLevel(arg_15_0)
 	assert(false, "index can not be nil")
 end
 
-function var_0_0.getMitigationRate(arg_16_0)
-	local var_16_0 = arg_16_0:getMaxCount()
-	local var_16_1 = LOCK_MITIGATION and 0 or arg_16_0:getConfig("mitigation_rate")
+function Chapter.getMitigationRate(self)
+	local repressMax = self:getMaxCount()
+	local repressLevel = LOCK_MITIGATION and 0 or self:getConfig("mitigation_rate")
 
-	return math.min(arg_16_0.passCount, var_16_0) * var_16_1
+	return math.min(self.passCount, repressMax) * repressLevel
 end
 
-function var_0_0.getRepressInfo(arg_17_0)
+-- 计算章节压制信息
+-- 被BattleMediator.GenBattleData调用(SYSTEM_SCENARIO)
+function Chapter.getRepressInfo(self)
 	return {
-		repressMax = arg_17_0:getMaxCount(),
-		repressCount = arg_17_0.passCount,
-		repressReduce = arg_17_0:getMitigationRate(),
-		repressLevel = LOCK_MITIGATION and 0 or arg_17_0:getRemainPassCount() > 0 and 0 or arg_17_0:getConfig("mitigation_level") or 0,
-		repressEnemyHpRant = 1 - arg_17_0:getStageCell(arg_17_0.fleet.line.row, arg_17_0.fleet.line.column).data / 10000
+		repressMax = self:getMaxCount(),
+		repressCount = self.passCount,
+		repressReduce = self:getMitigationRate(),
+		repressLevel = LOCK_MITIGATION and 0 or self:getRemainPassCount() > 0 and 0 or self:getConfig("mitigation_level") or 0,
+		repressEnemyHpRant = 1 - self:getStageCell(self.fleet.line.row, self.fleet.line.column).data / 10000
 	}
 end
 
-function var_0_0.getChapterState(arg_18_0)
+function Chapter.getChapterState(arg_18_0)
 	local var_18_0 = arg_18_0:getRiskLevel()
 
-	assert(var_0_0.CHAPTER_STATE[var_18_0], "state desc is nil")
+	assert(Chapter.CHAPTER_STATE[var_18_0], "state desc is nil")
 
-	return var_0_0.CHAPTER_STATE[var_18_0]
+	return Chapter.CHAPTER_STATE[var_18_0]
 end
 
-function var_0_0.getPlayType(arg_19_0)
+function Chapter.getPlayType(arg_19_0)
 	return arg_19_0:getConfig("model")
 end
 
-function var_0_0.isTypeDefence(arg_20_0)
+function Chapter.isTypeDefence(arg_20_0)
 	return arg_20_0:getPlayType() == ChapterConst.TypeDefence
 end
 
-function var_0_0.IsSpChapter(arg_21_0)
+function Chapter.IsSpChapter(arg_21_0)
 	return arg_21_0:isTriesLimit()
 end
 
-function var_0_0.IsEXChapter(arg_22_0)
+function Chapter.IsEXChapter(arg_22_0)
 	return arg_22_0:getPlayType() == ChapterConst.TypeExtra
 end
 
-function var_0_0.getConfig(arg_23_0, arg_23_1)
+function Chapter.getConfig(arg_23_0, arg_23_1)
 	if arg_23_0:isLoop() then
 		local var_23_0 = pg.chapter_template_loop[arg_23_0.id]
 
@@ -202,30 +204,30 @@ function var_0_0.getConfig(arg_23_0, arg_23_1)
 		end
 	end
 
-	return var_0_0.super.getConfig(arg_23_0, arg_23_1)
+	return Chapter.super.getConfig(arg_23_0, arg_23_1)
 end
 
-function var_0_0.existLoop(arg_24_0)
+function Chapter.existLoop(arg_24_0)
 	return pg.chapter_template_loop[arg_24_0.id] ~= nil
 end
 
-function var_0_0.canActivateLoop(arg_25_0)
+function Chapter.canActivateLoop(arg_25_0)
 	return arg_25_0.progress == 100
 end
 
-function var_0_0.isLoop(arg_26_0)
+function Chapter.isLoop(arg_26_0)
 	return arg_26_0.loopFlag == 1
 end
 
-function var_0_0.existAmbush(arg_27_0)
+function Chapter.existAmbush(arg_27_0)
 	return arg_27_0:getConfig("is_ambush") == 1 or arg_27_0:getConfig("is_air_attack") == 1
 end
 
-function var_0_0.isUnlock(arg_28_0)
+function Chapter.isUnlock(arg_28_0)
 	return arg_28_0:IsCleanPrevChapter() and arg_28_0:IsCleanPrevStory()
 end
 
-function var_0_0.IsCleanPrevChapter(arg_29_0)
+function Chapter.IsCleanPrevChapter(arg_29_0)
 	for iter_29_0, iter_29_1 in ipairs(arg_29_0:getConfig("pre_chapter")) do
 		if _.all(iter_29_1, function(arg_30_0)
 			if arg_30_0 == 0 then
@@ -241,7 +243,7 @@ function var_0_0.IsCleanPrevChapter(arg_29_0)
 	return false
 end
 
-function var_0_0.IsCleanPrevStory(arg_31_0)
+function Chapter.IsCleanPrevStory(arg_31_0)
 	local var_31_0 = arg_31_0:getConfig("pre_story")
 
 	if var_31_0 == 0 then
@@ -251,31 +253,31 @@ function var_0_0.IsCleanPrevStory(arg_31_0)
 	return getProxy(ChapterProxy):GetChapterItemById(var_31_0):isClear()
 end
 
-function var_0_0.isPlayerLVUnlock(arg_32_0)
+function Chapter.isPlayerLVUnlock(arg_32_0)
 	return getProxy(PlayerProxy):getRawData().level >= arg_32_0:getConfig("unlocklevel")
 end
 
-function var_0_0.isClear(arg_33_0)
+function Chapter.isClear(arg_33_0)
 	return arg_33_0.progress >= 100
 end
 
-function var_0_0.ifNeedHide(arg_34_0)
+function Chapter.ifNeedHide(arg_34_0)
 	if table.contains(pg.chapter_setting.all, arg_34_0.id) and pg.chapter_setting[arg_34_0.id].hide == 1 then
 		return arg_34_0:isClear()
 	end
 end
 
-function var_0_0.existAchieve(arg_35_0)
+function Chapter.existAchieve(arg_35_0)
 	return #arg_35_0.achieves > 0
 end
 
-function var_0_0.isAllAchieve(arg_36_0)
+function Chapter.isAllAchieve(arg_36_0)
 	return _.all(arg_36_0.achieves, function(arg_37_0)
 		return ChapterConst.IsAchieved(arg_37_0)
 	end)
 end
 
-function var_0_0.GetFleetTypeByIndex(arg_38_0)
+function Chapter.GetFleetTypeByIndex(arg_38_0)
 	assert(arg_38_0 > 0)
 
 	return switch(arg_38_0, {
@@ -290,8 +292,8 @@ function var_0_0.GetFleetTypeByIndex(arg_38_0)
 	end)
 end
 
-function var_0_0.getEliteTeamByIndex(arg_42_0, arg_42_1)
-	local var_42_0, var_42_1 = var_0_0.GetFleetTypeByIndex(arg_42_1)
+function Chapter.getEliteTeamByIndex(arg_42_0, arg_42_1)
+	local var_42_0, var_42_1 = Chapter.GetFleetTypeByIndex(arg_42_1)
 
 	if not arg_42_0.eliteFleetList[var_42_0][var_42_1] then
 		for iter_42_0 = #arg_42_0.eliteFleetList[var_42_0] + 1, var_42_1 do
@@ -309,7 +311,7 @@ function var_0_0.getEliteTeamByIndex(arg_42_0, arg_42_1)
 	return arg_42_0.eliteFleetList[var_42_0][var_42_1], var_42_0
 end
 
-function var_0_0.setEliteFleetByIndex(arg_43_0, arg_43_1, arg_43_2)
+function Chapter.setEliteFleetByIndex(arg_43_0, arg_43_1, arg_43_2)
 	local var_43_0 = arg_43_0:getEliteTeamByIndex(arg_43_1)
 
 	for iter_43_0, iter_43_1 in ipairs(arg_43_2) do
@@ -323,7 +325,7 @@ function var_0_0.setEliteFleetByIndex(arg_43_0, arg_43_1, arg_43_2)
 	end
 end
 
-function var_0_0.clearEliterFleetByIndex(arg_44_0, arg_44_1)
+function Chapter.clearEliterFleetByIndex(arg_44_0, arg_44_1)
 	arg_44_0:setEliteFleetByIndex(arg_44_1, {
 		{
 			TeamType.FormShips,
@@ -332,7 +334,7 @@ function var_0_0.clearEliterFleetByIndex(arg_44_0, arg_44_1)
 	})
 end
 
-function var_0_0.wrapEliteFleet(arg_45_0, arg_45_1)
+function Chapter.wrapEliteFleet(arg_45_0, arg_45_1)
 	local var_45_0, var_45_1 = arg_45_0:getEliteTeamByIndex(arg_45_1)
 	local var_45_2 = {}
 
@@ -353,7 +355,7 @@ function var_0_0.wrapEliteFleet(arg_45_0, arg_45_1)
 	})
 end
 
-function var_0_0.getEliteFleetCommanders(arg_46_0)
+function Chapter.getEliteFleetCommanders(arg_46_0)
 	arg_46_0:EliteCommanderFilter()
 
 	local var_46_0 = {}
@@ -385,7 +387,7 @@ function var_0_0.getEliteFleetCommanders(arg_46_0)
 	return var_46_0
 end
 
-function var_0_0.updateCommander(arg_47_0, arg_47_1, arg_47_2, arg_47_3)
+function Chapter.updateCommander(arg_47_0, arg_47_1, arg_47_2, arg_47_3)
 	arg_47_0:setEliteFleetByIndex(arg_47_1, {
 		{
 			TeamType.FormCommander,
@@ -397,7 +399,7 @@ function var_0_0.updateCommander(arg_47_0, arg_47_1, arg_47_2, arg_47_3)
 	})
 end
 
-function var_0_0.getEliteFleetList(arg_48_0)
+function Chapter.getEliteFleetList(arg_48_0)
 	arg_48_0:EliteShipTypeFilter()
 
 	local var_48_0 = {}
@@ -429,7 +431,7 @@ function var_0_0.getEliteFleetList(arg_48_0)
 	return var_48_0
 end
 
-function var_0_0.setEliteFleetList(arg_49_0, arg_49_1)
+function Chapter.setEliteFleetList(arg_49_0, arg_49_1)
 	if not arg_49_1 then
 		return
 	end
@@ -437,7 +439,7 @@ function var_0_0.setEliteFleetList(arg_49_0, arg_49_1)
 	arg_49_0.eliteFleetList = arg_49_1
 end
 
-function var_0_0.IsEliteFleetLegal(arg_50_0)
+function Chapter.IsEliteFleetLegal(arg_50_0)
 	local var_50_0 = {}
 
 	for iter_50_0, iter_50_1 in ipairs({
@@ -501,7 +503,7 @@ function var_0_0.IsEliteFleetLegal(arg_50_0)
 	return true
 end
 
-function var_0_0.IsPropertyLimitationSatisfy(arg_54_0)
+function Chapter.IsPropertyLimitationSatisfy(arg_54_0)
 	local var_54_0 = getProxy(BayProxy):getRawData()
 	local var_54_1 = arg_54_0:getConfig("property_limitation")
 	local var_54_2 = {}
@@ -574,19 +576,19 @@ function var_0_0.IsPropertyLimitationSatisfy(arg_54_0)
 	return var_54_14, var_54_2
 end
 
-function var_0_0.GetNomralFleetMaxCount(arg_55_0)
+function Chapter.GetNomralFleetMaxCount(arg_55_0)
 	return arg_55_0:getConfig("group_num")
 end
 
-function var_0_0.GetSubmarineFleetMaxCount(arg_56_0)
+function Chapter.GetSubmarineFleetMaxCount(arg_56_0)
 	return arg_56_0:getConfig("submarine_num")
 end
 
-function var_0_0.GetSupportFleetMaxCount(arg_57_0)
+function Chapter.GetSupportFleetMaxCount(arg_57_0)
 	return arg_57_0:getConfig("support_group_num")
 end
 
-function var_0_0.EliteShipTypeFilter(arg_58_0)
+function Chapter.EliteShipTypeFilter(arg_58_0)
 	if arg_58_0:getConfig("type") == Chapter.SelectFleet then
 		arg_58_0.eliteFleetList[FleetType.Normal] = {}
 		arg_58_0.eliteFleetList[FleetType.Submarine] = {}
@@ -700,7 +702,7 @@ function var_0_0.EliteShipTypeFilter(arg_58_0)
 	end
 end
 
-function var_0_0.EliteCommanderFilter(arg_66_0)
+function Chapter.EliteCommanderFilter(arg_66_0)
 	local var_66_0 = getProxy(CommanderProxy)
 
 	for iter_66_0, iter_66_1 in pairs(arg_66_0.eliteFleetList) do
@@ -714,7 +716,7 @@ function var_0_0.EliteCommanderFilter(arg_66_0)
 	end
 end
 
-function var_0_0.singleEliteFleetVertify(arg_67_0, arg_67_1)
+function Chapter.singleEliteFleetVertify(arg_67_0, arg_67_1)
 	local var_67_0 = getProxy(BayProxy):getRawData()
 	local var_67_1, var_67_2 = arg_67_0:getEliteTeamByIndex(arg_67_1)
 	local var_67_3 = var_67_1[TeamType.FormShips]
@@ -810,7 +812,7 @@ function var_0_0.singleEliteFleetVertify(arg_67_0, arg_67_1)
 	end
 end
 
-function var_0_0.getSupportFleet(arg_71_0)
+function Chapter.getSupportFleet(arg_71_0)
 	arg_71_0:EliteShipTypeFilter()
 
 	local var_71_0 = arg_71_0:getEliteTeamByIndex(4)
@@ -818,7 +820,7 @@ function var_0_0.getSupportFleet(arg_71_0)
 	return underscore.to_array(var_71_0[TeamType.FormShips])
 end
 
-function var_0_0.activeAlways(arg_72_0)
+function Chapter.activeAlways(arg_72_0)
 	if getProxy(ChapterProxy):getMapById(arg_72_0:getConfig("map")):isActivity() then
 		local var_72_0 = arg_72_0:GetBindActID()
 		local var_72_1 = pg.activity_template[var_72_0]
@@ -833,7 +835,7 @@ function var_0_0.activeAlways(arg_72_0)
 	return false
 end
 
-function var_0_0.GetPrevChapterNames(arg_73_0)
+function Chapter.GetPrevChapterNames(arg_73_0)
 	local var_73_0 = {}
 
 	for iter_73_0, iter_73_1 in ipairs(arg_73_0:getConfig("pre_chapter")) do
@@ -849,17 +851,17 @@ function var_0_0.GetPrevChapterNames(arg_73_0)
 	return var_73_0
 end
 
-function var_0_0.CanQuickPlay(arg_74_0)
+function Chapter.CanQuickPlay(arg_74_0)
 	local var_74_0 = pg.chapter_setting[arg_74_0.id]
 
 	return var_74_0 and var_74_0.expedite > 0
 end
 
-function var_0_0.GetQuickPlayFlag(arg_75_0)
+function Chapter.GetQuickPlayFlag(arg_75_0)
 	return PlayerPrefs.GetInt("chapter_quickPlay_flag_" .. arg_75_0.id, 0) == 1
 end
 
-function var_0_0.writeDrops(arg_76_0, arg_76_1)
+function Chapter.writeDrops(arg_76_0, arg_76_1)
 	_.each(arg_76_1, function(arg_77_0)
 		if arg_77_0.type == DROP_TYPE_SHIP and not table.contains(arg_76_0.dropShipIdList, arg_77_0.id) then
 			table.insert(arg_76_0.dropShipIdList, arg_77_0.id)
@@ -867,7 +869,7 @@ function var_0_0.writeDrops(arg_76_0, arg_76_1)
 	end)
 end
 
-function var_0_0.UpdateDropShipList(arg_78_0, arg_78_1)
+function Chapter.UpdateDropShipList(arg_78_0, arg_78_1)
 	for iter_78_0, iter_78_1 in ipairs(arg_78_1) do
 		if not table.contains(arg_78_0.dropShipIdList, iter_78_1) then
 			table.insert(arg_78_0.dropShipIdList, iter_78_1)
@@ -875,19 +877,19 @@ function var_0_0.UpdateDropShipList(arg_78_0, arg_78_1)
 	end
 end
 
-function var_0_0.GetDropShipList(arg_79_0)
+function Chapter.GetDropShipList(arg_79_0)
 	return arg_79_0.dropShipIdList
 end
 
-function var_0_0.getOniChapterInfo(arg_80_0)
+function Chapter.getOniChapterInfo(arg_80_0)
 	return pg.chapter_capture[arg_80_0.id]
 end
 
-function var_0_0.getBombChapterInfo(arg_81_0)
+function Chapter.getBombChapterInfo(arg_81_0)
 	return pg.chapter_boom[arg_81_0.id]
 end
 
-function var_0_0.getNpcShipByType(arg_82_0, arg_82_1)
+function Chapter.getNpcShipByType(arg_82_0, arg_82_1)
 	local var_82_0 = {}
 	local var_82_1 = getProxy(TaskProxy)
 
@@ -923,21 +925,21 @@ function var_0_0.getNpcShipByType(arg_82_0, arg_82_1)
 	return var_82_0
 end
 
-function var_0_0.getTodayDefeatCount(arg_84_0)
+function Chapter.getTodayDefeatCount(arg_84_0)
 	return getProxy(DailyLevelProxy):getChapterDefeatCount(arg_84_0.configId)
 end
 
-function var_0_0.isTriesLimit(arg_85_0)
+function Chapter.isTriesLimit(arg_85_0)
 	local var_85_0 = arg_85_0:getConfig("count")
 
 	return var_85_0 and var_85_0 > 0
 end
 
-function var_0_0.updateTodayDefeatCount(arg_86_0)
+function Chapter.updateTodayDefeatCount(arg_86_0)
 	getProxy(DailyLevelProxy):updateChapterDefeatCount(arg_86_0.configId)
 end
 
-function var_0_0.enoughTimes2Start(arg_87_0)
+function Chapter.enoughTimes2Start(arg_87_0)
 	if arg_87_0:isTriesLimit() then
 		return arg_87_0:getTodayDefeatCount() < arg_87_0:getConfig("count")
 	else
@@ -945,7 +947,7 @@ function var_0_0.enoughTimes2Start(arg_87_0)
 	end
 end
 
-function var_0_0.GetRestDailyBonus(arg_88_0)
+function Chapter.GetRestDailyBonus(arg_88_0)
 	local var_88_0 = 0
 
 	if arg_88_0:IsRemaster() then
@@ -969,20 +971,20 @@ function var_0_0.GetRestDailyBonus(arg_88_0)
 	return (math.max(var_88_0 - arg_88_0.todayDefeatCount, 0))
 end
 
-function var_0_0.GetDailyBonusQuota(arg_89_0)
+function Chapter.GetDailyBonusQuota(arg_89_0)
 	return arg_89_0:GetRestDailyBonus() > 0
 end
 
-var_0_0.OPERATION_BUFF_TYPE_COST = "more_oil"
-var_0_0.OPERATION_BUFF_TYPE_REWARD = "extra_drop"
-var_0_0.OPERATION_BUFF_TYPE_EXP = "chapter_up"
-var_0_0.OPERATION_BUFF_TYPE_DESC = "desc"
+Chapter.OPERATION_BUFF_TYPE_COST = "more_oil"
+Chapter.OPERATION_BUFF_TYPE_REWARD = "extra_drop"
+Chapter.OPERATION_BUFF_TYPE_EXP = "chapter_up"
+Chapter.OPERATION_BUFF_TYPE_DESC = "desc"
 
-function var_0_0.GetSPOperationItemCacheKey(arg_90_0)
+function Chapter.GetSPOperationItemCacheKey(arg_90_0)
 	return "specialOPItem_" .. arg_90_0
 end
 
-function var_0_0.GetSpItems(arg_91_0)
+function Chapter.GetSpItems(arg_91_0)
 	local var_91_0 = {}
 	local var_91_1 = getProxy(BagProxy):getItemsByType(Item.SPECIAL_OPERATION_TICKET)
 	local var_91_2 = arg_91_0:getConfig("special_operation_list")
@@ -1010,7 +1012,7 @@ function var_0_0.GetSpItems(arg_91_0)
 	return var_91_0
 end
 
-function var_0_0.GetSPBuffByItem(arg_92_0)
+function Chapter.GetSPBuffByItem(arg_92_0)
 	for iter_92_0, iter_92_1 in ipairs(pg.benefit_buff_template.all) do
 		local var_92_0 = pg.benefit_buff_template[iter_92_1]
 
@@ -1020,7 +1022,7 @@ function var_0_0.GetSPBuffByItem(arg_92_0)
 	end
 end
 
-function var_0_0.GetActiveSPItemID(arg_93_0)
+function Chapter.GetActiveSPItemID(arg_93_0)
 	local var_93_0 = Chapter.GetSPOperationItemCacheKey(arg_93_0.id)
 	local var_93_1 = PlayerPrefs.GetInt(var_93_0, 0)
 
@@ -1043,7 +1045,7 @@ function var_0_0.GetActiveSPItemID(arg_93_0)
 	return 0
 end
 
-function var_0_0.GetLimitOilCost(arg_95_0, arg_95_1, arg_95_2)
+function Chapter.GetLimitOilCost(arg_95_0, arg_95_1, arg_95_2)
 	if not arg_95_0:isLoop() then
 		return 9999
 	end
@@ -1062,17 +1064,17 @@ function var_0_0.GetLimitOilCost(arg_95_0, arg_95_1, arg_95_2)
 	return arg_95_0:getConfig("use_oil_limit")[var_95_1] or 9999
 end
 
-function var_0_0.IsRemaster(arg_96_0)
+function Chapter.IsRemaster(arg_96_0)
 	local var_96_0 = getProxy(ChapterProxy):getMapById(arg_96_0:getConfig("map"))
 
 	return var_96_0 and var_96_0:isRemaster()
 end
 
-function var_0_0.GetBindActID(arg_97_0)
+function Chapter.GetBindActID(arg_97_0)
 	return arg_97_0:getConfig("act_id")
 end
 
-function var_0_0.GetMaxBattleCount(arg_98_0)
+function Chapter.GetMaxBattleCount(arg_98_0)
 	local var_98_0 = 0
 	local var_98_1 = getProxy(ChapterProxy):getMapById(arg_98_0:getConfig("map"))
 
@@ -1097,12 +1099,12 @@ function var_0_0.GetMaxBattleCount(arg_98_0)
 	return var_98_0
 end
 
-function var_0_0.IsSupportSubmarineStage(arg_99_0)
+function Chapter.IsSupportSubmarineStage(arg_99_0)
 	return arg_99_0:GetSupportFleetMaxCount() > 0 and tobool(arg_99_0:getConfigMiscArg("submarine_support"))
 end
 
-function var_0_0.IsFogStage(arg_100_0)
+function Chapter.IsFogStage(arg_100_0)
 	return tobool(arg_100_0:getConfigMiscArg("fog"))
 end
 
-return var_0_0
+return Chapter

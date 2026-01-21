@@ -53,10 +53,12 @@ end
 --- @param scoutList table<number, BattleUnit>:表示前排
 --- @return number
 --- 获取(前排)航速。
+--- 被BattleFleetVO.GetFleetVelocity调用
 function BattleFormulas.GetFleetVelocity(scoutList)
 	local frontShip = scoutList[1]
 
-	-- 这一段是什么意思看不太懂
+	-- 如果第一艘船有fleetVelocity属性，直接使用该属性
+	-- (但一般是没有的)
 	if frontShip then
 		local frontShipVelocity = BattleAttr.GetCurrent(frontShip, "fleetVelocity")
 
@@ -598,24 +600,27 @@ function BattleFormulas.CalculateDamageFromSubmarinToMainShip(attacker, target)
 end
 
 
---- @param target BattlePlayerUnit
+--- @param attacker BattleEnemyUnit
 --- @return boolean
---- 用于判定敌方潜艇自爆时我方主力舰是否闪避伤害
-function BattleFormulas.RollSubmarineDualDice(target)
-	-- targetDodgeProbability
+--- 用于判定敌方潜艇触底时，进行连续两次伤害结算的概率
+--- 被BattleDataProxy.HandleShipMissDamage调用
+function BattleFormulas.RollSubmarineDualDice(attacker)
+	-- attackerDodgeRate
 		-- MONSTER_SUB_KAMIKAZE_DUAL_K = 50
 		-- MONSTER_SUB_KAMIKAZE_DUAL_P = 0.15
-	local targetDodgeRate = BattleAttr.GetCurrent(target, "dodgeRate")
-	-- 机动/(机动 + 50) * 0.15 < 0.15
-	local targetDodgeProbability = targetDodgeRate / (targetDodgeRate + BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_K) * BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_P
+	local attackerDodgeRate = BattleAttr.GetCurrent(attacker, "dodgeRate")
+	-- 用攻击者的机动计算双重攻击概率
+	-- 机动/(机动 + 50) * 0.15 < 0.15，即最多不超过15%的概率触发双重攻击
+	local attackerDualProbability = attackerDodgeRate / (attackerDodgeRate + BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_K) * BattleConfig.MONSTER_SUB_KAMIKAZE_DUAL_P
 
-	return BattleFormulas.IsHappen(targetDodgeProbability * bfConsts.NUM10000)
+	return BattleFormulas.IsHappen(attackerDualProbability * bfConsts.NUM10000)
 end
 
 --- @param ship1 BattleUnit
 --- @param ship2 BattleUnit
 --- @return number, number
 --- 计算碰撞伤害，敌我双方受到同样的伤害
+--- 被BattleDataProxy.HandleCrashDamage调用
 function BattleFormulas.CalculateCrashDamage(ship1, ship2)
 	local ship1MaxHP = BattleAttr.GetCurrent(ship1, "maxHP")
 	local ship2MaxHP = BattleAttr.GetCurrent(ship2, "maxHP")
@@ -1096,6 +1101,7 @@ end
 --- 计算普通图章节的压制减伤倍率
 --- 这个传入的repressReduce对应压制层数 * chapter_template的mitigation_rate(一般为2)
 --- 所以一般可认为，每层压制提供2%的伤害减免
+--- 被BattleDataProxy.InitData调用
 function BattleFormulas.ChapterRepressReduce(repressReduce)
 	return 1 - repressReduce * 0.01
 end

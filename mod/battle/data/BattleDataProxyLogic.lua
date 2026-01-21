@@ -300,57 +300,59 @@ end
 
 -- 舰船触底伤害主逻辑(又可细分为潜艇和水面舰船)
 -- 被BattleDataProxy.updateLoop调用
-function BattleDataProxy.HandleShipMissDamage(arg_12_0, arg_12_1, arg_12_2)
-	if arg_12_2 == nil then
+function BattleDataProxy.HandleShipMissDamage(self, ship, fleet)
+	if fleet == nil then
 		return
 	end
 
-	local var_12_0 = arg_12_2:GetCloakList()
+	local cloakList = fleet:GetCloakList()
 
-	for iter_12_0, iter_12_1 in ipairs(var_12_0) do
-		iter_12_1:CloakExpose(arg_12_0._shipExpose)
+	for _, cloakUnit in ipairs(cloakList) do
+		cloakUnit:CloakExpose(self._shipExpose)
 	end
 
-	local var_12_1 = arg_12_1:GetPosition()
-	local var_12_2 = arg_12_2:NearestUnitByType(var_12_1, ShipType.CloakShipTypeList)
+	local shipPos = ship:GetPosition()
+	local nearestUnit = fleet:NearestUnitByType(shipPos, ShipType.CloakShipTypeList)
 
-	if var_12_2 then
-		var_12_2:CloakExpose(arg_12_0._shipExposeEX)
+	if nearestUnit then
+		nearestUnit:CloakExpose(self._shipExposeEX)
 	end
 
-	local var_12_3 = arg_12_2:RandomMainVictim({
+	local victim = fleet:RandomMainVictim({
 		"immuneDirectHit"
 	})
 
-	if var_12_3 then
-		local var_12_4 = arg_12_1:GetTemplate().type
+	if victim then
+		local shipType = ship:GetTemplate().type
+		-- 如果触底的船(攻击者)是潜艇
+		if table.contains(ShipType.SubShipType, shipType) then
+			local subKamikazeDamage = BattleFormulas.CalculateDamageFromSubmarinToMainShip(ship, victim)
+			-- 触底也算被命中，触发被命中BuffEffect
+			victim:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
+			self:HandleDirectDamage(victim, subKamikazeDamage, ship)
+			-- 潜艇触底会额外有概率，再次对同一目标造成伤害
+			-- (根据公式，这个概率最大不超过15%)
+			if victim:IsAlive() and BattleFormulas.RollSubmarineDualDice(ship) then
+				local subKamikazeDamage2 = BattleFormulas.CalculateDamageFromSubmarinToMainShip(ship, victim)
 
-		if table.contains(ShipType.SubShipType, var_12_4) then
-			local var_12_5 = BattleFormulas.CalculateDamageFromSubmarinToMainShip(arg_12_1, var_12_3)
-
-			var_12_3:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
-			arg_12_0:HandleDirectDamage(var_12_3, var_12_5, arg_12_1)
-
-			if var_12_3:IsAlive() and BattleFormulas.RollSubmarineDualDice(arg_12_1) then
-				local var_12_6 = BattleFormulas.CalculateDamageFromSubmarinToMainShip(arg_12_1, var_12_3)
-
-				var_12_3:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
-				arg_12_0:HandleDirectDamage(var_12_3, var_12_6, arg_12_1)
+				victim:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
+				self:HandleDirectDamage(victim, subKamikazeDamage2, ship)
 			end
 		else
-			local var_12_7 = arg_12_0._calculateDamageKamikazeShip(arg_12_1, var_12_3)
+			local shipKamikazeDamage = self._calculateDamageKamikazeShip(ship, victim)
 
-			var_12_3:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
-			arg_12_0:HandleDirectDamage(var_12_3, var_12_7, arg_12_1)
+			victim:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
+			self:HandleDirectDamage(victim, shipKamikazeDamage, ship)
 		end
 	end
 end
 
-function BattleDataProxy.HandleCrashDamage(arg_13_0, arg_13_1, arg_13_2)
-	local var_13_0, var_13_1 = arg_13_0._calculateDamageCrush(arg_13_1, arg_13_2)
+-- 处理舰船碰撞伤害的核心逻辑
+function BattleDataProxy.HandleCrashDamage(self, ship1, ship2)
+	local ship1CrashDamage, ship2CrashDamage = self._calculateDamageCrush(ship1, ship2)
 
-	arg_13_0:HandleDirectDamage(arg_13_1, var_13_0, arg_13_2, BattleConst.UnitDeathReason.CRUSH)
-	arg_13_0:HandleDirectDamage(arg_13_2, var_13_1, arg_13_1, BattleConst.UnitDeathReason.CRUSH)
+	self:HandleDirectDamage(ship1, ship1CrashDamage, ship2, BattleConst.UnitDeathReason.CRUSH)
+	self:HandleDirectDamage(ship2, ship2CrashDamage, ship1, BattleConst.UnitDeathReason.CRUSH)
 end
 
 -- 处理子弹附加Buff的触发

@@ -174,9 +174,9 @@ function BattleState.GetUIMediator(arg_11_0)
 	return arg_11_0._uiMediator
 end
 
-function BattleState.ActiveBot(arg_12_0, arg_12_1)
-	arg_12_0._weaponCommand:ActiveBot(arg_12_1, true)
-	arg_12_0:EnableJoystick(not arg_12_1)
+function BattleState.ActiveBot(self, active)
+	self._weaponCommand:ActiveBot(active, true)
+	self:EnableJoystick(not active)
 end
 
 function BattleState.EnableJoystick(arg_13_0, arg_13_1)

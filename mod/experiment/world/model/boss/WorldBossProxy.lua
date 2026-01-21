@@ -1,8 +1,8 @@
-local var_0_0 = class("WorldBossProxy", import("....BaseEntity"))
-local var_0_1 = "WorldbossFleet"
-local var_0_2 = "WorldbossFleet_for_archives"
+local WorldBossProxy = class("WorldBossProxy", import("....BaseEntity"))
+local WorldbossFleet = "WorldbossFleet"
+local WorldbossFleetForArchives = "WorldbossFleet_for_archives"
 
-var_0_0.Fields = {
+WorldBossProxy.Fields = {
 	summonPtDailyAcc = "number",
 	ptTime = "number",
 	otherBosses = "table",
@@ -30,16 +30,16 @@ var_0_0.Fields = {
 	pt = "number",
 	refreshBossesTime = "number"
 }
-var_0_0.REFRESH_BOSSES_TIME = 300
-var_0_0.EventProcessBossListUpdated = "WorldBossProxy.EventProcessBossListUpdated"
-var_0_0.EventCacheBossListUpdated = "WorldBossProxy.EventCacheBossListUpdated"
-var_0_0.EventBossUpdated = "WorldBossProxy.EventBossUpdated"
-var_0_0.EventFleetUpdated = "WorldBossProxy.EventFleetUpdated"
-var_0_0.EventPtUpdated = "WorldBossProxy.EventPtUpdated"
-var_0_0.EventRankListUpdated = "WorldBossProxy.EventRankListUpdated"
-var_0_0.EventUnlockProgressUpdated = "WorldBossProxy.EventUnlockProgressUpdated"
+WorldBossProxy.REFRESH_BOSSES_TIME = 300
+WorldBossProxy.EventProcessBossListUpdated = "WorldBossProxy.EventProcessBossListUpdated"
+WorldBossProxy.EventCacheBossListUpdated = "WorldBossProxy.EventCacheBossListUpdated"
+WorldBossProxy.EventBossUpdated = "WorldBossProxy.EventBossUpdated"
+WorldBossProxy.EventFleetUpdated = "WorldBossProxy.EventFleetUpdated"
+WorldBossProxy.EventPtUpdated = "WorldBossProxy.EventPtUpdated"
+WorldBossProxy.EventRankListUpdated = "WorldBossProxy.EventRankListUpdated"
+WorldBossProxy.EventUnlockProgressUpdated = "WorldBossProxy.EventUnlockProgressUpdated"
 
-function var_0_0.Setup(arg_1_0, arg_1_1)
+function WorldBossProxy.Setup(arg_1_0, arg_1_1)
 	arg_1_0.pt = arg_1_0:GetMaxPt() - (arg_1_1.fight_count or 0)
 
 	if arg_1_1.self_boss then
@@ -78,105 +78,105 @@ function var_0_0.Setup(arg_1_0, arg_1_1)
 	arg_1_0.isFetched = false
 end
 
-function var_0_0.CheckRemouldShip(arg_2_0)
+function WorldBossProxy.CheckRemouldShip(arg_2_0)
 	if arg_2_0.fleet and arg_2_0.fleetForArchives then
 		arg_2_0:GenFleet()
 	end
 end
 
-function var_0_0.FriendSupported(arg_3_0)
+function WorldBossProxy.FriendSupported(arg_3_0)
 	return arg_3_0.friendSupport > pg.TimeMgr.GetInstance():GetServerTime()
 end
 
-function var_0_0.UpdateFriendSupported(arg_4_0)
+function WorldBossProxy.UpdateFriendSupported(arg_4_0)
 	local var_4_0 = pg.gameset.joint_boss_world_time.key_value
 
 	arg_4_0.friendSupport = pg.TimeMgr.GetInstance():GetServerTime() + var_4_0
 end
 
-function var_0_0.ClearFriendSupported(arg_5_0)
+function WorldBossProxy.ClearFriendSupported(arg_5_0)
 	arg_5_0.friendSupport = 0
 end
 
-function var_0_0.GetNextFriendSupportTime(arg_6_0)
+function WorldBossProxy.GetNextFriendSupportTime(arg_6_0)
 	return arg_6_0.friendSupport
 end
 
-function var_0_0.GuildSupported(arg_7_0)
+function WorldBossProxy.GuildSupported(arg_7_0)
 	return arg_7_0.guildSupport > pg.TimeMgr.GetInstance():GetServerTime()
 end
 
-function var_0_0.UpdateGuildSupported(arg_8_0)
+function WorldBossProxy.UpdateGuildSupported(arg_8_0)
 	local var_8_0 = pg.gameset.joint_boss_world_time.key_value
 
 	arg_8_0.guildSupport = pg.TimeMgr.GetInstance():GetServerTime() + var_8_0
 end
 
-function var_0_0.ClearGuildSupported(arg_9_0)
+function WorldBossProxy.ClearGuildSupported(arg_9_0)
 	arg_9_0.guildSupport = 0
 end
 
-function var_0_0.GetNextGuildSupportTime(arg_10_0)
+function WorldBossProxy.GetNextGuildSupportTime(arg_10_0)
 	return arg_10_0.guildSupport
 end
 
-function var_0_0.WorldSupported(arg_11_0)
+function WorldBossProxy.WorldSupported(arg_11_0)
 	return arg_11_0.worldSupport > pg.TimeMgr.GetInstance():GetServerTime()
 end
 
-function var_0_0.UpdateWorldSupported(arg_12_0)
+function WorldBossProxy.UpdateWorldSupported(arg_12_0)
 	local var_12_0 = pg.gameset.joint_boss_world_time.key_value
 
 	arg_12_0.worldSupport = pg.TimeMgr.GetInstance():GetServerTime() + var_12_0
 end
 
-function var_0_0.ClearWorldSupported(arg_13_0)
+function WorldBossProxy.ClearWorldSupported(arg_13_0)
 	arg_13_0.worldSupport = 0
 end
 
-function var_0_0.GetNextWorldSupportTime(arg_14_0)
+function WorldBossProxy.GetNextWorldSupportTime(arg_14_0)
 	return arg_14_0.worldSupport
 end
 
-function var_0_0.UpdateAutoBattleFinishTime(arg_15_0, arg_15_1)
+function WorldBossProxy.UpdateAutoBattleFinishTime(arg_15_0, arg_15_1)
 	arg_15_0.autoFightFinishTime = arg_15_1
 end
 
-function var_0_0.InAutoBattle(arg_16_0)
+function WorldBossProxy.InAutoBattle(arg_16_0)
 	return arg_16_0.autoFightFinishTime > 0
 end
 
-function var_0_0.ClearAutoBattle(arg_17_0)
+function WorldBossProxy.ClearAutoBattle(arg_17_0)
 	arg_17_0.autoFightFinishTime = 0
 end
 
-function var_0_0.GetAutoBattleFinishTime(arg_18_0)
+function WorldBossProxy.GetAutoBattleFinishTime(arg_18_0)
 	return arg_18_0.autoFightFinishTime
 end
 
-function var_0_0.GetHighestDamage(arg_19_0)
+function WorldBossProxy.GetHighestDamage(arg_19_0)
 	return arg_19_0.highestDamage
 end
 
-function var_0_0.UpdateHighestDamage(arg_20_0, arg_20_1)
+function WorldBossProxy.UpdateHighestDamage(arg_20_0, arg_20_1)
 	if arg_20_1 > arg_20_0.highestDamage then
 		arg_20_0.highestDamage = arg_20_1
 	end
 end
 
-function var_0_0.ClearHighestDamage(arg_21_0)
+function WorldBossProxy.ClearHighestDamage(arg_21_0)
 	arg_21_0.highestDamage = 0
 end
 
-function var_0_0.AddSummonFree(arg_22_0, arg_22_1)
+function WorldBossProxy.AddSummonFree(arg_22_0, arg_22_1)
 	arg_22_0.summonFree = arg_22_0.summonFree + arg_22_1
 end
 
-function var_0_0.GetSummonPt(arg_23_0)
+function WorldBossProxy.GetSummonPt(arg_23_0)
 	return arg_23_0.summonPt
 end
 
-function var_0_0.AddSummonPt(arg_24_0, arg_24_1)
+function WorldBossProxy.AddSummonPt(arg_24_0, arg_24_1)
 	local var_24_0, var_24_1, var_24_2 = WorldBossConst.GetCurrBossConsume()
 
 	if var_24_1 < arg_24_0.summonPtDailyAcc + arg_24_1 then
@@ -198,27 +198,27 @@ function var_0_0.AddSummonPt(arg_24_0, arg_24_1)
 	arg_24_0:UpdatedUnlockProgress(var_24_3, arg_24_0.summonPt)
 end
 
-function var_0_0.ConsumeSummonPt(arg_25_0, arg_25_1)
+function WorldBossProxy.ConsumeSummonPt(arg_25_0, arg_25_1)
 	arg_25_0.summonPt = arg_25_0.summonPt - arg_25_1
 
-	arg_25_0:DispatchEvent(var_0_0.EventUnlockProgressUpdated)
+	arg_25_0:DispatchEvent(WorldBossProxy.EventUnlockProgressUpdated)
 end
 
-function var_0_0.GetSummonPtDailyAcc(arg_26_0)
+function WorldBossProxy.GetSummonPtDailyAcc(arg_26_0)
 	return arg_26_0.summonPtDailyAcc
 end
 
-function var_0_0.ClearSummonPtDailyAcc(arg_27_0)
+function WorldBossProxy.ClearSummonPtDailyAcc(arg_27_0)
 	arg_27_0.summonPtDailyAcc = 0
 
-	arg_27_0:DispatchEvent(var_0_0.EventUnlockProgressUpdated)
+	arg_27_0:DispatchEvent(WorldBossProxy.EventUnlockProgressUpdated)
 end
 
-function var_0_0.GetSummonPtOld(arg_28_0)
+function WorldBossProxy.GetSummonPtOld(arg_28_0)
 	return arg_28_0.summonPtOld
 end
 
-function var_0_0.AddSummonPtOld(arg_29_0, arg_29_1)
+function WorldBossProxy.AddSummonPtOld(arg_29_0, arg_29_1)
 	local var_29_0, var_29_1, var_29_2 = WorldBossConst.GetAchieveBossConsume()
 
 	if var_29_1 < arg_29_0.summonPtOldDailyAcc + arg_29_1 then
@@ -238,42 +238,42 @@ function var_0_0.AddSummonPtOld(arg_29_0, arg_29_1)
 	arg_29_0.summonPtOldDailyAcc = math.min(arg_29_0.summonPtOldDailyAcc + var_29_4, var_29_1)
 end
 
-function var_0_0.ConsumeSummonPtOld(arg_30_0, arg_30_1)
+function WorldBossProxy.ConsumeSummonPtOld(arg_30_0, arg_30_1)
 	arg_30_0.summonPtOld = arg_30_0.summonPtOld - arg_30_1
 
-	arg_30_0:DispatchEvent(var_0_0.EventUnlockProgressUpdated)
+	arg_30_0:DispatchEvent(WorldBossProxy.EventUnlockProgressUpdated)
 end
 
-function var_0_0.ClearSummonPtOldAcc(arg_31_0)
+function WorldBossProxy.ClearSummonPtOldAcc(arg_31_0)
 	arg_31_0.summonPtOldDailyAcc = 0
 
-	arg_31_0:DispatchEvent(var_0_0.EventUnlockProgressUpdated)
+	arg_31_0:DispatchEvent(WorldBossProxy.EventUnlockProgressUpdated)
 end
 
-function var_0_0.GetSummonPtOldAcc(arg_32_0)
+function WorldBossProxy.GetSummonPtOldAcc(arg_32_0)
 	return arg_32_0.summonPtOldDailyAcc
 end
 
-function var_0_0.GetArchivesId(arg_33_0)
+function WorldBossProxy.GetArchivesId(arg_33_0)
 	return arg_33_0.archivesId
 end
 
-function var_0_0.SetArchivesId(arg_34_0, arg_34_1)
+function WorldBossProxy.SetArchivesId(arg_34_0, arg_34_1)
 	arg_34_0.archivesId = arg_34_1
 end
 
-function var_0_0.BossId2FleetKey(arg_35_0, arg_35_1)
+function WorldBossProxy.BossId2FleetKey(arg_35_0, arg_35_1)
 	local var_35_0 = arg_35_0:GetBossById(arg_35_1)
 
 	if var_35_0 and not WorldBossConst._IsCurrBoss(var_35_0) then
-		return var_0_2
+		return WorldbossFleetForArchives
 	else
-		return var_0_1
+		return WorldbossFleet
 	end
 end
 
-function var_0_0.GenFleet(arg_36_0)
-	local var_36_0 = arg_36_0:GetCacheShips(var_0_1)
+function WorldBossProxy.GenFleet(arg_36_0)
+	local var_36_0 = arg_36_0:GetCacheShips(WorldbossFleet)
 
 	arg_36_0.fleet = Fleet.New({
 		0,
@@ -282,7 +282,7 @@ function var_0_0.GenFleet(arg_36_0)
 		ship_list = var_36_0
 	})
 
-	local var_36_1 = arg_36_0:GetCacheShips(var_0_2)
+	local var_36_1 = arg_36_0:GetCacheShips(WorldbossFleetForArchives)
 
 	arg_36_0.fleetForArchives = Fleet.New({
 		0,
@@ -292,7 +292,7 @@ function var_0_0.GenFleet(arg_36_0)
 	})
 end
 
-function var_0_0.GetCacheShips(arg_37_0, arg_37_1)
+function WorldBossProxy.GetCacheShips(arg_37_0, arg_37_1)
 	local function var_37_0(arg_38_0, arg_38_1)
 		local var_38_0 = arg_38_0:getTeamType()
 
@@ -332,11 +332,11 @@ function var_0_0.GetCacheShips(arg_37_0, arg_37_1)
 	return var_37_3
 end
 
-function var_0_0.GetFleet(arg_39_0, arg_39_1)
+function WorldBossProxy.GetFleet(arg_39_0, arg_39_1)
 	local var_39_0 = arg_39_0:BossId2FleetKey(arg_39_1)
 	local var_39_1
 
-	if var_0_2 == var_39_0 then
+	if WorldbossFleetForArchives == var_39_0 then
 		var_39_1 = arg_39_0.fleetForArchives
 	else
 		var_39_1 = arg_39_0.fleet
@@ -360,19 +360,19 @@ function var_0_0.GetFleet(arg_39_0, arg_39_1)
 	return var_39_1
 end
 
-function var_0_0.UpdateFleet(arg_40_0, arg_40_1, arg_40_2)
+function WorldBossProxy.UpdateFleet(arg_40_0, arg_40_1, arg_40_2)
 	local var_40_0 = arg_40_0:BossId2FleetKey(arg_40_1)
 
-	if var_0_2 == var_40_0 then
+	if WorldbossFleetForArchives == var_40_0 then
 		arg_40_0.fleetForArchives = arg_40_2
 	else
 		arg_40_0.fleet = arg_40_2
 	end
 
-	arg_40_0:DispatchEvent(var_0_0.EventFleetUpdated)
+	arg_40_0:DispatchEvent(WorldBossProxy.EventFleetUpdated)
 end
 
-function var_0_0.SavaCacheShips(arg_41_0, arg_41_1, arg_41_2)
+function WorldBossProxy.SavaCacheShips(arg_41_0, arg_41_1, arg_41_2)
 	local var_41_0 = arg_41_0:BossId2FleetKey(arg_41_1)
 	local var_41_1 = arg_41_2:getShipIds()
 	local var_41_2 = ""
@@ -385,22 +385,22 @@ function var_0_0.SavaCacheShips(arg_41_0, arg_41_1, arg_41_2)
 	PlayerPrefs.Save()
 end
 
-function var_0_0.ClearCacheShips(arg_42_0, arg_42_1)
+function WorldBossProxy.ClearCacheShips(arg_42_0, arg_42_1)
 	local var_42_0 = arg_42_0:BossId2FleetKey(arg_42_1)
 
 	PlayerPrefs.DeleteKey(var_42_0 .. getProxy(PlayerProxy):getRawData().id)
 	PlayerPrefs.Save()
 end
 
-function var_0_0.UpdteRefreshBossesTime(arg_43_0)
-	arg_43_0.refreshBossesTime = pg.TimeMgr.GetInstance():GetServerTime() + var_0_0.REFRESH_BOSSES_TIME
+function WorldBossProxy.UpdteRefreshBossesTime(arg_43_0)
+	arg_43_0.refreshBossesTime = pg.TimeMgr.GetInstance():GetServerTime() + WorldBossProxy.REFRESH_BOSSES_TIME
 end
 
-function var_0_0.ShouldRefreshBosses(arg_44_0)
+function WorldBossProxy.ShouldRefreshBosses(arg_44_0)
 	return pg.TimeMgr.GetInstance():GetServerTime() >= arg_44_0.refreshBossesTime
 end
 
-function var_0_0.UpdateCacheBoss(arg_45_0, arg_45_1)
+function WorldBossProxy.UpdateCacheBoss(arg_45_0, arg_45_1)
 	if arg_45_0:IsSelfBoss(arg_45_1) then
 		arg_45_0:UpdateSelfBoss(arg_45_1)
 	else
@@ -410,7 +410,7 @@ function var_0_0.UpdateCacheBoss(arg_45_0, arg_45_1)
 	end
 end
 
-function var_0_0.BalanceMaxBossCnt(arg_46_0)
+function WorldBossProxy.BalanceMaxBossCnt(arg_46_0)
 	local var_46_0 = pg.gameset.boss_cnt_limit.description
 
 	if table.getCount(arg_46_0.cacheBosses) < var_46_0[1] then
@@ -473,47 +473,47 @@ function var_0_0.BalanceMaxBossCnt(arg_46_0)
 			end
 		end
 
-		arg_46_0:DispatchEvent(var_0_0.EventCacheBossListUpdated)
+		arg_46_0:DispatchEvent(WorldBossProxy.EventCacheBossListUpdated)
 	end
 end
 
-function var_0_0.RemoveCacheBoss(arg_50_0, arg_50_1)
+function WorldBossProxy.RemoveCacheBoss(arg_50_0, arg_50_1)
 	if arg_50_0.cacheBosses[arg_50_1] then
 		arg_50_0.cacheBosses[arg_50_1] = nil
 
-		arg_50_0:DispatchEvent(var_0_0.EventCacheBossListUpdated)
+		arg_50_0:DispatchEvent(WorldBossProxy.EventCacheBossListUpdated)
 	end
 end
 
-function var_0_0.GetCacheBoss(arg_51_0, arg_51_1)
+function WorldBossProxy.GetCacheBoss(arg_51_0, arg_51_1)
 	return arg_51_0.cacheBosses[arg_51_1]
 end
 
-function var_0_0.LockCacheBoss(arg_52_0, arg_52_1)
+function WorldBossProxy.LockCacheBoss(arg_52_0, arg_52_1)
 	arg_52_0.cacheLock = arg_52_1
 end
 
-function var_0_0.UnlockCacheBoss(arg_53_0)
+function WorldBossProxy.UnlockCacheBoss(arg_53_0)
 	arg_53_0.cacheLock = nil
 end
 
-function var_0_0.canGetSelfAward(arg_54_0)
+function WorldBossProxy.canGetSelfAward(arg_54_0)
 	local var_54_0 = arg_54_0:GetSelfBoss()
 
 	return var_54_0 and var_54_0:isDeath()
 end
 
-function var_0_0.UpdateSelfBoss(arg_55_0, arg_55_1)
+function WorldBossProxy.UpdateSelfBoss(arg_55_0, arg_55_1)
 	if arg_55_0.boss and arg_55_1 and not arg_55_1:isSameLevel(arg_55_0.boss) then
 		arg_55_0.fleet:clearFleet()
 	end
 
 	arg_55_0.boss = arg_55_1
 
-	arg_55_0:DispatchEvent(var_0_0.EventBossUpdated)
+	arg_55_0:DispatchEvent(WorldBossProxy.EventBossUpdated)
 end
 
-function var_0_0.RemoveSelfBoss(arg_56_0)
+function WorldBossProxy.RemoveSelfBoss(arg_56_0)
 	if arg_56_0.boss then
 		arg_56_0:UpdateSelfBoss(nil)
 	end
@@ -525,7 +525,7 @@ function var_0_0.RemoveSelfBoss(arg_56_0)
 	arg_56_0:ClearWorldSupported()
 end
 
-function var_0_0.updateBossHp(arg_57_0, arg_57_1, arg_57_2)
+function WorldBossProxy.updateBossHp(arg_57_0, arg_57_1, arg_57_2)
 	if arg_57_0.boss and arg_57_1 == arg_57_0.boss.id then
 		arg_57_0.boss:UpdateHp(arg_57_2)
 		arg_57_0:UpdateSelfBoss(arg_57_0.boss)
@@ -539,7 +539,7 @@ function var_0_0.updateBossHp(arg_57_0, arg_57_1, arg_57_2)
 	end
 end
 
-function var_0_0.GetBossById(arg_58_0, arg_58_1)
+function WorldBossProxy.GetBossById(arg_58_0, arg_58_1)
 	if arg_58_0.boss and arg_58_0.boss.id == arg_58_1 then
 		return arg_58_0.boss
 	end
@@ -551,25 +551,25 @@ function var_0_0.GetBossById(arg_58_0, arg_58_1)
 	end
 end
 
-function var_0_0.GetSelfBoss(arg_59_0)
+function WorldBossProxy.GetSelfBoss(arg_59_0)
 	return arg_59_0.boss
 end
 
-function var_0_0.IsSelfBoss(arg_60_0, arg_60_1)
+function WorldBossProxy.IsSelfBoss(arg_60_0, arg_60_1)
 	assert(arg_60_1)
 
 	return arg_60_0.boss and arg_60_0.boss.id == arg_60_1.id or arg_60_1:IsSelf()
 end
 
-function var_0_0.GetBoss(arg_61_0)
+function WorldBossProxy.GetBoss(arg_61_0)
 	return arg_61_0.boss
 end
 
-function var_0_0.ExistSelfBoss(arg_62_0)
+function WorldBossProxy.ExistSelfBoss(arg_62_0)
 	return arg_62_0.boss ~= nil and not arg_62_0.boss:IsExpired()
 end
 
-function var_0_0.GetCacheBossList(arg_63_0)
+function WorldBossProxy.GetCacheBossList(arg_63_0)
 	local var_63_0 = {}
 
 	for iter_63_0, iter_63_1 in pairs(arg_63_0.cacheBosses) do
@@ -581,21 +581,21 @@ function var_0_0.GetCacheBossList(arg_63_0)
 	return var_63_0
 end
 
-function var_0_0.reducePt(arg_64_0)
+function WorldBossProxy.reducePt(arg_64_0)
 	arg_64_0.pt = arg_64_0.pt - 1
 
-	arg_64_0:DispatchEvent(var_0_0.EventPtUpdated)
+	arg_64_0:DispatchEvent(WorldBossProxy.EventPtUpdated)
 end
 
-function var_0_0.increasePt(arg_65_0)
+function WorldBossProxy.increasePt(arg_65_0)
 	local var_65_0 = arg_65_0:GetMaxPt()
 
 	arg_65_0.pt = math.min(var_65_0, arg_65_0.pt + pg.gameset.joint_boss_ap_recove_cnt_pre_day.key_value)
 
-	arg_65_0:DispatchEvent(var_0_0.EventPtUpdated)
+	arg_65_0:DispatchEvent(WorldBossProxy.EventPtUpdated)
 end
 
-function var_0_0.SetRank(arg_66_0, arg_66_1, arg_66_2)
+function WorldBossProxy.SetRank(arg_66_0, arg_66_1, arg_66_2)
 	arg_66_0.ranks[arg_66_1] = arg_66_2
 
 	local var_66_0 = arg_66_0:GetBossById(arg_66_1)
@@ -605,18 +605,18 @@ function var_0_0.SetRank(arg_66_0, arg_66_1, arg_66_2)
 	end
 
 	arg_66_0:addTimer(arg_66_1)
-	arg_66_0:DispatchEvent(var_0_0.EventRankListUpdated, arg_66_1)
+	arg_66_0:DispatchEvent(WorldBossProxy.EventRankListUpdated, arg_66_1)
 end
 
-function var_0_0.GetRank(arg_67_0, arg_67_1)
+function WorldBossProxy.GetRank(arg_67_0, arg_67_1)
 	return arg_67_0.ranks[arg_67_1]
 end
 
-function var_0_0.ClearRank(arg_68_0, arg_68_1)
+function WorldBossProxy.ClearRank(arg_68_0, arg_68_1)
 	arg_68_0.ranks[arg_68_1] = nil
 end
 
-function var_0_0.addTimer(arg_69_0, arg_69_1)
+function WorldBossProxy.addTimer(arg_69_0, arg_69_1)
 	if not arg_69_1 then
 		return
 	end
@@ -642,32 +642,32 @@ function var_0_0.addTimer(arg_69_0, arg_69_1)
 	arg_69_0.timers[arg_69_1]:Start()
 end
 
-function var_0_0.GetPt(arg_71_0)
+function WorldBossProxy.GetPt(arg_71_0)
 	return arg_71_0.pt
 end
 
-function var_0_0.GetMaxPt(arg_72_0)
+function WorldBossProxy.GetMaxPt(arg_72_0)
 	return pg.gameset.joint_boss_ap_max.key_value
 end
 
-function var_0_0.isMaxPt(arg_73_0)
+function WorldBossProxy.isMaxPt(arg_73_0)
 	return arg_73_0.pt == arg_73_0:GetMaxPt()
 end
 
-function var_0_0.GetRecoverPtTime(arg_74_0)
+function WorldBossProxy.GetRecoverPtTime(arg_74_0)
 	return pg.gameset.joint_boss_ap_recover_time.key_value
 end
 
-function var_0_0.GetNextReconveTime(arg_75_0)
+function WorldBossProxy.GetNextReconveTime(arg_75_0)
 	return arg_75_0.ptTime
 end
 
-function var_0_0.updatePtTime(arg_76_0, arg_76_1)
+function WorldBossProxy.updatePtTime(arg_76_0, arg_76_1)
 	arg_76_0.ptTime = arg_76_1
 end
 
-function var_0_0.Dispose(arg_77_0)
-	var_0_0.super.Dispose(arg_77_0)
+function WorldBossProxy.Dispose(arg_77_0)
+	WorldBossProxy.super.Dispose(arg_77_0)
 
 	for iter_77_0, iter_77_1 in pairs(arg_77_0.timers or {}) do
 		iter_77_1:Stop()
@@ -676,7 +676,7 @@ function var_0_0.Dispose(arg_77_0)
 	arg_77_0.timers = nil
 end
 
-function var_0_0.NeedTip(arg_78_0)
+function WorldBossProxy.NeedTip(arg_78_0)
 	return (function()
 		if arg_78_0.boss and arg_78_0.boss:isDeath() and not arg_78_0.boss:IsExpired() and not arg_78_0.boss:ShouldWaitForResult() then
 			return true
@@ -686,7 +686,7 @@ function var_0_0.NeedTip(arg_78_0)
 	end)()
 end
 
-function var_0_0.UpdatedUnlockProgress(arg_80_0, arg_80_1, arg_80_2)
+function WorldBossProxy.UpdatedUnlockProgress(arg_80_0, arg_80_1, arg_80_2)
 	if arg_80_2 <= arg_80_1 or not nowWorld():IsSystemOpen(WorldConst.SystemWorldBoss) then
 		arg_80_0.tipProgress = false
 	elseif not (pg.NewStoryMgr.GetInstance():IsPlayed("WorldG190") or not GUIDE_WROLD) then
@@ -703,22 +703,22 @@ function var_0_0.UpdatedUnlockProgress(arg_80_0, arg_80_1, arg_80_2)
 		end
 	end
 
-	arg_80_0:DispatchEvent(var_0_0.EventUnlockProgressUpdated)
+	arg_80_0:DispatchEvent(WorldBossProxy.EventUnlockProgressUpdated)
 end
 
-function var_0_0.ShouldTipProgress(arg_82_0)
+function WorldBossProxy.ShouldTipProgress(arg_82_0)
 	return arg_82_0.tipProgress
 end
 
-function var_0_0.ClearTipProgress(arg_83_0)
+function WorldBossProxy.ClearTipProgress(arg_83_0)
 	arg_83_0.tipProgress = false
 end
 
-function var_0_0.GetCanGetAwardBoss(arg_84_0)
+function WorldBossProxy.GetCanGetAwardBoss(arg_84_0)
 	return nil
 end
 
-function var_0_0.ExistSelfBossAward(arg_85_0)
+function WorldBossProxy.ExistSelfBossAward(arg_85_0)
 	if arg_85_0.boss and arg_85_0.boss:isDeath() and not arg_85_0.boss:IsExpired() then
 		return true
 	end
@@ -726,45 +726,48 @@ function var_0_0.ExistSelfBossAward(arg_85_0)
 	return false
 end
 
-function var_0_0.ExistCacheBoss(arg_86_0)
+function WorldBossProxy.ExistCacheBoss(arg_86_0)
 	return table.getCount(arg_86_0.cacheBosses) ~= 0
 end
 
-function var_0_0.IsOpen(arg_87_0)
+function WorldBossProxy.IsOpen(arg_87_0)
 	return WorldBossConst.GetCurrBossID() ~= nil
 end
 
-function var_0_0.IsNeedSupport()
-	local var_88_0 = WorldBossConst.GetCurrBossDayIndex()
-	local var_88_1 = pg.gameset.world_metaboss_supportattack.description
-	local var_88_2 = nowWorld():GetBossProxy():GetSelfBoss()
+-- 判断META BOSS是否需要支援(基于日期)
+function WorldBossProxy.IsNeedSupport()
+	local curBossDayIndex = WorldBossConst.GetCurrBossDayIndex()
+	local supportDesc = pg.gameset.world_metaboss_supportattack.description
+	local selfBoss = nowWorld():GetBossProxy():GetSelfBoss()
 
-	if not var_88_2 then
+	if not selfBoss then
 		return
 	end
 
-	if not WorldBossConst._IsCurrBoss(var_88_2) then
+	if not WorldBossConst._IsCurrBoss(selfBoss) then
 		return
 	end
-
-	if var_88_0 < var_88_1[1] then
+	-- 31天及之后才支援
+	if curBossDayIndex < supportDesc[1] then
 		return
 	end
 
 	return true
 end
 
-function var_0_0.GetSupportValue()
+-- META BOSS 支援相关
+function WorldBossProxy.GetSupportValue()
 	if not WorldBossProxy.IsNeedSupport() then
 		return
 	end
 
-	local var_89_0 = pg.gameset.world_metaboss_supportattack.description
+	local supportDesc = pg.gameset.world_metaboss_supportattack.description
 	local var_89_1 = 0
 
-	assert(var_89_0[6], "Missing WorldBoss SupportAttack Buff")
-
-	return true, var_89_1, var_89_0[6]
+	assert(supportDesc[6], "Missing WorldBoss SupportAttack Buff")
+	-- supportDesc[6]: 支援Buff ID
+	-- 至于META 支援伤害计算公式，参考BattleFormulas.CaclulateMetaDotaDamage
+	return true, var_89_1, supportDesc[6]
 end
 
-return var_0_0
+return WorldBossProxy

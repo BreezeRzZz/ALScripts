@@ -1,86 +1,95 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
--- TODO
-var_0_0.Battle.BattleManualWeaponAutoBot = class("BattleManualWeaponAutoBot")
-var_0_0.Battle.BattleManualWeaponAutoBot.__name = "BattleManualWeaponAutoBot"
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-local var_0_3 = var_0_0.Battle.BattleManualWeaponAutoBot
+ys.Battle.BattleManualWeaponAutoBot = class("BattleManualWeaponAutoBot")
+ys.Battle.BattleManualWeaponAutoBot.__name = "BattleManualWeaponAutoBot"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+local BattleManualWeaponAutoBot = ys.Battle.BattleManualWeaponAutoBot
 
-	arg_1_0._fleetVO = arg_1_1
+-- BattleManualWeaponAutoBot: 管理的是三个手动武器VO的自动释放(对应三个按钮)
+-- 在BattleControllerWeaponCommand.onUnitInitFinish中初始化
+function BattleManualWeaponAutoBot.Ctor(self, fleetVO)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_1_0:init(arg_1_1)
+	self._fleetVO = fleetVO
+
+	self:init(fleetVO)
 end
 
-function var_0_3.init(arg_2_0)
-	arg_2_0._active = false
-	arg_2_0._isPlayFocus = true
-	arg_2_0._chargeVO = arg_2_0._fleetVO:GetChargeWeaponVO()
-	arg_2_0._torpedoVO = arg_2_0._fleetVO:GetTorpedoWeaponVO()
-	arg_2_0._AAVO = arg_2_0._fleetVO:GetAirAssistVO()
-	arg_2_0._totalTime = 0
-	arg_2_0._lastActiveTimeStamp = nil
+-- BattleManualWeaponAutoBot初始化
+-- 可以看到，该AutoBot负责三个武器VO: 跨射(charge)、鱼雷(torpedo)、空袭(air assist)
+-- 直接是对应fleetVO的三个武器VO
+function BattleManualWeaponAutoBot.init(self)
+	self._active = false
+	self._isPlayFocus = true
+	self._chargeVO = self._fleetVO:GetChargeWeaponVO()
+	self._torpedoVO = self._fleetVO:GetTorpedoWeaponVO()
+	self._AAVO = self._fleetVO:GetAirAssistVO()
+	self._totalTime = 0
+	self._lastActiveTimeStamp = nil
 end
 
-function var_0_3.Update(arg_3_0)
-	if arg_3_0._active then
-		if not arg_3_0._torpedoVO:IsOverLoad() and arg_3_0._fleetVO:QuickCastTorpedo() then
+-- 自动武器的更新逻辑
+-- 简单来说就是每个AI帧，都尝试立刻释放这三种武器
+-- 被BattleControllerWeaponCommand.Update调用
+function BattleManualWeaponAutoBot.Update(self)
+	if self._active then
+		if not self._torpedoVO:IsOverLoad() and self._fleetVO:QuickCastTorpedo() then
 			return
 		end
 
-		if not arg_3_0._AAVO:IsOverLoad() and arg_3_0._fleetVO:UnleashAllInStrike() then
+		if not self._AAVO:IsOverLoad() and self._fleetVO:UnleashAllInStrike() then
 			return
 		end
 
-		if not arg_3_0._chargeVO:IsOverLoad() and arg_3_0._fleetVO:QuickTagChrageWeapon(arg_3_0._isPlayFocus) then
+		if not self._chargeVO:IsOverLoad() and self._fleetVO:QuickTagChrageWeapon(self._isPlayFocus) then
 			return
 		end
 	end
 end
 
-function var_0_3.IsActive(arg_4_0)
-	return arg_4_0._active
+function BattleManualWeaponAutoBot.IsActive(self)
+	return self._active
 end
 
 -- 触发自动/手动状态切换
-function var_0_3.SetActive(arg_5_0, arg_5_1, arg_5_2)
-	if arg_5_0._active ~= arg_5_1 and arg_5_1 == true then
-		arg_5_0._lastActiveTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
-	elseif arg_5_0._active ~= arg_5_1 and arg_5_1 == false and arg_5_0._lastActiveTimeStamp ~= nil then
-		local var_5_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+-- 被BattleControllerWeaponCommand.ActiveBot调用
+function BattleManualWeaponAutoBot.SetActive(self, active, isPlayFocus)
+	if self._active ~= active and active == true then
+		self._lastActiveTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
+	elseif self._active ~= active and active == false and self._lastActiveTimeStamp ~= nil then
+		local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-		arg_5_0._totalTime = arg_5_0._totalTime + (var_5_0 - arg_5_0._lastActiveTimeStamp)
-		arg_5_0._lastActiveTimeStamp = nil
+		self._totalTime = self._totalTime + (currentTime - self._lastActiveTimeStamp)
+		self._lastActiveTimeStamp = nil
 	end
 
-	arg_5_0._fleetVO:AutoBotUpdated(arg_5_1)
+	self._fleetVO:AutoBotUpdated(active)
 
-	arg_5_0._active = arg_5_1
-	arg_5_0._isPlayFocus = arg_5_2
+	self._active = active
+	self._isPlayFocus = isPlayFocus
 end
 
-function var_0_3.GetTotalActiveDuration(arg_6_0)
-	if arg_6_0._lastActiveTimeStamp then
-		local var_6_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleManualWeaponAutoBot.GetTotalActiveDuration(self)
+	if self._lastActiveTimeStamp then
+		local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-		arg_6_0._totalTime = arg_6_0._totalTime + (var_6_0 - arg_6_0._lastActiveTimeStamp)
-		arg_6_0._lastActiveTimeStamp = nil
+		self._totalTime = self._totalTime + (currentTime - self._lastActiveTimeStamp)
+		self._lastActiveTimeStamp = nil
 	end
 
-	return arg_6_0._totalTime
+	return self._totalTime
 end
 
-function var_0_3.Dispose(arg_7_0)
-	arg_7_0._chargeVO = nil
-	arg_7_0._torpedoVO = nil
-	arg_7_0._AAVO = nil
-	arg_7_0._dataProxy = nil
-	arg_7_0._uiMediator = nil
+function BattleManualWeaponAutoBot.Dispose(self)
+	self._chargeVO = nil
+	self._torpedoVO = nil
+	self._AAVO = nil
+	self._dataProxy = nil
+	self._uiMediator = nil
 
-	var_0_0.EventListener.DetachEventListener(arg_7_0)
+	ys.EventListener.DetachEventListener(self)
 end

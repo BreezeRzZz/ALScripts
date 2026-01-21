@@ -483,12 +483,13 @@ function BattlePlayerUnit.CeaseAllWeapon(self, ceaseFire)
 	BattlePlayerUnit.super.CeaseAllWeapon(self, ceaseFire)
 end
 
-function BattlePlayerUnit.LeaderSetting(arg_33_0)
-	local var_33_0 = arg_33_0:GetIntimacy()
-	local var_33_1 = BattleDataFunction.GetWords(arg_33_0:GetSkinID(), "hp_warning", var_33_0)
+-- 被BattleFleetVO.refreshFleetFormation调用
+function BattlePlayerUnit.LeaderSetting(self)
+	local intimacy = self:GetIntimacy()
+	local shipWords = BattleDataFunction.GetWords(self:GetSkinID(), "hp_warning", intimacy)
 
-	if var_33_1 and var_33_1 ~= "" then
-		arg_33_0._warningValue = BattleConfig.WARNING_HP_RATE * arg_33_0:GetMaxHP()
+	if shipWords and shipWords ~= "" then
+		self._warningValue = BattleConfig.WARNING_HP_RATE * self:GetMaxHP()
 	end
 end
 
@@ -589,8 +590,11 @@ function BattlePlayerUnit.GetIntimacy(arg_46_0)
 	return arg_46_0._intimacy or 0
 end
 
-function BattlePlayerUnit.GetAutoPilotPreference(arg_47_0)
-	return arg_47_0._personality
+-- 被BattleFleetVO.GetLeaderPersonality调用
+-- _personality在SetTemplate中初始化，来自BattleDataFunction.GetShipPersonality(2)
+-- 对应的是ship_data_personality表的第二项("元气")
+function BattlePlayerUnit.GetAutoPilotPreference(self)
+	return self._personality
 end
 
 function BattlePlayerUnit.GetFleetVO(arg_48_0)

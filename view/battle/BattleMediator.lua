@@ -645,7 +645,7 @@ function BattleMediator.GenBattleData(self)
 	local systemCostTmp = pg.battle_cost_template[system]
 	-- bayProxy: 船坞Proxy
 	local bayProxy = getProxy(BayProxy)
-	local var_36_8 = {}
+	local shipIDList = {}
 
 	-- 下面，根据不同的战斗类型，准备不同的数据
 	-- 第一类：Chapter类(主线/活动等)，最常见的战斗类型
@@ -711,72 +711,73 @@ function BattleMediator.GenBattleData(self)
 
 		self.mainShips = {}
 
-		local function var_36_25(arg_37_0, arg_37_1, arg_37_2)
-			local var_37_0 = arg_37_0.id
-			local var_37_1 = arg_37_0.hpRant * 0.0001
+		local function PrepareFleet(ship, commanders, unitList)
+			local shipID = ship.id
+			local shipHPRate = ship.hpRant * 0.0001
 
-			if table.contains(var_36_8, var_37_0) then
+			if table.contains(shipIDList, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = var_37_0
+			shipIDList[#shipIDList + 1] = shipID
 
-			local var_37_2 = PrepareShipData(system, arg_37_0, arg_37_1)
+			local shipData = PrepareShipData(system, ship, commanders)
 
-			var_37_2.initHPRate = var_37_1
+			shipData.initHPRate = shipHPRate
 
-			table.insert(self.mainShips, arg_37_0)
-			table.insert(arg_37_2, var_37_2)
+			table.insert(self.mainShips, ship)
+			table.insert(unitList, shipData)
 		end
 
-		for iter_36_6, iter_36_7 in ipairs(mainShips) do
-			var_36_25(iter_36_7, commanders, battleData.MainUnitList)
+		for _, mainShip in ipairs(mainShips) do
+			PrepareFleet(mainShip, commanders, battleData.MainUnitList)
 		end
 
-		for iter_36_8, iter_36_9 in ipairs(vanguardShips) do
-			var_36_25(iter_36_9, commanders, battleData.VanguardUnitList)
+		for _, vanguardShip in ipairs(vanguardShips) do
+			PrepareFleet(vanguardShip, commanders, battleData.VanguardUnitList)
 		end
 
-		for iter_36_10, iter_36_11 in ipairs(subShips) do
-			var_36_25(iter_36_11, subCommanders, battleData.SubUnitList)
+		for _, subShip in ipairs(subShips) do
+			PrepareFleet(subShip, subCommanders, battleData.SubUnitList)
 		end
 
-		local var_36_26 = activeChapter:getChapterSupportFleet()
+		local supportFleet = activeChapter:getChapterSupportFleet()
 
-		if var_36_26 then
-			local var_36_27 = var_36_26:getShips()
+		if supportFleet then
+			local supportShips = supportFleet:getShips()
 
-			for iter_36_12, iter_36_13 in pairs(var_36_27) do
-				var_36_25(iter_36_13, {}, battleData.SupportUnitList)
+			for _, supportShip in pairs(supportShips) do
+				PrepareFleet(supportShip, {}, battleData.SupportUnitList)
 			end
 		end
 
 		self.viewComponent:setFleet(mainShips, vanguardShips, subShips)
+	-- 2. 限界挑战模式(老版)
 	elseif system == SYSTEM_CHALLENGE then
-		local var_36_28 = self.contextData.mode
-		local var_36_29 = getProxy(ChallengeProxy):getUserChallengeInfo(var_36_28)
+		local mode = self.contextData.mode
+		local challengeInfo = getProxy(ChallengeProxy):getUserChallengeInfo(mode)
 
-		battleData.ChallengeInfo = var_36_29
+		battleData.ChallengeInfo = challengeInfo
 
-		self.viewComponent:setChapter(var_36_29)
+		self.viewComponent:setChapter(challengeInfo)
 
-		local var_36_30 = var_36_29:getRegularFleet()
+		local fleet = challengeInfo:getRegularFleet()
 
-		battleData.CommanderList = var_36_30:buildBattleBuffList()
+		battleData.CommanderList = fleet:buildBattleBuffList()
 
-		local var_36_31 = _.values(var_36_30:getCommanders())
-		local var_36_32 = {}
-		local var_36_33 = var_36_30:getShipsByTeam(TeamType.Main, false)
-		local var_36_34 = var_36_30:getShipsByTeam(TeamType.Vanguard, false)
+		local commanders = _.values(fleet:getCommanders())
+		local subCommanders = {}
+		local mainShips = fleet:getShipsByTeam(TeamType.Main, false)
+		local vanguardShips = fleet:getShipsByTeam(TeamType.Vanguard, false)
 		local var_36_35 = {}
-		local var_36_36 = var_36_29:getSubmarineFleet()
-		local var_36_37 = var_36_36:getShipsByTeam(TeamType.Submarine, false)
+		local subFleet = challengeInfo:getSubmarineFleet()
+		local subShips = subFleet:getShipsByTeam(TeamType.Submarine, false)
 
-		if #var_36_37 > 0 then
+		if #subShips > 0 then
 			battleData.SubFlag = 1
 			battleData.TotalSubAmmo = 1
-			var_36_32 = _.values(var_36_36:getCommanders())
-			battleData.SubCommanderList = var_36_36:buildBattleBuffList()
+			subCommanders = _.values(subFleet:getCommanders())
+			battleData.SubCommanderList = subFleet:buildBattleBuffList()
 		else
 			battleData.SubFlag = 0
 			battleData.TotalSubAmmo = 0
@@ -784,42 +785,44 @@ function BattleMediator.GenBattleData(self)
 
 		self.mainShips = {}
 
-		local function var_36_38(arg_38_0, arg_38_1, arg_38_2)
-			local var_38_0 = arg_38_0.id
-			local var_38_1 = arg_38_0.hpRant * 0.0001
+		local function PrepareChallengeFleet(ship, commanders, unitList)
+			local shipID = ship.id
+			local shipHPRate = ship.hpRant * 0.0001
 
-			if table.contains(var_36_8, var_38_0) then
+			if table.contains(shipIDList, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = var_38_0
+			shipIDList[#shipIDList + 1] = shipID
 
-			local var_38_2 = PrepareShipData(system, arg_38_0, arg_38_1)
+			local shipData = PrepareShipData(system, ship, commanders)
 
-			var_38_2.initHPRate = var_38_1
-
-			table.insert(self.mainShips, arg_38_0)
-			table.insert(arg_38_2, var_38_2)
+			shipData.initHPRate = shipHPRate
+			-- 与PrepareFleet的唯一区别是多了这一句
+			table.insert(self.mainShips, ship)
+			table.insert(unitList, shipData)
 		end
 
-		for iter_36_14, iter_36_15 in ipairs(var_36_33) do
-			var_36_38(iter_36_15, var_36_31, battleData.MainUnitList)
+		for _, mainShip in ipairs(mainShips) do
+			PrepareChallengeFleet(mainShip, commanders, battleData.MainUnitList)
 		end
 
-		for iter_36_16, iter_36_17 in ipairs(var_36_34) do
-			var_36_38(iter_36_17, var_36_31, battleData.VanguardUnitList)
+		for _, vanguardShip in ipairs(vanguardShips) do
+			PrepareChallengeFleet(vanguardShip, commanders, battleData.VanguardUnitList)
 		end
 
-		for iter_36_18, iter_36_19 in ipairs(var_36_37) do
-			var_36_38(iter_36_19, var_36_32, battleData.SubUnitList)
+		for _, subShip in ipairs(subShips) do
+			PrepareChallengeFleet(subShip, subCommanders, battleData.SubUnitList)
 		end
 
-		self.viewComponent:setFleet(var_36_33, var_36_34, var_36_37)
+		self.viewComponent:setFleet(mainShips, vanguardShips, subShips)
+	-- 3. 大型作战系统(主要游戏模式之一, 有很多完全独立的代码模块)
 	elseif system == SYSTEM_WORLD then
 		--- @type World
 		local world = nowWorld()
 		--- @type WorldMap
 		local worldMap = world:GetActiveMap()
+		--- @type WorldMapFleet
 		local worldFleet = worldMap:GetFleet()
 		--- @type WorldMapAttachment
 		local enemyAttachment = worldMap:GetCell(worldFleet.row, worldFleet.column):GetStageEnemy()
@@ -829,138 +832,142 @@ function BattleMediator.GenBattleData(self)
 				repressEnemyHpRant = self.contextData.hpRate
 			}
 		end
-
+		-- 敌人附带的Buff列表(大世界特供)
 		battleData.AffixBuffList = table.mergeArray(enemyAttachment:GetBattleLuaBuffs(), worldMap:GetBattleLuaBuffs(WorldMap.FactionEnemy, enemyAttachment))
 
-		local function var_36_43(arg_39_0)
-			local var_39_0 = {}
+		local function TransformSkillList(skillList)
+			local transformedSkillList = {}
 
-			for iter_39_0, iter_39_1 in ipairs(arg_39_0) do
-				local var_39_1 = {
-					id = ys.Battle.BattleDataFunction.SkillTranform(system, iter_39_1.id),
-					level = iter_39_1.level
+			for _, skill in ipairs(skillList) do
+				local transformedSkill = {
+					id = ys.Battle.BattleDataFunction.SkillTranform(system, skill.id),
+					level = skill.level
 				}
 
-				table.insert(var_39_0, var_39_1)
+				table.insert(transformedSkillList, transformedSkill)
 			end
 
-			return var_39_0
+			return transformedSkillList
 		end
 
 		battleData.DefeatCount = worldFleet:getDefeatCount()
 		battleData.ChapterBuffIDs, battleData.CommanderList = worldMap:getFleetBattleBuffs(worldFleet, true)
 		battleData.MapAuraSkills = worldMap:GetChapterAuraBuffs()
-		battleData.MapAuraSkills = var_36_43(battleData.MapAuraSkills)
+		battleData.MapAuraSkills = TransformSkillList(battleData.MapAuraSkills)
 		battleData.MapAidSkills = {}
 
-		local var_36_44 = worldMap:GetChapterAidBuffs()
+		local chapterAidBuffs = worldMap:GetChapterAidBuffs()
 
-		for iter_36_20, iter_36_21 in pairs(var_36_44) do
-			local var_36_45 = worldMap:GetFleet(iter_36_20.fleetId)
-			local var_36_46 = _.values(var_36_45:getCommanders(true))
-			local var_36_47 = PrepareShipData(system, WorldConst.FetchShipVO(iter_36_20.id), var_36_46)
+		-- 处理跨队支援的舰船数据
+		for ship, shipAidList in pairs(chapterAidBuffs) do
+			local aidFleet = worldMap:GetFleet(ship.fleetId)
+			local aidCommanders = _.values(aidFleet:getCommanders(true))
+			local shipData = PrepareShipData(system, WorldConst.FetchShipVO(ship.id), aidCommanders)
 
-			table.insert(battleData.AidUnitList, var_36_47)
+			table.insert(battleData.AidUnitList, shipData)
 
-			battleData.MapAidSkills = table.mergeArray(battleData.MapAidSkills, var_36_43(iter_36_21))
+			battleData.MapAidSkills = table.mergeArray(battleData.MapAidSkills, TransformSkillList(shipAidList))
 		end
+		-- 从WorldBaseFleet.GetTeamShipVOs的实现来看，false表示需要舰船存活
+		local mainShips = worldFleet:GetTeamShipVOs(TeamType.Main, false)
+		local vanguardShips = worldFleet:GetTeamShipVOs(TeamType.Vanguard, false)
+		local subShips = {}
+		local commanders = _.values(worldFleet:getCommanders(true))
+		local subCommanders = {}
+		local subAidFlag = world:GetSubAidFlag()
 
-		local var_36_48 = worldFleet:GetTeamShipVOs(TeamType.Main, false)
-		local var_36_49 = worldFleet:GetTeamShipVOs(TeamType.Vanguard, false)
-		local var_36_50 = {}
-		local var_36_51 = _.values(worldFleet:getCommanders(true))
-		local var_36_52 = {}
-		local var_36_53 = world:GetSubAidFlag()
-
-		if var_36_53 == true then
-			local var_36_54 = worldMap:GetSubmarineFleet()
+		if subAidFlag == true then
+			local subFleet = worldMap:GetSubmarineFleet()
 
 			battleData.SubFlag = 1
 			battleData.TotalSubAmmo = 1
-			var_36_50 = var_36_54:GetTeamShipVOs(TeamType.Submarine, false)
-			var_36_52 = _.values(var_36_54:getCommanders(true))
+			subShips = subFleet:GetTeamShipVOs(TeamType.Submarine, false)
+			subCommanders = _.values(subFleet:getCommanders(true))
 
-			local var_36_55, var_36_56 = worldMap:getFleetBattleBuffs(var_36_54, true)
+			local _, subCommanderBuffList = worldMap:getFleetBattleBuffs(subFleet, true)
 
-			battleData.SubCommanderList = var_36_56
+			battleData.SubCommanderList = subCommanderBuffList
 		else
 			battleData.SubFlag = 0
 
-			if var_36_53 ~= ys.Battle.BattleConst.SubAidFlag.AID_EMPTY then
+			if subAidFlag ~= ys.Battle.BattleConst.SubAidFlag.AID_EMPTY then
 				battleData.TotalSubAmmo = 0
 			end
 		end
 
 		self.mainShips = {}
+		-- 下面几个for循环，跟前面的PrepareFleet几乎一样的写法和作用, 不知道为什么不弄个函数复用
+		for _, mainShip in ipairs(mainShips) do
+			local shipID = mainShip.id
+			local shipHPRate = WorldConst.FetchWorldShip(mainShip.id).hpRant * 0.0001
 
-		for iter_36_22, iter_36_23 in ipairs(var_36_48) do
-			local var_36_57 = iter_36_23.id
-			local var_36_58 = WorldConst.FetchWorldShip(iter_36_23.id).hpRant * 0.0001
-
-			if table.contains(var_36_8, var_36_57) then
+			if table.contains(shipIDList, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = var_36_57
+			shipIDList[#shipIDList + 1] = shipID
 
-			local var_36_59 = PrepareShipData(system, iter_36_23, var_36_51)
+			local mainShipData = PrepareShipData(system, mainShip, commanders)
 
-			var_36_59.initHPRate = var_36_58
+			mainShipData.initHPRate = shipHPRate
 
-			table.insert(self.mainShips, iter_36_23)
-			table.insert(battleData.MainUnitList, var_36_59)
+			table.insert(self.mainShips, mainShip)
+			table.insert(battleData.MainUnitList, mainShipData)
 		end
 
-		for iter_36_24, iter_36_25 in ipairs(var_36_49) do
-			local var_36_60 = iter_36_25.id
-			local var_36_61 = WorldConst.FetchWorldShip(iter_36_25.id).hpRant * 0.0001
+		for _, vanguardShip in ipairs(vanguardShips) do
+			local shipID = vanguardShip.id
+			local shipHPRate = WorldConst.FetchWorldShip(vanguardShip.id).hpRant * 0.0001
 
-			if table.contains(var_36_8, var_36_60) then
+			if table.contains(shipIDList, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = var_36_60
+			shipIDList[#shipIDList + 1] = shipID
 
-			local var_36_62 = PrepareShipData(system, iter_36_25, var_36_51)
+			local vanguardShipData = PrepareShipData(system, vanguardShip, commanders)
 
-			var_36_62.initHPRate = var_36_61
+			vanguardShipData.initHPRate = shipHPRate
 
-			table.insert(self.mainShips, iter_36_25)
-			table.insert(battleData.VanguardUnitList, var_36_62)
+			table.insert(self.mainShips, vanguardShip)
+			table.insert(battleData.VanguardUnitList, vanguardShipData)
 		end
 
-		for iter_36_26, iter_36_27 in ipairs(var_36_50) do
-			local var_36_63 = iter_36_27.id
-			local var_36_64 = WorldConst.FetchWorldShip(iter_36_27.id).hpRant * 0.0001
+		for _, subShip in ipairs(subShips) do
+			local shipID = subShip.id
+			local shipHPRate = WorldConst.FetchWorldShip(subShip.id).hpRant * 0.0001
 
-			if table.contains(var_36_8, var_36_63) then
+			if table.contains(shipIDList, shipID) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = var_36_63
+			shipIDList[#shipIDList + 1] = shipID
 
-			local var_36_65 = PrepareShipData(system, iter_36_27, var_36_52)
+			local subShipData = PrepareShipData(system, subShip, subCommanders)
 
-			var_36_65.initHPRate = var_36_64
+			subShipData.initHPRate = shipHPRate
 
-			table.insert(self.mainShips, iter_36_27)
-			table.insert(battleData.SubUnitList, var_36_65)
+			table.insert(self.mainShips, subShip)
+			table.insert(battleData.SubUnitList, subShipData)
 		end
 
-		self.viewComponent:setFleet(var_36_48, var_36_49, var_36_50)
+		self.viewComponent:setFleet(mainShips, vanguardShips, subShips)
 
 		local expeditionTmpData = pg.expedition_data_template[self.contextData.stageId]
 		-- 计算大型作战的敌人等级
-		-- difficulty == 4
+		-- difficulty == 4的对应WORLD
 		if expeditionTmpData.difficulty == ys.Battle.BattleConst.Difficulty.WORLD then
 			battleData.WorldMapId = worldMap.config.expedition_map_id
+			-- 简单来说，小型+0，中型+2，大型/精英+4，BOSS+8
 			battleData.WorldLevel = WorldConst.WorldLevelCorrect(worldMap.config.expedition_level, expeditionTmpData.type)
 		end
+	-- 4. META作战
 	elseif system == SYSTEM_WORLD_BOSS then
-		local var_36_67 = nowWorld():GetBossProxy()
-		local var_36_68 = self.contextData.bossId
-		local var_36_69 = var_36_67:GetFleet(var_36_68)
-		local var_36_70 = var_36_67:GetBossById(var_36_68)
+		--- @type WorldBossProxy
+		local worldBossProxy = nowWorld():GetBossProxy()
+		local bossID = self.contextData.bossId
+		local fleet = worldBossProxy:GetFleet(bossID)
+		local boss = worldBossProxy:GetBossById(bossID)
 
 		if self.contextData.hpRate then
 			battleData.RepressInfo = {
@@ -968,57 +975,57 @@ function BattleMediator.GenBattleData(self)
 			}
 		end
 
-		local var_36_71 = _.values(var_36_69:getCommanders())
+		local commanders = _.values(fleet:getCommanders())
 
-		battleData.CommanderList = var_36_69:buildBattleBuffList()
-		self.mainShips = bayProxy:getShipsByFleet(var_36_69)
+		battleData.CommanderList = fleet:buildBattleBuffList()
+		self.mainShips = bayProxy:getShipsByFleet(fleet)
 
-		local var_36_72 = {}
-		local var_36_73 = {}
-		local var_36_74 = {}
-		local var_36_75 = var_36_69:getTeamByName(TeamType.Main)
+		local mainFleet = {}
+		local vanguardFleet = {}
+		local subFleet = {}
+		local mainShips = fleet:getTeamByName(TeamType.Main)
 
-		for iter_36_28, iter_36_29 in ipairs(var_36_75) do
-			if table.contains(var_36_8, iter_36_29) then
+		for _, mainShip in ipairs(mainShips) do
+			if table.contains(shipIDList, mainShip) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = iter_36_29
+			shipIDList[#shipIDList + 1] = mainShip
 
-			local var_36_76 = bayProxy:getShipById(iter_36_29)
-			local var_36_77 = PrepareShipData(system, var_36_76, var_36_71)
+			local ship = bayProxy:getShipById(mainShip)
+			local mainShipData = PrepareShipData(system, ship, commanders)
 
-			table.insert(var_36_72, var_36_76)
-			table.insert(battleData.MainUnitList, var_36_77)
+			table.insert(mainFleet, ship)
+			table.insert(battleData.MainUnitList, mainShipData)
 		end
 
-		local var_36_78 = var_36_69:getTeamByName(TeamType.Vanguard)
+		local vanguardShips = fleet:getTeamByName(TeamType.Vanguard)
 
-		for iter_36_30, iter_36_31 in ipairs(var_36_78) do
-			if table.contains(var_36_8, iter_36_31) then
+		for _, vanguardShip in ipairs(vanguardShips) do
+			if table.contains(shipIDList, vanguardShip) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = iter_36_31
+			shipIDList[#shipIDList + 1] = vanguardShip
 
-			local var_36_79 = bayProxy:getShipById(iter_36_31)
-			local var_36_80 = PrepareShipData(system, var_36_79, var_36_71)
+			local ship = bayProxy:getShipById(vanguardShip)
+			local vanguardShipData = PrepareShipData(system, ship, commanders)
 
-			table.insert(var_36_73, var_36_79)
-			table.insert(battleData.VanguardUnitList, var_36_80)
+			table.insert(vanguardFleet, ship)
+			table.insert(battleData.VanguardUnitList, vanguardShipData)
 		end
 
-		self.viewComponent:setFleet(var_36_72, var_36_73, var_36_74)
+		self.viewComponent:setFleet(mainFleet, vanguardFleet, subFleet)
 
 		battleData.MapAidSkills = {}
 
-		if var_36_70 and var_36_70:IsSelf() then
-			local var_36_81, var_36_82, var_36_83 = var_36_67.GetSupportValue()
+		if boss and boss:IsSelf() then
+			local isNeedSupport, _, supportBuffID = worldBossProxy.GetSupportValue()
 
-			if var_36_81 then
+			if isNeedSupport then
 				table.insert(battleData.MapAidSkills, {
 					level = 1,
-					id = var_36_83
+					id = supportBuffID
 				})
 			end
 		end
@@ -1036,11 +1043,11 @@ function BattleMediator.GenBattleData(self)
 			local var_36_89 = {}
 
 			local function var_36_90(arg_40_0, arg_40_1, arg_40_2, arg_40_3)
-				if table.contains(var_36_8, arg_40_0) then
+				if table.contains(shipIDList, arg_40_0) then
 					BattleVertify.cloneShipVertiry = true
 				end
 
-				var_36_8[#var_36_8 + 1] = arg_40_0
+				shipIDList[#shipIDList + 1] = arg_40_0
 
 				local var_40_0 = bayProxy:getShipById(arg_40_0)
 				local var_40_1 = PrepareShipData(system, var_40_0, arg_40_1)
@@ -1213,11 +1220,11 @@ function BattleMediator.GenBattleData(self)
 		local var_36_130 = {}
 
 		local function var_36_131(arg_48_0, arg_48_1, arg_48_2, arg_48_3)
-			if table.contains(var_36_8, arg_48_0) then
+			if table.contains(shipIDList, arg_48_0) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = arg_48_0
+			shipIDList[#shipIDList + 1] = arg_48_0
 
 			local var_48_0 = bayProxy:getShipById(arg_48_0)
 			local var_48_1 = PrepareShipData(system, var_48_0, arg_48_1)
@@ -1332,11 +1339,11 @@ function BattleMediator.GenBattleData(self)
 		local var_36_160 = {}
 
 		local function var_36_161(arg_50_0, arg_50_1, arg_50_2, arg_50_3)
-			if table.contains(var_36_8, arg_50_0) then
+			if table.contains(shipIDList, arg_50_0) then
 				BattleVertify.cloneShipVertiry = true
 			end
 
-			var_36_8[#var_36_8 + 1] = arg_50_0
+			shipIDList[#shipIDList + 1] = arg_50_0
 
 			local var_50_0 = bayProxy:getShipById(arg_50_0)
 			local var_50_1 = PrepareShipData(system, var_50_0, arg_50_1)
@@ -1436,11 +1443,11 @@ function BattleMediator.GenBattleData(self)
 			local var_36_182 = {}
 
 			local function var_36_183(arg_52_0, arg_52_1, arg_52_2, arg_52_3)
-				if table.contains(var_36_8, arg_52_0) then
+				if table.contains(shipIDList, arg_52_0) then
 					BattleVertify.cloneShipVertiry = true
 				end
 
-				var_36_8[#var_36_8 + 1] = arg_52_0
+				shipIDList[#shipIDList + 1] = arg_52_0
 
 				local var_52_0 = bayProxy:getShipById(arg_52_0)
 				local var_52_1 = PrepareShipData(system, var_52_0, arg_52_1)
@@ -1526,11 +1533,11 @@ function BattleMediator.GenBattleData(self)
 
 		local function var_36_198(arg_54_0, arg_54_1, arg_54_2)
 			for iter_54_0, iter_54_1 in ipairs(arg_54_0) do
-				if table.contains(var_36_8, iter_54_1) then
+				if table.contains(shipIDList, iter_54_1) then
 					BattleVertify.cloneShipVertiry = true
 				end
 
-				var_36_8[#var_36_8 + 1] = iter_54_1
+				shipIDList[#shipIDList + 1] = iter_54_1
 
 				local var_54_0 = bayProxy:getShipById(iter_54_1)
 				local var_54_1 = PrepareShipData(system, var_54_0, nil)
@@ -1564,11 +1571,11 @@ function BattleMediator.GenBattleData(self)
 
 		local function var_36_209(arg_55_0, arg_55_1, arg_55_2)
 			for iter_55_0, iter_55_1 in ipairs(arg_55_0) do
-				if table.contains(var_36_8, iter_55_1) then
+				if table.contains(shipIDList, iter_55_1) then
 					BattleVertify.cloneShipVertiry = true
 				end
 
-				var_36_8[#var_36_8 + 1] = iter_55_1
+				shipIDList[#shipIDList + 1] = iter_55_1
 
 				local var_55_0 = bayProxy:getShipById(iter_55_1)
 				local var_55_1 = PrepareShipData(system, var_55_0, nil, var_36_201)

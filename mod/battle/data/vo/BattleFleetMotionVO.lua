@@ -1,65 +1,69 @@
 ys = ys or {}
 pg = pg or {}
 
-local var_0_0 = ys
-local var_0_1 = pg
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleFormulas
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = class("BattleFleetMotionVO")
+local ys = ys
+local pg = pg
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConfig = ys.Battle.BattleConfig
+local BattleFleetMotionVO = class("BattleFleetMotionVO")
 
-var_0_0.Battle.BattleFleetMotionVO = var_0_5
-var_0_5.__name = "BattleFleetMotionVO"
+ys.Battle.BattleFleetMotionVO = BattleFleetMotionVO
+BattleFleetMotionVO.__name = "BattleFleetMotionVO"
 
-function var_0_5.Ctor(arg_1_0)
-	arg_1_0._pos = Vector3.zero
-	arg_1_0._speed = Vector3.zero
-	arg_1_0._lastDir = var_0_2.NORMALIZE_FLEET_SPEED
-	arg_1_0._rotateAngle = Quaternion.identity
-	arg_1_0._isCalibrateAcc = false
+-- BattleFleetVO.init中初始化，作为舰队整体的运动VO
+function BattleFleetMotionVO.Ctor(self)
+	self._pos = Vector3.zero
+	self._speed = Vector3.zero
+	-- 默认为Vector3.right，即(1,0,0)
+	self._lastDir = BattleConst.NORMALIZE_FLEET_SPEED
+	self._rotateAngle = Quaternion.identity
+	self._isCalibrateAcc = false
 end
 
-function var_0_5.GetPos(arg_2_0)
-	return arg_2_0._pos
+function BattleFleetMotionVO.GetPos(self)
+	return self._pos
 end
 
-function var_0_5.GetSpeed(arg_3_0)
-	return arg_3_0._speed:Clone()
+function BattleFleetMotionVO.GetSpeed(self)
+	return self._speed:Clone()
 end
 
-function var_0_5.GetDirAngle(arg_4_0)
-	return arg_4_0._rotateAngle
+function BattleFleetMotionVO.GetDirAngle(self)
+	return self._rotateAngle
 end
 
-function var_0_5.UpdatePos(arg_5_0, arg_5_1)
-	arg_5_0._pos = arg_5_1:GetPosition()
+-- 被BattleFleetVO.UpdateMotion调用
+function BattleFleetMotionVO.UpdatePos(self, referenceUnit)
+	self._pos = referenceUnit:GetPosition()
 end
 
-function var_0_5.UpdateVelocityAndDirection(arg_6_0, arg_6_1, arg_6_2, arg_6_3)
-	local var_6_0 = arg_6_1
-	local var_6_1 = arg_6_2
-	local var_6_2 = arg_6_3
-	local var_6_3 = Vector3(var_6_1, 0, var_6_2):Mul(var_6_0)
+-- 被BattleFleetVO.UpdateMotion调用
+function BattleFleetMotionVO.UpdateVelocityAndDirection(self, velocity, dirX, dirZ)
+	local _velocity = velocity
+	local _dirX = dirX
+	local _dirZ = dirZ
+	local speedVec = Vector3(_dirX, 0, _dirZ):Mul(_velocity)
 
-	arg_6_0:UpdateSpeed(var_6_3)
+	self:UpdateSpeed(speedVec)
 end
 
-function var_0_5.UpdateSpeed(arg_7_0, arg_7_1)
-	if arg_7_0._speed ~= arg_7_1 then
-		arg_7_0._speed = arg_7_1
+function BattleFleetMotionVO.UpdateSpeed(self, speedVec)
+	if self._speed ~= speedVec then
+		self._speed = speedVec
 
-		if not arg_7_1:EqualZero() then
-			arg_7_0._lastDir = arg_7_1
+		if not speedVec:EqualZero() then
+			self._lastDir = speedVec
 		end
-
-		arg_7_0._rotateAngle:SetFromToRotation1(var_0_2.NORMALIZE_FLEET_SPEED, arg_7_0._lastDir)
+		-- Quaternion.SetFromToRotation1(fromVector3, toVector3)
+		self._rotateAngle:SetFromToRotation1(BattleConst.NORMALIZE_FLEET_SPEED, self._lastDir)
 	end
 end
 
-function var_0_5.CalibrateAcc(arg_8_0, arg_8_1)
-	arg_8_0._isCalibrateAcc = arg_8_1
+function BattleFleetMotionVO.CalibrateAcc(self, isCalibrate)
+	self._isCalibrateAcc = isCalibrate
 end
 
-function var_0_5.SetPos(arg_9_0, arg_9_1)
-	arg_9_0._pos = arg_9_1
+function BattleFleetMotionVO.SetPos(self, pos)
+	self._pos = pos
 end

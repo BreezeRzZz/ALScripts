@@ -1,56 +1,56 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleJoyStickBotBaseStrategy = class("BattleJoyStickBotBaseStrategy")
+ys.Battle.BattleJoyStickBotBaseStrategy = class("BattleJoyStickBotBaseStrategy")
 
-local var_0_1 = var_0_0.Battle.BattleJoyStickBotBaseStrategy
+local BattleJoyStickBotBaseStrategy = ys.Battle.BattleJoyStickBotBaseStrategy
 
-var_0_1.__name = "BattleJoyStickBotBaseStrategy"
+BattleJoyStickBotBaseStrategy.__name = "BattleJoyStickBotBaseStrategy"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._hrz = 0
-	arg_1_0._vtc = 0
-	arg_1_0._fleetVO = arg_1_1
-	arg_1_0._motionVO = arg_1_1:GetMotion()
+function BattleJoyStickBotBaseStrategy.Ctor(self, fleetVO)
+	self._hrz = 0
+	self._vtc = 0
+	self._fleetVO = fleetVO
+	self._motionVO = fleetVO:GetMotion()
 end
 
-function var_0_1.GetStrategyType(arg_2_0)
+function BattleJoyStickBotBaseStrategy.GetStrategyType(self)
 	return nil
 end
 
-function var_0_1.SetBoardBound(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4)
-	arg_3_0._upperBound = arg_3_1
-	arg_3_0._lowerBound = arg_3_2
-	arg_3_0._leftBound = arg_3_3
-	arg_3_0._rightBound = arg_3_4
-	arg_3_0._totalWidth = arg_3_4 - arg_3_3
-	arg_3_0._totalHeight = arg_3_1 - arg_3_2
+function BattleJoyStickBotBaseStrategy.SetBoardBound(self, upperBound, lowerBound, leftBound, rightBound)
+	self._upperBound = upperBound
+	self._lowerBound = lowerBound
+	self._leftBound = leftBound
+	self._rightBound = rightBound
+	self._totalWidth = rightBound - leftBound
+	self._totalHeight = upperBound - lowerBound
 end
 
-function var_0_1.Input(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0._foeShipList = arg_4_1
-	arg_4_0._foeAircraftList = arg_4_2
+function BattleJoyStickBotBaseStrategy.Input(self, foeShipList, foeAircraftList)
+	self._foeShipList = foeShipList
+	self._foeAircraftList = foeAircraftList
 end
 
-function var_0_1.Output(arg_5_0)
-	arg_5_0:analysis()
+function BattleJoyStickBotBaseStrategy.Output(self)
+	self:analysis()
 
-	return arg_5_0._hrz, arg_5_0._vtc
+	return self._hrz, self._vtc
 end
 
-function var_0_1.Dispose(arg_6_0)
-	arg_6_0._foeShipList = nil
-	arg_6_0._foeAircraftList = nil
-	arg_6_0._motionVO = nil
+function BattleJoyStickBotBaseStrategy.Dispose(self)
+	self._foeShipList = nil
+	self._foeAircraftList = nil
+	self._motionVO = nil
 end
 
-function var_0_1.analysis(arg_7_0)
+function BattleJoyStickBotBaseStrategy.analysis(self)
 	return
 end
 
-function var_0_1.getDirection(arg_8_0, arg_8_1)
-	local var_8_0 = (arg_8_1 - arg_8_0).normalized
+function BattleJoyStickBotBaseStrategy.getDirection(pos, target)
+	local direction = (target - pos).normalized
 
-	return var_8_0.x, var_8_0.z
+	return direction.x, direction.z
 end

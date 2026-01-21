@@ -1346,12 +1346,12 @@ end
 
 --- @class BattleUnit
 --- @param effectType string
---- @param args table<string, any>
+--- @param arg_list table<string, any>
 --- @return nil
 --- BattleUnit的Buff触发接口
 --- - 调用BattleBuffUnit的静态方法Trigger
-function BattleUnit.TriggerBuff(self, effectType, args)
-	ys.Battle.BattleBuffUnit.Trigger(self, effectType, args)
+function BattleUnit.TriggerBuff(self, effectType, arg_list)
+	ys.Battle.BattleBuffUnit.Trigger(self, effectType, arg_list)
 end
 
 function BattleUnit.GetBuffList(arg_141_0)

@@ -632,16 +632,17 @@ function BattleDataFunction.GetFleetTorpedoPower(arg_24_0)
 	return BattleFormulas.GetFleetTorpedoPower(arg_24_0)
 end
 
-function BattleDataFunction.SortFleetList(arg_25_0, arg_25_1)
-	local var_25_0 = {}
+-- 被BattleFleetVO.refreshFleetFormation调用
+function BattleDataFunction.SortFleetList(currentUnitList, previousUnitList)
+	local unitList = {}
 
-	for iter_25_0, iter_25_1 in ipairs(arg_25_0) do
-		var_25_0[#var_25_0 + 1] = arg_25_1[iter_25_1]
+	for currentIndex, unit in ipairs(currentUnitList) do
+		unitList[#unitList + 1] = previousUnitList[unit]
 
-		var_25_0[iter_25_0]:SetFormationIndex(iter_25_0)
+		unitList[currentIndex]:SetFormationIndex(currentIndex)
 	end
 
-	return var_25_0
+	return unitList
 end
 
 function BattleDataFunction.GetLimitAttributeRange(arg_26_0, arg_26_1)
