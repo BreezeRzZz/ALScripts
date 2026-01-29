@@ -55,45 +55,46 @@ function BattleBuffSize.onRemove(self, owner, buff)
 	self:UpdateScale(owner)
 end
 
+-- 这个更新逻辑基本类似于BattleBuffAddAttr.UpdateAttrMul的逻辑，可以参考一下
 function BattleBuffSize.UpdateScale(self, owner)
-	local var_8_0 = 1
-	local var_8_1 = 1
-	local var_8_2 = {}
-	local var_8_3 = {}
-	local var_8_4 = owner:GetBuffList()
+	local factorPositive = 1
+	local factorNegative = 1
+	local groupMaxTablePositive = {}
+	local groupMaxTableNegative = {}
+	local buffList = owner:GetBuffList()
 
-	for iter_8_0, iter_8_1 in pairs(var_8_4) do
-		for iter_8_2, iter_8_3 in ipairs(iter_8_1._effectList) do
-			if iter_8_3:GetEffectType() == BattleBuffSize.FX_TYPE then
-				local var_8_5 = iter_8_3._number
-				local var_8_6 = iter_8_3._group
-				local var_8_7 = var_8_2[var_8_6] or 1
-				local var_8_8 = var_8_3[var_8_6] or 1
+	for _, buff in pairs(buffList) do
+		for _, effect in ipairs(buff._effectList) do
+			if effect:GetEffectType() == BattleBuffSize.FX_TYPE then
+				local number = effect._number
+				local group = effect._group
+				local groupMaxFactorPositive = groupMaxTablePositive[group] or 1
+				local groupMaxFactorNegative = groupMaxTableNegative[group] or 1
 
-				if var_8_7 < var_8_5 and var_8_5 > 1 then
-					var_8_0 = var_8_0 * var_8_5 / var_8_7
-					var_8_7 = var_8_5
+				if groupMaxFactorPositive < number and number > 1 then
+					factorPositive = factorPositive * number / groupMaxFactorPositive
+					groupMaxFactorPositive = number
 				end
 
-				if var_8_5 < var_8_8 and var_8_5 < 1 then
-					var_8_1 = var_8_1 * var_8_5 / var_8_8
-					var_8_8 = var_8_5
+				if number < groupMaxFactorNegative and number < 1 then
+					factorNegative = factorNegative * number / groupMaxFactorNegative
+					groupMaxFactorNegative = number
 				end
 
-				var_8_2[var_8_6] = var_8_7
-				var_8_3[var_8_6] = var_8_8
+				groupMaxTablePositive[group] = groupMaxFactorPositive
+				groupMaxTableNegative[group] = groupMaxFactorNegative
 			end
 		end
 	end
 
-	local var_8_9 = var_0_0.Battle.BattleAttr.GetCurrent(owner, "baseScale") * var_8_0 * var_8_1
+	local scaleValue = ys.Battle.BattleAttr.GetCurrent(owner, "baseScale") * factorPositive * factorNegative
 
-	var_0_0.Battle.BattleAttr.SetCurrent(owner, "modelScale", var_8_9)
-	owner:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE))
+	ys.Battle.BattleAttr.SetCurrent(owner, "modelScale", scaleValue)
+	owner:DispatchEvent(ys.Event.New(ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE))
 end
 
-function BattleBuffSize.doScale(arg_9_0, arg_9_1)
-	local var_9_0 = arg_9_1:GetHPRate()
+function BattleBuffSize.doScale(self, owner)
+	local hpRate = owner:GetHPRate()
 
-	arg_9_0._number = arg_9_0._base + var_9_0 * arg_9_0._hpScale
+	self._number = self._base + hpRate * self._hpScale
 end
