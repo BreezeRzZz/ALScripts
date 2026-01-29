@@ -807,79 +807,84 @@ function BattleAttr.SetAirFighterAttr(airFighter, tmpData)
 	attr.crashDMG = tmpData.crash_DMG
 end
 
-function BattleAttr.SetFusionAttrFromElement(arg_46_0, arg_46_1, arg_46_2, arg_46_3)
-	local var_46_0 = BattleAttr.GetAttr(arg_46_1)
-	local var_46_1 = var_46_0.level
-	local var_46_2 = arg_46_0._attr or {}
+-- 被BattleDataProxy.SpawnFusionUnit调用
+-- fusion是融合体(例如，宝多六花、南梦芽、飞鸟川千濑的合体技能，会让前排的两艘船合体成一艘船)，该函数处理这个融合体的属性计算
+function BattleAttr.SetFusionAttrFromElement(fusionUnit, caster, candidateList, attrInheritList)
+	local casterAttr = BattleAttr.GetAttr(caster)
+	local casterLevel = casterAttr.level
+	local fusionAttr = fusionUnit._attr or {}
 
-	arg_46_0._attr = var_46_2
-	var_46_2.id = var_46_0.id
-	var_46_2.level = var_46_1
-	var_46_2.formulaLevel = var_46_1
-	var_46_2.battleUID = arg_46_0:GetUniqueID()
-
-	for iter_46_0, iter_46_1 in ipairs(BattleAttr.AttrListInheritance) do
-		var_46_2[iter_46_1] = var_46_0[iter_46_1]
+	fusionUnit._attr = fusionAttr
+	fusionAttr.id = casterAttr.id
+	fusionAttr.level = casterLevel
+	fusionAttr.formulaLevel = casterLevel
+	fusionAttr.battleUID = fusionUnit:GetUniqueID()
+	-- 与召唤物、舰载机的继承逻辑一样
+	for _, attrType in ipairs(BattleAttr.AttrListInheritance) do
+		fusionAttr[attrType] = casterAttr[attrType]
 	end
 
-	for iter_46_2, iter_46_3 in pairs(var_46_0) do
-		if string.find(iter_46_2, BattleAttr.TAG_EHC_KEY) then
-			var_46_2[iter_46_2] = iter_46_3
+	for attrType, attrValue in pairs(casterAttr) do
+		if string.find(attrType, BattleAttr.TAG_EHC_KEY) then
+			fusionAttr[attrType] = attrValue
 		end
 	end
 
-	for iter_46_4, iter_46_5 in pairs(var_46_0) do
-		if string.find(iter_46_4, BattleAttr.TAG_CRI_EHC_KEY) then
-			var_46_2[iter_46_4] = iter_46_5
+	for attrType, attrValue in pairs(casterAttr) do
+		if string.find(attrType, BattleAttr.TAG_CRI_EHC_KEY) then
+			fusionAttr[attrType] = attrValue
 		end
 	end
 
-	local var_46_3 = arg_46_1:GetHP()
-
-	for iter_46_6, iter_46_7 in ipairs(arg_46_2) do
-		var_46_3 = var_46_3 + iter_46_7:GetHP()
+	local fusionMaxHP = caster:GetHP()
+	-- 融合体的最大耐久是所有参与融合的单位当前耐久之和
+	for _, candidate in ipairs(candidateList) do
+		fusionMaxHP = fusionMaxHP + candidate:GetHP()
 	end
 
-	var_46_2.maxHP = var_46_3
-	var_46_2.hpProvideRate = {}
-	var_46_2.hpProvideRate[BattleAttr.GetCurrent(arg_46_1, "id")] = arg_46_1:GetHP() / var_46_3
+	fusionAttr.maxHP = fusionMaxHP
+	-- 每个参与融合的单位对融合体的耐久贡献比例
+	fusionAttr.hpProvideRate = {}
+	fusionAttr.hpProvideRate[BattleAttr.GetCurrent(caster, "id")] = caster:GetHP() / fusionMaxHP
 
-	for iter_46_8, iter_46_9 in ipairs(arg_46_2) do
-		var_46_2.hpProvideRate[BattleAttr.GetCurrent(iter_46_9, "id")] = iter_46_9:GetHP() / var_46_3
+	for _, candidate in ipairs(candidateList) do
+		fusionAttr.hpProvideRate[BattleAttr.GetCurrent(candidate, "id")] = candidate:GetHP() / fusionMaxHP
 	end
 
-	local function var_46_4(arg_47_0)
-		local var_47_0 = arg_46_3[arg_47_0] or 1
+	local function FusionInheritAttrValue(attrType)
+		-- 这个attrInheritList是调用该函数时传入的参数(来自BattleSkillFusion的attr_inherit_list字段)
+		-- 实际表示的是，融合体继承Caster的各属性的比例(例如3，表示3倍继承). 默认是1倍继承
+		local attrInheritRatio = attrInheritList[attrType] or 1
 
-		var_46_2[arg_47_0] = BattleAttr.GetCurrent(arg_46_1, arg_47_0) * var_47_0
+		fusionAttr[attrType] = BattleAttr.GetCurrent(caster, attrType) * attrInheritRatio
 	end
 
-	var_46_4("cannonPower")
-	var_46_4("torpedoPower")
-	var_46_4("antiAirPower")
-	var_46_4("antiSubPower")
-	var_46_4("baseAntiSubPower")
-	var_46_4("airPower")
-	var_46_4("loadSpeed")
-	var_46_4("attackRating")
-	var_46_4("dodgeRate")
-	var_46_4("luck")
-	var_46_4("velocity")
-	var_46_4("baseVelocity")
+	FusionInheritAttrValue("cannonPower")
+	FusionInheritAttrValue("torpedoPower")
+	FusionInheritAttrValue("antiAirPower")
+	FusionInheritAttrValue("antiSubPower")
+	FusionInheritAttrValue("baseAntiSubPower")
+	FusionInheritAttrValue("airPower")
+	FusionInheritAttrValue("loadSpeed")
+	FusionInheritAttrValue("attackRating")
+	FusionInheritAttrValue("dodgeRate")
+	FusionInheritAttrValue("luck")
+	FusionInheritAttrValue("velocity")
+	FusionInheritAttrValue("baseVelocity")
 
-	var_46_2.armorType = BattleAttr.GetCurrent(arg_46_1, "armorType")
-	var_46_2.aimBias = 0
-	var_46_2.aimBiasDecaySpeed = 0
-	var_46_2.aimBiasDecaySpeedRatio = 0
-	var_46_2.aimBiasExtraACC = 0
-	var_46_2.healingRate = 1
-	var_46_2.comboTag = "combo_" .. var_46_2.battleUID
-	var_46_2.labelTag = {}
-	var_46_2.barrageCounterMod = 1
-	var_46_2.TargetChoise = {}
-	var_46_2.guardian = {}
+	fusionAttr.armorType = BattleAttr.GetCurrent(caster, "armorType")
+	fusionAttr.aimBias = 0
+	fusionAttr.aimBiasDecaySpeed = 0
+	fusionAttr.aimBiasDecaySpeedRatio = 0
+	fusionAttr.aimBiasExtraACC = 0
+	fusionAttr.healingRate = 1
+	fusionAttr.comboTag = "combo_" .. fusionAttr.battleUID
+	fusionAttr.labelTag = {}
+	fusionAttr.barrageCounterMod = 1
+	fusionAttr.TargetChoise = {}
+	fusionAttr.guardian = {}
 
-	BattleAttr.SetBaseAttr(arg_46_0)
+	BattleAttr.SetBaseAttr(fusionUnit)
 end
 
 
@@ -917,10 +922,12 @@ function BattleAttr.FlashVelocity(unit, mulValue, addValue)
 	BattleAttr.SetCurrent(unit, "velocity", finalVelocity)
 end
 
-function BattleAttr.HasSonar(arg_50_0)
-	local var_50_0 = arg_50_0:GetTemplate().type
+-- BattlePlayerCharacter.SonarAcitve
+-- 判定该舰种是否有声呐属性
+function BattleAttr.HasSonar(unitData)
+	local unitType = unitData:GetTemplate().type
 
-	return ys.Battle.BattleConfig.VAN_SONAR_PROPERTY[var_50_0] ~= nil
+	return ys.Battle.BattleConfig.VAN_SONAR_PROPERTY[unitType] ~= nil
 end
 
 function BattleAttr.SetCurrent(host, attrType, attrValue)
@@ -978,40 +985,44 @@ function BattleAttr.RatioIncrease(arg_58_0, arg_58_1, arg_58_2)
 	end
 end
 
+-- 计算对某个tag的伤害增加(总效果)
+-- 被BattleFormulas.CreateContextCalculateDamage调用
 function BattleAttr.GetTagAttr(bullet, target, inWorld)
-	local labelTagList = target:GetLabelTag()
+	local targetLabelTagSet = target:GetLabelTag()
 	local tagEhcTable = {}
 
-	for _, labelTag in ipairs(labelTagList) do
-		tagEhcTable[BattleAttr.TAG_EHC_KEY .. labelTag] = true
+	for _, targetLabelTag in ipairs(targetLabelTagSet) do
+		tagEhcTable[BattleAttr.TAG_EHC_KEY .. targetLabelTag] = true
 	end
 
 	local totalTagEhcValue = 1
 
 	for tagEhcKey, _ in pairs(tagEhcTable) do
+		-- 对于同tag的增伤，请参考BattleBuffAddAttr的处理方式：同tag加算，如果有group，则取group内最大值
+		-- (这也是除了injureRatio以外的通用属性增伤处理方式)
 		local tagEhcValue = BattleAttr.GetCurrent(bullet, tagEhcKey)
 
 		if tagEhcValue ~= 0 then
 			if inWorld then
 				tagEhcValue = ys.Battle.BattleDataFunction.GetLimitAttributeRange(tagEhcKey, tagEhcValue)
 			end
-
+			-- 乘算
 			totalTagEhcValue = totalTagEhcValue * (1 + tagEhcValue)
 		end
 	end
 
 	if BattleAttr.GetCurrent(target, BattleAttr.FROM_TAG_EHC_KEY) > 0 then
-		local var_59_4 = bullet:GetWeaponTempData().attack_attribute
-		local var_59_5 = BattleAttr.FROM_TAG_EHC_KEY .. var_59_4 .. "_"
-		local var_59_6 = BattleAttr.GetCurrentTags(bullet)
+		local attack_attribute = bullet:GetWeaponTempData().attack_attribute
+		local fromTagEhcKeyPrefix = BattleAttr.FROM_TAG_EHC_KEY .. attack_attribute .. "_"
+		local bulletTags = BattleAttr.GetCurrentTags(bullet)
 
-		for iter_59_4, iter_59_5 in pairs(var_59_6) do
-			if iter_59_5 > 0 then
-				local var_59_7 = var_59_5 .. iter_59_4
-				local var_59_8 = BattleAttr.GetCurrent(target, var_59_7)
-
-				if var_59_8 ~= 0 then
-					totalTagEhcValue = totalTagEhcValue * (1 + var_59_8)
+		for bulletTag, bulletTagValue in pairs(bulletTags) do
+			if bulletTagValue > 0 then
+				local fromTagEhcKey = fromTagEhcKeyPrefix .. bulletTag
+				local bulletTagEhcValue = BattleAttr.GetCurrent(target, fromTagEhcKey)
+				-- 与之前的一起乘算
+				if bulletTagEhcValue ~= 0 then
+					totalTagEhcValue = totalTagEhcValue * (1 + bulletTagEhcValue)
 				end
 			end
 		end
@@ -1020,44 +1031,48 @@ function BattleAttr.GetTagAttr(bullet, target, inWorld)
 	return totalTagEhcValue
 end
 
-function BattleAttr.GetTagAttrCri(arg_60_0, arg_60_1)
-	local var_60_0 = arg_60_1:GetLabelTag()
-	local var_60_1 = {}
+-- 用于计算对某个tag的暴击率增加(总效果)
+-- 被BattleFormulas.CreateContextCalculateDamage调用
+function BattleAttr.GetTagAttrCri(bullet, target)
+	local targetLabelTagList = target:GetLabelTag()
+	local targetLabelTagSet = {}
 
-	for iter_60_0, iter_60_1 in ipairs(var_60_0) do
-		var_60_1[BattleAttr.TAG_CRI_EHC_KEY .. iter_60_1] = true
+	for _, targetLabelTag in ipairs(targetLabelTagList) do
+		targetLabelTagSet[BattleAttr.TAG_CRI_EHC_KEY .. targetLabelTag] = true
 	end
 
-	local var_60_2 = 0
+	local totalCriEhc = 0
 
-	for iter_60_2, iter_60_3 in pairs(var_60_1) do
-		local var_60_3 = BattleAttr.GetCurrent(arg_60_0, iter_60_2)
-
-		if var_60_3 ~= 0 then
-			var_60_2 = var_60_2 + var_60_3
+	for criEhcKey, _ in pairs(targetLabelTagSet) do
+		local criEhcValue = BattleAttr.GetCurrent(bullet, criEhcKey)
+		-- 均为加算
+		if criEhcValue ~= 0 then
+			totalCriEhc = totalCriEhc + criEhcValue
 		end
 	end
 
-	return var_60_2
+	return totalCriEhc
 end
 
-function BattleAttr.GetTagAttrCriDmg(arg_61_0, arg_61_1)
-	local var_61_0 = arg_61_1:GetLabelTag()
-	local var_61_1 = {}
+-- 用于计算对某个tag的暴击伤害增加(总效果)
+-- 被BattleFormulas.CreateContextCalculateDamage调用
+function BattleAttr.GetTagAttrCriDmg(bullet, target)
+	local targetLabelTagList = target:GetLabelTag()
+	local targetLabelTagSet = {}
 
-	for iter_61_0, iter_61_1 in ipairs(var_61_0) do
-		var_61_1[BattleAttr.TAG_CRIDMG_EHC_KEY .. iter_61_1] = true
+	for _, targetLabelTag in ipairs(targetLabelTagList) do
+		targetLabelTagSet[BattleAttr.TAG_CRIDMG_EHC_KEY .. targetLabelTag] = true
 	end
 
-	local var_61_2 = 0
+	local totalCriDmgEhc = 0
 
-	for iter_61_2, iter_61_3 in pairs(var_61_1) do
-		local var_61_3 = BattleAttr.GetCurrent(arg_61_0, iter_61_2)
-
-		if var_61_3 ~= 0 then
-			var_61_2 = var_61_2 + var_61_3
+	for criDmgEhcKey, _ in pairs(targetLabelTagSet) do
+		local tagCriDmgEhcValue = BattleAttr.GetCurrent(bullet, criDmgEhcKey)
+		-- 均为加算
+		if tagCriDmgEhcValue ~= 0 then
+			totalCriDmgEhc = totalCriDmgEhc + tagCriDmgEhcValue
 		end
 	end
 
-	return var_61_2
+	return totalCriDmgEhc
 end

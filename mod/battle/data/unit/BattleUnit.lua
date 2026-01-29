@@ -627,7 +627,7 @@ function BattleUnit.RemoveLabelTag(self, tag)
 	end
 end
 -- 用于设定标准标签
--- 包括国际标签N_和舰种标签T_
+-- 包括国籍标签N_和舰种标签T_
 function BattleUnit.setStandardLabelTag(self)
 	local nationalityTag = "N_" .. self._tmpData.nationality
 	local typeTag = "T_" .. self._tmpData.type

@@ -6,6 +6,7 @@ local BattleAntiAirUnit = class("BattleAntiAirUnit", ys.Battle.BattleWeaponUnit)
 ys.Battle.BattleAntiAirUnit = BattleAntiAirUnit
 BattleAntiAirUnit.__name = "BattleAntiAirUnit"
 
+-- 代表武器：舰载机的对空机炮
 function BattleAntiAirUnit.Ctor(self)
 	BattleAntiAirUnit.super.Ctor(self)
 end

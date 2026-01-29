@@ -1,37 +1,37 @@
 ys = ys or {}
 
-local var_0_0 = ys
--- TODO
-var_0_0.Battle.BattleTorpedoUnit = class("BattleTorpedoUnit", var_0_0.Battle.BattleWeaponUnit)
-var_0_0.Battle.BattleTorpedoUnit.__name = "BattleTorpedoUnit"
+local ys = ys
 
-local var_0_1 = var_0_0.Battle.BattleTorpedoUnit
+ys.Battle.BattleTorpedoUnit = class("BattleTorpedoUnit", ys.Battle.BattleWeaponUnit)
+ys.Battle.BattleTorpedoUnit.__name = "BattleTorpedoUnit"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_0.Battle.BattleTorpedoUnit.super.Ctor(arg_1_0)
+local BattleTorpedoUnit = ys.Battle.BattleTorpedoUnit
+
+function BattleTorpedoUnit.Ctor(self)
+	ys.Battle.BattleTorpedoUnit.super.Ctor(self)
 end
 
-function var_0_1.TriggerBuffOnFire(arg_2_0)
-	arg_2_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_TORPEDO_FIRE, {
-		equipIndex = arg_2_0._equipmentIndex
+function BattleTorpedoUnit.TriggerBuffOnFire(self)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_TORPEDO_FIRE, {
+		equipIndex = self._equipmentIndex
 	})
 end
 
-function var_0_1.EnterCoolDown(arg_3_0)
-	if arg_3_0._isSupportWeapon then
-		arg_3_0._currentState = arg_3_0.STATE_DISABLE
+function BattleTorpedoUnit.EnterCoolDown(self)
+	if self._isSupportWeapon then
+		self._currentState = self.STATE_DISABLE
 	else
-		var_0_1.super.EnterCoolDown(arg_3_0)
+		BattleTorpedoUnit.super.EnterCoolDown(self)
 	end
 end
 
-function var_0_1.TriggerBuffWhenSpawn(arg_4_0, arg_4_1)
-	local var_4_0 = {
-		_bullet = arg_4_1,
-		equipIndex = arg_4_0._equipmentIndex,
-		bulletTag = arg_4_1:GetExtraTag()
+function BattleTorpedoUnit.TriggerBuffWhenSpawn(self, bullet)
+	local bulletCreateArgs = {
+		_bullet = bullet,
+		equipIndex = self._equipmentIndex,
+		bulletTag = bullet:GetExtraTag()
 	}
-
-	arg_4_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_BULLET_CREATE, var_4_0)
-	arg_4_0._host:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_CREATE, var_4_0)
+	-- 鱼雷子弹也会触发"普通子弹创建"的BuffEffect
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_BULLET_CREATE, bulletCreateArgs)
+	self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_CREATE, bulletCreateArgs)
 end

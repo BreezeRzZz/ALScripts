@@ -305,6 +305,9 @@ function BattleDataFunction.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
 	end
 end
 
+-- 创建武器主要逻辑
+-- 非常重要
+-- 一般是在对应的BattleUnit(如PlayerUnit)中调用。此外, BattleSkillFire、BattlePointAirStrikeUnit等也会调用
 function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, weapon_type)
 	index = index or -1
 
@@ -326,6 +329,8 @@ function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, w
 		weapon = ys.Battle.BattleManualTorpedoUnit.New()
 	elseif weaponType == BattleConst.EquipmentType.ANTI_AIR then
 		weapon = ys.Battle.BattleAntiAirUnit.New()
+	-- 因为近程防空炮和远程防空炮本质是把多个防空炮综合成一个防空炮，这个处理在BattlePlayerUnit.AddWeapon
+	-- 因此这里对于近程防空炮和远程防空炮只创建普通的BattleWeaponUnit
 	elseif weaponType == BattleConst.EquipmentType.FLEET_ANTI_AIR or weaponType == BattleConst.EquipmentType.FLEET_RANGE_ANTI_AIR then
 		weapon = ys.Battle.BattleWeaponUnit.New()
 	elseif weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then

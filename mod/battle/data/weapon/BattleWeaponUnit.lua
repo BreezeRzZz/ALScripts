@@ -84,7 +84,7 @@ function BattleWeaponUnit.SetEquipmentLabel(self, labelList)
 end
 
 --- @class BattleWeaponUnit
---- @param template table<string, any>
+--- @param tmpData table<string, any>
 --- @return nil
 --- 设置模板数据
 -- 相关参数说明
@@ -100,21 +100,21 @@ end
 -- preCastInfo(precast_param): 前摇(precast)参数
 -- correctedDMG: 经过修正的伤害，可以当成武器标伤 * 武器效率 * 修正比例
 -- convertedAtkAttr: 经过修正的攻击属性，实际是属性效率
-function BattleWeaponUnit.SetTemplateData(self, template)
+function BattleWeaponUnit.SetTemplateData(self, tmpData)
 	self._potential = self._potential or 1
-	self._tmpData = template
-	self._maxRangeSqr = template.range
-	self._minRangeSqr = template.min_range
-	self._fireFXFlag = template.fire_fx_loop_type
-	self._oxyList = template.oxy_type
-	self._bulletList = template.bullet_ID
+	self._tmpData = tmpData
+	self._maxRangeSqr = tmpData.range
+	self._minRangeSqr = tmpData.min_range
+	self._fireFXFlag = tmpData.fire_fx_loop_type
+	self._oxyList = tmpData.oxy_type
+	self._bulletList = tmpData.bullet_ID
 	--- @type table<number, BattleBulletEmitter>
 	self._majorEmitterList = {}
 
-	self:ShiftBarrage(template.barrage_ID)
+	self:ShiftBarrage(tmpData.barrage_ID)
 
-	self._GCD = template.recover_time
-	self._preCastInfo = template.precast_param
+	self._GCD = tmpData.recover_time
+	self._preCastInfo = tmpData.precast_param
 	self._correctedDMG = BattleFormulas.WeaponDamagePreCorrection(self)
 	self._convertedAtkAttr = BattleFormulas.WeaponAtkAttrPreRatio(self)
 
@@ -1538,11 +1538,11 @@ end
 --- 在createMajorEmitter和SingleFire中均有使用
 function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 	local position = position
-	local template = self._tmpData
+	local tmpData = self._tmpData
 	local fireFXID
 
 	if self._fireFXFlag ~= 0 then
-		fireFXID = self._skinFireFX or template.fire_fx
+		fireFXID = self._skinFireFX or tmpData.fire_fx
 
 		if self._fireFXFlag ~= -1 then
 			self._fireFXFlag = self._fireFXFlag - 1
@@ -1555,18 +1555,18 @@ function BattleWeaponUnit.DispatchBulletEvent(self, bullet, position)
 	-- 是table的例子：例如，狮的15s弹幕有spawn_bound={1}
 	-- 这种情况下，spawn_bound指定了这个武器/弹幕从后排哪个位置生成子弹
 	-- 也就实现了：与自己所在位置无关的子弹生成位置(这就是居中弹幕的实现原理)
-	if type(template.spawn_bound) == "table" and not position then
+	if type(tmpData.spawn_bound) == "table" and not position then
 		local mainUnitPosition = self._dataProxy:GetStageInfo().mainUnitPosition
 
 		if mainUnitPosition and mainUnitPosition[self._hostIFF] then
-			position = Clone(mainUnitPosition[self._hostIFF][template.spawn_bound[1]])
+			position = Clone(mainUnitPosition[self._hostIFF][tmpData.spawn_bound[1]])
 		else
-			position = Clone(BattleConfig.MAIN_UNIT_POS[self._hostIFF][template.spawn_bound[1]])
+			position = Clone(BattleConfig.MAIN_UNIT_POS[self._hostIFF][tmpData.spawn_bound[1]])
 		end
 	end
 
 	local eventArgs = {
-		spawnBound = template.spawn_bound,
+		spawnBound = tmpData.spawn_bound,
 		bullet = bullet,
 		fireFxID = fireFXID,
 		position = position
@@ -1845,49 +1845,49 @@ function BattleWeaponUnit.FlushRequireByInverse(self, loadSpeed)
 	return elapsedTime + BattleFormulas.CalculateReloadTime(remainingReload, BattleAttr.GetCurrent(self._host, "loadSpeed"))
 end
 
-function var_0_9.SetSupportWeapon(arg_128_0)
-	arg_128_0._isSupportWeapon = true
+function BattleWeaponUnit.SetSupportWeapon(self)
+	self._isSupportWeapon = true
 end
 
-function var_0_9.SetCardPuzzleDamageEnhance(arg_129_0, arg_129_1)
-	arg_129_0._cardPuzzleEnhance = arg_129_1
+function BattleWeaponUnit.SetCardPuzzleDamageEnhance(self, cardPuzzleEnhance)
+	self._cardPuzzleEnhance = cardPuzzleEnhance
 end
 
-function var_0_9.GetCardPuzzleDamageEnhance(arg_130_0)
-	return arg_130_0._cardPuzzleEnhance or 1
+function BattleWeaponUnit.GetCardPuzzleDamageEnhance(self)
+	return self._cardPuzzleEnhance or 1
 end
 
-function var_0_9.GetReloadRate(arg_131_0)
-	if arg_131_0._currentState == arg_131_0.STATE_READY then
+function BattleWeaponUnit.GetReloadRate(self)
+	if self._currentState == self.STATE_READY then
 		return 0
-	elseif arg_131_0._CDstartTime then
-		return (arg_131_0:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / arg_131_0._reloadRequire
+	elseif self._CDstartTime then
+		return (self:GetReloadFinishTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()) / self._reloadRequire
 	else
 		return 1
 	end
 end
 
-function var_0_9.WeaponStatistics(arg_132_0, arg_132_1, arg_132_2, arg_132_3)
-	arg_132_0._CLDCount = arg_132_0._CLDCount + 1
-	arg_132_0._damageSum = arg_132_1 + arg_132_0._damageSum
+function BattleWeaponUnit.WeaponStatistics(self, damage, isCrit, isMiss)
+	self._CLDCount = self._CLDCount + 1
+	self._damageSum = damage + self._damageSum
 
-	if arg_132_2 then
-		arg_132_0._CTSum = arg_132_0._CTSum + 1
+	if isCrit then
+		self._CTSum = self._CTSum + 1
 	end
 
-	if not arg_132_3 then
-		arg_132_0._ACCSum = arg_132_0._ACCSum + 1
+	if not isMiss then
+		self._ACCSum = self._ACCSum + 1
 	end
 end
 
-function var_0_9.GetDamageSUM(arg_133_0)
-	return arg_133_0._damageSum
+function BattleWeaponUnit.GetDamageSUM(self)
+	return self._damageSum
 end
 
-function var_0_9.GetCTRate(arg_134_0)
-	return arg_134_0._CTSum / arg_134_0._CLDCount
+function BattleWeaponUnit.GetCTRate(self)
+	return self._CTSum / self._CLDCount
 end
 
-function var_0_9.GetACCRate(arg_135_0)
-	return arg_135_0._ACCSum / arg_135_0._CLDCount
+function BattleWeaponUnit.GetACCRate(self)
+	return self._ACCSum / self._CLDCount
 end

@@ -25,17 +25,17 @@ function BattleHiveUnit.Update(self)
 				self:PreCast()
 			end
 		else
-			local var_2_0
+			local targetList
 
 			if self._antiSub then
-				var_2_0 = ys.Battle.BattleTargetChoise.LegalTarget(self._host)
-				var_2_0 = ys.Battle.BattleTargetChoise.TargetDiveState(nil, nil, var_2_0)
-				var_2_0 = ys.Battle.BattleTargetChoise.TargetDetectedUnit(nil, nil, var_2_0)
+				targetList = ys.Battle.BattleTargetChoise.LegalTarget(self._host)
+				targetList = ys.Battle.BattleTargetChoise.TargetDiveState(nil, nil, targetList)
+				targetList = ys.Battle.BattleTargetChoise.TargetDetectedUnit(nil, nil, targetList)
 			else
-				var_2_0 = ys.Battle.BattleTargetChoise.TargetAircraftHarm(self._host)
+				targetList = ys.Battle.BattleTargetChoise.TargetAircraftHarm(self._host)
 			end
 
-			if #var_2_0 > 0 then
+			if #targetList > 0 then
 				self._currentState = self.STATE_PRECAST_FINISH
 			end
 		end
@@ -47,24 +47,24 @@ function BattleHiveUnit.Update(self)
 	end
 end
 
-function BattleHiveUnit.SetTemplateData(arg_3_0, arg_3_1)
-	BattleHiveUnit.super.SetTemplateData(arg_3_0, arg_3_1)
+function BattleHiveUnit.SetTemplateData(self, tmpData)
+	BattleHiveUnit.super.SetTemplateData(self, tmpData)
 
-	arg_3_0._antiSub = table.contains(arg_3_1.search_condition, BattleConst.OXY_STATE.DIVE)
+	self._antiSub = table.contains(tmpData.search_condition, BattleConst.OXY_STATE.DIVE)
 end
 
-function BattleHiveUnit.Fire(arg_4_0)
-	arg_4_0:DispatchGCD()
+function BattleHiveUnit.Fire(self)
+	self:DispatchGCD()
 
-	arg_4_0._currentState = arg_4_0.STATE_ATTACK
+	self._currentState = self.STATE_ATTACK
 
-	if arg_4_0._tmpData.action_index == "" then
-		arg_4_0:DoAttack()
+	if self._tmpData.action_index == "" then
+		self:DoAttack()
 	else
-		arg_4_0:DispatchFireEvent(nil, arg_4_0._tmpData.action_index)
+		self:DispatchFireEvent(nil, self._tmpData.action_index)
 	end
 
-	arg_4_0._host:CloakExpose(arg_4_0._tmpData.expose)
+	self._host:CloakExpose(self._tmpData.expose)
 
 	return true
 end
@@ -73,7 +73,7 @@ function BattleHiveUnit.createMajorEmitter(self, barrageID, index, emitterType, 
 	-- HiveUnit的createMajorEmitter主要目的是创建舰载机，因此不需要使用正常武器的大多参数
 	local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority, target)
 		local aircraft, direction = self:SpawnAircraft(barrageAngle)
-
+		-- 创建后delay(默认1.5)秒内，不能攻击
 		aircraft:AddCreateTimer(direction, 1.5)
 
 		if self._debugRecordDEFAircraft then
@@ -159,47 +159,48 @@ function BattleHiveUnit.SpawnAircraft(self, barrageAngle)
 	return aircraft, direction
 end
 
-function BattleHiveUnit.TriggerBuffWhenSpawnAircraft(arg_11_0, arg_11_1)
-	local var_11_0 = BattleConst.BuffEffectType.ON_AIRCRAFT_CREATE
-	local var_11_1 = {
-		aircraft = arg_11_1,
-		equipIndex = arg_11_0._equipmentIndex
+-- 被BattleHiveUnit.SpawnAircraft调用
+function BattleHiveUnit.TriggerBuffWhenSpawnAircraft(self, aircraft)
+	local buffEffectType = BattleConst.BuffEffectType.ON_AIRCRAFT_CREATE
+	local buffEffectArgs = {
+		aircraft = aircraft,
+		equipIndex = self._equipmentIndex
 	}
 
-	arg_11_0._host:TriggerBuff(var_11_0, var_11_1)
+	self._host:TriggerBuff(buffEffectType, buffEffectArgs)
 end
 
-function BattleHiveUnit.SetStrikePoint(arg_12_0, arg_12_1)
-	arg_12_0._strikePoint = arg_12_1
+function BattleHiveUnit.SetStrikePoint(self, strikePoint)
+	self._strikePoint = strikePoint
 end
 
-function BattleHiveUnit.GetStrikePoint(arg_13_0)
-	return arg_13_0._strikePoint
+function BattleHiveUnit.GetStrikePoint(self)
+	return self._strikePoint
 end
 
-function BattleHiveUnit.GetATKAircraftList(arg_14_0)
-	arg_14_0._debugRecordATKAircraft = arg_14_0._debugRecordATKAircraft or {}
+function BattleHiveUnit.GetATKAircraftList(self)
+	self._debugRecordATKAircraft = self._debugRecordATKAircraft or {}
 
-	return arg_14_0._debugRecordATKAircraft
+	return self._debugRecordATKAircraft
 end
 
-function BattleHiveUnit.GetDEFAircraftList(arg_15_0)
-	arg_15_0._debugRecordDEFAircraft = arg_15_0._debugRecordDEFAircraft or {}
+function BattleHiveUnit.GetDEFAircraftList(self)
+	self._debugRecordDEFAircraft = self._debugRecordDEFAircraft or {}
 
-	return arg_15_0._debugRecordDEFAircraft
+	return self._debugRecordDEFAircraft
 end
 
-function BattleHiveUnit.GetDamageSUM(arg_16_0)
-	local var_16_0 = 0
-	local var_16_1 = arg_16_0:GetDEFAircraftList()
+function BattleHiveUnit.GetDamageSUM(self)
+	local damageSum = 0
+	local defAircraftList = self:GetDEFAircraftList()
 
-	for iter_16_0, iter_16_1 in ipairs(var_16_1) do
-		local var_16_2 = iter_16_1:GetWeapon()
+	for _, defAircraft in ipairs(defAircraftList) do
+		local weaponList = defAircraft:GetWeapon()
 
-		for iter_16_2, iter_16_3 in ipairs(var_16_2) do
-			var_16_0 = var_16_0 + iter_16_3:GetDamageSUM()
+		for _, weapon in ipairs(weaponList) do
+			damageSum = damageSum + weapon:GetDamageSUM()
 		end
 	end
 
-	return var_16_0
+	return damageSum
 end

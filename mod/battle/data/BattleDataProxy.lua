@@ -1839,62 +1839,63 @@ function BattleDataProxy.generateSupportPlayerUnit(self, unitData, IFF)
 	return supportUnit
 end
 
--- TODO
+
 -- 根据battle_unit_type，切换幽灵状态
-function BattleDataProxy.SwitchSpectreUnit(arg_86_0, arg_86_1)
-	local var_86_0 = arg_86_1:GetUniqueID()
-	local var_86_1 = arg_86_1:GetIFF() == BattleConfig.FRIENDLY_CODE and arg_86_0._friendlyShipList or arg_86_0._foeShipList
-
-	if arg_86_1:IsSpectre() then
-		var_86_1[var_86_0] = nil
-		arg_86_0._spectreShipList[var_86_0] = arg_86_1
-
-		for iter_86_0, iter_86_1 in pairs(arg_86_0._AOEList) do
-			iter_86_1:ForceExit(arg_86_1:GetUniqueID())
+function BattleDataProxy.SwitchSpectreUnit(self, unit)
+	local unitUID = unit:GetUniqueID()
+	local shipList = unit:GetIFF() == BattleConfig.FRIENDLY_CODE and self._friendlyShipList or self._foeShipList
+	-- IsSpectre的判断逻辑就只看battle_unit_type <= -99 是否成立
+	if unit:IsSpectre() then
+		-- 从正常列表移除，加入幽灵列表
+		shipList[unitUID] = nil
+		self._spectreShipList[unitUID] = unit
+		-- 如果该单位在AOE范围内，则强制退出
+		for _, aoe in pairs(self._AOEList) do
+			aoe:ForceExit(unit:GetUniqueID())
 		end
-
-		arg_86_0._cldSystem:DeleteShipCld(arg_86_1)
+		-- 移除碰撞体
+		self._cldSystem:DeleteShipCld(unit)
 	else
-		arg_86_0._spectreShipList[var_86_0] = nil
-		var_86_1[var_86_0] = arg_86_1
+		self._spectreShipList[unitUID] = nil
+		shipList[unitUID] = unit
 
-		arg_86_1:ActiveCldBox()
-		arg_86_0._cldSystem:InitShipCld(arg_86_1)
+		unit:ActiveCldBox()
+		self._cldSystem:InitShipCld(unit)
 	end
 end
 
-function BattleDataProxy.GetUnitList(arg_87_0)
-	return arg_87_0._unitList
+function BattleDataProxy.GetUnitList(self)
+	return self._unitList
 end
 
-function BattleDataProxy.GetFriendlyShipList(arg_88_0)
-	return arg_88_0._friendlyShipList
+function BattleDataProxy.GetFriendlyShipList(self)
+	return self._friendlyShipList
 end
 
-function BattleDataProxy.GetFoeShipList(arg_89_0)
-	return arg_89_0._foeShipList
+function BattleDataProxy.GetFoeShipList(self)
+	return self._foeShipList
 end
 
-function BattleDataProxy.GetFoeAircraftList(arg_90_0)
-	return arg_90_0._foeAircraftList
+function BattleDataProxy.GetFoeAircraftList(self)
+	return self._foeAircraftList
 end
 
-function BattleDataProxy.GetFreeShipList(arg_91_0)
-	return arg_91_0._freeShipList
+function BattleDataProxy.GetFreeShipList(self)
+	return self._freeShipList
 end
 
-function BattleDataProxy.GetSpectreShipList(arg_92_0)
-	return arg_92_0._spectreShipList
+function BattleDataProxy.GetSpectreShipList(self)
+	return self._spectreShipList
 end
 
-function BattleDataProxy.GenerateUnitID(arg_93_0)
-	arg_93_0._unitCount = arg_93_0._unitCount + 1
+function BattleDataProxy.GenerateUnitID(self)
+	self._unitCount = self._unitCount + 1
 
-	return arg_93_0._unitCount
+	return self._unitCount
 end
 
-function BattleDataProxy.GetCountDown(arg_94_0)
-	return arg_94_0._countDown
+function BattleDataProxy.GetCountDown(self)
+	return self._countDown
 end
 
 -- note: 这是敌方飞机的生成，没有Mother Unit
@@ -2191,20 +2192,23 @@ function BattleDataProxy.GenerateBulletID(arg_113_0)
 
 	return var_113_0
 end
--- TODO
-function BattleDataProxy.CLSBullet(arg_114_0, arg_114_1, arg_114_2)
-	local var_114_0 = true
 
-	if arg_114_0._battleInitData.battleType == SYSTEM_DUEL then
-		var_114_0 = false
+-- 消除子弹
+-- 典型如航母空袭时会消弹(BattleFleetVO.UnleashAllInStrike -> BattleAllInStrike.CLSBullet -> BattleDataProxy.CLSBullet), 或BattleSkillCLS
+-- 被BattleAllInStrike.CLSBullet调用
+function BattleDataProxy.CLSBullet(self, oppositeIFF, bombCLS)
+	local canCLS = true
+	-- 演习模式不消弹
+	if self._battleInitData.battleType == SYSTEM_DUEL then
+		canCLS = false
 	end
 
-	if var_114_0 then
-		for iter_114_0, iter_114_1 in pairs(arg_114_0._bulletList) do
-			if iter_114_1:GetIFF() ~= arg_114_1 or not iter_114_1:GetExist() or iter_114_1:ImmuneCLS() or iter_114_1:ImmuneBombCLS() and arg_114_2 then
+	if canCLS then
+		for bulletUID, bullet in pairs(self._bulletList) do
+			if bullet:GetIFF() ~= oppositeIFF or not bullet:GetExist() or bullet:ImmuneCLS() or bullet:ImmuneBombCLS() and bombCLS then
 				-- block empty
 			else
-				arg_114_0:RemoveBulletUnit(iter_114_0)
+				self:RemoveBulletUnit(bulletUID)
 			end
 		end
 	end
@@ -2621,7 +2625,6 @@ function BattleDataProxy.JamManualCast(arg_150_0, arg_150_1)
 	}))
 end
 
--- TODO
 -- 潜艇出击逻辑
 -- 被BattleControllerWeaponCommand.TryAutoSub(自律召唤潜艇)或BattleSkillView的_subStriveBtn的callback调用
 function BattleDataProxy.SubmarineStrike(self, IFF)
@@ -2710,82 +2713,92 @@ function BattleDataProxy.DispatchGridmanSkill(arg_156_0, arg_156_1, arg_156_2)
 	}))
 end
 
-function BattleDataProxy.SpawnFusionUnit(arg_157_0, arg_157_1, arg_157_2, arg_157_3, arg_157_4)
-	local var_157_0 = Clone(arg_157_1:GetPosition())
-	local var_157_1 = arg_157_1:GetIFF()
-	local var_157_2 = arg_157_0:generatePlayerUnit(arg_157_2, var_157_1, var_157_0, arg_157_0._commanderBuff)
+-- 创建融合单位
+-- 被BattleSkillFusion.doFusion调用
+function BattleDataProxy.SpawnFusionUnit(self, caster, fusionUnitData, candidateList, attrInheritList)
+	local pos = Clone(caster:GetPosition())
+	local IFF = caster:GetIFF()
+	local fusionUnit = self:generatePlayerUnit(fusionUnitData, IFF, pos, self._commanderBuff)
 
-	BattleAttr.SetFusionAttrFromElement(var_157_2, arg_157_1, arg_157_3, arg_157_4)
-	var_157_2:SetCurrentHP(var_157_2:GetMaxHP())
-	arg_157_1:GetFleetVO():AppendPlayerUnit(var_157_2)
-	arg_157_0:setShipUnitBound(var_157_2)
-	BattleDataFunction.AttachWeather(var_157_2, arg_157_0._weahter)
-	arg_157_0._cldSystem:InitShipCld(var_157_2)
+	BattleAttr.SetFusionAttrFromElement(fusionUnit, caster, candidateList, attrInheritList)
+	fusionUnit:SetCurrentHP(fusionUnit:GetMaxHP())
+	caster:GetFleetVO():AppendPlayerUnit(fusionUnit)
+	self:setShipUnitBound(fusionUnit)
+	BattleDataFunction.AttachWeather(fusionUnit, self._weahter)
+	self._cldSystem:InitShipCld(fusionUnit)
 
-	local var_157_3 = {
+	local addUnitArgs = {
 		type = BattleConst.UnitType.PLAYER_UNIT,
-		unit = var_157_2
+		unit = fusionUnit
 	}
 
-	arg_157_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_157_3))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, addUnitArgs))
 
-	return var_158_2
+	return fusionUnit
 end
 
-function BattleDataProxy.DefusionUnit(arg_158_0, arg_158_1)
-	local var_158_0 = arg_158_1:GetIFF()
-	local var_158_1 = arg_158_0:GetFleetByIFF(var_158_0)
+-- 解除融合单位
+-- 被BattleSkillFusion.doFusion调用
+function BattleDataProxy.DefusionUnit(self, fusionUnit)
+	local fusionUnitIFF = fusionUnit:GetIFF()
+	local fleet = self:GetFleetByIFF(fusionUnitIFF)
 
-	var_159_1:RemovePlayerUnit(arg_159_1)
+	fleet:RemovePlayerUnit(fusionUnit)
 
-	local var_159_2 = {}
+	local antiAreaArgs = {}
 
-	if var_159_1:GetFleetAntiAirWeapon():GetRange() == 0 then
-		var_159_2.isShow = false
+	if fleet:GetFleetAntiAirWeapon():GetRange() == 0 then
+		antiAreaArgs.isShow = false
 	end
 
-	arg_158_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, var_158_2))
-	arg_158_1:SetDeathReason(BattleConst.UnitDeathReason.DEFUSION)
-	arg_158_0:KillUnit(arg_158_1:GetUniqueID())
+	self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, antiAreaArgs))
+	fusionUnit:SetDeathReason(BattleConst.UnitDeathReason.DEFUSION)
+	self:KillUnit(fusionUnit:GetUniqueID())
 end
 
-function BattleDataProxy.FreezeUnit(arg_159_0, arg_159_1)
-	BattleAttr.SetCurrent(arg_159_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.FUSION_ELEMENT_UNIT_TYPE)
-	arg_159_1:UpdateBlindInvisibleBySpectre()
-	arg_159_0:SwitchSpectreUnit(arg_159_1)
+-- 冻结单位
+-- 被BattleSkillFusion.doFusion调用
+-- 这是在融合期间，参与融合的单位会被冻结，无法行动
+-- 取而代之的是，多个单位会融合成一个新的融合单位行动
+function BattleDataProxy.FreezeUnit(self, unit)
+	-- 设置battle_unit_type = -10000
+	BattleAttr.SetCurrent(unit, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.FUSION_ELEMENT_UNIT_TYPE)
+	unit:UpdateBlindInvisibleBySpectre()
+	-- 变为幽灵状态
+	self:SwitchSpectreUnit(unit)
 
-	if arg_160_1:GetAimBias() then
-		local var_160_0 = arg_160_1:GetAimBias()
+	if unit:GetAimBias() then
+		--- @type BattleUnitAimBiasComponent
+		local aimBias = unit:GetAimBias()
+		-- 不参与瞄准偏差计算
+		aimBias:RemoveCrew(unit)
 
-		var_160_0:RemoveCrew(arg_160_1)
-
-		if var_159_0:GetCurrentState() == var_159_0.STATE_EXPIRE then
-			arg_159_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIM_BIAS, {
-				aimBias = arg_159_1:GetAimBias()
+		if aimBias:GetCurrentState() == aimBias.STATE_EXPIRE then
+			self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIM_BIAS, {
+				aimBias = unit:GetAimBias()
 			}))
 		end
 	end
 
-	arg_160_1:Freeze()
+	unit:Freeze()
+	local fleetVO = unit:GetFleetVO()
 
-	local var_160_1 = arg_160_1:GetFleetVO()
-
-	if var_160_1 then
-		var_160_1:FreezeUnit(arg_160_1)
+	if fleetVO then
+		fleetVO:FreezeUnit(unit)
 	end
 end
 
-function BattleDataProxy.ActiveFreezeUnit(arg_160_0, arg_160_1)
-	BattleAttr.SetCurrent(arg_160_1, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.PLAYER_DEFAULT)
-	arg_160_1:UpdateBlindInvisibleBySpectre()
-	arg_160_0:SwitchSpectreUnit(arg_160_1)
-	BattleDataFunction.AttachWeather(arg_160_1, arg_160_0._weahter)
-	arg_160_1:ActiveFreeze()
+function BattleDataProxy.ActiveFreezeUnit(self, unit)
+	BattleAttr.SetCurrent(unit, ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY, BattleConfig.PLAYER_DEFAULT)
+	unit:UpdateBlindInvisibleBySpectre()
+	self:SwitchSpectreUnit(unit)
+	BattleDataFunction.AttachWeather(unit, self._weahter)
+	unit:ActiveFreeze()
 
-	local var_161_0 = arg_161_1:GetFleetVO()
+	local fleetVO = unit:GetFleetVO()
 
-	if var_161_0 then
-		var_161_0:ActiveFreezeUnit(arg_161_1)
+	if fleetVO then
+		fleetVO:ActiveFreezeUnit(unit)
 	end
 end
 

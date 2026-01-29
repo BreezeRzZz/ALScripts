@@ -9,8 +9,8 @@ ys.Battle.BattleSkillEffect.__name = "BattleSkillEffect"
 
 local BattleSkillEffect = ys.Battle.BattleSkillEffect
 
-function BattleSkillEffect.Ctor(self, template, level)
-	self._tempData = template
+function BattleSkillEffect.Ctor(self, tempData, level)
+	self._tempData = tempData
 	self._type = self._tempData.type
 	self._targetChoise = self._tempData.target_choise or "TargetNull"
 	self._casterAniEffect = self._tempData.casterAniEffect

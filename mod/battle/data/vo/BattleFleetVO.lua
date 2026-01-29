@@ -306,23 +306,27 @@ function BattleFleetVO.SetExposeLine(arg_24_0, arg_24_1, arg_24_2)
 	arg_24_0._exposeLineX = arg_24_2
 end
 
-function BattleFleetVO.AppendPlayerUnit(arg_25_0, arg_25_1)
-	arg_25_0._unitList[#arg_25_0._unitList + 1] = arg_25_1
-	arg_25_0._maxCount = arg_25_0._maxCount + 1
+--- @class BattleFleetVO
+--- @param unit BattleUnit
+--- @return nil
+--- BattleDataProxy.SpawnVanguard/BattleDataProxy.SpawnMain调用
+function BattleFleetVO.AppendPlayerUnit(self, unit)
+	self._unitList[#self._unitList + 1] = unit
+	self._maxCount = self._maxCount + 1
 
-	if arg_25_1:IsMainFleetUnit() then
-		arg_25_0:appendMainUnit(arg_25_1)
+	if unit:IsMainFleetUnit() then
+		self:appendMainUnit(unit)
 	else
-		arg_25_0:appendScoutUnit(arg_25_1)
+		self:appendScoutUnit(unit)
 	end
 
-	arg_25_1:SetFleetVO(arg_25_0)
-	arg_25_1:SetMotion(arg_25_0._motionVO)
-	arg_25_1:RegisterEventListener(arg_25_0, BattleUnitEvent.UPDATE_HP, arg_25_0.onUnitUpdateHP)
-	arg_25_1:RegisterEventListener(arg_25_0, BattleUnitEvent.UPDATE_CLOAK_STATE, arg_25_0.onUnitCloakUpdate)
+	unit:SetFleetVO(self)
+	unit:SetMotion(self._motionVO)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUnitUpdateHP)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE, self.onUnitCloakUpdate)
 
-	if arg_25_0._cardPuzzleComponent then
-		arg_25_0._cardPuzzleComponent:AppendUnit(arg_25_1)
+	if self._cardPuzzleComponent then
+		self._cardPuzzleComponent:AppendUnit(unit)
 	end
 end
 
@@ -470,84 +474,84 @@ function BattleFleetVO.GetShipByID(arg_39_0, arg_39_1)
 	end
 end
 
-function BattleFleetVO.GetCloakList(arg_40_0)
-	return arg_40_0._cloakList
+function BattleFleetVO.GetCloakList(self)
+	return self._cloakList
 end
 
-function BattleFleetVO.GetSubBench(arg_41_0)
-	return arg_41_0._manualSubBench
+function BattleFleetVO.GetSubBench(self)
+	return self._manualSubBench
 end
 
-function BattleFleetVO.GetUnitBound(arg_42_0)
-	return arg_42_0._fleetUnitBound
+function BattleFleetVO.GetUnitBound(self)
+	return self._fleetUnitBound
 end
 
-function BattleFleetVO.GetMotion(arg_43_0)
-	return arg_43_0._motionVO
+function BattleFleetVO.GetMotion(self)
+	return self._motionVO
 end
 
 function BattleFleetVO.GetMotionReferenceUnit(self)
 	return self._motionReferenceUnit
 end
 
-function BattleFleetVO.GetAutoBotAIID(arg_45_0)
-	return arg_45_0._autoBotAIID
+function BattleFleetVO.GetAutoBotAIID(self)
+	return self._autoBotAIID
 end
 
-function BattleFleetVO.GetChargeWeaponVO(arg_46_0)
-	return arg_46_0._chargeWeaponVO
+function BattleFleetVO.GetChargeWeaponVO(self)
+	return self._chargeWeaponVO
 end
 
-function BattleFleetVO.GetTorpedoWeaponVO(arg_47_0)
-	return arg_47_0._torpedoWeaponVO
+function BattleFleetVO.GetTorpedoWeaponVO(self)
+	return self._torpedoWeaponVO
 end
 
-function BattleFleetVO.GetAirAssistVO(arg_48_0)
-	return arg_48_0._airAssistVO
+function BattleFleetVO.GetAirAssistVO(self)
+	return self._airAssistVO
 end
 
-function BattleFleetVO.GetSubAidVO(arg_49_0)
-	return arg_49_0._submarineVO
+function BattleFleetVO.GetSubAidVO(self)
+	return self._submarineVO
 end
 
-function BattleFleetVO.GetSubFreeDiveVO(arg_50_0)
-	return arg_50_0._submarineDiveVO
+function BattleFleetVO.GetSubFreeDiveVO(self)
+	return self._submarineDiveVO
 end
 
-function BattleFleetVO.GetSubFreeFloatVO(arg_51_0)
-	return arg_51_0._submarineFloatVO
+function BattleFleetVO.GetSubFreeFloatVO(self)
+	return self._submarineFloatVO
 end
 
-function BattleFleetVO.GetSubBoostVO(arg_52_0)
-	return arg_52_0._submarineBoostVO
+function BattleFleetVO.GetSubBoostVO(self)
+	return self._submarineBoostVO
 end
 
-function BattleFleetVO.GetSubSpecialVO(arg_53_0)
-	return arg_53_0._submarineSpecialVO
+function BattleFleetVO.GetSubSpecialVO(self)
+	return self._submarineSpecialVO
 end
 
-function BattleFleetVO.GetSubShiftVO(arg_54_0)
-	return arg_54_0._submarineShiftVO
+function BattleFleetVO.GetSubShiftVO(self)
+	return self._submarineShiftVO
 end
 
-function BattleFleetVO.GetFleetAntiAirWeapon(arg_55_0)
-	return arg_55_0._fleetAntiAir
+function BattleFleetVO.GetFleetAntiAirWeapon(self)
+	return self._fleetAntiAir
 end
 
-function BattleFleetVO.GetFleetRangeAntiAirWeapon(arg_56_0)
-	return arg_56_0._fleetRangeAntiAir
+function BattleFleetVO.GetFleetRangeAntiAirWeapon(self)
+	return self._fleetRangeAntiAir
 end
 
 function BattleFleetVO.GetFleetVelocity(self)
 	return BattleFormulas.GetFleetVelocity(self._scoutList)
 end
 
-function BattleFleetVO.GetFleetBound(arg_58_0)
-	return arg_58_0._upperBound, arg_58_0._lowerBound, arg_58_0._leftBound, arg_58_0._rightBound
+function BattleFleetVO.GetFleetBound(self)
+	return self._upperBound, self._lowerBound, self._leftBound, self._rightBound
 end
 
-function BattleFleetVO.GetFleetUnitBound(arg_59_0)
-	return arg_59_0._totalUpperBound, arg_59_0._totalLowerBound
+function BattleFleetVO.GetFleetUnitBound(self)
+	return self._totalUpperBound, self._totalLowerBound
 end
 
 function BattleFleetVO.GetFleetExposeLine(self)
@@ -563,41 +567,41 @@ function BattleFleetVO.GetLeaderPersonality(self)
 	return self._motionReferenceUnit:GetAutoPilotPreference()
 end
 
-function BattleFleetVO.GetDamageRatioResult(arg_63_0)
-	return string.format("%0.2f", arg_63_0._currentDMGRatio / arg_63_0._totalDMGRatio * 100), arg_63_0._totalDMGRatio
+function BattleFleetVO.GetDamageRatioResult(self)
+	return string.format("%0.2f", self._currentDMGRatio / self._totalDMGRatio * 100), self._totalDMGRatio
 end
 
-function BattleFleetVO.GetDamageRatio(arg_64_0)
-	return arg_64_0._currentDMGRatio / arg_64_0._totalDMGRatio
+function BattleFleetVO.GetDamageRatio(self)
+	return self._currentDMGRatio / self._totalDMGRatio
 end
 
-function BattleFleetVO.GetSubmarineBaseLine(arg_65_0)
-	return arg_65_0._fixedSubRefLine or arg_65_0._subAttackBaseLine, arg_65_0._subRetreatBaseLine
+function BattleFleetVO.GetSubmarineBaseLine(self)
+	return self._fixedSubRefLine or self._subAttackBaseLine, self._subRetreatBaseLine
 end
 
-function BattleFleetVO.GetFleetSonar(arg_66_0)
-	return arg_66_0._fleetStaticSonar
+function BattleFleetVO.GetFleetSonar(self)
+	return self._fleetStaticSonar
 end
 
-function BattleFleetVO.Dispose(arg_67_0)
-	ys.EventDispatcher.DetachEventDispatcher(arg_67_0)
-	ys.EventListener.DetachEventListener(arg_67_0)
+function BattleFleetVO.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
+	ys.EventListener.DetachEventListener(self)
 
-	arg_67_0._leaderUnit = nil
+	self._leaderUnit = nil
 
-	arg_67_0._fleetAntiAir:Dispose()
-	arg_67_0._fleetRangeAntiAir:Dispose()
-	arg_67_0._fleetStaticSonar:Dispose()
+	self._fleetAntiAir:Dispose()
+	self._fleetRangeAntiAir:Dispose()
+	self._fleetStaticSonar:Dispose()
 
-	arg_67_0._fleetStaticSonar = nil
-	arg_67_0._buffList = nil
-	arg_67_0._indieSonarList = nil
-	arg_67_0._scoutAimBias = nil
+	self._fleetStaticSonar = nil
+	self._buffList = nil
+	self._indieSonarList = nil
+	self._scoutAimBias = nil
 
-	arg_67_0._fleetAttr:Dispose()
+	self._fleetAttr:Dispose()
 
-	arg_67_0._fleetAttr = nil
-	arg_67_0._freezeList = nil
+	self._fleetAttr = nil
+	self._freezeList = nil
 end
 
 -- 刷新前排舰队阵型/位置的主逻辑, 重要
@@ -705,118 +709,122 @@ function BattleFleetVO.init(self)
 	self:SetMotionSource()
 end
 
-function BattleFleetVO.appendScoutUnit(arg_70_0, arg_70_1)
-	arg_70_0._scoutList[#arg_70_0._scoutList + 1] = arg_70_1
+-- 被BattleFleetVO.AppendPlayerUnit调用
+function BattleFleetVO.appendScoutUnit(self, unit)
+	self._scoutList[#self._scoutList + 1] = unit
 
-	local var_70_0 = arg_70_1:GetTorpedoList()
+	local manualTorpedoList = unit:GetTorpedoList()
 
-	for iter_70_0, iter_70_1 in ipairs(var_70_0) do
-		arg_70_0._torpedoWeaponVO:AppendWeapon(iter_70_1)
+	for _, manualTorpedo in ipairs(manualTorpedoList) do
+		self._torpedoWeaponVO:AppendWeapon(manualTorpedo)
 	end
 
-	if #arg_70_1:GetHiveList() > 0 then
-		local var_70_1 = BattleDataFunction.CreateAllInStrike(arg_70_1)
+	if #unit:GetHiveList() > 0 then
+		local airAssistList = BattleDataFunction.CreateAllInStrike(unit)
 
-		for iter_70_2, iter_70_3 in ipairs(var_70_1) do
-			arg_70_0._airAssistVO:AppendWeapon(iter_70_3)
+		for _, airAssist in ipairs(airAssistList) do
+			self._airAssistVO:AppendWeapon(airAssist)
 		end
 
-		arg_70_1:SetAirAssistList(var_70_1)
+		unit:SetAirAssistList(airAssistList)
 	end
 
-	arg_70_0._fleetAntiAir:AppendCrewUnit(arg_70_1)
-	arg_70_0._fleetStaticSonar:AppendCrewUnit(arg_70_1)
+	self._fleetAntiAir:AppendCrewUnit(unit)
+	self._fleetStaticSonar:AppendCrewUnit(unit)
 
-	local var_70_2 = 1
-	local var_70_3 = #arg_70_0._unitList
-	local var_70_4 = {}
+	local posIndex = 1
+	local unitListLength = #self._unitList
+	local currentUnitList = {}
 
-	while var_70_2 < var_70_3 do
-		table.insert(var_70_4, var_70_2)
+	while posIndex < unitListLength do
+		table.insert(currentUnitList, posIndex)
 
-		var_70_2 = var_70_2 + 1
+		posIndex = posIndex + 1
 	end
-
-	table.insert(var_70_4, #arg_70_0._scoutList, var_70_2)
-	arg_70_0:refreshFleetFormation(var_70_4)
+	-- 有点没看懂，相关逻辑待重看
+	table.insert(currentUnitList, #self._scoutList, posIndex)
+	self:refreshFleetFormation(currentUnitList)
 end
--- TODO
-function BattleFleetVO.appendMainUnit(arg_71_0, arg_71_1)
-	if #arg_71_0._mainList == 0 then
-		arg_71_0._flagShip = arg_71_1
+
+-- 被BattleFleetVO.AppendPlayerUnit调用
+function BattleFleetVO.appendMainUnit(self, unit)
+	if #self._mainList == 0 then
+		self._flagShip = unit
 	end
 
-	arg_71_0._mainList[#arg_71_0._mainList + 1] = arg_71_1
+	self._mainList[#self._mainList + 1] = unit
 
-	arg_71_1:SetMainUnitIndex(#arg_71_0._mainList)
+	unit:SetMainUnitIndex(#self._mainList)
 
-	if ShipType.CloakShipType(arg_71_1:GetTemplate().type) then
-		arg_71_0:AttachCloak(arg_71_1)
+	if ShipType.CloakShipType(unit:GetTemplate().type) then
+		self:AttachCloak(unit)
 	end
 
-	local var_71_0 = arg_71_1:GetChargeList()
+	local chargeList = unit:GetChargeList()
 
-	for iter_71_0, iter_71_1 in ipairs(var_71_0) do
-		arg_71_0._chargeWeaponVO:AppendWeapon(iter_71_1)
+	for _, chargeWeapon in ipairs(chargeList) do
+		self._chargeWeaponVO:AppendWeapon(chargeWeapon)
 	end
 
-	local var_71_1 = arg_71_1:GetTorpedoList()
+	local manualTorpedoList = unit:GetTorpedoList()
 
-	for iter_71_2, iter_71_3 in ipairs(var_71_1) do
-		arg_71_0._torpedoWeaponVO:AppendWeapon(iter_71_3)
+	for _, manualTorpedo in ipairs(manualTorpedoList) do
+		self._torpedoWeaponVO:AppendWeapon(manualTorpedo)
 	end
 
-	if #arg_71_1:GetHiveList() > 0 then
+	if #unit:GetHiveList() > 0 then
 		-- 此处将Hive->Airassist
-		local var_71_2 = BattleDataFunction.CreateAllInStrike(arg_71_1)
+		local airAssistList = BattleDataFunction.CreateAllInStrike(unit)
 
-		for iter_71_4, iter_71_5 in ipairs(var_71_2) do
-			arg_71_0._airAssistVO:AppendWeapon(iter_71_5)
+		for _, airAssist in ipairs(airAssistList) do
+			self._airAssistVO:AppendWeapon(airAssist)
 		end
 
-		arg_71_1:SetAirAssistList(var_71_2)
+		unit:SetAirAssistList(airAssistList)
 	end
 
-	arg_71_0._fleetAntiAir:AppendCrewUnit(arg_71_1)
-	arg_71_0._fleetRangeAntiAir:AppendCrewUnit(arg_71_1)
-	arg_71_0._fleetStaticSonar:AppendCrewUnit(arg_71_1)
+	self._fleetAntiAir:AppendCrewUnit(unit)
+	self._fleetRangeAntiAir:AppendCrewUnit(unit)
+	self._fleetStaticSonar:AppendCrewUnit(unit)
 
-	local var_71_3 = {}
+	local currentUnitList = {}
 
-	for iter_71_6, iter_71_7 in ipairs(arg_71_0._unitList) do
-		table.insert(var_71_3, iter_71_6)
+	for _unit, _ in ipairs(self._unitList) do
+		table.insert(currentUnitList, _unit)
 	end
 
-	arg_71_0:refreshFleetFormation(var_71_3)
+	self:refreshFleetFormation(currentUnitList)
 end
 
-function BattleFleetVO.appendSubUnit(arg_72_0, arg_72_1)
-	arg_72_0._subList[#arg_72_0._subList + 1] = arg_72_1
+function BattleFleetVO.appendSubUnit(self, unit)
+	self._subList[#self._subList + 1] = unit
 
-	arg_72_1:SetMainUnitIndex(#arg_72_0._subList)
+	unit:SetMainUnitIndex(#self._subList)
 end
 
-function BattleFleetVO.FleetWarcry(arg_73_0)
-	local var_73_0
-	local var_73_1 = math.random(0, 1)
-	local var_73_2 = arg_73_0:GetScoutList()[1]
-	local var_73_3 = arg_73_0:GetMainList()[1]
+-- 开场台词
+-- 典型如被BattleSingleDungeonCommand.DoPrologue调用
+function BattleFleetVO.FleetWarcry(self)
+	local warCrier
+	local randomChoice = math.random(0, 1)
+	local leader = self:GetScoutList()[1]
+	local flagShip = self:GetMainList()[1]
 
-	if var_73_3 == nil or var_73_1 == 0 then
-		var_73_0 = var_73_2
-	elseif var_73_1 == 1 then
-		var_73_0 = var_73_3
+	if flagShip == nil or randomChoice == 0 then
+		warCrier = leader
+	elseif randomChoice == 1 then
+		warCrier = flagShip
 	end
 
-	local var_73_4 = "battle"
-	local var_73_5 = var_73_0:GetIntimacy()
-	local var_73_6 = ys.Battle.BattleDataFunction.GetWords(var_73_0:GetSkinID(), var_73_4, var_73_5)
+	local voiceName = "battle"
+	local intimacy = warCrier:GetIntimacy()
+	local words = ys.Battle.BattleDataFunction.GetWords(warCrier:GetSkinID(), voiceName, intimacy)
 
-	var_73_0:DispatchVoice(var_73_4)
-	var_73_0:DispatchChat(var_73_6, 2.5, var_73_4)
+	warCrier:DispatchVoice(voiceName)
+	warCrier:DispatchChat(words, 2.5, voiceName)
 end
 
--- TODO: 计算舰队总战力，并设置到每个unit的fleetGS属性中（用于一些武器的伤害计算）
+-- 计算舰队总战力，并设置到每个unit的fleetGS属性中（用于一些武器的伤害计算）
 function BattleFleetVO.FleetUnitSpwanFinish(self)
 	local gearScore = 0
 
@@ -829,22 +837,23 @@ function BattleFleetVO.FleetUnitSpwanFinish(self)
 	end
 end
 
-function BattleFleetVO.SubWarcry(arg_75_0)
-	local var_75_0 = arg_75_0:GetSubList()[1]
-	local var_75_1 = "battle"
-	local var_75_2 = var_75_0:GetIntimacy()
-	local var_75_3 = ys.Battle.BattleDataFunction.GetWords(var_75_0:GetSkinID(), var_75_1, var_75_2)
+-- 潜艇出场台词
+function BattleFleetVO.SubWarcry(self)
+	local subFlagShip = self:GetSubList()[1]
+	local voiceName = "battle"
+	local intimacy = subFlagShip:GetIntimacy()
+	local words = ys.Battle.BattleDataFunction.GetWords(subFlagShip:GetSkinID(), voiceName, intimacy)
 
-	var_75_0:DispatchVoice(var_75_1)
-	var_75_0:DispatchChat(var_75_3, 2.5, var_75_1)
+	subFlagShip:DispatchVoice(voiceName)
+	subFlagShip:DispatchChat(words, 2.5, voiceName)
 end
 
-function BattleFleetVO.SetWeaponBlock(arg_76_0, arg_76_1)
-	arg_76_0._blockCast = arg_76_0._blockCast + arg_76_1
+function BattleFleetVO.SetWeaponBlock(self, value)
+	self._blockCast = self._blockCast + value
 end
 
-function BattleFleetVO.GetWeaponBlock(arg_77_0)
-	return arg_77_0._blockCast > 0
+function BattleFleetVO.GetWeaponBlock(self)
+	return self._blockCast > 0
 end
 
 -- 作为按下跨射按钮时的回调(不放开)

@@ -1,5 +1,5 @@
 local AttributeType = class("AttributeType")
--- TODO
+
 AttributeType.Durability = "durability"
 AttributeType.Cannon = "cannon"
 AttributeType.Torpedo = "torpedo"
@@ -39,10 +39,12 @@ AttributeType.SonarRange = "sonarRange"
 AttributeType.Tactics = "tactics"
 AttributeType.WorldPower = "world_power"
 
-function AttributeType.Type2Name(arg_1_0)
-	return i18n("attribute_" .. arg_1_0)
+-- 将属性类型转换为对应的文本
+function AttributeType.Type2Name(type)
+	return i18n("attribute_" .. type)
 end
--- TODO
+
+-- 用于困难关卡的属性条件
 AttributeType.eliteConditionTip = {
 	cannon = "elite_condition_cannon",
 	air = "elite_condition_air",
@@ -56,7 +58,7 @@ AttributeType.eliteConditionTip = {
 	level = "elite_condition_level"
 }
 
-local var_0_1 = {
+local compareFuncs = {
 	[0] = "common_compare_equal",
 	"common_compare_larger",
 	"common_compare_not_less_than",
@@ -64,14 +66,15 @@ local var_0_1 = {
 	[-2] = "common_compare_not_more_than"
 }
 
-function AttributeType.eliteConditionCompareTip(arg_2_0)
-	return i18n(var_0_1[arg_2_0])
+function AttributeType.eliteConditionCompareTip(type)
+	return i18n(compareFuncs[type])
 end
 
-function AttributeType.EliteCondition2Name(arg_3_0, ...)
-	return i18n(AttributeType.eliteConditionTip[arg_3_0], ...)
+function AttributeType.EliteCondition2Name(condition, ...)
+	return i18n(AttributeType.eliteConditionTip[condition], ...)
 end
 
+-- Chapter.IsPropertyLimitationSatisfy
 function AttributeType.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
 	if arg_4_0 == 0 then
 		return arg_4_1 == arg_4_2
@@ -87,7 +90,7 @@ function AttributeType.EliteConditionCompare(arg_4_0, arg_4_1, arg_4_2)
 		assert(false, "compare type error")
 	end
 end
--- TODO
+
 -- 左侧是战斗外属性名，右侧是战斗内属性名
 AttributeType.attrNameTable = {
 	[AttributeType.Durability] = "maxHP",
@@ -109,15 +112,16 @@ AttributeType.attrNameTable = {
 	[AttributeType.OxyAttackDuration] = "oxyAtkDuration",
 	[AttributeType.OxyRaidDistance] = "raidDist"
 }
--- TODO
-function AttributeType.ConvertBattleAttrName(arg_5_0)
-	if AttributeType.attrNameTable[arg_5_0] then
-		return AttributeType.attrNameTable[arg_5_0]
+
+function AttributeType.ConvertBattleAttrName(attrType)
+	if AttributeType.attrNameTable[attrType] then
+		return AttributeType.attrNameTable[attrType]
 	else
-		return arg_5_0
+		return attrType
 	end
 end
 
+-- 这些是PrimalAttr，特点是最小值为0
 AttributeType.PrimalAttr = {
 	torpedoPower = true,
 	loadSpeed = true,
@@ -130,8 +134,8 @@ AttributeType.PrimalAttr = {
 	velocity = true
 }
 
-function AttributeType.IsPrimalBattleAttr(arg_6_0)
-	return AttributeType.PrimalAttr[arg_6_0]
+function AttributeType.IsPrimalBattleAttr(attrType)
+	return AttributeType.PrimalAttr[attrType]
 end
 
 return AttributeType

@@ -1,89 +1,90 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleAttr
-local var_0_2 = var_0_0.Battle.BattleTargetChoise
+local ys = ys
+local BattleAttr = ys.Battle.BattleAttr
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
 
-var_0_0.Battle.BattleSkillFusion = class("BattleSkillFusion", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillFusion.__name = "BattleSkillFusion"
+ys.Battle.BattleSkillFusion = class("BattleSkillFusion", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillFusion.__name = "BattleSkillFusion"
 
-local var_0_3 = var_0_0.Battle.BattleSkillFusion
+local BattleSkillFusion = ys.Battle.BattleSkillFusion
 
-var_0_3.FREEZE_POS = {
+BattleSkillFusion.FREEZE_POS = {
 	Vector3(-10000, 0, 58),
 	[-1] = Vector3(10000, 0, 58)
 }
+-- BattleSkillFusion: 融合技能
+-- 目前只有Skill 108414用到
+function BattleSkillFusion.Ctor(self, tempData, level)
+	BattleSkillFusion.super.Ctor(self, tempData, level)
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+	self._fusionUnitTempID = self._tempData.arg_list.fusion_id
+	self._fusionUnitSkinID = self._tempData.arg_list.ship_skin_id
+	self._elementTagList = self._tempData.arg_list.element_tag_list
+	self._attrInheritList = self._tempData.arg_list.attr_inherit_list
+	self._fusionUnitEquipmentList = {}
 
-	arg_1_0._fusionUnitTempID = arg_1_0._tempData.arg_list.fusion_id
-	arg_1_0._fusionUnitSkinID = arg_1_0._tempData.arg_list.ship_skin_id
-	arg_1_0._elementTagList = arg_1_0._tempData.arg_list.element_tag_list
-	arg_1_0._attrInheritList = arg_1_0._tempData.arg_list.attr_inherit_list
-	arg_1_0._fusionUnitEquipmentList = {}
-
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.arg_list.weapon_id_list) do
-		table.insert(arg_1_0._fusionUnitEquipmentList, {
-			id = iter_1_1,
+	for _, weaponID in ipairs(self._tempData.arg_list.weapon_id_list) do
+		table.insert(self._fusionUnitEquipmentList, {
+			id = weaponID,
 			equipment = {
 				weapon_id = {
-					iter_1_1
+					weaponID
 				}
 			}
 		})
 	end
 
-	arg_1_0._fusionUnitSkillList = {}
+	self._fusionUnitSkillList = {}
 
-	for iter_1_2, iter_1_3 in ipairs(arg_1_0._tempData.arg_list.buff_list) do
-		table.insert(arg_1_0._fusionUnitSkillList, {
-			id = iter_1_3,
-			level = arg_1_0._level
+	for _, buffID in ipairs(self._tempData.arg_list.buff_list) do
+		table.insert(self._fusionUnitSkillList, {
+			id = buffID,
+			level = self._level
 		})
 	end
 
-	arg_1_0._duration = arg_1_0._tempData.arg_list.duration
+	self._duration = self._tempData.arg_list.duration
 end
 
-function var_0_3.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0:doFusion(arg_2_1)
+function BattleSkillFusion.DoDataEffect(self, caster, target)
+	self:doFusion(caster)
 end
 
-function var_0_3.DoDataEffectWithoutTarget(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:doFusion(arg_3_1)
+function BattleSkillFusion.DoDataEffectWithoutTarget(self, caster, target)
+	self:doFusion(caster)
 end
 
-function var_0_3.doFusion(arg_4_0, arg_4_1)
-	local var_4_0 = var_0_2.TargetAllHelp(arg_4_1)
-	local var_4_1 = var_0_2.TargetShipTag(arg_4_1, {
-		ship_tag_list = arg_4_0._elementTagList
-	}, var_4_0)
-	local var_4_2 = {}
+function BattleSkillFusion.doFusion(self, caster)
+	local candidateList1 = BattleTargetChoise.TargetAllHelp(caster)
+	local candidateList2 = BattleTargetChoise.TargetShipTag(caster, {
+		ship_tag_list = self._elementTagList
+	}, candidateList1)
+	local properties = {}
 
-	for iter_4_0, iter_4_1 in ipairs(Ship.PROPERTIES) do
-		var_4_2[iter_4_1] = 1
+	for _, property in ipairs(Ship.PROPERTIES) do
+		properties[property] = 1
 	end
 
-	local var_4_3 = var_0_0.Battle.BattleDataProxy.GetInstance()
-	local var_4_4 = {
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local unitData = {
 		name = "123",
 		shipGS = 1,
-		id = arg_4_1.id,
-		tmpID = arg_4_0._fusionUnitTempID,
-		skinId = arg_4_0._fusionUnitSkinID,
-		level = var_0_1.GetCurrent(arg_4_1, "formulaLevel"),
-		equipment = arg_4_0._fusionUnitEquipmentList,
-		properties = var_4_2,
-		baseProperties = var_4_2,
+		id = caster.id,
+		tmpID = self._fusionUnitTempID,
+		skinId = self._fusionUnitSkinID,
+		level = BattleAttr.GetCurrent(caster, "formulaLevel"),
+		equipment = self._fusionUnitEquipmentList,
+		properties = properties,
+		baseProperties = properties,
 		proficiency = {
 			1,
 			1,
 			1
 		},
-		rarity = arg_4_1:GetRarity(),
-		intimacy = arg_4_1:GetIntimacy(),
-		skills = arg_4_0._fusionUnitSkillList,
+		rarity = caster:GetRarity(),
+		intimacy = caster:GetIntimacy(),
+		skills = self._fusionUnitSkillList,
 		baseList = {
 			1,
 			1,
@@ -95,67 +96,70 @@ function var_0_3.doFusion(arg_4_0, arg_4_1)
 			0
 		}
 	}
-	local var_4_5 = var_4_3:SpawnFusionUnit(arg_4_1, var_4_4, var_4_1, arg_4_0._attrInheritList)
-	local var_4_6 = var_4_5:GetHP()
-	local var_4_7 = {}
-
-	for iter_4_2, iter_4_3 in ipairs(var_4_1) do
-		if iter_4_3:IsMainFleetUnit() then
-			var_4_7[iter_4_3] = Clone(iter_4_3:GetPosition())
+	local fusionUnit = battleDataProxy:SpawnFusionUnit(caster, unitData, candidateList2, self._attrInheritList)
+	local fusionUnitHP = fusionUnit:GetHP()
+	local mainUnitOriginalPos = {}
+	-- 在融合期间，如果有主力舰队的单位参与融合，则记录其原始位置以便后续还原
+	-- 融合期间其位置被放到一个很远的位置(实现消失的效果)
+	-- 所有参与融合的单位都会被冻结
+	-- 融合完毕，回到原始位置
+	for _, candidate in ipairs(candidateList2) do
+		if candidate:IsMainFleetUnit() then
+			mainUnitOriginalPos[candidate] = Clone(candidate:GetPosition())
 		end
 
-		var_4_3:FreezeUnit(iter_4_3)
-		iter_4_3:SetPosition(var_0_3.FREEZE_POS[iter_4_3:GetIFF()])
+		battleDataProxy:FreezeUnit(candidate)
+		candidate:SetPosition(BattleSkillFusion.FREEZE_POS[candidate:GetIFF()])
 	end
 
-	if arg_4_1:IsMainFleetUnit() then
-		var_4_7[arg_4_1] = Clone(arg_4_1:GetPosition())
+	if caster:IsMainFleetUnit() then
+		mainUnitOriginalPos[caster] = Clone(caster:GetPosition())
 	end
 
-	var_4_3:FreezeUnit(arg_4_1)
-	arg_4_1:SetPosition(var_0_3.FREEZE_POS[arg_4_1:GetIFF()])
+	battleDataProxy:FreezeUnit(caster)
+	caster:SetPosition(BattleSkillFusion.FREEZE_POS[caster:GetIFF()])
 
-	arg_4_0._fusionTimer = nil
-
-	local function var_4_8()
-		local var_5_0, var_5_1 = var_4_5:GetHP()
-		local var_5_2 = var_5_1 - var_5_0
+	self._fusionTimer = nil
+	-- 融合持续时间结束后的回调
+	local function onFusionTimerEnds()
+		local fusionCurrentHP, fusionMaxHP = fusionUnit:GetHP()
+		local fusionHPLost = fusionMaxHP - fusionCurrentHP
 		local var_5_3 = 0
-		local var_5_4 = var_4_5:GetPosition()
-		local var_5_5 = var_4_5:GetAttrByName("hpProvideRate")
+		local fusionPos = fusionUnit:GetPosition()
+		local fusionHPProvideRate = fusionUnit:GetAttrByName("hpProvideRate")
 
-		if arg_4_1:IsMainFleetUnit() then
-			arg_4_1:SetPosition(var_4_7[arg_4_1])
+		if caster:IsMainFleetUnit() then
+			caster:SetPosition(mainUnitOriginalPos[caster])
 		else
-			arg_4_1:SetPosition(Clone(var_5_4))
+			caster:SetPosition(Clone(fusionPos))
 		end
+		-- 对每个参与融合的单位根据其提供的血量比例进行扣血
+		local casterHPLost = math.floor(fusionHPLost * fusionHPProvideRate[caster:GetAttrByName("id")])
 
-		local var_5_6 = math.floor(var_5_2 * var_5_5[arg_4_1:GetAttrByName("id")])
+		battleDataProxy:HandleDirectDamage(caster, casterHPLost)
+		battleDataProxy:ActiveFreezeUnit(caster)
 
-		var_4_3:HandleDirectDamage(arg_4_1, var_5_6)
-		var_4_3:ActiveFreezeUnit(arg_4_1)
-
-		for iter_5_0, iter_5_1 in ipairs(var_4_1) do
-			if iter_5_1:IsMainFleetUnit() then
-				iter_5_1:SetPosition(var_4_7[iter_5_1])
+		for _, candidate in ipairs(candidateList2) do
+			if candidate:IsMainFleetUnit() then
+				candidate:SetPosition(mainUnitOriginalPos[candidate])
 			else
-				iter_5_1:SetPosition(Clone(var_5_4))
+				candidate:SetPosition(Clone(fusionPos))
 			end
 
-			local var_5_7 = math.floor(var_5_2 * var_5_5[iter_5_1:GetAttrByName("id")])
+			local candidateHPLost = math.floor(fusionHPLost * fusionHPProvideRate[candidate:GetAttrByName("id")])
 
-			var_4_3:HandleDirectDamage(iter_5_1, var_5_7)
-			var_4_3:ActiveFreezeUnit(iter_5_1)
+			battleDataProxy:HandleDirectDamage(candidate, candidateHPLost)
+			battleDataProxy:ActiveFreezeUnit(candidate)
 		end
 
-		var_4_3:DefusionUnit(var_4_5)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_4_0._fusionTimer)
+		battleDataProxy:DefusionUnit(fusionUnit)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._fusionTimer)
 	end
 
-	arg_4_0._fusionTimer = pg.TimeMgr.GetInstance():AddBattleTimer("fusionSkillTimer", 0, arg_4_0._duration, var_4_8, true)
+	self._fusionTimer = pg.TimeMgr.GetInstance():AddBattleTimer("fusionSkillTimer", 0, self._duration, onFusionTimerEnds, true)
 end
 
-function var_0_3.Clear(arg_6_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_6_0._fusionTimer)
-	var_0_3.super.Clear(arg_6_0)
+function BattleSkillFusion.Clear(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._fusionTimer)
+	BattleSkillFusion.super.Clear(self)
 end

@@ -439,34 +439,36 @@ function Chapter.setEliteFleetList(arg_49_0, arg_49_1)
 	arg_49_0.eliteFleetList = arg_49_1
 end
 
-function Chapter.IsEliteFleetLegal(arg_50_0)
+-- 判定给定的困难关卡编队是否合法
+-- TrackingCommand.execute调用
+function Chapter.IsEliteFleetLegal(self)
 	local var_50_0 = {}
 
-	for iter_50_0, iter_50_1 in ipairs({
+	for _, fleetInfo in ipairs({
 		{
-			arg_50_0:GetNomralFleetMaxCount(),
+			self:GetNomralFleetMaxCount(),
 			0,
 			FleetType.Normal
 		},
 		{
-			arg_50_0:GetSubmarineFleetMaxCount(),
+			self:GetSubmarineFleetMaxCount(),
 			2,
 			FleetType.Submarine
 		},
 		{
-			arg_50_0:GetSupportFleetMaxCount(),
+			self:GetSupportFleetMaxCount(),
 			3,
 			FleetType.Support
 		}
 	}) do
-		local var_50_1, var_50_2, var_50_3 = unpack(iter_50_1)
+		local fleetMaxCount, var_50_2, fleetType = unpack(fleetInfo)
 
-		for iter_50_2 = 1, var_50_1 do
+		for iter_50_2 = 1, fleetMaxCount do
 			local var_50_4 = var_50_2 + iter_50_2
-			local var_50_5, var_50_6 = arg_50_0:singleEliteFleetVertify(var_50_4)
+			local var_50_5, var_50_6 = self:singleEliteFleetVertify(var_50_4)
 
 			if var_50_5 then
-				var_50_0[var_50_3] = defaultValue(var_50_0[var_50_3], 0) + 1
+				var_50_0[fleetType] = defaultValue(var_50_0[fleetType], 0) + 1
 			elseif var_50_6 == "empty" then
 				-- block empty
 			else
@@ -489,7 +491,7 @@ function Chapter.IsEliteFleetLegal(arg_50_0)
 		return false, i18n("elite_disable_no_fleet")
 	end
 
-	local var_50_7 = arg_50_0:IsPropertyLimitationSatisfy()
+	local var_50_7 = self:IsPropertyLimitationSatisfy()
 	local var_50_8 = 1
 
 	for iter_50_3, iter_50_4 in ipairs(var_50_7) do
@@ -503,6 +505,8 @@ function Chapter.IsEliteFleetLegal(arg_50_0)
 	return true
 end
 
+-- 用于判定困难关卡的属性条件是否满足
+-- Chapter.IsEliteFleetLegal调用
 function Chapter.IsPropertyLimitationSatisfy(arg_54_0)
 	local var_54_0 = getProxy(BayProxy):getRawData()
 	local var_54_1 = arg_54_0:getConfig("property_limitation")
@@ -716,6 +720,7 @@ function Chapter.EliteCommanderFilter(arg_66_0)
 	end
 end
 
+-- 检查单个困难关卡编队是否合法
 function Chapter.singleEliteFleetVertify(arg_67_0, arg_67_1)
 	local var_67_0 = getProxy(BayProxy):getRawData()
 	local var_67_1, var_67_2 = arg_67_0:getEliteTeamByIndex(arg_67_1)

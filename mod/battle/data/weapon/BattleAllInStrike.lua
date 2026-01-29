@@ -327,10 +327,15 @@ function BattleAllInStrike.JammingEliminate(arg_35_0)
 	arg_35_0._jammingStartTime = nil
 end
 
-function BattleAllInStrike.CLSBullet(arg_36_0)
-	local var_36_0 = arg_36_0._host:GetIFF() * -1
+-- 消弹逻辑
+-- 被BattleFleetVO.UnleashAllInStrike调用
+-- 从传入参数来看， 只要敌方的Bullet不是immuneCLS或immuneBombCLS的，就能被消弹
+-- 一个特例是激光类武器。因为激光武器的本质是创建一个持续存在的AOE区域，对碰撞判定的敌人创建“隐形”子弹
+-- 所以激光类武器看起来不能被消除（区域当然不能被消除；子弹理论上可以消除，但由于“隐形”子弹是瞬间结算的，所以实际也不能被消除）
+function BattleAllInStrike.CLSBullet(self)
+	local oppositeIFF = self._host:GetIFF() * -1
 
-	ys.Battle.BattleDataProxy.GetInstance():CLSBullet(var_36_0, true)
+	ys.Battle.BattleDataProxy.GetInstance():CLSBullet(oppositeIFF, true)
 end
 
 function BattleAllInStrike.DispatchBlink(arg_37_0, arg_37_1)

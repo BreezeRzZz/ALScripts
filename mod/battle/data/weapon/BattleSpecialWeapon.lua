@@ -1,63 +1,65 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSpecialWeapon", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleSpecialWeapon = class("BattleSpecialWeapon", ys.Battle.BattleWeaponUnit)
 
-var_0_0.Battle.BattleSpecialWeapon = var_0_1
-var_0_1.__name = "BattleSpecialWeapon"
+ys.Battle.BattleSpecialWeapon = BattleSpecialWeapon
+BattleSpecialWeapon.__name = "BattleSpecialWeapon"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleSpecialWeapon.Ctor(self)
+	BattleSpecialWeapon.super.Ctor(self)
 end
 
-function var_0_1.CheckPreCast(arg_2_0)
-	local var_2_0 = arg_2_0._dataProxy:GetSeqCenter()
-	local var_2_1 = arg_2_0._tmpData.bullet_ID[1]
+function BattleSpecialWeapon.CheckPreCast(self)
+	-- 这个方法在BattleDataProxy中已经删除了
+	--- @type SeqCenter
+	local seqCenter = self._dataProxy:GetSeqCenter()
+	local bulletID = self._tmpData.bullet_ID[1]
 
-	if not var_2_1 then
-		arg_2_0._castInfo = {
-			weapon = arg_2_0
+	if not bulletID then
+		self._castInfo = {
+			weapon = self
 		}
 
 		return true
 	end
 
-	local var_2_2 = var_2_0:NewSeq("precast")
-	local var_2_3 = var_0_0.Battle.NodeData.New(arg_2_0._host, {
-		weapon = arg_2_0
-	}, var_2_2)
+	local precastSeq = seqCenter:NewSeq("precast")
+	local node = ys.Battle.NodeData.New(self._host, {
+		weapon = self
+	}, precastSeq)
 
-	pg.NodeMgr.GetInstance():GenNode(var_2_3, pg.BattleNodesCfg[var_2_1], var_2_2)
+	pg.NodeMgr.GetInstance():GenNode(node, pg.BattleNodesCfg[bulletID], precastSeq)
 
-	local var_2_4 = var_2_3:GetData()
+	local nodeData = node:GetData()
 
-	if var_2_4.targets[1] == nil then
+	if nodeData.targets[1] == nil then
 		return false
 	end
 
-	arg_2_0._castInfo = var_2_4
+	self._castInfo = nodeData
 
 	return true
 end
 
-function var_0_1.Fire(arg_3_0)
-	assert(arg_3_0._castInfo ~= nil, "需要指定施法信息，有特殊需求可默认指定为{ weapon = self }")
+function BattleSpecialWeapon.Fire(self)
+	assert(self._castInfo ~= nil, "需要指定施法信息，有特殊需求可默认指定为{ weapon = self }")
 
-	local var_3_0 = arg_3_0._dataProxy:GetSeqCenter()
-	local var_3_1 = arg_3_0._tmpData.bullet_ID[1]
-	local var_3_2 = arg_3_0._castInfo
-	local var_3_3 = var_3_0:NewSeq("cast")
-	local var_3_4 = var_0_0.Battle.NodeData.New(arg_3_0._host, var_3_2, var_3_3)
+	local seqCenter = self._dataProxy:GetSeqCenter()
+	local bulletID = self._tmpData.bullet_ID[1]
+	local castInfo = self._castInfo
+	local castSeq = seqCenter:NewSeq("cast")
+	local node = ys.Battle.NodeData.New(self._host, castInfo, castSeq)
 
-	pg.NodeMgr.GetInstance():GenNode(var_3_4, pg.BattleNodesCfg[arg_3_0._tmpData.barrage_ID[1]], var_3_3)
-	arg_3_0._host:SetCurNodeList(var_3_4:GetAllSeq())
+	pg.NodeMgr.GetInstance():GenNode(node, pg.BattleNodesCfg[self._tmpData.barrage_ID[1]], castSeq)
+	self._host:SetCurNodeList(node:GetAllSeq())
 
-	arg_3_0._currentState = arg_3_0.STATE_ATTACK
-	arg_3_0._castInfo = nil
+	self._currentState = self.STATE_ATTACK
+	self._castInfo = nil
 
-	arg_3_0:CheckAndShake()
-	var_3_3:Add(var_0_0.Battle.CallbackNode.New(function()
-		arg_3_0:EnterCoolDown()
+	self:CheckAndShake()
+	castSeq:Add(ys.Battle.CallbackNode.New(function()
+		self:EnterCoolDown()
 	end))
 
 	return true
