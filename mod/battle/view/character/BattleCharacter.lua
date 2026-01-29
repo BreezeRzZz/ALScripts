@@ -335,7 +335,7 @@ function BattleCharacter.GetReferenceVector(arg_29_0, arg_29_1)
 end
 
 function BattleCharacter.GetInitScale(arg_30_0)
-	return arg_30_0._unitData:GetTemplate().scale / 50
+	return arg_30_0._unitData:GetAttrByName("modelScale")
 end
 
 function BattleCharacter.AddUnitEvent(arg_31_0)
@@ -1618,14 +1618,9 @@ function BattleCharacter.updateSomkeFX(arg_126_0)
 end
 
 function BattleCharacter.doChangeSize(self, payload)
-	local size_ratio = payload.Data.size_ratio
-	local size = payload.Data.size
+	local modelScale = self._unitData:GetAttrByName("modelScale")
 
-	if size_ratio then
-		self:setLocalScale(self._tf.localScale * size_ratio)
-	elseif size then
-		self:setLocalScale(Vector3(size * self._unitData:GetDirection(), size, size))
-	end
+	self:setLocalScale(Vector3(modelScale * self._unitData:GetDirection(), modelScale, modelScale))
 end
 
 function BattleCharacter.InitEffectView(arg_128_0)

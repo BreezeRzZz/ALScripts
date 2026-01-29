@@ -17,6 +17,7 @@ BattleBuffEffect.FX_TYPE_MOD_VELOCTIY = 4
 BattleBuffEffect.FX_TYPE_DOT = 5
 BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE = 6
 BattleBuffEffect.FX_TYPE_COUNTER = 7
+BattleBuffEffect.FX_TYPE_MOD_MODEL_SCALE = 8
 
 function BattleBuffEffect.Ctor(self, effectData)
 	self._tempData = Clone(effectData)

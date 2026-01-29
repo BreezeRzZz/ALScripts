@@ -463,6 +463,8 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 	attr.aimBiasDecaySpeed = 0
 	attr.aimBiasDecaySpeedRatio = 0
 	attr.aimBiasExtraACC = 0
+	attr.baseScale = templateData.scale / 50
+	attr.modelScale = attr.baseScale
 	attr.healingRate = 1
 	attr.DMG_TAG_EHC_N_99 = templateData[AttributeType.AntiSiren] or 0
 	attr.comboTag = "combo_" .. attr.battleUID
@@ -543,6 +545,8 @@ function BattleAttr.SetEnemyAttr(enemy)
 	enemyAttr.repressReduce = 1
 	enemyAttr.healingRate = 1
 	enemyAttr.comboTag = "combo_" .. enemyAttr.battleUID
+	enemyAttr.baseScale = enemyTemplateData.scale / 50
+	enemyAttr.modelScale = enemyAttr.baseScale
 	enemyAttr.labelTag = {}
 	enemyAttr.TargetChoise = {}
 	enemyAttr.guardian = {}
@@ -616,6 +620,8 @@ function BattleAttr.SetMinionAttr(minion)
 	minionAttr.id = masterAttr.id
 	minionAttr.level = masterLevel
 	minionAttr.formulaLevel = masterLevel
+	minionAttr.baseScale = minionTemplateData.scale / 50
+	minionAttr.modelScale = minionAttr.baseScale
 
 	-- 下面的逻辑要覆盖掉上面继承的一些属性
 	local function inheritAttr(tmpAttr, attrName)
