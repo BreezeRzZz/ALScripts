@@ -50,7 +50,7 @@ function BattleBuffSize.onStack(self, owner, buff)
 end
 
 function BattleBuffSize.onRemove(self, owner, buff)
-	self._number = 0
+	self._number = 1
 
 	self:UpdateScale(owner)
 end
