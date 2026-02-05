@@ -1,12 +1,12 @@
-local var_0_0 = class("Commander", import("..BaseVO"))
-local var_0_1 = pg.commander_level
-local var_0_2 = pg.commander_attribute_template
+local Commander = class("Commander", import("..BaseVO"))
+local commander_level = pg.commander_level
+local commander_attribute_template = pg.commander_attribute_template
 local var_0_3 = 0
 local var_0_4 = 1
 
-function var_0_0.rarity2Print(arg_1_0)
-	if not var_0_0.prints then
-		var_0_0.prints = {
+function Commander.rarity2Print(arg_1_0)
+	if not Commander.prints then
+		Commander.prints = {
 			"n",
 			"n",
 			"r",
@@ -15,12 +15,12 @@ function var_0_0.rarity2Print(arg_1_0)
 		}
 	end
 
-	return var_0_0.prints[arg_1_0]
+	return Commander.prints[arg_1_0]
 end
 
-function var_0_0.rarity2Frame(arg_2_0)
-	if not var_0_0.frames then
-		var_0_0.frames = {
+function Commander.rarity2Frame(arg_2_0)
+	if not Commander.frames then
+		Commander.frames = {
 			"2",
 			"2",
 			"2",
@@ -29,10 +29,10 @@ function var_0_0.rarity2Frame(arg_2_0)
 		}
 	end
 
-	return var_0_0.frames[arg_2_0]
+	return Commander.frames[arg_2_0]
 end
 
-function var_0_0.Ctor(arg_3_0, arg_3_1)
+function Commander.Ctor(arg_3_0, arg_3_1)
 	arg_3_0.id = arg_3_1.id
 	arg_3_0.configId = arg_3_1.template_id or arg_3_0.id
 	arg_3_0.level = arg_3_1.level
@@ -85,30 +85,30 @@ function var_0_0.Ctor(arg_3_0, arg_3_1)
 
 	arg_3_0:updateAbilitys()
 
-	arg_3_0.maxLevel = var_0_1.all[#var_0_1.all]
+	arg_3_0.maxLevel = commander_level.all[#commander_level.all]
 	arg_3_0.groupId = arg_3_0:getConfig("group_type")
 	arg_3_0.cleanTime = arg_3_1.home_clean_time or 0
 	arg_3_0.playTime = arg_3_1.home_play_time or 0
 	arg_3_0.feedTime = arg_3_1.home_feed_time or 0
 end
 
-function var_0_0.IsRegularTalent(arg_4_0)
+function Commander.IsRegularTalent(arg_4_0)
 	return arg_4_0:getConfig("ability_refresh_type") == var_0_4
 end
 
-function var_0_0.getRenameTime(arg_5_0)
+function Commander.getRenameTime(arg_5_0)
 	return arg_5_0.renameTime
 end
 
-function var_0_0.setRenameTime(arg_6_0, arg_6_1)
+function Commander.setRenameTime(arg_6_0, arg_6_1)
 	arg_6_0.renameTime = arg_6_1
 end
 
-function var_0_0.canModifyName(arg_7_0)
+function Commander.canModifyName(arg_7_0)
 	return pg.TimeMgr.GetInstance():GetServerTime() >= arg_7_0.renameTime
 end
 
-function var_0_0.getRenameTimeDesc(arg_8_0)
+function Commander.getRenameTimeDesc(arg_8_0)
 	local var_8_0 = pg.TimeMgr.GetInstance():GetServerTime()
 	local var_8_1 = arg_8_0.renameTime
 	local var_8_2, var_8_3, var_8_4, var_8_5 = pg.TimeMgr.GetInstance():parseTimeFrom(var_8_1 - var_8_0)
@@ -124,31 +124,31 @@ function var_0_0.getRenameTimeDesc(arg_8_0)
 	end
 end
 
-function var_0_0.setLock(arg_9_0, arg_9_1)
+function Commander.setLock(arg_9_0, arg_9_1)
 	assert(type(arg_9_1) == "number")
 
 	arg_9_0.isLock = arg_9_1
 end
 
-function var_0_0.getLock(arg_10_0)
+function Commander.getLock(arg_10_0)
 	return arg_10_0.isLock
 end
 
-function var_0_0.isLocked(arg_11_0)
+function Commander.isLocked(arg_11_0)
 	return arg_11_0.isLock == 1
 end
 
-function var_0_0.bindConfigTable(arg_12_0)
+function Commander.bindConfigTable(arg_12_0)
 	return pg.commander_data_template
 end
 
-function var_0_0.getSkill(arg_13_0, arg_13_1)
+function Commander.getSkill(arg_13_0, arg_13_1)
 	return _.detect(arg_13_0.skills, function(arg_14_0)
 		return arg_14_0.id == arg_13_1
 	end)
 end
 
-function var_0_0.getSkills(arg_15_0)
+function Commander.getSkills(arg_15_0)
 	return arg_15_0.skills
 end
 
@@ -166,7 +166,7 @@ local function var_0_5(arg_16_0, arg_16_1)
 	return arg_16_1[1]
 end
 
-function var_0_0.GetDisplayTalents(arg_18_0)
+function Commander.GetDisplayTalents(arg_18_0)
 	if arg_18_0:IsRegularTalent() then
 		local var_18_0 = {}
 
@@ -204,7 +204,7 @@ function var_0_0.GetDisplayTalents(arg_18_0)
 	return arg_18_0:getTalents()
 end
 
-function var_0_0.IsLearnedTalent(arg_20_0, arg_20_1)
+function Commander.IsLearnedTalent(arg_20_0, arg_20_1)
 	for iter_20_0, iter_20_1 in ipairs(arg_20_0.talents) do
 		if iter_20_1.id == arg_20_1 then
 			return true
@@ -214,15 +214,15 @@ function var_0_0.IsLearnedTalent(arg_20_0, arg_20_1)
 	return false
 end
 
-function var_0_0.getTalents(arg_21_0)
+function Commander.getTalents(arg_21_0)
 	return arg_21_0.talents
 end
 
-function var_0_0.getTalentOrigins(arg_22_0)
+function Commander.getTalentOrigins(arg_22_0)
 	return arg_22_0.talentOrigins
 end
 
-function var_0_0.addTalent(arg_23_0, arg_23_1)
+function Commander.addTalent(arg_23_0, arg_23_1)
 	local var_23_0 = _.detect(arg_23_0.talentOrigins, function(arg_24_0)
 		return arg_24_0.groupId == arg_23_1.groupId
 	end)
@@ -231,7 +231,7 @@ function var_0_0.addTalent(arg_23_0, arg_23_1)
 	table.insert(arg_23_0.talents, arg_23_1)
 end
 
-function var_0_0.deleteTablent(arg_25_0, arg_25_1)
+function Commander.deleteTablent(arg_25_0, arg_25_1)
 	for iter_25_0, iter_25_1 in ipairs(arg_25_0.talents) do
 		if iter_25_1.id == arg_25_1 then
 			table.remove(arg_25_0.talents, iter_25_0)
@@ -241,7 +241,7 @@ function var_0_0.deleteTablent(arg_25_0, arg_25_1)
 	end
 end
 
-function var_0_0.getTalent(arg_26_0, arg_26_1)
+function Commander.getTalent(arg_26_0, arg_26_1)
 	for iter_26_0, iter_26_1 in pairs(arg_26_0.talents) do
 		if iter_26_1 == arg_26_1 then
 			return iter_26_1
@@ -249,47 +249,47 @@ function var_0_0.getTalent(arg_26_0, arg_26_1)
 	end
 end
 
-function var_0_0.resetTalents(arg_27_0)
+function Commander.resetTalents(arg_27_0)
 	arg_27_0.talents = Clone(arg_27_0.talentOrigins)
 end
 
-function var_0_0.getNotLearnedList(arg_28_0)
+function Commander.getNotLearnedList(arg_28_0)
 	return arg_28_0.notLearnedList
 end
 
-function var_0_0.updateNotLearnedList(arg_29_0, arg_29_1)
+function Commander.updateNotLearnedList(arg_29_0, arg_29_1)
 	arg_29_0.notLearnedList = arg_29_1
 end
 
-function var_0_0.getResetTalentConsume(arg_30_0)
+function Commander.getResetTalentConsume(arg_30_0)
 	return pg.gameset.commander_skill_reset_cost.description[1][arg_30_0.pt]
 end
 
-function var_0_0.getTotalPoint(arg_31_0)
+function Commander.getTotalPoint(arg_31_0)
 	return math.floor(arg_31_0.level / CommanderConst.TALENT_POINT_LEVEL) * CommanderConst.TALENT_POINT
 end
 
-function var_0_0.getTalentPoint(arg_32_0)
+function Commander.getTalentPoint(arg_32_0)
 	return arg_32_0:getTotalPoint() - arg_32_0.pt
 end
 
-function var_0_0.updatePt(arg_33_0, arg_33_1)
+function Commander.updatePt(arg_33_0, arg_33_1)
 	arg_33_0.pt = arg_33_1
 end
 
-function var_0_0.getPt(arg_34_0)
+function Commander.getPt(arg_34_0)
 	return arg_34_0.pt
 end
 
-function var_0_0.fullTalentCnt(arg_35_0)
+function Commander.fullTalentCnt(arg_35_0)
 	return #arg_35_0.talents >= CommanderConst.MAX_TELENT_COUNT
 end
 
-function var_0_0.hasTalent(arg_36_0, arg_36_1)
+function Commander.hasTalent(arg_36_0, arg_36_1)
 	return arg_36_0:getSameGroupTalent(arg_36_1.groupId) ~= nil
 end
 
-function var_0_0.getSameGroupTalent(arg_37_0, arg_37_1)
+function Commander.getSameGroupTalent(arg_37_0, arg_37_1)
 	for iter_37_0, iter_37_1 in ipairs(arg_37_0.talents) do
 		if iter_37_1.groupId == arg_37_1 then
 			return iter_37_1
@@ -297,7 +297,7 @@ function var_0_0.getSameGroupTalent(arg_37_0, arg_37_1)
 	end
 end
 
-function var_0_0.getTalentsDesc(arg_38_0)
+function Commander.getTalentsDesc(arg_38_0)
 	local var_38_0 = {}
 	local var_38_1 = arg_38_0:getTalents()
 
@@ -318,128 +318,145 @@ function var_0_0.getTalentsDesc(arg_38_0)
 	return var_38_0
 end
 
-function var_0_0.getAbilitys(arg_39_0)
-	return arg_39_0.abilitys
+function Commander.getAbilitys(self)
+	return self.abilitys
 end
 
-function var_0_0.updateAbilitys(arg_40_0)
-	local var_40_0 = pg.gameset.commander_grow_form_a.key_value
-	local var_40_1 = pg.gameset.commander_grow_form_b.key_value
+-- note: 指挥喵能力值成长公式
+-- Commander.Ctor/Commander.updateLevel中会调用
+function Commander.updateAbilitys(self)
+	-- commander_grow_form_a = 24
+	local commander_grow_form_a = pg.gameset.commander_grow_form_a.key_value
+	-- commander_grow_form_b = 304
+	local commander_grow_form_b = pg.gameset.commander_grow_form_b.key_value
 
-	local function var_40_2(arg_41_0)
-		local var_41_0 = arg_40_0:getConfig(arg_41_0 .. "_value")
-
-		return math.floor(var_41_0 + var_41_0 * (arg_40_0.level - 1) * var_40_0 / var_40_1)
+	local function getAbilityValue(abilityName)
+		-- baseValue对应的是commander_data_template表中的xxx_value字段
+		local baseValue = self:getConfig(abilityName .. "_value")
+		-- 计算公式: floor(baseValue + baseValue * (level - 1) * 24 / 304)
+		return math.floor(baseValue + baseValue * (self.level - 1) * commander_grow_form_a / commander_grow_form_b)
 	end
 
-	local var_40_3 = {
+	local abilities = {
 		"command",
 		"tactic",
 		"support"
 	}
-	local var_40_4 = {
+	local abilityIds = {
 		101,
 		102,
 		103
 	}
 
-	for iter_40_0, iter_40_1 in ipairs(var_40_3) do
-		local var_40_5 = var_40_2(iter_40_1)
+	for abilityIndex, abilityName in ipairs(abilities) do
+		local abilityValue = getAbilityValue(abilityName)
 
-		arg_40_0.abilitys[iter_40_1] = {
-			value = var_40_5,
-			id = var_40_4[iter_40_0]
+		self.abilitys[abilityName] = {
+			value = abilityValue,
+			id = abilityIds[abilityIndex]
 		}
 	end
 end
 
-function var_0_0.getAbilitysAddition(arg_42_0)
-	local var_42_0 = pg.gameset.commander_form_a.key_value
-	local var_42_1 = pg.gameset.commander_form_b.key_value
-	local var_42_2 = pg.gameset.commander_form_c.key_value
-	local var_42_3 = pg.gameset.commander_form_n.key_value
+-- 指挥喵能力加成
+function Commander.getAbilitysAddition(self)
+	-- commander_form_a = 6
+	local commander_form_a = pg.gameset.commander_form_a.key_value
+	-- commander_form_b = 1500
+	local commander_form_b = pg.gameset.commander_form_b.key_value
+	-- commander_form_c = 250
+	local commander_form_c = pg.gameset.commander_form_c.key_value
+	-- commander_form_n = 1
+	local commander_form_n = pg.gameset.commander_form_n.key_value
 
-	local function var_42_4(arg_43_0)
-		local var_43_0 = 0
+	local function getAdditionForProperty(property)
+		local totalRatioForProperty = 0
 
-		for iter_43_0, iter_43_1 in pairs(arg_42_0.abilitys) do
-			local var_43_1 = var_0_2[iter_43_1.id]
+		for _, ability in pairs(self.abilitys) do
+			local abilityTempData = commander_attribute_template[ability.id]
 
-			if var_43_1["rate_" .. arg_43_0] then
-				local var_43_2 = var_43_1["rate_" .. arg_43_0] / 10000
+			if abilityTempData["rate_" .. property] then
+				local abilityRatioForProperty = abilityTempData["rate_" .. property] / 10000
 
-				if var_43_2 > 0 then
-					var_43_0 = var_43_0 + iter_43_1.value * var_43_2
+				if abilityRatioForProperty > 0 then
+					totalRatioForProperty = totalRatioForProperty + ability.value * abilityRatioForProperty
 				end
 			end
 		end
 
-		return tonumber(string.format("%0.3f", (var_42_0 - var_42_1 / (var_43_0 + var_42_2)) * var_42_3))
+		-- 公式: (6 - 1500 / (totalRatioForProperty + 250)) * 1, 四舍五入保留三位小数
+		-- 等价公式: 6 * totalRatioForProperty / (totalRatioForProperty + 250)
+		return tonumber(string.format("%0.3f", (commander_form_a - commander_form_b / (totalRatioForProperty + commander_form_c)) * commander_form_n))
 	end
 
-	local var_42_5 = {}
+	local abilityRatioAdditions = {}
 
-	for iter_42_0, iter_42_1 in ipairs(CommanderConst.PROPERTIES) do
-		var_42_5[iter_42_1] = var_42_4(iter_42_1)
+	for _, property in ipairs(CommanderConst.PROPERTIES) do
+		abilityRatioAdditions[property] = getAdditionForProperty(property)
 	end
 
-	return var_42_5
+	return abilityRatioAdditions
 end
 
-function var_0_0.getTalentsAddition(arg_44_0, arg_44_1, arg_44_2, arg_44_3, arg_44_4)
-	local var_44_0 = 0
-	local var_44_1 = arg_44_0:getTalents()
+-- 指挥喵天赋加成
+function Commander.getTalentsAddition(self, talentAdditionType, property, nationality, shipType)
+	local totalAdditionsForProperty = 0
+	local talents = self:getTalents()
 
-	for iter_44_0, iter_44_1 in pairs(var_44_1) do
-		local var_44_2, var_44_3 = iter_44_1:getAttrsAddition()
-		local var_44_4
+	for _, talent in pairs(talents) do
+		local numberAdditions, ratioAdditions = talent:getAttrsAddition()
+		local additions
 
-		if arg_44_1 == CommanderConst.TALENT_ADDITION_NUMBER then
-			var_44_4 = var_44_2
-		elseif arg_44_1 == CommanderConst.TALENT_ADDITION_RATIO then
-			var_44_4 = var_44_3
+		if talentAdditionType == CommanderConst.TALENT_ADDITION_NUMBER then
+			additions = numberAdditions
+		elseif talentAdditionType == CommanderConst.TALENT_ADDITION_RATIO then
+			additions = ratioAdditions
 		end
 
-		local var_44_5 = var_44_4[arg_44_2]
-		local var_44_6 = true
+		local additionForProperty = additions[property]
+		local satisfied = true
 
-		if var_44_5 then
-			if #var_44_5.nation > 0 and not table.contains(var_44_5.nation, arg_44_3) then
-				var_44_6 = false
+		if additionForProperty then
+			if #additionForProperty.nation > 0 and not table.contains(additionForProperty.nation, nationality) then
+				satisfied = false
 			end
 
-			if #var_44_5.shiptype > 0 and not table.contains(var_44_5.shiptype, arg_44_4) then
-				var_44_6 = false
+			if #additionForProperty.shiptype > 0 and not table.contains(additionForProperty.shiptype, shipType) then
+				satisfied = false
 			end
 		else
-			var_44_6 = false
+			satisfied = false
 		end
 
-		if var_44_6 then
-			var_44_0 = var_44_0 + var_44_5.value
+		if satisfied then
+			totalAdditionsForProperty = totalAdditionsForProperty + additionForProperty.value
 		end
 	end
 
-	return var_44_0
+	return totalAdditionsForProperty
 end
 
-function var_0_0.getAttrRatioAddition(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
-	if table.contains(CommanderConst.PROPERTIES, arg_45_1) then
-		return arg_45_0:getAbilitysAddition()[arg_45_1] + arg_45_0:getTalentsAddition(CommanderConst.TALENT_ADDITION_RATIO, arg_45_1, arg_45_2, arg_45_3) / 100
+-- 被Ship.getProperties调用
+-- 能力加成
+function Commander.getAttrRatioAddition(self, property, nationality, shipType)
+	if table.contains(CommanderConst.PROPERTIES, property) then
+		return self:getAbilitysAddition()[property] + self:getTalentsAddition(CommanderConst.TALENT_ADDITION_RATIO, property, nationality, shipType) / 100
 	else
 		return 0
 	end
 end
 
-function var_0_0.getAttrValueAddition(arg_46_0, arg_46_1, arg_46_2, arg_46_3)
-	if table.contains(CommanderConst.PROPERTIES, arg_46_1) then
-		return (arg_46_0:getTalentsAddition(CommanderConst.TALENT_ADDITION_NUMBER, arg_46_1, arg_46_2, arg_46_3))
+-- 被Ship.getProperties调用
+-- 天赋加成
+function Commander.getAttrValueAddition(self, property, nationality, shipType)
+	if table.contains(CommanderConst.PROPERTIES, property) then
+		return (self:getTalentsAddition(CommanderConst.TALENT_ADDITION_NUMBER, property, nationality, shipType))
 	else
 		return 0
 	end
 end
 
-function var_0_0.addExp(arg_47_0, arg_47_1)
+function Commander.addExp(arg_47_0, arg_47_1)
 	if arg_47_0:isMaxLevel() then
 		return
 	end
@@ -453,7 +470,7 @@ function var_0_0.addExp(arg_47_0, arg_47_1)
 	end
 end
 
-function var_0_0.ReduceExp(arg_48_0, arg_48_1)
+function Commander.ReduceExp(arg_48_0, arg_48_1)
 	arg_48_0.exp = arg_48_0.exp - arg_48_1
 
 	while arg_48_0.exp < 0 do
@@ -462,46 +479,46 @@ function var_0_0.ReduceExp(arg_48_0, arg_48_1)
 	end
 end
 
-function var_0_0.canLevelUp(arg_49_0)
+function Commander.canLevelUp(arg_49_0)
 	return arg_49_0.exp >= arg_49_0:getNextLevelExp()
 end
 
-function var_0_0.isMaxLevel(arg_50_0)
+function Commander.isMaxLevel(arg_50_0)
 	return arg_50_0:getMaxLevel() <= arg_50_0.level
 end
 
-function var_0_0.getMaxLevel(arg_51_0)
+function Commander.getMaxLevel(arg_51_0)
 	return arg_51_0.maxLevel
 end
 
-function var_0_0.updateLevel(arg_52_0)
-	arg_52_0.level = arg_52_0.level + 1
+function Commander.updateLevel(self)
+	self.level = self.level + 1
 
-	arg_52_0:updateAbilitys()
+	self:updateAbilitys()
 
-	if arg_52_0.level % CommanderConst.TALENT_POINT_LEVEL == 0 then
-		arg_52_0.notLearnedList = {}
+	if self.level % CommanderConst.TALENT_POINT_LEVEL == 0 then
+		self.notLearnedList = {}
 	end
 end
 
-function var_0_0.getConfigExp(arg_53_0, arg_53_1)
+function Commander.getConfigExp(arg_53_0, arg_53_1)
 	arg_53_1 = math.max(arg_53_1, 1)
 
-	local var_53_0 = var_0_1[arg_53_1]
+	local var_53_0 = commander_level[arg_53_1]
 
 	return var_53_0["exp_" .. arg_53_0:getRarity()] or var_53_0.exp
 end
 
-function var_0_0.getNextLevelExp(arg_54_0)
+function Commander.getNextLevelExp(arg_54_0)
 	return arg_54_0:getConfigExp(arg_54_0.level)
 end
 
-function var_0_0.UpdateLevelAndExp(arg_55_0, arg_55_1, arg_55_2)
+function Commander.UpdateLevelAndExp(arg_55_0, arg_55_1, arg_55_2)
 	arg_55_0.exp = arg_55_2
 	arg_55_0.level = arg_55_1
 end
 
-function var_0_0.getName(arg_56_0, arg_56_1)
+function Commander.getName(arg_56_0, arg_56_1)
 	if arg_56_1 then
 		return arg_56_0:getConfig("name")
 	else
@@ -509,35 +526,35 @@ function var_0_0.getName(arg_56_0, arg_56_1)
 	end
 end
 
-function var_0_0.setName(arg_57_0, arg_57_1)
+function Commander.setName(arg_57_0, arg_57_1)
 	arg_57_0.name = arg_57_1
 end
 
-function var_0_0.getRarity(arg_58_0)
+function Commander.getRarity(arg_58_0)
 	return arg_58_0:getConfig("rarity")
 end
 
-function var_0_0.isSSR(arg_59_0)
+function Commander.isSSR(arg_59_0)
 	return arg_59_0:getRarity() == 5
 end
 
-function var_0_0.isSR(arg_60_0)
+function Commander.isSR(arg_60_0)
 	return arg_60_0:getRarity() == 4
 end
 
-function var_0_0.isR(arg_61_0)
+function Commander.isR(arg_61_0)
 	return arg_61_0:getRarity() == 3
 end
 
-function var_0_0.getPainting(arg_62_0)
+function Commander.getPainting(arg_62_0)
 	return arg_62_0:getConfig("painting")
 end
 
-function var_0_0.getLevel(arg_63_0)
+function Commander.getLevel(arg_63_0)
 	return arg_63_0.level
 end
 
-function var_0_0.getDestoryedExp(arg_64_0, arg_64_1)
+function Commander.getDestoryedExp(arg_64_0, arg_64_1)
 	local var_64_0 = 0
 
 	for iter_64_0 = 1, arg_64_0.level - 1 do
@@ -567,7 +584,7 @@ function var_0_0.getDestoryedExp(arg_64_0, arg_64_1)
 	return (arg_64_0:getConfig("exp") + var_64_1 * var_64_3) * var_64_5 * (1 + var_64_7) + var_64_6
 end
 
-function var_0_0.getDestoryedSkillExp(arg_66_0, arg_66_1)
+function Commander.getDestoryedSkillExp(arg_66_0, arg_66_1)
 	if arg_66_1 == arg_66_0.groupId then
 		return pg.gameset.commander_skill_exp.key_value
 	end
@@ -575,11 +592,11 @@ function var_0_0.getDestoryedSkillExp(arg_66_0, arg_66_1)
 	return 0
 end
 
-function var_0_0.updateAbilityTime(arg_67_0, arg_67_1)
+function Commander.updateAbilityTime(arg_67_0, arg_67_1)
 	arg_67_0.abilityTime = arg_67_1
 end
 
-function var_0_0.GetNextResetAbilityTime(arg_68_0)
+function Commander.GetNextResetAbilityTime(arg_68_0)
 	if pg.gameset.commander_ability_reset_time.key_value == 1 then
 		return pg.TimeMgr.GetInstance():GetNextTimeByTimeStamp(arg_68_0.abilityTime) + 86400
 	else
@@ -587,27 +604,27 @@ function var_0_0.GetNextResetAbilityTime(arg_68_0)
 	end
 end
 
-function var_0_0.isLevelUp(arg_69_0, arg_69_1)
+function Commander.isLevelUp(arg_69_0, arg_69_1)
 	return arg_69_0.level > 1 and arg_69_0.exp - arg_69_1 < 0
 end
 
-function var_0_0.isSameGroup(arg_70_0, arg_70_1)
+function Commander.isSameGroup(arg_70_0, arg_70_1)
 	return arg_70_1 == arg_70_0.groupId
 end
 
-function var_0_0.getUpgradeConsume(arg_71_0)
+function Commander.getUpgradeConsume(arg_71_0)
 	local var_71_0 = arg_71_0:getConfig("exp_cost")
 
 	return var_71_0 + var_71_0 * (arg_71_0.level - 1) * (0.85 + 0.15 * arg_71_0.level)
 end
 
-function var_0_0.canEquipToEliteChapter(arg_72_0, arg_72_1, arg_72_2, arg_72_3)
+function Commander.canEquipToEliteChapter(arg_72_0, arg_72_1, arg_72_2, arg_72_3)
 	local var_72_0 = getProxy(ChapterProxy):getChapterById(arg_72_0):getEliteFleetCommanders() or {}
 
-	return var_0_0.canEquipToFleetList(var_72_0, arg_72_1, arg_72_2, arg_72_3)
+	return Commander.canEquipToFleetList(var_72_0, arg_72_1, arg_72_2, arg_72_3)
 end
 
-function var_0_0.canEquipToFleetList(arg_73_0, arg_73_1, arg_73_2, arg_73_3)
+function Commander.canEquipToFleetList(arg_73_0, arg_73_1, arg_73_2, arg_73_3)
 	local var_73_0 = getProxy(CommanderProxy)
 	local var_73_1 = var_73_0:getCommanderById(arg_73_3)
 
@@ -636,25 +653,25 @@ function var_0_0.canEquipToFleetList(arg_73_0, arg_73_1, arg_73_2, arg_73_3)
 	return true
 end
 
-function var_0_0.ExistCleanFlag(arg_74_0)
+function Commander.ExistCleanFlag(arg_74_0)
 	local var_74_0 = pg.TimeMgr.GetInstance():GetServerTime()
 
 	return not pg.TimeMgr.GetInstance():IsSameDay(arg_74_0.cleanTime, var_74_0)
 end
 
-function var_0_0.ExitFeedFlag(arg_75_0)
+function Commander.ExitFeedFlag(arg_75_0)
 	local var_75_0 = pg.TimeMgr.GetInstance():GetServerTime()
 
 	return not pg.TimeMgr.GetInstance():IsSameDay(arg_75_0.feedTime, var_75_0)
 end
 
-function var_0_0.ExitPlayFlag(arg_76_0)
+function Commander.ExitPlayFlag(arg_76_0)
 	local var_76_0 = pg.TimeMgr.GetInstance():GetServerTime()
 
 	return not pg.TimeMgr.GetInstance():IsSameDay(arg_76_0.playTime, var_76_0)
 end
 
-function var_0_0.UpdateHomeOpTime(arg_77_0, arg_77_1, arg_77_2)
+function Commander.UpdateHomeOpTime(arg_77_0, arg_77_1, arg_77_2)
 	if arg_77_1 == 1 then
 		arg_77_0.cleanTime = arg_77_2
 	elseif arg_77_1 == 2 then
@@ -664,7 +681,7 @@ function var_0_0.UpdateHomeOpTime(arg_77_0, arg_77_1, arg_77_2)
 	end
 end
 
-function var_0_0.IsSameTalent(arg_78_0)
+function Commander.IsSameTalent(arg_78_0)
 	local var_78_0 = arg_78_0:getTalentOrigins()
 	local var_78_1 = arg_78_0:getTalents()
 
@@ -679,12 +696,12 @@ function var_0_0.IsSameTalent(arg_78_0)
 	return false
 end
 
-function var_0_0.CanReset(arg_81_0)
+function Commander.CanReset(arg_81_0)
 	return arg_81_0:GetNextResetAbilityTime() <= pg.TimeMgr.GetInstance():GetServerTime()
 end
 
-function var_0_0.ShouldTipLock(arg_82_0)
+function Commander.ShouldTipLock(arg_82_0)
 	return arg_82_0:isSSR() and not arg_82_0:isLocked()
 end
 
-return var_0_0
+return Commander

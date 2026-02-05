@@ -16,7 +16,7 @@ BattleBuffUnit.DEFAULT_ANI_FX_CONFIG = {
 		0
 	}
 }
--- TODO
+
 function BattleBuffUnit.Ctor(self, buffID, level, caster)
 	level = level or 1
 	self._id = buffID
@@ -32,106 +32,108 @@ function BattleBuffUnit.Ctor(self, buffID, level, caster)
 	self._forceStack = self._tempData.force_stack
 	self._stackCap = self._tempData.stack_cap or self._tempData.stack
 
-	for iter_1_0, iter_1_1 in ipairs(self._tempData.effect_list) do
-		local var_1_0 = ys.Battle[iter_1_1.type].New(iter_1_1)
+	for index, effectData in ipairs(self._tempData.effect_list) do
+		local effect = ys.Battle[effectData.type].New(effectData)
 
-		self._effectList[iter_1_0] = var_1_0
+		self._effectList[index] = effect
 
-		local var_1_1 = iter_1_1.trigger
+		local triggerList = effectData.trigger
 
-		for iter_1_2, iter_1_3 in ipairs(var_1_1) do
-			local var_1_2 = self._triggerSearchTable[iter_1_3]
+		for _, trigger in ipairs(triggerList) do
+			-- 该Trigger对应能触发的Effect列表
+			local effectList = self._triggerSearchTable[trigger]
 
-			if var_1_2 == nil then
-				var_1_2 = {}
-				self._triggerSearchTable[iter_1_3] = var_1_2
+			if effectList == nil then
+				effectList = {}
+				self._triggerSearchTable[trigger] = effectList
 			end
 
-			var_1_2[#var_1_2 + 1] = var_1_0
+			effectList[#effectList + 1] = effect
 		end
 	end
 end
--- TODO
-function BattleBuffUnit.GetTriggerPriority(arg_2_0, arg_2_1)
-	local var_2_0 = BattleConfig.TRIGGER_PRIORITY[arg_2_1]
-	local var_2_1 = math.huge
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0._tempData.effect_list) do
-		local var_2_2 = var_2_0[iter_2_1.type] or BattleConfig.TRIGGER_PRIORITY_LOWEST
+-- 被BattleBuffUnit.sortTriggerBuff调用
+function BattleBuffUnit.GetTriggerPriority(self, trigger)
+	local triggerPriority = BattleConfig.TRIGGER_PRIORITY[trigger]
+	local minPriority = math.huge
 
-		var_2_1 = math.min(var_2_1, var_2_2)
+	for _, effect in ipairs(self._tempData.effect_list) do
+		local effectPriority = triggerPriority[effect.type] or BattleConfig.TRIGGER_PRIORITY_LOWEST
+		-- Buff的优先级取优先级数值最小的Effect的优先级(表示优先级更高)
+		minPriority = math.min(minPriority, effectPriority)
 	end
 
-	return var_2_1
+	return minPriority
 end
 
-function BattleBuffUnit.SetTemplate(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._tempData = ys.Battle.BattleDataFunction.GetBuffTemplate(arg_3_1, arg_3_2)
+function BattleBuffUnit.SetTemplate(self, buffID, buffLevel)
+	self._tempData = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, buffLevel)
 end
 
 -- 附加Buff逻辑。注意会重置持续时间
-function BattleBuffUnit.Attach(arg_4_0, arg_4_1)
-	arg_4_0._owner = arg_4_1
-	arg_4_0._stack = 1
+function BattleBuffUnit.Attach(self, owner)
+	self._owner = owner
+	self._stack = 1
 
-	arg_4_0:SetArgs(arg_4_1)
-	arg_4_0:onTrigger(BuffEffectType.ON_ATTACH, arg_4_1)
-	arg_4_0:SetRemoveTime()
+	self:SetArgs(owner)
+	self:onTrigger(BuffEffectType.ON_ATTACH, owner)
+	self:SetRemoveTime()
 end
 
--- TODO
+
 -- 新groupLevel <= 原groupLevel时触发
-function BattleBuffUnit.Stack(arg_5_0, arg_5_1)
-	arg_5_0._stack = math.min(arg_5_0._stack + 1, arg_5_0._tempData.stack)
+function BattleBuffUnit.Stack(self, owner)
+	self._stack = math.min(self._stack + 1, self._tempData.stack)
 
-	arg_5_0:onTrigger(BuffEffectType.ON_STACK, arg_5_1)
-	arg_5_0:SetRemoveTime()
+	self:onTrigger(BuffEffectType.ON_STACK, owner)
+	self:SetRemoveTime()
 end
 
-function BattleBuffUnit.SetOrb(arg_6_0, arg_6_1, arg_6_2)
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._effectList) do
-		iter_6_1:SetOrb(arg_6_0, arg_6_1, arg_6_2)
+function BattleBuffUnit.SetOrb(self, orb, level)
+	for _, effect in ipairs(self._effectList) do
+		effect:SetOrb(self, orb, level)
 	end
 end
 
-function BattleBuffUnit.SetOrbDuration(arg_7_0, arg_7_1)
-	arg_7_0._time = arg_7_1 + arg_7_0._time
+function BattleBuffUnit.SetOrbDuration(self, duration)
+	self._time = duration + self._time
 end
 
-function BattleBuffUnit.SetOrbLevel(arg_8_0, arg_8_1)
-	arg_8_0._level = arg_8_1
+function BattleBuffUnit.SetOrbLevel(self, level)
+	self._level = level
 end
 
-function BattleBuffUnit.SetGroupLevel(arg_9_0, arg_9_1)
-	arg_9_0._groupLevel = arg_9_1
+function BattleBuffUnit.SetGroupLevel(self, groupLevel)
+	self._groupLevel = groupLevel
 end
 
-function BattleBuffUnit.GetGroupLevel(arg_10_0)
-	return arg_10_0._groupLevel or 1
+function BattleBuffUnit.GetGroupLevel(self)
+	return self._groupLevel or 1
 end
 
-function BattleBuffUnit.SetInfection(arg_11_0, arg_11_1)
-	for iter_11_0, iter_11_1 in ipairs(arg_11_0._effectList) do
-		if iter_11_1.SetInfection then
-			iter_11_1:SetInfection(arg_11_1)
+function BattleBuffUnit.SetInfection(self, infection)
+	for _, effect in ipairs(self._effectList) do
+		if effect.SetInfection then
+			effect:SetInfection(infection)
 		end
 	end
 end
 
-function BattleBuffUnit.SetCommander(arg_12_0, arg_12_1)
-	arg_12_0._commander = arg_12_1
+function BattleBuffUnit.SetCommander(self, commander)
+	self._commander = commander
 
-	for iter_12_0, iter_12_1 in ipairs(arg_12_0._effectList) do
-		iter_12_1:SetCommander(arg_12_1)
+	for _, effect in ipairs(self._effectList) do
+		effect:SetCommander(commander)
 	end
 end
 
-function BattleBuffUnit.GetEffectList(arg_13_0)
-	return arg_13_0._effectList
+function BattleBuffUnit.GetEffectList(self)
+	return self._effectList
 end
 
-function BattleBuffUnit.GetCommander(arg_14_0)
-	return arg_14_0._commander
+function BattleBuffUnit.GetCommander(self)
+	return self._commander
 end
 
 function BattleBuffUnit.UpdateStack(self, owner, stack)
@@ -153,54 +155,54 @@ function BattleBuffUnit.UpdateStack(self, owner, stack)
 	owner:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_STACK, args))
 end
 
-function BattleBuffUnit.Remove(arg_16_0, arg_16_1)
-	local var_16_0 = arg_16_0._owner
-	local var_16_1 = arg_16_0._id
-	local var_16_2 = {
-		unit_id = var_16_0:GetUniqueID(),
-		buff_id = var_16_1
+function BattleBuffUnit.Remove(self, timeStamp)
+	local owner = self._owner
+	local buffID = self._id
+	local buffRemoveArgs = {
+		unit_id = owner:GetUniqueID(),
+		buff_id = buffID
 	}
 
-	var_16_0:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_REMOVE, var_16_2))
-	arg_16_0:onTrigger(BuffEffectType.ON_REMOVE, var_16_0)
-	arg_16_0:Clear()
+	owner:DispatchEvent(ys.Event.New(BattleBuffEvent.BUFF_REMOVE, buffRemoveArgs))
+	self:onTrigger(BuffEffectType.ON_REMOVE, owner)
+	self:Clear()
 
-	var_16_0:GetBuffList()[var_16_1] = nil
+	owner:GetBuffList()[buffID] = nil
 end
 
 -- Buff更新接口，检查是否到达移除时间，触发ON_UPDATE
-function BattleBuffUnit.Update(arg_17_0, arg_17_1, arg_17_2)
-	if arg_17_0:IsTimeToRemove(arg_17_2) then
-		arg_17_0:Remove(arg_17_2)
+function BattleBuffUnit.Update(self, owner, timeStamp)
+	if self:IsTimeToRemove(timeStamp) then
+		self:Remove(timeStamp)
 	else
-		arg_17_0:onTrigger(BuffEffectType.ON_UPDATE, arg_17_1, {
-			timeStamp = arg_17_2
+		self:onTrigger(BuffEffectType.ON_UPDATE, owner, {
+			timeStamp = timeStamp
 		})
 	end
 end
 
-function BattleBuffUnit.SetArgs(arg_18_0, arg_18_1)
-	for iter_18_0, iter_18_1 in ipairs(arg_18_0._effectList) do
-		iter_18_1:SetCaster(arg_18_0._caster)
-		iter_18_1:SetArgs(arg_18_1, arg_18_0)
+function BattleBuffUnit.SetArgs(self, owner)
+	for _, effect in ipairs(self._effectList) do
+		effect:SetCaster(self._caster)
+		effect:SetArgs(owner, self)
 	end
 end
 
 --- @class BattleBuffUnit
 --- @param owner BattleUnit
---- @param effectType string
+--- @param trigger string
 --- @param args table<string, any>
 --- @return nil
 --- Buff本身的触发接口
 --- - 这是一个静态方法
 --- - 遍历owner的所有Buff，找到可以触发effectType的Buff，调用它们的onTrigger方法
-function BattleBuffUnit.Trigger(owner, effectType, args)
+function BattleBuffUnit.Trigger(owner, trigger, args)
 	local buffList = owner:GetBuffList() or {}
 	local canTriggerBuffList = {}
 
 	for _, buff in pairs(buffList) do
 		--- @type table<number, BattleBuffEffect>
-		local buffEffectList = buff._triggerSearchTable[effectType]
+		local buffEffectList = buff._triggerSearchTable[trigger]
 
 		if buffEffectList ~= nil and #buffEffectList > 0 then
 			canTriggerBuffList[#canTriggerBuffList + 1] = buff
@@ -211,73 +213,73 @@ function BattleBuffUnit.Trigger(owner, effectType, args)
 	-- 优先级越小，则触发顺序越靠前，以下描述的">"表示优先级更高，越先触发，对应的就是数值越小
 	-- 简要描述：BattleBuffLockHealth > BattleBuffHPLink > BattleBuffShield = BattleBuffOverHealingShield = BattleBuffRecordShield = BattleBuffBarrier > BattleBuffCastSkillDamageCount > BattleBuffCount
 	-- 如果优先级相同，按照Buff的添加顺序触发(一般来说，就是Buff ID优先？），先添加的先触发
-	BattleBuffUnit.sortTriggerBuff(canTriggerBuffList, effectType)
+	BattleBuffUnit.sortTriggerBuff(canTriggerBuffList, trigger)
 
 	for _, buff in ipairs(canTriggerBuffList) do
-		buff:onTrigger(effectType, owner, args)
+		buff:onTrigger(trigger, owner, args)
 	end
 end
 
 --- @class BattleBuffUnit
 --- @param buffList table<number, BattleBuffUnit>
---- @param effectType string
+--- @param trigger string
 --- @return table<number, BattleBuffUnit>
-function BattleBuffUnit.sortTriggerBuff(buffList, effectType)
-	if not BattleConfig.TRIGGER_PRIORITY[effectType] then
+function BattleBuffUnit.sortTriggerBuff(buffList, trigger)
+	if not BattleConfig.TRIGGER_PRIORITY[trigger] then
 		return buffList
 	end
 
 	--- @type table<string, number>
-	local triggerPriority = BattleConfig.TRIGGER_PRIORITY[effectType]
+	local triggerPriority = BattleConfig.TRIGGER_PRIORITY[trigger]
 
 	table.sort(buffList, function(buff1, buff2)
-		return buff1:GetTriggerPriority(effectType) < buff2:GetTriggerPriority(effectType)
+		return buff1:GetTriggerPriority(trigger) < buff2:GetTriggerPriority(trigger)
 	end)
 end
 
-function BattleBuffUnit.DisptachSkillFloat(arg_22_0, arg_22_1, arg_22_2, arg_22_3)
-	if arg_22_3.trigger == nil or table.contains(arg_22_3.trigger, arg_22_2) then
-		local var_22_0
+function BattleBuffUnit.DisptachSkillFloat(self, owner, trigger, popConfig)
+	if popConfig.trigger == nil or table.contains(popConfig.trigger, trigger) then
+		local _popConfig
 
-		if arg_22_3.painting and type(arg_22_3.painting) == "string" then
-			var_22_0 = arg_22_3
+		if popConfig.painting and type(popConfig.painting) == "string" then
+			_popConfig = popConfig
 		end
 
-		local var_22_1 = getSkillName(arg_22_3.displayID or arg_22_0._id)
+		local popSkillName = getSkillName(popConfig.displayID or self._id)
 
-		arg_22_1:DispatchSkillFloat(var_22_1, nil, var_22_0)
+		owner:DispatchSkillFloat(popSkillName, nil, _popConfig)
 
-		local var_22_2
+		local castCV
 
-		if arg_22_3.castCV ~= false then
-			var_22_2 = arg_22_3.castCV or "skill"
+		if popConfig.castCV ~= false then
+			castCV = popConfig.castCV or "skill"
 		end
 
-		local var_22_3 = type(var_22_2)
+		local castCVValueType = type(castCV)
 
-		if var_22_3 == "string" then
-			arg_22_1:DispatchVoice(var_22_2)
-		elseif var_22_3 == "table" then
-			local var_22_4, var_22_5, var_22_6 = ShipWordHelper.GetWordAndCV(var_22_2.skinID, var_22_2.key)
+		if castCVValueType == "string" then
+			owner:DispatchVoice(castCV)
+		elseif castCVValueType == "table" then
+			local _, sfx, _ = ShipWordHelper.GetWordAndCV(castCV.skinID, castCV.key)
 
-			pg.CriMgr.GetInstance():PlaySoundEffect_V3(var_22_5)
+			pg.CriMgr.GetInstance():PlaySoundEffect_V3(sfx)
 		end
 
-		local var_22_7 = arg_22_3.aniEffect or BattleBuffUnit.DEFAULT_ANI_FX_CONFIG
-		local var_22_8 = {
-			effect = var_22_7.effect,
-			offset = var_22_7.offset
+		local aniEffect = popConfig.aniEffect or BattleBuffUnit.DEFAULT_ANI_FX_CONFIG
+		local addEffectArgs = {
+			effect = aniEffect.effect,
+			offset = aniEffect.offset
 		}
 
-		arg_22_1:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, var_22_8))
+		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, addEffectArgs))
 	end
 end
 
-function BattleBuffUnit.IsSubmarineSpecial(arg_23_0)
-	local var_23_0 = arg_23_0._triggerSearchTable[ys.Battle.BattleConst.BuffEffectType.ON_SUBMARINE_FREE_SPECIAL] or {}
+function BattleBuffUnit.IsSubmarineSpecial(self)
+	local effectList = self._triggerSearchTable[ys.Battle.BattleConst.BuffEffectType.ON_SUBMARINE_FREE_SPECIAL] or {}
 
-	for iter_23_0, iter_23_1 in ipairs(var_23_0) do
-		if iter_23_1:HaveQuota() then
+	for _, effect in ipairs(effectList) do
+		if effect:HaveQuota() then
 			return true
 		end
 	end
@@ -286,30 +288,29 @@ function BattleBuffUnit.IsSubmarineSpecial(arg_23_0)
 end
 
 --- @class BattleBuffUnit
---- @param effectType string
+--- @param trigger string
 --- @param owner BattleUnit
 --- @param args table<string, any>
 --- @return nil
 --- Buff触发接口的具体实现
 --- - 遍历触发该buff的所有Effect，调用Effect的触发函数
-function BattleBuffUnit.onTrigger(self, effectType, owner, args)
-	local buffEffectList = self._triggerSearchTable[effectType]
+function BattleBuffUnit.onTrigger(self, trigger, owner, args)
+	local buffEffectList = self._triggerSearchTable[trigger]
 
 	if buffEffectList == nil or #buffEffectList == 0 then
 		return
 	end
 
 	for _, buffEffect in ipairs(buffEffectList) do
-		assert(type(buffEffect[effectType]) == "function", "buff效果的触发名字和触发函数不相符,buff id:>>" .. self._id .. "<<, trigger:>>" .. effectType .. "<<")
+		assert(type(buffEffect[trigger]) == "function", "buff效果的触发名字和触发函数不相符,buff id:>>" .. self._id .. "<<, trigger:>>" .. trigger .. "<<")
 
 		if buffEffect:HaveQuota() and buffEffect:IsActive() then
 			buffEffect:NotActive()
-			buffEffect:Trigger(effectType, owner, self, args)
+			buffEffect:Trigger(trigger, owner, self, args)
+			local popConfig = buffEffect:GetPopConfig()
 
-			local pop = buffEffect:GetPopConfig()
-
-			if pop then
-				self:DisptachSkillFloat(owner, effectType, pop)
+			if popConfig then
+				self:DisptachSkillFloat(owner, trigger, popConfig)
 			end
 
 			buffEffect:SetActive()
@@ -326,34 +327,34 @@ function BattleBuffUnit.onTrigger(self, effectType, owner, args)
 		self:Remove()
 	end
 end
--- TODO
--- 重置移除时间
-function BattleBuffUnit.SetRemoveTime(arg_25_0)
-	local var_25_0 = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	arg_25_0._buffStartTimeStamp = var_25_0
-	arg_25_0._RemoveTime = var_25_0 + arg_25_0._time
-	arg_25_0._cancelTime = nil
+-- 重置移除时间
+function BattleBuffUnit.SetRemoveTime(self)
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
+
+	self._buffStartTimeStamp = currentTime
+	self._RemoveTime = currentTime + self._time
+	self._cancelTime = nil
 end
 
-function BattleBuffUnit.IsTimeToRemove(arg_26_0, arg_26_1)
-	if arg_26_0._isCancel then
+function BattleBuffUnit.IsTimeToRemove(self, timeStamp)
+	if self._isCancel then
 		return true
-	elseif arg_26_0._cancelTime and arg_26_1 >= arg_26_0._cancelTime then
+	elseif self._cancelTime and timeStamp >= self._cancelTime then
 		return true
-	elseif arg_26_0._time == 0 then
+	elseif self._time == 0 then
 		return false
 	else
-		return arg_26_1 >= arg_26_0._RemoveTime
+		return timeStamp >= self._RemoveTime
 	end
 end
 
-function BattleBuffUnit.GetBuffLifeTime(arg_27_0)
-	return arg_27_0._time
+function BattleBuffUnit.GetBuffLifeTime(self)
+	return self._time
 end
 
-function BattleBuffUnit.GetBuffStartTime(arg_28_0)
-	return arg_28_0._buffStartTimeStamp
+function BattleBuffUnit.GetBuffStartTime(self)
+	return self._buffStartTimeStamp
 end
 
 function BattleBuffUnit.Interrupt(self)
@@ -362,47 +363,48 @@ function BattleBuffUnit.Interrupt(self)
 	end
 end
 
-function BattleBuffUnit.Clear(arg_30_0)
-	for iter_30_0, iter_30_1 in ipairs(arg_30_0._effectList) do
-		iter_30_1:Clear()
+function BattleBuffUnit.Clear(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Clear()
 	end
 end
 
-function BattleBuffUnit.GetID(arg_31_0)
-	return arg_31_0._id
+function BattleBuffUnit.GetID(self)
+	return self._id
 end
 
-function BattleBuffUnit.GetCaster(arg_32_0)
-	return arg_32_0._caster
+function BattleBuffUnit.GetCaster(self)
+	return self._caster
 end
 
-function BattleBuffUnit.GetLv(arg_33_0)
-	return arg_33_0._level or 1
+function BattleBuffUnit.GetLv(self)
+	return self._level or 1
 end
 
-function BattleBuffUnit.GetDuration(arg_34_0)
-	return arg_34_0._time
+function BattleBuffUnit.GetDuration(self)
+	return self._time
 end
 
-function BattleBuffUnit.GetStack(arg_35_0)
-	return arg_35_0._stack or 1
+function BattleBuffUnit.GetStack(self)
+	return self._stack or 1
 end
 
-function BattleBuffUnit.IsForceStack(arg_36_0)
-	return arg_36_0._forceStack
+function BattleBuffUnit.IsForceStack(self)
+	return self._forceStack
 end
 
-function BattleBuffUnit.SetToCancel(arg_37_0, arg_37_1)
-	if arg_37_1 then
-		if not arg_37_0._cancelTime then
-			arg_37_0._cancelTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_37_1
+-- 可以来自BattleBuffCancelBuff.onTrigger
+function BattleBuffUnit.SetToCancel(self, delay)
+	if delay then
+		if not self._cancelTime then
+			self._cancelTime = pg.TimeMgr.GetInstance():GetCombatTime() + delay
 		end
 	else
-		arg_37_0._isCancel = true
+		self._isCancel = true
 	end
 end
 
-function BattleBuffUnit.Dispose(arg_38_0)
-	arg_38_0._triggerSearchTable = nil
-	arg_38_0._commander = nil
+function BattleBuffUnit.Dispose(self)
+	self._triggerSearchTable = nil
+	self._commander = nil
 end

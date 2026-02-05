@@ -20,6 +20,7 @@ function BattleBuffAura.SetArgs(self, owner, buff)
 
 	self._auraRange = arg_list.cld_data.box.range
 	self._buffID = arg_list.buff_id
+	-- BattleBuffAura 默认是对敌方生效的
 	self._friendly = arg_list.friendly_fire or false
 
 	local areaCldFunc, exitCldFunc, endFunc = self:getAreaCldFunc(owner)

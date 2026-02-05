@@ -1,16 +1,16 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAntiSubMine", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffAntiSubMine = class("BattleBuffAntiSubMine", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAntiSubMine = var_0_1
-var_0_1.__name = "BattleBuffAntiSubMine"
+ys.Battle.BattleBuffAntiSubMine = BattleBuffAntiSubMine
+BattleBuffAntiSubMine.__name = "BattleBuffAntiSubMine"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAntiSubMine.Ctor(self, effectData)
+	BattleBuffAntiSubMine.super.Ctor(self, effectData)
 end
 
-function var_0_1.onAttach(arg_2_0, arg_2_1)
-	arg_2_1:InitOxygen()
-	arg_2_1:ChangeOxygenState(var_0_0.Battle.OxyState.STATE_DEEP_MINE)
+function BattleBuffAntiSubMine.onAttach(self, owner)
+	owner:InitOxygen()
+	owner:ChangeOxygenState(ys.Battle.OxyState.STATE_DEEP_MINE)
 end

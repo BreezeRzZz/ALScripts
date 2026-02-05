@@ -1,88 +1,88 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleTargetChoise
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = class("BattleSpaceLaserUnit", var_0_0.Battle.BattleColumnAreaBulletUnit)
+local ys = ys
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleSpaceLaserUnit = class("BattleSpaceLaserUnit", ys.Battle.BattleColumnAreaBulletUnit)
 
-var_0_3.__name = "BattleSpaceLaserUnit"
-var_0_0.Battle.BattleSpaceLaserUnit = var_0_3
-var_0_3.STATE_READY = "Ready"
-var_0_3.STATE_PRECAST = "Precast"
-var_0_3.STATE_ATTACK = "Attack"
-var_0_3.STATE_DESTROY = "Destroy"
+BattleSpaceLaserUnit.__name = "BattleSpaceLaserUnit"
+ys.Battle.BattleSpaceLaserUnit = BattleSpaceLaserUnit
+BattleSpaceLaserUnit.STATE_READY = "Ready"
+BattleSpaceLaserUnit.STATE_PRECAST = "Precast"
+BattleSpaceLaserUnit.STATE_ATTACK = "Attack"
+BattleSpaceLaserUnit.STATE_DESTROY = "Destroy"
 
-function var_0_3.Ctor(arg_1_0, ...)
-	var_0_3.super.Ctor(arg_1_0, ...)
+function BattleSpaceLaserUnit.Ctor(self, ...)
+	BattleSpaceLaserUnit.super.Ctor(self, ...)
 
-	arg_1_0._collidedTimes = {}
+	self._collidedTimes = {}
 end
 
-function var_0_3.Dispose(arg_2_0)
-	arg_2_0._lifeEndCb = nil
-	arg_2_0._collidedTimes = nil
+function BattleSpaceLaserUnit.Dispose(self)
+	self._lifeEndCb = nil
+	self._collidedTimes = nil
 
-	var_0_3.super.Dispose(arg_2_0)
+	BattleSpaceLaserUnit.super.Dispose(self)
 end
 
-function var_0_3.ExecuteLifeEndCallback(arg_3_0)
-	if arg_3_0._lifeEndCb then
-		arg_3_0._lifeEndCb()
+function BattleSpaceLaserUnit.ExecuteLifeEndCallback(self)
+	if self._lifeEndCb then
+		self._lifeEndCb()
 	end
 end
 
-function var_0_3.AssertFields(arg_4_0, arg_4_1)
-	assert(arg_4_0[arg_4_1], "Lack Field " .. arg_4_1)
+function BattleSpaceLaserUnit.AssertFields(self, field)
+	assert(self[field], "Lack Field " .. field)
 end
 
-function var_0_3.SetTemplateData(arg_5_0, arg_5_1)
-	arg_5_0.AssertFields(arg_5_1.extra_param, "attack_time")
-	arg_5_0.AssertFields(arg_5_1.hit_type, "interval")
-	var_0_3.super.SetTemplateData(arg_5_0, arg_5_1)
+function BattleSpaceLaserUnit.SetTemplateData(self, tempData)
+	self.AssertFields(tempData.extra_param, "attack_time")
+	self.AssertFields(tempData.hit_type, "interval")
+	BattleSpaceLaserUnit.super.SetTemplateData(self, tempData)
 
-	arg_5_0._hitInterval = arg_5_1.hit_type.interval
+	self._hitInterval = tempData.hit_type.interval
 end
 
-function var_0_3.GetHitInterval(arg_6_0)
-	return arg_6_0._hitInterval
+function BattleSpaceLaserUnit.GetHitInterval(self)
+	return self._hitInterval
 end
 
-function var_0_3.DoTrack(arg_7_0)
-	local var_7_0 = arg_7_0
-	local var_7_1 = var_7_0:getTrackingTarget()
+function BattleSpaceLaserUnit.DoTrack(bullet)
+	local _bullet = bullet
+	local trackingTarget = _bullet:getTrackingTarget()
 
-	if not var_7_1 or var_7_1 == -1 then
+	if not trackingTarget or trackingTarget == -1 then
 		return
-	elseif not var_7_1:IsAlive() then
-		var_7_0:setTrackingTarget(-1)
-		var_7_0._speed:SetNormalize():Mul(arg_7_0._convertedVelocity)
-
-		return
-	elseif var_7_0:GetDistance(var_7_1) > var_7_0._trackRange then
-		var_7_0:setTrackingTarget(-1)
-		var_7_0._speed:SetNormalize():Mul(arg_7_0._convertedVelocity)
+	elseif not trackingTarget:IsAlive() then
+		_bullet:setTrackingTarget(-1)
+		_bullet._speed:SetNormalize():Mul(bullet._convertedVelocity)
 
 		return
-	end
-
-	local var_7_2 = var_7_1:GetPosition() - var_7_0:GetPosition()
-	local var_7_3 = var_7_2:Magnitude()
-
-	if var_7_3 <= 1e-05 then
-		arg_7_0._speed:Set(0, 0, 0)
+	elseif _bullet:GetDistance(trackingTarget) > _bullet._trackRange then
+		_bullet:setTrackingTarget(-1)
+		_bullet._speed:SetNormalize():Mul(bullet._convertedVelocity)
 
 		return
 	end
 
-	local var_7_4 = arg_7_0._speedNormal
+	local disVector = trackingTarget:GetPosition() - _bullet:GetPosition()
+	local distance = disVector:Magnitude()
 
-	var_7_2:SetNormalize()
+	if distance <= 1e-05 then
+		bullet._speed:Set(0, 0, 0)
 
-	local var_7_5 = var_7_2.x * var_7_4.x + var_7_2.z * var_7_4.z
-	local var_7_6 = var_7_2.z * var_7_4.x - var_7_2.x * var_7_4.z
-	local var_7_7 = var_7_0:GetSpeedRatio()
-	local var_7_8 = math.cos(var_7_0._cosAngularSpeed * var_7_7)
-	local var_7_9 = math.sin(var_7_0._sinAngularSpeed * var_7_7)
+		return
+	end
+
+	local speedNormal = bullet._speedNormal
+
+	disVector:SetNormalize()
+
+	local var_7_5 = disVector.x * speedNormal.x + disVector.z * speedNormal.z
+	local var_7_6 = disVector.z * speedNormal.x - disVector.x * speedNormal.z
+	local var_7_7 = _bullet:GetSpeedRatio()
+	local var_7_8 = math.cos(_bullet._cosAngularSpeed * var_7_7)
+	local var_7_9 = math.sin(_bullet._sinAngularSpeed * var_7_7)
 	local var_7_10 = var_7_5
 	local var_7_11 = var_7_6
 
@@ -91,76 +91,76 @@ function var_0_3.DoTrack(arg_7_0)
 		var_7_11 = var_7_9 * (var_7_11 > 0 and 1 or -1)
 	end
 
-	local var_7_12 = var_7_4.x * var_7_10 - var_7_4.z * var_7_11
-	local var_7_13 = var_7_4.z * var_7_10 + var_7_4.x * var_7_11
-	local var_7_14 = math.min(arg_7_0._convertedVelocity, var_7_3)
+	local var_7_12 = speedNormal.x * var_7_10 - speedNormal.z * var_7_11
+	local var_7_13 = speedNormal.z * var_7_10 + speedNormal.x * var_7_11
+	local var_7_14 = math.min(bullet._convertedVelocity, distance)
 
-	var_7_0._speed:Set(var_7_12, 0, var_7_13)
-	var_7_0._speed:Mul(var_7_14)
-	arg_7_0._speedNormal:Set(var_7_12, 0, var_7_13)
-	arg_7_0._speedNormal:SetNormalize()
+	_bullet._speed:Set(var_7_12, 0, var_7_13)
+	_bullet._speed:Mul(var_7_14)
+	bullet._speedNormal:Set(var_7_12, 0, var_7_13)
+	bullet._speedNormal:SetNormalize()
 
-	arg_7_0._yAngle = math.rad2Deg * math.atan2(var_7_12, var_7_13)
+	bullet._yAngle = math.rad2Deg * math.atan2(var_7_12, var_7_13)
 end
 
-function var_0_3.InitSpeed(arg_8_0, ...)
-	var_0_3.super.InitSpeed(arg_8_0, ...)
+function BattleSpaceLaserUnit.InitSpeed(self, ...)
+	BattleSpaceLaserUnit.super.InitSpeed(self, ...)
 
-	if arg_8_0:IsTracker() then
-		local var_8_0 = math.deg2Rad * arg_8_0._yAngle
+	if self:IsTracker() then
+		local var_8_0 = math.deg2Rad * self._yAngle
 
-		arg_8_0._speedNormal = Vector3(math.cos(var_8_0), 0, math.sin(var_8_0))
-		arg_8_0.updateSpeed = arg_8_0.DoTrack
-	elseif arg_8_0:IsCircle() and arg_8_0:IsAlert() then
-		arg_8_0._centripetalSpeed = arg_8_0._centripetalSpeed * arg_8_0.alertSpeedRatio
+		self._speedNormal = Vector3(math.cos(var_8_0), 0, math.sin(var_8_0))
+		self.updateSpeed = self.DoTrack
+	elseif self:IsCircle() and self:IsAlert() then
+		self._centripetalSpeed = self._centripetalSpeed * self.alertSpeedRatio
 	end
 end
 
-function var_0_3.SetLifeTime(arg_9_0, arg_9_1)
-	arg_9_0._lifeTime = arg_9_1
+function BattleSpaceLaserUnit.SetLifeTime(self, lifetime)
+	self._lifeTime = lifetime
 end
 
-function var_0_3.SetAlert(arg_10_0, arg_10_1)
-	arg_10_0._alertFlag = arg_10_1
+function BattleSpaceLaserUnit.SetAlert(self, alertFlag)
+	self._alertFlag = alertFlag
 
-	local var_10_0 = arg_10_0:GetTemplate().extra_param
+	local extra_param = self:GetTemplate().extra_param
 
-	if not var_10_0.alertSpeed then
+	if not extra_param.alertSpeed then
 		return
 	end
 
-	arg_10_0:ResetVelocity(arg_10_0._velocity * var_10_0.alertSpeed)
+	self:ResetVelocity(self._velocity * extra_param.alertSpeed)
 
-	arg_10_0.alertSpeedRatio = var_10_0.alertSpeed
+	self.alertSpeedRatio = extra_param.alertSpeed
 end
 
-function var_0_3.IsAlert(arg_11_0)
-	return arg_11_0._alertFlag
+function BattleSpaceLaserUnit.IsAlert(self)
+	return self._alertFlag
 end
 
-function var_0_3.Update(arg_12_0, arg_12_1)
-	var_0_3.super.Update(arg_12_0, arg_12_1)
+function BattleSpaceLaserUnit.Update(self, timeStamp)
+	BattleSpaceLaserUnit.super.Update(self, timeStamp)
 
-	arg_12_0._reachDestFlag = arg_12_1 > arg_12_0._timeStamp + arg_12_0._lifeTime
+	self._reachDestFlag = timeStamp > self._timeStamp + self._lifeTime
 
-	local var_12_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	for iter_12_0, iter_12_1 in pairs(arg_12_0._collidedTimes) do
-		if var_12_0 > iter_12_1 + arg_12_0._hitInterval then
-			arg_12_0._collidedTimes[iter_12_0] = nil
-			arg_12_0._collidedList[iter_12_0] = nil
+	for clbObjID, collidedTime in pairs(self._collidedTimes) do
+		if currentTime > collidedTime + self._hitInterval then
+			self._collidedTimes[clbObjID] = nil
+			self._collidedList[clbObjID] = nil
 		end
 	end
 end
 
-function var_0_3.GetCollidedList(arg_13_0)
-	return arg_13_0._collidedList, arg_13_0._collidedTimes
+function BattleSpaceLaserUnit.GetCollidedList(self)
+	return self._collidedList, self._collidedTimes
 end
 
-function var_0_3.RegisterLifeEndCB(arg_14_0, arg_14_1)
-	arg_14_0._lifeEndCb = arg_14_1
+function BattleSpaceLaserUnit.RegisterLifeEndCB(self, liftEndCb)
+	self._lifeEndCb = liftEndCb
 end
 
-function var_0_3.UnRegisterLifeEndCB(arg_15_0)
-	arg_15_0._lifeEndCb = nil
+function BattleSpaceLaserUnit.UnRegisterLifeEndCB(self)
+	self._lifeEndCb = nil
 end

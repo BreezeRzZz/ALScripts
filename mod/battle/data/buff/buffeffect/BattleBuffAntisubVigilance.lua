@@ -1,77 +1,77 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAntiSubVigilance", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffAntiSubVigilance = class("BattleBuffAntiSubVigilance", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffAntiSubVigilance = var_0_1
-var_0_1.__name = "BattleBuffAntiSubVigilance"
+ys.Battle.BattleBuffAntiSubVigilance = BattleBuffAntiSubVigilance
+BattleBuffAntiSubVigilance.__name = "BattleBuffAntiSubVigilance"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAntiSubVigilance.Ctor(self, effectData)
+	BattleBuffAntiSubVigilance.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffAntiSubVigilance.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._vigilantRange = var_2_0.vigilanceRange
-	arg_2_0._sonarRange = var_2_0.sonarRange
-	arg_2_0._sonarFrequency = var_2_0.sonarFrequency
+	self._vigilantRange = arg_list.vigilanceRange
+	self._sonarRange = arg_list.sonarRange
+	self._sonarFrequency = arg_list.sonarFrequency
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1)
-	arg_3_0._vigilantUnit = arg_3_1
-	arg_3_0._vigilantState = arg_3_1:InitAntiSubState(arg_3_0._sonarRange, arg_3_0._sonarFrequency)
+function BattleBuffAntiSubVigilance.onAttach(self, owner)
+	self._vigilantUnit = owner
+	self._vigilantState = owner:InitAntiSubState(self._sonarRange, self._sonarFrequency)
 
-	local var_3_0 = arg_3_0:getTargetList(arg_3_0._vigilantUnit, "TargetHarmNearest", {
+	local checkArgs = self:getTargetList(self._vigilantUnit, "TargetHarmNearest", {
 		range = 200
 	})
 
-	arg_3_0._vigilantState:InitCheck(#var_3_0)
+	self._vigilantState:InitCheck(#checkArgs)
 
-	arg_3_0._sonarCheckTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._sonarCheckTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function var_0_1.onUpdate(arg_4_0)
-	if #arg_4_0:getTargetList(arg_4_0._vigilantUnit, "TargetHarmNearest", {
-		range = arg_4_0._vigilantRange
+function BattleBuffAntiSubVigilance.onUpdate(self)
+	if #self:getTargetList(self._vigilantUnit, "TargetHarmNearest", {
+		range = self._vigilantRange
 	}) > 0 then
-		arg_4_0._vigilantState:VigilantAreaEngage()
+		self._vigilantState:VigilantAreaEngage()
 	end
 
-	local var_4_0 = #arg_4_0:getTargetList(arg_4_0._vigilantUnit, "TargetHarmNearest", {
+	local var_4_0 = #self:getTargetList(self._vigilantUnit, "TargetHarmNearest", {
 		range = 200
 	})
-	local var_4_1 = #arg_4_0:getTargetList(arg_4_0._vigilantUnit, {
+	local targetList = #self:getTargetList(self._vigilantUnit, {
 		"TargetAllFoe",
 		"TargetHarmNearest",
 		"TargetDiveState"
 	}, {
-		range = arg_4_0._sonarRange
+		range = self._sonarRange
 	})
 
-	arg_4_0._vigilantState:Update(var_4_0, var_4_1)
+	self._vigilantState:Update(var_4_0, targetList)
 
-	local var_4_2 = pg.TimeMgr.GetInstance():GetCombatTime()
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	if var_4_2 - arg_4_0._sonarCheckTimeStamp >= arg_4_0._sonarFrequency then
-		arg_4_0._vigilantState:SonarDetect(var_4_1)
+	if currentTime - self._sonarCheckTimeStamp >= self._sonarFrequency then
+		self._vigilantState:SonarDetect(targetList)
 
-		arg_4_0._sonarCheckTimeStamp = var_4_2
+		self._sonarCheckTimeStamp = currentTime
 	end
 end
 
-function var_0_1.onAntiSubHateChain(arg_5_0)
-	arg_5_0._vigilantState:HateChain()
+function BattleBuffAntiSubVigilance.onAntiSubHateChain(self)
+	self._vigilantState:HateChain()
 end
 
-function var_0_1.onTeammateShipDying(arg_6_0, arg_6_1, arg_6_2, arg_6_3)
-	arg_6_0._vigilantState:MineExplode()
+function BattleBuffAntiSubVigilance.onTeammateShipDying(self, owner, buff, args)
+	self._vigilantState:MineExplode()
 end
 
-function var_0_1.onSubmarinFreeDive(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
+function BattleBuffAntiSubVigilance.onSubmarinFreeDive(self, owner, buff, args)
 	return
 end
 
-function var_0_1.onSubmarinFreeFloat(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	arg_8_0._vigilantState:SubmarineFloat()
+function BattleBuffAntiSubVigilance.onSubmarinFreeFloat(self, owner, buff, args)
+	self._vigilantState:SubmarineFloat()
 end

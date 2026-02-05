@@ -226,16 +226,16 @@ function BattleBulletUnit.Update(self, timeStamp)
 	end
 end
 
-function BattleBulletUnit.ActiveCldBox(arg_9_0)
-	arg_9_0._cldComponent:SetActive(true)
+function BattleBulletUnit.ActiveCldBox(self)
+	self._cldComponent:SetActive(true)
 end
 
-function BattleBulletUnit.DeactiveCldBox(arg_10_0)
-	arg_10_0._cldComponent:SetActive(false)
+function BattleBulletUnit.DeactiveCldBox(self)
+	self._cldComponent:SetActive(false)
 end
 
-function BattleBulletUnit.SetStartTimeStamp(arg_11_0, arg_11_1)
-	arg_11_0._timeStamp = arg_11_1
+function BattleBulletUnit.SetStartTimeStamp(self, timeStamp)
+	self._timeStamp = timeStamp
 end
 
 -- 被BattleDataProxy.HandleBulletHit调用
@@ -250,12 +250,12 @@ function BattleBulletUnit.Hit(self, shipUID, shipUnitType)
 	self:DispatchEvent(ys.Event.New(BattleBulletEvent.HIT, hitArgs))
 end
 
-function BattleBulletUnit.Intercepted(arg_13_0)
-	arg_13_0:DispatchEvent(ys.Event.New(BattleBulletEvent.INTERCEPTED, {}))
+function BattleBulletUnit.Intercepted(self)
+	self:DispatchEvent(ys.Event.New(BattleBulletEvent.INTERCEPTED, {}))
 end
 
-function BattleBulletUnit.Reflected(arg_14_0)
-	arg_14_0._speed.x = -arg_14_0._speed.x
+function BattleBulletUnit.Reflected(self)
+	self._speed.x = -self._speed.x
 end
 
 -- 被BattleBulletUnit.SetTemplateData调用(用于初始化速度)
@@ -315,63 +315,63 @@ function BattleBulletUnit.SetTemplateData(self, tempData)
 	self:SetDiverFilter()
 end
 
-function BattleBulletUnit.GetModleID(arg_18_0)
-	local var_18_0 = arg_18_0:GetTemplate().extra_param
-	local var_18_1
+function BattleBulletUnit.GetModleID(self)
+	local extra_param = self:GetTemplate().extra_param
+	local modelID
 
-	if arg_18_0._IFF == BattleConfig.FOE_CODE then
-		if arg_18_0._mirrorSkin == BattleBulletUnit.MIRROR_SKIN_RES then
-			var_18_1 = arg_18_0._modleID .. BattleBulletUnit.MIRROR_RES
-		elseif arg_18_0._mirrorSkin == BattleBulletUnit.ORIGNAL_RES and var_18_0.mirror == true then
-			var_18_1 = arg_18_0._modleID .. BattleBulletUnit.MIRROR_RES
+	if self._IFF == BattleConfig.FOE_CODE then
+		if self._mirrorSkin == BattleBulletUnit.MIRROR_SKIN_RES then
+			modelID = self._modleID .. BattleBulletUnit.MIRROR_RES
+		elseif self._mirrorSkin == BattleBulletUnit.ORIGNAL_RES and extra_param.mirror == true then
+			modelID = self._modleID .. BattleBulletUnit.MIRROR_RES
 		else
-			var_18_1 = arg_18_0._modleID
+			modelID = self._modleID
 		end
 	else
-		var_18_1 = arg_18_0._modleID
+		modelID = self._modleID
 	end
 
-	return var_18_1
+	return modelID
 end
 
 BattleBulletUnit.ORIGNAL_RES = -1
 BattleBulletUnit.SKIN_RES = 0
 BattleBulletUnit.MIRROR_SKIN_RES = 1
 
-function BattleBulletUnit.SetModleID(arg_19_0, arg_19_1, arg_19_2, arg_19_3)
-	arg_19_0._modleID = arg_19_1
-	arg_19_0._mirrorSkin = arg_19_2
+function BattleBulletUnit.SetModleID(self, modelID, mirrorSkin, hit_fx)
+	self._modleID = modelID
+	self._mirrorSkin = mirrorSkin
 
-	if arg_19_3 and arg_19_3 ~= "" then
-		arg_19_0._tempData.hit_fx = arg_19_3
+	if hit_fx and hit_fx ~= "" then
+		self._tempData.hit_fx = hit_fx
 	end
 end
 
-function BattleBulletUnit.SetSFXID(arg_20_0, arg_20_1, arg_20_2)
-	if arg_20_1 then
-		arg_20_0._hitSFX = arg_20_1
+function BattleBulletUnit.SetSFXID(self, hitSFX, missSFX)
+	if hitSFX then
+		self._hitSFX = hitSFX
 	end
 
-	if arg_20_2 then
-		arg_20_0._missSFX = arg_20_2
+	if missSFX then
+		self._missSFX = missSFX
 	end
 end
 
-function BattleBulletUnit.SetShiftInfo(arg_21_0, arg_21_1, arg_21_2)
-	local var_21_0 = 0
-	local var_21_1 = 0
-	local var_21_2 = arg_21_0:GetTemplate().extra_param
+function BattleBulletUnit.SetShiftInfo(self, offsetX, offsetZ)
+	local randomLaunchOffsetX = 0
+	local randomLaunchOffsetZ = 0
+	local extra_param = self:GetTemplate().extra_param
 
-	if var_21_2.randomLaunchOffsetX then
-		var_21_0 = math.random() * var_21_2.randomLaunchOffsetX * 2 - var_21_2.randomLaunchOffsetX
+	if extra_param.randomLaunchOffsetX then
+		randomLaunchOffsetX = math.random() * extra_param.randomLaunchOffsetX * 2 - extra_param.randomLaunchOffsetX
 	end
 
-	if var_21_2.randomLaunchOffsetZ then
-		var_21_1 = math.random() * var_21_2.randomLaunchOffsetZ * 2 - var_21_2.randomLaunchOffsetZ
+	if extra_param.randomLaunchOffsetZ then
+		randomLaunchOffsetZ = math.random() * extra_param.randomLaunchOffsetZ * 2 - extra_param.randomLaunchOffsetZ
 	end
 
-	arg_21_0._offsetX = arg_21_1 + var_21_0
-	arg_21_0._offsetZ = arg_21_2 + var_21_1
+	self._offsetX = offsetX + randomLaunchOffsetX
+	self._offsetZ = offsetZ + randomLaunchOffsetZ
 end
 
 function BattleBulletUnit.SetRotateInfo(self, targetPos, baseAngle, barrageAngle)
@@ -390,24 +390,24 @@ function BattleBulletUnit.SetRotateInfo(self, targetPos, baseAngle, barrageAngle
 	end
 end
 
-function BattleBulletUnit.SetBarrageTransformTempate(arg_23_0, arg_23_1)
-	if #arg_23_1 > 0 then
-		arg_23_0._barrageTransData = arg_23_1
+function BattleBulletUnit.SetBarrageTransformTempate(self, transBarrage)
+	if #transBarrage > 0 then
+		self._barrageTransData = transBarrage
 	end
 end
 
-function BattleBulletUnit.SetAttr(arg_24_0, arg_24_1)
-	ys.Battle.BattleAttr.SetAttr(arg_24_0, arg_24_1)
+function BattleBulletUnit.SetAttr(self, attr)
+	ys.Battle.BattleAttr.SetAttr(self, attr)
 end
 
 function BattleBulletUnit.GetAttr(self)
 	return ys.Battle.BattleAttr.GetAttr(self)
 end
 
-function BattleBulletUnit.SetStandHostAttr(arg_26_0, arg_26_1)
-	arg_26_0._standUnit = {}
+function BattleBulletUnit.SetStandHostAttr(self, attr)
+	self._standUnit = {}
 
-	ys.Battle.BattleAttr.SetAttr(arg_26_0._standUnit, arg_26_1)
+	ys.Battle.BattleAttr.SetAttr(self._standUnit, attr)
 end
 
 function BattleBulletUnit.GetWeaponHostAttr(self)
@@ -437,28 +437,28 @@ function BattleBulletUnit.GetWeaponAtkAttr(self)
 	return atkAttr
 end
 
-function BattleBulletUnit.GetWeaponCardPuzzleEnhance(arg_29_0)
-	return arg_29_0._weapon:GetCardPuzzleDamageEnhance()
+function BattleBulletUnit.GetWeaponCardPuzzleEnhance(self)
+	return self._weapon:GetCardPuzzleDamageEnhance()
 end
 
-function BattleBulletUnit.SetDamageEnhance(arg_30_0, arg_30_1)
-	arg_30_0._dmgEnhanceRate = arg_30_1
+function BattleBulletUnit.SetDamageEnhance(self, dmgEnhanceRate)
+	self._dmgEnhanceRate = dmgEnhanceRate
 end
 
-function BattleBulletUnit.GetDamageEnhance(arg_31_0)
-	return arg_31_0._dmgEnhanceRate
+function BattleBulletUnit.GetDamageEnhance(self)
+	return self._dmgEnhanceRate
 end
 
-function BattleBulletUnit.GetAttrByName(arg_32_0, arg_32_1)
-	return ys.Battle.BattleAttr.GetCurrent(arg_32_0, arg_32_1)
+function BattleBulletUnit.GetAttrByName(self, attrName)
+	return ys.Battle.BattleAttr.GetCurrent(self, attrName)
 end
 
-function BattleBulletUnit.GetVerticalSpeed(arg_33_0)
-	return arg_33_0._verticalSpeed
+function BattleBulletUnit.GetVerticalSpeed(self)
+	return self._verticalSpeed
 end
 
-function BattleBulletUnit.IsGravitate(arg_34_0)
-	return arg_34_0._gravity ~= 0
+function BattleBulletUnit.IsGravitate(self)
+	return self._gravity ~= 0
 end
 
 function BattleBulletUnit.SetBuffTrigger(self, host)
@@ -495,36 +495,36 @@ function BattleBulletUnit.BuffTrigger(self, effectType, args)
 	end
 end
 
-function BattleBulletUnit.SetIsCld(arg_38_0, arg_38_1)
-	arg_38_0._needCld = arg_38_1
+function BattleBulletUnit.SetIsCld(self, needCld)
+	self._needCld = needCld
 end
 
-function BattleBulletUnit.GetIsCld(arg_39_0)
-	return arg_39_0._needCld
+function BattleBulletUnit.GetIsCld(self)
+	return self._needCld
 end
 
-function BattleBulletUnit.IsIngoreCld(arg_40_0)
-	return arg_40_0._tempData.extra_param.ingoreCld
+function BattleBulletUnit.IsIngoreCld(self)
+	return self._tempData.extra_param.ingoreCld
 end
 
-function BattleBulletUnit.IsFragile(arg_41_0)
-	return arg_41_0._tempData.extra_param.fragile
+function BattleBulletUnit.IsFragile(self)
+	return self._tempData.extra_param.fragile
 end
 
-function BattleBulletUnit.IsIndiscriminate(arg_42_0)
-	return arg_42_0._tempData.extra_param.indiscriminate
+function BattleBulletUnit.IsIndiscriminate(self)
+	return self._tempData.extra_param.indiscriminate
 end
 
-function BattleBulletUnit.GetExtraTag(arg_43_0)
-	return arg_43_0._tempData.extra_param.tag
-end
--- TODO
-function BattleBulletUnit.AppendDamageUnit(arg_44_0, arg_44_1)
-	arg_44_0._damageList[#arg_44_0._damageList + 1] = arg_44_1
+function BattleBulletUnit.GetExtraTag(self)
+	return self._tempData.extra_param.tag
 end
 
-function BattleBulletUnit.DamageUnitListWriteback(arg_45_0)
-	arg_45_0._weapon:UpdateCombo(arg_45_0._damageList)
+function BattleBulletUnit.AppendDamageUnit(self, damageUnit)
+	self._damageList[#self._damageList + 1] = damageUnit
+end
+
+function BattleBulletUnit.DamageUnitListWriteback(self)
+	self._weapon:UpdateCombo(self._damageList)
 end
 
 function BattleBulletUnit.HasAcceleration(self)
@@ -577,35 +577,35 @@ function BattleBulletUnit.reverseAcceleration(self)
 	end
 end
 
-function BattleBulletUnit.GetDistance(arg_52_0, arg_52_1)
-	local var_52_0 = arg_52_0._battleProxy.FrameIndex
+function BattleBulletUnit.GetDistance(self, target)
+	local frameIndex = self._battleProxy.FrameIndex
 
-	if arg_52_0._frame ~= var_52_0 then
-		arg_52_0._distanceBackup = {}
-		arg_52_0._frame = var_52_0
+	if self._frame ~= frameIndex then
+		self._distanceBackup = {}
+		self._frame = frameIndex
 	end
 
-	local var_52_1 = arg_52_0._distanceBackup[arg_52_1]
+	local distance = self._distanceBackup[target]
 
-	if var_52_1 == nil then
-		var_52_1 = Vector3.Distance(arg_52_0:GetPosition(), arg_52_1:GetPosition())
-		arg_52_0._distanceBackup[arg_52_1] = var_52_1
+	if distance == nil then
+		distance = Vector3.Distance(self:GetPosition(), target:GetPosition())
+		self._distanceBackup[target] = distance
 
-		arg_52_1:backupDistance(arg_52_0, var_52_1)
+		target:backupDistance(self, distance)
 	end
 
-	return var_52_1
+	return distance
 end
 
-function BattleBulletUnit.backupDistance(arg_53_0, arg_53_1, arg_53_2)
-	local var_53_0 = arg_53_0._battleProxy.FrameIndex
+function BattleBulletUnit.backupDistance(self, target, distance)
+	local frameIndex = self._battleProxy.FrameIndex
 
-	if arg_53_0._frame ~= var_53_0 then
-		arg_53_0._distanceBackup = {}
-		arg_53_0._frame = var_53_0
+	if self._frame ~= frameIndex then
+		self._distanceBackup = {}
+		self._frame = frameIndex
 	end
 
-	arg_53_0._distanceBackup[arg_53_1] = arg_53_2
+	self._distanceBackup[target] = distance
 end
 
 function BattleBulletUnit.getTrackingTarget(self)
@@ -616,225 +616,227 @@ function BattleBulletUnit.setTrackingTarget(self, target)
 	self._tarckingTarget = target
 end
 
-function BattleBulletUnit.SetWeapon(arg_56_0, arg_56_1)
-	arg_56_0._weapon = arg_56_1
+function BattleBulletUnit.SetWeapon(self, weapon)
+	self._weapon = weapon
 
-	if arg_56_1 then
-		arg_56_0._correctedDMG = arg_56_0._weapon:GetCorrectedDMG()
+	if weapon then
+		self._correctedDMG = self._weapon:GetCorrectedDMG()
 	end
 end
 
-function BattleBulletUnit.GetWeapon(arg_57_0)
-	return arg_57_0._weapon
+function BattleBulletUnit.GetWeapon(self)
+	return self._weapon
 end
 
-function BattleBulletUnit.GetCorrectedDMG(arg_58_0)
-	return arg_58_0._correctedDMG
+function BattleBulletUnit.GetCorrectedDMG(self)
+	return self._correctedDMG
 end
 
-function BattleBulletUnit.OverrideCorrectedDMG(arg_59_0, arg_59_1)
-	arg_59_0._correctedDMG = BattleFormulas.WeaponDamagePreCorrection(arg_59_0._weapon, arg_59_1)
+function BattleBulletUnit.OverrideCorrectedDMG(self, overrideDamage)
+	self._correctedDMG = BattleFormulas.WeaponDamagePreCorrection(self._weapon, overrideDamage)
 end
 
-function BattleBulletUnit.GetWeaponTempData(arg_60_0)
-	return arg_60_0._weapon:GetTemplateData()
+function BattleBulletUnit.GetWeaponTempData(self)
+	return self._weapon:GetTemplateData()
 end
 
-function BattleBulletUnit.GetPosition(arg_61_0)
-	return arg_61_0._position or Vector3.zero
+function BattleBulletUnit.GetPosition(self)
+	return self._position or Vector3.zero
 end
--- TODO
-function BattleBulletUnit.SetSpawnPosition(arg_62_0, arg_62_1)
-	arg_62_0._spawnPos = arg_62_1
-	arg_62_0._position = arg_62_1:Clone()
 
-	if arg_62_0._gravity ~= 0 then
-		local var_62_0 = math.atan2(arg_62_0._speed.x, arg_62_0._speed.z)
+-- 设置子弹的出生点
+function BattleBulletUnit.SetSpawnPosition(self, spawnPos)
+	self._spawnPos = spawnPos
+	self._position = spawnPos:Clone()
 
-		if var_62_0 == 0 then
-			arg_62_0._verticalSpeed = 0
+	if self._gravity ~= 0 then
+		local speedDirAngle = math.atan2(self._speed.x, self._speed.z)
+
+		if speedDirAngle == 0 then
+			self._verticalSpeed = 0
 		else
-			local var_62_1 = Vector3(math.cos(var_62_0) * 60, math.sin(var_62_0) * 60)
-			local var_62_2 = 60 / arg_62_0._convertedVelocity
+			-- 60是什么意思？
+			local dir = Vector3(math.cos(speedDirAngle) * 60, math.sin(speedDirAngle) * 60)
+			local time = 60 / self._convertedVelocity
 
-			arg_62_0._verticalSpeed = -0.5 * arg_62_0._gravity * var_62_2
+			self._verticalSpeed = -0.5 * self._gravity * time
 		end
 	end
 end
 
-function BattleBulletUnit.GetSpawnPosition(arg_63_0)
-	return arg_63_0._spawnPos
+function BattleBulletUnit.GetSpawnPosition(self)
+	return self._spawnPos
 end
 
-function BattleBulletUnit.GetTemplate(arg_64_0)
-	return arg_64_0._tempData
+function BattleBulletUnit.GetTemplate(self)
+	return self._tempData
 end
 
-function BattleBulletUnit.GetType(arg_65_0)
-	return arg_65_0._tempData.type
+function BattleBulletUnit.GetType(self)
+	return self._tempData.type
 end
 
-function BattleBulletUnit.GetHitSFX(arg_66_0)
-	return arg_66_0._hitSFX
+function BattleBulletUnit.GetHitSFX(self)
+	return self._hitSFX
 end
 
-function BattleBulletUnit.GetMissSFX(arg_67_0)
-	return arg_67_0._missSFX
+function BattleBulletUnit.GetMissSFX(self)
+	return self._missSFX
 end
 
-function BattleBulletUnit.GetOutBound(arg_68_0)
-	return arg_68_0._tempData.out_bound
+function BattleBulletUnit.GetOutBound(self)
+	return self._tempData.out_bound
 end
 
-function BattleBulletUnit.GetUniqueID(arg_69_0)
-	return arg_69_0._uniqueID
+function BattleBulletUnit.GetUniqueID(self)
+	return self._uniqueID
 end
 
-function BattleBulletUnit.GetOffset(arg_70_0)
-	return arg_70_0._offsetX, arg_70_0._offsetZ, arg_70_0._isOffsetPriority
+function BattleBulletUnit.GetOffset(self)
+	return self._offsetX, self._offsetZ, self._isOffsetPriority
 end
 
-function BattleBulletUnit.GetRotateInfo(arg_71_0)
-	return arg_71_0._targetPos, arg_71_0._baseAngle, arg_71_0._barrageAngle
+function BattleBulletUnit.GetRotateInfo(self)
+	return self._targetPos, self._baseAngle, self._barrageAngle
 end
 
-function BattleBulletUnit.IsOutRange(arg_72_0)
-	return arg_72_0._reachDestFlag
+function BattleBulletUnit.IsOutRange(self)
+	return self._reachDestFlag
 end
 
-function BattleBulletUnit.SetYAngle(arg_73_0, arg_73_1)
-	arg_73_0._yAngle = arg_73_1
+function BattleBulletUnit.SetYAngle(self, yAngle)
+	self._yAngle = yAngle
 end
 
-function BattleBulletUnit.SetOffsetPriority(arg_74_0, arg_74_1)
-	arg_74_0._isOffsetPriority = arg_74_1 or false
+function BattleBulletUnit.SetOffsetPriority(self, isOffsetPriority)
+	self._isOffsetPriority = isOffsetPriority or false
 end
 
-function BattleBulletUnit.GetOffsetPriority(arg_75_0)
-	return arg_75_0._isOffsetPriority
+function BattleBulletUnit.GetOffsetPriority(self)
+	return self._isOffsetPriority
 end
 
-function BattleBulletUnit.GetYAngle(arg_76_0)
-	return arg_76_0._yAngle
+function BattleBulletUnit.GetYAngle(self)
+	return self._yAngle
 end
 
-function BattleBulletUnit.GetCurrentYAngle(arg_77_0)
-	local var_77_0 = Vector3.Normalize(arg_77_0._speed)
-	local var_77_1 = math.acos(var_77_0.x) / math.deg2Rad
+function BattleBulletUnit.GetCurrentYAngle(self)
+	local speedDir = Vector3.Normalize(self._speed)
+	local speedDirAngle = math.acos(speedDir.x) / math.deg2Rad
 
-	if var_77_0.z < 0 then
-		var_77_1 = 360 - var_77_1
+	if speedDir.z < 0 then
+		speedDirAngle = 360 - speedDirAngle
 	end
 
-	return var_77_1
+	return speedDirAngle
 end
 
-function BattleBulletUnit.GetIFF(arg_78_0)
-	return arg_78_0._IFF
+function BattleBulletUnit.GetIFF(self)
+	return self._IFF
 end
 
-function BattleBulletUnit.GetHost(arg_79_0)
-	return arg_79_0._host
+function BattleBulletUnit.GetHost(self)
+	return self._host
 end
 
-function BattleBulletUnit.GetPierceCount(arg_80_0)
-	return arg_80_0._pierceCount
-end
--- TODO
-function BattleBulletUnit.AppendAttachBuff(arg_81_0, arg_81_1)
-	arg_81_0._attachBuffList = arg_81_0._attachBuffList or arg_81_0:generateAttachBuffList()
-
-	table.insert(arg_81_0._attachBuffList, arg_81_1)
+function BattleBulletUnit.GetPierceCount(self)
+	return self._pierceCount
 end
 
-function BattleBulletUnit.GetAttachBuff(arg_82_0)
-	arg_82_0._attachBuffList = arg_82_0._attachBuffList or arg_82_0:generateAttachBuffList()
+function BattleBulletUnit.AppendAttachBuff(self, buffConfig)
+	self._attachBuffList = self._attachBuffList or self:generateAttachBuffList()
 
-	return arg_82_0._attachBuffList
+	table.insert(self._attachBuffList, buffConfig)
 end
--- TODO
-function BattleBulletUnit.generateAttachBuffList(arg_83_0)
-	local var_83_0 = {}
 
-	if not arg_83_0:GetTemplate().attach_buff then
+function BattleBulletUnit.GetAttachBuff(self)
+	self._attachBuffList = self._attachBuffList or self:generateAttachBuffList()
+
+	return self._attachBuffList
+end
+
+function BattleBulletUnit.generateAttachBuffList(self)
+	local attachBuffList = {}
+
+	if not self:GetTemplate().attach_buff then
 		local var_83_1 = {}
 	end
 
-	for iter_83_0, iter_83_1 in ipairs(arg_83_0:GetTemplate().attach_buff) do
-		local var_83_2 = {
-			buff_id = iter_83_1.buff_id,
-			level = iter_83_1.buff_level,
-			rant = iter_83_1.rant,
-			hit_ignore = iter_83_1.hit_ignore,
-			group_level = iter_83_1.group_level
+	for _, attachBuff in ipairs(self:GetTemplate().attach_buff) do
+		local buffConfig = {
+			buff_id = attachBuff.buff_id,
+			level = attachBuff.buff_level,
+			rant = attachBuff.rant,
+			hit_ignore = attachBuff.hit_ignore,
+			group_level = attachBuff.group_level
 		}
 
-		table.insert(var_83_0, var_83_2)
+		table.insert(attachBuffList, buffConfig)
 	end
 
-	return var_83_0
+	return attachBuffList
 end
 
-function BattleBulletUnit.GetEffectField(arg_84_0)
-	return arg_84_0._field
+function BattleBulletUnit.GetEffectField(self)
+	return self._field
 end
 
-function BattleBulletUnit.SetDiverFilter(arg_85_0, arg_85_1)
-	if arg_85_1 == nil then
-		arg_85_0._diveFilter = arg_85_0._tempData.extra_param.diveFilter or {
+function BattleBulletUnit.SetDiverFilter(self, diveFilter)
+	if diveFilter == nil then
+		self._diveFilter = self._tempData.extra_param.diveFilter or {
 			2
 		}
 	else
-		arg_85_0._diveFilter = arg_85_1
+		self._diveFilter = diveFilter
 	end
 end
 
-function BattleBulletUnit.GetDiveFilter(arg_86_0)
-	return arg_86_0._diveFilter
+function BattleBulletUnit.GetDiveFilter(self)
+	return self._diveFilter
 end
 
-function BattleBulletUnit.GetVelocity(arg_87_0)
-	return arg_87_0._velocity
+function BattleBulletUnit.GetVelocity(self)
+	return self._velocity
 end
 
-function BattleBulletUnit.GetConvertedVelocity(arg_88_0)
-	return arg_88_0._convertedVelocity
+function BattleBulletUnit.GetConvertedVelocity(self)
+	return self._convertedVelocity
 end
 
-function BattleBulletUnit.GetSpeedExemptKey(arg_89_0)
-	return arg_89_0._speedExemptKey
+function BattleBulletUnit.GetSpeedExemptKey(self)
+	return self._speedExemptKey
 end
 
-function BattleBulletUnit.IsCollided(arg_90_0, arg_90_1)
-	return arg_90_0._collidedList[arg_90_1]
+function BattleBulletUnit.IsCollided(self, target)
+	return self._collidedList[target]
 end
 
-function BattleBulletUnit.GetExist(arg_91_0)
-	return arg_91_0._exist
+function BattleBulletUnit.GetExist(self)
+	return self._exist
 end
 
-function BattleBulletUnit.SetExist(arg_92_0, arg_92_1)
-	arg_92_0._exist = arg_92_1
+function BattleBulletUnit.SetExist(self, exist)
+	self._exist = exist
 end
 
-function BattleBulletUnit.GetIgnoreShield(arg_93_0)
-	return arg_93_0._ignoreShield
+function BattleBulletUnit.GetIgnoreShield(self)
+	return self._ignoreShield
 end
 
-function BattleBulletUnit.SetIgnoreShield(arg_94_0, arg_94_1)
-	arg_94_0._ignoreShield = arg_94_1
+function BattleBulletUnit.SetIgnoreShield(self, ignoreShield)
+	self._ignoreShield = ignoreShield
 end
 
-function BattleBulletUnit.IsAutoRotate(arg_95_0)
-	return arg_95_0._autoRotate
+function BattleBulletUnit.IsAutoRotate(self)
+	return self._autoRotate
 end
 
-function BattleBulletUnit.Dispose(arg_96_0)
-	arg_96_0._dataProxy = nil
+function BattleBulletUnit.Dispose(self)
+	self._dataProxy = nil
 
-	ys.EventDispatcher.DetachEventDispatcher(arg_96_0)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
--- TODO
+
 -- note: 子弹碰撞体初始化
 function BattleBulletUnit.InitCldComponent(self)
 	local cld_box = self:GetTemplate().cld_box
@@ -856,30 +858,30 @@ function BattleBulletUnit.InitCldComponent(self)
 	self._cldComponent:SetCldData(cldData)
 end
 
-function BattleBulletUnit.ResetCldSurface(arg_98_0)
-	local var_98_0 = arg_98_0:GetDiveFilter()
+function BattleBulletUnit.ResetCldSurface(self)
+	local diveFilter = self:GetDiveFilter()
 
-	if var_98_0 and #var_98_0 == 0 then
-		arg_98_0:GetCldData().Surface = BattleConst.OXY_STATE.DIVE
+	if diveFilter and #diveFilter == 0 then
+		self:GetCldData().Surface = BattleConst.OXY_STATE.DIVE
 	else
-		arg_98_0:GetCldData().Surface = BattleConst.OXY_STATE.FLOAT
+		self:GetCldData().Surface = BattleConst.OXY_STATE.FLOAT
 	end
 end
 
-function BattleBulletUnit.GetBoxSize(arg_99_0)
-	return arg_99_0._cldComponent:GetCldBoxSize()
+function BattleBulletUnit.GetBoxSize(self)
+	return self._cldComponent:GetCldBoxSize()
 end
 
 function BattleBulletUnit.GetCldBox(self)
 	return self._cldComponent:GetCldBox(self:GetPosition())
 end
 
-function BattleBulletUnit.GetCldData(arg_101_0)
-	return arg_101_0._cldComponent:GetCldData()
+function BattleBulletUnit.GetCldData(self)
+	return self._cldComponent:GetCldData()
 end
 
-function BattleBulletUnit.GetSpeed(arg_102_0)
-	return arg_102_0._speed
+function BattleBulletUnit.GetSpeed(self)
+	return self._speed
 end
 
 function BattleBulletUnit.GetSpeedRatio(self)
@@ -936,9 +938,9 @@ function BattleBulletUnit.InitSpeed(self, angle)
 	end
 end
 
-function BattleBulletUnit.InheritSpeed(arg_105_0, arg_105_1)
-	arg_105_0._speed = Vector3(arg_105_1.x, arg_105_1.y, arg_105_1.z)
-	arg_105_0._speedInited = true
+function BattleBulletUnit.InheritSpeed(self, speed)
+	self._speed = Vector3(speed.x, speed.y, speed.z)
+	self._speedInited = true
 end
 
 -- 计算速度的大小和方向，得到速度向量
@@ -956,43 +958,43 @@ function BattleBulletUnit.calcSpeed(self)
 	self._speed = Vector3(bulletVelocity * math.cos(yAngle), 0, bulletVelocity * math.sin(yAngle))
 end
 
-function BattleBulletUnit.updateBarrageTransform(arg_107_0, arg_107_1)
-	if not arg_107_0._barrageTransData or #arg_107_0._barrageTransData == 0 then
+function BattleBulletUnit.updateBarrageTransform(self, timeStamp)
+	if not self._barrageTransData or #self._barrageTransData == 0 then
 		return
 	end
 
-	local var_107_0 = arg_107_1 - arg_107_0._timeStamp
-	local var_107_1 = arg_107_0._barrageTransData[1]
+	local elapsedTime = timeStamp - self._timeStamp
+	local transData1 = self._barrageTransData[1]
 
-	if var_107_0 >= var_107_1.transStartDelay then
-		if var_107_1.transAimAngle then
-			arg_107_0._yAngle = var_107_1.transAimAngle
+	if elapsedTime >= transData1.transStartDelay then
+		if transData1.transAimAngle then
+			self._yAngle = transData1.transAimAngle
 		else
-			arg_107_0._yAngle = math.rad2Deg * math.atan2(var_107_1.transAimPosZ - arg_107_0._position.z, var_107_1.transAimPosX - arg_107_0._position.x)
+			self._yAngle = math.rad2Deg * math.atan2(transData1.transAimPosZ - self._position.z, transData1.transAimPosX - self._position.x)
 		end
 
-		arg_107_0:calcSpeed()
-		table.remove(arg_107_0._barrageTransData, 1)
+		self:calcSpeed()
+		table.remove(self._barrageTransData, 1)
 
-		local var_107_2 = arg_107_0._barrageTransData[1]
+		local transData1 = self._barrageTransData[1]
 
-		if var_107_2 then
-			var_107_2.transStartDelay = var_107_2.transStartDelay + var_107_1.transStartDelay
+		if transData1 then
+			transData1.transStartDelay = transData1.transStartDelay + transData1.transStartDelay
 		end
 	end
 end
 
-function BattleBulletUnit.GetCurrentDistance(arg_108_0)
-	return Vector3.Distance(arg_108_0._spawnPos, arg_108_0._position)
+function BattleBulletUnit.GetCurrentDistance(self)
+	return Vector3.Distance(self._spawnPos, self._position)
 end
 
-function BattleBulletUnit.SetOutRangeCallback(arg_109_0, arg_109_1)
-	arg_109_0._outRangeFunc = arg_109_1
+function BattleBulletUnit.SetOutRangeCallback(self, outRangeFunc)
+	self._outRangeFunc = outRangeFunc
 end
 
-function BattleBulletUnit.OutRange(arg_110_0)
-	arg_110_0:DispatchEvent(ys.Event.New(BattleBulletEvent.OUT_RANGE, {}))
-	arg_110_0._outRangeFunc(arg_110_0)
+function BattleBulletUnit.OutRange(self)
+	self:DispatchEvent(ys.Event.New(BattleBulletEvent.OUT_RANGE, {}))
+	self._outRangeFunc(self)
 end
 
 -- 被BattleBulletUnit.SetTemplateData和BattleDataProxy.CreateBulletUnit调用
@@ -1013,14 +1015,14 @@ function BattleBulletUnit.FixRange(self, range, fixRange)
 	self._sqrRange = self._range * self._range
 end
 
-function BattleBulletUnit.ImmuneBombCLS(arg_112_0)
-	return arg_112_0:GetTemplate().extra_param.ignoreB
+function BattleBulletUnit.ImmuneBombCLS(self)
+	return self:GetTemplate().extra_param.ignoreB
 end
 
-function BattleBulletUnit.ImmuneCLS(arg_113_0)
-	return arg_113_0._immuneCLS
+function BattleBulletUnit.ImmuneCLS(self)
+	return self._immuneCLS
 end
 
-function BattleBulletUnit.SetImmuneCLS(arg_114_0, arg_114_1)
-	arg_114_0._immuneCLS = arg_114_1
+function BattleBulletUnit.SetImmuneCLS(self, immuneCLS)
+	self._immuneCLS = immuneCLS
 end

@@ -1,25 +1,27 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAddAttrConvert", var_0_0.Battle.BattleBuffAddAttr)
+local ys = ys
+local BattleBuffAddAttrConvert = class("BattleBuffAddAttrConvert", ys.Battle.BattleBuffAddAttr)
 
-var_0_0.Battle.BattleBuffAddAttrConvert = var_0_1
-var_0_1.__name = "BattleBuffAddAttrConvert"
+ys.Battle.BattleBuffAddAttrConvert = BattleBuffAddAttrConvert
+BattleBuffAddAttrConvert.__name = "BattleBuffAddAttrConvert"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAttrConvert.Ctor(self, effectData)
+	BattleBuffAddAttrConvert.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
+function BattleBuffAddAttrConvert.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._group = arg_3_0._tempData.arg_list.group or arg_3_2:GetID()
-	arg_3_0._attr = arg_3_0._tempData.arg_list.attr
-	arg_3_0._convertAttr = arg_3_0._tempData.arg_list.convertAttr
-	arg_3_0._convertAttrValue = var_0_0.Battle.BattleAttr.GetBase(arg_3_1, arg_3_0._convertAttr)
-	arg_3_0._convertRate = arg_3_0._tempData.arg_list.convertRate
-	arg_3_0._number = (arg_3_0._tempData.arg_list.number or 0) + arg_3_0._convertAttrValue * arg_3_0._convertRate
-	arg_3_0._numberBase = arg_3_0._number
+-- 相比BattleBuffAddAttr，增加了根据转换属性计算数值的逻辑(number = baseNumber + convertAttrValue * convertRate)
+-- convertAttrValue使用的是base值，因此战斗内Buff提高的被转换属性不会影响转换后的数值
+function BattleBuffAddAttrConvert.SetArgs(self, owner, buff)
+	self._group = self._tempData.arg_list.group or buff:GetID()
+	self._attr = self._tempData.arg_list.attr
+	self._convertAttr = self._tempData.arg_list.convertAttr
+	self._convertAttrValue = ys.Battle.BattleAttr.GetBase(owner, self._convertAttr)
+	self._convertRate = self._tempData.arg_list.convertRate
+	self._number = (self._tempData.arg_list.number or 0) + self._convertAttrValue * self._convertRate
+	self._numberBase = self._number
 end

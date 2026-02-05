@@ -1331,8 +1331,8 @@ function BattleDataProxy.SpawnNPC(self, spawnData, caster)
 	unit:SetAI(spawnData.pilotAITemplateID or monsterTemplate.pilot_ai_template_id)
 	self:setShipUnitBound(unit)
 
-	if table.contains(ShipType.SubShipType, var_63_2.type) then
-		var_63_4:InitOxygen()
+	if table.contains(ShipType.SubShipType, monsterTemplate.type) then
+		unit:InitOxygen()
 
 		if unit:GetIFF() ~= BattleConfig.FRIENDLY_CODE then
 			self:UpdateHostileSubmarine(true)

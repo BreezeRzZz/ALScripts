@@ -46,7 +46,6 @@ function BattlePlayerUnit.IsSpectre(self)
 		battleUnitType = BattleConfig.PLAYER_DEFAULT
 	end
 	-- SPECTRE_UNIT_TYPE = -99
-	-- 稍微查了一下，好像部分召唤物才被判定为SPECTRE(幽灵?)
 	return battleUnitType <= BattleConfig.SPECTRE_UNIT_TYPE, battleUnitType
 end
 

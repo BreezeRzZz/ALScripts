@@ -1,28 +1,28 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffAirStrikeCoolDown = class("BattleBuffAirStrikeCoolDown", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffAirStrikeCoolDown.__name = "BattleBuffAirStrikeCoolDown"
+ys.Battle.BattleBuffAirStrikeCoolDown = class("BattleBuffAirStrikeCoolDown", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffAirStrikeCoolDown.__name = "BattleBuffAirStrikeCoolDown"
 
-local var_0_1 = var_0_0.Battle.BattleBuffAirStrikeCoolDown
+local BattleBuffAirStrikeCoolDown = ys.Battle.BattleBuffAirStrikeCoolDown
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAirStrikeCoolDown.Ctor(self, effectData)
+	BattleBuffAirStrikeCoolDown.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._rant = arg_2_0._tempData.arg_list.rant or 10000
+function BattleBuffAirStrikeCoolDown.SetArgs(self, owner, buff)
+	self._rant = self._tempData.arg_list.rant or 10000
 end
 
-function var_0_1.onTrigger(arg_3_0, arg_3_1)
-	var_0_1.super.onTrigger(arg_3_0, arg_3_1, buff, attach)
+function BattleBuffAirStrikeCoolDown.onTrigger(self, owner)
+	BattleBuffAirStrikeCoolDown.super.onTrigger(self, owner, buff, attach)
 
-	if var_0_0.Battle.BattleFormulas.IsHappen(arg_3_0._rant) then
-		local var_3_0 = arg_3_1:GetAirAssistQueue():GetQueueHead()
+	if ys.Battle.BattleFormulas.IsHappen(self._rant) then
+		local airAssist = owner:GetAirAssistQueue():GetQueueHead()
 
-		if var_3_0 then
-			var_3_0:QuickCoolDown()
+		if airAssist then
+			airAssist:QuickCoolDown()
 		end
 	end
 end

@@ -9,22 +9,22 @@ local BattlePointHitWeaponUnit = class("BattlePointHitWeaponUnit", ys.Battle.Bat
 ys.Battle.BattlePointHitWeaponUnit = BattlePointHitWeaponUnit
 BattlePointHitWeaponUnit.__name = "BattlePointHitWeaponUnit"
 
-function BattlePointHitWeaponUnit.Ctor(arg_1_0)
-	BattlePointHitWeaponUnit.super.Ctor(arg_1_0)
+function BattlePointHitWeaponUnit.Ctor(self)
+	BattlePointHitWeaponUnit.super.Ctor(self)
 
 	BattlePointHitWeaponUnit._strikePoint = nil
 	BattlePointHitWeaponUnit._strikeRequire = 1
 	BattlePointHitWeaponUnit._strikeMode = false
 end
 
-function BattlePointHitWeaponUnit.DispatchBlink(arg_2_0, arg_2_1)
-	local var_2_0 = {
-		callbackFunc = arg_2_1,
+function BattlePointHitWeaponUnit.DispatchBlink(self, callbackFunc)
+	local chargeWeaponFinishArgs = {
+		callbackFunc = callbackFunc,
 		timeScale = ys.Battle.BattleConfig.FOCUS_MAP_RATE
 	}
-	local var_2_1 = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FINISH, var_2_0)
+	local chargeWeaponFinishEvent = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FINISH, chargeWeaponFinishArgs)
 
-	arg_2_0:DispatchEvent(var_2_1)
+	self:DispatchEvent(chargeWeaponFinishEvent)
 end
 
 function BattlePointHitWeaponUnit.RemoveAllLock(self)
@@ -151,36 +151,36 @@ function BattlePointHitWeaponUnit.Fire(self, targetPos)
 	return BattlePointHitWeaponUnit.super.Fire(self)
 end
 
-function BattlePointHitWeaponUnit.DoAttack(arg_14_0, arg_14_1)
-	ys.Battle.PlayBattleSFX(arg_14_0._tmpData.fire_sfx)
+function BattlePointHitWeaponUnit.DoAttack(self, target)
+	ys.Battle.PlayBattleSFX(self._tmpData.fire_sfx)
 
-	local var_14_0 = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FIRE, {
-		weapon = arg_14_0
+	local chargeWeaponFireEvent = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FIRE, {
+		weapon = self
 	})
 
-	arg_14_0:DispatchEvent(var_14_0)
-	arg_14_0:cacheBulletID()
-	arg_14_0:TriggerBuffOnSteday()
+	self:DispatchEvent(chargeWeaponFireEvent)
+	self:cacheBulletID()
+	self:TriggerBuffOnSteday()
 
-	for iter_14_0, iter_14_1 in ipairs(arg_14_0._majorEmitterList) do
-		iter_14_1:Ready()
+	for _, emitter in ipairs(self._majorEmitterList) do
+		emitter:Ready()
 	end
 
-	for iter_14_2, iter_14_3 in ipairs(arg_14_0._majorEmitterList) do
-		iter_14_3:Fire(arg_14_1, arg_14_0:GetDirection(), arg_14_0:GetAttackAngle())
-		iter_14_3:SetTimeScale(false)
+	for _, emitter in ipairs(self._majorEmitterList) do
+		emitter:Fire(target, self:GetDirection(), self:GetAttackAngle())
+		emitter:SetTimeScale(false)
 	end
 
-	arg_14_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
-	arg_14_0:TriggerBuffOnFire()
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
+	self:TriggerBuffOnFire()
 	ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[BattleConst.ShakeType.FIRE])
 end
 
-function BattlePointHitWeaponUnit.TriggerBuffOnReady(arg_15_0)
-	if arg_15_0._tmpData.type == BattleConst.EquipmentType.MANUAL_MISSILE then
-		arg_15_0._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_MANUAL_MISSILE_READY, {})
+function BattlePointHitWeaponUnit.TriggerBuffOnReady(self)
+	if self._tmpData.type == BattleConst.EquipmentType.MANUAL_MISSILE then
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_MANUAL_MISSILE_READY, {})
 	else
-		arg_15_0._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_CHARGE_READY, {})
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_CHARGE_READY, {})
 	end
 end
 
@@ -218,33 +218,34 @@ function BattlePointHitWeaponUnit.Spawn(self, bulletID, target, bulletInType)
 	return bullet
 end
 
-function BattlePointHitWeaponUnit.SpawnPointBullet(arg_17_0, arg_17_1, arg_17_2)
-	local var_17_0 = arg_17_0._dataProxy:CreateBulletUnit(arg_17_1, arg_17_0._host, arg_17_0, arg_17_2)
+-- BattlePointHitWeaponUnit.createMajorEmitter的spawnFunc调用
+function BattlePointHitWeaponUnit.SpawnPointBullet(self, bulletID, strikePoint)
+	local bullet = self._dataProxy:CreateBulletUnit(bulletID, self._host, self, strikePoint)
 
-	arg_17_0:TriggerBuffWhenSpawn(var_17_0, BattleConst.BuffEffectType.ON_MANUAL_BULLET_CREATE)
-	arg_17_0:setBulletSkin(var_17_0, arg_17_1)
+	self:TriggerBuffWhenSpawn(bullet, BattleConst.BuffEffectType.ON_MANUAL_BULLET_CREATE)
+	self:setBulletSkin(bullet, bulletID)
+	-- 手动开火的增伤
+	local initialEnhance = self._host:GetAttrByName("initialEnhancement") + self._host:GetAttrByName("manualEnhancement")
 
-	local var_17_1 = arg_17_0._host:GetAttrByName("initialEnhancement") + arg_17_0._host:GetAttrByName("manualEnhancement")
+	bullet:SetDamageEnhance(ys.Battle.BattleConfig.ChargeWeaponConfig.Enhance + initialEnhance)
+	self:TriggerBuffWhenSpawn(bullet)
+	self:TriggerBuffWhenSpawn(bullet, BattleConst.BuffEffectType.ON_INTERNAL_BULLET_CREATE)
 
-	var_17_0:SetDamageEnhance(ys.Battle.BattleConfig.ChargeWeaponConfig.Enhance + var_17_1)
-	arg_17_0:TriggerBuffWhenSpawn(var_17_0)
-	arg_17_0:TriggerBuffWhenSpawn(var_17_0, BattleConst.BuffEffectType.ON_INTERNAL_BULLET_CREATE)
-
-	return var_17_0
+	return bullet
 end
 
-function BattlePointHitWeaponUnit.TriggerBuffOnFire(arg_18_0)
-	if arg_18_0._tmpData.type == BattleConst.EquipmentType.MANUAL_MISSILE then
-		arg_18_0._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_MANUAL_MISSILE_FIRE, {})
+function BattlePointHitWeaponUnit.TriggerBuffOnFire(self)
+	if self._tmpData.type == BattleConst.EquipmentType.MANUAL_MISSILE then
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_MANUAL_MISSILE_FIRE, {})
 	else
-		arg_18_0._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_CHARGE_FIRE, {})
+		self._host:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_CHARGE_FIRE, {})
 	end
 end
 
-function BattlePointHitWeaponUnit.InitialCD(arg_19_0)
-	BattlePointHitWeaponUnit.super.InitialCD(arg_19_0)
-	arg_19_0._playerChargeWeaponVo:InitialDeduct(arg_19_0)
-	arg_19_0._playerChargeWeaponVo:Charge(arg_19_0)
+function BattlePointHitWeaponUnit.InitialCD(self)
+	BattlePointHitWeaponUnit.super.InitialCD(self)
+	self._playerChargeWeaponVo:InitialDeduct(self)
+	self._playerChargeWeaponVo:Charge(self)
 end
 
 function BattlePointHitWeaponUnit.EnterCoolDown(self)
@@ -252,17 +253,17 @@ function BattlePointHitWeaponUnit.EnterCoolDown(self)
 	self._playerChargeWeaponVo:Charge(self)
 end
 
-function BattlePointHitWeaponUnit.OverHeat(arg_21_0)
-	BattlePointHitWeaponUnit.super.OverHeat(arg_21_0)
-	arg_21_0._playerChargeWeaponVo:Deduct(arg_21_0)
+function BattlePointHitWeaponUnit.OverHeat(self)
+	BattlePointHitWeaponUnit.super.OverHeat(self)
+	self._playerChargeWeaponVo:Deduct(self)
 end
 
-function BattlePointHitWeaponUnit.GetMinAngle(arg_22_0)
-	return arg_22_0:GetAttackAngle()
+function BattlePointHitWeaponUnit.GetMinAngle(self)
+	return self:GetAttackAngle()
 end
 
-function BattlePointHitWeaponUnit.GetLockList(arg_23_0)
-	return arg_23_0._lockList
+function BattlePointHitWeaponUnit.GetLockList(self)
+	return self._lockList
 end
 
 function BattlePointHitWeaponUnit.GetFilteredList(self)
@@ -298,73 +299,73 @@ function BattlePointHitWeaponUnit.filterEnemyUnitType(self, filteredList)
 	return filteredPriorityList
 end
 
-function BattlePointHitWeaponUnit.handleCoolDown(arg_26_0)
-	arg_26_0._currentState = arg_26_0.STATE_READY
+function BattlePointHitWeaponUnit.handleCoolDown(self)
+	self._currentState = self.STATE_READY
 
-	arg_26_0._playerChargeWeaponVo:Plus(arg_26_0)
-	arg_26_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_READY, {}))
-	arg_26_0:TriggerBuffOnReady()
+	self._playerChargeWeaponVo:Plus(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_READY, {}))
+	self:TriggerBuffOnReady()
 
-	arg_26_0._CDstartTime = nil
-	arg_26_0._reloadBoostList = {}
+	self._CDstartTime = nil
+	self._reloadBoostList = {}
 end
 
-function BattlePointHitWeaponUnit.FlushReloadMax(arg_27_0, arg_27_1)
-	if BattlePointHitWeaponUnit.super.FlushReloadMax(arg_27_0, arg_27_1) then
+function BattlePointHitWeaponUnit.FlushReloadMax(self, reloadFactor)
+	if BattlePointHitWeaponUnit.super.FlushReloadMax(self, reloadFactor) then
 		return true
 	end
 
-	arg_27_0._playerChargeWeaponVo:RefreshReloadingBar()
+	self._playerChargeWeaponVo:RefreshReloadingBar()
 end
 
-function BattlePointHitWeaponUnit.FlushReloadRequire(arg_28_0)
-	if BattlePointHitWeaponUnit.super.FlushReloadRequire(arg_28_0) then
+function BattlePointHitWeaponUnit.FlushReloadRequire(self)
+	if BattlePointHitWeaponUnit.super.FlushReloadRequire(self) then
 		return true
 	end
 
-	arg_28_0._playerChargeWeaponVo:RefreshReloadingBar()
+	self._playerChargeWeaponVo:RefreshReloadingBar()
 end
 
-function BattlePointHitWeaponUnit.QuickCoolDown(arg_29_0)
-	if arg_29_0._currentState == arg_29_0.STATE_OVER_HEAT then
-		arg_29_0._currentState = arg_29_0.STATE_READY
+function BattlePointHitWeaponUnit.QuickCoolDown(self)
+	if self._currentState == self.STATE_OVER_HEAT then
+		self._currentState = self.STATE_READY
 
-		arg_29_0._playerChargeWeaponVo:InstantCoolDown(arg_29_0)
-		arg_29_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, {}))
+		self._playerChargeWeaponVo:InstantCoolDown(self)
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, {}))
 
-		arg_29_0._CDstartTime = nil
-		arg_29_0._reloadBoostList = {}
+		self._CDstartTime = nil
+		self._reloadBoostList = {}
 	end
 end
 
-function BattlePointHitWeaponUnit.ReloadBoost(arg_30_0, arg_30_1)
-	local var_30_0 = 0
+function BattlePointHitWeaponUnit.ReloadBoost(self, boostFactor)
+	local totalBoost = 0
 
-	for iter_30_0, iter_30_1 in ipairs(arg_30_0._reloadBoostList) do
-		var_30_0 = var_30_0 + iter_30_1
+	for _, boost in ipairs(self._reloadBoostList) do
+		totalBoost = totalBoost + boost
 	end
 
-	local var_30_1 = var_30_0 + arg_30_1
-	local var_30_2 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_30_0._jammingTime - arg_30_0._CDstartTime
-	local var_30_3
+	local totalReloadBoost = totalBoost + boostFactor
+	local reloadedTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._jammingTime - self._CDstartTime
+	local restReloadTime
 
-	if var_30_1 < 0 then
-		var_30_3 = math.max(var_30_1, (arg_30_0._reloadRequire - var_30_2) * -1)
+	if totalReloadBoost < 0 then
+		restReloadTime = math.max(totalReloadBoost, (self._reloadRequire - reloadedTime) * -1)
 	else
-		var_30_3 = math.min(var_30_1, var_30_2)
+		restReloadTime = math.min(totalReloadBoost, reloadedTime)
 	end
 
-	fixValue = var_30_3 - var_30_1 + arg_30_1
+	fixValue = restReloadTime - totalReloadBoost + boostFactor
 
-	table.insert(arg_30_0._reloadBoostList, fixValue)
+	table.insert(self._reloadBoostList, fixValue)
 end
 
-function BattlePointHitWeaponUnit.AppendReloadBoost(arg_31_0, arg_31_1)
-	if arg_31_0._currentState == arg_31_0.STATE_OVER_HEAT then
-		arg_31_0._playerChargeWeaponVo:ReloadBoost(arg_31_0, arg_31_1)
+function BattlePointHitWeaponUnit.AppendReloadBoost(self, boostFactor)
+	if self._currentState == self.STATE_OVER_HEAT then
+		self._playerChargeWeaponVo:ReloadBoost(self, boostFactor)
 	end
 end
 
-function BattlePointHitWeaponUnit.IsStrikeMode(arg_32_0)
-	return arg_32_0._strikeMode
+function BattlePointHitWeaponUnit.IsStrikeMode(self)
+	return self._strikeMode
 end

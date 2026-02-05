@@ -109,15 +109,15 @@ function BattleBuffEffect.SetCommander(self, commander)
 	self._commander = commander
 end
 
-function BattleBuffEffect.SetBullet(arg_10_0, arg_10_1)
+function BattleBuffEffect.SetBullet(self, bullet)
 	return
 end
 
-function BattleBuffEffect.SetArgs(arg_11_0, arg_11_1, arg_11_2)
+function BattleBuffEffect.SetArgs(self, owner, buff)
 	return
 end
 
-function BattleBuffEffect.SetOrb(arg_12_0)
+function BattleBuffEffect.SetOrb(self)
 	return
 end
 

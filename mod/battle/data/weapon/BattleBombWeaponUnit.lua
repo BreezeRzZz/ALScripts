@@ -7,179 +7,180 @@ local BattleBombWeaponUnit = class("BattleBombWeaponUnit", ys.Battle.BattleWeapo
 ys.Battle.BattleBombWeaponUnit = BattleBombWeaponUnit
 BattleBombWeaponUnit.__name = "BattleBombWeaponUnit"
 
-function BattleBombWeaponUnit.Ctor(arg_1_0)
-	BattleBombWeaponUnit.super.Ctor(arg_1_0)
+function BattleBombWeaponUnit.Ctor(self)
+	BattleBombWeaponUnit.super.Ctor(self)
 
-	arg_1_0._alertCache = {}
-	arg_1_0._cacheList = {}
+	self._alertCache = {}
+	self._cacheList = {}
 end
 
-function BattleBombWeaponUnit.Clear(arg_2_0)
-	if arg_2_0._alertTimer then
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_2_0._alertTimer)
+function BattleBombWeaponUnit.Clear(self)
+	if self._alertTimer then
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._alertTimer)
 	end
 
-	arg_2_0._alertTimer = nil
+	self._alertTimer = nil
 
-	for iter_2_0, iter_2_1 in pairs(arg_2_0._cacheList) do
-		iter_2_1:Destroy()
+	for _, emitter in pairs(self._cacheList) do
+		emitter:Destroy()
 	end
 
 	BattleBombWeaponUnit._cacheList = nil
 
-	BattleBombWeaponUnit.super.Clear(arg_2_0)
+	BattleBombWeaponUnit.super.Clear(self)
 end
 
-function BattleBombWeaponUnit.HostOnEnemy(arg_3_0)
-	BattleBombWeaponUnit.super.HostOnEnemy(arg_3_0)
+function BattleBombWeaponUnit.HostOnEnemy(self)
+	BattleBombWeaponUnit.super.HostOnEnemy(self)
+	-- 如果有alertTime，则会等待alertTime(这段时间先显示预警特效)后再真正开火
+	if self._preCastInfo.alertTime ~= nil then
+		self._showPrecastAlert = true
 
-	if arg_3_0._preCastInfo.alertTime ~= nil then
-		arg_3_0._showPrecastAlert = true
-
-		local function var_3_0()
-			arg_3_0._alertTimer:Stop()
-			arg_3_0:Fire()
+		local function onAlertTimerEnds()
+			self._alertTimer:Stop()
+			self:Fire()
 		end
 
-		arg_3_0._alertTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, arg_3_0._preCastInfo.alertTime or 3, var_3_0, true, true)
+		self._alertTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, self._preCastInfo.alertTime or 3, onAlertTimerEnds, true, true)
 	end
 end
 
-function BattleBombWeaponUnit.Update(arg_5_0, arg_5_1)
-	arg_5_0:UpdateReload()
+function BattleBombWeaponUnit.Update(self, timeStamp)
+	self:UpdateReload()
 
-	if arg_5_0._currentState == arg_5_0.STATE_READY then
-		arg_5_0:updateMovementInfo()
+	if self._currentState == self.STATE_READY then
+		self:updateMovementInfo()
 
-		local var_5_0 = arg_5_0:Tracking()
+		local target = self:Tracking()
 
-		if var_5_0 then
-			if arg_5_0._showPrecastAlert then
-				arg_5_0:PreCast(var_5_0)
+		if target then
+			if self._showPrecastAlert then
+				self:PreCast(target)
+			-- 如果没有alert信息，就直接到准备实际开火的状态(跟普通武器一样)
 			else
-				arg_5_0._currentState = arg_5_0.STATE_PRECAST_FINISH
+				self._currentState = self.STATE_PRECAST_FINISH
 			end
 		end
 	end
 
-	if arg_5_0._currentState == arg_5_0.STATE_PRECAST_FINISH then
-		arg_5_0:updateMovementInfo()
+	if self._currentState == self.STATE_PRECAST_FINISH then
+		self:updateMovementInfo()
 
-		local var_5_1 = arg_5_0:Tracking()
-		local var_5_2 = arg_5_0:GetDirection()
-		local var_5_3 = arg_5_0:GetAttackAngle()
+		local target = self:Tracking()
+		local direction = self:GetDirection()
+		local attackAngle = self:GetAttackAngle()
 
-		for iter_5_0, iter_5_1 in ipairs(arg_5_0._majorEmitterList) do
-			iter_5_1:Ready()
+		for _, emitter in ipairs(self._majorEmitterList) do
+			emitter:Ready()
 		end
 
-		for iter_5_2, iter_5_3 in ipairs(arg_5_0._majorEmitterList) do
-			iter_5_3:Fire(var_5_1, var_5_2, var_5_3)
+		for _, emitter in ipairs(self._majorEmitterList) do
+			emitter:Fire(target, direction, attackAngle)
 		end
 
-		BattleBombWeaponUnit.super.Fire(arg_5_0, var_5_1)
+		BattleBombWeaponUnit.super.Fire(self, target)
 	end
 end
 
-function BattleBombWeaponUnit.PreCast(arg_6_0, arg_6_1)
-	arg_6_0:cacheBulletID()
+function BattleBombWeaponUnit.PreCast(self, target)
+	self:cacheBulletID()
 
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._majorEmitterList) do
-		iter_6_1:Ready()
+	for _, emitter in ipairs(self._majorEmitterList) do
+		emitter:Ready()
 	end
 
-	for iter_6_2, iter_6_3 in ipairs(arg_6_0._majorEmitterList) do
-		iter_6_3:Fire(arg_6_1, arg_6_0:GetDirection(), arg_6_0:GetAttackAngle())
+	for _, emitter in ipairs(self._majorEmitterList) do
+		emitter:Fire(target, self:GetDirection(), self:GetAttackAngle())
 	end
 
-	BattleBombWeaponUnit.super.PreCast(arg_6_0)
-	arg_6_0._alertTimer:Start()
+	BattleBombWeaponUnit.super.PreCast(self)
+	self._alertTimer:Start()
 end
 
-function BattleBombWeaponUnit.AddPreCastTimer(arg_7_0)
-	local function var_7_0()
-		arg_7_0._currentState = arg_7_0.STATE_OVER_HEAT
+function BattleBombWeaponUnit.AddPreCastTimer(self)
+	local function onPrecastTimerEnds()
+		self._currentState = self.STATE_OVER_HEAT
 
-		arg_7_0:RemovePrecastTimer()
+		self:RemovePrecastTimer()
 
-		local var_8_0 = arg_7_0._preCastInfo
-		local var_8_1 = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, var_8_0)
+		local precastInfo = self._preCastInfo
+		local precastEvent = ys.Event.New(ys.Battle.BattleUnitEvent.WEAPON_PRE_CAST_FINISH, precastInfo)
 
-		arg_7_0._host:SetWeaponPreCastBound(false)
-		arg_7_0:DispatchEvent(var_8_1)
+		self._host:SetWeaponPreCastBound(false)
+		self:DispatchEvent(precastEvent)
 	end
 
-	arg_7_0._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponPrecastTimer", 0, arg_7_0._preCastInfo.time, var_7_0, true)
+	self._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponPrecastTimer", 0, self._preCastInfo.time, onPrecastTimerEnds, true)
 end
 
-function BattleBombWeaponUnit.createMajorEmitter(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4, arg_9_5)
-	local var_9_0 = {}
+function BattleBombWeaponUnit.createMajorEmitter(self, barrageID, index, emitter, paramSpawnFunc, paramStopFunc)
+	local cachedBulletList = {}
 	local var_9_1
 
-	local function var_9_2()
-		arg_9_0:DispatchBulletEvent(table.remove(var_9_0, 1))
+	local function cachedSpawnFunc()
+		self:DispatchBulletEvent(table.remove(cachedBulletList, 1))
 	end
 
 	local var_9_3
 
-	local function var_9_4()
-		for iter_11_0, iter_11_1 in ipairs(arg_9_0._cacheList) do
-			if iter_11_1:GetState() ~= iter_11_1.STATE_STOP then
+	local function cachedStopFunc()
+		for _, cachedEmitter in ipairs(self._cacheList) do
+			if cachedEmitter:GetState() ~= cachedEmitter.STATE_STOP then
 				return
 			end
 		end
 
-		arg_9_0:EnterCoolDown()
+		self:EnterCoolDown()
 	end
 
-	local var_9_5 = ys.Battle.BattleBulletEmitter.New(var_9_2, var_9_4, arg_9_1)
+	local cachedEmitter = ys.Battle.BattleBulletEmitter.New(cachedSpawnFunc, cachedStopFunc, barrageID)
 
-	arg_9_0._cacheList[var_9_5] = var_9_5
+	self._cacheList[cachedEmitter] = cachedEmitter
 
-	local function var_9_6(arg_12_0, arg_12_1, arg_12_2, arg_12_3, arg_12_4)
-		local var_12_0 = arg_9_0._emitBulletIDList[arg_9_2]
-		local var_12_1 = arg_9_0:Spawn(var_12_0, arg_12_4)
+	local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority, target)
+		local bulletID = self._emitBulletIDList[index]
+		local bullet = self:Spawn(bulletID, target)
 
-		var_12_1:SetOffsetPriority(arg_12_3)
-		var_12_1:SetShiftInfo(arg_12_0, arg_12_1)
+		bullet:SetOffsetPriority(isOffsetPriority)
+		bullet:SetShiftInfo(offsetX, offsetZ)
 
-		if arg_9_0._tmpData.aim_type == ys.Battle.BattleConst.WeaponAimType.AIM and arg_12_4 ~= nil then
-			var_12_1:SetRotateInfo(arg_12_4:GetBeenAimedPosition(), arg_9_0:GetBaseAngle(), arg_12_2)
+		if self._tmpData.aim_type == ys.Battle.BattleConst.WeaponAimType.AIM and target ~= nil then
+			bullet:SetRotateInfo(target:GetBeenAimedPosition(), self:GetBaseAngle(), barrageAngle)
 		else
-			var_12_1:SetRotateInfo(nil, arg_9_0:GetBaseAngle(), arg_12_2)
+			bullet:SetRotateInfo(nil, self:GetBaseAngle(), barrageAngle)
 		end
 
-		table.insert(var_9_0, var_12_1)
-		arg_9_0:showBombAlert(var_12_1)
+		table.insert(cachedBulletList, bullet)
+		self:showBombAlert(bullet)
 	end
 
-	local function var_9_7()
+	local function stopFunc()
 		return
 	end
 
-	BattleBombWeaponUnit.super.createMajorEmitter(arg_9_0, arg_9_1, arg_9_2, nil, var_9_6, var_9_7)
+	BattleBombWeaponUnit.super.createMajorEmitter(self, barrageID, index, nil, spawnFunc, stopFunc)
 end
 
-function BattleBombWeaponUnit.DoAttack(arg_14_0)
-	arg_14_0:TriggerBuffOnSteday()
+function BattleBombWeaponUnit.DoAttack(self)
+	self:TriggerBuffOnSteday()
 
-	for iter_14_0, iter_14_1 in pairs(arg_14_0._cacheList) do
-		iter_14_1:Ready()
+	for _, emitter in pairs(self._cacheList) do
+		emitter:Ready()
 	end
 
-	for iter_14_2, iter_14_3 in pairs(arg_14_0._cacheList) do
-		iter_14_3:Fire(nil, arg_14_0:GetDirection())
+	for _, emitter in pairs(self._cacheList) do
+		emitter:Fire(nil, self:GetDirection())
 	end
 
-	ys.Battle.PlayBattleSFX(arg_14_0._tmpData.fire_sfx)
-	arg_14_0:TriggerBuffOnFire()
-	arg_14_0:CheckAndShake()
+	ys.Battle.PlayBattleSFX(self._tmpData.fire_sfx)
+	self:TriggerBuffOnFire()
+	self:CheckAndShake()
 end
 
-function BattleBombWeaponUnit.showBombAlert(arg_15_0, arg_15_1)
-	arg_15_1:SetExist(false)
+function BattleBombWeaponUnit.showBombAlert(self, bullet)
+	bullet:SetExist(false)
 
-	if arg_15_1:GetTemplate().alert_fx ~= "" then
-		ys.Battle.BattleBombBulletFactory.CreateBulletAlert(arg_15_1)
+	if bullet:GetTemplate().alert_fx ~= "" then
+		ys.Battle.BattleBombBulletFactory.CreateBulletAlert(bullet)
 	end
 end

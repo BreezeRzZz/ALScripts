@@ -1833,7 +1833,9 @@ function Ship.getProperties(self, commanders, inDuel, inWorld, techNotAdjusted)
 		local commanderAttrValue = 0
 
 		for _, commander in pairs(commanders) do
+			-- 能力加成
 			commanderAttrRatio = commanderAttrRatio + commander:getAttrRatioAddition(property, nationality, type) / 100
+			-- 天赋加成
 			commanderAttrValue = commanderAttrValue + commander:getAttrValueAddition(property, nationality, type)
 		end
 		-- 如上所述，此处equipRates基本全0，因此可忽略

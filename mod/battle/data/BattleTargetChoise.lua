@@ -43,99 +43,103 @@ function BattleTargetChoise.TargetSpectreUnit(caster, argList, candidateList)
 	return targetList
 end
 
-function BattleTargetChoise.TargetTemplate(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = arg_6_1.targetTemplateIDList or {
-		arg_6_1.targetTemplateID
+function BattleTargetChoise.TargetTemplate(caster, argList, candidateList)
+	local targetTemplateIDList = argList.targetTemplateIDList or {
+		argList.targetTemplateID
 	}
-	local var_6_1 = arg_6_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_6_2 = {}
-	local var_6_3 = arg_6_0:GetIFF()
+	-- 无传参，则默认从所有实体单位中选取
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
 
-	for iter_6_0, iter_6_1 in pairs(var_6_1) do
-		local var_6_4 = iter_6_1:GetTemplateID()
-		local var_6_5 = iter_6_1:GetIFF()
-
-		if table.contains(var_6_0, var_6_4) and var_6_3 == var_6_5 then
-			var_6_2[#var_6_2 + 1] = iter_6_1
+	for _, candidate in pairs(_candidateList) do
+		local candidateTempID = candidate:GetTemplateID()
+		local candidateIFF = candidate:GetIFF()
+		-- 需要参数中指定的模板ID，且在同边
+		if table.contains(targetTemplateIDList, candidateTempID) and casterIFF == candidateIFF then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_6_2
+	return targetList
 end
 
-function BattleTargetChoise.TargetNationality(arg_7_0, arg_7_1, arg_7_2)
-	if not arg_7_1.targetTemplateIDList then
-		({})[1] = arg_7_1.targetTemplateID
+function BattleTargetChoise.TargetNationality(caster, argList, candidateList)
+	if not argList.targetTemplateIDList then
+		({})[1] = argList.targetTemplateID
 	end
+	-- 无传参，则默认从所有单位中选取
+	local _candidateList = candidateList or ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
+	local targetList = {}
+	local nationality = argList.nationality
+	local nationalityType = type(nationality)
 
-	local var_7_0 = arg_7_2 or ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
-	local var_7_1 = {}
-	local var_7_2 = arg_7_1.nationality
-	local var_7_3 = type(var_7_2)
-
-	for iter_7_0, iter_7_1 in pairs(var_7_0) do
-		if var_7_3 == "number" then
-			if iter_7_1:GetTemplate().nationality == var_7_2 then
-				var_7_1[#var_7_1 + 1] = iter_7_1
+	for _, candidate in pairs(_candidateList) do
+		if nationalityType == "number" then
+			if candidate:GetTemplate().nationality == nationality then
+				targetList[#targetList + 1] = candidate
 			end
-		elseif var_7_3 == "table" and table.contains(var_7_2, iter_7_1:GetTemplate().nationality) then
-			var_7_1[#var_7_1 + 1] = iter_7_1
+		elseif nationalityType == "table" and table.contains(nationality, candidate:GetTemplate().nationality) then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_7_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetShipType(arg_8_0, arg_8_1, arg_8_2)
-	local var_8_0 = arg_8_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_8_1 = {}
-	local var_8_2 = arg_8_1.ship_type_list
+function BattleTargetChoise.TargetShipType(caster, argList, candidateList)
+	-- 无传参，则默认从所有实体单位中选取
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
+	local shipTypeList = argList.ship_type_list
 
-	for iter_8_0, iter_8_1 in pairs(var_8_0) do
-		local var_8_3 = iter_8_1:GetTemplate().type
+	for _, candidate in pairs(_candidateList) do
+		local candidateType = candidate:GetTemplate().type
 
-		if table.contains(var_8_2, var_8_3) then
-			var_8_1[#var_8_1 + 1] = iter_8_1
+		if table.contains(shipTypeList, candidateType) then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_8_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetShipTag(arg_9_0, arg_9_1, arg_9_2)
-	local var_9_0 = arg_9_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_9_1 = {}
-	local var_9_2 = arg_9_1.ship_tag_list
+function BattleTargetChoise.TargetShipTag(caster, argList, candidateList)
+	-- 无传参，则默认从所有实体单位中选取
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
+	local shipTagList = argList.ship_tag_list
 
-	for iter_9_0, iter_9_1 in pairs(var_9_0) do
-		if iter_9_1:ContainsLabelTag(var_9_2) then
-			var_9_1[#var_9_1 + 1] = iter_9_1
+	for _, candidate in pairs(_candidateList) do
+		if candidate:ContainsLabelTag(shipTagList) then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_9_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetShipArmor(arg_10_0, arg_10_1, arg_10_2)
-	local var_10_0 = arg_10_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_10_1 = {}
-	local var_10_2 = arg_10_1.armor_type
+function BattleTargetChoise.TargetShipArmor(caster, argList, candidateList)
+	-- 无传参，则默认从所有实体单位中选取
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
+	local armorType = argList.armor_type
 
-	for iter_10_0, iter_10_1 in ipairs(var_10_0) do
-		if iter_10_1:GetAttrByName("armorType") == var_10_2 then
-			var_10_1[#var_10_1 + 1] = iter_10_1
+	for _, candidate in ipairs(_candidateList) do
+		if candidate:GetAttrByName("armorType") == armorType then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_10_1
+	return targetList
 end
 
 function BattleTargetChoise.getShipListByIFF(IFF)
 	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 	local candidateList
-	-- 到底哪些属于friendlyList，比如召唤出的单位算不算？
-	-- 粗看下来不算
-	-- 潜艇也计入
+	-- 友方召唤物不属于friendlyShipList
+	-- 潜艇也属于friendShipList
+	-- 敌方召唤物属于foeShipList
 	if IFF == BattleConfig.FRIENDLY_CODE then
 		candidateList = battleDataProxy:GetFriendlyShipList()
 	elseif IFF == BattleConfig.FOE_CODE then
@@ -514,18 +518,18 @@ function BattleTargetChoise.TargetFoeUncloak(arg_29_0, arg_29_1, arg_29_2)
 	return var_29_0
 end
 
-function BattleTargetChoise.TargetCloakState(arg_30_0, arg_30_1, arg_30_2)
-	local var_30_0 = {}
-	local var_30_1 = arg_30_1.cloak or 1
-	local var_30_2 = arg_30_2 or BattleTargetChoise.TargetEntityUnit()
+function BattleTargetChoise.TargetCloakState(caster, argList, candidateList)
+	local targetList = {}
+	local cloakState = argList.cloak or 1
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	for iter_30_0, iter_30_1 in ipairs(var_30_2) do
-		if BattleAttr.GetCurrent(iter_30_1, "isCloak") == var_30_1 then
-			var_30_0[#var_30_0 + 1] = iter_30_1
+	for _, candidate in ipairs(_candidateList) do
+		if BattleAttr.GetCurrent(candidate, "isCloak") == cloakState then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_30_0
+	return targetList
 end
 
 function BattleTargetChoise.TargetFaintState(arg_31_0, arg_31_1, arg_31_2)
@@ -568,7 +572,7 @@ function BattleTargetChoise.TargetNearest(arg_32_0, arg_32_1, arg_32_2)
 		var_32_1
 	}
 end
--- TODO
+
 function BattleTargetChoise.TargetHarmNearest(caster, argList, candidateList)
 	argList = argList or {}
 

@@ -98,6 +98,8 @@ end
 --- @param attr table<string, number>: 属性表
 --- @return nil
 --- 设置属性到host
+--- 此处是引用赋值，因此结算的时候，用的实际是host的属性表
+--- 例外是BattleBuffAddBulletAttr中，会克隆一份属性表再进行修改，所以不会影响host的属性表，结算使用Bullet的属性表(会体现出"快照"效果)
 function BattleAttr.SetAttr(host, attr)
 	host._attr = setmetatable({}, {
 		__index = attr

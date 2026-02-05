@@ -9,44 +9,44 @@ local BattlePointAirStrikeUnit = class("BattlePointAirStrikeUnit", ys.Battle.Bat
 ys.Battle.BattlePointAirStrikeUnit = BattlePointAirStrikeUnit
 BattlePointAirStrikeUnit.__name = "BattlePointAirStrikeUnit"
 
-function BattlePointAirStrikeUnit.Ctor(arg_1_0)
-	BattlePointAirStrikeUnit.super.Ctor(arg_1_0)
+function BattlePointAirStrikeUnit.Ctor(self)
+	BattlePointAirStrikeUnit.super.Ctor(self)
 
 	BattlePointAirStrikeUnit._strikePoint = nil
 	BattlePointAirStrikeUnit._strikeMode = false
 end
 
-function BattlePointAirStrikeUnit.RemoveAllLock(arg_2_0)
-	arg_2_0._lockList = {}
+function BattlePointAirStrikeUnit.RemoveAllLock(self)
+	self._lockList = {}
 end
 
-function BattlePointAirStrikeUnit.Charge(arg_3_0)
-	arg_3_0._currentState = arg_3_0.STATE_PRECAST
-	arg_3_0._lockList = {}
+function BattlePointAirStrikeUnit.Charge(self)
+	self._currentState = self.STATE_PRECAST
+	self._lockList = {}
 
-	local var_3_0 = {}
-	local var_3_1 = ys.Event.New(BattleUnitEvent.POINT_HIT_CHARGE, var_3_0)
+	local pointHitChargeArgs = {}
+	local pointHitChargeEvent = ys.Event.New(BattleUnitEvent.POINT_HIT_CHARGE, pointHitChargeArgs)
 
-	arg_3_0:DispatchEvent(var_3_1)
+	self:DispatchEvent(pointHitChargeEvent)
 
-	arg_3_0._strikeMode = true
+	self._strikeMode = true
 end
 
-function BattlePointAirStrikeUnit.CancelCharge(arg_4_0)
-	if arg_4_0._currentState ~= arg_4_0.STATE_PRECAST then
+function BattlePointAirStrikeUnit.CancelCharge(self)
+	if self._currentState ~= self.STATE_PRECAST then
 		return
 	end
 
-	arg_4_0:RemoveAllLock()
+	self:RemoveAllLock()
 
-	arg_4_0._currentState = arg_4_0.STATE_READY
+	self._currentState = self.STATE_READY
 
-	local var_4_0 = {}
-	local var_4_1 = ys.Event.New(BattleUnitEvent.POINT_HIT_CANCEL, var_4_0)
+	local pointHitCancelArgs = {}
+	local pointHitCancelEvent = ys.Event.New(BattleUnitEvent.POINT_HIT_CANCEL, pointHitCancelArgs)
 
-	arg_4_0:DispatchEvent(var_4_1)
+	self:DispatchEvent(pointHitCancelEvent)
 
-	arg_4_0._strikeMode = nil
+	self._strikeMode = nil
 end
 
 function BattlePointAirStrikeUnit.SetAirUnit(self, hiveIDList)
@@ -63,135 +63,135 @@ function BattlePointAirStrikeUnit.SetAirUnit(self, hiveIDList)
 	end
 end
 
-function BattlePointAirStrikeUnit.DoAttack(arg_6_0, arg_6_1)
-	ys.Battle.PlayBattleSFX(arg_6_0._tmpData.fire_sfx)
+function BattlePointAirStrikeUnit.DoAttack(self, target)
+	ys.Battle.PlayBattleSFX(self._tmpData.fire_sfx)
 
-	local var_6_0 = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FIRE, {
-		weapon = arg_6_0
+	local chargeWeaponFireEvent = ys.Event.New(BattleUnitEvent.CHARGE_WEAPON_FIRE, {
+		weapon = self
 	})
 
-	arg_6_0:DispatchEvent(var_6_0)
-	arg_6_0._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE_STEADY, {})
+	self:DispatchEvent(chargeWeaponFireEvent)
+	self._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE_STEADY, {})
 
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._hiveList) do
-		local var_6_1 = arg_6_0._strikePoint or arg_6_0._lockList[1]:GetPosition()
+	for _, hive in ipairs(self._hiveList) do
+		local strikePoint = self._strikePoint or self._lockList[1]:GetPosition()
 
-		iter_6_1:SetStrikePoint(var_6_1)
-		iter_6_1:updateMovementInfo()
-		iter_6_1:SingleFire()
+		hive:SetStrikePoint(strikePoint)
+		hive:updateMovementInfo()
+		hive:SingleFire()
 	end
 
-	arg_6_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
-	arg_6_0:TriggerBuffOnFire()
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
+	self:TriggerBuffOnFire()
 
-	arg_6_0._strikePoint = nil
+	self._strikePoint = nil
 
-	arg_6_0:RemoveAllLock()
+	self:RemoveAllLock()
 end
 
-function BattlePointAirStrikeUnit.SetReloadTime(arg_7_0, arg_7_1)
-	arg_7_0._reloadMax = arg_7_1
+function BattlePointAirStrikeUnit.SetReloadTime(self, reloadMax)
+	self._reloadMax = reloadMax
 end
 
-function BattlePointAirStrikeUnit.AddCDTimer(arg_8_0, arg_8_1)
-	arg_8_0._currentState = arg_8_0.STATE_OVER_HEAT
-	arg_8_0._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_8_0._reloadRequire = arg_8_1
+function BattlePointAirStrikeUnit.AddCDTimer(self, reloadRequire)
+	self._currentState = self.STATE_OVER_HEAT
+	self._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._reloadRequire = reloadRequire
 end
 
-function BattlePointAirStrikeUnit.TriggerBuffOnReady(arg_9_0)
-	arg_9_0._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE_READY, {})
+function BattlePointAirStrikeUnit.TriggerBuffOnReady(self)
+	self._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE_READY, {})
 end
 
-function BattlePointAirStrikeUnit.TriggerBuffOnFire(arg_10_0)
-	arg_10_0._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE, {})
+function BattlePointAirStrikeUnit.TriggerBuffOnFire(self)
+	self._host:TriggerBuff(BattleConst.BuffEffectType.ON_POINT_STRIKE, {})
 end
 
-function BattlePointAirStrikeUnit.GetReloadFinishTimeStamp(arg_11_0)
-	local var_11_0 = 0
+function BattlePointAirStrikeUnit.GetReloadFinishTimeStamp(self)
+	local totalBoost = 0
 
-	for iter_11_0, iter_11_1 in ipairs(arg_11_0._reloadBoostList) do
-		var_11_0 = var_11_0 + iter_11_1
+	for _, boost in ipairs(self._reloadBoostList) do
+		totalBoost = totalBoost + boost
 	end
 
-	return arg_11_0._reloadRequire + arg_11_0._CDstartTime + arg_11_0._jammingTime + var_11_0
+	return self._reloadRequire + self._CDstartTime + self._jammingTime + totalBoost
 end
 
-function BattlePointAirStrikeUnit.GetLockList(arg_12_0)
-	return arg_12_0._lockList
+function BattlePointAirStrikeUnit.GetLockList(self)
+	return self._lockList
 end
 
-function BattlePointAirStrikeUnit.GetFilteredList(arg_13_0)
-	local var_13_0 = BattlePointAirStrikeUnit.super.GetFilteredList(arg_13_0)
+function BattlePointAirStrikeUnit.GetFilteredList(self)
+	local filteredList = BattlePointAirStrikeUnit.super.GetFilteredList(self)
 
-	return (arg_13_0:filterEnemyUnitType(var_13_0))
+	return (self:filterEnemyUnitType(filteredList))
 end
 
-function BattlePointAirStrikeUnit.filterEnemyUnitType(arg_14_0, arg_14_1)
-	local var_14_0 = {}
-	local var_14_1 = {}
-	local var_14_2 = -9999
+function BattlePointAirStrikeUnit.filterEnemyUnitType(self, filteredList)
+	local filteredPriorityList = {}
+	local candidateList = {}
+	local maxPriority = -9999
 
-	for iter_14_0, iter_14_1 in ipairs(arg_14_1) do
-		local var_14_3 = iter_14_1:GetTargetedPriority()
+	for _, candidate in ipairs(filteredList) do
+		local targetedPriority = candidate:GetTargetedPriority()
 
-		if var_14_3 == nil then
-			var_14_1[#var_14_1 + 1] = iter_14_1
-		elseif var_14_2 < var_14_3 then
-			var_14_2 = var_14_3
-			var_14_0 = {}
-			var_14_0[#var_14_0 + 1] = iter_14_1
-		elseif var_14_2 == var_14_3 then
-			var_14_0[#var_14_0 + 1] = iter_14_1
+		if targetedPriority == nil then
+			candidateList[#candidateList + 1] = candidate
+		elseif maxPriority < targetedPriority then
+			maxPriority = targetedPriority
+			filteredPriorityList = {}
+			filteredPriorityList[#filteredPriorityList + 1] = candidate
+		elseif maxPriority == targetedPriority then
+			filteredPriorityList[#filteredPriorityList + 1] = candidate
 		end
 	end
 
-	for iter_14_2, iter_14_3 in ipairs(var_14_1) do
-		var_14_0[#var_14_0 + 1] = iter_14_3
+	for _, candidate in ipairs(candidateList) do
+		filteredPriorityList[#filteredPriorityList + 1] = candidate
 	end
 
-	return var_14_0
+	return filteredPriorityList
 end
 
-function BattlePointAirStrikeUnit.handleCoolDown(arg_15_0)
-	arg_15_0._currentState = arg_15_0.STATE_READY
+function BattlePointAirStrikeUnit.handleCoolDown(self)
+	self._currentState = self.STATE_READY
 
-	arg_15_0._playerChargeWeaponVo:Plus(arg_15_0)
-	arg_15_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_READY, {}))
-	arg_15_0:TriggerBuffOnReady()
+	self._playerChargeWeaponVo:Plus(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_READY, {}))
+	self:TriggerBuffOnReady()
 
-	arg_15_0._CDstartTime = nil
-	arg_15_0._reloadBoostList = {}
+	self._CDstartTime = nil
+	self._reloadBoostList = {}
 end
 
-function BattlePointAirStrikeUnit.FlushReloadMax(arg_16_0, arg_16_1)
-	if BattlePointAirStrikeUnit.super.FlushReloadMax(arg_16_0, arg_16_1) then
+function BattlePointAirStrikeUnit.FlushReloadMax(self, reloadFactor)
+	if BattlePointAirStrikeUnit.super.FlushReloadMax(self, reloadFactor) then
 		return true
 	end
 
-	arg_16_0._playerChargeWeaponVo:RefreshReloadingBar()
+	self._playerChargeWeaponVo:RefreshReloadingBar()
 end
 
-function BattlePointAirStrikeUnit.FlushReloadRequire(arg_17_0)
-	if BattlePointAirStrikeUnit.super.FlushReloadRequire(arg_17_0) then
+function BattlePointAirStrikeUnit.FlushReloadRequire(self)
+	if BattlePointAirStrikeUnit.super.FlushReloadRequire(self) then
 		return true
 	end
 
-	arg_17_0._playerChargeWeaponVo:RefreshReloadingBar()
+	self._playerChargeWeaponVo:RefreshReloadingBar()
 end
 
-function BattlePointAirStrikeUnit.QuickCoolDown(arg_18_0)
-	if arg_18_0._currentState == arg_18_0.STATE_OVER_HEAT then
-		arg_18_0._currentState = arg_18_0.STATE_READY
+function BattlePointAirStrikeUnit.QuickCoolDown(self)
+	if self._currentState == self.STATE_OVER_HEAT then
+		self._currentState = self.STATE_READY
 
-		arg_18_0._playerChargeWeaponVo:InstantCoolDown(arg_18_0)
-		arg_18_0:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, {}))
+		self._playerChargeWeaponVo:InstantCoolDown(self)
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_INSTANT_READY, {}))
 
-		arg_18_0._CDstartTime = nil
-		arg_18_0._reloadBoostList = {}
+		self._CDstartTime = nil
+		self._reloadBoostList = {}
 	end
 end
 
-function BattlePointAirStrikeUnit.IsStrikeMode(arg_19_0)
-	return arg_19_0._strikeMode
+function BattlePointAirStrikeUnit.IsStrikeMode(self)
+	return self._strikeMode
 end

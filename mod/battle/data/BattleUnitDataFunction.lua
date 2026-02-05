@@ -803,6 +803,7 @@ function BattleDataFunction.GetEnvironmentBehaviour(arg_47_0)
 end
 
 -- 添加驱逐舰的满破加成
+-- 被BattleDataProxy.generatePlayerUnit调用
 function BattleDataFunction.AttachUltimateBonus(playerUnit)
 	local shipID = playerUnit:GetTemplateID()
 
@@ -847,6 +848,7 @@ function BattleDataFunction.AuxBoost(playerUnit)
 						-- 一个要注意的点是不向下取整
 						-- 这和平常稍有不同，因为平常的装备加成这部分都是整数，所以一般Base属性也是整数
 						-- 但这里乘以AuxBoostValue后，可能会变成小数
+					-- 这部分额外的属性值，不计入综合性能计算
 					local newBattleAttrValue = BattleAttr.GetBase(playerUnit, battleAttrName) + attrValue * BattleConst.UltimateBonus.AuxBoostValue
 
 					BattleAttr.SetCurrent(playerUnit, battleAttrName, newBattleAttrValue)

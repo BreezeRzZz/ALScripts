@@ -1,55 +1,55 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffAddAttrRatioBloodrage", var_0_0.Battle.BattleBuffAddAttr)
+local ys = ys
+local BattleBuffAddAttrRatioBloodrage = class("BattleBuffAddAttrRatioBloodrage", ys.Battle.BattleBuffAddAttr)
 
-var_0_0.Battle.BattleBuffAddAttrRatioBloodrage = var_0_1
-var_0_1.__name = "BattleBuffAddAttrRatioBloodrage"
+ys.Battle.BattleBuffAddAttrRatioBloodrage = BattleBuffAddAttrRatioBloodrage
+BattleBuffAddAttrRatioBloodrage.__name = "BattleBuffAddAttrRatioBloodrage"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffAddAttrRatioBloodrage.Ctor(self, effectData)
+	BattleBuffAddAttrRatioBloodrage.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
+function BattleBuffAddAttrRatioBloodrage.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._group = arg_3_0._tempData.arg_list.group or arg_3_2:GetID()
-	arg_3_0._attr = arg_3_0._tempData.arg_list.attr
-	arg_3_0._threshold = arg_3_0._tempData.arg_list.threshold
-	arg_3_0._value = arg_3_0._tempData.arg_list.value
-	arg_3_0._attrBound = arg_3_0._tempData.arg_list.attrBound
-	arg_3_0._number = 0
+function BattleBuffAddAttrRatioBloodrage.SetArgs(self, owner, buff)
+	self._group = self._tempData.arg_list.group or buff:GetID()
+	self._attr = self._tempData.arg_list.attr
+	self._threshold = self._tempData.arg_list.threshold
+	self._value = self._tempData.arg_list.value
+	self._attrBound = self._tempData.arg_list.attrBound
+	self._number = 0
 end
 
-function var_0_1.doOnHPRatioUpdate(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0:UpdateAttr(arg_4_1)
-end
+-- function BattleBuffAddAttrRatioBloodrage.doOnHPRatioUpdate(self, owner, buff)
+-- 	self:UpdateAttr(owner)
+-- end
 
-function var_0_1.calcBloodRageNumber(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_1:GetHPRate()
+function BattleBuffAddAttrRatioBloodrage.calcBloodRageNumber(self, owner)
+	local ownerHPRate = owner:GetHPRate()
 
-	if var_5_0 > arg_5_0._threshold then
-		arg_5_0._number = 0
+	if ownerHPRate > self._threshold then
+		self._number = 0
 	else
-		local var_5_1 = var_0_0.Battle.BattleAttr.GetBase(arg_5_1, arg_5_0._attr)
+		local baseAttrValue = ys.Battle.BattleAttr.GetBase(owner, self._attr)
+		-- 按百分比转换加成
+		self._number = (self._threshold - ownerHPRate) / self._value * baseAttrValue * 0.0001
 
-		arg_5_0._number = (arg_5_0._threshold - var_5_0) / arg_5_0._value * var_5_1 * 0.0001
-
-		if arg_5_0._attrBound then
-			arg_5_0._number = math.min(arg_5_0._number, arg_5_0._attrBound)
+		if self._attrBound then
+			self._number = math.min(self._number, self._attrBound)
 		end
 	end
 end
 
-function var_0_1.doOnHPRatioUpdate(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_0:calcBloodRageNumber(arg_6_1)
-	arg_6_0:UpdateAttr(arg_6_1)
+function BattleBuffAddAttrRatioBloodrage.doOnHPRatioUpdate(self, owner, buff)
+	self:calcBloodRageNumber(owner)
+	self:UpdateAttr(owner)
 end
 
-function var_0_1.onRemove(arg_7_0, arg_7_1, arg_7_2)
-	arg_7_0._number = 0
+function BattleBuffAddAttrRatioBloodrage.onRemove(self, owner, buff)
+	self._number = 0
 
-	arg_7_0:UpdateAttr(arg_7_1)
+	self:UpdateAttr(owner)
 end

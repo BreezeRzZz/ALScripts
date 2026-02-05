@@ -44,32 +44,34 @@ function CommanderTalent.getConsume(arg_7_0)
 
 	return var_7_0
 end
--- TODO: 指挥喵天赋加成
-function CommanderTalent.getAttrsAddition(arg_8_0)
-	local var_8_0 = {}
-	local var_8_1 = {}
 
-	for iter_8_0, iter_8_1 in ipairs(CommanderConst.PROPERTIES) do
-		for iter_8_2, iter_8_3 in ipairs(arg_8_0:getConfig("add")) do
-			if CommanderConst.TALENT_ADDITION_NUMBER == iter_8_3[1] then
-				if iter_8_3[4] == iter_8_0 then
-					var_8_0[iter_8_1] = {
-						value = iter_8_3[5],
-						nation = iter_8_3[2],
-						shiptype = iter_8_3[3]
+-- 单个天赋提供的属性加成(固定/百分比)
+-- 被Commander.getTalentsAddition调用
+function CommanderTalent.getAttrsAddition(self)
+	local numberAdditions = {}
+	local ratioAdditions = {}
+
+	for propertyIndex, propertyName in ipairs(CommanderConst.PROPERTIES) do
+		for _, addItem in ipairs(self:getConfig("add")) do
+			if CommanderConst.TALENT_ADDITION_NUMBER == addItem[1] then
+				if addItem[4] == propertyIndex then
+					numberAdditions[propertyName] = {
+						value = addItem[5],
+						nation = addItem[2],
+						shiptype = addItem[3]
 					}
 				end
-			elseif CommanderConst.TALENT_ADDITION_RATIO == iter_8_3[1] and iter_8_3[4] == iter_8_0 then
-				var_8_1[iter_8_1] = {
-					value = iter_8_3[5],
-					nation = iter_8_3[2],
-					shiptype = iter_8_3[3]
+			elseif CommanderConst.TALENT_ADDITION_RATIO == addItem[1] and addItem[4] == propertyIndex then
+				ratioAdditions[propertyName] = {
+					value = addItem[5],
+					nation = addItem[2],
+					shiptype = addItem[3]
 				}
 			end
 		end
 	end
 
-	return var_8_0, var_8_1
+	return numberAdditions, ratioAdditions
 end
 
 function CommanderTalent.getBuffsAddition(arg_9_0)

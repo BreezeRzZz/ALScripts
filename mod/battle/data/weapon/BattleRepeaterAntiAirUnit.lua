@@ -1,81 +1,82 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = var_0_0.Battle.BattleVariable
-local var_0_8 = class("BattleRepeaterAntiAirUnit", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local BattleRepeaterAntiAirUnit = class("BattleRepeaterAntiAirUnit", ys.Battle.BattleWeaponUnit)
 
-var_0_0.Battle.BattleRepeaterAntiAirUnit = var_0_8
-var_0_8.__name = "BattleRepeaterAntiAirUnit"
+ys.Battle.BattleRepeaterAntiAirUnit = BattleRepeaterAntiAirUnit
+BattleRepeaterAntiAirUnit.__name = "BattleRepeaterAntiAirUnit"
 
-function var_0_8.Ctor(arg_1_0)
-	var_0_8.super.Ctor(arg_1_0)
+function BattleRepeaterAntiAirUnit.Ctor(self)
+	BattleRepeaterAntiAirUnit.super.Ctor(self)
 
-	arg_1_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_8.FilterTarget(arg_2_0)
-	local var_2_0 = arg_2_0._dataProxy:GetAircraftList()
-	local var_2_1 = {}
-	local var_2_2 = arg_2_0._host:GetIFF()
-	local var_2_3 = 1
+function BattleRepeaterAntiAirUnit.FilterTarget(self)
+	local aircraftList = self._dataProxy:GetAircraftList()
+	local targetList = {}
+	local hostIFF = self._host:GetIFF()
+	local index = 1
 
-	for iter_2_0, iter_2_1 in pairs(var_2_0) do
-		if iter_2_1:GetIFF() ~= var_2_2 and iter_2_1:IsVisitable() then
-			var_2_1[var_2_3] = iter_2_1
-			var_2_3 = var_2_3 + 1
+	for _, aircraft in pairs(aircraftList) do
+		if aircraft:GetIFF() ~= hostIFF and aircraft:IsVisitable() then
+			targetList[index] = aircraft
+			index = index + 1
 		end
 	end
 
-	return var_2_1
+	return targetList
 end
 
-function var_0_8.Fire(arg_3_0)
-	local function var_3_0(arg_4_0)
-		if not arg_3_0._dataProxy then
+function BattleRepeaterAntiAirUnit.Fire(self)
+	local function areaCldFunc(cldObjList)
+		if not self._dataProxy then
 			return
 		end
 
-		local var_4_0 = {}
-		local var_4_1 = arg_3_0._dataProxy:GetAircraftList()
+		local targetList = {}
+		local aircraftList = self._dataProxy:GetAircraftList()
 
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-			if iter_4_1.Active then
-				local var_4_2 = var_4_1[iter_4_1.UID]
+		for _, cldObj in ipairs(cldObjList) do
+			if cldObj.Active then
+				local aircraft = aircraftList[cldObj.UID]
 
-				if var_4_2 and var_4_2:IsVisitable() then
-					var_4_0[#var_4_0 + 1] = var_4_2
+				if aircraft and aircraft:IsVisitable() then
+					targetList[#targetList + 1] = aircraft
 				end
 			end
 		end
 
-		local var_4_3 = var_0_2.CalculateRepaterAnitiAirTotalDamage(arg_3_0)
+		local repeaterAATotalDamage = BattleFormulas.CalculateRepaterAnitiAirTotalDamage(self)
 
-		while var_4_3 > 0 and #var_4_0 > 0 do
-			local var_4_4 = math.random(#var_4_0)
-			local var_4_5 = var_4_0[var_4_4]
-			local var_4_6 = var_4_5:GetMaxHP()
+		while repeaterAATotalDamage > 0 and #targetList > 0 do
+			local index = math.random(#targetList)
+			local target = targetList[index]
+			local targetMaxHP = target:GetMaxHP()
+			-- BattleConfig.AnitAirRepeaterConfig.upper_range = 35
+			-- BattleConfig.AnitAirRepeaterConfig.lower_range = 15
+			repeaterAATotalDamage = repeaterAATotalDamage - (targetMaxHP + math.random(BattleConfig.AnitAirRepeaterConfig.lower_range, BattleConfig.AnitAirRepeaterConfig.upper_range))
 
-			var_4_3 = var_4_3 - (var_4_6 + math.random(var_0_4.AnitAirRepeaterConfig.lower_range, var_0_4.AnitAirRepeaterConfig.upper_range))
-
-			if var_4_3 < 0 then
-				var_4_6 = var_4_6 + var_4_3
+			if repeaterAATotalDamage < 0 then
+				targetMaxHP = targetMaxHP + repeaterAATotalDamage
 			end
 
-			if not var_0_2.RollRepeaterHitDice(arg_3_0, var_4_5) then
-				table.remove(var_4_0, var_4_4)
-				arg_3_0._dataProxy:HandleDirectDamage(var_4_5, var_4_6, arg_3_0:GetHost())
+			if not BattleFormulas.RollRepeaterHitDice(self, target) then
+				table.remove(targetList, index)
+				self._dataProxy:HandleDirectDamage(target, targetMaxHP, self:GetHost())
 			end
 		end
 	end
 
-	arg_3_0._dataProxy:SpawnColumnArea(var_0_3.AOEField.AIR, arg_3_0._host:GetIFF(), arg_3_0._host:GetPosition(), arg_3_0._tmpData.range * 2, -1, var_3_0)
-	arg_3_0:EnterCoolDown()
-	arg_3_0._host:PlayFX(arg_3_0._tmpData.fire_fx, true)
-	var_0_0.Battle.PlayBattleSFX(arg_3_0._tmpData.fire_sfx)
+	self._dataProxy:SpawnColumnArea(BattleConst.AOEField.AIR, self._host:GetIFF(), self._host:GetPosition(), self._tmpData.range * 2, -1, areaCldFunc)
+	self:EnterCoolDown()
+	self._host:PlayFX(self._tmpData.fire_fx, true)
+	ys.Battle.PlayBattleSFX(self._tmpData.fire_sfx)
 end

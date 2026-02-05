@@ -42,70 +42,73 @@ function BattleBuffAddBulletAttr.onInternalBulletCreate(self, owner, buff, args)
 	self:calcBulletAttr(args)
 end
 
-function BattleBuffAddBulletAttr.onManualBulletCreate(self, arg_6_1, arg_6_2, arg_6_3)
-	if not self:equipIndexRequire(arg_6_3.equipIndex) then
+function BattleBuffAddBulletAttr.onManualBulletCreate(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:calcBulletAttr(arg_6_3)
+	self:calcBulletAttr(args)
 end
 
-function BattleBuffAddBulletAttr.onBulletCollideBefore(self, arg_7_1, arg_7_2, arg_7_3)
-	if not self:equipIndexRequire(arg_7_3.equipIndex) then
+function BattleBuffAddBulletAttr.onBulletCollideBefore(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:displacementConvert(arg_7_3, arg_7_1)
-	self:calcBulletAttr(arg_7_3)
+	self:displacementConvert(args, owner)
+	self:calcBulletAttr(args)
 end
 
-function BattleBuffAddBulletAttr.onBombBulletBang(self, arg_8_1, arg_8_2, arg_8_3)
-	if not self:equipIndexRequire(arg_8_3.equipIndex) then
+function BattleBuffAddBulletAttr.onBombBulletBang(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:displacementConvert(arg_8_3, arg_8_1)
-	self:calcBulletAttr(arg_8_3)
+	self:displacementConvert(args, owner)
+	self:calcBulletAttr(args)
 end
 
-function BattleBuffAddBulletAttr.onTorpedoBulletBang(self, arg_9_1, arg_9_2, arg_9_3)
-	if not self:equipIndexRequire(arg_9_3.equipIndex) then
+function BattleBuffAddBulletAttr.onTorpedoBulletBang(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:displacementConvert(arg_9_3, arg_9_1)
-	self:calcBulletAttr(arg_9_3)
+	self:displacementConvert(args, owner)
+	self:calcBulletAttr(args)
 end
 
-function BattleBuffAddBulletAttr.displacementConvert(self, arg_10_1, arg_10_2)
-	local var_10_0 = arg_10_1._bullet
+-- 处理按距离转换属性加成的逻辑
+function BattleBuffAddBulletAttr.displacementConvert(self, args, owner)
+	local bullet = args._bullet
 
+	-- 按照子弹飞行距离动态计算距离转换属性加成的逻辑
 	if self._displacementConvert then
-		local var_10_1 = var_10_0:GetCurrentDistance()
-		local var_10_2 = self._displacementConvert.base
-		local var_10_3 = self._displacementConvert.rate
-		local var_10_4 = self._displacementConvert.max
+		local distanceFromSpawn = bullet:GetCurrentDistance()
+		local base = self._displacementConvert.base
+		local rate = self._displacementConvert.rate
+		local max = self._displacementConvert.max
 
-		if var_10_3 > 0 then
-			self._number = math.min(math.max(var_10_1 - var_10_2, 0) * var_10_3, var_10_4)
-		elseif var_10_3 < 0 then
-			self._number = math.min(math.max(0, var_10_4 + (var_10_1 - var_10_2) * var_10_3), var_10_4)
-		elseif var_10_3 == 0 then
+		if rate > 0 then
+			self._number = math.min(math.max(distanceFromSpawn - base, 0) * rate, max)
+		elseif rate < 0 then
+			self._number = math.min(math.max(0, max + (distanceFromSpawn - base) * rate), max)
+		elseif rate == 0 then
 			self._number = 0
 		end
+	-- 按照子弹与施法者的距离动态计算距离转换属性加成的逻辑
 	elseif self._displacementDynamic then
-		local var_10_5 = self._displacementDynamic.check_caster
-		local var_10_6 = self._displacementDynamic.base
-		local var_10_7 = self._displacementDynamic.rate
-		local var_10_8 = self._displacementDynamic.max
-		local var_10_9 = self:getTargetList(arg_10_2, var_10_5, self._displacementDynamic)
+		local check_caster = self._displacementDynamic.check_caster
+		local base = self._displacementDynamic.base
+		local rate = self._displacementDynamic.rate
+		local max = self._displacementDynamic.max
+		local targetList = self:getTargetList(owner, check_caster, self._displacementDynamic)
 
-		if var_10_9 and #var_10_9 > 0 then
-			local var_10_10 = var_10_9[1]:GetPosition()
-			local var_10_11 = var_10_0:GetPosition()
-			local var_10_12 = Vector3.Distance(var_10_10, var_10_11)
+		if targetList and #targetList > 0 then
+			local casterPos = targetList[1]:GetPosition()
+			local bulletPos = bullet:GetPosition()
+			local distance = Vector3.Distance(casterPos, bulletPos)
 
-			self._number = math.min(math.max(var_10_12 - var_10_6, 0) * var_10_7, var_10_8)
+			self._number = math.min(math.max(distance - base, 0) * rate, max)
 		else
 			self._number = 0
 		end

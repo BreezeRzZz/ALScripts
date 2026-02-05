@@ -1975,14 +1975,14 @@ function BattleUnit.GetCurrentOxyState(arg_233_0)
 	end
 end
 
-function BattleUnit.InitAntiSubState(arg_234_0, arg_234_1, arg_234_2)
-	arg_234_0._antiSubVigilanceState = ys.Battle.AntiSubState.New(arg_234_0)
+function BattleUnit.InitAntiSubState(self, sonarRange, sonarFrequency)
+	self._antiSubVigilanceState = ys.Battle.AntiSubState.New(self)
 
-	arg_234_0:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE, {
-		sonarRange = arg_234_1
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE, {
+		sonarRange = sonarRange
 	}))
 
-	return arg_234_0._antiSubVigilanceState
+	return self._antiSubVigilanceState
 end
 
 function BattleUnit.GetAntiSubState(arg_235_0)
