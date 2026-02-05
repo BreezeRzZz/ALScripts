@@ -8,8 +8,8 @@ local var_0_3 = class("BattleSkillFireSupport", var_0_0.Battle.BattleSkillEffect
 var_0_0.Battle.BattleSkillFireSupport = var_0_3
 var_0_3.__name = "BattleSkillFireSupport"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._weaponID = arg_1_0._tempData.arg_list.weapon_id
 	arg_1_0._supportTargetFilter = arg_1_0._tempData.arg_list.supportTarget.targetChoice

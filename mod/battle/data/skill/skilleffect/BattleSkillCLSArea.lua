@@ -12,8 +12,8 @@ var_0_4.TYPE_BULLET = 1
 var_0_4.TYPE_AIRCRAFT = 2
 var_0_4.TYPE_MINION = 3
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_4.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_4.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._range = arg_1_0._tempData.arg_list.range
 	arg_1_0._width = arg_1_0._tempData.arg_list.width

@@ -7,8 +7,8 @@ var_0_0.Battle.BattleSkillSetCount.__name = "BattleSkillSetCount"
 
 local var_0_1 = var_0_0.Battle.BattleSkillSetCount
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._countType = arg_1_0._tempData.arg_list.countType
 	arg_1_0._countTarget = arg_1_0._tempData.arg_list.countTarget or 0

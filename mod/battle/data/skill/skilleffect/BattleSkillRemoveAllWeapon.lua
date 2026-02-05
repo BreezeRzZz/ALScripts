@@ -6,8 +6,8 @@ local var_0_1 = class("BattleSkillRemoveAllWeapon", var_0_0.Battle.BattleSkillEf
 var_0_0.Battle.BattleSkillRemoveAllWeapon = var_0_1
 var_0_1.__name = "BattleSkillRemoveAllWeapon"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 end
 
 function var_0_1.DoDataEffect(arg_2_0, arg_2_1)

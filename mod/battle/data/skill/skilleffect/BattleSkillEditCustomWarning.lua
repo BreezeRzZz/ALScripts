@@ -10,8 +10,8 @@ var_0_1.OP_REMOVE = 0
 var_0_1.OP_REMOVE_PERMANENT = -1
 var_0_1.OP_REMOVE_TEMPLATE = -2
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._labelData = {
 		op = arg_1_0._tempData.arg_list.op,

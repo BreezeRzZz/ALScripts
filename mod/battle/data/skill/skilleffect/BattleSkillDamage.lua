@@ -5,8 +5,8 @@ local var_0_0 = ys
 var_0_0.Battle.BattleSkillDamage = class("BattleSkillDamage", var_0_0.Battle.BattleSkillEffect)
 var_0_0.Battle.BattleSkillDamage.__name = "BattleSkillDamage"
 
-function var_0_0.Battle.BattleSkillDamage.Ctor(arg_1_0, arg_1_1)
-	var_0_0.Battle.BattleSkillDamage.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_0.Battle.BattleSkillDamage.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_0.Battle.BattleSkillDamage.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._number = arg_1_0._tempData.arg_list.number or 0
 	arg_1_0._currentHPRate = arg_1_0._tempData.arg_list.current_hp_rate or 0

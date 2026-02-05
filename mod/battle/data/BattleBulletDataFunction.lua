@@ -268,9 +268,9 @@ var_0_4.generateBulletFuncs[var_0_1.BulletType.TRIGGER_BOMB] = var_0_4._createBo
 var_0_4.generateBulletFuncs[var_0_1.BulletType.AAMissile] = var_0_4._createAAMissile
 
 function var_0_4.ConvertSpecificBarrage(arg_21_0, arg_21_1)
-	local var_21_0
+	local var_21_0 = var_0_4.ConvertedBarrageTableList[arg_21_0] or {}
 
-	var_21_0[arg_21_1], var_21_0 = var_0_4.barrageInteration(pg.barrage_template[arg_21_0], arg_21_1), var_0_4.ConvertedBarrageTableList[arg_21_0] or {}
+	var_21_0[arg_21_1] = var_0_4.barrageInteration(pg.barrage_template[arg_21_0], arg_21_1)
 	var_0_4.ConvertedBarrageTableList[arg_21_0] = var_21_0
 end
 

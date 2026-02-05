@@ -9,8 +9,8 @@ local var_0_4 = class("BattleSkillProjectArea", var_0_0.Battle.BattleSkillEffect
 var_0_0.Battle.BattleSkillProjectArea = var_0_4
 var_0_4.__name = "BattleSkillProjectArea"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_4.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_4.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._posX = arg_1_0._tempData.arg_list.offset_x
 	arg_1_0._posZ = arg_1_0._tempData.arg_list.offset_z

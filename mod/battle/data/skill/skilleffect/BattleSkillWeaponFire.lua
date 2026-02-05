@@ -6,8 +6,8 @@ local var_0_1 = class("BattleSkillWeaponFire", var_0_0.Battle.BattleSkillEffect)
 var_0_0.Battle.BattleSkillWeaponFire = var_0_1
 var_0_1.__name = "BattleSkillWeaponFire"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
+		var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
 
 	arg_1_0._weaponType = arg_1_0._tempData.arg_list.weaponType
 	arg_1_0._useTempBullet = arg_1_0._tempData.arg_list.preShiftBullet
