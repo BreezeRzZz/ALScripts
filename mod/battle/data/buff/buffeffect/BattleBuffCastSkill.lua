@@ -9,6 +9,8 @@ local BattleBuffCastSkill = ys.Battle.BattleBuffCastSkill
 
 BattleBuffCastSkill.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_CASTER
 
+-- 核心BuffEffect之一
+-- 此BuffEffect会在满足条件是释放Skill(联系到BattleSkillUnit)
 function BattleBuffCastSkill.Ctor(self, effectData)
 	BattleBuffCastSkill.super.Ctor(self, effectData)
 
@@ -41,6 +43,8 @@ function BattleBuffCastSkill.SetArgs(self, owner, buff)
 	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
 	-- initialCD表示无开局CD，否则按time计算首次生效时间
+	-- 注意SetArgs等效于onAttach时的时间点，所以要注意currentTime的获取时机
+	-- 例如有些时候Trigger比较靠后，但Buff可能附加得很早，所以不存在CD的情况
 	if arg_list.initialCD then
 		self._nextEffectTime = currentTime
 	else

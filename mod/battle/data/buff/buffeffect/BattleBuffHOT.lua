@@ -1,62 +1,66 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffHOT = class("BattleBuffHOT", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffHOT.__name = "BattleBuffHOT"
+ys.Battle.BattleBuffHOT = class("BattleBuffHOT", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffHOT.__name = "BattleBuffHOT"
 
-function var_0_0.Battle.BattleBuffHOT.Ctor(arg_1_0, arg_1_1)
-	var_0_0.Battle.BattleBuffHOT.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect会在持续时间内定期为单位恢复HP，number参数控制每次恢复的基础HP，time参数控制恢复间隔，maxHPRatio和currentHPRatio参数控制恢复量随当前HP和最大HP的比例
+-- HOT即Healing Over Time
+-- 但这类BuffEffect使用很少, 一般这类需求是用BattleSkillHeal更多.
+-- 使用例: 翡绿之心的1技能
+function ys.Battle.BattleBuffHOT.Ctor(self, effectData)
+	ys.Battle.BattleBuffHOT.super.Ctor(self, effectData)
 end
 
-function var_0_0.Battle.BattleBuffHOT.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._number = arg_2_0._tempData.arg_list.number or 0
-	arg_2_0._numberBase = arg_2_0._number
-	arg_2_0._time = arg_2_0._tempData.arg_list.time or 0
-	arg_2_0._nextEffectTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_2_0._time
-	arg_2_0._maxHPRatio = arg_2_0._tempData.arg_list.maxHPRatio or 0
-	arg_2_0._currentHPRatio = arg_2_0._tempData.arg_list.currentHPRatio or 0
-	arg_2_0._incorruptible = arg_2_0._tempData.arg_list.incorrupt
+function ys.Battle.BattleBuffHOT.SetArgs(self, owner, buff)
+	self._number = self._tempData.arg_list.number or 0
+	self._numberBase = self._number
+	self._time = self._tempData.arg_list.time or 0
+	self._nextEffectTime = pg.TimeMgr.GetInstance():GetCombatTime() + self._time
+	self._maxHPRatio = self._tempData.arg_list.maxHPRatio or 0
+	self._currentHPRatio = self._tempData.arg_list.currentHPRatio or 0
+	self._incorruptible = self._tempData.arg_list.incorrupt
 end
 
-function var_0_0.Battle.BattleBuffHOT.onStack(arg_3_0, arg_3_1, arg_3_2)
+function ys.Battle.BattleBuffHOT.onStack(self, owner, buff)
 	return
 end
 
-function var_0_0.Battle.BattleBuffHOT.onUpdate(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	if arg_4_3.timeStamp >= arg_4_0._nextEffectTime then
-		local var_4_0 = arg_4_0:CalcNumber(arg_4_1, arg_4_2)
-		local var_4_1 = {
+function ys.Battle.BattleBuffHOT.onUpdate(self, owner, buff, args)
+	if args.timeStamp >= self._nextEffectTime then
+		local healNumber = self:CalcNumber(owner, buff)
+		local extraInfo = {
 			isMiss = false,
 			isCri = false,
 			isHeal = true,
-			incorrupt = arg_4_0._incorruptible
+			incorrupt = self._incorruptible
 		}
 
-		arg_4_1:UpdateHP(var_4_0, var_4_1)
+		owner:UpdateHP(healNumber, extraInfo)
 
-		if arg_4_1:IsAlive() then
-			arg_4_0._nextEffectTime = arg_4_0._nextEffectTime + arg_4_0._time
+		if owner:IsAlive() then
+			self._nextEffectTime = self._nextEffectTime + self._time
 		end
 	end
 end
 
-function var_0_0.Battle.BattleBuffHOT.onRemove(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_0:CalcNumber(arg_5_1, arg_5_2)
-	local var_5_1 = {
+function ys.Battle.BattleBuffHOT.onRemove(self, owner, buff)
+	local healNumber = self:CalcNumber(owner, buff)
+	local extraInfo = {
 		isMiss = false,
 		isCri = false,
 		isHeal = true,
-		incorrupt = arg_5_0._incorruptible
+		incorrupt = self._incorruptible
 	}
 
-	arg_5_1:UpdateHP(var_5_0, var_5_1)
+	owner:UpdateHP(healNumber, extraInfo)
 end
 
-function var_0_0.Battle.BattleBuffHOT.CalcNumber(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0, var_6_1 = arg_6_1:GetHP()
-	local var_6_2 = arg_6_1:GetAttrByName("healingRate")
-	local var_6_3 = math.max(0, var_6_0 * arg_6_0._currentHPRatio + var_6_1 * arg_6_0._maxHPRatio + arg_6_0._number)
-
-	return (math.floor(var_6_3 * arg_6_2._stack * var_6_2))
+function ys.Battle.BattleBuffHOT.CalcNumber(self, owner, buff)
+	local currentHP, maxHP = owner:GetHP()
+	local healingRate = owner:GetAttrByName("healingRate")
+	local healNumber = math.max(0, currentHP * self._currentHPRatio + maxHP * self._maxHPRatio + self._number)
+	-- 可叠层恢复量
+	return (math.floor(healNumber * buff._stack * healingRate))
 end

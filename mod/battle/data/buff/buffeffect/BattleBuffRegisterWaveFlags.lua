@@ -1,21 +1,25 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffRegisterWaveFlags", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffRegisterWaveFlags = class("BattleBuffRegisterWaveFlags", ys.Battle.BattleBuffEffect)
 
-var_0_1.__name = "BattleBuffRegisterWaveFlags"
-var_0_0.Battle.BattleBuffRegisterWaveFlags = var_0_1
+BattleBuffRegisterWaveFlags.__name = "BattleBuffRegisterWaveFlags"
+ys.Battle.BattleBuffRegisterWaveFlags = BattleBuffRegisterWaveFlags
 
-function var_0_1.SetArgs(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._flags = arg_1_0._tempData.arg_list.flags
+-- 此类BuffEffect用于注册WaveFlags到具体Dungeon中
+-- 注册后，会对应多出新的wave
+-- 使用例: 15/16图的空袭支援; (某些)EX图的装备检测来决定出现不同敌人等. 广泛使用
+-- (此类BuffEffect不是给舰船用的. 只是随便以某个舰船为载体)
+function BattleBuffRegisterWaveFlags.SetArgs(self, owner, buff)
+	self._flags = self._tempData.arg_list.flags
 end
 
-function var_0_1.onTrigger(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	var_0_1.super.onTrigger(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
+function BattleBuffRegisterWaveFlags.onTrigger(self, owner, buff, args)
+	BattleBuffRegisterWaveFlags.super.onTrigger(self, owner, buff, args)
 
-	local var_2_0 = var_0_0.Battle.BattleDataProxy.GetInstance()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0._flags) do
-		var_2_0:AddWaveFlag(iter_2_1)
+	for _, flag in ipairs(self._flags) do
+		battleDataProxy:AddWaveFlag(flag)
 	end
 end

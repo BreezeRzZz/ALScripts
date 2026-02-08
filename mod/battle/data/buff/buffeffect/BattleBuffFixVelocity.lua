@@ -1,117 +1,119 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffFixVelocity", var_0_0.Battle.BattleBuffAddAttr)
 
-var_0_0.Battle.BattleBuffFixVelocity = var_0_1
-var_0_1.__name = "BattleBuffFixVelocity"
-var_0_1.FX_TYPE = var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_VELOCTIY
+local ys = ys
+local BattleBuffFixVelocity = class("BattleBuffFixVelocity", ys.Battle.BattleBuffAddAttr)
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+ys.Battle.BattleBuffFixVelocity = BattleBuffFixVelocity
+BattleBuffFixVelocity.__name = "BattleBuffFixVelocity"
+BattleBuffFixVelocity.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_MOD_VELOCTIY
+
+-- 此类BuffEffect专门用于调整航速，原理是对单位的velocity属性进行加算和乘算
+-- 其逻辑和BattleBuffAddAttr基本完全一致(本身也是其子类), 但航速涉及上下限, 以及加算/乘算混合处理, 专门处理了一下.
+function BattleBuffFixVelocity.Ctor(self, effectData)
+	BattleBuffFixVelocity.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_0.Battle.BattleBuffEffect.FX_TYPE_MOD_VELOCTIY
+function BattleBuffFixVelocity.GetEffectType(self)
+	return ys.Battle.BattleBuffEffect.FX_TYPE_MOD_VELOCTIY
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._group = arg_3_0._tempData.arg_list.group or arg_3_2:GetID()
+function BattleBuffFixVelocity.SetArgs(self, owner, buff)
+	self._group = self._tempData.arg_list.group or buff:GetID()
 
-	local var_3_0 = arg_3_0._tempData.arg_list.add or 0
+	local add = self._tempData.arg_list.add or 0
 
-	arg_3_0._baseAdd = var_0_0.Battle.BattleFormulas.ConvertShipSpeed(var_3_0)
-	arg_3_0._addValue = arg_3_0._baseAdd
-	arg_3_0._baseMul = (arg_3_0._tempData.arg_list.mul or 0) * 0.0001
-	arg_3_0._mulValue = arg_3_0._baseMul
+	self._baseAdd = ys.Battle.BattleFormulas.ConvertShipSpeed(add)
+	self._addValue = self._baseAdd
+	self._baseMul = (self._tempData.arg_list.mul or 0) * 0.0001
+	self._mulValue = self._baseMul
 end
 
-function var_0_1.onStack(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0._addValue = arg_4_0._baseAdd * arg_4_2._stack
-	arg_4_0._mulValue = arg_4_0._baseMul * arg_4_2._stack
+function BattleBuffFixVelocity.onStack(self, owner, buff)
+	self._addValue = self._baseAdd * buff._stack
+	self._mulValue = self._baseMul * buff._stack
 
-	arg_4_0:UpdateAttr(arg_4_1)
+	self:UpdateAttr(owner)
 end
 
-function var_0_1.onRemove(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._addValue = 0
-	arg_5_0._mulValue = 0
+function BattleBuffFixVelocity.onRemove(self, owner, buff)
+	self._addValue = 0
+	self._mulValue = 0
 
-	arg_5_0:UpdateAttr(arg_5_1)
+	self:UpdateAttr(owner)
 end
 
-function var_0_1.UpdateAttr(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_0:calcMulValue(arg_6_1)
-	local var_6_1 = arg_6_0:calcAddValue(arg_6_1)
+function BattleBuffFixVelocity.UpdateAttr(self, owner)
+	local mulValue = self:calcMulValue(owner)
+	local addValue = self:calcAddValue(owner)
 
-	var_0_0.Battle.BattleAttr.FlashVelocity(arg_6_1, var_6_0, var_6_1)
+	ys.Battle.BattleAttr.FlashVelocity(owner, mulValue, addValue)
 end
 
-function var_0_1.calcMulValue(arg_7_0, arg_7_1)
-	local var_7_0 = 1
-	local var_7_1 = 1
-	local var_7_2 = {}
-	local var_7_3 = {}
-	local var_7_4 = arg_7_1:GetBuffList()
+function BattleBuffFixVelocity.calcMulValue(self, owner)
+	local factorPositive = 1
+	local factorNegative = 1
+	local groupMaxTablePositive = {}
+	local groupMaxTableNegative = {}
+	local buffList = owner:GetBuffList()
 
-	for iter_7_0, iter_7_1 in pairs(var_7_4) do
-		for iter_7_2, iter_7_3 in ipairs(iter_7_1._effectList) do
-			if iter_7_3:GetEffectType() == var_0_1.FX_TYPE then
-				local var_7_5 = iter_7_3._mulValue
-				local var_7_6 = iter_7_3._group
-				local var_7_7 = var_7_2[var_7_6] or 1
-				local var_7_8 = var_7_3[var_7_6] or 1
-				local var_7_9 = 1 + var_7_5
+	for _, buff in pairs(buffList) do
+		for _, effect in ipairs(buff._effectList) do
+			if effect:GetEffectType() == BattleBuffFixVelocity.FX_TYPE then
+				local mulValue = effect._mulValue
+				local group = effect._group
+				local groupMaxFactorPositive = groupMaxTablePositive[group] or 1
+				local roupMaxFactorNegative = groupMaxTableNegative[group] or 1
+				local mulFactor = 1 + mulValue
 
-				if var_7_5 > 0 and var_7_7 < var_7_9 then
-					var_7_0 = var_7_0 / var_7_7 * var_7_9
-					var_7_7 = var_7_9
+				if mulValue > 0 and groupMaxFactorPositive < mulFactor then
+					factorPositive = factorPositive / groupMaxFactorPositive * mulFactor
+					groupMaxFactorPositive = mulFactor
 				end
 
-				if var_7_5 < 0 and var_7_9 < var_7_8 then
-					var_7_1 = var_7_1 / var_7_8 * var_7_9
-					var_7_8 = var_7_9
+				if mulValue < 0 and mulFactor < roupMaxFactorNegative then
+					factorNegative = factorNegative / roupMaxFactorNegative * mulFactor
+					roupMaxFactorNegative = mulFactor
 				end
 
-				var_7_2[var_7_6] = var_7_7
-				var_7_3[var_7_6] = var_7_8
+				groupMaxTablePositive[group] = groupMaxFactorPositive
+				groupMaxTableNegative[group] = roupMaxFactorNegative
 			end
 		end
 	end
 
-	return var_7_0 * var_7_1
+	return factorPositive * factorNegative
 end
 
-function var_0_1.calcAddValue(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_1:GetBuffList()
-	local var_8_1 = 0
-	local var_8_2 = 0
-	local var_8_3 = {}
-	local var_8_4 = {}
+function BattleBuffFixVelocity.calcAddValue(self, owner)
+	local buffList = owner:GetBuffList()
+	local factorPositive = 0
+	local factorNegative = 0
+	local groupMaxTablePositive = {}
+	local groupMaxTableNegative = {}
 
-	for iter_8_0, iter_8_1 in pairs(var_8_0) do
-		for iter_8_2, iter_8_3 in ipairs(iter_8_1._effectList) do
-			if iter_8_3:GetEffectType() == var_0_1.FX_TYPE then
-				local var_8_5 = iter_8_3._addValue
-				local var_8_6 = iter_8_3._group
-				local var_8_7 = var_8_3[var_8_6] or 0
-				local var_8_8 = var_8_4[var_8_6] or 0
+	for _, buff in pairs(buffList) do
+		for _, effect in ipairs(buff._effectList) do
+			if effect:GetEffectType() == BattleBuffFixVelocity.FX_TYPE then
+				local addValue = effect._addValue
+				local group = effect._group
+				local groupMaxFactorPositive = groupMaxTablePositive[group] or 0
+				local groupMaxFactorNegative = groupMaxTableNegative[group] or 0
 
-				if var_8_7 < var_8_5 and var_8_5 > 0 then
-					var_8_1 = var_8_1 + var_8_5 - var_8_7
-					var_8_7 = var_8_5
+				if groupMaxFactorPositive < addValue and addValue > 0 then
+					factorPositive = factorPositive + addValue - groupMaxFactorPositive
+					groupMaxFactorPositive = addValue
 				end
 
-				if var_8_5 < var_8_8 and var_8_5 < 0 then
-					var_8_2 = var_8_2 + var_8_5 - var_8_8
-					var_8_8 = var_8_5
+				if addValue < groupMaxFactorNegative and addValue < 0 then
+					factorNegative = factorNegative + addValue - groupMaxFactorNegative
+					groupMaxFactorNegative = addValue
 				end
 
-				var_8_3[var_8_6] = var_8_7
-				var_8_4[var_8_6] = var_8_8
+				groupMaxTablePositive[group] = groupMaxFactorPositive
+				groupMaxTableNegative[group] = groupMaxFactorNegative
 			end
 		end
 	end
 
-	return var_8_1 + var_8_2
+	return factorPositive + factorNegative
 end

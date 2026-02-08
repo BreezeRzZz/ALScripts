@@ -1,116 +1,121 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffHP", var_0_0.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffHP = var_0_1
-var_0_1.__name = "BattleBuffHP"
+local ys = ys
+local BattleBuffHP = class("BattleBuffHP", ys.Battle.BattleBuffEffect)
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+ys.Battle.BattleBuffHP = BattleBuffHP
+BattleBuffHP.__name = "BattleBuffHP"
+
+-- 核心BuffEffect之一
+-- 此类BuffEffect为单位恢复HP. 各种治疗技能基本都是这个BuffEffect
+-- 使用非常广泛, 不列举
+function BattleBuffHP.Ctor(self, effectData)
+	BattleBuffHP.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._number = arg_2_0._tempData.arg_list.number or 0
-	arg_2_0._numberBase = arg_2_0._number
-	arg_2_0._currentHPRatio = 0
+function BattleBuffHP.SetArgs(self, owner, buff)
+	self._number = self._tempData.arg_list.number or 0
+	self._numberBase = self._number
+	self._currentHPRatio = 0
 
-	if arg_2_0._tempData.arg_list.currentHPRatio then
-		arg_2_0._currentHPRatio = arg_2_0._tempData.arg_list.currentHPRatio * 0.0001
+	if self._tempData.arg_list.currentHPRatio then
+		self._currentHPRatio = self._tempData.arg_list.currentHPRatio * 0.0001
 	end
 
-	local var_2_0, var_2_1 = arg_2_1:GetHP()
-	local var_2_2, var_2_3 = arg_2_0._caster:GetHP()
+	local _, ownerMaxHP = owner:GetHP()
+	local _, casterMaxHP = self._caster:GetHP()
 
-	arg_2_0._maxHPRatio = arg_2_0._tempData.arg_list.maxHPRatio or 0
-	arg_2_0._maxHPNumber = var_2_1 * arg_2_0._maxHPRatio
-	arg_2_0._castMaxHPRatio = arg_2_0._tempData.arg_list.casterMaxHPRatio or 0
-	arg_2_0._castMaxHPNumber = arg_2_0._castMaxHPRatio * var_2_3
-	arg_2_0._castHPRatio = arg_2_0._tempData.arg_list.casterHPRatio or 0
-	arg_2_0._weaponType = arg_2_0._tempData.arg_list.weaponType
-	arg_2_0._damageConvert = 0
+	self._maxHPRatio = self._tempData.arg_list.maxHPRatio or 0
+	self._maxHPNumber = ownerMaxHP * self._maxHPRatio
+	self._castMaxHPRatio = self._tempData.arg_list.casterMaxHPRatio or 0
+	self._castMaxHPNumber = self._castMaxHPRatio * casterMaxHP
+	self._castHPRatio = self._tempData.arg_list.casterHPRatio or 0
+	self._weaponType = self._tempData.arg_list.weaponType
+	self._damageConvert = 0
 
-	if arg_2_0._tempData.arg_list.damageConvertRatio then
-		arg_2_0._damageConvert = arg_2_0._tempData.arg_list.damageConvertRatio * 0.0001
+	if self._tempData.arg_list.damageConvertRatio then
+		self._damageConvert = self._tempData.arg_list.damageConvertRatio * 0.0001
 	end
 
-	arg_2_0._incorruptible = arg_2_0._tempData.arg_list.incorrupt
+	self._incorruptible = self._tempData.arg_list.incorrupt
 end
 
-function var_0_1.onBulletHit(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	if not arg_3_0:equipIndexRequire(arg_3_3.equipIndex) then
+function BattleBuffHP.onBulletHit(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	if not arg_3_0:bulletTagRequire(arg_3_3.bulletTag) then
+	if not self:bulletTagRequire(args.bulletTag) then
 		return
 	end
 
-	if not arg_3_0:victimRequire(arg_3_3.target, arg_3_1) then
+	if not self:victimRequire(args.target, owner) then
 		return
 	end
 
-	local var_3_0 = arg_3_1:GetAttrByName("healingRate")
-	local var_3_1 = arg_3_3.target
+	local healingRate = owner:GetAttrByName("healingRate")
+	local target = args.target
 
-	if not arg_3_0._weaponType then
-		local var_3_2 = arg_3_0._number
-		local var_3_3 = var_3_2 > 0
+	if not self._weaponType then
+		local number = self._number
+		local isHeal = number > 0
 
-		if var_3_3 then
-			var_3_2 = math.floor(var_3_2 * var_3_0)
+		if isHeal then
+			number = math.floor(number * healingRate)
 		end
 
-		local var_3_4 = {
+		local extraInfo = {
 			isMiss = false,
 			isCri = false,
-			isHeal = var_3_3
+			isHeal = isHeal
 		}
 
-		var_3_1:UpdateHP(var_3_2, var_3_4)
-	elseif arg_3_3.weaponType == arg_3_0._weaponType then
-		local var_3_5 = math.floor(arg_3_3.damage * arg_3_0._damageConvert * var_3_0)
-		local var_3_6 = {
+		target:UpdateHP(number, extraInfo)
+	elseif args.weaponType == self._weaponType then
+		-- 由伤害转化的治疗
+		-- 使用例: 吸血鬼1技能
+		local damageConvertNumber = math.floor(args.damage * self._damageConvert * healingRate)
+		local extraInfo = {
 			isMiss = false,
 			isCri = false,
 			isHeal = true,
-			incorrupt = arg_3_0._incorruptible
+			incorrupt = self._incorruptible
 		}
 
-		arg_3_1:UpdateHP(var_3_5, var_3_6)
+		owner:UpdateHP(damageConvertNumber, extraInfo)
 	end
 end
 
-function var_0_1.onAttach(arg_4_0, arg_4_1, arg_4_2)
+function BattleBuffHP.onAttach(self, owner, buff)
 	onDelayTick(function()
-		var_0_1.super.onAttach(arg_4_0, arg_4_1, arg_4_2)
+		BattleBuffHP.super.onAttach(self, owner, buff)
 	end, 0.03)
 end
 
-function var_0_1.onTrigger(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = arg_6_0:CalcNumber(arg_6_1)
-	local var_6_1 = var_6_0 > 0
+function BattleBuffHP.onTrigger(self, owner, buff)
+	local number = self:CalcNumber(owner)
+	local isHeal = number > 0
 
-	if var_6_1 then
-		local var_6_2 = arg_6_1:GetAttrByName("healingRate")
+	if isHeal then
+		local healingRate = owner:GetAttrByName("healingRate")
 
-		var_6_0 = math.floor(var_6_0 * var_6_2)
+		number = math.floor(number * healingRate)
 	end
 
-	local var_6_3 = {
+	local extraInfo = {
 		isMiss = false,
 		isCri = false,
-		isHeal = var_6_1,
-		incorrupt = arg_6_0._incorruptible
+		isHeal = isHeal,
+		incorrupt = self._incorruptible
 	}
 
-	arg_6_1:UpdateHP(var_6_0, var_6_3)
+	owner:UpdateHP(number, extraInfo)
 end
 
-function var_0_1.CalcNumber(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_1:GetHP()
-	local var_7_1 = arg_7_0._caster:GetHP()
-	local var_7_2 = arg_7_0._caster:GetAttrByName("healingEnhancement") + 1
+function BattleBuffHP.CalcNumber(self, owner)
+	local currentHP = owner:GetHP()
+	local casterCurrentHP = self._caster:GetHP()
+	local casterHealingEnhancement = self._caster:GetAttrByName("healingEnhancement") + 1
 
-	return math.floor((var_7_0 * arg_7_0._currentHPRatio + arg_7_0._maxHPNumber + arg_7_0._number + arg_7_0._castMaxHPNumber + var_7_1 * arg_7_0._castHPRatio) * var_7_2)
+	return math.floor((currentHP * self._currentHPRatio + self._maxHPNumber + self._number + self._castMaxHPNumber + casterCurrentHP * self._castHPRatio) * casterHealingEnhancement)
 end

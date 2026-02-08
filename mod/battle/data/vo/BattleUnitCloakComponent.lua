@@ -1,205 +1,239 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.BattleUnitCloakComponent = class("BattleUnitCloakComponent")
-var_0_0.Battle.BattleUnitCloakComponent.__name = "BattleUnitCloakComponent"
+ys.Battle.BattleUnitCloakComponent = class("BattleUnitCloakComponent")
+ys.Battle.BattleUnitCloakComponent.__name = "BattleUnitCloakComponent"
 
-local var_0_5 = var_0_0.Battle.BattleUnitCloakComponent
+-- 核心组件之一: 隐匿组件
+local BattleUnitCloakComponent = ys.Battle.BattleUnitCloakComponent
 
-var_0_5.STATE_CLOAK = "STATE_CLOAK"
-var_0_5.STATE_UNCLOAK = "STATE_UNCLOAK"
+BattleUnitCloakComponent.STATE_CLOAK = "STATE_CLOAK"
+BattleUnitCloakComponent.STATE_UNCLOAK = "STATE_UNCLOAK"
 
-function var_0_5.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._client = arg_1_1
+-- 在BattleUnit.InitCloak调用, 挂载隐匿组件
+function BattleUnitCloakComponent.Ctor(self, client)
+	-- client指的是主体单位，也就是这个组件是挂在这个单位身上的
+	self._client = client
 
-	arg_1_0:initCloak()
+	self:initCloak()
 end
 
-function var_0_5.Update(arg_2_0, arg_2_1)
-	arg_2_0._lastCloakUpdateStamp = arg_2_0._lastCloakUpdateStamp or arg_2_1
+function BattleUnitCloakComponent.Update(self, timeStamp)
+	self._lastCloakUpdateStamp = self._lastCloakUpdateStamp or timeStamp
 
-	arg_2_0:updateCloakValue(arg_2_1)
-	arg_2_0:UpdateCloakState()
+	self:updateCloakValue(timeStamp)
+	self:UpdateCloakState()
 
-	arg_2_0._lastCloakUpdateStamp = arg_2_1
-
-	var_0_0.Battle.BattleBuffDOT.UpdateCloakLock(arg_2_0._client)
+	self._lastCloakUpdateStamp = timeStamp
+	-- DOT的暴露值更新在状态更新后, 这有点奇怪
+	ys.Battle.BattleBuffDOT.UpdateCloakLock(self._client)
 end
 
-function var_0_5.UpdateCloakConfig(arg_3_0)
-	arg_3_0._exposeBase = var_0_4.GetCurrent(arg_3_0._client, "cloakExposeBase")
-	arg_3_0._exposeExtra = var_0_4.GetCurrent(arg_3_0._client, "cloakExposeExtra")
-	arg_3_0._restoreValue = var_0_4.GetCurrent(arg_3_0._client, "cloakRestore")
-	arg_3_0._recovery = var_0_4.GetCurrent(arg_3_0._client, "cloakRecovery")
+function BattleUnitCloakComponent.UpdateCloakConfig(self)
+	self._exposeBase = BattleAttr.GetCurrent(self._client, "cloakExposeBase")
+	self._exposeExtra = BattleAttr.GetCurrent(self._client, "cloakExposeExtra")
+	self._restoreValue = BattleAttr.GetCurrent(self._client, "cloakRestore")
+	self._recovery = BattleAttr.GetCurrent(self._client, "cloakRecovery")
 
-	arg_3_0:adjustCloakAttr()
-	arg_3_0._client:DispatchEvent(var_0_0.Event.New(var_0_1.UPDATE_CLOAK_CONFIG))
+	self:adjustCloakAttr()
+	self._client:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_CONFIG))
 end
 
-function var_0_5.SetRecoverySpeed(arg_4_0, arg_4_1)
-	arg_4_0._fieldRecoveryOverride = arg_4_1
+function BattleUnitCloakComponent.SetRecoverySpeed(self, recoverySpeed)
+	self._fieldRecoveryOverride = recoverySpeed
 end
 
-function var_0_5.AppendExpose(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_0._cloakValue + arg_5_1
-	local var_5_1 = arg_5_0:GetCloakBottom()
+-- 提高暴露值("进度条"增加)
+function BattleUnitCloakComponent.AppendExpose(self, exposeValue)
+	local currentCloakValue = self._cloakValue + exposeValue
+	local cloakBottom = self:GetCloakBottom()
 
-	arg_5_0._cloakValue = Mathf.Clamp(var_5_0, var_5_1, arg_5_0._exposeValue)
+	self._cloakValue = Mathf.Clamp(currentCloakValue, cloakBottom, self._exposeValue)
 
-	arg_5_0:UpdateCloakState()
+	self:UpdateCloakState()
 end
 
-function var_0_5.AppendStrikeExpose(arg_6_0)
-	local var_6_0 = math.min(arg_6_0._strikeExposeAdditive * arg_6_0._strikeCount, arg_6_0._strikeExposeAdditiveLimit)
+function BattleUnitCloakComponent.AppendStrikeExpose(self)
+	local exposedValue = math.min(self._strikeExposeAdditive * self._strikeCount, self._strikeExposeAdditiveLimit)
 
-	arg_6_0._strikeCount = arg_6_0._strikeCount + 1
+	self._strikeCount = self._strikeCount + 1
 
-	arg_6_0:AppendExpose(var_6_0)
+	self:AppendExpose(exposedValue)
 end
 
-function var_0_5.AppendBombardExpose(arg_7_0)
-	local var_7_0 = math.min(arg_7_0._bombardExposeAdditive * arg_7_0._bombardCount, arg_7_0._bombardExposeAdditiveLimit)
+function BattleUnitCloakComponent.AppendBombardExpose(self)
+	local exposedValue = math.min(self._bombardExposeAdditive * self._bombardCount, self._bombardExposeAdditiveLimit)
 
-	arg_7_0._bombardCount = arg_7_0._bombardCount + 1
+	self._bombardCount = self._bombardCount + 1
 
-	arg_7_0:AppendExpose(var_7_0)
+	self:AppendExpose(exposedValue)
 end
 
-function var_0_5.AppendExposeSpeed(arg_8_0, arg_8_1)
-	arg_8_0._exposeSpeed = arg_8_1
+function BattleUnitCloakComponent.AppendExposeSpeed(self, exposeSpeed)
+	self._exposeSpeed = exposeSpeed
 end
 
-function var_0_5.ForceToMax(arg_9_0)
-	arg_9_0:ForceToRate(1)
+-- 强制破隐
+function BattleUnitCloakComponent.ForceToMax(self)
+	self:ForceToRate(1)
 end
 
-function var_0_5.ForceToRate(arg_10_0, arg_10_1)
-	arg_10_0._cloakValue = math.floor(arg_10_1 * arg_10_0._exposeValue)
+function BattleUnitCloakComponent.ForceToRate(self, rate)
+	self._cloakValue = math.floor(rate * self._exposeValue)
 
-	arg_10_0:UpdateCloakState()
+	self:UpdateCloakState()
 end
 
-function var_0_5.UpdateDotExpose(arg_11_0, arg_11_1)
-	if arg_11_1 ~= arg_11_0._cloakBottom then
-		arg_11_0._cloakBottom = arg_11_1
+-- 处理DOT类BuffEffect传来的暴露值更新请求
+-- 被BattleUnit.CloakOnFire调用
+-- DOT类的特点是会锁定隐匿下限. 在DOT存在期间, cloakValue不能落到此线之下
+function BattleUnitCloakComponent.UpdateDotExpose(self, exposedValue)
+	if exposedValue ~= self._cloakBottom then
+		self._cloakBottom = exposedValue
 
-		arg_11_0._client:DispatchEvent(var_0_0.Event.New(var_0_1.UPDATE_CLOAK_LOCK))
+		self._client:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_LOCK))
 	end
 end
 
-function var_0_5.UpdateTauntExpose(arg_12_0, arg_12_1)
-	if arg_12_1 then
-		arg_12_0._tauntCloakBottom = arg_12_0._restoreValue
+-- 被BattleBuffTaunt用到. 用于强制暴露(设置暴露值下限).
+function BattleUnitCloakComponent.UpdateTauntExpose(self, tauntExpose)
+	if tauntExpose then
+		self._tauntCloakBottom = self._restoreValue
 	else
-		arg_12_0._tauntCloakBottom = nil
+		self._tauntCloakBottom = nil
 	end
 end
 
-function var_0_5.UpdateCloakState(arg_13_0)
-	local var_13_0
-
-	if arg_13_0._cloakValue >= arg_13_0._exposeValue then
-		var_13_0 = var_0_5.STATE_UNCLOAK
-	elseif arg_13_0._cloakValue < arg_13_0._restoreValue then
-		var_13_0 = var_0_5.STATE_CLOAK
+function BattleUnitCloakComponent.UpdateCloakState(self)
+	local currentState
+	-- 大于隐匿上限, 破隐
+	if self._cloakValue >= self._exposeValue then
+		currentState = BattleUnitCloakComponent.STATE_UNCLOAK
+	-- 小于隐匿回复线, 重新隐匿
+	elseif self._cloakValue < self._restoreValue then
+		currentState = BattleUnitCloakComponent.STATE_CLOAK
 	end
+	-- 状态发生了切换时, 相应修改属性并触发事件
+	if currentState and currentState ~= self._currentState then
+		self._currentState = currentState
 
-	if var_13_0 and var_13_0 ~= arg_13_0._currentState then
-		arg_13_0._currentState = var_13_0
-
-		if arg_13_0._currentState == var_0_5.STATE_UNCLOAK then
-			var_0_4.Uncloak(arg_13_0._client)
-			arg_13_0:triggerBuff()
-		elseif arg_13_0._currentState == var_0_5.STATE_CLOAK then
-			var_0_4.Cloak(arg_13_0._client)
-			arg_13_0:triggerBuff()
+		if self._currentState == BattleUnitCloakComponent.STATE_UNCLOAK then
+			BattleAttr.Uncloak(self._client)
+			self:triggerBuff()
+		elseif self._currentState == BattleUnitCloakComponent.STATE_CLOAK then
+			BattleAttr.Cloak(self._client)
+			self:triggerBuff()
 		end
 	end
 end
 
-function var_0_5.GetCloakValue(arg_14_0)
-	return arg_14_0._cloakValue
+function BattleUnitCloakComponent.GetCloakValue(self)
+	return self._cloakValue
 end
 
-function var_0_5.GetCloakMax(arg_15_0)
-	return arg_15_0._exposeValue
+function BattleUnitCloakComponent.GetCloakMax(self)
+	return self._exposeValue
 end
 
-function var_0_5.GetCloakLockMin(arg_16_0)
-	return arg_16_0._fireLockValue
+function BattleUnitCloakComponent.GetCloakLockMin(self)
+	return self._fireLockValue
 end
 
-function var_0_5.GetCloakRestoreValue(arg_17_0)
-	return arg_17_0._restoreValue
+function BattleUnitCloakComponent.GetCloakRestoreValue(self)
+	return self._restoreValue
 end
 
-function var_0_5.GetCloakBottom(arg_18_0)
-	if arg_18_0._tauntCloakBottom then
-		return math.max(arg_18_0._tauntCloakBottom, arg_18_0._cloakBottom)
+function BattleUnitCloakComponent.GetCloakBottom(self)
+	-- 强制暴露: 设置暴露值下限
+	if self._tauntCloakBottom then
+		return math.max(self._tauntCloakBottom, self._cloakBottom)
 	else
-		return arg_18_0._cloakBottom
+		return self._cloakBottom
 	end
 end
 
-function var_0_5.GetCurrentState(arg_19_0)
-	return arg_19_0._currentState
+function BattleUnitCloakComponent.GetCurrentState(self)
+	return self._currentState
 end
 
-function var_0_5.GetExposeSpeed(arg_20_0)
-	return arg_20_0._exposeSpeed
+function BattleUnitCloakComponent.GetExposeSpeed(self)
+	return self._exposeSpeed
 end
 
-function var_0_5.updateCloakValue(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_1 - arg_21_0._lastCloakUpdateStamp
-	local var_21_1 = arg_21_0._fieldRecoveryOverride or arg_21_0._recovery
-	local var_21_2 = (arg_21_0._exposeSpeed - var_21_1) * var_21_0
+function BattleUnitCloakComponent.updateCloakValue(self, timeStamp)
+	local elapsedTime = timeStamp - self._lastCloakUpdateStamp
+	local recovery = self._fieldRecoveryOverride or self._recovery
+	local exposedValue = (self._exposeSpeed - recovery) * elapsedTime
 
-	arg_21_0:AppendExpose(var_21_2)
+	self:AppendExpose(exposedValue)
 end
 
-function var_0_5.initCloak(arg_22_0)
-	arg_22_0._exposeBase = var_0_4.GetCurrent(arg_22_0._client, "cloakExposeBase")
-	arg_22_0._exposeExtra = var_0_4.GetCurrent(arg_22_0._client, "cloakExposeExtra")
-	arg_22_0._restoreValue = var_0_4.GetCurrent(arg_22_0._client, "cloakRestore")
-	arg_22_0._fireLockValue = var_0_4.GetCurrent(arg_22_0._client, "cloakFireLock")
-	arg_22_0._cloakValue = 0
-	arg_22_0._exposeSpeed = 0
-	arg_22_0._cloakBottom = 0
+function BattleUnitCloakComponent.initCloak(self)
+	-- 先明确定义: 
+	-- 隐匿系统的核心属性是暴露值cloakValue. 暴露值有各种增加方式(如舰载机撞线、DOT等)
+	--- (虽然理论上应该叫exposeValue, 但代码就这么写的. 注意区分cloakValue是那个"进度条", exposeValue是那个"上限", 这命名我也是醉了)
+	-- 暴露值达到隐匿上限后，破隐(切换cloakState = 0).
+	-- 只有当破隐者回落到隐匿回复线以下时，才能重新隐匿(切换cloakState = 1)
+	-- 暴露值如何降低: 依靠隐匿回复速度，随着时间流逝自动降低
+	-- (因此可以认为, "隐匿"和"暴露”是两个相对的概念，暴露值越高，隐匿状态越差)
 
-	arg_22_0:adjustCloakAttr()
+	-- exposeBase: 隐匿基础上限
+	-- 在BattleAttr.SetPlayerAttrFromOutBattle中, 设置为机动+50
+	self._exposeBase = BattleAttr.GetCurrent(self._client, "cloakExposeBase")
+	-- exposeExtra: 隐匿额外上限. 一般靠特定技能提供, 否则是0
+	self._exposeExtra = BattleAttr.GetCurrent(self._client, "cloakExposeExtra")
+	-- restoreValue: 隐匿回复线. 如果破隐, 需要到此值之下才能重新隐匿
+	-- 为上述两者之和(即总上限)减去一个固定值(60)
+	self._restoreValue = BattleAttr.GetCurrent(self._client, "cloakRestore")
+	-- fireLockValue: 这没用过, 应该废弃了
+	self._fireLockValue = BattleAttr.GetCurrent(self._client, "cloakFireLock")
+	self._cloakValue = 0
+	self._exposeSpeed = 0
+	self._cloakBottom = 0
 
-	arg_22_0._recovery = var_0_4.GetCurrent(arg_22_0._client, "cloakRecovery")
-	arg_22_0._strikeExposeAdditive = var_0_4.GetCurrent(arg_22_0._client, "cloakStrikeAdditive")
-	arg_22_0._bombardExposeAdditive = var_0_4.GetCurrent(arg_22_0._client, "cloakBombardAdditive")
-	arg_22_0._strikeCount = 0
-	arg_22_0._bombardCount = 0
-	arg_22_0._strikeExposeAdditiveLimit = var_0_3.CLOAK_STRIKE_ADDITIVE_LIMIT
-	arg_22_0._bombardExposeAdditiveLimit = var_0_3.CLOAK_STRIKE_ADDITIVE_LIMIT
-	arg_22_0._exposeDotList = {}
-	arg_22_0._currentState = var_0_5.STATE_CLOAK
-
-	var_0_4.Cloak(arg_22_0._client)
-	arg_22_0:triggerBuff()
+	self:adjustCloakAttr()
+	-- recovery: 隐匿回复速度. 默认为5/s
+	self._recovery = BattleAttr.GetCurrent(self._client, "cloakRecovery")
+	-- strikeExposeAdditive: 每次空袭额外增加的暴露值. 默认6
+	self._strikeExposeAdditive = BattleAttr.GetCurrent(self._client, "cloakStrikeAdditive")
+	-- bombardExposeAdditive: 每次跨射额外增加的暴露值. 默认6
+	self._bombardExposeAdditive = BattleAttr.GetCurrent(self._client, "cloakBombardAdditive")
+	self._strikeCount = 0
+	self._bombardCount = 0
+	-- 额外上限均为60
+	self._strikeExposeAdditiveLimit = BattleConfig.CLOAK_STRIKE_ADDITIVE_LIMIT
+	self._bombardExposeAdditiveLimit = BattleConfig.CLOAK_STRIKE_ADDITIVE_LIMIT
+	self._exposeDotList = {}
+	-- 初始默认是隐匿状态
+	self._currentState = BattleUnitCloakComponent.STATE_CLOAK
+	-- 设置隐匿属性, 才能用这个属性
+	BattleAttr.Cloak(self._client)
+	self:triggerBuff()
 end
 
-function var_0_5.triggerBuff(arg_23_0)
-	local var_23_0 = var_0_4.GetCurrent(arg_23_0._client, "isCloak")
+function BattleUnitCloakComponent.triggerBuff(self)
+	local isCloak = BattleAttr.GetCurrent(self._client, "isCloak")
 
-	arg_23_0._client:DispatchCloakStateUpdate()
+	self._client:DispatchCloakStateUpdate()
 end
 
-function var_0_5.adjustCloakAttr(arg_24_0)
-	arg_24_0._exposeBase = math.max(arg_24_0._exposeBase, var_0_3.CLOAK_EXPOSE_BASE_MIN)
-	arg_24_0._exposeValue = math.max(arg_24_0._exposeBase + arg_24_0._exposeExtra, var_0_3.CLOAK_EXPOSE_SKILL_MIN)
-	arg_24_0._restoreValue = math.max(arg_24_0._exposeValue + var_0_3.CLOAK_BASE_RESTORE_DELTA, 0)
-	arg_24_0._cloakValue = Mathf.Clamp(arg_24_0._cloakValue, 0, arg_24_0._exposeValue)
+function BattleUnitCloakComponent.adjustCloakAttr(self)
+	-- CLOAK_EXPOSE_BASE_MIN = 100
+	-- base最小是100
+	self._exposeBase = math.max(self._exposeBase, BattleConfig.CLOAK_EXPOSE_BASE_MIN)
+	-- CLOAK_EXPOSE_SKILL_MIN = 60
+	-- exposeValue这里指的是隐匿上限(超过即破隐)
+	self._exposeValue = math.max(self._exposeBase + self._exposeExtra, BattleConfig.CLOAK_EXPOSE_SKILL_MIN)
+	-- CLOAK_BASE_RESTORE_DELTA = -60
+	self._restoreValue = math.max(self._exposeValue + BattleConfig.CLOAK_BASE_RESTORE_DELTA, 0)
+	self._cloakValue = Mathf.Clamp(self._cloakValue, 0, self._exposeValue)
 
-	var_0_4.SetCurrent(arg_24_0._client, "cloakExposeBase", arg_24_0._exposeBase)
-	var_0_4.SetCurrent(arg_24_0._client, "cloakRestore", arg_24_0._restoreValue)
-	arg_24_0:UpdateCloakState()
+	BattleAttr.SetCurrent(self._client, "cloakExposeBase", self._exposeBase)
+	BattleAttr.SetCurrent(self._client, "cloakRestore", self._restoreValue)
+	self:UpdateCloakState()
 end

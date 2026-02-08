@@ -1,85 +1,87 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = pg.effect_offset
+local ys = ys
+local effect_offset = pg.effect_offset
 
-var_0_0.Battle.BattleBuffBarrier = class("BattleBuffBarrier", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffBarrier.__name = "BattleBuffBarrier"
+ys.Battle.BattleBuffBarrier = class("BattleBuffBarrier", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffBarrier.__name = "BattleBuffBarrier"
 
-local var_0_2 = var_0_0.Battle.BattleBuffBarrier
+local BattleBuffBarrier = ys.Battle.BattleBuffBarrier
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+-- 此Effect是基于Wall的护盾，抵挡伤害
+-- 算是Shield和ShieldWall的一个结合体?
+function BattleBuffBarrier.Ctor(self, effectData)
+	BattleBuffBarrier.super.Ctor(self, effectData)
 end
 
-function var_0_2.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffBarrier.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._durability = var_2_0.durability
-	arg_2_0._dir = arg_2_1:GetDirection()
-	arg_2_0._unit = arg_2_1
-	arg_2_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
-	arg_2_0._centerPos = arg_2_1:GetPosition()
+	self._durability = arg_list.durability
+	self._dir = owner:GetDirection()
+	self._unit = owner
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._centerPos = owner:GetPosition()
 
-	local function var_2_1(arg_3_0)
-		arg_2_0._dataProxy:HandleDamage(arg_3_0, arg_2_0._unit)
-		arg_3_0:Intercepted()
-		arg_2_0._dataProxy:RemoveBulletUnit(arg_3_0:GetUniqueID())
+	local function cldFun(bullet)
+		self._dataProxy:HandleDamage(bullet, self._unit)
+		bullet:Intercepted()
+		self._dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 	end
 
-	local var_2_2 = var_2_0.cld_data
-	local var_2_3 = var_2_2.box
-	local var_2_4 = Clone(var_2_2.offset)
+	local cld_data = arg_list.cld_data
+	local box = cld_data.box
+	local offset = Clone(cld_data.offset)
 
-	if arg_2_1:GetDirection() == var_0_0.Battle.BattleConst.UnitDir.LEFT then
-		var_2_4[1] = -var_2_4[1]
+	if owner:GetDirection() == ys.Battle.BattleConst.UnitDir.LEFT then
+		offset[1] = -offset[1]
 	end
 
-	arg_2_0._wall = arg_2_0._dataProxy:SpawnWall(arg_2_0, var_2_1, var_2_3, var_2_4)
+	self._wall = self._dataProxy:SpawnWall(self, cldFun, box, offset)
 end
 
-function var_0_2.onUpdate(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	local var_4_0 = arg_4_3.timeStamp
-
-	arg_4_0._centerPos = arg_4_1:GetPosition()
+function BattleBuffBarrier.onUpdate(self, owner, buff, args)
+	local timeStamp = args.timeStamp
+	-- 更新位置
+	self._centerPos = owner:GetPosition()
 end
 
-function var_0_2.onTakeDamage(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
-	if arg_5_0:damageCheck(arg_5_3) then
-		local var_5_0 = arg_5_3.damage
+function BattleBuffBarrier.onTakeDamage(self, owner, buff, args)
+	if self:damageCheck(args) then
+		local damage = args.damage
 
-		arg_5_0._durability = arg_5_0._durability - var_5_0
+		self._durability = self._durability - damage
 
-		if arg_5_0._durability > 0 then
-			arg_5_3.damage = 0
+		if self._durability > 0 then
+			args.damage = 0
 		else
-			arg_5_3.damage = -arg_5_0._durability
+			args.damage = -self._durability
 
-			arg_5_2:SetToCancel()
+			buff:SetToCancel()
 		end
 	end
 end
 
-function var_0_2.onAttach(arg_6_0, arg_6_1, arg_6_2, arg_6_3)
-	if arg_6_0._unit:IsBoss() then
-		arg_6_0._unit:BarrierStateChange(arg_6_0._durability, arg_6_2:GetDuration())
+function BattleBuffBarrier.onAttach(self, owner, buff, args)
+	if self._unit:IsBoss() then
+		self._unit:BarrierStateChange(self._durability, buff:GetDuration())
 	end
 end
 
-function var_0_2.onRemove(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-	if arg_7_0._unit:IsBoss() then
-		arg_7_0._unit:BarrierStateChange(0)
+function BattleBuffBarrier.onRemove(self, owner, buff, args)
+	if self._unit:IsBoss() then
+		self._unit:BarrierStateChange(0)
 	end
 end
 
-function var_0_2.GetIFF(arg_8_0)
-	return arg_8_0._unit:GetIFF()
+function BattleBuffBarrier.GetIFF(self)
+	return self._unit:GetIFF()
 end
 
-function var_0_2.GetPosition(arg_9_0)
-	return arg_9_0._centerPos
+function BattleBuffBarrier.GetPosition(self)
+	return self._centerPos
 end
 
-function var_0_2.IsWallActive(arg_10_0)
-	return arg_10_0._durability > 0
+function BattleBuffBarrier.IsWallActive(self)
+	return self._durability > 0
 end

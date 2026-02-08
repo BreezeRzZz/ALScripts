@@ -1,130 +1,135 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffRecordShield = class("BattleBuffRecordShield", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffRecordShield.__name = "BattleBuffRecordShield"
+ys.Battle.BattleBuffRecordShield = class("BattleBuffRecordShield", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffRecordShield.__name = "BattleBuffRecordShield"
 
-local var_0_1 = var_0_0.Battle.BattleBuffRecordShield
+local BattleBuffRecordShield = ys.Battle.BattleBuffRecordShield
 
-var_0_1.MODE_RECORD = "record"
-var_0_1.MODE_SHIELD = "shield"
+BattleBuffRecordShield.MODE_RECORD = "record"
+BattleBuffRecordShield.MODE_SHIELD = "shield"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect会先进入记录模式，记录满足条件的伤害，持续时间结束后转换为护盾，护盾持续时间结束或者护盾值耗尽后再次转换为记录模式，如此循环
+-- 使用例: 莫加多尔2技能
+function BattleBuffRecordShield.Ctor(self, arg_1_1)
+	BattleBuffRecordShield.super.Ctor(self, arg_1_1)
 end
 
-function var_0_1.GetEffectAttachData(arg_2_0)
-	return arg_2_0._shieldValue
+function BattleBuffRecordShield.GetEffectAttachData(self)
+	return self._shieldValue
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_0._tempData.arg_list
+function BattleBuffRecordShield.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_3_0._damageAttrRequire = var_3_0.damageAttr
-	arg_3_0._damageSrcTagRequire = var_3_0.srcTag
-	arg_3_0._convertRate = var_3_0.convertRate
-	arg_3_0._shieldDuration = var_3_0.shield_duration
-	arg_3_0._recordDuration = var_3_0.record_duration
-	arg_3_0._exhaustRemove = var_3_0.exhaust_remove
-	arg_3_0._shieldValue = 0
-	arg_3_0._recordDamage = 0
-	arg_3_0._shieldStartTimeStamp = 0
-	arg_3_0._recordStartTimeStamp = 0
-	arg_3_0._unit = arg_3_1
-	arg_3_0._fxName = var_3_0.effect
-	arg_3_0._effectIndex = "BattleBuffRecordShield" .. arg_3_2:GetID()
+	self._damageAttrRequire = arg_list.damageAttr
+	self._damageSrcTagRequire = arg_list.srcTag
+	self._convertRate = arg_list.convertRate
+	self._shieldDuration = arg_list.shield_duration
+	self._recordDuration = arg_list.record_duration
+	self._exhaustRemove = arg_list.exhaust_remove
+	self._shieldValue = 0
+	self._recordDamage = 0
+	self._shieldStartTimeStamp = 0
+	self._recordStartTimeStamp = 0
+	self._unit = owner
+	self._fxName = arg_list.effect
+	self._effectIndex = "BattleBuffRecordShield" .. buff:GetID()
 
-	arg_3_0:switchMode(var_0_1.MODE_RECORD)
+	self:switchMode(BattleBuffRecordShield.MODE_RECORD)
 end
 
-function var_0_1.onUpdate(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleBuffRecordShield.onUpdate(self, owner, buff)
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	if arg_4_0._buffMode == var_0_1.MODE_SHIELD then
-		if arg_4_0._shieldDuration and var_4_0 - arg_4_0._shieldStartTimeStamp > arg_4_0._shieldDuration or arg_4_0._shieldValue <= 0 then
-			arg_4_0:handleShieldExhaust(arg_4_2)
+	if self._buffMode == BattleBuffRecordShield.MODE_SHIELD then
+		-- 护盾持续时间到或者护盾值耗尽
+		if self._shieldDuration and currentTime - self._shieldStartTimeStamp > self._shieldDuration or self._shieldValue <= 0 then
+			self:handleShieldExhaust(buff)
 		end
-	elseif arg_4_0._buffMode == var_0_1.MODE_RECORD and arg_4_0._recordDuration and var_4_0 - arg_4_0._recordStartTimeStamp > arg_4_0._recordDuration then
-		arg_4_0:switchMode(var_0_1.MODE_SHIELD)
+	elseif self._buffMode == BattleBuffRecordShield.MODE_RECORD and self._recordDuration and currentTime - self._recordStartTimeStamp > self._recordDuration then
+		self:switchMode(BattleBuffRecordShield.MODE_SHIELD)
 	end
 end
 
-function var_0_1.handleShieldExhaust(arg_5_0, arg_5_1)
-	if arg_5_0._exhaustRemove then
-		arg_5_1:SetToCancel()
+function BattleBuffRecordShield.handleShieldExhaust(self, buff)
+	if self._exhaustRemove then
+		buff:SetToCancel()
 	else
-		arg_5_0:switchMode(var_0_1.MODE_RECORD)
+		self:switchMode(BattleBuffRecordShield.MODE_RECORD)
 	end
 end
 
-function var_0_1.switchMode(arg_6_0, arg_6_1)
-	arg_6_0._buffMode = arg_6_1
+function BattleBuffRecordShield.switchMode(self, mode)
+	self._buffMode = mode
 
-	local var_6_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	-- 根据模式不同，写了两种onTakeDamage函数，分别处理护盾和记录两种情况
+	-- (两种模式会互相切换，所以需要两种函数，不能在一个函数里处理两种情况)
+	if mode == BattleBuffRecordShield.MODE_SHIELD then
+		self._shieldStartTimeStamp = currentTime
+		self._shieldValue = self:calcNumber()
+		self.onTakeDamage = BattleBuffRecordShield.__shieldTakeDamage
 
-	if arg_6_1 == var_0_1.MODE_SHIELD then
-		arg_6_0._shieldStartTimeStamp = var_6_0
-		arg_6_0._shieldValue = arg_6_0:calcNumber()
-		arg_6_0.onTakeDamage = var_0_1.__shieldTakeDamage
-
-		local var_6_1 = {
-			index = arg_6_0._effectIndex,
-			effect = arg_6_0._fxName
+		local addEffectArgs = {
+			index = self._effectIndex,
+			effect = self._fxName
 		}
 
-		arg_6_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.ADD_EFFECT, var_6_1))
-	elseif arg_6_1 == var_0_1.MODE_RECORD then
-		arg_6_0._recordStartTimeStamp = var_6_0
-		arg_6_0._recordDamage = 0
-		arg_6_0._shieldValue = 0
-		arg_6_0.onTakeDamage = var_0_1.__recordDamage
+		self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, addEffectArgs))
+	elseif mode == BattleBuffRecordShield.MODE_RECORD then
+		self._recordStartTimeStamp = currentTime
+		self._recordDamage = 0
+		self._shieldValue = 0
+		self.onTakeDamage = BattleBuffRecordShield.__recordDamage
 
-		arg_6_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CANCEL_EFFECT, {
-			index = arg_6_0._effectIndex
+		self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.CANCEL_EFFECT, {
+			index = self._effectIndex
 		}))
 	end
 end
 
-function var_0_1.__shieldTakeDamage(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-	if arg_7_0:damageCheck(arg_7_3) then
-		local var_7_0 = arg_7_3.damage
+function BattleBuffRecordShield.__shieldTakeDamage(self, owner, buff, args)
+	if self:damageCheck(args) then
+		local damage = args.damage
 
-		arg_7_0._shieldValue = arg_7_0._shieldValue - var_7_0
+		self._shieldValue = self._shieldValue - damage
 
-		if arg_7_0._shieldValue > 0 then
-			arg_7_3.damage = 0
+		if self._shieldValue > 0 then
+			args.damage = 0
 		else
-			arg_7_3.damage = -arg_7_0._shieldValue
+			args.damage = -self._shieldValue
 
-			arg_7_0:handleShieldExhaust(arg_7_2)
+			self:handleShieldExhaust(buff)
 		end
 	end
 end
 
-function var_0_1.__recordDamage(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	if not arg_8_0:damageCheck(arg_8_3) then
+function BattleBuffRecordShield.__recordDamage(self, owner, buff, args)
+	if not self:damageCheck(args) then
 		return
 	end
 
-	if not arg_8_0:DamageSourceRequire(arg_8_3.damageSrc) then
+	if not self:DamageSourceRequire(args.damageSrc) then
 		return
 	end
 
-	arg_8_0._recordDamage = arg_8_0._recordDamage + arg_8_3.damage
+	self._recordDamage = self._recordDamage + args.damage
 
-	if not arg_8_0._recordDuration and arg_8_0:calcNumber() >= 1 then
-		arg_8_0:switchMode(var_0_1.MODE_SHIELD)
+	if not self._recordDuration and self:calcNumber() >= 1 then
+		self:switchMode(BattleBuffRecordShield.MODE_SHIELD)
 	end
 end
 
-function var_0_1.calcNumber(arg_9_0)
-	return (math.max(0, math.floor(arg_9_0._recordDamage * arg_9_0._convertRate)))
+-- 核心: 将记录模式下记录的伤害转换为护盾值
+function BattleBuffRecordShield.calcNumber(self)
+	return (math.max(0, math.floor(self._recordDamage * self._convertRate)))
 end
 
-function var_0_1.Clear(arg_10_0)
-	arg_10_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CANCEL_EFFECT, {
-		index = arg_10_0._effectIndex
+function BattleBuffRecordShield.Clear(self)
+	self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.CANCEL_EFFECT, {
+		index = self._effectIndex
 	}))
-	var_0_1.super.Clear(arg_10_0)
+	BattleBuffRecordShield.super.Clear(self)
 end

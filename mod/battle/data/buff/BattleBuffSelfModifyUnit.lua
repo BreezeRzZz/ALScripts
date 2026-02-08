@@ -1,19 +1,21 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBuffEvent
-local var_0_2 = var_0_0.Battle.BattleConst.BuffEffectType
-local var_0_3 = class("BattleBuffSelfModifyUnit", var_0_0.Battle.BattleBuffUnit)
+local ys = ys
+local BattleBuffEvent = ys.Battle.BattleBuffEvent
+local BuffEffectType = ys.Battle.BattleConst.BuffEffectType
+local BattleBuffSelfModifyUnit = class("BattleBuffSelfModifyUnit", ys.Battle.BattleBuffUnit)
 
-var_0_0.Battle.BattleBuffSelfModifyUnit = var_0_3
-var_0_3.__name = "BattleBuffSelfModifyUnit"
+ys.Battle.BattleBuffSelfModifyUnit = BattleBuffSelfModifyUnit
+BattleBuffSelfModifyUnit.__name = "BattleBuffSelfModifyUnit"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
-	arg_1_0._selfModifyTempData = arg_1_4
+-- 用来重载Template
+-- BattleBuffDamageConvert有用到
+function BattleBuffSelfModifyUnit.Ctor(self, buffID, level, caster, selfModifyTempData)
+	self._selfModifyTempData = selfModifyTempData
 
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3, arg_1_4)
+	BattleBuffSelfModifyUnit.super.Ctor(self, buffID, level, caster, selfModifyTempData)
 end
 
-function var_0_3.SetTemplate(arg_2_0)
-	arg_2_0._tempData = arg_2_0._selfModifyTempData
+function BattleBuffSelfModifyUnit.SetTemplate(self)
+	self._tempData = self._selfModifyTempData
 end

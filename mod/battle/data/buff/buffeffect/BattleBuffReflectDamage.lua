@@ -1,39 +1,41 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffReflectDamage = class("BattleBuffReflectDamage", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffReflectDamage.__name = "BattleBuffReflectDamage"
+ys.Battle.BattleBuffReflectDamage = class("BattleBuffReflectDamage", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffReflectDamage.__name = "BattleBuffReflectDamage"
 
-local var_0_1 = var_0_0.Battle.BattleBuffReflectDamage
+local BattleBuffReflectDamage = ys.Battle.BattleBuffReflectDamage
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect的触发条件为：当受到伤害时，若伤害值超过一定(最大耐久)比例，则对伤害来源造成反弹伤害
+-- 使用例: 光荣META 3技能
+function BattleBuffReflectDamage.Ctor(self, effectData)
+	BattleBuffReflectDamage.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffReflectDamage.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._triggerValve = var_2_0.valve
-	arg_2_0._reflectRate = var_2_0.reflectRate
-	arg_2_0._reflectTargetChoice = var_2_0.reflectTarget.target_choise
-	arg_2_0._reflectTargetParam = var_2_0.reflectTarget.arg_list
+	self._triggerValve = arg_list.valve
+	self._reflectRate = arg_list.reflectRate
+	self._reflectTargetChoice = arg_list.reflectTarget.target_choise
+	self._reflectTargetParam = arg_list.reflectTarget.arg_list
 end
 
-function var_0_1.onDamageConclude(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	if arg_3_0:damageCheck(arg_3_3) and not arg_3_3.isReflect then
-		local var_3_0, var_3_1 = arg_3_1:GetHP()
-		local var_3_2 = -arg_3_3.validDHP
+function BattleBuffReflectDamage.onDamageConclude(self, owner, buff, args)
+	if self:damageCheck(args) and not args.isReflect then
+		local _, maxHP = owner:GetHP()
+		local validDamage = -args.validDHP
 
-		if var_3_2 >= math.floor(var_3_1 * arg_3_0._triggerValve) then
-			local var_3_3 = var_0_0.Battle.BattleDataProxy.GetInstance()
-			local var_3_4 = arg_3_0:getTargetList(arg_3_1, arg_3_0._reflectTargetChoice, arg_3_0._reflectTargetParam, {})
+		if validDamage >= math.floor(maxHP * self._triggerValve) then
+			local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+			local reflectTargetList = self:getTargetList(owner, self._reflectTargetChoice, self._reflectTargetParam, {})
 
-			if #var_3_4 ~= 0 then
-				local var_3_5 = var_3_4[1]
-				local var_3_6 = math.floor(arg_3_0._reflectRate * var_3_2)
+			if #reflectTargetList ~= 0 then
+				local reflectTarget = reflectTargetList[1]
+				local reflectDamage = math.floor(self._reflectRate * validDamage)
 
-				var_3_3:HandleDirectDamage(var_3_5, var_3_6, arg_3_1, nil, true)
+				battleDataProxy:HandleDirectDamage(reflectTarget, reflectDamage, owner, nil, true)
 			end
 		end
 	end

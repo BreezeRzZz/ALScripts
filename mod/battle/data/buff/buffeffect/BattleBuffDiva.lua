@@ -1,25 +1,26 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffDiva", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffDiva = class("BattleBuffDiva", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffDiva = var_0_1
-var_0_1.__name = "BattleBuffDiva"
+ys.Battle.BattleBuffDiva = BattleBuffDiva
+BattleBuffDiva.__name = "BattleBuffDiva"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 这类BuffEffect会播放BGM。如果有多首，随机播放一首。
+function BattleBuffDiva.Ctor(self, effectData)
+	BattleBuffDiva.super.Ctor(self, effectData)
 end
 
-function var_0_1.onInitGame(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = var_0_0.Battle.BattleDataProxy.GetInstance():GetBGMList()
-	local var_2_1 = var_2_0[math.random(#var_2_0)]
+function BattleBuffDiva.onInitGame(self, owner, buff)
+	local bgmList = ys.Battle.BattleDataProxy.GetInstance():GetBGMList()
+	local randomBgm = bgmList[math.random(#bgmList)]
 
-	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, var_2_1)
+	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, randomBgm)
 end
 
-function var_0_1.onTrigger(arg_3_0)
-	local var_3_0 = var_0_0.Battle.BattleDataProxy.GetInstance():GetBGMList(true)
-	local var_3_1 = var_3_0[math.random(#var_3_0)]
+function BattleBuffDiva.onTrigger(self)
+	local bgmList = ys.Battle.BattleDataProxy.GetInstance():GetBGMList(true)
+	local randomBgm = bgmList[math.random(#bgmList)]
 
-	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, var_3_1)
+	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, randomBgm)
 end

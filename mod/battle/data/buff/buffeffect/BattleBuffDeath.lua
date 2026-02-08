@@ -1,69 +1,71 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
 
-var_0_0.Battle.BattleBuffDeath = class("BattleBuffDeath", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffDeath.__name = "BattleBuffDeath"
+local ys = ys
 
-local var_0_1 = var_0_0.Battle.BattleBuffDeath
+ys.Battle.BattleBuffDeath = class("BattleBuffDeath", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffDeath.__name = "BattleBuffDeath"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+local BattleBuffDeath = ys.Battle.BattleBuffDeath
+
+-- 此类BuffEffect会在满足条件时让单位死亡，条件可以是时间到了，或者单位离开了指定范围，或者单位的某个countType的count不足了(来自BattleBuffCount)，或者直接瞬间死亡(instant_kill)
+-- 使用例: 常见于召唤物的持续时间(时间到了就死)，或者让某个单位立刻死亡(通过瞬移到一个很远的地方来触发离开范围)
+function BattleBuffDeath.Ctor(self, effectData)
+	BattleBuffDeath.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
-
-	if var_2_0.time then
-		arg_2_0._time = var_2_0.time + pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleBuffDeath.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
+	-- 在Buff Attach时，设定死亡时间点为time秒后
+	if arg_list.time then
+		self._time = arg_list.time + pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 
-	arg_2_0._maxX = var_2_0.maxX
-	arg_2_0._minX = var_2_0.minX
-	arg_2_0._maxY = var_2_0.maxY
-	arg_2_0._minY = var_2_0.minY
-	arg_2_0._countType = var_2_0.countType
-	arg_2_0._instantkill = arg_2_0._tempData.arg_list.instant_kill
+	self._maxX = arg_list.maxX
+	self._minX = arg_list.minX
+	self._maxY = arg_list.maxY
+	self._minY = arg_list.minY
+	self._countType = arg_list.countType
+	self._instantkill = self._tempData.arg_list.instant_kill
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	if arg_3_0._instantkill then
-		arg_3_0:DoDead(arg_3_1)
+function BattleBuffDeath.onAttach(self, owner, buff, args)
+	if self._instantkill then
+		self:DoDead(owner)
 	end
 end
 
-function var_0_1.onUpdate(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	local var_4_0 = arg_4_3.timeStamp
+function BattleBuffDeath.onUpdate(self, owner, buff, args)
+	local timeStamp = args.timeStamp
 
-	if arg_4_0._time and var_4_0 > arg_4_0._time then
-		arg_4_1:SetDeathReason(var_0_0.Battle.BattleConst.UnitDeathReason.DESTRUCT)
-		arg_4_0:DoDead(arg_4_1)
+	if self._time and timeStamp > self._time then
+		owner:SetDeathReason(ys.Battle.BattleConst.UnitDeathReason.DESTRUCT)
+		self:DoDead(owner)
 	else
-		local var_4_1 = arg_4_1:GetPosition()
+		local position = owner:GetPosition()
 
-		if arg_4_0._maxX and var_4_1.x >= arg_4_0._maxX then
-			arg_4_1:SetDeathReason(var_0_0.Battle.BattleConst.UnitDeathReason.LEAVE)
-			arg_4_0:DoDead(arg_4_1)
-		elseif arg_4_0._minX and var_4_1.x <= arg_4_0._minX then
-			arg_4_1:SetDeathReason(var_0_0.Battle.BattleConst.UnitDeathReason.LEAVE)
-			arg_4_0:DoDead(arg_4_1)
-		elseif arg_4_0._maxY and var_4_1.z >= arg_4_0._maxY then
-			arg_4_1:SetDeathReason(var_0_0.Battle.BattleConst.UnitDeathReason.LEAVE)
-			arg_4_0:DoDead(arg_4_1)
-		elseif arg_4_0._minY and var_4_1.z <= arg_4_0._minY then
-			arg_4_1:SetDeathReason(var_0_0.Battle.BattleConst.UnitDeathReason.LEAVE)
-			arg_4_0:DoDead(arg_4_1)
+		if self._maxX and position.x >= self._maxX then
+			owner:SetDeathReason(ys.Battle.BattleConst.UnitDeathReason.LEAVE)
+			self:DoDead(owner)
+		elseif self._minX and position.x <= self._minX then
+			owner:SetDeathReason(ys.Battle.BattleConst.UnitDeathReason.LEAVE)
+			self:DoDead(owner)
+		elseif self._maxY and position.z >= self._maxY then
+			owner:SetDeathReason(ys.Battle.BattleConst.UnitDeathReason.LEAVE)
+			self:DoDead(owner)
+		elseif self._minY and position.z <= self._minY then
+			owner:SetDeathReason(ys.Battle.BattleConst.UnitDeathReason.LEAVE)
+			self:DoDead(owner)
 		end
 	end
 end
 
-function var_0_1.onBattleBuffCount(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
-	if arg_5_3.countType == arg_5_0._countType then
-		arg_5_0:DoDead(arg_5_1)
+function BattleBuffDeath.onBattleBuffCount(self, owner, buff, args)
+	if args.countType == self._countType then
+		self:DoDead(owner)
 	end
 end
 
-function var_0_1.DoDead(arg_6_0, arg_6_1)
-	arg_6_1:SetCurrentHP(0)
-	arg_6_1:DeadAction()
+function BattleBuffDeath.DoDead(self, target)
+	target:SetCurrentHP(0)
+	target:DeadAction()
 end

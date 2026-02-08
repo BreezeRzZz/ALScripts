@@ -1,179 +1,185 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = pg.effect_offset
+local ys = ys
+local effect_offset = pg.effect_offset
 
-var_0_0.Battle.BattleBuffShieldWall = class("BattleBuffShieldWall", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffShieldWall.__name = "BattleBuffShieldWall"
+ys.Battle.BattleBuffShieldWall = class("BattleBuffShieldWall", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffShieldWall.__name = "BattleBuffShieldWall"
 
-local var_0_2 = var_0_0.Battle.BattleBuffShieldWall
+local BattleBuffShieldWall = ys.Battle.BattleBuffShieldWall
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect会在单位周围生成一个护盾墙，持续一段时间。护盾墙能阻挡指定类型的子弹类型的碰撞(子弹消失), 当碰撞次数达到指定数量后，护盾墙会消失
+-- 游戏中将这种和BattleBuffShield都叫做“护盾”。实际区别很大：Shield是一个有血量的护盾，受到伤害时会先扣Shield的血量，血量扣完后才会对单位造成伤害; 而ShieldWall是一个有碰撞次数的护盾，能阻挡一定数量的子弹，碰撞次数用完后就会消失
+function BattleBuffShieldWall.Ctor(self, effectData)
+	BattleBuffShieldWall.super.Ctor(self, effectData)
 end
 
-function var_0_2.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffShieldWall.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._buffID = arg_2_2:GetID()
-	arg_2_0._dir = arg_2_1:GetDirection()
-	arg_2_0._count = var_2_0.count
-	arg_2_0._bulletType = var_2_0.bulletType or var_0_0.Battle.BattleConst.BulletType.CANNON
-	arg_2_0._doWhenHit = var_2_0.do_when_hit
-	arg_2_0._unit = arg_2_1
-	arg_2_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
-	arg_2_0._centerPos = arg_2_1:GetPosition()
-	arg_2_0._startTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._buffID = buff:GetID()
+	self._dir = owner:GetDirection()
+	self._count = arg_list.count
+	self._bulletType = arg_list.bulletType or ys.Battle.BattleConst.BulletType.CANNON
+	self._doWhenHit = arg_list.do_when_hit
+	self._unit = owner
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._centerPos = owner:GetPosition()
+	self._startTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	local function var_2_1(arg_3_0)
-		return arg_2_0:onWallCld(arg_3_0)
+	local function cldFunc(bullet)
+		return self:onWallCld(bullet)
 	end
 
-	local var_2_2 = arg_2_1:GetTemplate().scale / 50
-	local var_2_3 = var_2_0.cld_list[1]
-	local var_2_4 = var_2_3.box
-	local var_2_5 = Clone(var_2_3.offset)
+	local baseScale = owner:GetTemplate().scale / 50
+	local cldData = arg_list.cld_list[1]
+	local cldBox = cldData.box
+	local cldOffset = Clone(cldData.offset)
 
-	if arg_2_1:GetDirection() == var_0_0.Battle.BattleConst.UnitDir.LEFT then
-		var_2_5[1] = -var_2_5[1] * var_2_2
+	if owner:GetDirection() == ys.Battle.BattleConst.UnitDir.LEFT then
+		cldOffset[1] = -cldOffset[1] * baseScale
 	else
-		var_2_5[1] = var_2_5[1] * var_2_2
+		cldOffset[1] = cldOffset[1] * baseScale
 	end
 
-	arg_2_0._wall = arg_2_0._dataProxy:SpawnWall(arg_2_0, var_2_1, var_2_4, var_2_5)
+	self._wall = self._dataProxy:SpawnWall(self, cldFunc, cldBox, cldOffset)
 
-	local var_2_6
-	local var_2_7 = var_0_1[var_2_0.effect]
+	local fxOffset
+	local effectOffsetData = effect_offset[arg_list.effect]
 
-	if var_2_7 then
-		local var_2_8 = var_2_7.container_index
-		local var_2_9 = Vector3(var_2_7.offset[1], var_2_7.offset[2], var_2_7.offset[3])
-		local var_2_10 = arg_2_1:GetTemplate().fx_container[var_2_8]
-		local var_2_11 = Vector3(var_2_10[1], var_2_10[2], var_2_10[3])
+	if effectOffsetData then
+		local container_index = effectOffsetData.container_index
+		local effectOffsetVector = Vector3(effectOffsetData.offset[1], effectOffsetData.offset[2], effectOffsetData.offset[3])
+		local fxContainer = owner:GetTemplate().fx_container[container_index]
+		local fxContainerVector = Vector3(fxContainer[1], fxContainer[2], fxContainer[3])
 
-		var_2_11:Add(var_2_9)
+		fxContainerVector:Add(effectOffsetVector)
 
-		var_2_6 = var_2_11
+		fxOffset = fxContainerVector
 	end
 
-	if var_2_6 then
-		function arg_2_0._centerPosFun(arg_4_0)
+	if fxOffset then
+		function self._centerPosFun(pos)
 			local var_4_0
-			local var_4_1 = var_2_0.centerPosFun(arg_4_0):Add(var_2_6)
+			local centerPos = arg_list.centerPosFun(pos):Add(fxOffset)
 
-			var_4_1.x = var_4_1.x * arg_2_0._dir
+			centerPos.x = centerPos.x * self._dir
 
-			return var_4_1
+			return centerPos
 		end
 	else
-		arg_2_0._centerPosFun = var_2_0.centerPosFun
+		self._centerPosFun = arg_list.centerPosFun
 	end
 
-	arg_2_0._currentTimeCount = 0
+	self._currentTimeCount = 0
 
-	if var_2_0.effect then
-		arg_2_0._effectIndex = "BattleBuffShieldWall" .. arg_2_0._buffID .. arg_2_0._tempData.id
+	if arg_list.effect then
+		self._effectIndex = "BattleBuffShieldWall" .. self._buffID .. self._tempData.id
 
-		local var_2_12
+		local _centerPosFun
 
-		if var_2_6 then
-			function var_2_12(arg_5_0)
+		if fxOffset then
+			function _centerPosFun(pos)
 				local var_5_0
 
-				return (var_2_0.centerPosFun(arg_5_0):Add(var_2_6))
+				return (arg_list.centerPosFun(pos):Add(fxOffset))
 			end
 		else
-			var_2_12 = var_2_0.centerPosFun
+			_centerPosFun = arg_list.centerPosFun
 		end
 
-		arg_2_0._unit = arg_2_1
-		arg_2_0._evtData = {
-			effect = var_2_0.effect,
-			posFun = var_2_12,
-			index = arg_2_0._effectIndex,
-			rotationFun = var_2_0.rotationFun
+		self._unit = owner
+		self._evtData = {
+			effect = arg_list.effect,
+			posFun = _centerPosFun,
+			index = self._effectIndex,
+			rotationFun = arg_list.rotationFun
 		}
 
-		arg_2_1:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.ADD_EFFECT, arg_2_0._evtData))
+		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, self._evtData))
 	end
 end
 
-function var_0_2.onStack(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_0._count = arg_6_0._tempData.arg_list.count
+function BattleBuffShieldWall.onStack(self, owner, buff)
+	-- 重复叠加时，刷新护盾墙的持续时间(这是基于Buff的)和碰撞次数
+	self._count = self._tempData.arg_list.count
 
-	arg_6_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.ADD_EFFECT, arg_6_0._evtData))
+	self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, self._evtData))
 end
 
-function var_0_2.onUpdate(arg_7_0, arg_7_1, arg_7_2, arg_7_3)
-	local var_7_0 = arg_7_1:GetPosition()
-	local var_7_1 = arg_7_1:GetTemplate().scale * 0.02
-	local var_7_2 = arg_7_3.timeStamp
+function BattleBuffShieldWall.onUpdate(self, owner, buff, args)
+	local ownerPos = owner:GetPosition()
+	local ownerBaseScale = owner:GetTemplate().scale * 0.02
+	local timeStamp = args.timeStamp
 
-	if arg_7_0._centerPosFun then
-		arg_7_0._currentTimeCount = var_7_2 - arg_7_0._startTime
-		var_7_0 = arg_7_0._centerPosFun(arg_7_0._currentTimeCount):Mul(var_7_1):Add(var_7_0)
+	if self._centerPosFun then
+		self._currentTimeCount = timeStamp - self._startTime
+		ownerPos = self._centerPosFun(self._currentTimeCount):Mul(ownerBaseScale):Add(ownerPos)
 	end
 
-	arg_7_0._centerPos = var_7_0
+	self._centerPos = ownerPos
 end
 
-function var_0_2.onWallCld(arg_8_0, arg_8_1)
-	if not arg_8_1:GetIgnoreShield() and arg_8_1:GetType() == arg_8_0._bulletType and arg_8_0._count > 0 then
-		if arg_8_0._doWhenHit == "intercept" then
-			arg_8_1:Intercepted()
-			arg_8_0._dataProxy:RemoveBulletUnit(arg_8_1:GetUniqueID())
+function BattleBuffShieldWall.onWallCld(self, bullet)
+	-- 子弹不是穿盾的、子弹类型符合要求、碰撞次数还没用完，才会发生护盾墙拦截效果
+	if not bullet:GetIgnoreShield() and bullet:GetType() == self._bulletType and self._count > 0 then
+		-- intercept: 直接拦截子弹，子弹消失
+		if self._doWhenHit == "intercept" then
+			bullet:Intercepted()
+			self._dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 
-			arg_8_0._count = arg_8_0._count - 1
-		elseif arg_8_0._doWhenHit == "reflect" and arg_8_0:GetIFF() ~= arg_8_1:GetIFF() then
-			arg_8_1:Reflected()
+			self._count = self._count - 1
+		-- ;reflect: 反弹子弹，子弹飞回去(但不会伤害自己)
+		elseif self._doWhenHit == "reflect" and self:GetIFF() ~= bullet:GetIFF() then
+			bullet:Reflected()
 
-			arg_8_0._count = arg_8_0._count - 1
+			self._count = self._count - 1
 		end
 
-		if arg_8_0._count <= 0 then
-			arg_8_0:Deactive()
+		if self._count <= 0 then
+			self:Deactive()
 		end
 	end
 
-	return arg_8_0._count > 0
+	return self._count > 0
 end
 
-function var_0_2.GetIFF(arg_9_0)
-	return arg_9_0._unit:GetIFF()
+function BattleBuffShieldWall.GetIFF(self)
+	return self._unit:GetIFF()
 end
 
-function var_0_2.GetPosition(arg_10_0)
-	return arg_10_0._centerPos
+function BattleBuffShieldWall.GetPosition(self)
+	return self._centerPos
 end
 
-function var_0_2.IsWallActive(arg_11_0)
-	return arg_11_0._count > 0
+function BattleBuffShieldWall.IsWallActive(self)
+	return self._count > 0
 end
 
-function var_0_2.Deactive(arg_12_0)
-	if arg_12_0._effectIndex then
-		local var_12_0 = {
-			index = arg_12_0._effectIndex
+function BattleBuffShieldWall.Deactive(self)
+	if self._effectIndex then
+		local deactiveEffectArgs = {
+			index = self._effectIndex
 		}
 
-		arg_12_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.DEACTIVE_EFFECT, var_12_0))
+		self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.DEACTIVE_EFFECT, deactiveEffectArgs))
 	end
 
-	if arg_12_0._unit:IsAlive() then
-		arg_12_0._unit:TriggerBuff(var_0_0.Battle.BattleConst.BuffEffectType.ON_SHIELD_BROKEN, {
-			shieldBuffID = arg_12_0._buffID
+	if self._unit:IsAlive() then
+		self._unit:TriggerBuff(ys.Battle.BattleConst.BuffEffectType.ON_SHIELD_BROKEN, {
+			shieldBuffID = self._buffID
 		})
 	end
 end
 
-function var_0_2.Clear(arg_13_0)
-	if arg_13_0._effectIndex then
-		local var_13_0 = {
-			index = arg_13_0._effectIndex
+function BattleBuffShieldWall.Clear(self)
+	if self._effectIndex then
+		local cancelEffectArgs = {
+			index = self._effectIndex
 		}
 
-		arg_13_0._unit:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.CANCEL_EFFECT, var_13_0))
+		self._unit:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.CANCEL_EFFECT, cancelEffectArgs))
 	end
 
-	arg_13_0._dataProxy:RemoveWall(arg_13_0._wall:GetUniqueID())
+	self._dataProxy:RemoveWall(self._wall:GetUniqueID())
 end

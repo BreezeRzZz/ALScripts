@@ -250,10 +250,12 @@ function BattleBulletUnit.Hit(self, shipUID, shipUnitType)
 	self:DispatchEvent(ys.Event.New(BattleBulletEvent.HIT, hitArgs))
 end
 
+-- 被BattleBuffShieldWall.onWallCld调用
 function BattleBulletUnit.Intercepted(self)
 	self:DispatchEvent(ys.Event.New(BattleBulletEvent.INTERCEPTED, {}))
 end
 
+-- 被BattleBuffShieldWall.onWallCld调用
 function BattleBulletUnit.Reflected(self)
 	self._speed.x = -self._speed.x
 end

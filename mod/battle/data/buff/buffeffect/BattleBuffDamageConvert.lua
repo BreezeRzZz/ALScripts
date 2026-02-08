@@ -1,69 +1,71 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleAttr
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = class("BattleBuffDamageConvert", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleConst = ys.Battle.BattleConst
+local BattleBuffDamageConvert = class("BattleBuffDamageConvert", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffDamageConvert = var_0_4
-var_0_4.__name = "BattleBuffDamageConvert"
-var_0_4.ATTR_PRE = {
-	[var_0_3.WeaponDamageAttr.CANNON] = "injureRatioByCannon",
-	[var_0_3.WeaponDamageAttr.TORPEDO] = "injureRatioByBulletTorpedo",
-	[var_0_3.WeaponDamageAttr.AIR] = "injureRatioByAir"
+ys.Battle.BattleBuffDamageConvert = BattleBuffDamageConvert
+BattleBuffDamageConvert.__name = "BattleBuffDamageConvert"
+BattleBuffDamageConvert.ATTR_PRE = {
+	[BattleConst.WeaponDamageAttr.CANNON] = "injureRatioByCannon",
+	[BattleConst.WeaponDamageAttr.TORPEDO] = "injureRatioByBulletTorpedo",
+	[BattleConst.WeaponDamageAttr.AIR] = "injureRatioByAir"
 }
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect会在Buff持续期间内记录受到的伤害(按属性分类)，Buff结束时，选择造成伤害最多的属性，并根据给定的参数，生成一个Buff(代码形式)来减少受到对应属性伤害的Buff
+-- 这看起来像是BattleBuffSkillDamageCount的早期设计。目前这类BuffEffect没有被使用过，不需要管。
+function BattleBuffDamageConvert.Ctor(self, effectData)
+	BattleBuffDamageConvert.super.Ctor(self, effectData)
 end
 
-function var_0_4.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffDamageConvert.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._convert = var_2_0.convert_rate
-	arg_2_0._duration = var_2_0.duration
-	arg_2_0._buffSkinID = var_2_0.buff_skin_id
-	arg_2_0._attrTable = {}
+	self._convert = arg_list.convert_rate
+	self._duration = arg_list.duration
+	self._buffSkinID = arg_list.buff_skin_id
+	self._attrTable = {}
 end
 
-function var_0_4.onTakeDamage(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_3.damageAttr
+function BattleBuffDamageConvert.onTakeDamage(self, owner, buff, args)
+	local damageAttr = args.damageAttr
 
-	if var_3_0 then
-		local var_3_1 = (arg_3_0._attrTable[var_3_0] or 0) + arg_3_3.damage
+	if damageAttr then
+		local totalDamage = (self._attrTable[damageAttr] or 0) + args.damage
 
-		arg_3_0._attrTable[var_3_0] = var_3_1
+		self._attrTable[damageAttr] = totalDamage
 	end
 end
 
-function var_0_4.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = 0
-	local var_4_1
+function BattleBuffDamageConvert.onRemove(self, owner, buff)
+	local maxAttrDamage = 0
+	local maxAttrType
 
-	for iter_4_0, iter_4_1 in pairs(arg_4_0._attrTable) do
-		if var_4_0 <= iter_4_1 then
-			var_4_0 = iter_4_1
-			var_4_1 = iter_4_0
+	for attrType, attrTotalDamage in pairs(self._attrTable) do
+		if maxAttrDamage <= attrTotalDamage then
+			maxAttrDamage = attrTotalDamage
+			maxAttrType = attrType
 		end
 	end
 
-	if not var_4_1 then
+	if not maxAttrType then
 		return
 	end
 
-	local var_4_2 = var_0_4.ATTR_PRE[var_4_1]
-	local var_4_3 = var_0_4.generateBuff(arg_4_0._buffSkinID, arg_4_0._duration, var_4_2, var_4_0 * arg_4_0._convert)
-	local var_4_4 = var_0_0.Battle.BattleBuffSelfModifyUnit.New(var_4_3.id, 1, arg_4_1, var_4_3)
+	local injureRatioByAttr = BattleBuffDamageConvert.ATTR_PRE[maxAttrType]
+	local convertedBuff = BattleBuffDamageConvert.generateBuff(self._buffSkinID, self._duration, injureRatioByAttr, maxAttrDamage * self._convert)
+	local convertedBuffUnit = ys.Battle.BattleBuffSelfModifyUnit.New(convertedBuff.id, 1, owner, convertedBuff)
 
-	arg_4_1:AddBuff(var_4_4)
+	owner:AddBuff(convertedBuffUnit)
 end
 
-function var_0_4.generateBuff(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
+function BattleBuffDamageConvert.generateBuff(buffSkinID, duration, injureRatioByAttr, number)
 	return {
-		id = arg_5_0,
-		icon = arg_5_0,
-		time = arg_5_1,
+		id = buffSkinID,
+		icon = buffSkinID,
+		time = duration,
 		blink = {
 			0,
 			0.7,
@@ -79,14 +81,14 @@ function var_0_4.generateBuff(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
 					"onRemove"
 				},
 				arg_list = {
-					attr = arg_5_2,
-					number = arg_5_3,
-					group = arg_5_0
+					attr = injureRatioByAttr,
+					number = number,
+					group = buffSkinID
 				}
 			}
 		},
 		{
-			time = arg_5_1
+			time = duration
 		},
 		name = "代码生成buff",
 		init_effect = "jinengchufablue",

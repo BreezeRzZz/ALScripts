@@ -7,6 +7,10 @@ ys.Battle.BattleBuffAddAttr = BattleBuffAddAttr
 BattleBuffAddAttr.__name = "BattleBuffAddAttr"
 BattleBuffAddAttr.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_MOD_ATTR
 
+-- 核心BuffEffect之一
+-- 此类BuffEffect对单位的属性进行加算或乘算
+-- 使用例: 极多，不列举
+
 --- @class BattleBuffAddAttr
 --- @param effectData table
 --- @return nil

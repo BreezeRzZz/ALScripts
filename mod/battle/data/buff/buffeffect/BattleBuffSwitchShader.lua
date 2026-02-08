@@ -1,29 +1,31 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffSwitchShader = class("BattleBuffSwitchShader", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffSwitchShader.__name = "BattleBuffSwitchShader"
+ys.Battle.BattleBuffSwitchShader = class("BattleBuffSwitchShader", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffSwitchShader.__name = "BattleBuffSwitchShader"
 
-local var_0_1 = var_0_0.Battle.BattleBuffSwitchShader
+local BattleBuffSwitchShader = ys.Battle.BattleBuffSwitchShader
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect用于做视觉效果的切换，主要是切换Shader和调整透明度
+-- 使用例: 玛丽·西莱斯特号1技能
+function BattleBuffSwitchShader.Ctor(self, effectData)
+	BattleBuffSwitchShader.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._shader = arg_2_0._tempData.arg_list.shader
-	arg_2_0._invisible = arg_2_0._tempData.arg_list.invisible or 0.7
+function BattleBuffSwitchShader.SetArgs(self, owner, buff)
+	self._shader = self._tempData.arg_list.shader
+	self._invisible = self._tempData.arg_list.invisible or 0.7
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = {
-		invisible = arg_3_0._invisible
+function BattleBuffSwitchShader.onAttach(self, owner, buff, args)
+	local shaderArgs = {
+		invisible = self._invisible
 	}
 
-	arg_3_1:SwitchShader(arg_3_0._shader, nil, var_3_0)
+	owner:SwitchShader(self._shader, nil, shaderArgs)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	arg_4_1:SwitchShader("COLORED_ALPHA")
+function BattleBuffSwitchShader.onRemove(self, owner, buff, args)
+	owner:SwitchShader("COLORED_ALPHA")
 end

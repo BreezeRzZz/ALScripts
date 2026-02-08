@@ -1,23 +1,25 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffStory = class("BattleBuffStory", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffStory.__name = "BattleBuffStory"
+ys.Battle.BattleBuffStory = class("BattleBuffStory", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffStory.__name = "BattleBuffStory"
 
-local var_0_1 = var_0_0.Battle.BattleBuffStory
+local BattleBuffStory = ys.Battle.BattleBuffStory
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect大概是想让某个单位在血量达到某个百分比时播放某个剧情
+-- 但目前没有被使用过
+function BattleBuffStory.Ctor(self, effectData)
+	BattleBuffStory.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffStory.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._storyID = var_2_0.story_id
-	arg_2_0._countType = var_2_0.countType
+	self._storyID = arg_list.story_id
+	self._countType = arg_list.countType
 end
 
-function var_0_1.doOnHPRatioUpdate(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	pg.NewStoryMgr.GetInstance():Play(arg_3_0._storyID)
+function BattleBuffStory.doOnHPRatioUpdate(self, owner, buff, args)
+	pg.NewStoryMgr.GetInstance():Play(self._storyID)
 end

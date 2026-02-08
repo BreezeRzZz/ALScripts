@@ -1,5 +1,5 @@
 ys = ys or {}
-
+-- TODO
 local var_0_0 = ys.Battle.BattleVariable
 local var_0_1 = class("MoveComponent")
 

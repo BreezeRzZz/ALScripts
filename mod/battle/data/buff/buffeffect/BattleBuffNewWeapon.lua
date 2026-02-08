@@ -1,50 +1,53 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleDataFunction
-local var_0_3 = class("BattleBuffNewWeapon", var_0_0.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffNewWeapon = var_0_3
-var_0_3.__name = "BattleBuffNewWeapon"
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleBuffNewWeapon = class("BattleBuffNewWeapon", ys.Battle.BattleBuffEffect)
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1)
+ys.Battle.BattleBuffNewWeapon = BattleBuffNewWeapon
+BattleBuffNewWeapon.__name = "BattleBuffNewWeapon"
+
+-- 核心BuffEffect之一
+-- 此类BuffEffect会给持有者添加一个新的自动武器(常规武器, 与技能武器/临时武器的概念区分)
+-- 使用例很多，不列举
+function BattleBuffNewWeapon.Ctor(self, effectData)
+	BattleBuffNewWeapon.super.Ctor(self, effectData)
 end
 
-function var_0_3.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._weaponID = arg_2_0._tempData.arg_list.weapon_id
-	arg_2_0._reverse = arg_2_0._tempData.arg_list.reverse
+function BattleBuffNewWeapon.SetArgs(self, owner, buff)
+	self._weaponID = self._tempData.arg_list.weapon_id
+	self._reverse = self._tempData.arg_list.reverse
 end
 
-function var_0_3.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	if arg_3_0._reverse then
-		arg_3_1:RemoveAutoWeaponByWeaponID(arg_3_0._weaponID)
-	elseif var_0_2.GetWeaponPropertyDataFromID(arg_3_0._weaponID).type == var_0_1.EquipmentType.FLEET_ANTI_AIR then
-		arg_3_1:AddWeapon(arg_3_0._weaponID)
-		arg_3_1:GetFleetVO():GetFleetAntiAirWeapon():FlushCrewUnit(arg_3_1)
+function BattleBuffNewWeapon.onAttach(self, owner, buff)
+	if self._reverse then
+		owner:RemoveAutoWeaponByWeaponID(self._weaponID)
+	elseif BattleDataFunction.GetWeaponPropertyDataFromID(self._weaponID).type == BattleConst.EquipmentType.FLEET_ANTI_AIR then
+		owner:AddWeapon(self._weaponID)
+		owner:GetFleetVO():GetFleetAntiAirWeapon():FlushCrewUnit(owner)
 	else
-		arg_3_0._weapon = arg_3_1:AddNewAutoWeapon(arg_3_0._weaponID)
+		self._weapon = owner:AddNewAutoWeapon(self._weaponID)
 	end
 end
 
-function var_0_3.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	if arg_4_0._reverse then
-		arg_4_1:AddNewAutoWeapon(arg_4_0._weaponID)
-	elseif arg_4_0._weapon then
-		if var_0_2.GetWeaponPropertyDataFromID(arg_4_0._weaponID).type == var_0_1.EquipmentType.FLEET_ANTI_AIR then
-			arg_4_1:RemoveWeapon(arg_4_0._weaponID)
-			arg_4_1:RemoveFleetAntiAirWeapon(arg_4_0._weapon)
-			arg_4_1:GetFleetVO():GetFleetAntiAirWeapon():FlushCrewUnit(arg_4_1)
+function BattleBuffNewWeapon.onRemove(self, owner, buff)
+	if self._reverse then
+		owner:AddNewAutoWeapon(self._weaponID)
+	elseif self._weapon then
+		if BattleDataFunction.GetWeaponPropertyDataFromID(self._weaponID).type == BattleConst.EquipmentType.FLEET_ANTI_AIR then
+			owner:RemoveWeapon(self._weaponID)
+			owner:RemoveFleetAntiAirWeapon(self._weapon)
+			owner:GetFleetVO():GetFleetAntiAirWeapon():FlushCrewUnit(owner)
 		else
-			arg_4_0._weapon:Clear()
-			arg_4_1:RemoveAutoWeapon(arg_4_0._weapon)
+			self._weapon:Clear()
+			owner:RemoveAutoWeapon(self._weapon)
 		end
 	end
 end
 
-function var_0_3.Dispose(arg_5_0)
-	var_0_3.super.Dispose(arg_5_0)
+function BattleBuffNewWeapon.Dispose(self)
+	BattleBuffNewWeapon.super.Dispose(self)
 
-	arg_5_0._weapon = nil
+	self._weapon = nil
 end

@@ -31,6 +31,7 @@ function BattleWeaponUnit.Ctor(self)
 	ys.EventDispatcher.AttachEventDispatcher(self)
 
 	self._currentState = self.STATE_READY
+	-- 默认是-1. 因此各种针对非装备的弹幕武器的就是-1, 而装备的则是对应的装备索引
 	self._equipmentIndex = -1
 	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
 	--- @type table<number, table<number, BattleBulletEmitter>>
@@ -451,6 +452,7 @@ end
 --- @class BattleWeaponUnit
 --- @return boolean
 --- 判断是否为固定武器
+--- fix_equip_list实际都是weapon(虽然equip_data_statistics中有同ID的装备. 但要搞清楚实际逻辑只看武器)
 function BattleWeaponUnit.IsFixedWeapon(self)
 	return self._isFixedWeapon
 end
@@ -625,7 +627,8 @@ end
 --- @param minRange number
 --- @param bulletRangeOffset number
 --- @return nil
---- 设置武器range相关参数
+--- 重载武器range相关参数
+--- 被BattleBuffFixRange.updateBulletRange调用
 function BattleWeaponUnit.FixWeaponRange(self, maxRange, fixBulletRange, minRange, bulletRangeOffset)
 	self._maxRangeSqr = maxRange or self._tmpData.range
 	self._minRangeSqr = minRange or self._tmpData.min_range
@@ -1458,6 +1461,7 @@ end
 --- @param barrageID number|table<number, number>
 --- @return nil
 --- 替换武器的弹幕ID列表为指定的弹幕ID
+--- 这也是初始化的一个重要部分, 调用了核心: createMajorEmitter函数
 function BattleWeaponUnit.ShiftBarrage(self, barrageID)
 	for _, emitter in ipairs(self._majorEmitterList) do
 		table.insert(self._dumpedEmittersList, emitter)

@@ -1,41 +1,43 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffFixRange = class("BattleBuffFixRange", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffFixRange.__name = "BattleBuffFixRange"
+ys.Battle.BattleBuffFixRange = class("BattleBuffFixRange", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffFixRange.__name = "BattleBuffFixRange"
 
-local var_0_1 = var_0_0.Battle.BattleBuffFixRange
+local BattleBuffFixRange = ys.Battle.BattleBuffFixRange
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect调整武器的索敌范围及其所有子弹的射程
+-- 使用例: 近江1技能调整副炮的索敌范围和射程
+function BattleBuffFixRange.Ctor(self, effectData)
+	BattleBuffFixRange.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._weaponRange = arg_2_0._tempData.arg_list.weaponRange
-	arg_2_0._bulletRange = arg_2_0._tempData.arg_list.bulletRange
-	arg_2_0._minRange = arg_2_0._tempData.arg_list.minRange
-	arg_2_0._bulletRangeOffset = arg_2_0._tempData.arg_list.bulletRangeOffset
+function BattleBuffFixRange.SetArgs(self, owner, buff)
+	self._weaponRange = self._tempData.arg_list.weaponRange
+	self._bulletRange = self._tempData.arg_list.bulletRange
+	self._minRange = self._tempData.arg_list.minRange
+	self._bulletRangeOffset = self._tempData.arg_list.bulletRangeOffset
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1)
-	if arg_3_0._weaponRange or arg_3_0._bulletRange or arg_3_0._bulletRangeOffset then
-		arg_3_0:updateBulletRange(arg_3_1, arg_3_0._weaponRange, arg_3_0._bulletRange, arg_3_0._minRange, arg_3_0._bulletRangeOffset)
+function BattleBuffFixRange.onAttach(self, owner)
+	if self._weaponRange or self._bulletRange or self._bulletRangeOffset then
+		self:updateBulletRange(owner, self._weaponRange, self._bulletRange, self._minRange, self._bulletRangeOffset)
 	end
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1)
-	arg_4_0:updateBulletRange(arg_4_1)
+function BattleBuffFixRange.onRemove(self, owner)
+	self:updateBulletRange(owner)
 end
 
-function var_0_1.updateBulletRange(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
-	local var_5_0 = arg_5_1:GetAllWeapon()
+function BattleBuffFixRange.updateBulletRange(self, target, weaponRange, bulletRange, minRange, bulletRangeOffset)
+	local weaponList = target:GetAllWeapon()
 
-	for iter_5_0, iter_5_1 in ipairs(var_5_0) do
-		local var_5_1 = iter_5_1:GetEquipmentIndex()
+	for _, weapon in ipairs(weaponList) do
+		local equipIndex = weapon:GetEquipmentIndex()
 
-		if arg_5_0._indexRequire == nil or table.contains(arg_5_0._indexRequire, var_5_1) then
-			iter_5_1:FixWeaponRange(arg_5_2, arg_5_3, arg_5_4, arg_5_5)
+		if self._indexRequire == nil or table.contains(self._indexRequire, equipIndex) then
+			weapon:FixWeaponRange(weaponRange, bulletRange, minRange, bulletRangeOffset)
 		end
 	end
 end

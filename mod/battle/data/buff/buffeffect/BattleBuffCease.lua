@@ -6,6 +6,7 @@ local BattleBuffCease = class("BattleBuffCease", ys.Battle.BattleBuffEffect)
 ys.Battle.BattleBuffCease = BattleBuffCease
 BattleBuffCease.__name = "BattleBuffCease"
 
+-- 此BuffEffect用于停止单位的所有武器
 function BattleBuffCease.Ctor(self, effectData)
 	BattleBuffCease.super.Ctor(self, effectData)
 end

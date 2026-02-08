@@ -7,6 +7,8 @@ local BattleBuffTaunt = class("BattleBuffTaunt", ys.Battle.BattleBuffEffect)
 ys.Battle.BattleBuffTaunt = BattleBuffTaunt
 BattleBuffTaunt.__name = "BattleBuffTaunt"
 
+-- 此类BuffEffect用于在保护的单位暴露时，强制暴露自己
+-- 使用例: 仅武藏3技能
 function BattleBuffTaunt.Ctor(self, effectData)
 	BattleBuffTaunt.super.Ctor(self, effectData)
 

@@ -168,7 +168,7 @@ function BattleBombBulletUnit.SetTemplateData(self, tmpData)
 		-- 总的来说三部分：随机偏移((-0.5,0.5)的分布)、固定偏移、目标偏移
 		self._randomOffset = Vector3(realRandomOffsetX + targetOffsetX, 0, realRandomOffsetZ + targetOffsetZ)
 	end
-
+	-- timeToExplode: 设定多少秒后强制引爆(走BattleTimer)
 	if extra_param.timeToExplode then
 		self._explodeTime = pg.TimeMgr.GetInstance():GetCombatTime() + extra_param.timeToExplode
 	end

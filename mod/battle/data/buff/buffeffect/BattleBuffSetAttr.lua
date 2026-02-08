@@ -1,34 +1,36 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffSetAttr = class("BattleBuffSetAttr", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffSetAttr.__name = "BattleBuffSetAttr"
+ys.Battle.BattleBuffSetAttr = class("BattleBuffSetAttr", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffSetAttr.__name = "BattleBuffSetAttr"
 
-local var_0_1 = var_0_0.Battle.BattleBuffSetAttr
-local var_0_2 = var_0_0.Battle.BattleAttr
+local BattleBuffSetAttr = ys.Battle.BattleBuffSetAttr
+local BattleAttr = ys.Battle.BattleAttr
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect用于设置单位的某个属性到特定数值，或添加/移除一个TargetChoise
+-- 使用例: VH装甲钢板的护甲类型修改; TargetChoise的例子: 厌战改1技能的集火目标优先级提高
+function BattleBuffSetAttr.Ctor(self, effectData)
+	BattleBuffSetAttr.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._attr = arg_2_0._tempData.arg_list.attr
-	arg_2_0._value = arg_2_0._tempData.arg_list.value
+function BattleBuffSetAttr.SetArgs(self, owner, buff)
+	self._attr = self._tempData.arg_list.attr
+	self._value = self._tempData.arg_list.value
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	if arg_3_0._attr == "TargetChoise" then
-		var_0_2.AddTargetSelect(arg_3_1, arg_3_0._value)
+function BattleBuffSetAttr.onAttach(self, owner, buff)
+	if self._attr == "TargetChoise" then
+		BattleAttr.AddTargetSelect(owner, self._value)
 	else
-		var_0_2.SetCurrent(arg_3_1, arg_3_0._attr, arg_3_0._value)
+		BattleAttr.SetCurrent(owner, self._attr, self._value)
 	end
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	if arg_4_0._attr == "TargetChoise" then
-		var_0_2.RemoveTargetSelect(arg_4_1, arg_4_0._value)
+function BattleBuffSetAttr.onRemove(self, owner, buff)
+	if self._attr == "TargetChoise" then
+		BattleAttr.RemoveTargetSelect(owner, self._value)
 	else
-		var_0_2.SetCurrent(arg_4_1, arg_4_0._attr, 0)
+		BattleAttr.SetCurrent(owner, self._attr, 0)
 	end
 end

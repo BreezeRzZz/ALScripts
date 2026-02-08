@@ -1,33 +1,35 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffShiftCLDBox = class("BattleBuffShiftCLDBox", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffShiftCLDBox.__name = "BattleBuffShiftCLDBox"
+ys.Battle.BattleBuffShiftCLDBox = class("BattleBuffShiftCLDBox", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffShiftCLDBox.__name = "BattleBuffShiftCLDBox"
 
-local var_0_1 = var_0_0.Battle.BattleBuffShiftCLDBox
+local BattleBuffShiftCLDBox = ys.Battle.BattleBuffShiftCLDBox
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect用于改变单位的碰撞箱，表现为碰撞箱的大小和位置发生变化
+-- 使用例: EX困难模式，修改碰撞箱为1x1
+function BattleBuffShiftCLDBox.Ctor(self, effectData)
+	BattleBuffShiftCLDBox.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._cldBox = arg_2_0._tempData.arg_list.cld_box
-	arg_2_0._cldOffset = arg_2_0._tempData.arg_list.cld_offset or {
+function BattleBuffShiftCLDBox.SetArgs(self, owner, buff)
+	self._cldBox = self._tempData.arg_list.cld_box
+	self._cldOffset = self._tempData.arg_list.cld_offset or {
 		0,
 		0,
 		0
 	}
 end
 
-function var_0_1.GetEffectType(arg_3_0)
-	return var_0_1.FX_TYPE
+function BattleBuffShiftCLDBox.GetEffectType(self)
+	return BattleBuffShiftCLDBox.FX_TYPE
 end
 
-function var_0_1.onAttach(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:ShiftCldComponent(arg_4_0._cldBox, arg_4_0._cldOffset)
+function BattleBuffShiftCLDBox.onAttach(self, owner, buff)
+	owner:ShiftCldComponent(self._cldBox, self._cldOffset)
 end
 
-function var_0_1.onRemove(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_1:ResetCldComponent()
+function BattleBuffShiftCLDBox.onRemove(self, owner, buff)
+	owner:ResetCldComponent()
 end

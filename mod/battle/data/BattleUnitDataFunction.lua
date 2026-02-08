@@ -153,84 +153,93 @@ function BattleDataFunction.InitUnitSkill(unitData, owner, battleType)
 		owner:AddBuff(buff)
 	end
 end
--- TODO
-function BattleDataFunction.GetEquipSkill(arg_3_0, arg_3_1)
-	local var_3_0 = Ship.WEAPON_COUNT
-	local var_3_1 = {}
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0) do
-		local var_3_2 = iter_3_1.id
+-- 初始化装备的Buff
+-- 被BattleDataFunction.InitEquipSkill调用
+function BattleDataFunction.GetEquipSkill(equipmentInfoList, playerUnit)
+	-- WEAPON_COUNT = 3
+	local WEAPON_COUNT = Ship.WEAPON_COUNT
+	local buffInfoList = {}
 
-		if var_3_2 then
+	for _, equipmentInfo in ipairs(equipmentInfoList) do
+		local equipID = equipmentInfo.id
+
+		if equipID then
 			local var_3_3
-			local var_3_4 = BattleDataFunction.GetWeaponDataFromID(var_3_2)
+			-- 实际是从equip_data_statistics里拿数据
+			local equipTempData = BattleDataFunction.GetWeaponDataFromID(equipID)
 
-			if var_3_4 then
-				for iter_3_2, iter_3_3 in ipairs(var_3_4.skill_id) do
-					local var_3_5 = arg_3_1 and BattleDataFunction.SkillTranform(arg_3_1, iter_3_3[1]) or iter_3_3[1]
-					local var_3_6 = iter_3_3[2] or 1
-					local var_3_7 = {
-						buffID = var_3_5,
-						buffLV = var_3_6
+			if equipTempData then
+				for _, buffID in ipairs(equipTempData.skill_id) do
+					-- 进行battleType转换
+					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, buffID[1]) or buffID[1]
+					local buffLV = buffID[2] or 1
+					local buffInfo = {
+						buffID = actualBuffID,
+						buffLV = buffLV
 					}
 
-					table.insert(var_3_1, var_3_7)
+					table.insert(buffInfoList, buffInfo)
 				end
 
-				for iter_3_4, iter_3_5 in ipairs(var_3_4.hidden_skill_id) do
-					local var_3_8 = arg_3_1 and BattleDataFunction.SkillTranform(arg_3_1, iter_3_5[1]) or iter_3_5[1]
-					local var_3_9 = iter_3_5[2] or 1
-					local var_3_10 = {
-						buffID = var_3_8,
-						buffLV = var_3_9
+				for _, buffID in ipairs(equipTempData.hidden_skill_id) do
+					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, buffID[1]) or buffID[1]
+					local buffLV = buffID[2] or 1
+					local buffInfo = {
+						buffID = actualBuffID,
+						buffLV = buffLV
 					}
 
-					table.insert(var_3_1, var_3_10)
+					table.insert(buffInfoList, buffInfo)
 				end
 			end
 		end
 	end
 
-	return var_3_1
+	return buffInfoList
 end
 
-function BattleDataFunction.AttachWeather(arg_4_0, arg_4_1)
-	if table.contains(arg_4_1, BattleConst.WEATHER.NIGHT) then
-		local var_4_0 = arg_4_0:GetTemplate().type
+-- 在BattleDataProxy的各个SpawnXXX和generatePlayerUnit里调用, 用于根据天气等环境因素给单位添加Buff
+function BattleDataFunction.AttachWeather(unit, weather)
+	if table.contains(weather, BattleConst.WEATHER.NIGHT) then
+		local unitShipType = unit:GetTemplate().type
 
-		if arg_4_0:GetFleetVO() then
-			local var_4_1 = arg_4_0:GetFleetVO()
+		if unit:GetFleetVO() then
+			local fleetVO = unit:GetFleetVO()
+			-- 如果是前排，作为crew
+			-- crew的整体挂载一个偏移组件
+			if table.contains(ShipType.VanguardShipType, unitShipType) then
+				local fleetBias = fleetVO:GetFleetBias()
+				local crewCount = fleetBias:GetCrewCount() + 1
 
-			if table.contains(ShipType.VanguardShipType, var_4_0) then
-				local var_4_2 = var_4_1:GetFleetBias()
-				local var_4_3 = var_4_2:GetCrewCount() + 1
+				fleetBias:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SCOUT[crewCount])
+				fleetBias:AppendCrew(unit)
+			elseif table.contains(ShipType.MainShipType, unitShipType) then
+				fleetVO:AttachCloak(unit)
+			elseif table.contains(ShipType.SubShipType, unitShipType) then
+				-- 潜艇每个单位独立挂载一个偏移组件
+				local aimBiasComponent = ys.Battle.BattleUnitAimBiasComponent.New()
 
-				var_4_2:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SCOUT[var_4_3])
-				var_4_2:AppendCrew(arg_4_0)
-			elseif table.contains(ShipType.MainShipType, var_4_0) then
-				var_4_1:AttachCloak(arg_4_0)
-			elseif table.contains(ShipType.SubShipType, var_4_0) then
-				local var_4_4 = ys.Battle.BattleUnitAimBiasComponent.New()
-
-				var_4_4:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeSub, ys.Battle.BattleFormulas.CalculateBiasDecay)
-				var_4_4:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
-				var_4_4:AppendCrew(arg_4_0)
-				var_4_4:Active(var_4_4.STATE_ACTIVITING)
+				aimBiasComponent:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeSub, ys.Battle.BattleFormulas.CalculateBiasDecay)
+				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
+				aimBiasComponent:AppendCrew(unit)
+				aimBiasComponent:Active(aimBiasComponent.STATE_ACTIVITING)
 			end
-		elseif arg_4_0:GetUnitType() == BattleConst.UnitType.ENEMY_UNIT or arg_4_0:GetUnitType() == BattleConst.UnitType.MINION_UNIT or arg_4_0:GetUnitType() == BattleConst.UnitType.BOSS_UNIT then
-			local var_4_5 = ys.Battle.BattleUnitAimBiasComponent.New()
+		elseif unit:GetUnitType() == BattleConst.UnitType.ENEMY_UNIT or unit:GetUnitType() == BattleConst.UnitType.MINION_UNIT or unit:GetUnitType() == BattleConst.UnitType.BOSS_UNIT then
+			-- 敌人也是每个单位独立挂载一个偏移组件
+			local aimBiasComponent = ys.Battle.BattleUnitAimBiasComponent.New()
 
-			var_4_5:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonster)
+			aimBiasComponent:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonster)
 
-			if table.contains(ShipType.SubShipType, var_4_0) then
-				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
+			if table.contains(ShipType.SubShipType, unitShipType) then
+				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
-				var_4_5:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
+				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
 			end
 
-			var_4_5:AppendCrew(arg_4_0)
-			var_4_5:SetHostile()
-			var_4_5:Active(var_4_5.STATE_SUMMON_SICKNESS)
+			aimBiasComponent:AppendCrew(unit)
+			aimBiasComponent:SetHostile()
+			aimBiasComponent:Active(aimBiasComponent.STATE_SUMMON_SICKNESS)
 		end
 	end
 end
@@ -253,7 +262,7 @@ function BattleDataFunction.AttachSmoke(unit)
 			local aimBiasComponent = ys.Battle.BattleUnitAimBiasComponent.New()
 
 			aimBiasComponent:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
-
+			-- 这个shipType变量是何意味...忘改了吗?
 			if table.contains(ShipType.SubShipType, shipType) then
 				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
@@ -267,40 +276,44 @@ function BattleDataFunction.AttachSmoke(unit)
 	end
 end
 
-function BattleDataFunction.InitEquipSkill(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = BattleDataFunction.GetEquipSkill(arg_6_0, arg_6_2)
+-- BattleDataProxy.generatePlayerUnit调用, 初始化装备Buff
+function BattleDataFunction.InitEquipSkill(equipment, playerUnit, battleType)
+	local equipBuffInfoList = BattleDataFunction.GetEquipSkill(equipment, battleType)
+	-- 将记载了buffID和buffLV的buffInfo转换为真正的BuffUnit并添加到单位身上
+	for _, buffInfo in ipairs(equipBuffInfoList) do
+		local buff = ys.Battle.BattleBuffUnit.New(buffInfo.buffID, buffInfo.buffLV, playerUnit)
 
-	for iter_6_0, iter_6_1 in ipairs(var_6_0) do
-		local var_6_1 = ys.Battle.BattleBuffUnit.New(iter_6_1.buffID, iter_6_1.buffLV, arg_6_1)
-
-		arg_6_1:AddBuff(var_6_1)
+		playerUnit:AddBuff(buff)
 	end
 end
 
-function BattleDataFunction.InitCommanderSkill(arg_7_0, arg_7_1, arg_7_2)
-	arg_7_0 = arg_7_0 or {}
+-- BattleDataProxy.generatePlayerUnit调用
+-- 添加指挥喵提供的Buff
+function BattleDataFunction.InitCommanderSkill(commanderBuffInfoList, playerUnit, battleType)
+	commanderBuffInfoList = commanderBuffInfoList or {}
 
-	local var_7_0 = ys.Battle.BattleState.GetInstance():GetBattleType()
+	local battleType = ys.Battle.BattleState.GetInstance():GetBattleType()
 
-	for iter_7_0, iter_7_1 in pairs(arg_7_0) do
-		local var_7_1 = ys.Battle.BattleDataFunction.GetBuffTemplate(iter_7_1.id, iter_7_1.level).limit
-		local var_7_2 = false
+	for _, buffInfo in pairs(commanderBuffInfoList) do
+		-- limit是battleType的限制. 即这个Buff不能在这些battleType里生效
+		local limit = ys.Battle.BattleDataFunction.GetBuffTemplate(buffInfo.id, buffInfo.level).limit
+		local isLimited = false
 
-		if var_7_1 then
-			for iter_7_2, iter_7_3 in ipairs(var_7_1) do
-				if var_7_0 == iter_7_3 then
-					var_7_2 = true
+		if limit then
+			for _, limitBattleType in ipairs(limit) do
+				if battleType == limitBattleType then
+					isLimited = true
 
 					break
 				end
 			end
 		end
 
-		if not var_7_2 then
-			local var_7_3 = ys.Battle.BattleBuffUnit.New(iter_7_1.id, iter_7_1.level, arg_7_1)
-
-			var_7_3:SetCommander(iter_7_1.commander)
-			arg_7_1:AddBuff(var_7_3)
+		if not isLimited then
+			local buff = ys.Battle.BattleBuffUnit.New(buffInfo.id, buffInfo.level, playerUnit)
+			-- 为了防止BUG，需要设定这个Buff是哪个指挥喵提供的
+			buff:SetCommander(buffInfo.commander)
+			playerUnit:AddBuff(buff)
 		end
 	end
 end

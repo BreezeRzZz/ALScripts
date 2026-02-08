@@ -8,6 +8,8 @@ ys.Battle.BattleBuffCastSkillRandom.__name = "BattleBuffCastSkillRandom"
 
 local BattleBuffCastSkillRandom = ys.Battle.BattleBuffCastSkillRandom
 
+-- 此BuffEffect是BattleBuffCastSkill的一个变种
+-- 根据给定的概率列表和技能列表，随机释放一个技能
 function BattleBuffCastSkillRandom.Ctor(self, effectData)
 	BattleBuffCastSkillRandom.super.Ctor(self, effectData)
 

@@ -8,6 +8,9 @@ BattleBuffField.__name = "BattleBuffField"
 
 local BattleConst = ys.Battle.BattleConst
 
+-- 核心BuffEffect之一
+-- 此BuffEffect会在全场生成一个(矩形)范围的AOE, 进入这个范围的单位会被施加一个Buff, 离开这个范围的单位会被移除这个Buff
+-- 与BattleBuffAura基本一样的. 只不过Aura默认是对敌方; 而Field默认是对友方.
 function BattleBuffField.Ctor(self, effectData)
 	BattleBuffField.super.Ctor(self, effectData)
 end

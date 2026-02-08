@@ -65,7 +65,9 @@ function BattleCharacter.SetUnitData(arg_4_0, arg_4_1)
 
 	arg_4_0:AddUnitEvent()
 end
--- TODO
+
+-- 设置绑点信息
+-- 从ship_data_statistics/enemy_data_statistics中读取bound_bone字段，存储到boneList中
 function BattleCharacter.SetBoneList(self)
 	self._boneList = {}
 	self._remoteBoneTable = {}
@@ -110,11 +112,11 @@ function BattleCharacter.SpawnBullet(self, bullet, spawnBound, fireFXID, positio
 
 	bulletfactory:CreateBullet(self._tf, bullet, spawnPosition, fireFXID, self._unitData:GetDirection())
 end
--- TODO
+
 function BattleCharacter.GetBonePos(self, spawnBound)
 	--- @type table<number, Vector3>
 	local boneOffsetPos = self._boneList[spawnBound]
-	-- 如果没有
+	-- 如果没有, 则随机选一个绑点返回
 	if boneOffsetPos == nil or #boneOffsetPos == 0 then
 		for _, _boneOffsetPos in pairs(self._boneList) do
 			boneOffsetPos = _boneOffsetPos

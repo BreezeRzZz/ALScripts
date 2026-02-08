@@ -12,6 +12,10 @@ local BattleBuffDOT = ys.Battle.BattleBuffDOT
 
 BattleBuffDOT.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_DOT
 
+-- 核心BuffEffect之一
+-- 所有DOT类均使用这个实现
+-- 这类BuffEffect会在持续时间内定期造成伤害(点燃/进水等)，伤害值可以根据Buff参数和目标属性计算得到。
+-- DOT伤害可以被压制减免影响(但不受伤害加成影响)，如果DOT的伤害造成了目标死亡，并且这个DOT是具有传染性的，那么就会对周围的单位造成一个新的DOT效果(这个新的DOT效果的伤害值由原DOT的伤害值传染过来)，从而形成链式反应。此外
 function BattleBuffDOT.Ctor(self, effectData)
 	BattleBuffDOT.super.Ctor(self, effectData)
 end
@@ -147,6 +151,8 @@ function BattleBuffDOT.SetInfection(self, igniteDMG)
 	self._infection = igniteDMG
 end
 
+-- 被BattleUnitCloakComponent.Update调用
+-- 这是随动的. 如果某个Buff消失了，它的暴露值就不再提供了, 该单位的CloakValue会下降.
 function BattleBuffDOT.UpdateCloakLock(owner)
 	local buffList = owner:GetBuffList()
 	local totalExpose = 0

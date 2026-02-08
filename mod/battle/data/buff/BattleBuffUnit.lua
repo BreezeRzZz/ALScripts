@@ -72,6 +72,8 @@ function BattleBuffUnit.SetTemplate(self, buffID, buffLevel)
 end
 
 -- 附加Buff逻辑。注意会重置持续时间
+-- 在新增Buff/新groupLevel > 旧groupLevel时触发
+-- 被BattleUnit.AddBuff调用
 function BattleBuffUnit.Attach(self, owner)
 	self._owner = owner
 	self._stack = 1
@@ -83,6 +85,7 @@ end
 
 
 -- 新groupLevel <= 原groupLevel时触发
+-- 被BattleUnit.AddBuff调用
 function BattleBuffUnit.Stack(self, owner)
 	self._stack = math.min(self._stack + 1, self._tempData.stack)
 

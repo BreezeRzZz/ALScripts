@@ -9,6 +9,8 @@ local BattleBuffHPLink = ys.Battle.BattleBuffHPLink
 
 BattleBuffHPLink.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_LINK
 
+-- 此类BuffEffect会将单位受到的伤害分摊给Buff的caster, number参数控制分摊比例，absorb参数控制分摊伤害中被吸收的比例，restoreRatio参数控制Buff结束时根据分摊伤害总量为caster恢复HP的比例
+-- 使用例: 南达科他的1技能
 function BattleBuffHPLink.Ctor(self, effectData)
 	BattleBuffHPLink.super.Ctor(self, effectData)
 end

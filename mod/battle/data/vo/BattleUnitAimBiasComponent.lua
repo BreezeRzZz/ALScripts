@@ -1,284 +1,291 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = var_0_0.Battle.BattleAttr
-local var_0_5 = var_0_0.Battle.BattleFormulas
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAttr = ys.Battle.BattleAttr
+local BattleFormulas = ys.Battle.BattleFormulas
 
-var_0_0.Battle.BattleUnitAimBiasComponent = class("BattleUnitAimBiasComponent")
-var_0_0.Battle.BattleUnitAimBiasComponent.__name = "BattleUnitAimBiasComponent"
+ys.Battle.BattleUnitAimBiasComponent = class("BattleUnitAimBiasComponent")
+ys.Battle.BattleUnitAimBiasComponent.__name = "BattleUnitAimBiasComponent"
 
-local var_0_6 = var_0_0.Battle.BattleUnitAimBiasComponent
+local BattleUnitAimBiasComponent = ys.Battle.BattleUnitAimBiasComponent
 
-var_0_6.NORMAL = 1
-var_0_6.DIVING = 2
-var_0_6.STATE_SUMMON_SICKNESS = "STATE_SUMMON_SICKNESS"
-var_0_6.STATE_ACTIVITING = "STATE_ACTIVITING"
-var_0_6.STATE_SKILL_EXPOSE = "STATE_SKILL_EXPOSE"
-var_0_6.STATE_TOTAL_EXPOSE = "STATE_TOTAL_EXPOSE"
-var_0_6.STATE_EXPIRE = "STATE_EXPIRE"
+BattleUnitAimBiasComponent.NORMAL = 1
+BattleUnitAimBiasComponent.DIVING = 2
+BattleUnitAimBiasComponent.STATE_SUMMON_SICKNESS = "STATE_SUMMON_SICKNESS"
+BattleUnitAimBiasComponent.STATE_ACTIVITING = "STATE_ACTIVITING"
+BattleUnitAimBiasComponent.STATE_SKILL_EXPOSE = "STATE_SKILL_EXPOSE"
+BattleUnitAimBiasComponent.STATE_TOTAL_EXPOSE = "STATE_TOTAL_EXPOSE"
+BattleUnitAimBiasComponent.STATE_EXPIRE = "STATE_EXPIRE"
 
-function var_0_6.Ctor(arg_1_0)
+-- BattleDataFunction.AttachWeather调用, 该组件用于管理夜战隐匿相关的瞄准偏移机制(与隐匿组件区分)
+function BattleUnitAimBiasComponent.Ctor(self)
 	return
 end
 
-function var_0_6.Dispose(arg_2_0)
-	arg_2_0:clear()
+function BattleUnitAimBiasComponent.Dispose(self)
+	self:clear()
 end
 
-function var_0_6.init(arg_3_0)
-	arg_3_0._crewList = {}
-	arg_3_0._maxBiasRange = 0
-	arg_3_0._minBiasRange = 0
-	arg_3_0._currentBiasRange = 0
-	arg_3_0._biasAttr = 0
-	arg_3_0._decaySpeed = 0
-	arg_3_0._ratioSpeed = 0
-	arg_3_0._combinedSpeed = 0
-	arg_3_0._pos = Vector3.zero
+function BattleUnitAimBiasComponent.init(self)
+	self._crewList = {}
+	self._maxBiasRange = 0
+	self._minBiasRange = 0
+	self._currentBiasRange = 0
+	self._biasAttr = 0
+	self._decaySpeed = 0
+	self._ratioSpeed = 0
+	self._combinedSpeed = 0
+	self._pos = Vector3.zero
 end
 
-function var_0_6.ConfigRangeFormula(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0._rangeFormulaFunc = arg_4_1
-	arg_4_0._decayFormulaFunc = arg_4_2
+function BattleUnitAimBiasComponent.ConfigRangeFormula(self, rangeFormulaFunc, decayFormulaFunc)
+	self._rangeFormulaFunc = rangeFormulaFunc
+	self._decayFormulaFunc = decayFormulaFunc
 
-	arg_4_0:init()
+	self:init()
 end
 
-function var_0_6.ConfigMinRange(arg_5_0, arg_5_1)
-	arg_5_0._minBiasRange = arg_5_1
+function BattleUnitAimBiasComponent.ConfigMinRange(self, minBiasRange)
+	self._minBiasRange = minBiasRange
 end
 
-function var_0_6.Active(arg_6_0, arg_6_1)
-	arg_6_0._state = arg_6_1
-	arg_6_0._currentBiasRange = arg_6_0._maxBiasRange
-	arg_6_0._activeTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_6_0._lastUpdateTimeStamp = arg_6_0._activeTimeStamp
+function BattleUnitAimBiasComponent.Active(self, state)
+	self._state = state
+	self._currentBiasRange = self._maxBiasRange
+	self._activeTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._lastUpdateTimeStamp = self._activeTimeStamp
 end
 
-function var_0_6.GetHost(arg_7_0)
-	return arg_7_0._host
+function BattleUnitAimBiasComponent.GetHost(self)
+	return self._host
 end
 
-function var_0_6.Update(arg_8_0, arg_8_1)
-	arg_8_0._pos = arg_8_0._host:GetPosition()
+function BattleUnitAimBiasComponent.Update(self, timeStamp)
+	self._pos = self._host:GetPosition()
 
-	local var_8_0 = var_0_4.GetCurrent(arg_8_0._host, "aimBiasDecaySpeed")
-	local var_8_1 = var_0_4.GetCurrent(arg_8_0._host, "aimBiasDecaySpeedRatio") * arg_8_0._maxBiasRange
+	-- 数值衰减速度
+	local aimBiasDecaySpeed = BattleAttr.GetCurrent(self._host, "aimBiasDecaySpeed")
+	-- ratioSpeed: 根据maxBiasRange计算的百分比衰减速度
+	local ratioSpeed = BattleAttr.GetCurrent(self._host, "aimBiasDecaySpeedRatio") * self._maxBiasRange
 
-	arg_8_0._ratioSpeed = var_8_1
-	arg_8_0._combinedSpeed = arg_8_0._decaySpeed + var_8_0 + var_8_1
+	self._ratioSpeed = ratioSpeed
+	self._combinedSpeed = self._decaySpeed + aimBiasDecaySpeed + ratioSpeed
 
-	if arg_8_0._state == var_0_6.STATE_SUMMON_SICKNESS then
-		if arg_8_1 - arg_8_0._activeTimeStamp > var_0_3.AIM_BIAS_ENEMY_INIT_TIME then
-			arg_8_0:ChangeState(var_0_6.STATE_ACTIVITING)
+	if self._state == BattleUnitAimBiasComponent.STATE_SUMMON_SICKNESS then
+		-- AIM_BIAS_ENEMY_INIT_TIME = 1.5
+		if timeStamp - self._activeTimeStamp > BattleConfig.AIM_BIAS_ENEMY_INIT_TIME then
+			-- 也即瞄准偏移需要1.5s才能激活
+			self:ChangeState(BattleUnitAimBiasComponent.STATE_ACTIVITING)
 		end
-	elseif arg_8_0._state == var_0_6.STATE_SKILL_EXPOSE then
-		arg_8_0._biasAttr = 0
+	elseif self._state == BattleUnitAimBiasComponent.STATE_SKILL_EXPOSE then
+		self._biasAttr = 0
 	else
-		local var_8_2 = arg_8_0._combinedSpeed * (arg_8_1 - arg_8_0._lastUpdateTimeStamp)
+		-- 缩圈的量
+		local decayedValue = self._combinedSpeed * (timeStamp - self._lastUpdateTimeStamp)
 
-		arg_8_0._currentBiasRange = Mathf.Clamp(arg_8_0._currentBiasRange - var_8_2, arg_8_0._minBiasRange, arg_8_0._maxBiasRange)
-		arg_8_0._biasAttr = arg_8_0._currentBiasRange
+		self._currentBiasRange = Mathf.Clamp(self._currentBiasRange - decayedValue, self._minBiasRange, self._maxBiasRange)
+		self._biasAttr = self._currentBiasRange
 
-		if arg_8_0._currentBiasRange <= arg_8_0._minBiasRange then
-			arg_8_0:ChangeState(var_0_6.STATE_TOTAL_EXPOSE)
+		if self._currentBiasRange <= self._minBiasRange then
+			self:ChangeState(BattleUnitAimBiasComponent.STATE_TOTAL_EXPOSE)
 		else
-			arg_8_0:ChangeState(var_0_6.STATE_ACTIVITING)
+			self:ChangeState(BattleUnitAimBiasComponent.STATE_ACTIVITING)
 		end
 	end
 
-	arg_8_0._lastUpdateTimeStamp = arg_8_1
+	self._lastUpdateTimeStamp = timeStamp
 
-	arg_8_0:biasEffect()
+	self:biasEffect()
 end
 
-function var_0_6.GetCurrentRate(arg_9_0)
-	return (arg_9_0._currentBiasRange - arg_9_0._minBiasRange) / arg_9_0._progressLength
+function BattleUnitAimBiasComponent.GetCurrentRate(self)
+	return (self._currentBiasRange - self._minBiasRange) / self._progressLength
 end
 
-function var_0_6.GetDecayRatioSpeed(arg_10_0)
-	return arg_10_0._ratioSpeed
+function BattleUnitAimBiasComponent.GetDecayRatioSpeed(self)
+	return self._ratioSpeed
 end
 
-function var_0_6.GetCurrentState(arg_11_0)
-	return arg_11_0._state
+function BattleUnitAimBiasComponent.GetCurrentState(self)
+	return self._state
 end
 
-function var_0_6.IsFaint(arg_12_0)
-	return arg_12_0._state == var_0_6.STATE_TOTAL_EXPOSE or arg_12_0._state == var_0_6.STATE_SKILL_EXPOSE
+function BattleUnitAimBiasComponent.IsFaint(self)
+	return self._state == BattleUnitAimBiasComponent.STATE_TOTAL_EXPOSE or self._state == BattleUnitAimBiasComponent.STATE_SKILL_EXPOSE
 end
 
-function var_0_6.GetPosition(arg_13_0)
-	return arg_13_0._pos
+function BattleUnitAimBiasComponent.GetPosition(self)
+	return self._pos
 end
 
-function var_0_6.GetCrewCount(arg_14_0)
-	return #arg_14_0._crewList
+function BattleUnitAimBiasComponent.GetCrewCount(self)
+	return #self._crewList
 end
 
-function var_0_6.GetRange(arg_15_0)
-	local var_15_0
-
-	if arg_15_0._state == var_0_6.STATE_SKILL_EXPOSE then
-		var_15_0 = arg_15_0._minBiasRange
+function BattleUnitAimBiasComponent.GetRange(self)
+	local range
+	-- 技能破隐期间, 瞄准偏移范围是最小的, 也即暴露程度最高
+	if self._state == BattleUnitAimBiasComponent.STATE_SKILL_EXPOSE then
+		range = self._minBiasRange
 	else
-		var_15_0 = arg_15_0._currentBiasRange
+		range = self._currentBiasRange
 	end
 
-	return var_15_0
+	return range
 end
 
-function var_0_6.GetDecayFactorType(arg_16_0)
-	if arg_16_0._host:GetCurrentOxyState() == var_0_2.OXY_STATE.DIVE then
-		return var_0_6.DIVING
+function BattleUnitAimBiasComponent.GetDecayFactorType(self)
+	if self._host:GetCurrentOxyState() == BattleConst.OXY_STATE.DIVE then
+		return BattleUnitAimBiasComponent.DIVING
 	else
-		return var_0_6.NORMAL
+		return BattleUnitAimBiasComponent.NORMAL
 	end
 end
 
-function var_0_6.IsHostile(arg_17_0)
-	return arg_17_0._hostile
+function BattleUnitAimBiasComponent.IsHostile(self)
+	return self._hostile
 end
 
-function var_0_6.SetDecayFactor(arg_18_0, arg_18_1, arg_18_2)
-	if arg_18_1 == 0 then
-		arg_18_0._decaySpeed = 0
+function BattleUnitAimBiasComponent.SetDecayFactor(self, decayFactor, extraDecaySpeed)
+	if decayFactor == 0 then
+		self._decaySpeed = 0
 
 		return
 	end
 
-	if arg_18_0._cacheFactor == arg_18_1 and arg_18_0._cacheType == arg_18_0:GetDecayFactorType() then
+	if self._cacheFactor == decayFactor and self._cacheType == self:GetDecayFactorType() then
 		return
 	end
 
-	if arg_18_0:GetDecayFactorType() == var_0_6.DIVING then
-		arg_18_0._decaySpeed = var_0_5.CalculateBiasDecayDiving(arg_18_1)
+	if self:GetDecayFactorType() == BattleUnitAimBiasComponent.DIVING then
+		self._decaySpeed = BattleFormulas.CalculateBiasDecayDiving(decayFactor)
 	else
-		arg_18_0._decaySpeed = arg_18_0._decayFormulaFunc(arg_18_1)
+		self._decaySpeed = self._decayFormulaFunc(decayFactor)
 	end
 
-	arg_18_0._decaySpeed = arg_18_0._decaySpeed + arg_18_2
+	self._decaySpeed = self._decaySpeed + extraDecaySpeed
 end
 
-function var_0_6.AppendCrew(arg_19_0, arg_19_1)
-	if table.contains(arg_19_0._crewList, arg_19_1) then
+function BattleUnitAimBiasComponent.AppendCrew(self, crew)
+	if table.contains(self._crewList, crew) then
 		return
 	end
 
-	table.insert(arg_19_0._crewList, arg_19_1)
-	arg_19_0:switchHost()
-	arg_19_0:flush()
-	arg_19_1:AttachAimBias(arg_19_0)
+	table.insert(self._crewList, crew)
+	self:switchHost()
+	self:flush()
+	crew:AttachAimBias(self)
 
-	arg_19_0._currentBiasRange = arg_19_0._maxBiasRange
+	self._currentBiasRange = self._maxBiasRange
 end
 
-function var_0_6.RemoveCrew(arg_20_0, arg_20_1)
+function BattleUnitAimBiasComponent.RemoveCrew(self, crew)
 	local var_20_0
 
-	for iter_20_0, iter_20_1 in ipairs(arg_20_0._crewList) do
-		if iter_20_1 == arg_20_1 then
-			table.remove(arg_20_0._crewList, iter_20_0)
+	for index, _crew in ipairs(self._crewList) do
+		if _crew == crew then
+			table.remove(self._crewList, index)
 
 			break
 		end
 	end
 
-	if #arg_20_0._crewList == 0 then
-		arg_20_0:clear()
+	if #self._crewList == 0 then
+		self:clear()
 	else
-		arg_20_0:switchHost()
-		arg_20_0:flush()
+		self:switchHost()
+		self:flush()
 	end
 end
 
-function var_0_6.UpdateSkillLock(arg_21_0)
-	if var_0_4.IsLockAimBias(arg_21_0._host) then
-		arg_21_0:ChangeState(var_0_6.STATE_SKILL_EXPOSE)
-	elseif arg_21_0._currentBiasRange <= arg_21_0._minBiasRange then
-		arg_21_0:ChangeState(var_0_6.STATE_TOTAL_EXPOSE)
+function BattleUnitAimBiasComponent.UpdateSkillLock(self)
+	if BattleAttr.IsLockAimBias(self._host) then
+		self:ChangeState(BattleUnitAimBiasComponent.STATE_SKILL_EXPOSE)
+	elseif self._currentBiasRange <= self._minBiasRange then
+		self:ChangeState(BattleUnitAimBiasComponent.STATE_TOTAL_EXPOSE)
 	else
-		arg_21_0:ChangeState(var_0_6.STATE_ACTIVITING)
+		self:ChangeState(BattleUnitAimBiasComponent.STATE_ACTIVITING)
 	end
 
-	arg_21_0._host:DispatchEvent(var_0_0.Event.New(var_0_1.UPDATE_AIMBIAS_LOCK))
+	self._host:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_AIMBIAS_LOCK))
 end
 
-function var_0_6.SmokeExitPause(arg_22_0)
-	local var_22_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleUnitAimBiasComponent.SmokeExitPause(self)
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	arg_22_0._pauseStartTimeStamp = var_22_0
+	self._pauseStartTimeStamp = currentTime
 
-	var_0_4.SetCurrent(arg_22_0._host, "lockAimBias", 1)
-	arg_22_0:UpdateSkillLock()
-	arg_22_0:Update(var_22_0)
+	BattleAttr.SetCurrent(self._host, "lockAimBias", 1)
+	self:UpdateSkillLock()
+	self:Update(currentTime)
 
-	local function var_22_1()
-		arg_22_0:removeRestoreTimer()
-		arg_22_0._host:DetachAimBias()
+	local function onRestoreTimerEnds()
+		self:removeRestoreTimer()
+		self._host:DetachAimBias()
 	end
 
-	arg_22_0._smokeRestoreTimer = pg.TimeMgr.GetInstance():AddBattleTimer("smokeRestoreTimer", 0, var_0_3.AIM_BIAS_SMOKE_RESTORE_DURATION, var_22_1, true)
+	self._smokeRestoreTimer = pg.TimeMgr.GetInstance():AddBattleTimer("smokeRestoreTimer", 0, BattleConfig.AIM_BIAS_SMOKE_RESTORE_DURATION, onRestoreTimerEnds, true)
 end
 
-function var_0_6.SomkeExitResume(arg_24_0)
-	arg_24_0:removeRestoreTimer()
+function BattleUnitAimBiasComponent.SomkeExitResume(self)
+	self:removeRestoreTimer()
 
-	local var_24_0 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_24_0._pauseStartTimeStamp
+	local elapsedTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._pauseStartTimeStamp
 
-	arg_24_0._lastUpdateTimeStamp = arg_24_0._lastUpdateTimeStamp + var_24_0
+	self._lastUpdateTimeStamp = self._lastUpdateTimeStamp + elapsedTime
 
-	arg_24_0:UpdateSkillLock()
+	self:UpdateSkillLock()
 end
 
-function var_0_6.SmokeRecover(arg_25_0)
-	arg_25_0._currentBiasRange = math.min(arg_25_0._maxBiasRange, arg_25_0._currentBiasRange + arg_25_0._maxBiasRange * var_0_3.AIM_BIAS_SMOKE_RECOVERY_RATE)
+function BattleUnitAimBiasComponent.SmokeRecover(self)
+	-- AIM_BIAS_SMOKE_RECOVERY_RATE = 0.6
+	self._currentBiasRange = math.min(self._maxBiasRange, self._currentBiasRange + self._maxBiasRange * BattleConfig.AIM_BIAS_SMOKE_RECOVERY_RATE)
 end
 
-function var_0_6.ChangeState(arg_26_0, arg_26_1)
-	arg_26_0._state = arg_26_1
+function BattleUnitAimBiasComponent.ChangeState(self, state)
+	self._state = state
 end
 
-function var_0_6.SetHostile(arg_27_0)
-	arg_27_0._hostile = true
+function BattleUnitAimBiasComponent.SetHostile(self)
+	self._hostile = true
 end
 
-function var_0_6.switchHost(arg_28_0)
-	arg_28_0._host = arg_28_0._crewList[1]
+function BattleUnitAimBiasComponent.switchHost(self)
+	self._host = self._crewList[1]
 
-	arg_28_0._host:HostAimBias()
+	self._host:HostAimBias()
 end
 
-function var_0_6.flush(arg_29_0)
-	arg_29_0._maxBiasRange = math.max(arg_29_0._rangeFormulaFunc(arg_29_0._crewList), arg_29_0._minBiasRange)
+function BattleUnitAimBiasComponent.flush(self)
+	self._maxBiasRange = math.max(self._rangeFormulaFunc(self._crewList), self._minBiasRange)
 
-	local var_29_0 = arg_29_0._host:GetTemplate().cld_box
+	local cld_box = self._host:GetTemplate().cld_box
 
-	arg_29_0._progressLength = arg_29_0._maxBiasRange - arg_29_0._minBiasRange
+	self._progressLength = self._maxBiasRange - self._minBiasRange
 end
 
-function var_0_6.biasEffect(arg_30_0)
-	for iter_30_0, iter_30_1 in ipairs(arg_30_0._crewList) do
-		var_0_4.SetCurrent(iter_30_1, "aimBias", arg_30_0._biasAttr)
+function BattleUnitAimBiasComponent.biasEffect(self)
+	for _, crew in ipairs(self._crewList) do
+		BattleAttr.SetCurrent(crew, "aimBias", self._biasAttr)
 	end
 end
 
-function var_0_6.removeRestoreTimer(arg_31_0)
-	var_0_4.SetCurrent(arg_31_0._host, "lockAimBias", 0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_31_0._smokeRestoreTimer)
+function BattleUnitAimBiasComponent.removeRestoreTimer(self)
+	BattleAttr.SetCurrent(self._host, "lockAimBias", 0)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._smokeRestoreTimer)
 
-	arg_31_0._smokeRestoreTimer = nil
+	self._smokeRestoreTimer = nil
 end
 
-function var_0_6.clear(arg_32_0)
-	if arg_32_0._smokeRestoreTimer then
-		arg_32_0:removeRestoreTimer()
+function BattleUnitAimBiasComponent.clear(self)
+	if self._smokeRestoreTimer then
+		self:removeRestoreTimer()
 	end
 
-	arg_32_0._crewList = {}
-	arg_32_0._pos = nil
-	arg_32_0._state = var_0_6.STATE_EXPIRE
+	self._crewList = {}
+	self._pos = nil
+	self._state = BattleUnitAimBiasComponent.STATE_EXPIRE
 end

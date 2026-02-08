@@ -1,62 +1,66 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleAOEMobilizedComponent")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleAOEMobilizedComponent = class("BattleAOEMobilizedComponent")
 
-var_0_0.Battle.BattleAOEMobilizedComponent = var_0_2
-var_0_2.__name = "BattleAOEMobilizedComponent"
-var_0_2.STAY = 0
-var_0_2.FOLLOW = 1
-var_0_2.REFERENCE = 2
+ys.Battle.BattleAOEMobilizedComponent = BattleAOEMobilizedComponent
+BattleAOEMobilizedComponent.__name = "BattleAOEMobilizedComponent"
+BattleAOEMobilizedComponent.STAY = 0
+BattleAOEMobilizedComponent.FOLLOW = 1
+BattleAOEMobilizedComponent.REFERENCE = 2
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._area = arg_1_1
+-- 该Component用于让AOE跟随某个单位移动或者以某个点为参考移动（根据UpdatePosition的实现）
+function BattleAOEMobilizedComponent.Ctor(self, area)
+	self._area = area
+	-- area对应AOE Data
+	self._area:AppendComponent(self)
+	-- AOE的Settle函数会调用updatePosition来更新位置
+	local Settle = self._area.Settle
 
-	arg_1_0._area:AppendComponent(arg_1_0)
-
-	local var_1_0 = arg_1_0._area.Settle
-
-	function arg_1_0._area.Settle()
-		arg_1_0:updatePosition()
-		var_1_0(arg_1_0._area)
+	function self._area.Settle()
+		self:updatePosition()
+		Settle(self._area)
 	end
 end
 
-function var_0_2.Dispose(arg_3_0)
-	arg_3_0._area = nil
-	arg_3_0._referenceUnit = nil
+function BattleAOEMobilizedComponent.Dispose(self)
+	self._area = nil
+	self._referenceUnit = nil
 end
 
-function var_0_2.SetReferenceUnit(arg_4_0, arg_4_1)
-	arg_4_0._referenceUnit = arg_4_1
-	arg_4_0._referencePoint = Clone(arg_4_1:GetPosition())
+function BattleAOEMobilizedComponent.SetReferenceUnit(self, referenceUnit)
+	self._referenceUnit = referenceUnit
+	self._referencePoint = Clone(referenceUnit:GetPosition())
 end
 
-function var_0_2.ConfigData(arg_5_0, arg_5_1, arg_5_2)
-	if arg_5_1 == var_0_2.STAY then
-		arg_5_0.updatePosition = var_0_2.doStay
-	elseif arg_5_1 == var_0_2.FOLLOW then
-		arg_5_0.updatePosition = var_0_2.doFollow
-	elseif arg_5_1 == var_0_2.REFERENCE then
-		arg_5_0.updatePosition = var_0_2.doReference
-		arg_5_0._speedVector = Vector3.New(arg_5_2.speedX, 0, 0)
+function BattleAOEMobilizedComponent.ConfigData(self, mode, params)
+	if mode == BattleAOEMobilizedComponent.STAY then
+		self.updatePosition = BattleAOEMobilizedComponent.doStay
+	elseif mode == BattleAOEMobilizedComponent.FOLLOW then
+		self.updatePosition = BattleAOEMobilizedComponent.doFollow
+	elseif mode == BattleAOEMobilizedComponent.REFERENCE then
+		self.updatePosition = BattleAOEMobilizedComponent.doReference
+		self._speedVector = Vector3.New(params.speedX, 0, 0)
 	end
 end
 
-function var_0_2.doStay()
+-- 1. STAY: 不移动
+function BattleAOEMobilizedComponent.doStay(self)
 	return
 end
 
-function var_0_2.doFollow(arg_7_0)
-	local var_7_0 = setmetatable({}, {
-		__index = arg_7_0._referenceUnit:GetPosition()
+-- 2. FOLLOW: 跟随referenceUnit移动
+function BattleAOEMobilizedComponent.doFollow(self)
+	local referencePos = setmetatable({}, {
+		__index = self._referenceUnit:GetPosition()
 	})
 
-	arg_7_0._area:SetPosition(var_7_0)
+	self._area:SetPosition(referencePos)
 end
 
-function var_0_2.doReference(arg_8_0)
-	arg_8_0._referencePoint:Add(arg_8_0._speedVector)
-	arg_8_0._area:SetPosition(arg_8_0._referencePoint)
+-- 3. REFERENCE: 以某个点(referenceUnit的初始位置?)为参考移动
+function BattleAOEMobilizedComponent.doReference(self)
+	self._referencePoint:Add(self._speedVector)
+	self._area:SetPosition(self._referencePoint)
 end

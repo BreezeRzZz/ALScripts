@@ -1,19 +1,21 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffUnstoppable", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffUnstoppable = class("BattleBuffUnstoppable", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffUnstoppable = var_0_1
-var_0_1.__name = "BattleBuffUnstoppable"
+ys.Battle.BattleBuffUnstoppable = BattleBuffUnstoppable
+BattleBuffUnstoppable.__name = "BattleBuffUnstoppable"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect设置单位不可阻挡/不被吸引. 具体效果是使得单位免疫各种吸引效果(不影响吸引tag, tag是另一套逻辑，不相干)
+-- 使用例: 某些BOSS的不可阻挡/不被吸引特性
+function BattleBuffUnstoppable.Ctor(self, effectData)
+	BattleBuffUnstoppable.super.Ctor(self, effectData)
 end
 
-function var_0_1.onAttach(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_1:ActiveUnstoppable(true)
+function BattleBuffUnstoppable.onAttach(self, owner, buff)
+	owner:ActiveUnstoppable(true)
 end
 
-function var_0_1.onRemove(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:ActiveUnstoppable(false)
+function BattleBuffUnstoppable.onRemove(self, owner, buff)
+	owner:ActiveUnstoppable(false)
 end

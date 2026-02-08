@@ -1,7 +1,7 @@
 ys = ys or {}
 
 local var_0_0 = ys
-
+-- TODO
 var_0_0.Battle.BattleGravitationBulletFactory = singletonClass("BattleGravitationBulletFactory", var_0_0.Battle.BattleBulletFactory)
 var_0_0.Battle.BattleGravitationBulletFactory.__name = "BattleGravitationBulletFactory"
 

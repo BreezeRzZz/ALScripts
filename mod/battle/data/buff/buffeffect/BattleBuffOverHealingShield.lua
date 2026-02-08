@@ -1,99 +1,105 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffOverHealingShield = class("BattleBuffOverHealingShield", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffOverHealingShield.__name = "BattleBuffOverHealingShield"
+ys.Battle.BattleBuffOverHealingShield = class("BattleBuffOverHealingShield", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffOverHealingShield.__name = "BattleBuffOverHealingShield"
 
-local var_0_1 = var_0_0.Battle.BattleBuffOverHealingShield
+local BattleBuffOverHealingShield = ys.Battle.BattleBuffOverHealingShield
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect会在单位受到过量治疗时生成一个护盾，持续一段时间。护盾会优先抵消伤害(并可以附加tag），直到护盾值为0或护盾持续时间结束。
+-- 使用例: 目前只有阿尔比恩的3技能
+function BattleBuffOverHealingShield.Ctor(self, effectData)
+	BattleBuffOverHealingShield.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffOverHealingShield.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._shieldDuration = arg_2_0._tempData.arg_list.shield_duration
-	arg_2_0._shieldRate = arg_2_0._tempData.arg_list.shield_rate
-	arg_2_0._shieldLabel = arg_2_0._tempData.arg_list.shield_tag_list or {}
-	arg_2_0._shieldList = {}
+	self._shieldDuration = self._tempData.arg_list.shield_duration
+	self._shieldRate = self._tempData.arg_list.shield_rate
+	self._shieldLabel = self._tempData.arg_list.shield_tag_list or {}
+	self._shieldList = {}
 end
 
-function var_0_1.onOverHealing(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_3.overHealing
-	local var_3_1 = math.ceil(var_3_0 * arg_3_0._shieldRate)
+function BattleBuffOverHealingShield.onOverHealing(self, owner, buff, args)
+	local overHealing = args.overHealing
+	local shieldNumber = math.ceil(overHealing * self._shieldRate)
 
-	if var_3_1 > 0 then
-		local var_3_2 = pg.TimeMgr.GetInstance():GetCombatTime()
+	if shieldNumber > 0 then
+		local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-		table.insert(arg_3_0._shieldList, {
-			timeStamp = var_3_2,
-			value = var_3_1
+		table.insert(self._shieldList, {
+			timeStamp = currentTime,
+			value = shieldNumber
 		})
 	end
 
-	arg_3_0:updateLabelTag(arg_3_1)
+	self:updateLabelTag(owner)
 end
 
-function var_0_1.onUpdate(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = #arg_4_0._shieldList
-	local var_4_1 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_4_0._shieldDuration
+function BattleBuffOverHealingShield.onUpdate(self, owner, buff)
+	local shieldListLength = #self._shieldList
+	local startTimeStampThreshold = pg.TimeMgr.GetInstance():GetCombatTime() - self._shieldDuration
 
-	while var_4_0 > 0 do
-		if var_4_1 >= arg_4_0._shieldList[var_4_0].timeStamp then
-			table.remove(arg_4_0._shieldList, var_4_0)
+	while shieldListLength > 0 do
+		-- 护盾到期移除
+		if startTimeStampThreshold >= self._shieldList[shieldListLength].timeStamp then
+			table.remove(self._shieldList, shieldListLength)
 		end
 
-		var_4_0 = var_4_0 - 1
+		shieldListLength = shieldListLength - 1
 	end
 
-	arg_4_0:updateLabelTag(arg_4_1)
+	self:updateLabelTag(owner)
 end
 
-function var_0_1.onTakeDamage(arg_5_0, arg_5_1, arg_5_2, arg_5_3)
-	local var_5_0 = #arg_5_0._shieldList
+function BattleBuffOverHealingShield.onTakeDamage(self, owner, buff, args)
+	local shieldListLength = #self._shieldList
+	-- 如果有护盾，且伤害满足条件，则优先扣除护盾
+	-- 多个护盾时，可以认为按照护盾生成的时间戳先后顺序扣除(先生成的护盾优先扣除)
+	-- 这里应该只有这类BuffEffect内部的护盾是这样的. 其他BuffEffect如果需要类似功能，自己实现
+	-- 例如最常见的护盾是BattleBuffShield
+	if self:damageCheck(args) and shieldListLength > 0 then
+		local damage = args.damage
+		local shieldIndex = 0
 
-	if arg_5_0:damageCheck(arg_5_3) and var_5_0 > 0 then
-		local var_5_1 = arg_5_3.damage
-		local var_5_2 = 0
+		while damage > 0 and shieldIndex < shieldListLength do
+			shieldIndex = shieldIndex + 1
 
-		while var_5_1 > 0 and var_5_2 < var_5_0 do
-			var_5_2 = var_5_2 + 1
+			local shieldValue = self._shieldList[shieldIndex].value
 
-			local var_5_3 = arg_5_0._shieldList[var_5_2].value
-
-			if var_5_1 <= var_5_3 then
-				arg_5_0._shieldList[var_5_2].value = var_5_3 - var_5_1
-				var_5_1 = 0
+			if damage <= shieldValue then
+				self._shieldList[shieldIndex].value = shieldValue - damage
+				damage = 0
 			else
-				var_5_1 = var_5_1 - var_5_3
-				arg_5_0._shieldList[var_5_2].value = 0
+				damage = damage - shieldValue
+				self._shieldList[shieldIndex].value = 0
 			end
 		end
 
-		arg_5_3.damage = var_5_1
+		args.damage = damage
 
-		while var_5_0 > 0 do
-			if arg_5_0._shieldList[var_5_0].value <= 0 then
-				table.remove(arg_5_0._shieldList, var_5_0)
+		while shieldListLength > 0 do
+			if self._shieldList[shieldListLength].value <= 0 then
+				table.remove(self._shieldList, shieldListLength)
 			end
 
-			var_5_0 = var_5_0 - 1
+			shieldListLength = shieldListLength - 1
 		end
 
-		arg_5_0:updateLabelTag(arg_5_1)
+		self:updateLabelTag(owner)
 	end
 end
 
-function var_0_1.updateLabelTag(arg_6_0, arg_6_1)
-	if #arg_6_0._shieldList <= 0 then
-		for iter_6_0, iter_6_1 in ipairs(arg_6_0._shieldLabel) do
-			arg_6_1:RemoveLabelTag(iter_6_1)
+function BattleBuffOverHealingShield.updateLabelTag(self, owner)
+	if #self._shieldList <= 0 then
+		for iter_6_0, iter_6_1 in ipairs(self._shieldLabel) do
+			owner:RemoveLabelTag(iter_6_1)
 		end
-	elseif not arg_6_1:ContainsLabelTag(arg_6_0._shieldLabel) then
-		for iter_6_2, iter_6_3 in ipairs(arg_6_0._shieldLabel) do
-			arg_6_1:AddLabelTag(iter_6_3)
+	elseif not owner:ContainsLabelTag(self._shieldLabel) then
+		for iter_6_2, iter_6_3 in ipairs(self._shieldLabel) do
+			owner:AddLabelTag(iter_6_3)
 		end
 	end
 end

@@ -7,6 +7,8 @@ ys.Battle.BattleBuffDeactiveCLDBox.__name = "BattleBuffDeactiveCLDBox"
 
 local BattleBuffDeactiveCLDBox = ys.Battle.BattleBuffDeactiveCLDBox
 
+-- 此类BuffEffect会取消掉单位的碰撞箱
+-- 使用例: 莫加多尔的1技能
 function BattleBuffDeactiveCLDBox.Ctor(self, effectData)
 	BattleBuffDeactiveCLDBox.super.Ctor(self, effectData)
 end

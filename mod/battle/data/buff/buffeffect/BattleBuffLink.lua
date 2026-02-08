@@ -1,28 +1,30 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffLink = class("BattleBuffLink", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffLink.__name = "BattleBuffLink"
+ys.Battle.BattleBuffLink = class("BattleBuffLink", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffLink.__name = "BattleBuffLink"
 
-function var_0_0.Battle.BattleBuffLink.Ctor(arg_1_0, arg_1_1)
-	var_0_0.Battle.BattleBuffLink.super.Ctor(arg_1_0, arg_1_1)
+-- 这类BuffEffect的作用是为目标单位的Buff触发提供一个链接, 也即当满足条件时, 该BuffEffect会让目标单位的指定Buff触发
+-- 目前只有Buff 60026使用(可能废弃)
+function ys.Battle.BattleBuffLink.Ctor(self, effectData)
+	ys.Battle.BattleBuffLink.super.Ctor(self, effectData)
 end
 
-function var_0_0.Battle.BattleBuffLink.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._target = arg_2_0._tempData.arg_list.target
-	arg_2_0._buff_id = arg_2_0._tempData.arg_list.buff_id
+function ys.Battle.BattleBuffLink.SetArgs(self, owner, buff)
+	self._target = self._tempData.arg_list.target
+	self._buff_id = self._tempData.arg_list.buff_id
 end
 
-function var_0_0.Battle.BattleBuffLink.Trigger(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4)
-	local var_3_0 = arg_3_0:getTargetList(arg_3_2, arg_3_0._target, arg_3_0._tempData.arg_list)
+function ys.Battle.BattleBuffLink.Trigger(self, effectType, owner, buff, args)
+	local targetList = self:getTargetList(owner, self._target, self._tempData.arg_list)
 
-	if var_3_0 then
-		for iter_3_0, iter_3_1 in ipairs(var_3_0) do
-			local var_3_1 = iter_3_1:GetBuff(arg_3_0._buff_id)
+	if targetList then
+		for _, target in ipairs(targetList) do
+			local buff = target:GetBuff(self._buff_id)
 
-			if var_3_1 then
-				var_3_1:onTrigger(arg_3_1, iter_3_1, arg_3_4)
+			if buff then
+				buff:onTrigger(effectType, target, args)
 			end
 		end
 	end

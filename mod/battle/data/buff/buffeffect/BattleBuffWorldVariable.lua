@@ -1,40 +1,42 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffWorldVariable = class("BattleBuffWorldVariable", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffWorldVariable.__name = "BattleBuffWorldVariable"
+ys.Battle.BattleBuffWorldVariable = class("BattleBuffWorldVariable", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffWorldVariable.__name = "BattleBuffWorldVariable"
 
-local var_0_1 = var_0_0.Battle.BattleBuffWorldVariable
+local BattleBuffWorldVariable = ys.Battle.BattleBuffWorldVariable
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 这个BuffEffect看起来是用来调控UI速度(子弹时间之类的效果)的. 具体是通过设置BattleVariable里的变量来实现的.
+-- 但目前看起来是废弃的
+function BattleBuffWorldVariable.Ctor(self, effectData)
+	BattleBuffWorldVariable.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._variable = arg_2_0._tempData.arg_list.variable
-	arg_2_0._key = arg_2_0._tempData.arg_list.key
-	arg_2_0._number = arg_2_0._tempData.arg_list.number
-	arg_2_0._resetNumber = arg_2_0._tempData.arg_list.resetNumber
-	arg_2_0._speedFactorName = "buff_" .. arg_2_0._tempData.id
+function BattleBuffWorldVariable.SetArgs(self, owner, buff)
+	self._variable = self._tempData.arg_list.variable
+	self._key = self._tempData.arg_list.key
+	self._number = self._tempData.arg_list.number
+	self._resetNumber = self._tempData.arg_list.resetNumber
+	self._speedFactorName = "buff_" .. self._tempData.id
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = var_0_0.Battle.BattleVariable
+function BattleBuffWorldVariable.onAttach(self, owner, buff)
+	local BattleVariable = ys.Battle.BattleVariable
 
-	if arg_3_0._key then
-		var_3_0.AppendIFFFactor(arg_3_0._key, arg_3_0._speedFactorName, arg_3_0._number)
+	if self._key then
+		BattleVariable.AppendIFFFactor(self._key, self._speedFactorName, self._number)
 	else
-		var_3_0.AppendMapFactor(arg_3_0._speedFactorName, arg_3_0._number)
+		BattleVariable.AppendMapFactor(self._speedFactorName, self._number)
 	end
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = var_0_0.Battle.BattleVariable
+function BattleBuffWorldVariable.onRemove(self, owner, buff)
+	local BattleVariable = ys.Battle.BattleVariable
 
-	if arg_4_0._key then
-		var_4_0.RemoveIFFFactor(arg_4_0._key, arg_4_0._speedFactorName)
+	if self._key then
+		BattleVariable.RemoveIFFFactor(self._key, self._speedFactorName)
 	else
-		var_4_0.RemoveMapFactor(arg_4_0._speedFactorName)
+		BattleVariable.RemoveMapFactor(self._speedFactorName)
 	end
 end

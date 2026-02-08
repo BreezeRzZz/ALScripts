@@ -291,6 +291,7 @@ function BattlePlayerUnit.AddWeapon(arg_23_0, arg_23_1, arg_23_2, arg_23_3, arg_
 	return var_23_0
 end
 
+-- BattleBuffShiftWeapon.removeWeapon调用
 function BattlePlayerUnit.RemoveWeapon(arg_24_0, arg_24_1)
 	local var_24_0 = BattleDataFunction.GetWeaponPropertyDataFromID(arg_24_1).type
 	local var_24_1

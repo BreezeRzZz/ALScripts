@@ -217,6 +217,7 @@ end
 --- @class BattleUnit
 --- @return number
 --- 获取自己被作为目标的优先级
+--- 会被BattleTargetChoise.TargetHarmRandomByWeight/TargetWeightiest调用
 function BattleUnit.GetTargetedPriority(self)
 	local targetedPriority
 
@@ -555,32 +556,40 @@ function BattleUnit.ActionKeyOffsetUseable(arg_43_0)
 	return true
 end
 
-function BattleUnit.RemoveRemoteBoundBone(arg_44_0, arg_44_1)
-	arg_44_0._remoteBoundBone[arg_44_1] = nil
+--- Remote Bound Bone相关 ---
+--- 用于实现"远程绑定点": 将单位的某个骨骼绑定到另一个单位上，表现为该骨骼跟随目标单位移动
+--- (并不常用)
+function BattleUnit.RemoveRemoteBoundBone(self, group)
+	self._remoteBoundBone[group] = nil
 end
 
-function BattleUnit.SetRemoteBoundBone(arg_45_0, arg_45_1, arg_45_2, arg_45_3)
-	local var_45_0 = arg_45_0._remoteBoundBone[arg_45_1] or {}
+-- BattleBuffRemoteBone会调用这个函数来设定远程绑定点
+-- 将单位的某个骨骼绑定到另一个单位上，表现为该骨骼跟随目标单位移动
+function BattleUnit.SetRemoteBoundBone(self, group, bone, target)
+	-- group: Buff ID
+	-- remoteBoundBone: table<number, table<string, string>>
+	-- 表示远程绑定点的表，第一层的key是Buff ID，第二层的key是骨骼名称(如"cannon")，value是目标单位的位置(如"FlagShip"之类的字符串)
+	local boneGroup = self._remoteBoundBone[group] or {}
 
-	var_45_0[arg_45_2] = arg_45_3
-	arg_45_0._remoteBoundBone[arg_45_1] = var_45_0
+	boneGroup[bone] = target
+	self._remoteBoundBone[group] = boneGroup
 end
--- tODO
+
 function BattleUnit.GetRemoteBoundBone(self, spawnBound)
-	for _, iter_46_1 in pairs(self._remoteBoundBone) do
-		local var_46_0 = iter_46_1[spawnBound]
+	for _, boneGroup in pairs(self._remoteBoundBone) do
+		local fleetPos = boneGroup[spawnBound]
 
-		if var_46_0 then
-			local var_46_1 = ys.Battle.BattleTargetChoise.TargetFleetIndex(self, {
-				fleetPos = var_46_0
+		if fleetPos then
+			local target = ys.Battle.BattleTargetChoise.TargetFleetIndex(self, {
+				fleetPos = fleetPos
 			})[1]
 
-			if var_46_1 and var_46_1:IsAlive() then
-				local var_46_2 = Clone(var_46_1:GetPosition())
+			if target and target:IsAlive() then
+				local targetPos = Clone(target:GetPosition())
+				-- 调整目标位置的y值，表现为绑定点在单位头顶(做视觉调整)
+				targetPos:Set(targetPos.x, 1.5, targetPos.z)
 
-				var_46_2:Set(var_46_2.x, 1.5, var_46_2.z)
-
-				return var_46_2
+				return targetPos
 			end
 		end
 	end
@@ -873,6 +882,7 @@ function BattleUnit.ShiftWeapon(arg_81_0, arg_81_1, arg_81_2)
 	end
 end
 
+-- 被BattleBuffMountExpand调用
 function BattleUnit.ExpandWeaponMount(arg_82_0, arg_82_1)
 	if arg_82_1 == "airAssist" then
 		BattleDataFunction.ExpandAllinStrike(arg_82_0)
@@ -1187,13 +1197,15 @@ function BattleUnit.UpdatePrecastMoveLimit(arg_132_0)
 	arg_132_0:UpdateMoveLimit()
 end
 
-function BattleUnit.UpdateMoveLimit(arg_133_0)
-	local var_133_0 = arg_133_0:IsMoveAble()
+-- 切换一次是否能移动的状态
+-- BattleBuffStun调用
+function BattleUnit.UpdateMoveLimit(self)
+	local moveable = self:IsMoveAble()
 
-	arg_133_0._move:SetStaticState(not var_133_0)
+	self._move:SetStaticState(not moveable)
 end
 
--- TODO：单位添加Buff主逻辑
+-- note: 单位添加Buff主逻辑
 function BattleUnit.AddBuff(self, buff, ifStock)
 	local buffID = buff:GetID()
 	local args = {
@@ -1543,12 +1555,12 @@ function BattleUnit.GetHPRate(arg_171_0)
 	return arg_171_0._currentHPRate
 end
 
-function BattleUnit.GetHP(arg_172_0)
-	return arg_172_0._currentHP, arg_172_0:GetMaxHP()
+function BattleUnit.GetHP(self)
+	return self._currentHP, self:GetMaxHP()
 end
 
-function BattleUnit.GetCurrentHP(arg_173_0)
-	return arg_173_0._currentHP
+function BattleUnit.GetCurrentHP(self)
+	return self._currentHP
 end
 
 function BattleUnit.SetCurrentHP(arg_174_0, arg_174_1)
@@ -1619,12 +1631,14 @@ function BattleUnit.GetMainUnitIndex(arg_187_0)
 	return arg_187_0._mainUnitIndex or 1
 end
 
-function BattleUnit.IsMoveAble(arg_188_0)
-	local var_188_0 = table.getCount(arg_188_0._GCDTimerList) > 0 or arg_188_0._preCastBound
-	local var_188_1 = BattleAttr.IsStun(arg_188_0)
-	local var_188_2 = arg_188_0:IsMoveCast()
+-- 判定单位能否移动: 通过看isStun/MoveCast(仅敌方)
+-- BattleUnit.UpdateMoveLimit调用
+function BattleUnit.IsMoveAble(self)
+	local inCD = table.getCount(self._GCDTimerList) > 0 or self._preCastBound
+	local isStun = BattleAttr.IsStun(self)
+	local isMoveCast = self:IsMoveCast()
 
-	return not arg_188_0._isMainStatic and (var_188_2 or not var_188_0) and not var_188_1
+	return not self._isMainStatic and (isMoveCast or not inCD) and not isStun
 end
 
 function BattleUnit.Reinforce(arg_189_0)
@@ -1756,8 +1770,9 @@ function BattleUnit.GetCldData(arg_203_0)
 	return arg_203_0._cldComponent:GetCldData()
 end
 
-function BattleUnit.ShiftCldComponent(arg_204_0, arg_204_1, arg_204_2)
-	arg_204_0:updateCldComponet(arg_204_1, arg_204_2)
+-- BattleBuffShiftCLDBox调用
+function BattleUnit.ShiftCldComponent(self, cldBox, cldOffset)
+	self:updateCldComponet(cldBox, cldOffset)
 end
 
 function BattleUnit.ResetCldComponent(arg_205_0)
@@ -1989,13 +2004,17 @@ function BattleUnit.GetAntiSubState(arg_235_0)
 	return arg_235_0._antiSubVigilanceState
 end
 
-function BattleUnit.UpdateBlindInvisibleBySpectre(arg_236_0)
-	local var_236_0, var_236_1 = arg_236_0:IsSpectre()
+-- 根据是否是幽灵单位来设置隐身状态：如果是幽灵单位且不是可见幽灵单位，则设置为隐身(不可见),否则取消隐身
+-- BattleBuffSetBattleUnitType.flash调用
+function BattleUnit.UpdateBlindInvisibleBySpectre(self)
+	local _, battleUnitType = self:IsSpectre()
 
-	if var_236_1 <= BattleConfig.SPECTRE_UNIT_TYPE and var_236_1 ~= BattleConfig.VISIBLE_SPECTRE_UNIT_TYPE then
-		arg_236_0:SetBlindInvisible(true)
+	-- VISIBLE_SPECTRE_UNIT_TYPE是特殊的幽灵单位类型，它是不可见的.(正常来说幽灵可见，只是没有碰撞体)
+	-- VISIBLE_SPECTRE_UNIT_TYPE = -100
+	if battleUnitType <= BattleConfig.SPECTRE_UNIT_TYPE and battleUnitType ~= BattleConfig.VISIBLE_SPECTRE_UNIT_TYPE then
+		self:SetBlindInvisible(true)
 	else
-		arg_236_0:SetBlindInvisible(false)
+		self:SetBlindInvisible(false)
 	end
 end
 
@@ -2052,17 +2071,19 @@ function BattleUnit.GetWorldDeathMark(arg_243_0)
 	return arg_243_0._worldDeathMark
 end
 
-function BattleUnit.InitCloak(arg_244_0)
-	arg_244_0._cloak = ys.Battle.BattleUnitCloakComponent.New(arg_244_0)
+--- 隐匿组件相关 ---
+function BattleUnit.InitCloak(self)
+	self._cloak = ys.Battle.BattleUnitCloakComponent.New(self)
 
-	arg_244_0:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_CLOAK))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_CLOAK))
 
-	return arg_244_0._cloak
+	return self._cloak
 end
 
-function BattleUnit.CloakOnFire(arg_245_0, arg_245_1)
-	if arg_245_0._cloak then
-		arg_245_0._cloak:UpdateDotExpose(arg_245_1)
+-- 被BattleBuffDOT.UpdateCloakLock调用
+function BattleUnit.CloakOnFire(self, exposedValue)
+	if self._cloak then
+		self._cloak:UpdateDotExpose(exposedValue)
 	end
 end
 

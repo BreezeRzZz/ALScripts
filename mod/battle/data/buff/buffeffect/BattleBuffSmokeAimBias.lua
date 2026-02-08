@@ -13,6 +13,8 @@ local BattleAttr = ys.Battle.BattleAttr
 
 BattleBuffSmokeAimBias.ATTR_SMOKE = "smoke_aim_bias"
 
+-- 此类BuffEffect为单位提供夜战隐蔽相关效果（被敌方瞄准偏移）
+-- 使用例: 15/16图的敌方烟幕发生器(拉烟船), 生成的烟幕给其中的敌人添加的Buff携带此BuffEffect
 function BattleBuffSmokeAimBias.Ctor(self, effectData)
 	BattleBuffSmokeAimBias.super.Ctor(self, effectData)
 end

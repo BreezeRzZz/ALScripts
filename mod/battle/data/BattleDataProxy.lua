@@ -562,20 +562,24 @@ function BattleDataProxy.SetSubmarinAidData(arg_27_0)
 	arg_27_0:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):SetSubAidData(arg_27_0._battleInitData.TotalSubAmmo, arg_27_0._battleInitData.SubFlag)
 end
 
-function BattleDataProxy.AddWeather(arg_28_0, arg_28_1)
-	table.insert(arg_28_0._weahter, arg_28_1)
-	arg_28_0:InitWeatherData()
+--- 天气 Weather 相关 ---
+
+--- @param weather number 天气类型/ID
+function BattleDataProxy.AddWeather(self, weather)
+	table.insert(self._weahter, weather)
+	self:InitWeatherData()
 end
 
-function BattleDataProxy.InitWeatherData(arg_29_0)
-	for iter_29_0, iter_29_1 in ipairs(arg_29_0._weahter) do
-		if iter_29_1 == BattleConst.WEATHER.NIGHT then
-			for iter_29_2, iter_29_3 in pairs(arg_29_0._fleetList) do
+function BattleDataProxy.InitWeatherData(self)
+	for _, weather in ipairs(self._weahter) do
+		-- 目前其实只有一种天气: 夜战
+		if weather == BattleConst.WEATHER.NIGHT then
+			for iter_29_2, iter_29_3 in pairs(self._fleetList) do
 				iter_29_3:AttachNightCloak()
 			end
 
-			for iter_29_4, iter_29_5 in pairs(arg_29_0._unitList) do
-				BattleDataFunction.AttachWeather(iter_29_5, arg_29_0._weahter)
+			for iter_29_4, iter_29_5 in pairs(self._unitList) do
+				BattleDataFunction.AttachWeather(iter_29_5, self._weahter)
 			end
 		end
 	end
@@ -658,23 +662,23 @@ function BattleDataProxy.GetVanguardBornCoordinate(self, IFF)
 	end
 end
 
-function BattleDataProxy.GetTotalBounds(arg_33_0)
-	return arg_33_0._totalUpperBound, arg_33_0._totalLowerBound, arg_33_0._totalLeftBound, arg_33_0._totalRightBound
+function BattleDataProxy.GetTotalBounds(self)
+	return self._totalUpperBound, self._totalLowerBound, self._totalLeftBound, self._totalRightBound
 end
 
-function BattleDataProxy.GetTotalRightBound(arg_34_0)
-	return arg_34_0._totalRightBound
+function BattleDataProxy.GetTotalRightBound(self)
+	return self._totalRightBound
 end
 
-function BattleDataProxy.GetTotalLowerBound(arg_35_0)
-	return arg_35_0._totalLowerBound
+function BattleDataProxy.GetTotalLowerBound(self)
+	return self._totalLowerBound
 end
 
-function BattleDataProxy.GetUnitBoundByIFF(arg_36_0, arg_36_1)
-	if arg_36_1 == BattleConfig.FRIENDLY_CODE then
-		return arg_36_0._leftZoneUpperBound, arg_36_0._leftZoneLowerBound, arg_36_0._leftZoneLeftBound, BattleConfig.MaxRight, BattleConfig.MaxLeft, arg_36_0._leftZoneRightBound
-	elseif arg_36_1 == BattleConfig.FOE_CODE then
-		return arg_36_0._rightZoneUpperBound, arg_36_0._rightZoneLowerBound, arg_36_0._rightZoneLeftBound, arg_36_0._rightZoneRightBound, arg_36_0._rightZoneLeftBound, BattleConfig.MaxRight
+function BattleDataProxy.GetUnitBoundByIFF(self, IFF)
+	if IFF == BattleConfig.FRIENDLY_CODE then
+		return self._leftZoneUpperBound, self._leftZoneLowerBound, self._leftZoneLeftBound, BattleConfig.MaxRight, BattleConfig.MaxLeft, self._leftZoneRightBound
+	elseif IFF == BattleConfig.FOE_CODE then
+		return self._rightZoneUpperBound, self._rightZoneLowerBound, self._rightZoneLeftBound, self._rightZoneRightBound, self._rightZoneLeftBound, BattleConfig.MaxRight
 	end
 end
 
@@ -759,11 +763,12 @@ function BattleDataProxy.GetWinningStreak(arg_47_0)
 	return arg_47_0._chapterWinningStreak
 end
 
-function BattleDataProxy.GetBGMList(arg_48_0, arg_48_1)
-	if not arg_48_1 then
-		return arg_48_0._initBGMList
+-- 被BattleBuffDiva.onXXX调用
+function BattleDataProxy.GetBGMList(self, isOther)
+	if not isOther then
+		return self._initBGMList
 	else
-		return arg_48_0._otherBGMList
+		return self._otherBGMList
 	end
 end
 
@@ -1022,72 +1027,74 @@ function BattleDataProxy.UpdateAutoComponent(self, timeStamp)
 	end
 end
 
--- TODO: 如夜战天气等的更新
-function BattleDataProxy.UpdateWeather(arg_57_0, arg_57_1)
-	for iter_57_0, iter_57_1 in ipairs(arg_57_0._weahter) do
-		if iter_57_1 == BattleConst.WEATHER.NIGHT then
-			local var_57_0 = {
+-- 如夜战天气等的更新
+-- BattleDataProxy.updateLoop调用
+function BattleDataProxy.UpdateWeather(self, timeStamp)
+	for _, weather in ipairs(self._weahter) do
+		if weather == BattleConst.WEATHER.NIGHT then
+			local divingDecayFactor = {
 				[BattleConfig.FRIENDLY_CODE] = 0,
 				[BattleConfig.FOE_CODE] = 0
 			}
-			local var_57_1 = {
+			local normalDecayFactor = {
 				[BattleConfig.FRIENDLY_CODE] = 0,
 				[BattleConfig.FOE_CODE] = 0
 			}
-			local var_57_2 = {
+			local extraDecaySpeed = {
 				[BattleConfig.FRIENDLY_CODE] = 0,
 				[BattleConfig.FOE_CODE] = 0
 			}
+			-- 1. 计算场上所有单位的Decay Factor(只记录). 包括友方和敌方
+			for _, unit in pairs(self._unitList) do
+				local aimBias = unit:GetAimBias()
 
-			for iter_57_2, iter_57_3 in pairs(arg_57_0._unitList) do
-				local var_57_3 = iter_57_3:GetAimBias()
+				if not aimBias or aimBias:GetCurrentState() ~= aimBias.STATE_SUMMON_SICKNESS then
+					local unitIFF = unit:GetIFF()
+					local maxNormalDecayFactor = normalDecayFactor[unitIFF]
+					local attackRating = BattleAttr.GetCurrent(unit, "attackRating")
+					local aimBiasExtraACC = BattleAttr.GetCurrent(unit, "aimBiasExtraACC")
+					-- 实质就是取命中的最大值作为(对手的)Decay Factor
+					normalDecayFactor[unitIFF] = math.max(maxNormalDecayFactor, attackRating)
+					extraDecaySpeed[unitIFF] = extraDecaySpeed[unitIFF] + aimBiasExtraACC
 
-				if not var_57_3 or var_57_3:GetCurrentState() ~= var_57_3.STATE_SUMMON_SICKNESS then
-					local var_57_4 = iter_57_3:GetIFF()
-					local var_57_5 = var_57_1[var_57_4]
-					local var_57_6 = BattleAttr.GetCurrent(iter_57_3, "attackRating")
-					local var_57_7 = BattleAttr.GetCurrent(iter_57_3, "aimBiasExtraACC")
-
-					var_57_1[var_57_4] = math.max(var_57_5, var_57_6)
-					var_57_2[var_57_4] = var_57_2[var_57_4] + var_57_7
-
-					if ShipType.ContainInLimitBundle(ShipType.BundleAntiSubmarine, iter_57_3:GetTemplate().type) then
-						var_57_0[var_57_4] = math.max(var_57_0[var_57_4], var_57_6)
+					-- 驱逐/轻巡/导驱V
+					if ShipType.ContainInLimitBundle(ShipType.BundleAntiSubmarine, unit:GetTemplate().type) then
+						divingDecayFactor[unitIFF] = math.max(divingDecayFactor[unitIFF], attackRating)
 					end
 				end
 			end
+			-- 2. 实际将Decay Factor用到两方的Aim Bias上(SetDecayFactor)
+			for fleetIFF, fleet in pairs(self._fleetList) do
+				local fleetBias = fleet:GetFleetBias()
+				local opponentIFF = fleetIFF * -1
 
-			for iter_57_4, iter_57_5 in pairs(arg_57_0._fleetList) do
-				local var_57_8 = iter_57_5:GetFleetBias()
-				local var_57_9 = iter_57_4 * -1
+				fleetBias:SetDecayFactor(normalDecayFactor[opponentIFF], extraDecaySpeed[opponentIFF])
+				fleetBias:Update(timeStamp)
 
-				var_57_8:SetDecayFactor(var_57_1[var_57_9], var_57_2[var_57_9])
-				var_57_8:Update(arg_57_1)
+				for _, subUnit in ipairs(fleet:GetSubList()) do
+					local subAimBias = subUnit:GetAimBias()
 
-				for iter_57_6, iter_57_7 in ipairs(iter_57_5:GetSubList()) do
-					local var_57_10 = iter_57_7:GetAimBias()
-
-					if var_57_10:GetDecayFactorType() == var_57_10.DIVING then
-						var_57_10:SetDecayFactor(var_57_0[var_57_9], var_57_2[var_57_9])
+					if subAimBias:GetDecayFactorType() == subAimBias.DIVING then
+						subAimBias:SetDecayFactor(divingDecayFactor[opponentIFF], extraDecaySpeed[opponentIFF])
 					else
-						var_57_10:SetDecayFactor(var_57_1[var_57_9], var_57_2[var_57_9])
+						subAimBias:SetDecayFactor(normalDecayFactor[opponentIFF], extraDecaySpeed[opponentIFF])
 					end
 
-					var_57_10:Update(arg_57_1)
+					subAimBias:Update(timeStamp)
 				end
 			end
 
-			for iter_57_8, iter_57_9 in pairs(arg_57_0._freeShipList) do
-				local var_57_11 = iter_57_9:GetIFF() * -1
-				local var_57_12 = iter_57_9:GetAimBias()
+			for _, freeShip in pairs(self._freeShipList) do
+				local opponentIFF = freeShip:GetIFF() * -1
+				local freeShipAimBias = freeShip:GetAimBias()
 
-				if var_57_12:GetDecayFactorType() == var_57_12.DIVING then
-					var_57_12:SetDecayFactor(var_57_0[var_57_11], var_57_2[var_57_11])
+				if freeShipAimBias:GetDecayFactorType() == freeShipAimBias.DIVING then
+					freeShipAimBias:SetDecayFactor(divingDecayFactor[opponentIFF], extraDecaySpeed[opponentIFF])
 				else
-					var_57_12:SetDecayFactor(var_57_1[var_57_11], var_57_2[var_57_11])
+					freeShipAimBias:SetDecayFactor(normalDecayFactor[opponentIFF], extraDecaySpeed[opponentIFF])
 				end
 
-				var_57_12:Update(arg_57_1)
+				freeShipAimBias:Update(timeStamp)
 			end
 		end
 	end
@@ -1833,7 +1840,7 @@ function BattleDataProxy.generateSupportPlayerUnit(self, unitData, IFF)
 
 	supportUnit:InitCurrentHP(1)
 	supportUnit:SetShipName(unitData.name)
-	-- 本质上supportUnit是作为幽灵单位存在的(因此没有模型，没有碰撞体)
+	-- note: 本质上supportUnit是作为幽灵单位存在的(因此没有模型，没有碰撞体)
 	self._spectreShipList[UID] = supportUnit
 
 	return supportUnit
@@ -2410,7 +2417,7 @@ function BattleDataProxy.RemoveAreaOfEffect(arg_124_0, arg_124_1)
 
 	var_125_0:Dispose()
 
-	arg_125_0._AOEList[arg_125_1] = nil
+	self._AOEList[arg_125_1] = nil
 
 	arg_124_0._cldSystem:DeleteAOECld(var_124_0)
 	arg_124_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AREA, {
@@ -2418,25 +2425,27 @@ function BattleDataProxy.RemoveAreaOfEffect(arg_124_0, arg_124_1)
 	}))
 end
 
-function BattleDataProxy.GetAOEList(arg_125_0)
-	return arg_125_0._AOEList
+function BattleDataProxy.GetAOEList(self)
+	return self._AOEList
 end
 
-function BattleDataProxy.GenerateAreaID(arg_126_0)
-	arg_126_0._AOECount = arg_126_0._AOECount + 1
+function BattleDataProxy.GenerateAreaID(self)
+	self._AOECount = self._AOECount + 1
 
-	return arg_127_0._AOECount
+	return self._AOECount
 end
 
-function BattleDataProxy.SpawnWall(arg_127_0, arg_127_1, arg_127_2, arg_127_3, arg_127_4)
-	local var_127_0 = arg_127_0:GenerateWallID()
-	local var_127_1 = ys.Battle.BattleWallData.New(var_127_0, arg_127_1, arg_127_2, arg_127_3, arg_127_4)
+-- 生成墙体
+-- Wall是游戏中的护盾墙
+function BattleDataProxy.SpawnWall(self, host, cldFun, cldBox, cldOffset)
+	local wallID = self:GenerateWallID()
+	local wallData = ys.Battle.BattleWallData.New(wallID, host, cldFun, cldBox, cldOffset)
 
-	arg_128_0._wallList[var_128_0] = var_128_1
+	self._wallList[wallID] = wallData
 
-	arg_128_0._cldSystem:InitWallCld(var_128_1)
+	self._cldSystem:InitWallCld(wallData)
 
-	return var_128_1
+	return wallData
 end
 
 function BattleDataProxy.RemoveWall(arg_128_0, arg_128_1)
@@ -2668,36 +2677,39 @@ function BattleDataProxy.SubmarineStrike(self, IFF)
 	subAidVO:Cast()
 end
 
+-- BattleWaveInfo.IsFlagsPass调用
 function BattleDataProxy.GetWaveFlags(self)
 	return self._waveFlags
 end
 
-function BattleDataProxy.AddWaveFlag(arg_153_0, arg_153_1)
-	if not arg_153_1 then
+-- BattleBuffRegisterWaveFlags.onTrigger调用
+-- 注册waveFlag
+function BattleDataProxy.AddWaveFlag(self, flag)
+	if not flag then
 		return
 	end
 
-	local var_154_0 = arg_154_0:GetWaveFlags()
+	local waveFlags = self:GetWaveFlags()
 
-	if table.contains(var_154_0, arg_154_1) then
+	if table.contains(waveFlags, flag) then
 		return
 	end
 
-	table.insert(var_154_0, arg_154_1)
+	table.insert(waveFlags, flag)
 end
 
-function BattleDataProxy.RemoveFlag(arg_154_0, arg_154_1)
-	if not arg_154_1 then
+function BattleDataProxy.RemoveFlag(self, flag)
+	if not flag then
 		return
 	end
 
-	local var_155_0 = arg_155_0:GetWaveFlags()
+	local waveFlags = self:GetWaveFlags()
 
-	if not table.contains(var_155_0, arg_155_1) then
+	if not table.contains(waveFlags, flag) then
 		return
 	end
 
-	table.removebyvalue(var_155_0, arg_155_1)
+	table.removebyvalue(waveFlags, flag)
 end
 
 function BattleDataProxy.DispatchCustomWarning(arg_155_0, arg_155_1)

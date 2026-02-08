@@ -1,33 +1,35 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffLockHealth = class("BattleBuffLockHealth", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffLockHealth.__name = "BattleBuffLockHealth"
+ys.Battle.BattleBuffLockHealth = class("BattleBuffLockHealth", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffLockHealth.__name = "BattleBuffLockHealth"
 
-local var_0_1 = var_0_0.Battle.BattleBuffLockHealth
+local BattleBuffLockHealth = ys.Battle.BattleBuffLockHealth
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect用于锁血, 即当单位HP低于某个阈值时, 受到的伤害不会再降低HP, 但仍会触发受击等相关逻辑. rate参数控制锁血阈值占最大HP的比例(优先), value参数控制锁血阈值的固定数值
+-- 使用例: 敌人的锁血, 例如偶像大师EX BOSS的锁血
+function BattleBuffLockHealth.Ctor(self, effectData)
+	BattleBuffLockHealth.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._rate = arg_2_0._tempData.arg_list.rate
-	arg_2_0._threshold = arg_2_0._tempData.arg_list.value
+function BattleBuffLockHealth.SetArgs(self, owner, buff)
+	self._rate = self._tempData.arg_list.rate
+	self._threshold = self._tempData.arg_list.value
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	if arg_3_0._rate then
-		arg_3_0._threshold = math.floor(arg_3_1:GetMaxHP() * arg_3_0._rate)
+function BattleBuffLockHealth.onAttach(self, owner, buff)
+	if self._rate then
+		self._threshold = math.floor(owner:GetMaxHP() * self._rate)
 	end
 end
 
-function var_0_1.onTrigger(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	local var_4_0 = arg_4_1:GetCurrentHP()
+function BattleBuffLockHealth.onTrigger(self, owner, buff, args)
+	local currentHP = owner:GetCurrentHP()
 
-	if var_4_0 <= arg_4_0._threshold then
-		arg_4_3.damage = 0
-	elseif var_4_0 - arg_4_3.damage < arg_4_0._threshold then
-		arg_4_3.damage = var_4_0 - arg_4_0._threshold
+	if currentHP <= self._threshold then
+		args.damage = 0
+	elseif currentHP - args.damage < self._threshold then
+		args.damage = currentHP - self._threshold
 	end
 end

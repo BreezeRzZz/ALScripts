@@ -1,38 +1,40 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffShiftBarrage = class("BattleBuffShiftBarrage", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffShiftBarrage.__name = "BattleBuffShiftBarrage"
+ys.Battle.BattleBuffShiftBarrage = class("BattleBuffShiftBarrage", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffShiftBarrage.__name = "BattleBuffShiftBarrage"
 
-local var_0_1 = var_0_0.Battle.BattleBuffShiftBarrage
+-- 此类BuffEffect用于显式地切换武器的弹幕(将武器的弹幕列表全部切换)
+-- 使用例: 驱逐满破增益的鱼雷散布减小
+local BattleBuffShiftBarrage = ys.Battle.BattleBuffShiftBarrage
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffShiftBarrage.Ctor(self, effectData)
+	BattleBuffShiftBarrage.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._barrageID = arg_2_0._tempData.arg_list.barrage_id
+function BattleBuffShiftBarrage.SetArgs(self, owner, buff)
+	self._barrageID = self._tempData.arg_list.barrage_id
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:shiftBarrage(arg_3_1, arg_3_0._barrageID)
+function BattleBuffShiftBarrage.onAttach(self, owner, buff)
+	self:shiftBarrage(owner, self._barrageID)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0:shiftBarrage(arg_4_1)
+function BattleBuffShiftBarrage.onRemove(self, owner, buff)
+	self:shiftBarrage(owner)
 end
 
-function var_0_1.shiftBarrage(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_1:GetAllWeapon()
+function BattleBuffShiftBarrage.shiftBarrage(self, owner, barrageID)
+	local weaponList = owner:GetAllWeapon()
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._indexRequire) do
-		for iter_5_2, iter_5_3 in ipairs(var_5_0) do
-			if iter_5_3:GetEquipmentIndex() == iter_5_1 then
-				if arg_5_2 then
-					iter_5_3:ShiftBarrage(arg_5_2)
+	for _, equipIndex in ipairs(self._indexRequire) do
+		for _, weapon in ipairs(weaponList) do
+			if weapon:GetEquipmentIndex() == equipIndex then
+				if barrageID then
+					weapon:ShiftBarrage(barrageID)
 				else
-					iter_5_3:RevertBarrage()
+					weapon:RevertBarrage()
 				end
 			end
 		end

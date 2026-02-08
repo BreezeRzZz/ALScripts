@@ -1,44 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffHealingSteal = class("BattleBuffHealingSteal", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffHealingSteal.__name = "BattleBuffHealingSteal"
+ys.Battle.BattleBuffHealingSteal = class("BattleBuffHealingSteal", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffHealingSteal.__name = "BattleBuffHealingSteal"
 
-local var_0_1 = var_0_0.Battle.BattleBuffHealingSteal
+local BattleBuffHealingSteal = ys.Battle.BattleBuffHealingSteal
 
-var_0_1.FX_TYPE = var_0_0.Battle.BattleBuffEffect.FX_TYPE_LINK
+BattleBuffHealingSteal.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_LINK
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect会在我方舰队受到治疗时偷窃治疗的一部分转化为对自身的治疗，stealRate参数控制偷窃比例，absorbRate参数控制转化为自身治疗的比例
+-- 使用例: 大世界的恢复转移Buff
+function BattleBuffHealingSteal.Ctor(self, effectData)
+	BattleBuffHealingSteal.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffHealingSteal.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._stealRate = var_2_0.stealingRate or 1
-	arg_2_0._absorbRate = var_2_0.arsorbRate or 1
+	self._stealRate = arg_list.stealingRate or 1
+	self._absorbRate = arg_list.arsorbRate or 1
 end
 
-function var_0_1.onTakeHealing(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_3.damage
-	local var_3_1 = arg_3_2:GetCaster()
+function BattleBuffHealingSteal.onTakeHealing(self, owner, buff, args)
+	-- 这里damage比较广义. 在这个场景下实际是治疗量
+	local damage = args.damage
+	local caster = buff:GetCaster()
 
-	if var_3_1 and var_3_1:IsAlive() and var_3_1 ~= arg_3_1 then
-		local var_3_2 = math.ceil(var_3_0 * arg_3_0._stealRate)
+	if caster and caster:IsAlive() and caster ~= owner then
+		local stealPart = math.ceil(damage * self._stealRate)
+		-- 受到治疗量减少被偷窃的部分
+		args.damage = damage - stealPart
 
-		arg_3_3.damage = var_3_0 - var_3_2
-
-		local var_3_3 = var_3_1:GetAttrByName("healingRate")
-		local var_3_4 = var_3_2 * arg_3_0._absorbRate
-		local var_3_5 = math.ceil(var_3_3 * var_3_4)
-		local var_3_6 = {
+		local healingRate = caster:GetAttrByName("healingRate")
+		-- 偷窃部分乘以吸收率转化为自身治疗量
+		local absorbPart = stealPart * self._absorbRate
+		local dHP = math.ceil(healingRate * absorbPart)
+		local extraInfo = {
 			isMiss = false,
 			isCri = false,
 			isHeal = true,
 			isShare = false
 		}
 
-		var_3_1:UpdateHP(var_3_5, var_3_6)
+		caster:UpdateHP(dHP, extraInfo)
 	end
 end

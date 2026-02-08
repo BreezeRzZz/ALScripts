@@ -1,35 +1,38 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffFixAmmo = class("BattleBuffFixAmmo", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffFixAmmo.__name = "BattleBuffFixAmmo"
+ys.Battle.BattleBuffFixAmmo = class("BattleBuffFixAmmo", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffFixAmmo.__name = "BattleBuffFixAmmo"
 
-local var_0_1 = var_0_0.Battle.BattleBuffFixAmmo
+local BattleBuffFixAmmo = ys.Battle.BattleBuffFixAmmo
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect会将指定Index的武器的Ammo固定为指定damageRate(对甲比例).
+-- 实际并不会修改ammoType，所以针对ammoType的增伤等仍生效
+-- 使用例: 圣黑之心的1技能
+function BattleBuffFixAmmo.Ctor(self, effectData)
+	BattleBuffFixAmmo.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._damageRate = arg_2_0._tempData.arg_list.damage_rate
+function BattleBuffFixAmmo.SetArgs(self, owner, buff)
+	self._damageRate = self._tempData.arg_list.damage_rate
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:updateAmmo(arg_3_1, arg_3_0._damageRate)
+function BattleBuffFixAmmo.onAttach(self, owner, buff)
+	self:updateAmmo(owner, self._damageRate)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0:updateAmmo(arg_4_1)
+function BattleBuffFixAmmo.onRemove(self, owner, buff)
+	self:updateAmmo(owner)
 end
 
-function var_0_1.updateAmmo(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_1:GetAllWeapon()
+function BattleBuffFixAmmo.updateAmmo(self, owner, damageRate)
+	local weaponList = owner:GetAllWeapon()
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._indexRequire) do
-		for iter_5_2, iter_5_3 in ipairs(var_5_0) do
-			if iter_5_3:GetEquipmentIndex() == iter_5_1 then
-				iter_5_3:FixAmmo(arg_5_2)
+	for _, index in ipairs(self._indexRequire) do
+		for _, weapon in ipairs(weaponList) do
+			if weapon:GetEquipmentIndex() == index then
+				weapon:FixAmmo(damageRate)
 			end
 		end
 	end

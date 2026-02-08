@@ -1,37 +1,39 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffHealingCorrupt = class("BattleBuffHealingCorrupt", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffHealingCorrupt.__name = "BattleBuffHealingCorrupt"
+ys.Battle.BattleBuffHealingCorrupt = class("BattleBuffHealingCorrupt", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffHealingCorrupt.__name = "BattleBuffHealingCorrupt"
 
-local var_0_1 = var_0_0.Battle.BattleBuffHealingCorrupt
+local BattleBuffHealingCorrupt = ys.Battle.BattleBuffHealingCorrupt
 
-var_0_1.FX_TYPE = var_0_0.Battle.BattleBuffEffect.FX_TYPE_LINK
+BattleBuffHealingCorrupt.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_LINK
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect会将受到的治疗转化为伤害，corruptRate参数控制转化比例，damageRate参数控制转化后伤害的倍率
+-- 使用例: 大世界的毒奶Buff
+function BattleBuffHealingCorrupt.Ctor(self, effectData)
+	BattleBuffHealingCorrupt.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0._tempData.arg_list
+function BattleBuffHealingCorrupt.SetArgs(self, owner, buff)
+	local arg_list = self._tempData.arg_list
 
-	arg_2_0._corruptRate = var_2_0.corruptRate or 1
-	arg_2_0._damageRate = var_2_0.damageRate or 1
-	arg_2_0._proxy = var_0_0.Battle.BattleDataProxy.GetInstance()
+	self._corruptRate = arg_list.corruptRate or 1
+	self._damageRate = arg_list.damageRate or 1
+	self._proxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_1.onTakeHealing(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	if arg_3_3.incorrupt then
+function BattleBuffHealingCorrupt.onTakeHealing(self, owner, buff, args)
+	if args.incorrupt then
 		return
 	end
+	-- 这里damage比较广义. 在这个场景下实际是治疗量
+	local damage = args.damage
+	local corruptedPart = math.ceil(damage * self._corruptRate)
 
-	local var_3_0 = arg_3_3.damage
-	local var_3_1 = math.ceil(var_3_0 * arg_3_0._corruptRate)
+	args.damage = damage - corruptedPart
 
-	arg_3_3.damage = var_3_0 - var_3_1
+	local corruptedDamage = math.ceil(corruptedPart * self._damageRate)
 
-	local var_3_2 = math.ceil(var_3_1 * arg_3_0._damageRate)
-
-	arg_3_0._proxy:HandleDirectDamage(arg_3_1, var_3_2)
+	self._proxy:HandleDirectDamage(owner, corruptedDamage)
 end

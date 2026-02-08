@@ -1,25 +1,27 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffRemoteBone", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffRemoteBone = class("BattleBuffRemoteBone", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffRemoteBone = var_0_1
-var_0_1.__name = "BattleBuffRemoteBone"
+ys.Battle.BattleBuffRemoteBone = BattleBuffRemoteBone
+BattleBuffRemoteBone.__name = "BattleBuffRemoteBone"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect将单位的某个骨骼绑定到另一个单位上，表现为该骨骼跟随目标单位移动
+-- 使用例: 目前只有复仇2技能用到，实现"队伍中旗舰位为其他战列或战巡时，自身主炮由旗舰位置发射"的效果
+function BattleBuffRemoteBone.Ctor(self, effectData)
+	BattleBuffRemoteBone.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._group = arg_2_2:GetID()
-	arg_2_0._targetChoice = arg_2_0._tempData.arg_list.bone_target
-	arg_2_0._bone = arg_2_0._tempData.arg_list.bone_name
+function BattleBuffRemoteBone.SetArgs(self, owner, buff)
+	self._group = buff:GetID()
+	self._targetChoice = self._tempData.arg_list.bone_target
+	self._bone = self._tempData.arg_list.bone_name
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:SetRemoteBoundBone(arg_3_0._group, arg_3_0._bone, arg_3_0._targetChoice)
+function BattleBuffRemoteBone.onAttach(self, owner, buff)
+	owner:SetRemoteBoundBone(self._group, self._bone, self._targetChoice)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:RemoveRemoteBoundBone(arg_4_0._group)
+function BattleBuffRemoteBone.onRemove(self, owner, buff)
+	owner:RemoveRemoteBoundBone(self._group)
 end

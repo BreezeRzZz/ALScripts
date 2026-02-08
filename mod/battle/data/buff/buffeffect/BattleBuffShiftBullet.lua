@@ -1,38 +1,42 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffShiftBullet = class("BattleBuffShiftBullet", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffShiftBullet.__name = "BattleBuffShiftBullet"
+ys.Battle.BattleBuffShiftBullet = class("BattleBuffShiftBullet", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffShiftBullet.__name = "BattleBuffShiftBullet"
 
-local var_0_1 = var_0_0.Battle.BattleBuffShiftBullet
+local BattleBuffShiftBullet = ys.Battle.BattleBuffShiftBullet
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect用于显式地切换武器的子弹(将武器的子弹列表全部切换)
+-- 和BattleBuffShiftBarrage基本是一样的思路
+-- 与BattleBuffOverrideBullet的区别在于，BattleBuffShiftBullet是切换整个子弹, 而BattleBuffOverrideBullet则是修改子弹的部分参数
+-- 使用例: 马萨诸塞2技能, 黑棒的装备技能
+function BattleBuffShiftBullet.Ctor(self, effectData)
+	BattleBuffShiftBullet.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._bulletID = arg_2_0._tempData.arg_list.bullet_id
+function BattleBuffShiftBullet.SetArgs(self, owner, buff)
+	self._bulletID = self._tempData.arg_list.bullet_id
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:shiftBullet(arg_3_1, arg_3_0._bulletID)
+function BattleBuffShiftBullet.onAttach(self, owner, buff)
+	self:shiftBullet(owner, self._bulletID)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0:shiftBullet(arg_4_1)
+function BattleBuffShiftBullet.onRemove(self, owner, buff)
+	self:shiftBullet(owner)
 end
 
-function var_0_1.shiftBullet(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_1:GetAllWeapon()
+function BattleBuffShiftBullet.shiftBullet(self, owner, bulletID)
+	local weaponList = owner:GetAllWeapon()
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._indexRequire) do
-		for iter_5_2, iter_5_3 in ipairs(var_5_0) do
-			if iter_5_3:GetEquipmentIndex() == iter_5_1 then
-				if arg_5_2 then
-					iter_5_3:ShiftBullet(arg_5_2)
+	for _, equipIndex in ipairs(self._indexRequire) do
+		for _, weapon in ipairs(weaponList) do
+			if weapon:GetEquipmentIndex() == equipIndex then
+				if bulletID then
+					weapon:ShiftBullet(bulletID)
 				else
-					iter_5_3:RevertBullet()
+					weapon:RevertBullet()
 				end
 			end
 		end

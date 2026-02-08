@@ -1,27 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleColumnCldComponent", var_0_0.Battle.BattleCldComponent)
+local ys = ys
+local BattleColumnCldComponent = class("BattleColumnCldComponent", ys.Battle.BattleCldComponent)
 
-var_0_0.Battle.BattleColumnCldComponent = var_0_1
-var_0_1.__name = "BattleColumnCldComponent"
+ys.Battle.BattleColumnCldComponent = BattleColumnCldComponent
+BattleColumnCldComponent.__name = "BattleColumnCldComponent"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_0.Battle.BattleColumnCldComponent.super.Ctor(arg_1_0)
+-- 圆柱碰撞组件，参数为范围和厚度
+-- 一般实际不用管厚度
+function BattleColumnCldComponent.Ctor(self, range, thickness)
+	ys.Battle.BattleColumnCldComponent.super.Ctor(self)
 	-- range和tickness都除以2
 	-- 所以实际上，原本的box参数是指直径和高度
-	arg_1_0._range = arg_1_1 * 0.5
-	arg_1_0._tickness = arg_1_2 * 0.5
-	arg_1_0._box = pg.CldNode.New()
+	self._range = range * 0.5
+	self._tickness = thickness * 0.5
+	self._box = pg.CldNode.New()
 end
 
-function var_0_1.GetCldBox(arg_2_0, arg_2_1)
-	return arg_2_0._box:UpdateCylinder(arg_2_1, arg_2_0._tickness, arg_2_0._range)
+function BattleColumnCldComponent.GetCldBox(self, position)
+	return self._box:UpdateCylinder(position, self._tickness, self._range)
 end
 
-function var_0_1.GetCldBoxSize(arg_3_0)
+function BattleColumnCldComponent.GetCldBoxSize(self)
 	return {
-		range = arg_3_0._range,
-		tickness = arg_3_0._tickness
+		range = self._range,
+		tickness = self._tickness
 	}
 end

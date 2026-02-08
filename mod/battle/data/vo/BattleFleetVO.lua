@@ -825,6 +825,7 @@ function BattleFleetVO.FleetWarcry(self)
 end
 
 -- 计算舰队总战力，并设置到每个unit的fleetGS属性中（用于一些武器的伤害计算）
+-- 被BattleDataProxy.InitUserShipsData调用
 function BattleFleetVO.FleetUnitSpwanFinish(self)
 	local gearScore = 0
 
@@ -1456,8 +1457,9 @@ function BattleFleetVO.Blinding(arg_115_0, arg_115_1)
 	}))
 end
 
-function BattleFleetVO.UpdateHorizon(arg_116_0)
-	arg_116_0:DispatchEvent(ys.Event.New(BattleEvent.FLEET_HORIZON_UPDATE, {}))
+-- 被BattleBuffBlindedHorizon.onAttach调用
+function BattleFleetVO.UpdateHorizon(self)
+	self:DispatchEvent(ys.Event.New(BattleEvent.FLEET_HORIZON_UPDATE, {}))
 end
 
 -- 对应触发ON_AUTOBOT和ON_MANUAL的buffEffect
@@ -1485,21 +1487,23 @@ function BattleFleetVO.CloakOutVision(arg_120_0)
 	end
 end
 
-function BattleFleetVO.AttachCloak(arg_121_0, arg_121_1)
-	if not arg_121_1:GetCloak() then
-		arg_121_1:InitCloak()
+-- BattleFleetVO.appendMainUnit调用. 给每个后排主力单位调用
+function BattleFleetVO.AttachCloak(self, unit)
+	if not unit:GetCloak() then
+		unit:InitCloak()
 
-		arg_121_0._cloakList[#arg_121_0._cloakList + 1] = arg_121_1
+		self._cloakList[#self._cloakList + 1] = unit
 	end
 end
 
-function BattleFleetVO.AttachNightCloak(arg_122_0)
-	arg_122_0._scoutAimBias = ys.Battle.BattleUnitAimBiasComponent.New()
 
-	arg_122_0._scoutAimBias:ConfigRangeFormula(BattleFormulas.CalculateMaxAimBiasRange, BattleFormulas.CalculateBiasDecay)
-	arg_122_0._scoutAimBias:Active(arg_122_0._scoutAimBias.STATE_ACTIVITING)
-	arg_122_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
-		aimBias = arg_122_0._scoutAimBias
+function BattleFleetVO.AttachNightCloak(self)
+	self._scoutAimBias = ys.Battle.BattleUnitAimBiasComponent.New()
+
+	self._scoutAimBias:ConfigRangeFormula(BattleFormulas.CalculateMaxAimBiasRange, BattleFormulas.CalculateBiasDecay)
+	self._scoutAimBias:Active(self._scoutAimBias.STATE_ACTIVITING)
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AIM_BIAS, {
+		aimBias = self._scoutAimBias
 	}))
 end
 

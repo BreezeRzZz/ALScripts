@@ -8,6 +8,7 @@ local BattleBuffCount = class("BattleBuffCount", ys.Battle.BattleBuffEffect)
 ys.Battle.BattleBuffCount = BattleBuffCount
 BattleBuffCount.__name = "BattleBuffCount"
 
+-- 此BuffEffect是一个通用的计数器，可以基于不同的事件进行计数(攻击次数、受到伤害、血量变化等)，当计数达到指定数量时触发对应的效果(通常是触发另一个BuffEffect)
 function BattleBuffCount.Ctor(self, effectData)
 	BattleBuffCount.super.Ctor(self, effectData)
 end

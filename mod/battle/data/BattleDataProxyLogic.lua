@@ -75,7 +75,7 @@ end
 -- 举例：在BattleDataProxy.updateLoop中被调用，在各子弹工厂的onBulletHitFunc中也有调用
 -- 被很多地方调用，主要的调用点是各个BulletFactory的onBulletHitFunc(典型的cannonBulletFactory/TorpedoBulletFactory)或OutRangeFunc(典型的BombBulletFactory)
 function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance, meteoDamageRatio)
-	-- isShowHPBar的本质是BattleEnemyUnit.IsShowHPBar, 需要IFF不为友方
+	-- isShowHPBar的本质是BattleEnemyUnit.IsShowHPBar, 只需要IFF不为友方
 	if target:GetIFF() == BattleConfig.FOE_CODE and target:IsShowHPBar() then
 		self:DispatchEvent(ys.Event.New(BattleEvent.HIT_ENEMY, target))
 	end
@@ -443,42 +443,44 @@ function BattleDataProxy.HandleWallHitByShip(arg_20_0, arg_20_1, arg_20_2)
 	arg_20_1:GetCldFunc()(arg_20_2)
 end
 
-function BattleDataProxy.HandleWallDamage(arg_21_0, arg_21_1, arg_21_2)
-	if arg_21_2:GetIFF() == BattleConfig.FOE_CODE and arg_21_2:IsShowHPBar() then
-		arg_21_0:DispatchEvent(ys.Event.New(BattleEvent.HIT_ENEMY, arg_21_2))
+-- 被BattleBuffDamageWall调用，处理伤害墙对单位的伤害
+function BattleDataProxy.HandleWallDamage(self, damageWall, target)
+	if target:GetIFF() == BattleConfig.FOE_CODE and target:IsShowHPBar() then
+		self:DispatchEvent(ys.Event.New(BattleEvent.HIT_ENEMY, target))
 	end
 
-	local var_21_0 = BattleAttr.GetCurrent(arg_21_1, "id")
+	local damageWallID = BattleAttr.GetCurrent(damageWall, "id")
 
-	if BattleAttr.IsInvincible(arg_21_2) then
+	if BattleAttr.IsInvincible(target) then
 		return
 	end
 
-	local var_21_1, var_21_2, var_21_3 = arg_21_0._calculateDamage(arg_21_1, arg_21_2)
-	local var_21_4 = var_21_2.isMiss
-	local var_21_5 = var_21_2.isCri
-	local var_21_6 = var_21_2.damageAttr
-	local var_21_7 = {
+	-- damageWall作为一种抽象子弹(虽然并不具备真正子弹的很多属性)，在这里被用来调用CalculateDamage函数来计算伤害
+	local damage, extraInfo, damageFont = self._calculateDamage(damageWall, target)
+	local isMiss = extraInfo.isMiss
+	local isCri = extraInfo.isCri
+	local damageAttr = extraInfo.damageAttr
+	local updateHPArgs = {
 		isHeal = false,
-		isMiss = var_21_4,
-		isCri = var_21_5,
-		attr = var_21_6,
-		font = var_21_3,
-		cldPos = arg_21_1:GetPosition(),
-		srcID = var_21_0
+		isMiss = isMiss,
+		isCri = isCri,
+		attr = damageAttr,
+		font = damageFont,
+		cldPos = damageWall:GetPosition(),
+		srcID = damageWallID
 	}
-	local var_21_8 = arg_21_2:UpdateHP(var_21_1 * -1, var_21_7)
+	local dHP = target:UpdateHP(damage * -1, updateHPArgs)
 
-	arg_21_0:DamageStatistics(var_21_0, arg_21_2:GetAttrByName("id"), -var_21_8)
+	self:DamageStatistics(damageWallID, target:GetAttrByName("id"), -dHP)
 
-	if arg_21_2:IsAlive() then
-		if not var_21_4 then
-			arg_21_2:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
+	if target:IsAlive() then
+		if not isMiss then
+			target:TriggerBuff(BattleConst.BuffEffectType.ON_BE_HIT, {})
 		end
 	else
-		arg_21_0:obituary(arg_21_2, false, arg_21_1)
-		arg_21_0:KillCountStatistics(var_21_0, arg_21_2:GetAttrByName("id"))
+		self:obituary(target, false, damageWall)
+		self:KillCountStatistics(damageWallID, target:GetAttrByName("id"))
 	end
 
-	return var_21_4, var_21_5
+	return isMiss, isCri
 end

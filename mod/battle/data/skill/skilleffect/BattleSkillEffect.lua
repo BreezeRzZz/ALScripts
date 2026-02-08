@@ -31,6 +31,7 @@ end
 -- Skill是一个瞬发效果，所以叫caster更合适
 	-- (skill没有各种onXXX的Trigger)
 -- 这也是根据两边数据结构本来的字段名称推测的
+-- 被BattleSkillUnit.Cast调用
 function BattleSkillEffect.Effect(self, caster, targetList, attachData)
 	if targetList and #targetList > 0 then
 		for _, target in ipairs(targetList) do
@@ -150,6 +151,9 @@ function BattleSkillEffect.DoDataEffectWithoutTarget(self, caster, attachData)
 	return
 end
 
+-- 被BattleSkillUnit.Cast调用
+-- 用于获取目标列表
+-- 因此可知，BattleSkillFire等的Target选取，无视了各种武器索敌逻辑(索敌范围等)
 function BattleSkillEffect.GetTarget(self, caster, skill)
 	if type(self._targetChoise) == "string" then
 		if self._targetChoise == "TargetSameToLastEffect" then

@@ -1,77 +1,82 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.BattleBuffCastSkillDamageCount = class("BattleBuffCastSkillDamageCount", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffCastSkillDamageCount.__name = "BattleBuffCastSkillDamageCount"
+ys.Battle.BattleBuffCastSkillDamageCount = class("BattleBuffCastSkillDamageCount", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffCastSkillDamageCount.__name = "BattleBuffCastSkillDamageCount"
 
-local var_0_2 = var_0_0.Battle.BattleBuffCastSkillDamageCount
+local BattleBuffCastSkillDamageCount = ys.Battle.BattleBuffCastSkillDamageCount
 
-var_0_2.FX_TYPE = var_0_0.Battle.BattleBuffEffect.FX_TYPE_CASTER
+BattleBuffCastSkillDamageCount.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_CASTER
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect是BattleBuffCastSkill的一个变种
+-- 记录在Buff持续期间内受到的伤害(按属性分类)
+-- Buff结束时，选择造成伤害最多的属性，并释放对应的技能(给定的参数)
+-- 不过此BuffEffect只被Buff 600047使用过。主要是用于实现限界挑战-天蝎座的根据受到最多的伤害类型，适应性的减少受到对应伤害的Buff
+function BattleBuffCastSkillDamageCount.Ctor(self, effectData)
+	BattleBuffCastSkillDamageCount.super.Ctor(self, effectData)
 end
 
-function var_0_2.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._level = arg_2_2:GetLv()
-	arg_2_0._skillTable = arg_2_0._tempData.arg_list.damage_attr_list
-	arg_2_0._attrTable = {}
+function BattleBuffCastSkillDamageCount.SetArgs(self, owner, buff)
+	self._level = buff:GetLv()
+	self._skillTable = self._tempData.arg_list.damage_attr_list
+	self._attrTable = {}
 end
 
-function var_0_2.onTakeDamage(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	local var_3_0 = arg_3_3.damageAttr
+function BattleBuffCastSkillDamageCount.onTakeDamage(self, owner, buff, args)
+	local damageAttr = args.damageAttr
 
-	if var_3_0 then
-		local var_3_1 = (arg_3_0._attrTable[var_3_0] or 0) + arg_3_3.damage
+	if damageAttr then
+		-- 记录每个伤害属性造成的伤害总和
+		local totalDamage = (self._attrTable[damageAttr] or 0) + args.damage
 
-		arg_3_0._attrTable[var_3_0] = var_3_1
+		self._attrTable[damageAttr] = totalDamage
 	end
 end
 
-function var_0_2.onRemove(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	local var_4_0 = 0
-	local var_4_1
+function BattleBuffCastSkillDamageCount.onRemove(self, owner, buff, args)
+	local maxAttrDamage = 0
+	local maxAttrType
 
-	for iter_4_0, iter_4_1 in pairs(arg_4_0._attrTable) do
-		if var_4_0 <= iter_4_1 then
-			var_4_0 = iter_4_1
-			var_4_1 = iter_4_0
+	for attrType, attrTotalDamage in pairs(self._attrTable) do
+		if maxAttrDamage <= attrTotalDamage then
+			maxAttrDamage = attrTotalDamage
+			maxAttrType = attrType
 		end
 	end
 
-	if not var_4_1 then
+	if not maxAttrType then
 		return
 	end
 
-	local var_4_2 = arg_4_0._skillTable[var_4_1]
+	local skillID = self._skillTable[maxAttrType]
 
-	arg_4_0._skill = var_0_0.Battle.BattleSkillUnit.GenerateSpell(var_4_2, arg_4_0._level, arg_4_1, arg_4_3)
+	self._skill = ys.Battle.BattleSkillUnit.GenerateSpell(skillID, self._level, owner, args)
 
-	if arg_4_3 and arg_4_3.target then
-		arg_4_0._skill:SetTarget({
-			arg_4_3.target
+	if args and args.target then
+		self._skill:SetTarget({
+			args.target
 		})
 	end
 
-	arg_4_0._skill:Cast(arg_4_1, arg_4_0._commander)
+	self._skill:Cast(owner, self._commander)
 end
 
-function var_0_2.Interrupt(arg_5_0)
-	var_0_2.super.Interrupt(arg_5_0)
+function BattleBuffCastSkillDamageCount.Interrupt(self)
+	BattleBuffCastSkillDamageCount.super.Interrupt(self)
 
-	if arg_5_0._skill then
-		arg_5_0._skill:Interrupt()
+	if self._skill then
+		self._skill:Interrupt()
 	end
 end
 
-function var_0_2.Clear(arg_6_0)
-	var_0_2.super.Clear(arg_6_0)
+function BattleBuffCastSkillDamageCount.Clear(self)
+	BattleBuffCastSkillDamageCount.super.Clear(self)
 
-	if arg_6_0._skill then
-		arg_6_0._skill:Clear()
+	if self._skill then
+		self._skill:Clear()
 
-		arg_6_0._skill = nil
+		self._skill = nil
 	end
 end

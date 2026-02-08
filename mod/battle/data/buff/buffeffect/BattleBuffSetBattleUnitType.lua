@@ -1,39 +1,47 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffSetBattleUnitType = class("BattleBuffSetBattleUnitType", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffSetBattleUnitType.__name = "BattleBuffSetBattleUnitType"
+ys.Battle.BattleBuffSetBattleUnitType = class("BattleBuffSetBattleUnitType", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffSetBattleUnitType.__name = "BattleBuffSetBattleUnitType"
 
-local var_0_1 = var_0_0.Battle.BattleBuffSetBattleUnitType
-local var_0_2 = var_0_0.Battle.BattleAttr
+local BattleBuffSetBattleUnitType = ys.Battle.BattleBuffSetBattleUnitType
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_1.FX_TYPE = var_0_0.Battle.BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE
-var_0_1.ATTR_KEY = "battle_unit_type"
+BattleBuffSetBattleUnitType.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE
+BattleBuffSetBattleUnitType.ATTR_KEY = "battle_unit_type"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect专用于修改battle_unit_type属性
+-- 一般来讲，battle_unit_type决定的是索敌优先级
+-- 此外还相关的则是是否属于Spectre(幽灵)单位
+-- 幽灵单位的特点: 
+-- 1. 会被大多数索敌方式规避
+-- 2. 没有碰撞体
+-- 3. 在特定值下, 不可见(-100, 这主要是给一些游戏机制设计的方便)
+-- 使用例: 非常常用. 例如用来让敌人"无敌"(失去碰撞判定+不可见), 或是转阶段隐藏本体等.
+function BattleBuffSetBattleUnitType.Ctor(self, effectData)
+	BattleBuffSetBattleUnitType.super.Ctor(self, effectData)
 end
 
-function var_0_1.GetEffectType(arg_2_0)
-	return var_0_1.FX_TYPE
+function BattleBuffSetBattleUnitType.GetEffectType(self)
+	return BattleBuffSetBattleUnitType.FX_TYPE
 end
 
-function var_0_1.SetArgs(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._value = arg_3_0._tempData.arg_list.value
+function BattleBuffSetBattleUnitType.SetArgs(self, owner, buff)
+	self._value = self._tempData.arg_list.value
 end
 
-function var_0_1.onAttach(arg_4_0, arg_4_1, arg_4_2)
-	var_0_2.SetCurrent(arg_4_1, var_0_1.ATTR_KEY, arg_4_0._value)
-	arg_4_0.flash(arg_4_1)
+function BattleBuffSetBattleUnitType.onAttach(self, owner, buff)
+	BattleAttr.SetCurrent(owner, BattleBuffSetBattleUnitType.ATTR_KEY, self._value)
+	self.flash(owner)
 end
 
-function var_0_1.onRemove(arg_5_0, arg_5_1, arg_5_2)
-	var_0_2.SetCurrent(arg_5_1, var_0_1.ATTR_KEY, nil)
-	arg_5_0.flash(arg_5_1)
+function BattleBuffSetBattleUnitType.onRemove(self, owner, buff)
+	BattleAttr.SetCurrent(owner, BattleBuffSetBattleUnitType.ATTR_KEY, nil)
+	self.flash(owner)
 end
 
-function var_0_1.flash(arg_6_0)
-	arg_6_0:UpdateBlindInvisibleBySpectre()
-	var_0_0.Battle.BattleDataProxy.GetInstance():SwitchSpectreUnit(arg_6_0)
+function BattleBuffSetBattleUnitType.flash(target)
+	target:UpdateBlindInvisibleBySpectre()
+	ys.Battle.BattleDataProxy.GetInstance():SwitchSpectreUnit(target)
 end

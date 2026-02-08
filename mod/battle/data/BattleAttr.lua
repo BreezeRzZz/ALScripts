@@ -249,6 +249,7 @@ end
 --- @param host any
 --- @return nil
 --- 设置眩晕/停滞状态
+--- BattleBuffStun.onTrigger调用
 function BattleAttr.Stun(host)
 	local isStun = host._attr.isStun or 0
 
@@ -258,6 +259,7 @@ end
 --- @param host any
 --- @return nil
 --- 取消眩晕/停滞状态
+--- BattleBuffStun.onRemove调用
 function BattleAttr.CancelStun(host)
 	local isStun = host._attr.isStun or 0
 
@@ -921,6 +923,7 @@ end
 
 -- 重新计算航速
 -- 航速上限1.8倍，下限0.2倍
+-- 被BattleBuffFixVelocity.UpdateAttr调用
 function BattleAttr.FlashVelocity(unit, mulValue, addValue)
 	local maxVelocity = BattleAttr.GetBase(unit, "velocity") * 1.8
 	local minVelocity = BattleAttr.GetBase(unit, "velocity") * 0.2

@@ -1,66 +1,69 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffShiftWeapon = class("BattleBuffShiftWeapon", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffShiftWeapon.__name = "BattleBuffShiftWeapon"
+ys.Battle.BattleBuffShiftWeapon = class("BattleBuffShiftWeapon", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffShiftWeapon.__name = "BattleBuffShiftWeapon"
 
-local var_0_1 = var_0_0.Battle.BattleBuffShiftWeapon
+local BattleBuffShiftWeapon = ys.Battle.BattleBuffShiftWeapon
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此类BuffEffect将根据配置表参数将目标的武器替换为指定武器
+-- 新武器会继承原武器的许多属性（如装备标签、皮肤ID、武器效率等）
+-- 使用例: 天雷的装备技能
+function BattleBuffShiftWeapon.Ctor(self, effectData)
+	BattleBuffShiftWeapon.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._detachID = arg_2_0._tempData.arg_list.detach_id
-	arg_2_0._attachID = arg_2_0._tempData.arg_list.weapon_id
-	arg_2_0._detachLabel = arg_2_0._tempData.arg_list.detach_labelList
-	arg_2_0._fixedEnabled = arg_2_0._tempData.arg_list.fixed
-	arg_2_0._initCD = arg_2_0._tempData.arg_list.initial_over_heat
+function BattleBuffShiftWeapon.SetArgs(self, owner, buff)
+	self._detachID = self._tempData.arg_list.detach_id
+	self._attachID = self._tempData.arg_list.weapon_id
+	self._detachLabel = self._tempData.arg_list.detach_labelList
+	self._fixedEnabled = self._tempData.arg_list.fixed
+	self._initCD = self._tempData.arg_list.initial_over_heat
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:shiftWeapon(arg_3_1)
+function BattleBuffShiftWeapon.onAttach(self, owner, buff)
+	self:shiftWeapon(owner)
 end
 
-function var_0_1.shiftWeapon(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0:removeWeapon(arg_4_1)
+function BattleBuffShiftWeapon.shiftWeapon(self, owner)
+	local originalWeapon = self:removeWeapon(owner)
 
-	if not var_4_0 or var_4_0:IsFixedWeapon() and not arg_4_0._fixedEnabled then
+	if not originalWeapon or originalWeapon:IsFixedWeapon() and not self._fixedEnabled then
 		return
 	end
 
-	local var_4_1 = var_4_0:GetEquipmentLabel()
-	local var_4_2 = var_4_0:GetSkinID()
-	local var_4_3 = var_4_0:GetPotential()
-	local var_4_4 = var_4_0:GetEquipmentIndex()
-	local var_4_5 = 0
-	local var_4_6 = {}
+	local originalEquipLabel = originalWeapon:GetEquipmentLabel()
+	local originalSkinID = originalWeapon:GetSkinID()
+	local originalPotential = originalWeapon:GetPotential()
+	local originalEquipIndex = originalWeapon:GetEquipmentIndex()
+	local index = 0
+	local weaponCDList = {}
 
-	while var_4_0 ~= nil do
-		table.insert(var_4_6, var_4_0:GetModifyInitialCD())
+	while originalWeapon ~= nil do
+		table.insert(weaponCDList, originalWeapon:GetModifyInitialCD())
 
-		var_4_5 = var_4_5 + 1
-		var_4_0 = arg_4_0:removeWeapon(arg_4_1)
+		index = index + 1
+		originalWeapon = self:removeWeapon(owner)
 	end
 
-	for iter_4_0 = 1, var_4_5 do
-		local var_4_7 = arg_4_1:AddWeapon(arg_4_0._attachID, var_4_1, var_4_2, var_4_3, var_4_4)
+	for weaponIndex = 1, index do
+		local newWeapon = owner:AddWeapon(self._attachID, originalEquipLabel, originalSkinID, originalPotential, originalEquipIndex)
 
-		if var_4_6[iter_4_0] then
-			var_4_7:SetModifyInitialCD()
+		if weaponCDList[weaponIndex] then
+			newWeapon:SetModifyInitialCD()
 		end
 	end
 end
 
-function var_0_1.removeWeapon(arg_5_0, arg_5_1)
-	local var_5_0
+function BattleBuffShiftWeapon.removeWeapon(self, owner)
+	local weapon
 
-	if arg_5_0._detachID then
-		var_5_0 = arg_5_1:RemoveWeapon(arg_5_0._detachID)
-	elseif arg_5_0._detachLabel then
-		var_5_0 = arg_5_1:RemoveWeaponByLabel(arg_5_0._detachLabel)
+	if self._detachID then
+		weapon = owner:RemoveWeapon(self._detachID)
+	elseif self._detachLabel then
+		weapon = owner:RemoveWeaponByLabel(self._detachLabel)
 	end
 
-	return var_5_0
+	return weapon
 end

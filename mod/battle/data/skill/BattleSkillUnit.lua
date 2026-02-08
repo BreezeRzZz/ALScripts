@@ -63,9 +63,9 @@ function BattleSkillUnit.Cast(self, owner, commander)
 	if castCV == "string" then
 		owner:DispatchVoice(self._tempData.castCV)
 	elseif castCV == "table" then
-		local var_4_2, var_4_3, var_4_4 = ShipWordHelper.GetWordAndCV(self._tempData.castCV.skinID, self._tempData.castCV.key)
+		local _, wordSfx, _ = ShipWordHelper.GetWordAndCV(self._tempData.castCV.skinID, self._tempData.castCV.key)
 
-		pg.CriMgr.GetInstance():PlaySoundEffect_V3(var_4_3)
+		pg.CriMgr.GetInstance():PlaySoundEffect_V3(wordSfx)
 	end
 
 	if self._tempData.sfx then
@@ -96,17 +96,17 @@ function BattleSkillUnit.Cast(self, owner, commander)
 		effect:Effect(owner, targetList, attachData)
 	end
 
-	local var_4_8 = self._tempData.aniEffect
+	local aniEffect = self._tempData.aniEffect
 
-	if var_4_8 and var_4_8 ~= "" then
-		local var_4_9 = {
-			effect = var_4_8.effect,
-			time = var_4_8.time,
-			offset = var_4_8.offset,
-			posFun = var_4_8.posFun
+	if aniEffect and aniEffect ~= "" then
+		local addEffectArgs = {
+			effect = aniEffect.effect,
+			time = aniEffect.time,
+			offset = aniEffect.offset,
+			posFun = aniEffect.posFun
 		}
 
-		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, var_4_9))
+		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, addEffectArgs))
 	end
 
 	if self._tempData.action then

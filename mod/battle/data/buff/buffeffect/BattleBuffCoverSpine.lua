@@ -1,25 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffCoverSpine = class("BattleBuffCoverSpine", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffCoverSpine.__name = "BattleBuffCoverSpine"
+ys.Battle.BattleBuffCoverSpine = class("BattleBuffCoverSpine", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffCoverSpine.__name = "BattleBuffCoverSpine"
 
-local var_0_1 = var_0_0.Battle.BattleBuffCoverSpine
+local BattleBuffCoverSpine = ys.Battle.BattleBuffCoverSpine
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect会在附加时切换单位的Spine，在移除时切换回原来的Spine
+-- (仅视觉效果，不会改变单位的属性等)
+-- 使用例: 主要是SSSS阵营的几个机甲变身时使用了这个BuffEffect，来切换机甲的Spine
+-- 宝多六花专武、南梦芽专武
+function BattleBuffCoverSpine.Ctor(self, effectData)
+	BattleBuffCoverSpine.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._skin = arg_2_0._tempData.arg_list.ship_skin_id
-	arg_2_0._hpbarOffset = arg_2_0._tempData.arg_list.hp_bar_offset or 0
+function BattleBuffCoverSpine.SetArgs(self, owner, buff)
+	self._skin = self._tempData.arg_list.ship_skin_id
+	self._hpbarOffset = self._tempData.arg_list.hp_bar_offset or 0
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2, arg_3_3)
-	arg_3_1:SwitchSpine(arg_3_0._skin, arg_3_0._hpbarOffset)
+function BattleBuffCoverSpine.onAttach(self, owner, buff, args)
+	owner:SwitchSpine(self._skin, self._hpbarOffset)
 end
 
-function var_0_1.onRemove(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	arg_4_1:SwitchSpine(nil, arg_4_0._hpbarOffset * -1)
+function BattleBuffCoverSpine.onRemove(self, owner, buff, args)
+	owner:SwitchSpine(nil, self._hpbarOffset * -1)
 end

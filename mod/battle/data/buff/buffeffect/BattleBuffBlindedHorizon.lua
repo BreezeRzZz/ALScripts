@@ -1,32 +1,34 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleBuffBlindedHorizon", var_0_0.Battle.BattleBuffEffect)
+local ys = ys
+local BattleBuffBlindedHorizon = class("BattleBuffBlindedHorizon", ys.Battle.BattleBuffEffect)
 
-var_0_0.Battle.BattleBuffBlindedHorizon = var_0_1
-var_0_1.__name = "BattleBuffBlindedHorizon"
+ys.Battle.BattleBuffBlindedHorizon = BattleBuffBlindedHorizon
+BattleBuffBlindedHorizon.__name = "BattleBuffBlindedHorizon"
 
-local var_0_2 = var_0_0.Battle.BattleConst
+local BattleConst = ys.Battle.BattleConst
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 致盲BuffEffect: 将视野限制在范围内
+function BattleBuffBlindedHorizon.Ctor(self, effectData)
+	BattleBuffBlindedHorizon.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._horizonRange = arg_2_0._tempData.arg_list.range
+function BattleBuffBlindedHorizon.SetArgs(self, owner, buff)
+	self._horizonRange = self._tempData.arg_list.range
 
-	local var_2_0 = arg_2_1:GetUniqueID()
+	local ownerUID = owner:GetUniqueID()
 
-	local function var_2_1(arg_3_0)
-		for iter_3_0, iter_3_1 in ipairs(arg_3_0) do
-			if iter_3_1.Active then
-				local var_3_0 = arg_2_0:getTargetList(arg_2_1, {
+	local function areaCldFunc(cldObjList)
+		for _, cldObj in ipairs(cldObjList) do
+			if cldObj.Active then
+				local targetList = self:getTargetList(owner, {
 					"TargetAllHarm"
 				})
 
-				for iter_3_2, iter_3_3 in ipairs(var_3_0) do
-					if iter_3_3:GetUniqueID() == iter_3_1.UID then
-						iter_3_3:AppendExposed(var_2_0)
+				for _, target in ipairs(targetList) do
+					if target:GetUniqueID() == cldObj.UID then
+						-- 致盲
+						target:AppendExposed(ownerUID)
 
 						break
 					end
@@ -35,15 +37,15 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 		end
 	end
 
-	local function var_2_2(arg_4_0)
-		if arg_4_0.Active then
-			local var_4_0 = arg_2_0:getTargetList(arg_2_1, {
+	local function exitCldFunc(cldObj)
+		if cldObj.Active then
+			local targetList = self:getTargetList(owner, {
 				"TargetAllHarm"
 			})
 
-			for iter_4_0, iter_4_1 in ipairs(var_4_0) do
-				if iter_4_1:GetUniqueID() == arg_4_0.UID then
-					iter_4_1:RemoveExposed(var_2_0)
+			for _, target in ipairs(targetList) do
+				if target:GetUniqueID() == cldObj.UID then
+					target:RemoveExposed(ownerUID)
 
 					break
 				end
@@ -51,48 +53,51 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 		end
 	end
 
-	local function var_2_3(arg_5_0)
-		if arg_5_0.Active then
-			local var_5_0 = arg_2_0:getTargetList(arg_2_1, {
+	local function endFunc(cldObj)
+		if cldObj.Active then
+			local targetList = self:getTargetList(owner, {
 				"TargetAllHarm"
 			})
 
-			for iter_5_0, iter_5_1 in ipairs(var_5_0) do
-				if iter_5_1:GetUniqueID() == arg_5_0.UID then
-					iter_5_1:RemoveExposed(var_2_0)
+			for _, target in ipairs(targetList) do
+				if target:GetUniqueID() == cldObj.UID then
+					target:RemoveExposed(ownerUID)
 
 					break
 				end
 			end
 		end
 	end
+	-- 生成一个AOE，AOE的碰撞函数会调用areaCldFunc来致盲进入范围内的单位，调用exitCldFunc/endFunc来解除致盲效果
+	-- 致盲的可见范围是一个圆形，直径为horizonRange(注意是直径)
+	self._aura = ys.Battle.BattleDataProxy.GetInstance():SpawnLastingColumnArea(BattleConst.AOEField.SURFACE, owner:GetIFF(), owner:GetPosition(), self._horizonRange, 0, areaCldFunc, exitCldFunc, false, nil, endFunc, true)
+	-- 让AOE跟随owner移动
+	local mobilizedAOE = ys.Battle.BattleAOEMobilizedComponent.New(self._aura)
 
-	arg_2_0._aura = var_0_0.Battle.BattleDataProxy.GetInstance():SpawnLastingColumnArea(var_0_2.AOEField.SURFACE, arg_2_1:GetIFF(), arg_2_1:GetPosition(), arg_2_0._horizonRange, 0, var_2_1, var_2_2, false, nil, var_2_3, true)
-
-	local var_2_4 = var_0_0.Battle.BattleAOEMobilizedComponent.New(arg_2_0._aura)
-
-	var_2_4:SetReferenceUnit(arg_2_1)
-	var_2_4:ConfigData(var_2_4.FOLLOW)
+	mobilizedAOE:SetReferenceUnit(owner)
+	mobilizedAOE:ConfigData(mobilizedAOE.FOLLOW)
 end
 
-function var_0_1.onAttach(arg_6_0, arg_6_1, arg_6_2)
-	var_0_0.Battle.BattleAttr.FlashByBuff(arg_6_1, "blindedHorizon", arg_6_0._horizonRange)
+function BattleBuffBlindedHorizon.onAttach(self, owner, buff)
+	-- blindedHorizon是一种属性
+	-- 这个属性在BattleInkView使用
+	ys.Battle.BattleAttr.FlashByBuff(owner, "blindedHorizon", self._horizonRange)
 
-	local var_6_0 = arg_6_1:GetFleetVO()
-
-	if var_6_0 then
-		var_6_0:UpdateHorizon()
+	local fleetVO = owner:GetFleetVO()
+	-- 影响全队的视野范围
+	if fleetVO then
+		fleetVO:UpdateHorizon()
 	end
 end
 
-function var_0_1.onRemove(arg_7_0, arg_7_1, arg_7_2)
-	var_0_0.Battle.BattleAttr.FlashByBuff(arg_7_1, "blindedHorizon", 0)
+function BattleBuffBlindedHorizon.onRemove(self, owner, buff)
+	ys.Battle.BattleAttr.FlashByBuff(owner, "blindedHorizon", 0)
 end
 
-function var_0_1.Clear(arg_8_0)
-	arg_8_0._aura:SetActiveFlag(false)
+function BattleBuffBlindedHorizon.Clear(self)
+	self._aura:SetActiveFlag(false)
 
-	arg_8_0._aura = nil
+	self._aura = nil
 
-	var_0_1.super.Clear(arg_8_0)
+	BattleBuffBlindedHorizon.super.Clear(self)
 end

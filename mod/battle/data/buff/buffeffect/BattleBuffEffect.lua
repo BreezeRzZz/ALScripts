@@ -19,6 +19,8 @@ BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE = 6
 BattleBuffEffect.FX_TYPE_COUNTER = 7
 BattleBuffEffect.FX_TYPE_MOD_MODEL_SCALE = 8
 
+-- 核心BuffEffect之一
+-- 这是所有BuffEffect的基类. 如果子类没重写, 请参考这个类的实现
 function BattleBuffEffect.Ctor(self, effectData)
 	self._tempData = Clone(effectData)
 	self._type = self._tempData.type
@@ -745,20 +747,20 @@ function BattleBuffEffect.onFleetAttrUpdate(self, arg_96_1, arg_96_2, arg_96_3)
 	self:onTrigger(arg_96_1, arg_96_2, arg_96_3)
 end
 
-function BattleBuffEffect.damageCheck(arg_97_0, arg_97_1)
-	return arg_97_0:damageAttrRequire(arg_97_1.damageAttr) and arg_97_0:damageReasonRequire(arg_97_1.damageReason)
+function BattleBuffEffect.damageCheck(self, args)
+	return self:damageAttrRequire(args.damageAttr) and self:damageReasonRequire(args.damageReason)
 end
 
-function BattleBuffEffect.damageAttrRequire(arg_98_0, arg_98_1)
-	if not arg_98_0._damageAttrRequire or table.contains(arg_98_0._damageAttrRequire, arg_98_1) then
+function BattleBuffEffect.damageAttrRequire(self, damageAttr)
+	if not self._damageAttrRequire or table.contains(self._damageAttrRequire, damageAttr) then
 		return true
 	else
 		return false
 	end
 end
 
-function BattleBuffEffect.damageReasonRequire(arg_99_0, arg_99_1)
-	if not arg_99_0._damageReasonRequire or table.contains(arg_99_0._damageReasonRequire, arg_99_1) then
+function BattleBuffEffect.damageReasonRequire(self, damageReason)
+	if not self._damageReasonRequire or table.contains(self._damageReasonRequire, damageReason) then
 		return true
 	else
 		return false

@@ -140,6 +140,8 @@ function BattleTargetChoise.getShipListByIFF(IFF)
 	-- 友方召唤物不属于friendlyShipList
 	-- 潜艇也属于friendShipList
 	-- 敌方召唤物属于foeShipList
+	-- 我方幽灵单位不属于friendlyShipList(也只有支援舰队这类才会是幽灵单位)
+	-- 敌方幽灵单位不属于foeShipList
 	if IFF == BattleConfig.FRIENDLY_CODE then
 		candidateList = battleDataProxy:GetFriendlyShipList()
 	elseif IFF == BattleConfig.FOE_CODE then
@@ -631,10 +633,11 @@ function BattleTargetChoise.TargetHarmRandom(caster, argList, candidateList)
 		return {}
 	end
 end
--- TODO
+
+-- 权重优先索敌
 function BattleTargetChoise.TargetHarmRandomByWeight(caster, argList, candidateList)
 	argList = argList or {}
-
+	-- 不会选择处于隐匿状态的敌人
 	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 	local maxPriorityCandList = {}
 	local maxPriority = -9999
@@ -663,25 +666,26 @@ function BattleTargetChoise.TargetHarmRandomByWeight(caster, argList, candidateL
 	end
 end
 
-function BattleTargetChoise.TargetWeightiest(arg_37_0, arg_37_1, arg_37_2)
-	local var_37_0 = arg_37_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_37_1 = {}
-	local var_37_2 = -9999
+-- 与TargetHarmRandomByWeight类似，但返回所有权重最高的单位而不是随机选一个
+function BattleTargetChoise.TargetWeightiest(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local maxPriorityCandList = {}
+	local maxPriority = -9999
 
-	for iter_37_0, iter_37_1 in ipairs(var_37_0) do
-		local var_37_3 = iter_37_1:GetTargetedPriority() or 0
+	for _, candidate in ipairs(_candidateList) do
+		local priority = candidate:GetTargetedPriority() or 0
 
-		if var_37_3 == var_37_2 then
-			var_37_1[#var_37_1 + 1] = iter_37_1
-		elseif var_37_2 < var_37_3 then
-			var_37_1 = {
-				iter_37_1
+		if priority == maxPriority then
+			maxPriorityCandList[#maxPriorityCandList + 1] = candidate
+		elseif maxPriority < priority then
+			maxPriorityCandList = {
+				candidate
 			}
-			var_37_2 = var_37_3
+			maxPriority = priority
 		end
 	end
 
-	return var_37_1
+	return maxPriorityCandList
 end
 
 function BattleTargetChoise.TargetRandom(arg_38_0, arg_38_1, arg_38_2)

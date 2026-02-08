@@ -9,6 +9,9 @@ local BattleBuffSize = ys.Battle.BattleBuffSize
 
 BattleBuffSize.FX_TYPE = ys.Battle.BattleBuffEffect.FX_TYPE_MOD_MODEL_SCALE
 
+-- 此类BuffEffect用于改变单位的模型缩放(不影响实际碰撞体积)
+-- 一种是直接指定一个数值，另一种是根据HP比例进行缩放，具体数值由base和hpScale共同决定
+-- 使用例: 嘭嘭速生君的装备技能
 function BattleBuffSize.Ctor(self, effectData)
 	ys.Battle.BattleBuffSize.super.Ctor(self, effectData)
 end

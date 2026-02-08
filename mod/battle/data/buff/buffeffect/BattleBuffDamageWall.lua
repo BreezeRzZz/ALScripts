@@ -1,28 +1,31 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffDamageWall = class("BattleBuffDamageWall", var_0_0.Battle.BattleBuffShieldWall)
-var_0_0.Battle.BattleBuffDamageWall.__name = "BattleBuffDamageWall"
+ys.Battle.BattleBuffDamageWall = class("BattleBuffDamageWall", ys.Battle.BattleBuffShieldWall)
+ys.Battle.BattleBuffDamageWall.__name = "BattleBuffDamageWall"
 
-local var_0_1 = var_0_0.Battle.BattleBuffDamageWall
+local BattleBuffDamageWall = ys.Battle.BattleBuffDamageWall
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 此BuffEffect会在单位周围生成一个伤害墙，持续一段时间。单位碰撞到伤害墙时会受到伤害(伤害值和伤害类型由Buff参数指定)，当碰撞次数达到指定数量后，伤害墙会消失(也就是说，是用来打伤害的护盾墙，与BattleBuffShieldWall不同，BattleBuffShieldWall是用来挡子弹的护盾墙)
+-- 使用例：μ罗恩的2技能，其中红色护盾碰撞到敌人时会造成伤害，碰撞次数用完后护盾消失
+function BattleBuffDamageWall.Ctor(self, effectData)
+	BattleBuffDamageWall.super.Ctor(self, effectData)
 
-	arg_1_0._cldList = {}
+	self._cldList = {}
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._wall:SetCldObjType(var_0_0.Battle.BattleWallData.CLD_OBJ_TYPE_SHIP)
-
-	arg_2_0._attr = setmetatable({}, {
-		__index = arg_2_1._attr
+function BattleBuffDamageWall.SetArgs(self, owner, buff)
+	BattleBuffDamageWall.super.SetArgs(self, owner, buff)
+	self._wall:SetCldObjType(ys.Battle.BattleWallData.CLD_OBJ_TYPE_SHIP)
+	-- 使用拥有者的属性引用
+	self._attr = setmetatable({}, {
+		__index = owner._attr
 	})
-	arg_2_0._atkAttrType = arg_2_0._tempData.arg_list.attack_attribute
-	arg_2_0._damage = arg_2_0._tempData.arg_list.damage
-	arg_2_0._forgeTmp = {
+	self._atkAttrType = self._tempData.arg_list.attack_attribute
+	self._damage = self._tempData.arg_list.damage
+	-- 构造forgeWeapon相关数据，用于伤害计算
+	self._forgeTmp = {
 		random_damage_rate = 0,
 		antisub_enhancement = 0,
 		ammo_type = 1,
@@ -47,7 +50,7 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 		},
 		hit_type = {}
 	}
-	arg_2_0._forgeWeapon = {
+	self._forgeWeapon = {
 		GetConvertedAtkAttr = function()
 			return 0.01
 		end,
@@ -55,77 +58,78 @@ function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
 			return nil
 		end
 	}
-	arg_2_0._forgeWeaponTmp = {
-		attack_attribute = arg_2_0._atkAttrType
+	self._forgeWeaponTmp = {
+		attack_attribute = self._atkAttrType
 	}
-	arg_2_0._atkAttr = var_0_0.Battle.BattleAttr.GetAtkAttrByType(arg_2_0._attr, arg_2_0._atkAttrType)
+	self._atkAttr = ys.Battle.BattleAttr.GetAtkAttrByType(self._attr, self._atkAttrType)
 end
 
-function var_0_1.onWallCld(arg_5_0, arg_5_1)
-	for iter_5_0, iter_5_1 in ipairs(arg_5_1) do
-		if not table.contains(arg_5_0._cldList, iter_5_1) then
-			arg_5_0._dataProxy:HandleWallDamage(arg_5_0, iter_5_1)
-			table.insert(arg_5_0._cldList, iter_5_1)
+function BattleBuffDamageWall.onWallCld(self, targetList)
+	for _, target in ipairs(targetList) do
+		if not table.contains(self._cldList, target) then
+			self._dataProxy:HandleWallDamage(self, target)
+			table.insert(self._cldList, target)
 
-			arg_5_0._count = arg_5_0._count - 1
+			self._count = self._count - 1
 
-			if arg_5_0._count <= 0 then
+			if self._count <= 0 then
 				break
 			end
 		end
 	end
 
-	local var_5_0 = #arg_5_0._cldList
+	local cldListLength = #self._cldList
 
-	while var_5_0 > 0 do
-		local var_5_1 = arg_5_0._cldList[var_5_0]
+	while cldListLength > 0 do
+		local cldUnit = self._cldList[cldListLength]
 
-		if not table.contains(arg_5_1, var_5_1) then
-			table.remove(arg_5_0._cldList, var_5_0)
+		if not table.contains(targetList, cldUnit) then
+			table.remove(self._cldList, cldListLength)
 		end
 
-		var_5_0 = var_5_0 - 1
+		cldListLength = cldListLength - 1
 	end
 
-	if arg_5_0._count <= 0 then
-		arg_5_0:Deactive()
+	if self._count <= 0 then
+		self:Deactive()
 	end
 end
 
-function var_0_1.GetDamageEnhance(arg_6_0)
+-- 因为DamageWall会被当成子弹来用，因此需要补充许多子弹相关的接口
+function BattleBuffDamageWall.GetDamageEnhance(self)
 	return 1
 end
 
-function var_0_1.GetHost(arg_7_0)
-	return arg_7_0._unit
+function BattleBuffDamageWall.GetHost(self)
+	return self._unit
 end
 
-function var_0_1.GetWeaponHostAttr(arg_8_0)
-	return var_0_0.Battle.BattleAttr.GetAttr(arg_8_0)
+function BattleBuffDamageWall.GetWeaponHostAttr(self)
+	return ys.Battle.BattleAttr.GetAttr(self)
 end
 
-function var_0_1.GetWeapon(arg_9_0)
-	return arg_9_0._forgeWeapon
+function BattleBuffDamageWall.GetWeapon(self)
+	return self._forgeWeapon
 end
 
-function var_0_1.GetWeaponTempData(arg_10_0)
-	return arg_10_0._forgeWeaponTmp
+function BattleBuffDamageWall.GetWeaponTempData(self)
+	return self._forgeWeaponTmp
 end
 
-function var_0_1.GetWeaponAtkAttr(arg_11_0)
-	return arg_11_0._atkAttr
+function BattleBuffDamageWall.GetWeaponAtkAttr(self)
+	return self._atkAttr
 end
 
-function var_0_1.GetCorrectedDMG(arg_12_0)
-	return arg_12_0._damage
+function BattleBuffDamageWall.GetCorrectedDMG(self)
+	return self._damage
 end
 
-function var_0_1.GetTemplate(arg_13_0)
-	return arg_13_0._forgeTmp
+function BattleBuffDamageWall.GetTemplate(self)
+	return self._forgeTmp
 end
 
-function var_0_1.Clear(arg_14_0)
-	arg_14_0._cldList = nil
+function BattleBuffDamageWall.Clear(self)
+	self._cldList = nil
 
-	var_0_1.super.Clear(arg_14_0)
+	BattleBuffDamageWall.super.Clear(self)
 end

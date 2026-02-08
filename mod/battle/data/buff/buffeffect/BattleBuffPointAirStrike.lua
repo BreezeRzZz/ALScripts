@@ -7,6 +7,8 @@ ys.Battle.BattleBuffPointAirStrike.__name = "BattleBuffPointAirStrike"
 
 local BattleBuffPointAirStrike = ys.Battle.BattleBuffPointAirStrike
 
+-- 此类BuffEffect的作用是为单位添加定点空袭武器，目前包含：初始过热、冷却时间、可叠加次数、空袭机ID列表等参数
+-- 使用例: 金狮1技能
 function BattleBuffPointAirStrike.Ctor(self, effectData)
 	BattleBuffPointAirStrike.super.Ctor(self, effectData)
 end

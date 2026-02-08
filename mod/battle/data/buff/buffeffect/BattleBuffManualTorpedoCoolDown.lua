@@ -1,28 +1,30 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBuffManualTorpedoCoolDown = class("BattleBuffManualTorpedoCoolDown", var_0_0.Battle.BattleBuffEffect)
-var_0_0.Battle.BattleBuffManualTorpedoCoolDown.__name = "BattleBuffManualTorpedoCoolDown"
+ys.Battle.BattleBuffManualTorpedoCoolDown = class("BattleBuffManualTorpedoCoolDown", ys.Battle.BattleBuffEffect)
+ys.Battle.BattleBuffManualTorpedoCoolDown.__name = "BattleBuffManualTorpedoCoolDown"
 
-local var_0_1 = var_0_0.Battle.BattleBuffManualTorpedoCoolDown
+-- 此类BuffEffect按概率, 瞬间完成(队列头)手动鱼雷的冷却
+-- 算是"快速起飞"的一个鱼雷版本. 但目前没有使用例
+local BattleBuffManualTorpedoCoolDown = ys.Battle.BattleBuffManualTorpedoCoolDown
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+function BattleBuffManualTorpedoCoolDown.Ctor(self, effectData)
+	BattleBuffManualTorpedoCoolDown.super.Ctor(self, effectData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._rant = arg_2_0._tempData.arg_list.rant or 10000
+function BattleBuffManualTorpedoCoolDown.SetArgs(self, owner, buff)
+	self._rant = self._tempData.arg_list.rant or 10000
 end
 
-function var_0_1.onTrigger(arg_3_0, arg_3_1)
-	var_0_1.super.onTrigger(arg_3_0, arg_3_1, buff, attach)
+function BattleBuffManualTorpedoCoolDown.onTrigger(self, owner)
+	BattleBuffManualTorpedoCoolDown.super.onTrigger(self, owner, buff, attach)
 
-	if var_0_0.Battle.BattleFormulas.IsHappen(arg_3_0._rant) then
-		local var_3_0 = arg_3_1:GetTorpedoQueue():GetQueueHead()
+	if ys.Battle.BattleFormulas.IsHappen(self._rant) then
+		local manualTorpedo = owner:GetTorpedoQueue():GetQueueHead()
 
-		if var_3_0 then
-			var_3_0:QuickCoolDown()
+		if manualTorpedo then
+			manualTorpedo:QuickCoolDown()
 		end
 	end
 end
