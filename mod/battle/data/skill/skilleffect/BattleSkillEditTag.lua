@@ -1,24 +1,27 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillEditTag", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillEditTag = class("BattleSkillEditTag", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillEditTag = var_0_1
-var_0_1.__name = "BattleSkillEditTag"
-var_0_1.TAG_OPERATION_APPEND = 1
-var_0_1.TAG_OPERATION_REMOVE = -1
+ys.Battle.BattleSkillEditTag = BattleSkillEditTag
+BattleSkillEditTag.__name = "BattleSkillEditTag"
+BattleSkillEditTag.TAG_OPERATION_APPEND = 1
+BattleSkillEditTag.TAG_OPERATION_REMOVE = -1
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect用于添加/移除标签
+-- 和BattleBuffAddTag差不多(用的都是Unit的Add/RemoveLabelTag接口), 只是AddTag没有直接的Remove(只能等OnRemove)
+-- 使用例: 很多, 略
+function BattleSkillEditTag.Ctor(self, template, level)
+	BattleSkillEditTag.super.Ctor(self, template, level)
 
-	arg_1_0._tag = arg_1_0._tempData.arg_list.tag
-	arg_1_0._op = arg_1_0._tempData.arg_list.operation
+	self._tag = self._tempData.arg_list.tag
+	self._op = self._tempData.arg_list.operation
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_0._op == var_0_1.TAG_OPERATION_APPEND then
-		arg_2_2:AddLabelTag(arg_2_0._tag)
-	elseif arg_2_0._op == var_0_1.TAG_OPERATION_REMOVE then
-		arg_2_2:RemoveLabelTag(arg_2_0._tag)
+function BattleSkillEditTag.DoDataEffect(self, caster, target)
+	if self._op == BattleSkillEditTag.TAG_OPERATION_APPEND then
+		target:AddLabelTag(self._tag)
+	elseif self._op == BattleSkillEditTag.TAG_OPERATION_REMOVE then
+		target:RemoveLabelTag(self._tag)
 	end
 end

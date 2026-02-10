@@ -135,6 +135,7 @@ function BattleDataFunction._createBombBullet(bulletUID, bulletTemplate, host, w
 	end
 
 	bullet:SetExplodePosition(targetPos)
+	-- 空中没有碰撞体, 到指定爆炸点就爆炸
 	bullet:SetIsCld(false)
 
 	return bullet, false
@@ -266,39 +267,39 @@ function BattleDataFunction._createAAMissile(bulletUID, bulletTemplate, host, we
 end
 
 BattleDataFunction.generateBulletFuncs = {}
--- CANNON(1) -> CreateCannonBullet
+-- CANNON(1) -> CreateCannonBullet -> CannonBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.CANNON] = BattleDataFunction._createCannonBullet
--- BOMB(2) -> CreateBombBullet
+-- BOMB(2) -> CreateBombBullet -> BombBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.BOMB] = BattleDataFunction._createBombBullet
--- TORPEDO(3) -> CreateTorpedoBullet
+-- TORPEDO(3) -> CreateTorpedoBullet -> TorpedoBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TORPEDO] = BattleDataFunction._createTorpedoBullet
--- DIRECT(4) -> CreateDirectBullet
+-- DIRECT(4) -> CreateDirectBullet -> AntiAirBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.DIRECT] = BattleDataFunction._createDirectBullet
--- ANTI_AIR(6) -> CreateAntiAirBullet
+-- ANTI_AIR(6) -> CreateAntiAirBullet -> AntiAirBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ANTI_AIR] = BattleDataFunction._createAntiAirBullet
--- ANTI_SEA(7) -> CreateAntiSeaBullet
+-- ANTI_SEA(7) -> CreateAntiSeaBullet -> AntiSeaBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ANTI_SEA] = BattleDataFunction._createAntiSeaBullet
--- SHRAPNEL(5) -> CreateSharpnelBullet
+-- SHRAPNEL(5) -> CreateSharpnelBullet -> SharpnelBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SHRAPNEL] = BattleDataFunction._createSharpnelBullet
--- STRAY(8) -> CreateStrayBullet
+-- STRAY(8) -> CreateStrayBullet -> StrayBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.STRAY] = BattleDataFunction._createStrayBullet
--- EFFECT(9) -> CreateEffectBullet
+-- EFFECT(9) -> CreateEffectBullet -> EffectBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.EFFECT] = BattleDataFunction._createEffectBullet
 -- BEAM(10) -> CreateBeamBullet(*实际创建BattleAntiAirBulletUnit负责实际的伤害结算逻辑，因为BattleBeamUnit本质不是子弹单位，不是BattleBulletUnit的子类)
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.BEAM] = BattleDataFunction._createBeamBullet
--- G_BULLET(11) -> CreateGravitationBullet
+-- G_BULLET(11) -> CreateGravitationBullet -> GravitationBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.G_BULLET] = BattleDataFunction._createGravitationBullet
--- ELECTRIC_ARC(12) -> CreateDirectBullet
+-- ELECTRIC_ARC(12) -> CreateDirectBullet -> AntiAirBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.ELECTRIC_ARC] = BattleDataFunction._createDirectBullet
--- MISSILE(13) -> CreateMissile
+-- MISSILE(13) -> CreateMissile -> MissileUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.MISSILE] = BattleDataFunction._createMissile
--- SPACE_LASER(14) -> CreateSpaceLaser
+-- SPACE_LASER(14) -> CreateSpaceLaser -> SpaceLaserBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SPACE_LASER] = BattleDataFunction._createSpaceLaser
--- SCALE(15) -> CreateScaleBullet
+-- SCALE(15) -> CreateScaleBullet -> ScaleBulletUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.SCALE] = BattleDataFunction._createScaleBullet
--- TRIGGER_BOMB(16) -> CreateBombBullet
+-- TRIGGER_BOMB(16) -> CreateBombBullet -> BombBulletUnit (和BOMB类型共用创建函数和子弹单位)
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.TRIGGER_BOMB] = BattleDataFunction._createBombBullet
--- AAMissile(17) -> CreateAAMissile
+-- AAMissile(17) -> CreateAAMissile -> TrackingAAMissileUnit
 BattleDataFunction.generateBulletFuncs[BattleConst.BulletType.AAMissile] = BattleDataFunction._createAAMissile
 
 -- 用于处理弹幕的重复发射逻辑

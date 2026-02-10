@@ -609,16 +609,16 @@ function BattleCharacter.UpdateDiveInvisible(arg_46_0, arg_46_1)
 	end
 end
 
-function BattleCharacter.onUpdateBlindInvisible(arg_47_0, arg_47_1)
-	arg_47_0:UpdateBlindInvisible()
+function BattleCharacter.onUpdateBlindInvisible(self, args)
+	self:UpdateBlindInvisible()
 end
 
-function BattleCharacter.UpdateBlindInvisible(arg_48_0)
-	local var_48_0 = arg_48_0._unitData:GetExposed()
+function BattleCharacter.UpdateBlindInvisible(self)
+	local exposed = self._unitData:GetExposed()
 
-	arg_48_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_48_0
+	self:GetTf():GetComponent(typeof(Renderer)).enabled = exposed
 
-	arg_48_0:updateComponentVisible()
+	self:updateComponentVisible()
 end
 
 function BattleCharacter.updateInvisible(arg_49_0, arg_49_1, arg_49_2, arg_49_3)

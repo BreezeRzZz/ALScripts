@@ -1,18 +1,19 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleCannonBulletUnit = class("BattleCannonBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleCannonBulletUnit.__name = "BattleCannonBulletUnit"
+ys.Battle.BattleCannonBulletUnit = class("BattleCannonBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleCannonBulletUnit.__name = "BattleCannonBulletUnit"
 
-local var_0_1 = var_0_0.Battle.BattleCannonBulletUnit
+local BattleCannonBulletUnit = ys.Battle.BattleCannonBulletUnit
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 对应CANNON类型子弹
+function BattleCannonBulletUnit.Ctor(self, UID, IFF)
+	BattleCannonBulletUnit.super.Ctor(self, UID, IFF)
 end
 
-function var_0_1.Hit(arg_2_0, arg_2_1, arg_2_2)
-	var_0_1.super.Hit(arg_2_0, arg_2_1, arg_2_2)
+function BattleCannonBulletUnit.Hit(self, shipUID, shipUnitType)
+	BattleCannonBulletUnit.super.Hit(self, shipUID, shipUnitType)
 
-	arg_2_0._pierceCount = arg_2_0._pierceCount - 1
+	self._pierceCount = self._pierceCount - 1
 end

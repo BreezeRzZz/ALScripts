@@ -9,6 +9,10 @@ ys.Battle.BattleSkillEffect.__name = "BattleSkillEffect"
 
 local BattleSkillEffect = ys.Battle.BattleSkillEffect
 
+-- 核心SkillEffect之一
+-- 这是所有SkillEffect的基类，其他SkillEffect都继承自它
+-- SkillEffect之于Skill，就像BuffEffect之于BuffUnit一样，都是Skill/Unit的效果组成部分
+-- 只不过两套体系的作用方式不一样. 相对来说Buff更复杂(有多种Trigger, 有持续时间). Skill简单很多(没有Trigger, 瞬发)
 function BattleSkillEffect.Ctor(self, tempData, level)
 	self._tempData = tempData
 	self._type = self._tempData.type
@@ -187,56 +191,57 @@ function BattleSkillEffect.Clear(self)
 	self._commander = nil
 end
 
-function BattleSkillEffect.calcCorrdinate(arg_18_0, arg_18_1, arg_18_2)
-	local var_18_0
+-- BattleSkillPlayCameraFX/BattleSkillPlayFX.DoDataEffect调用
+function BattleSkillEffect.calcCorrdinate(self, caster, target)
+	local corrdinate
 
-	if arg_18_0.absoulteCorrdinate then
-		var_18_0 = Vector3(arg_18_0.absoulteCorrdinate.x, 0, arg_18_0.absoulteCorrdinate.z)
-	elseif arg_18_0.absoulteRandom then
-		var_18_0 = BattleFormulas.RandomPos(arg_18_0.absoulteRandom)
-	elseif arg_18_0.casterRelativeCorrdinate then
-		local var_18_1 = arg_18_1:GetIFF()
-		local var_18_2 = arg_18_1:GetPosition()
-		local var_18_3 = var_18_1 * arg_18_0.casterRelativeCorrdinate.hrz + var_18_2.x
-		local var_18_4 = var_18_1 * arg_18_0.casterRelativeCorrdinate.vrt + var_18_2.z
+	if self.absoulteCorrdinate then
+		corrdinate = Vector3(self.absoulteCorrdinate.x, 0, self.absoulteCorrdinate.z)
+	elseif self.absoulteRandom then
+		corrdinate = BattleFormulas.RandomPos(self.absoulteRandom)
+	elseif self.casterRelativeCorrdinate then
+		local casterIFF = caster:GetIFF()
+		local casterPosition = caster:GetPosition()
+		local relativeCorrdinateX = casterIFF * self.casterRelativeCorrdinate.hrz + casterPosition.x
+		local relativeCorrdinateZ = casterIFF * self.casterRelativeCorrdinate.vrt + casterPosition.z
 
-		var_18_0 = Vector3(var_18_3, 0, var_18_4)
-	elseif arg_18_0.casterRelativeRandom then
-		local var_18_5 = arg_18_1:GetIFF()
-		local var_18_6 = arg_18_1:GetPosition()
-		local var_18_7 = {
-			X1 = var_18_5 * arg_18_0.casterRelativeRandom.front + var_18_6.x,
-			X2 = var_18_5 * arg_18_0.casterRelativeRandom.rear + var_18_6.x,
-			Z1 = arg_18_0.casterRelativeRandom.upper + var_18_6.z,
-			Z2 = arg_18_0.casterRelativeRandom.lower + var_18_6.z
+		corrdinate = Vector3(relativeCorrdinateX, 0, relativeCorrdinateZ)
+	elseif self.casterRelativeRandom then
+		local casterIFF = caster:GetIFF()
+		local casterPosition = caster:GetPosition()
+		local relativeRandomPoint = {
+			X1 = casterIFF * self.casterRelativeRandom.front + casterPosition.x,
+			X2 = casterIFF * self.casterRelativeRandom.rear + casterPosition.x,
+			Z1 = self.casterRelativeRandom.upper + casterPosition.z,
+			Z2 = self.casterRelativeRandom.lower + casterPosition.z
 		}
 
-		var_18_0 = BattleFormulas.RandomPos(var_18_7)
-	elseif arg_18_0.targetRelativeCorrdinate then
-		if arg_18_2 then
-			local var_18_8 = arg_18_2:GetIFF()
-			local var_18_9 = arg_18_2:GetPosition()
-			local var_18_10 = var_18_8 * arg_18_0.targetRelativeCorrdinate.hrz + var_18_9.x
-			local var_18_11 = var_18_8 * arg_18_0.targetRelativeCorrdinate.vrt + var_18_9.z
+		corrdinate = BattleFormulas.RandomPos(relativeRandomPoint)
+	elseif self.targetRelativeCorrdinate then
+		if target then
+			local targetIFF = target:GetIFF()
+			local targetPosition = target:GetPosition()
+			local targetCorrdinateX = targetIFF * self.targetRelativeCorrdinate.hrz + targetPosition.x
+			local targetCorrdinateZ = targetIFF * self.targetRelativeCorrdinate.vrt + targetPosition.z
 
-			var_18_0 = Vector3(var_18_10, 0, var_18_11)
+			corrdinate = Vector3(targetCorrdinateX, 0, targetCorrdinateZ)
 		end
-	elseif arg_18_0.targetRelativeRandom and arg_18_2 then
-		local var_18_12 = arg_18_2:GetIFF()
-		local var_18_13 = arg_18_2:GetPosition()
-		local var_18_14 = {
-			X1 = var_18_12 * arg_18_0.targetRelativeRandom.front + var_18_13.x,
-			X2 = var_18_12 * arg_18_0.targetRelativeRandom.rear + var_18_13.x,
-			Z1 = arg_18_0.targetRelativeRandom.upper + var_18_13.z,
-			Z2 = arg_18_0.targetRelativeRandom.lower + var_18_13.z
+	elseif self.targetRelativeRandom and target then
+		local targetIFF = target:GetIFF()
+		local targetPosition = target:GetPosition()
+		local relativeRandomPoint = {
+			X1 = targetIFF * self.targetRelativeRandom.front + targetPosition.x,
+			X2 = targetIFF * self.targetRelativeRandom.rear + targetPosition.x,
+			Z1 = self.targetRelativeRandom.upper + targetPosition.z,
+			Z2 = self.targetRelativeRandom.lower + targetPosition.z
 		}
 
-		var_18_0 = BattleFormulas.RandomPos(var_18_14)
+		corrdinate = BattleFormulas.RandomPos(relativeRandomPoint)
 	end
 
-	return var_18_0
+	return corrdinate
 end
 
-function BattleSkillEffect.GetDamageSum(arg_19_0)
+function BattleSkillEffect.GetDamageSum(self)
 	return 0
 end

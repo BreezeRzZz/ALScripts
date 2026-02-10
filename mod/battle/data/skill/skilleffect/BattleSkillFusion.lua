@@ -13,8 +13,9 @@ BattleSkillFusion.FREEZE_POS = {
 	Vector3(-10000, 0, 58),
 	[-1] = Vector3(10000, 0, 58)
 }
--- BattleSkillFusion: 融合技能
--- 目前只有Skill 108414用到
+
+-- 此类SkillEffect进行机甲合体
+-- 目前只有Skill 108414用到(宝多六花专武)
 function BattleSkillFusion.Ctor(self, tempData, level)
 	BattleSkillFusion.super.Ctor(self, tempData, level)
 

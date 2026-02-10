@@ -1,35 +1,42 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillInstantCoolDown", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillInstantCoolDown = class("BattleSkillInstantCoolDown", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillInstantCoolDown = var_0_1
-var_0_1.__name = "BattleSkillInstantCoolDown"
+ys.Battle.BattleSkillInstantCoolDown = BattleSkillInstantCoolDown
+BattleSkillInstantCoolDown.__name = "BattleSkillInstantCoolDown"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 此类SkillEffect立刻完成指定武器类型的冷却时间
+-- 使用例: 快速起飞
+function BattleSkillInstantCoolDown.Ctor(self, template, level)
+	BattleSkillInstantCoolDown.super.Ctor(self, template, level)
 
-	arg_1_0._weaponType = arg_1_0._tempData.arg_list.weaponType
+	self._weaponType = self._tempData.arg_list.weaponType
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0:_GetWeapon(arg_2_1)
+function BattleSkillInstantCoolDown.DoDataEffect(self, caster, target)
+	local weapon = self:_GetWeapon(caster)
 
-	if var_2_0 then
-		var_2_0:QuickCoolDown()
+	if weapon then
+		-- 有QuickCoolDown方法的只有如下几类:
+		-- AllInStrike
+		-- ManualTorpedo
+		-- PointAirStrike
+		-- PointHitWeapon
+		weapon:QuickCoolDown()
 	end
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:DoDataEffect(arg_3_1, nil)
+function BattleSkillInstantCoolDown.DoDataEffectWithoutTarget(self, caster)
+	self:DoDataEffect(caster, nil)
 end
 
-function var_0_1._GetWeapon(arg_4_0, arg_4_1)
-	local var_4_0
+function BattleSkillInstantCoolDown._GetWeapon(self, caster)
+	local weapon
 
-	if arg_4_0._weaponType == "AirAssist" then
-		var_4_0 = arg_4_1:GetAirAssistQueue():GetQueueHead()
+	if self._weaponType == "AirAssist" then
+		weapon = caster:GetAirAssistQueue():GetQueueHead()
 	end
 
-	return var_4_0
+	return weapon
 end

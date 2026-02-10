@@ -8,6 +8,9 @@ local BattleSkillFireSupport = class("BattleSkillFireSupport", ys.Battle.BattleS
 ys.Battle.BattleSkillFireSupport = BattleSkillFireSupport
 BattleSkillFireSupport.__name = "BattleSkillFireSupport"
 
+-- 此类SkillEffect会提供给caster一个临时武器，并让这个武器开火(SingleFire)
+-- 与BattleSkillFire不同的是，这个SkillEffect会根据supportTargetFilter来选取一个友方单位作为临时武器的standHost
+-- 使用例: 专门用于跨队弹幕
 function BattleSkillFireSupport.Ctor(self, template)
 	BattleSkillFireSupport.super.Ctor(self, template, lv)
 

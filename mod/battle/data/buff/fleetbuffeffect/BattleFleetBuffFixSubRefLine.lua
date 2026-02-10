@@ -1,20 +1,21 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleFleetBuffFixSubRefLine = class("BattleFleetBuffFixSubRefLine", var_0_0.Battle.BattleFleetBuffEffect)
-var_0_0.Battle.BattleFleetBuffFixSubRefLine.__name = "BattleFleetBuffFixSubRefLine"
+ys.Battle.BattleFleetBuffFixSubRefLine = class("BattleFleetBuffFixSubRefLine", ys.Battle.BattleFleetBuffEffect)
+ys.Battle.BattleFleetBuffFixSubRefLine.__name = "BattleFleetBuffFixSubRefLine"
 
-local var_0_1 = var_0_0.Battle.BattleFleetBuffFixSubRefLine
+local BattleFleetBuffFixSubRefLine = ys.Battle.BattleFleetBuffFixSubRefLine
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 修正潜艇的攻击基准线到固定值
+function BattleFleetBuffFixSubRefLine.Ctor(self, tempData)
+	BattleFleetBuffFixSubRefLine.super.Ctor(self, tempData)
 end
 
-function var_0_1.onAttach(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_1:FixSubRefLine(arg_2_0._tempData.arg_list.line)
+function BattleFleetBuffFixSubRefLine.onAttach(self, fleetVO, fleetBuff)
+	fleetVO:FixSubRefLine(self._tempData.arg_list.line)
 end
 
-function var_0_1.onRemove(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:FixSubRefLine()
+function BattleFleetBuffFixSubRefLine.onRemove(self, fleetVO, fleetBuff)
+	fleetVO:FixSubRefLine()
 end

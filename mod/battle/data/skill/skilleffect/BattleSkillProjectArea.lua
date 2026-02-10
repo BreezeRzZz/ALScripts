@@ -9,6 +9,8 @@ local BattleSkillProjectArea = class("BattleSkillProjectArea", ys.Battle.BattleS
 ys.Battle.BattleSkillProjectArea = BattleSkillProjectArea
 BattleSkillProjectArea.__name = "BattleSkillProjectArea"
 
+-- 此类SkillEffect会在caster位置(加上偏移)生成一个AOE，进入AOE的单位会被添加buff，离开AOE会移除buff
+-- 使用例: 敌方烟幕发生器
 function BattleSkillProjectArea.Ctor(self, effectData)
 	BattleSkillProjectArea.super.Ctor(self, effectData, lv)
 

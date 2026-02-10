@@ -1,30 +1,36 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSkillHeal = class("BattleSkillHeal", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillHeal.__name = "BattleSkillHeal"
+ys.Battle.BattleSkillHeal = class("BattleSkillHeal", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillHeal.__name = "BattleSkillHeal"
 
-function var_0_0.Battle.BattleSkillHeal.Ctor(arg_1_0, arg_1_1)
-	var_0_0.Battle.BattleSkillHeal.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 核心SkillEffect之一
+-- 此类SkillEffect用于治疗目标单位
+-- 使用例: 几乎所有的回血技能
+function ys.Battle.BattleSkillHeal.Ctor(self, template, level)
+	ys.Battle.BattleSkillHeal.super.Ctor(self, template, level)
 
-	arg_1_0._number = arg_1_0._tempData.arg_list.number or 0
-	arg_1_0._maxHPRatio = arg_1_0._tempData.arg_list.maxHPRatio or 0
-	arg_1_0._incorruptible = arg_1_0._tempData.arg_list.incorrupt
+	self._number = self._tempData.arg_list.number or 0
+	self._maxHPRatio = self._tempData.arg_list.maxHPRatio or 0
+	self._incorruptible = self._tempData.arg_list.incorrupt
 end
 
-function var_0_0.Battle.BattleSkillHeal.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_1:GetAttrByName("healingEnhancement") + 1
-	local var_2_1 = var_0_0.Battle.BattleFormulas.HealFixer(var_0_0.Battle.BattleDataProxy.GetInstance():GetInitData().battleType, arg_2_2:GetAttr())
-	local var_2_2 = math.floor(arg_2_0._number * var_2_1)
-	local var_2_3 = arg_2_1:GetAttrByName("healingRate")
-	local var_2_4 = math.max(0, math.floor((arg_2_2:GetMaxHP() * arg_2_0._maxHPRatio + var_2_2) * var_2_0 * var_2_3))
-	local var_2_5 = {
+function ys.Battle.BattleSkillHeal.DoDataEffect(self, caster, target)
+	local healingRatio = caster:GetAttrByName("healingEnhancement") + 1
+	-- 例如, 演习模式有治疗倍率加成
+	local healFixRatio = ys.Battle.BattleFormulas.HealFixer(ys.Battle.BattleDataProxy.GetInstance():GetInitData().battleType, target:GetAttr())
+	local fixedHealNumber = math.floor(self._number * healFixRatio)
+	-- healingRate是大型作战的治疗倍率
+	local healingRate = caster:GetAttrByName("healingRate")
+	-- 基于最大耐久的不用修正(因为耐久的倍率跟治疗倍率一样)
+	local healNumber = math.max(0, math.floor((target:GetMaxHP() * self._maxHPRatio + fixedHealNumber) * healingRatio * healingRate))
+	local extraInfo = {
 		isMiss = false,
 		isCri = false,
 		isHeal = true,
-		incorrupt = arg_2_0._incorruptible
+		incorrupt = self._incorruptible
 	}
 
-	arg_2_2:UpdateHP(var_2_4, var_2_5)
+	target:UpdateHP(healNumber, extraInfo)
 end

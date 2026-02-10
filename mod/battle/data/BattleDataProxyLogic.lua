@@ -191,7 +191,7 @@ function BattleDataProxy.HandleMeteoDamage(self, bullet, candidateList)
 	end
 end
 
--- DOT等使用，不需要子弹
+-- DOT、防空伤害等使用，不需要子弹. 此外, 也不需要经过伤害计算公式, 直接对目标造成伤害
 -- 如下面的各种ShipMissDamage和AircraftMissDamage也是DirectDamage
 function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect)
 	local srcID

@@ -238,7 +238,10 @@ function BattleBulletUnit.SetStartTimeStamp(self, timeStamp)
 	self._timeStamp = timeStamp
 end
 
+-- 核心: 处理子弹击中目标的逻辑
 -- 被BattleDataProxy.HandleBulletHit调用
+--- @param shipUID number 被击中目标的UID
+--- @param shipUnitType number 被击中目标的UnitType(如Player/Enemy/Boss等)
 function BattleBulletUnit.Hit(self, shipUID, shipUnitType)
 	self._collidedList[shipUID] = true
 

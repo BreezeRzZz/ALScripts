@@ -783,6 +783,7 @@ function BattleUnit.FlushReloadingWeapon(arg_70_0)
 	end
 end
 
+-- BattleBuffNewWeapon
 function BattleUnit.AddNewAutoWeapon(arg_71_0, arg_71_1)
 	local var_71_0 = BattleDataFunction.CreateWeaponUnit(arg_71_1, arg_71_0)
 
@@ -800,23 +801,23 @@ function BattleUnit.AddAutoWeapon(arg_72_0, arg_72_1)
 	arg_72_0._weaponQueue:AppendWeapon(arg_72_1)
 end
 
-function BattleUnit.RemoveAutoWeapon(arg_73_0, arg_73_1)
-	arg_73_0._weaponQueue:RemoveWeapon(arg_73_1)
+function BattleUnit.RemoveAutoWeapon(self, autoWeapon)
+	self._weaponQueue:RemoveWeapon(autoWeapon)
 
-	local var_73_0 = 1
-	local var_73_1 = #arg_73_0._autoWeaponList
+	local index = 1
+	local autoWeaponNum = #self._autoWeaponList
 
-	while var_73_0 <= var_73_1 do
-		if arg_73_0._autoWeaponList[var_73_0] == arg_73_1 then
-			arg_73_0:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_WEAPON, {
-				weapon = arg_73_1
+	while index <= autoWeaponNum do
+		if self._autoWeaponList[index] == autoWeapon then
+			self:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_WEAPON, {
+				weapon = autoWeapon
 			}))
-			table.remove(arg_73_0._autoWeaponList, var_73_0)
+			table.remove(self._autoWeaponList, index)
 
 			break
 		end
 
-		var_73_0 = var_73_0 + 1
+		index = index + 1
 	end
 end
 
@@ -831,16 +832,17 @@ function BattleUnit.RemoveAutoWeaponByWeaponID(arg_74_0, arg_74_1)
 	end
 end
 
-function BattleUnit.RemoveAllAutoWeapon(arg_75_0)
-	local var_75_0 = #arg_75_0._autoWeaponList
+-- BattleSkillRemoveAllWeapon
+function BattleUnit.RemoveAllAutoWeapon(self)
+	local autoWeaponNum = #self._autoWeaponList
 
-	while var_75_0 > 0 do
-		local var_75_1 = arg_75_0._autoWeaponList[var_75_0]
+	while autoWeaponNum > 0 do
+		local autoWeapon = self._autoWeaponList[autoWeaponNum]
 
-		var_75_1:Clear()
-		arg_75_0:RemoveAutoWeapon(var_75_1)
+		autoWeapon:Clear()
+		self:RemoveAutoWeapon(autoWeapon)
 
-		var_75_0 = var_75_0 - 1
+		autoWeaponNum = autoWeaponNum - 1
 	end
 end
 
@@ -1216,6 +1218,7 @@ function BattleUnit.AddBuff(self, buff, ifStock)
 	local oldBuff = self:GetBuff(buffID)
 
 	if oldBuff then
+		-- 目前只看到BattleBuffAura和EffectBullet的ifStock参数会传true，表现为同一Buff ID可以存在多个实例互不影响
 		if ifStock then
 			-- self._buffStockList: table<number, table<number, BattleBuffUnit>>
 			-- 同一Buff ID对应多个Buff实例的列表
@@ -1298,45 +1301,47 @@ function BattleUnit.UpdateBuff(arg_136_0, arg_136_1)
 	end
 end
 
-function BattleUnit.ConsumeBuffStack(arg_137_0, arg_137_1, arg_137_2)
-	local var_137_0 = arg_137_0:GetBuff(arg_137_1)
+-- 消耗指定Buff的层数，层数不足则移除Buff
+-- 被BattleSkillConsumeBuff.DoDataEffect调用
+function BattleUnit.ConsumeBuffStack(self, buffID, count)
+	local buff = self:GetBuff(buffID)
 
-	if var_137_0 then
-		if not arg_137_2 then
-			arg_137_0:RemoveBuff(arg_137_1)
+	if buff then
+		if not count then
+			self:RemoveBuff(buffID)
 		else
-			local var_137_1 = var_137_0:GetStack()
-			local var_137_2 = math.max(0, var_137_1 - arg_137_2)
+			local stack = buff:GetStack()
+			local stackAfterConsume = math.max(0, stack - count)
 
-			if var_137_2 == 0 then
-				arg_137_0:RemoveBuff(arg_137_1)
+			if stackAfterConsume == 0 then
+				self:RemoveBuff(buffID)
 			else
-				var_137_0:UpdateStack(arg_137_0, var_137_2)
+				buff:UpdateStack(self, stackAfterConsume)
 			end
 		end
 	end
 end
 
--- TODO: 单位移除Buff逻辑
-function BattleUnit.RemoveBuff(arg_138_0, arg_138_1, arg_138_2)
-	if arg_138_2 and arg_138_0._buffStockList[arg_138_1] then
-		local var_138_0 = table.remove(arg_138_0._buffStockList[arg_138_1])
+-- 单位移除Buff逻辑
+function BattleUnit.RemoveBuff(self, buffID, ifStock)
+	if ifStock and self._buffStockList[buffID] then
+		local stockedBuff = table.remove(self._buffStockList[buffID])
 
-		if var_138_0 then
-			var_138_0:Clear()
+		if stockedBuff then
+			stockedBuff:Clear()
 
 			return
 		end
 	end
 
-	local var_138_1 = arg_138_0:GetBuff(arg_138_1)
+	local buff = self:GetBuff(buffID)
 
-	if var_138_1 then
-		var_138_1:Remove()
+	if buff then
+		buff:Remove()
 	end
 
-	arg_138_0:TriggerBuff(BattleConst.BuffEffectType.ON_BUFF_REMOVED, {
-		buffID = arg_138_1
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_BUFF_REMOVED, {
+		buffID = buffID
 	})
 end
 
@@ -1890,22 +1895,23 @@ function BattleUnit.SetForceVisible(arg_219_0)
 	arg_219_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_FORCE_DETECTED))
 end
 
-function BattleUnit.Detected(arg_220_0, arg_220_1)
-	local var_220_0
+-- BattleIndieSonar.Detect调用
+function BattleUnit.Detected(self, duration)
+	local detected
 
-	if arg_220_0._exposedToSnoar == false and not arg_220_0._exposedOverTimeStamp then
-		var_220_0 = true
+	if self._exposedToSnoar == false and not self._exposedOverTimeStamp then
+		detected = true
 	end
 
-	if arg_220_1 then
-		arg_220_0:updateExposeTimeStamp(arg_220_1)
+	if duration then
+		self:updateExposeTimeStamp(duration)
 	else
-		arg_220_0._exposedToSnoar = true
+		self._exposedToSnoar = true
 	end
 
-	if var_220_0 then
-		arg_220_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED, {}))
-		arg_220_0:dispatchDetectedTrigger()
+	if detected then
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED, {}))
+		self:dispatchDetectedTrigger()
 	end
 end
 
@@ -2009,32 +2015,34 @@ end
 function BattleUnit.UpdateBlindInvisibleBySpectre(self)
 	local _, battleUnitType = self:IsSpectre()
 
-	-- VISIBLE_SPECTRE_UNIT_TYPE是特殊的幽灵单位类型，它是不可见的.(正常来说幽灵可见，只是没有碰撞体)
+	-- VISIBLE_SPECTRE_UNIT_TYPE是特殊的幽灵单位类型，它是可见的.(其他幽灵不可见，且没有碰撞体)
 	-- VISIBLE_SPECTRE_UNIT_TYPE = -100
 	if battleUnitType <= BattleConfig.SPECTRE_UNIT_TYPE and battleUnitType ~= BattleConfig.VISIBLE_SPECTRE_UNIT_TYPE then
+		-- SetBlindInvisible(true) -> GetExposed返回False -> Render.enabled = false -> 不可见
 		self:SetBlindInvisible(true)
 	else
+		-- 其余正常单位+(-100)的幽灵单位可见
 		self:SetBlindInvisible(false)
 	end
 end
 
-function BattleUnit.SetBlindInvisible(arg_237_0, arg_237_1)
-	arg_237_0._exposedList = arg_237_1 and {} or nil
-	arg_237_0._blindInvisible = arg_237_1
-
-	arg_237_0:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_VISIBLE))
+function BattleUnit.SetBlindInvisible(self, blindInvisible)
+	self._exposedList = blindInvisible and {} or nil
+	self._blindInvisible = blindInvisible
+	-- BattleCharacter.onUpdateBlindInvisible
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_VISIBLE))
 end
 
-function BattleUnit.GetBlindInvisible(arg_238_0)
-	return arg_238_0._blindInvisible
+function BattleUnit.GetBlindInvisible(self)
+	return self._blindInvisible
 end
 
-function BattleUnit.GetExposed(arg_239_0)
-	if not arg_239_0._blindInvisible then
+function BattleUnit.GetExposed(self)
+	if not self._blindInvisible then
 		return true
 	end
 
-	for iter_239_0, iter_239_1 in pairs(arg_239_0._exposedList) do
+	for _, _ in pairs(self._exposedList) do
 		return true
 	end
 end

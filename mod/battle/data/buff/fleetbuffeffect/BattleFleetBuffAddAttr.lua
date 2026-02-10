@@ -1,22 +1,23 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleFleetBuffInk = class("BattleFleetBuffInk", var_0_0.Battle.BattleFleetBuffEffect)
-var_0_0.Battle.BattleFleetBuffInk.__name = "BattleFleetBuffInk"
+ys.Battle.BattleFleetBuffInk = class("BattleFleetBuffInk", ys.Battle.BattleFleetBuffEffect)
+ys.Battle.BattleFleetBuffInk.__name = "BattleFleetBuffInk"
 
-local var_0_1 = var_0_0.Battle.BattleFleetBuffInk
+local BattleFleetBuffInk = ys.Battle.BattleFleetBuffInk
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 致盲舰队: 不能使用武器
+function BattleFleetBuffInk.Ctor(self, tempData)
+	BattleFleetBuffInk.super.Ctor(self, tempData)
 end
 
-function var_0_1.onAttach(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_1:Blinding(true)
-	arg_2_1:SetWeaponBlock(1)
+function BattleFleetBuffInk.onAttach(self, fleetVO, fleetBuff)
+	fleetVO:Blinding(true)
+	fleetVO:SetWeaponBlock(1)
 end
 
-function var_0_1.onRemove(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:Blinding(false)
-	arg_3_1:SetWeaponBlock(-1)
+function BattleFleetBuffInk.onRemove(self, fleetVO, fleetBuff)
+	fleetVO:Blinding(false)
+	fleetVO:SetWeaponBlock(-1)
 end

@@ -1,97 +1,101 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleCldComponent")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleCldComponent = class("BattleCldComponent")
 
-var_0_0.Battle.BattleCldComponent = var_0_2
-var_0_2.__name = "BattleCldComponent"
+ys.Battle.BattleCldComponent = BattleCldComponent
+BattleCldComponent.__name = "BattleCldComponent"
 
-function var_0_2.Ctor(arg_1_0)
+function BattleCldComponent.Ctor(self)
 	return
 end
 
-function var_0_2.SetActive(arg_2_0, arg_2_1)
-	arg_2_0._cldData.Active = arg_2_1
+function BattleCldComponent.SetActive(self, active)
+	self._cldData.Active = active
 end
 
-function var_0_2.SetImmuneCLD(arg_3_0, arg_3_1)
-	arg_3_0._cldData.ImmuneCLD = arg_3_1
+function BattleCldComponent.SetImmuneCLD(self, immuneCLD)
+	self._cldData.ImmuneCLD = immuneCLD
 end
 
-function var_0_2.SetCldData(arg_4_0, arg_4_1)
-	arg_4_0._cldData = arg_4_1
-	arg_4_0._cldData.distList = {}
-	arg_4_0._cldData.Active = false
-	arg_4_0._cldData.ImmuneCLD = false
-	arg_4_0._cldData.FriendlyCld = false
-	arg_4_0._cldData.Surface = var_0_1.OXY_STATE.FLOAT
-	arg_4_0._box.data = arg_4_1
+function BattleCldComponent.SetCldData(self, cldData)
+	self._cldData = cldData
+	self._cldData.distList = {}
+	self._cldData.Active = false
+	self._cldData.ImmuneCLD = false
+	self._cldData.FriendlyCld = false
+	self._cldData.Surface = BattleConst.OXY_STATE.FLOAT
+	self._box.data = cldData
 end
 
-function var_0_2.ActiveFriendlyCld(arg_5_0)
-	arg_5_0._cldData.FriendlyCld = true
+function BattleCldComponent.ActiveFriendlyCld(self)
+	self._cldData.FriendlyCld = true
 end
 
-function var_0_2.GetCldData(arg_6_0)
-	return arg_6_0._cldData
+function BattleCldComponent.GetCldData(self)
+	return self._cldData
 end
 
-function var_0_2.GetCldBox(arg_7_0, arg_7_1)
+function BattleCldComponent.GetCldBox(self, position)
 	assert(false, "BattleCldComponent.GetCldBox:重写这个方法啦！")
 end
 
-function var_0_2.GetCldBoxSize(arg_8_0)
+function BattleCldComponent.GetCldBoxSize(self)
 	assert(false, "BattleCldComponent.GetCldBoxSize:重写这个方法啦！")
 
 	return nil
 end
 
-function var_0_2.FixSpeed(arg_9_0, arg_9_1)
-	if not arg_9_0._cldData.FriendlyCld then
+function BattleCldComponent.FixSpeed(self, speed)
+	if not self._cldData.FriendlyCld then
 		return
 	end
 
-	if #arg_9_0._cldData.distList == 0 then
+	if #self._cldData.distList == 0 then
 		return
 	end
 
-	if arg_9_1.x == 0 and arg_9_1.z == 0 then
-		arg_9_0:HandleStaticCld(arg_9_1)
+	if speed.x == 0 and speed.z == 0 then
+		self:HandleStaticCld(speed)
 	else
-		arg_9_0:HandleDynamicCld(arg_9_1)
+		self:HandleDynamicCld(speed)
 	end
 end
 
-function var_0_2.HandleDynamicCld(arg_10_0, arg_10_1)
-	local var_10_0 = false
-	local var_10_1 = false
+-- 动态碰撞(速度不为0)
+-- 让速度为0
+function BattleCldComponent.HandleDynamicCld(self, speed)
+	local cldX = false
+	local cldZ = false
 
-	for iter_10_0, iter_10_1 in ipairs(arg_10_0._cldData.distList) do
-		local var_10_2 = iter_10_1.x
+	for _, dist in ipairs(self._cldData.distList) do
+		local distX = dist.x
 
-		if not var_10_0 and var_10_2 * math.abs(arg_10_1.x) / arg_10_1.x < 0 then
-			arg_10_1.x = 0
-			var_10_0 = true
+		if not cldX and distX * math.abs(speed.x) / speed.x < 0 then
+			speed.x = 0
+			cldX = true
 		end
 
-		local var_10_3 = iter_10_1.z
+		local distZ = dist.z
 
-		if not var_10_1 and var_10_3 * math.abs(arg_10_1.z) / arg_10_1.z < 0 then
-			arg_10_1.z = 0
-			var_10_1 = true
+		if not cldZ and distZ * math.abs(speed.z) / speed.z < 0 then
+			speed.z = 0
+			cldZ = true
 		end
 
-		if var_10_0 and var_10_1 then
+		if cldX and cldZ then
 			return
 		end
 	end
 end
 
-function var_0_2.HandleStaticCld(arg_11_0, arg_11_1)
-	local var_11_0 = arg_11_0._cldData.distList[1]
-	local var_11_1 = Vector3(var_11_0.x, 0, var_11_0.z).normalized
+-- 静态碰撞(速度为0)
+-- 反而会提供一个方向的速度，帮助舰船脱离碰撞
+function BattleCldComponent.HandleStaticCld(self, speed)
+	local dist = self._cldData.distList[1]
+	local dir = Vector3(dist.x, 0, dist.z).normalized
 
-	arg_11_1.x = var_0_0.Battle.BattleFormulas.ConvertShipSpeed(var_11_1.x)
-	arg_11_1.z = var_0_0.Battle.BattleFormulas.ConvertShipSpeed(var_11_1.z)
+	speed.x = ys.Battle.BattleFormulas.ConvertShipSpeed(dir.x)
+	speed.z = ys.Battle.BattleFormulas.ConvertShipSpeed(dir.z)
 end

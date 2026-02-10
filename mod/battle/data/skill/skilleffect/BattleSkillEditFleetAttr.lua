@@ -1,23 +1,25 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillEditFleetAttr", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillEditFleetAttr = class("BattleSkillEditFleetAttr", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillEditFleetAttr = var_0_1
-var_0_1.__name = "BattleSkillEditFleetAttr"
+ys.Battle.BattleSkillEditFleetAttr = BattleSkillEditFleetAttr
+BattleSkillEditFleetAttr.__name = "BattleSkillEditFleetAttr"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect用于设置舰队属性
+-- 使用例: 优米雅阵营设置环境玛那
+function BattleSkillEditFleetAttr.Ctor(self, template, level)
+	BattleSkillEditFleetAttr.super.Ctor(self, template, level)
 
-	arg_1_0._fleetAttrName = arg_1_0._tempData.arg_list.attr
-	arg_1_0._value = arg_1_0._tempData.arg_list.value
+	self._fleetAttrName = self._tempData.arg_list.attr
+	self._value = self._tempData.arg_list.value
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_1:GetFleetVO() then
-		local var_2_0 = arg_2_1:GetFleetVO():GetFleetAttr()
-		local var_2_1 = var_2_0:GetCurrent(arg_2_0._fleetAttrName) + arg_2_0._value
+function BattleSkillEditFleetAttr.DoDataEffect(self, caster, target)
+	if caster:GetFleetVO() then
+		local fleetAttr = caster:GetFleetVO():GetFleetAttr()
+		local fleetAttrValue = fleetAttr:GetCurrent(self._fleetAttrName) + self._value
 
-		var_2_0:SetCurrent(arg_2_0._fleetAttrName, var_2_1)
+		fleetAttr:SetCurrent(self._fleetAttrName, fleetAttrValue)
 	end
 end

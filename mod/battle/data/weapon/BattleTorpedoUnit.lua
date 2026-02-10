@@ -7,6 +7,7 @@ ys.Battle.BattleTorpedoUnit.__name = "BattleTorpedoUnit"
 
 local BattleTorpedoUnit = ys.Battle.BattleTorpedoUnit
 
+-- 对应TORPEDO类型武器
 function BattleTorpedoUnit.Ctor(self)
 	ys.Battle.BattleTorpedoUnit.super.Ctor(self)
 end

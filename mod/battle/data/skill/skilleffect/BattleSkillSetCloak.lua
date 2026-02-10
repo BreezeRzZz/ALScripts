@@ -1,30 +1,33 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSkillSetCloak = class("BattleSkillSetCloak", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillSetCloak.__name = "BattleSkillSetCloak"
+ys.Battle.BattleSkillSetCloak = class("BattleSkillSetCloak", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillSetCloak.__name = "BattleSkillSetCloak"
 
-local var_0_1 = var_0_0.Battle.BattleSkillSetCloak
+local BattleSkillSetCloak = ys.Battle.BattleSkillSetCloak
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 此类SkillEffect设置隐匿的暴露值
+-- 使用例: 各种隐匿清空的技能
+function BattleSkillSetCloak.Ctor(self, template, level)
+	BattleSkillSetCloak.super.Ctor(self, template, level)
 
-	arg_1_0._rate = arg_1_0._tempData.arg_list.cloak_rate or 0
+	self._rate = self._tempData.arg_list.cloak_rate or 0
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0:doSetCloakValue(arg_2_2)
+function BattleSkillSetCloak.DoDataEffect(self, caster, target)
+	self:doSetCloakValue(target)
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:doSetCloakValue(arg_3_1)
+function BattleSkillSetCloak.DoDataEffectWithoutTarget(self, caster)
+	self:doSetCloakValue(caster)
 end
 
-function var_0_1.doSetCloakValue(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_1:GetCloak()
+function BattleSkillSetCloak.doSetCloakValue(self, target)
+	--- @type BattleUnitCloakComponent
+	local cloak = target:GetCloak()
 
-	if var_4_0 then
-		var_4_0:ForceToRate(arg_4_0._rate)
+	if cloak then
+		cloak:ForceToRate(self._rate)
 	end
 end

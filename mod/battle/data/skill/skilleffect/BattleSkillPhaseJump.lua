@@ -1,29 +1,32 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillPhaseJump", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillPhaseJump = class("BattleSkillPhaseJump", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillPhaseJump = var_0_1
-var_0_1.__name = "BattleSkillPhaseJump"
+ys.Battle.BattleSkillPhaseJump = BattleSkillPhaseJump
+BattleSkillPhaseJump.__name = "BattleSkillPhaseJump"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 此类SkillEffect用于将Unit的Phase切换到指定阶段
+-- 使用例: 某些条件下触发的技能, 强制跳转阶段(如BOSS转阶段)
+function BattleSkillPhaseJump.Ctor(self, template, level)
+	BattleSkillPhaseJump.super.Ctor(self, template, level)
 
-	arg_1_0._phaseIndex = arg_1_0._tempData.arg_list.index or 0
+	self._phaseIndex = self._tempData.arg_list.index or 0
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1)
-	arg_2_0:doJump(arg_2_1)
+function BattleSkillPhaseJump.DoDataEffect(self, caster)
+	self:doJump(caster)
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:doJump(arg_3_1)
+function BattleSkillPhaseJump.DoDataEffectWithoutTarget(self, caster)
+	self:doJump(caster)
 end
 
-function var_0_1.doJump(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_1:GetPhaseSwitcher()
+function BattleSkillPhaseJump.doJump(self, caster)
+	--- @type BattleUnitPhaseSwitcher
+	local phaseSwitcher = caster:GetPhaseSwitcher()
 
-	if var_4_0 then
-		var_4_0:ForceSwitch(arg_4_0._phaseIndex)
+	if phaseSwitcher then
+		phaseSwitcher:ForceSwitch(self._phaseIndex)
 	end
 end

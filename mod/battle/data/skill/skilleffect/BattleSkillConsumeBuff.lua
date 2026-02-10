@@ -1,21 +1,23 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSkillConsumeBuff = class("BattleSkillConsumeBuff", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillConsumeBuff.__name = "BattleSkillConsumeBuff"
+ys.Battle.BattleSkillConsumeBuff = class("BattleSkillConsumeBuff", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillConsumeBuff.__name = "BattleSkillConsumeBuff"
 
-local var_0_1 = var_0_0.Battle.BattleSkillConsumeBuff
+local BattleSkillConsumeBuff = ys.Battle.BattleSkillConsumeBuff
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect消耗目标身上指定Buff的指定层数
+-- 使用例: 约克城META BOSS的逻辑
+function BattleSkillConsumeBuff.Ctor(self, template, level)
+	BattleSkillConsumeBuff.super.Ctor(self, template, level)
 
-	arg_1_0._buffID = arg_1_0._tempData.arg_list.buff_id
-	arg_1_0._count = arg_1_0._tempData.arg_list.consume_count
+	self._buffID = self._tempData.arg_list.buff_id
+	self._count = self._tempData.arg_list.consume_count
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	if arg_2_2:IsAlive() then
-		arg_2_2:ConsumeBuffStack(arg_2_0._buffID, arg_2_0._count)
+function BattleSkillConsumeBuff.DoDataEffect(self, caster, target)
+	if target:IsAlive() then
+		target:ConsumeBuffStack(self._buffID, self._count)
 	end
 end

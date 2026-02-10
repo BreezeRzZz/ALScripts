@@ -7,8 +7,10 @@ ys.Battle.BattleAntiAirBulletUnit.__name = "BattleAntiAirBulletUnit"
 
 local BattleAntiAirBulletUnit = ys.Battle.BattleAntiAirBulletUnit
 
-function BattleAntiAirBulletUnit.Ctor(self, UID, hostIFF)
-	ys.Battle.BattleAntiAirBulletUnit.super.Ctor(self, UID, hostIFF)
+-- 对应DIRECT/ANTI_AIR/BEAM/ELECTRIC_ARC类型子弹
+-- 特点为directHitUnit(直接命中单位)属性, 以及不受飞行时间和射程限制
+function BattleAntiAirBulletUnit.Ctor(self, UID, IFF)
+	ys.Battle.BattleAntiAirBulletUnit.super.Ctor(self, UID, IFF)
 end
 
 function BattleAntiAirBulletUnit.Update(self, timeStamp)

@@ -12,6 +12,10 @@ BattleSpaceLaserUnit.STATE_PRECAST = "Precast"
 BattleSpaceLaserUnit.STATE_ATTACK = "Attack"
 BattleSpaceLaserUnit.STATE_DESTROY = "Destroy"
 
+-- 对应SPACE_LASER类型子弹. 其主要对应的武器是BattleSpaceLaserWeaponUnit
+-- 大致形态是从天上落下的激光, 伤害结算有点像激光(Laser), 有个持续时间, 在持续时间内每隔一段时间对范围内单位造成一次伤害
+-- 从Weapon的实现来看, 这个子弹有一个前摇时间(aim_time), 前摇结束后才真正开始攻击(attack_time). 在attack_time内每隔interval秒对范围内单位造成伤害
+-- 使用例: 威奇塔META的激光炮
 function BattleSpaceLaserUnit.Ctor(self, ...)
 	BattleSpaceLaserUnit.super.Ctor(self, ...)
 

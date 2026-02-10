@@ -9,6 +9,7 @@ ys.Battle.BattleBombBulletUnit.__name = "BattleBombBulletUnit"
 
 local BattleBombBulletUnit = ys.Battle.BattleBombBulletUnit
 
+-- 对应BOMB类型子弹
 function BattleBombBulletUnit.Ctor(self, UID, IFF)
 	BattleBombBulletUnit.super.Ctor(self, UID, IFF)
 
@@ -172,7 +173,7 @@ function BattleBombBulletUnit.SetTemplateData(self, tmpData)
 	if extra_param.timeToExplode then
 		self._explodeTime = pg.TimeMgr.GetInstance():GetCombatTime() + extra_param.timeToExplode
 	end
-
+	-- 默认是-0.05. Bomb子弹都是有重力的, 因此会表现出抛物线运动的效果。gravity越大，抛物线越陡峭
 	self._gravity = extra_param.gravity or ys.Battle.BattleConfig.GRAVITY
 	-- hitInterval是判定两次伤害的时间间隔(很少用)
 	self._hitInterval = tmpData.hit_type.interval or 0.2

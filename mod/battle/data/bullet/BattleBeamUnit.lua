@@ -4,7 +4,7 @@ local ys = ys
 local BattleDataFunction = ys.Battle.BattleDataFunction
 local BattleVariable = ys.Battle.BattleVariable
 local BattleConfig = ys.Battle.BattleConfig
--- TODO
+
 ys.Battle.BattleBeamUnit = class("BattleBeamUnit")
 ys.Battle.BattleBeamUnit.__name = "BattleBeamUnit"
 
@@ -14,6 +14,8 @@ BattleBeamUnit.BEAM_STATE_READY = "ready"
 BattleBeamUnit.BEAM_STATE_ATTACK = "attack"
 BattleBeamUnit.BEAM_STATE_FINISH = "finish"
 
+-- BEAM类型子弹, 这个类的实例不是真正意义上的子弹, 而是一个激光攻击的载体, 负责管理激光攻击的状态、碰撞体列表、伤害判定时机等
+-- 上级武器是BattleLaserUnit
 function BattleBeamUnit.Ctor(self, bulletID, beamInfoID)
 	self._bulletID = bulletID
 	self._beamInfoID = beamInfoID

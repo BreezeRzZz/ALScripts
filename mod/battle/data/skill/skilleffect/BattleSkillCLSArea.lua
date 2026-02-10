@@ -12,6 +12,10 @@ BattleSkillCLSArea.TYPE_BULLET = 1
 BattleSkillCLSArea.TYPE_AIRCRAFT = 2
 BattleSkillCLSArea.TYPE_MINION = 3
 
+-- 此类SkillEffect会在指定位置生成一个持续性的AOE，AOE的碰撞逻辑是消弹（CLS），会消除掉所有在区域内的符合条件的子弹
+-- 主要是两类: 区域型(环绕自身消弹)和放射型(发射一个小AOE，AOE以一定速度前进, 消除路径上的子弹)
+-- 消除的类型根据bullet_type_list参数来区分，参数里需要包含子弹的类型，才会被消除
+-- 使用例: 特殊兵装的斩击
 function BattleSkillCLSArea.Ctor(self, effectData)
 	BattleSkillCLSArea.super.Ctor(self, effectData, lv)
 

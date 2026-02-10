@@ -1,55 +1,56 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = var_0_0.Battle.BattleVariable
-local var_0_8 = var_0_0.Battle.BattleTargetChoise
-local var_0_9 = class("BattleIndieSonar")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleIndieSonar = class("BattleIndieSonar")
 
-var_0_0.Battle.BattleIndieSonar = var_0_9
-var_0_9.__name = "BattleIndieSonar"
+ys.Battle.BattleIndieSonar = BattleIndieSonar
+BattleIndieSonar.__name = "BattleIndieSonar"
 
-function var_0_9.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
-	arg_1_0._fleetVO = arg_1_1
-	arg_1_0._range = 180
-	arg_1_0._duration = arg_1_3
+function BattleIndieSonar.Ctor(self, fleetVO, range, duration)
+	self._fleetVO = fleetVO
+	-- range实际是被固定死了，参数传了也没用
+	self._range = 180
+	self._duration = duration
 end
 
-function var_0_9.SwitchHost(arg_2_0, arg_2_1)
-	arg_2_0._host = arg_2_1
+function BattleIndieSonar.SwitchHost(self, host)
+	self._host = host
 end
 
-function var_0_9.Detect(arg_3_0)
-	arg_3_0._snoarStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+function BattleIndieSonar.Detect(self)
+	self._snoarStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	local var_3_0 = arg_3_0:FilterTarget()
-
-	for iter_3_0, iter_3_1 in ipairs(var_3_0) do
-		iter_3_1:Detected(arg_3_0._duration)
+	local targetList = self:FilterTarget()
+	-- 暴露范围内的潜艇，持续duration秒
+	for _, target in ipairs(targetList) do
+		target:Detected(self._duration)
 	end
 
-	arg_3_0._detectedList = var_3_0
+	self._detectedList = targetList
 
-	arg_3_0._fleetVO:DispatchSonarScan(true)
+	self._fleetVO:DispatchSonarScan(true)
 end
 
-function var_0_9.Update(arg_4_0, arg_4_1)
-	if arg_4_1 > arg_4_0._snoarStartTime + arg_4_0._duration then
-		arg_4_0._detectedList = nil
+function BattleIndieSonar.Update(self, timeStamp)
+	if timeStamp > self._snoarStartTime + self._duration then
+		self._detectedList = nil
 
-		arg_4_0._fleetVO:RemoveIndieSonar(arg_4_0)
+		self._fleetVO:RemoveIndieSonar(self)
 	end
 end
 
-function var_0_9.FilterTarget(arg_5_0)
-	local var_5_0 = var_0_8.LegalTarget(arg_5_0._host)
+function BattleIndieSonar.FilterTarget(self)
+	local candidateList = BattleTargetChoise.LegalTarget(self._host)
 
-	return (var_0_8.TargetDiveState(arg_5_0._host, {
-		diveState = var_0_3.OXY_STATE.DIVE
-	}, var_5_0))
+	return (BattleTargetChoise.TargetDiveState(self._host, {
+		diveState = BattleConst.OXY_STATE.DIVE
+	}, candidateList))
 end

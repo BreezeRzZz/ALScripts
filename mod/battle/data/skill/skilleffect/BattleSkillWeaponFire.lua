@@ -1,48 +1,55 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillWeaponFire", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillWeaponFire = class("BattleSkillWeaponFire", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillWeaponFire = var_0_1
-var_0_1.__name = "BattleSkillWeaponFire"
--- TODO
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+ys.Battle.BattleSkillWeaponFire = BattleSkillWeaponFire
+BattleSkillWeaponFire.__name = "BattleSkillWeaponFire"
 
-	arg_1_0._weaponType = arg_1_0._tempData.arg_list.weaponType
-	arg_1_0._useTempBullet = arg_1_0._tempData.arg_list.preShiftBullet
+-- 核心SkillEffect之一
+-- 此类SkillEffect的作用是让单位使用特定武器再次开火一次(SingleFire)
+function BattleSkillWeaponFire.Ctor(self, template, level)
+	BattleSkillWeaponFire.super.Ctor(self, template, level)
+
+	self._weaponType = self._tempData.arg_list.weaponType
+	self._useTempBullet = self._tempData.arg_list.preShiftBullet
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0:_GetWeapon(arg_2_1)
+function BattleSkillWeaponFire.DoDataEffect(self, caster, target)
+	local weaponList = self:_GetWeapon(caster)
 
-	for iter_2_0, iter_2_1 in ipairs(var_2_0) do
-		iter_2_1:SingleFire(arg_2_2, nil, nil, arg_2_0._useTempBullet)
+	for _, weapon in ipairs(weaponList) do
+		weapon:SingleFire(target, nil, nil, self._useTempBullet)
 	end
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:DoDataEffect(arg_3_1, nil)
+function BattleSkillWeaponFire.DoDataEffectWithoutTarget(self, caster)
+	self:DoDataEffect(caster, nil)
 end
 
-function var_0_1._GetWeapon(arg_4_0, arg_4_1)
-	local var_4_0 = {}
+function BattleSkillWeaponFire._GetWeapon(self, caster)
+	local weaponList = {}
+	-- 分为五种情况: 1. ChargeWeapon 2. TorpedoWeapon 3. AirAssist 4. Aircraft 5. OtherWeapon
+	-- ChargeWeapon: 立刻再次跨射一次
+	-- TorpedoWeapon: 立刻再次发射一次鱼雷
+	-- AirAssist: 立刻再次进行空袭
+	-- Aircraft: 立刻再次发射所有舰载机
+	-- OtherWeapon: 立刻再次发射一次自动武器(一般是前排的主炮/后排的副炮)
+	if self._weaponType == "ChargeWeapon" then
+		table.insert(weaponList, caster:GetChargeList()[1])
+	elseif self._weaponType == "TorpedoWeapon" then
+		table.insert(weaponList, caster:GetTorpedoList()[1])
+	elseif self._weaponType == "AirAssist" then
+		table.insert(weaponList, caster:GetAirAssistList()[1])
+	elseif self._weaponType == "Aircraft" then
+		local hiveList = caster:GetHiveList()
 
-	if arg_4_0._weaponType == "ChargeWeapon" then
-		table.insert(var_4_0, arg_4_1:GetChargeList()[1])
-	elseif arg_4_0._weaponType == "TorpedoWeapon" then
-		table.insert(var_4_0, arg_4_1:GetTorpedoList()[1])
-	elseif arg_4_0._weaponType == "AirAssist" then
-		table.insert(var_4_0, arg_4_1:GetAirAssistList()[1])
-	elseif arg_4_0._weaponType == "Aircraft" then
-		local var_4_1 = arg_4_1:GetHiveList()
-
-		for iter_4_0, iter_4_1 in ipairs(var_4_1) do
-			table.insert(var_4_0, iter_4_1)
+		for _, hive in ipairs(hiveList) do
+			table.insert(weaponList, hive)
 		end
 	else
-		table.insert(var_4_0, arg_4_1:GetAutoWeapons()[1])
+		table.insert(weaponList, caster:GetAutoWeapons()[1])
 	end
 
-	return var_4_0
+	return weaponList
 end

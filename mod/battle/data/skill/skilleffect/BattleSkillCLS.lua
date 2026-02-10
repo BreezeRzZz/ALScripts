@@ -1,42 +1,45 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillCLS", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillCLS = class("BattleSkillCLS", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillCLS = var_0_1
-var_0_1.__name = "BattleSkillCLS"
-var_0_1.TYPE_BULLET = 1
-var_0_1.TYPE_AIRCRAFT = 2
-var_0_1.TYPE_MINION = 3
-var_0_1.TYPE_AOE = 4
+ys.Battle.BattleSkillCLS = BattleSkillCLS
+BattleSkillCLS.__name = "BattleSkillCLS"
+BattleSkillCLS.TYPE_BULLET = 1
+BattleSkillCLS.TYPE_AIRCRAFT = 2
+BattleSkillCLS.TYPE_MINION = 3
+BattleSkillCLS.TYPE_AOE = 4
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 此类SkillEffect清除场上施法者敌对的子弹/舰载机/小怪/AOE
+-- 与CLSArea不同的是，CLSArea只能清除特定范围内的对象，而CLS则是全屏清除
+-- 使用例: 航母的空袭消弹
+function BattleSkillCLS.Ctor(self, tempData, level)
+	BattleSkillCLS.super.Ctor(self, tempData, level)
 
-	arg_1_0._clsTypeList = arg_1_0._tempData.arg_list.typeList or {}
+	self._clsTypeList = self._tempData.arg_list.typeList or {}
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1)
-	arg_2_0:doCls(arg_2_1)
+function BattleSkillCLS.DoDataEffect(self, caster)
+	self:doCls(caster)
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:doCls(arg_3_1)
+function BattleSkillCLS.DoDataEffectWithoutTarget(self, caster)
+	self:doCls(caster)
 end
 
-function var_0_1.doCls(arg_4_0, arg_4_1)
-	local var_4_0 = var_0_0.Battle.BattleDataProxy.GetInstance()
-	local var_4_1 = arg_4_1:GetIFF() * -1
+function BattleSkillCLS.doCls(self, caster)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local casterOpponentIFF = caster:GetIFF() * -1
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._clsTypeList) do
-		if iter_4_1 == var_0_1.TYPE_BULLET then
-			var_4_0:CLSBullet(var_4_1)
-		elseif iter_4_1 == var_0_1.TYPE_AIRCRAFT then
-			var_4_0:CLSAircraft(var_4_1)
-		elseif iter_4_1 == var_0_1.TYPE_MINION then
-			var_4_0:CLSMinion()
-		elseif iter_4_1 == var_0_1.TYPE_AOE then
-			var_4_0:CLSAOE()
+	for _, clsType in ipairs(self._clsTypeList) do
+		if clsType == BattleSkillCLS.TYPE_BULLET then
+			battleDataProxy:CLSBullet(casterOpponentIFF)
+		elseif clsType == BattleSkillCLS.TYPE_AIRCRAFT then
+			battleDataProxy:CLSAircraft(casterOpponentIFF)
+		elseif clsType == BattleSkillCLS.TYPE_MINION then
+			battleDataProxy:CLSMinion()
+		elseif clsType == BattleSkillCLS.TYPE_AOE then
+			battleDataProxy:CLSAOE()
 		end
 	end
 end

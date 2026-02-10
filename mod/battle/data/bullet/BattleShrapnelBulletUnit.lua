@@ -24,6 +24,8 @@ BattleShrapnelBulletUnit.STATE_PRIORITY = {
 	[BattleShrapnelBulletUnit.STATE_NORMAL] = 1
 }
 
+-- 对应SHRAPNEL类型子弹
+
 --- @class BattleShrapnelBulletUnit
 --- @param uniqueID number
 --- @param IFF number

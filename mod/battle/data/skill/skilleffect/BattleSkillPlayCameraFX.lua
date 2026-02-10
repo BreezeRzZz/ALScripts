@@ -1,28 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleFormulas
-local var_0_2 = class("BattleSkillPlayCameraFX", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleSkillPlayCameraFX = class("BattleSkillPlayCameraFX", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillPlayCameraFX = var_0_2
-var_0_2.__name = "BattleSkillPlayCameraFX"
+ys.Battle.BattleSkillPlayCameraFX = BattleSkillPlayCameraFX
+BattleSkillPlayCameraFX.__name = "BattleSkillPlayCameraFX"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect为镜头效果
+function BattleSkillPlayCameraFX.Ctor(self, template, level)
+	BattleSkillPlayCameraFX.super.Ctor(self, template, level)
 
-	arg_1_0._FXID = arg_1_0._tempData.arg_list.effect
-	arg_1_0._scale = arg_1_0._tempData.arg_list.scale
-	arg_1_0._order = arg_1_0._tempData.arg_list.order
+	self._FXID = self._tempData.arg_list.effect
+	self._scale = self._tempData.arg_list.scale
+	self._order = self._tempData.arg_list.order
 end
 
-function var_0_2.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0.calcCorrdinate(arg_2_0._tempData.arg_list, arg_2_1, arg_2_2)
+function BattleSkillPlayCameraFX.DoDataEffect(self, caster, target)
+	local corrdinate = self.calcCorrdinate(self._tempData.arg_list, caster, target)
 
-	var_0_0.Battle.BattleDataProxy.GetInstance():SpawnCameraFX(arg_2_0._FXID, var_2_0, arg_2_0._scale, arg_2_0._order)
+	ys.Battle.BattleDataProxy.GetInstance():SpawnCameraFX(self._FXID, corrdinate, self._scale, self._order)
 end
 
-function var_0_2.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0.calcCorrdinate(arg_3_0._tempData.arg_list, arg_3_1)
+function BattleSkillPlayCameraFX.DoDataEffectWithoutTarget(self, caster)
+	local corrdinate = self.calcCorrdinate(self._tempData.arg_list, caster)
 
-	var_0_0.Battle.BattleDataProxy.GetInstance():SpawnCameraFX(arg_3_0._FXID, var_3_0, arg_3_0._scale, arg_3_0._order)
+	ys.Battle.BattleDataProxy.GetInstance():SpawnCameraFX(self._FXID, corrdinate, self._scale, self._order)
 end

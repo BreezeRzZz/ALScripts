@@ -114,19 +114,19 @@ function BattleSkillUnit.Cast(self, owner, commander)
 	end
 end
 
-function BattleSkillUnit.SetTarget(arg_6_0, arg_6_1)
-	arg_6_0._lastEffectTarget = arg_6_1
+function BattleSkillUnit.SetTarget(self, target)
+	self._lastEffectTarget = target
 end
 
-function BattleSkillUnit.Interrupt(arg_7_0)
-	for iter_7_0, iter_7_1 in ipairs(arg_7_0._effectList) do
-		iter_7_1:Interrupt()
+function BattleSkillUnit.Interrupt(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Interrupt()
 	end
 end
 
-function BattleSkillUnit.Clear(arg_8_0)
-	for iter_8_0, iter_8_1 in ipairs(arg_8_0._effectList) do
-		iter_8_1:Clear()
+function BattleSkillUnit.Clear(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Clear()
 	end
 end
 
@@ -138,27 +138,27 @@ function BattleSkillUnit.callbackCount(self, owner)
 	end
 end
 
-function BattleSkillUnit.GetDamageSum(arg_10_0)
-	local var_10_0 = 0
+function BattleSkillUnit.GetDamageSum(self)
+	local damageSum = 0
 
-	for iter_10_0, iter_10_1 in ipairs(arg_10_0._effectList) do
-		var_10_0 = iter_10_1:GetDamageSum() + var_10_0
+	for _, effect in ipairs(self._effectList) do
+		damageSum = effect:GetDamageSum() + damageSum
 	end
 
-	return var_10_0
+	return damageSum
 end
 
-function BattleSkillUnit.IsFireSkill(arg_11_0, arg_11_1)
-	local var_11_0 = false
-	local var_11_1 = ys.Battle.BattleDataFunction.GetSkillTemplate(arg_11_0, arg_11_1)
+function BattleSkillUnit.IsFireSkill(self, skillID)
+	local isFireSkill = false
+	local skillTempData = ys.Battle.BattleDataFunction.GetSkillTemplate(self, skillID)
 
-	for iter_11_0, iter_11_1 in ipairs(var_11_1.effect_list) do
-		if iter_11_1.type == ys.Battle.BattleSkillFire.__name or iter_11_1.type == ys.Battle.BattleSkillFireSupport.__name then
-			var_11_0 = true
+	for _, effect in ipairs(skillTempData.effect_list) do
+		if effect.type == ys.Battle.BattleSkillFire.__name or effect.type == ys.Battle.BattleSkillFireSupport.__name then
+			isFireSkill = true
 
 			break
 		end
 	end
 
-	return var_11_0
+	return isFireSkill
 end

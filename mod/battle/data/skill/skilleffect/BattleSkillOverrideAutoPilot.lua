@@ -1,29 +1,33 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleSkillOverrideAutoPilot", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleSkillOverrideAutoPilot = class("BattleSkillOverrideAutoPilot", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillOverrideAutoPilot = var_0_3
-var_0_3.__name = "BattleSkillOverrideAutoPilot"
+ys.Battle.BattleSkillOverrideAutoPilot = BattleSkillOverrideAutoPilot
+BattleSkillOverrideAutoPilot.__name = "BattleSkillOverrideAutoPilot"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_3.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect用于修改我方的自律逻辑(变为指定AI逻辑)
+-- 与BattleBuffNewAI的区别是, BattleBuffNewAI一般不是给我方舰队使用(因为我方优先用RandomStrategy), 而是给我方召唤物/敌方单位使用
+-- BattleSkillOverrideAutoPilot则主要给我方舰队使用, 相比之下额外处理了从RandomStrategy切换到AutoPilotStrategy, 然后才能用AI逻辑
+-- 使用例: 2024异世界冒险 英灵效果 TB
+function BattleSkillOverrideAutoPilot.Ctor(self, template, level)
+	BattleSkillOverrideAutoPilot.super.Ctor(self, template, level)
 
-	arg_1_0._AIID = arg_1_0._tempData.arg_list.ai_id
+	self._AIID = self._tempData.arg_list.ai_id
 end
 
-function var_0_3.DoDataEffect(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_1:GetFleetVO()
+function BattleSkillOverrideAutoPilot.DoDataEffect(self, caster)
+	local fleetVO = caster:GetFleetVO()
 
-	if not var_2_0 then
+	if not fleetVO then
 		return
 	end
 
-	var_2_0:OverrideJoyStickAutoBot(arg_2_0._AIID)
+	fleetVO:OverrideJoyStickAutoBot(self._AIID)
 end
 
-function var_0_3.DataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:DoDataEffect(arg_3_1)
+function BattleSkillOverrideAutoPilot.DataEffectWithoutTarget(self, caster)
+	self:DoDataEffect(caster)
 end

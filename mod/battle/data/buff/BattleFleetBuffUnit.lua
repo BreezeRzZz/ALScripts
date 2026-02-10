@@ -1,147 +1,156 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBuffEvent
-local var_0_2 = var_0_0.Battle.BattleConst.BuffEffectType
-local var_0_3 = class("BattleFleetBuffUnit")
+local ys = ys
+local BattleBuffEvent = ys.Battle.BattleBuffEvent
+local BuffEffectType = ys.Battle.BattleConst.BuffEffectType
+local BattleFleetBuffUnit = class("BattleFleetBuffUnit")
 
-var_0_0.Battle.BattleFleetBuffUnit = var_0_3
-var_0_3.__name = "BattleFleetBuffUnit"
--- TODO
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_2 = arg_1_2 or 1
-	arg_1_0._id = arg_1_1
-	arg_1_0._tempData = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(arg_1_1, arg_1_2)
-	arg_1_0._time = arg_1_0._tempData.time
-	arg_1_0._RemoveTime = 0
-	arg_1_0._effectList = {}
-	arg_1_0._triggerSearchTable = {}
-	arg_1_0._level = arg_1_2
+ys.Battle.BattleFleetBuffUnit = BattleFleetBuffUnit
+BattleFleetBuffUnit.__name = "BattleFleetBuffUnit"
 
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.effect_list) do
-		local var_1_0 = var_0_0.Battle[iter_1_1.type].New(iter_1_1)
+-- FleetBuff是属于舰队的Buff，而不是属于某个Unit的Buff
+-- 实际就是给FleetVO添加一个Buff, 用于给FleetVO添加一些属性或者监听FleetVO的事件(例如全队致盲)
+-- FleetBuffID和BuffID用的是一套ID(配置文件), 但是BuffUnit和FleetBuffUnit是两套不同的类, 互不干扰
+function BattleFleetBuffUnit.Ctor(self, buffID, level)
+	level = level or 1
+	self._id = buffID
+	-- 从这里就能看出用的是同一套配置逻辑了
+	self._tempData = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, level)
+	self._time = self._tempData.time
+	self._RemoveTime = 0
+	self._effectList = {}
+	self._triggerSearchTable = {}
+	self._level = level
 
-		arg_1_0._effectList[iter_1_0] = var_1_0
+	for effectIndex, effectData in ipairs(self._tempData.effect_list) do
+		local effect = ys.Battle[effectData.type].New(effectData)
 
-		local var_1_1 = iter_1_1.trigger
+		self._effectList[effectIndex] = effect
 
-		for iter_1_2, iter_1_3 in ipairs(var_1_1) do
-			local var_1_2 = arg_1_0._triggerSearchTable[iter_1_3]
+		local triggerList = effectData.trigger
 
-			if var_1_2 == nil then
-				var_1_2 = {}
-				arg_1_0._triggerSearchTable[iter_1_3] = var_1_2
+		for _, trigger in ipairs(triggerList) do
+			-- 对应类型trigger能触发的effect列表
+			local effectList = self._triggerSearchTable[trigger]
+
+			if effectList == nil then
+				effectList = {}
+				self._triggerSearchTable[trigger] = effectList
 			end
 
-			var_1_2[#var_1_2 + 1] = var_1_0
+			effectList[#effectList + 1] = effect
 		end
 	end
 
-	arg_1_0:SetActive()
+	self:SetActive()
 end
 
-function var_0_3.SetArgs(arg_2_0, arg_2_1)
-	arg_2_0._host = arg_2_1
+function BattleFleetBuffUnit.SetArgs(self, host)
+	self._host = host
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_0._effectList) do
-		iter_2_1:SetArgs(arg_2_1, arg_2_0)
+	for _, effect in ipairs(self._effectList) do
+		effect:SetArgs(host, self)
 	end
 end
 
-function var_0_3.setRemoveTime(arg_3_0)
-	arg_3_0._RemoveTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_3_0._time
-	arg_3_0._cancelTime = nil
+function BattleFleetBuffUnit.setRemoveTime(self)
+	self._RemoveTime = pg.TimeMgr.GetInstance():GetCombatTime() + self._time
+	self._cancelTime = nil
 end
 
-function var_0_3.Attach(arg_4_0, arg_4_1)
-	arg_4_0._stack = 1
+-- BattleFleetVO.AttachFleetBuff调用
+function BattleFleetBuffUnit.Attach(self, host)
+	self._stack = 1
 
-	arg_4_0:SetArgs(arg_4_1)
-	arg_4_0:onTrigger(var_0_2.ON_ATTACH, arg_4_1)
-	arg_4_0:setRemoveTime()
+	self:SetArgs(host)
+	self:onTrigger(BuffEffectType.ON_ATTACH, host)
+	self:setRemoveTime()
 end
 
-function var_0_3.Stack(arg_5_0, arg_5_1)
-	arg_5_0._stack = math.min(arg_5_0._stack + 1, arg_5_0._tempData.stack)
+function BattleFleetBuffUnit.Stack(self, host)
+	self._stack = math.min(self._stack + 1, self._tempData.stack)
 
-	arg_5_0:onTrigger(var_0_2.ON_STACK, arg_5_1)
-	arg_5_0:setRemoveTime()
+	self:onTrigger(BuffEffectType.ON_STACK, host)
+	self:setRemoveTime()
 end
 
-function var_0_3.UpdateStack(arg_6_0, arg_6_1, arg_6_2)
+function BattleFleetBuffUnit.UpdateStack(arg_6_0, arg_6_1, arg_6_2)
 	return
 end
 
-function var_0_3.Remove(arg_7_0)
-	arg_7_0:onTrigger(var_0_2.ON_REMOVE, arg_7_0._host)
+function BattleFleetBuffUnit.Remove(self)
+	self:onTrigger(BuffEffectType.ON_REMOVE, self._host)
 
-	arg_7_0._host:GetFleetBuffList()[arg_7_0._id] = nil
+	self._host:GetFleetBuffList()[self._id] = nil
 
-	arg_7_0:Clear()
+	self:Clear()
 end
 
-function var_0_3.Update(arg_8_0, arg_8_1, arg_8_2)
-	if arg_8_0:IsTimeToRemove(arg_8_2) then
-		arg_8_0:Remove()
+function BattleFleetBuffUnit.Update(self, host, timeStamp)
+	if self:IsTimeToRemove(timeStamp) then
+		self:Remove()
 	else
-		arg_8_0:onTrigger(var_0_2.ON_UPDATE, arg_8_1, arg_8_2)
+		self:onTrigger(BuffEffectType.ON_UPDATE, host, timeStamp)
 	end
 end
 
-function var_0_3.onTrigger(arg_9_0, arg_9_1, arg_9_2, arg_9_3)
-	local var_9_0 = arg_9_0._triggerSearchTable[arg_9_1]
+-- 核心: BattleFleetBuffUnit触发效果
+-- 和BattleBuffUnit基本一样, 触发每一个effect, 只不过host是FleetVO而不是Unit
+-- BattleFleetBuffUnit.Attach/Stack/Remove/Update都会调用这个函数
+function BattleFleetBuffUnit.onTrigger(self, trigger, host, timeStamp)
+	local effectList = self._triggerSearchTable[trigger]
 
-	if var_9_0 == nil or #var_9_0 == 0 then
+	if effectList == nil or #effectList == 0 then
 		return
 	end
 
-	for iter_9_0, iter_9_1 in ipairs(var_9_0) do
-		assert(type(iter_9_1[arg_9_1]) == "function", "fleet buff效果的触发函数缺失,buff id:>>" .. arg_9_0._id .. "<<, trigger:>>" .. arg_9_1 .. "<<")
+	for _, effect in ipairs(effectList) do
+		assert(type(effect[trigger]) == "function", "fleet buff效果的触发函数缺失,buff id:>>" .. self._id .. "<<, trigger:>>" .. trigger .. "<<")
 
-		if iter_9_1:IsActive() then
-			iter_9_1:NotActive()
-			iter_9_1:Trigger(arg_9_1, arg_9_2, arg_9_0, arg_9_3)
-			iter_9_1:SetActive()
+		if effect:IsActive() then
+			effect:NotActive()
+			effect:Trigger(trigger, host, self, timeStamp)
+			effect:SetActive()
 		end
 	end
 end
 
-function var_0_3.IsTimeToRemove(arg_10_0, arg_10_1)
-	if arg_10_0._time == 0 then
+function BattleFleetBuffUnit.IsTimeToRemove(self, timeStamp)
+	if self._time == 0 then
 		return false
 	else
-		return arg_10_1 >= arg_10_0._RemoveTime
+		return timeStamp >= self._RemoveTime
 	end
 end
 
-function var_0_3.IsActive(arg_11_0)
-	return arg_11_0._isActive
+function BattleFleetBuffUnit.IsActive(self)
+	return self._isActive
 end
 
-function var_0_3.SetActive(arg_12_0)
-	arg_12_0._isActive = true
+function BattleFleetBuffUnit.SetActive(self)
+	self._isActive = true
 end
 
-function var_0_3.NotActive(arg_13_0)
-	arg_13_0._isActive = false
+function BattleFleetBuffUnit.NotActive(self)
+	self._isActive = false
 end
 
-function var_0_3.GetCaster(arg_14_0)
+function BattleFleetBuffUnit.GetCaster(self)
 	return nil
 end
 
-function var_0_3.GetID(arg_15_0)
-	return arg_15_0._id
+function BattleFleetBuffUnit.GetID(self)
+	return self._id
 end
 
-function var_0_3.GetLv(arg_16_0)
+function BattleFleetBuffUnit.GetLv(self)
 	return 1
 end
 
-function var_0_3.Clear(arg_17_0)
-	arg_17_0._host = nil
+function BattleFleetBuffUnit.Clear(self)
+	self._host = nil
 
-	for iter_17_0, iter_17_1 in ipairs(arg_17_0._effectList) do
-		iter_17_1:Clear()
+	for _, effect in ipairs(self._effectList) do
+		effect:Clear()
 	end
 end

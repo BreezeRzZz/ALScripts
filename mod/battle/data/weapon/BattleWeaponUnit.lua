@@ -1081,6 +1081,7 @@ end
 --- @param useTmpDataBulletFlag boolean
 --- @return nil
 --- 单次开火函数，一般是技能武器使用
+--- 与Fire的区别: 不会触发ON_FIRE
 function BattleWeaponUnit.SingleFire(self, target, emitterType, extraStopFunc, useTmpDataBulletFlag)
 	local emitterList = {}
 	-- 注意这个是emittersList
@@ -1089,7 +1090,7 @@ function BattleWeaponUnit.SingleFire(self, target, emitterType, extraStopFunc, u
 
 	if target and target:IsAlive() then
 		-- block empty
-	else
+else
 		target = nil
 	end
 
@@ -1669,6 +1670,7 @@ end
 --- @param rate number
 --- @return number
 --- 根据比例获取武器的装填时间
+--- BattleSkillManualWeaponReloadBoost.DoDataEffect中有调用
 function BattleWeaponUnit.GetReloadTimeByRate(self, rate)
 	local loadSpeed = BattleAttr.GetCurrent(self._host, "loadSpeed")
 	local newReloadMax = self._cacheReloadMax * rate

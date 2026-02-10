@@ -1,27 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSkillDamage = class("BattleSkillDamage", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillDamage.__name = "BattleSkillDamage"
+ys.Battle.BattleSkillDamage = class("BattleSkillDamage", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillDamage.__name = "BattleSkillDamage"
 
-function var_0_0.Battle.BattleSkillDamage.Ctor(arg_1_0, arg_1_1)
-	var_0_0.Battle.BattleSkillDamage.super.Ctor(arg_1_0, arg_1_1, lv)
+-- 此类SkillEffect对目标造成直接伤害
+-- DirectDamage并不会受到任何伤害计算公式的影响(如增伤区/易伤区等)，伤害数值完全由SkillEffect的参数决定
+function ys.Battle.BattleSkillDamage.Ctor(self, template, level)
+	ys.Battle.BattleSkillDamage.super.Ctor(self, template, level)
 
-	arg_1_0._number = arg_1_0._tempData.arg_list.number or 0
-	arg_1_0._currentHPRate = arg_1_0._tempData.arg_list.current_hp_rate or 0
-	arg_1_0._maxHPRate = arg_1_0._tempData.arg_list.rate or 0
-	arg_1_0._proxy = var_0_0.Battle.BattleDataProxy.GetInstance()
+	self._number = self._tempData.arg_list.number or 0
+	self._currentHPRate = self._tempData.arg_list.current_hp_rate or 0
+	self._maxHPRate = self._tempData.arg_list.rate or 0
+	self._proxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_0.Battle.BattleSkillDamage.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0, var_2_1 = arg_2_2:GetHP()
-	local var_2_2 = math.floor(var_2_1 * arg_2_0._maxHPRate) + math.floor(var_2_0 * arg_2_0._currentHPRate) + arg_2_0._number
+function ys.Battle.BattleSkillDamage.DoDataEffect(self, caster, target)
+	local currentHP, maxHP = target:GetHP()
+	local damage = math.floor(maxHP * self._maxHPRate) + math.floor(currentHP * self._currentHPRate) + self._number
 
-	arg_2_0._proxy:HandleDirectDamage(arg_2_2, var_2_2, arg_2_1)
-
-	if not arg_2_2:IsAlive() then
-		var_0_0.Battle.BattleAttr.Spirit(arg_2_2)
-		var_0_0.Battle.BattleAttr.AppendInvincible(arg_2_2)
+	self._proxy:HandleDirectDamage(target, damage, caster)
+	-- 不太清楚, 待定
+	if not target:IsAlive() then
+		ys.Battle.BattleAttr.Spirit(target)
+		ys.Battle.BattleAttr.AppendInvincible(target)
 	end
 end

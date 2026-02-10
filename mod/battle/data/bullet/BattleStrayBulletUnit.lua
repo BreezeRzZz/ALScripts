@@ -1,20 +1,23 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleStrayBulletUnit = class("BattleStrayBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleStrayBulletUnit.__name = "BattleStrayBulletUnit"
+ys.Battle.BattleStrayBulletUnit = class("BattleStrayBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleStrayBulletUnit.__name = "BattleStrayBulletUnit"
 
-local var_0_1 = var_0_0.Battle.BattleStrayBulletUnit
+local BattleStrayBulletUnit = ys.Battle.BattleStrayBulletUnit
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 对应STRAY类型子弹
+-- 不知道有啥意义, 只设定了个explodePos(父类没有), 其他部分跟父类完全一样
+-- 此外实际也没有任何这个类型的子弹的实例(可能废弃了)
+function BattleStrayBulletUnit.Ctor(self, UID, IFF)
+	BattleStrayBulletUnit.super.Ctor(self, UID, IFF)
 end
 
-function var_0_1.SetExplodePosition(arg_2_0, arg_2_1)
-	arg_2_0._explodePos = arg_2_1
+function BattleStrayBulletUnit.SetExplodePosition(self, explodePos)
+	self._explodePos = explodePos
 end
 
-function var_0_1.GetExplodePostion(arg_3_0)
-	return arg_3_0._explodePos
+function BattleStrayBulletUnit.GetExplodePostion(self)
+	return self._explodePos
 end

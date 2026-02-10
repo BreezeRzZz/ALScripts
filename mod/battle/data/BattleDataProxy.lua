@@ -2318,32 +2318,36 @@ function BattleDataProxy.SpawnLastingColumnArea(self, fieldType, ownerIFF, posit
 	return lastingAoeData
 end
 
-function BattleDataProxy.SpawnLastingEllipseArea(arg_120_0, arg_120_1, arg_120_2, arg_120_3, arg_120_4, arg_120_5, arg_120_6, arg_120_7, arg_120_8, arg_120_9, arg_120_10, arg_120_11, arg_120_12)
-	arg_120_9 = arg_120_9 or false
+-- BattleEffectBulletUnit.SpawnArea用到
+-- 字面意思似乎是生成一个椭圆AOE
+-- 但从BattleAOEData的实现来看, 椭圆和矩形使用的CldComponent都是Cube
+-- 使用例: 目前只有白凤EX的烟雾玉
+function BattleDataProxy.SpawnLastingEllipseArea(self, fieldType, ownerIFF, position, width, height, lifetime, areaCldFunc, exitCldFunc, friendly, fxID, endFunc, frequent)
+	friendly = friendly or false
 
-	local var_120_0 = arg_120_0:GenerateAreaID()
-	local var_120_1 = ys.Battle.BattleLastingAOEData.New(var_120_0, arg_120_2, arg_120_7, arg_120_8, arg_120_11, arg_120_12)
-	local var_120_2 = Clone(arg_120_3)
+	local areaID = self:GenerateAreaID()
+	local lastingAoeData = ys.Battle.BattleLastingAOEData.New(areaID, ownerIFF, areaCldFunc, exitCldFunc, endFunc, frequent)
+	local pos = Clone(position)
 
-	var_120_1:SetPosition(var_120_2)
-	var_120_1:SetWidth(arg_120_4)
-	var_120_1:SetHeight(arg_120_5)
-	var_120_1:SetAreaType(BattleConst.AreaType.ELLIPSE)
-	var_120_1:SetLifeTime(arg_120_6)
-	var_120_1:SetFieldType(arg_120_1)
-	var_120_1:SetOpponentAffected(not arg_120_8)
-	arg_120_0:CreateAreaOfEffect(var_120_1)
+	lastingAoeData:SetPosition(pos)
+	lastingAoeData:SetWidth(width)
+	lastingAoeData:SetHeight(height)
+	lastingAoeData:SetAreaType(BattleConst.AreaType.ELLIPSE)
+	lastingAoeData:SetLifeTime(lifetime)
+	lastingAoeData:SetFieldType(fieldType)
+	lastingAoeData:SetOpponentAffected(not friendly)
+	self:CreateAreaOfEffect(lastingAoeData)
 
-	if arg_120_9 and arg_120_9 ~= "" then
-		local var_120_3 = {
-			area = var_120_1,
-			FXID = arg_120_9
+	if fxID and fxID ~= "" then
+		local args = {
+			area = lastingAoeData,
+			FXID = fxID
 		}
 
-		arg_120_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, var_120_3))
+		self:DispatchEvent(ys.Event.New(BattleEvent.ADD_AREA, args))
 	end
 
-	return var_120_1
+	return lastingAoeData
 end
 
 function BattleDataProxy.SpawnLastingCubeArea(self, fieldType, ownerIFF, position, areaWidth, areaHeight, lifetime, areaCldFunc, exitCldFunc, friendly, fxID, endFunc, frequent)
@@ -2448,53 +2452,55 @@ function BattleDataProxy.SpawnWall(self, host, cldFun, cldBox, cldOffset)
 	return wallData
 end
 
-function BattleDataProxy.RemoveWall(arg_128_0, arg_128_1)
-	local var_128_0 = arg_128_0._wallList[arg_128_1]
+function BattleDataProxy.RemoveWall(self, wallID)
+	local wallData = self._wallList[wallID]
 
-	arg_129_0._wallList[arg_129_1] = nil
+	self._wallList[wallID] = nil
 
-	arg_129_0._cldSystem:DeleteWallCld(var_129_0)
+	self._cldSystem:DeleteWallCld(wallData)
 end
 
-function BattleDataProxy.SpawnShelter(arg_129_0, arg_129_1, arg_129_2)
-	local var_129_0 = arg_129_0:GernerateShelterID()
-	local var_129_1 = ys.Battle.BattleShelterData.New(var_129_0)
+-- BattleSkillProjectShelter使用
+-- Shelter: 本质来讲
+function BattleDataProxy.SpawnShelter(self, box, duration)
+	local ShelterID = self:GernerateShelterID()
+	local ShelterData = ys.Battle.BattleShelterData.New(ShelterID)
 
-	arg_130_0._shelterList[var_130_0] = var_130_1
+	self._shelterList[ShelterID] = ShelterData
 
-	return var_130_1
+	return ShelterData
 end
 
-function BattleDataProxy.RemoveShelter(arg_130_0, arg_130_1)
-	local var_130_0 = arg_130_0._shelterList[arg_130_1]
+function BattleDataProxy.RemoveShelter(self, arg_130_1)
+	local var_130_0 = self._shelterList[arg_130_1]
 	local var_130_1 = {
 		uid = arg_130_1
 	}
 
-	arg_130_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_SHELTER, var_130_1))
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_SHELTER, var_130_1))
 	var_130_0:Deactive()
 
-	arg_131_0._shelterList[arg_131_1] = nil
+	self._shelterList[arg_131_1] = nil
 end
 
-function BattleDataProxy.GetWallList(arg_131_0)
-	return arg_131_0._wallList
+function BattleDataProxy.GetWallList(self)
+	return self._wallList
 end
 
-function BattleDataProxy.GenerateWallID(arg_132_0)
-	arg_132_0._wallIndex = arg_132_0._wallIndex + 1
+function BattleDataProxy.GenerateWallID(self)
+	self._wallIndex = self._wallIndex + 1
 
-	return arg_133_0._wallIndex
+	return self._wallIndex
 end
 
-function BattleDataProxy.GernerateShelterID(arg_133_0)
-	arg_133_0._shelterIndex = arg_133_0._shelterIndex + 1
+function BattleDataProxy.GernerateShelterID(self)
+	self._shelterIndex = self._shelterIndex + 1
 
-	return arg_134_0._shelterIndex
+	return self._shelterIndex
 end
 
-function BattleDataProxy.SpawnEnvironment(arg_134_0, arg_134_1)
-	local var_134_0 = arg_134_0:GernerateEnvironmentID()
+function BattleDataProxy.SpawnEnvironment(self, arg_134_1)
+	local var_134_0 = self:GernerateEnvironmentID()
 	local var_134_1 = ys.Battle.BattleEnvironmentUnit.New(var_134_0, BattleConfig.FOE_CODE)
 
 	var_135_1:SetTemplate(arg_135_1)
@@ -2712,16 +2718,18 @@ function BattleDataProxy.RemoveFlag(self, flag)
 	table.removebyvalue(waveFlags, flag)
 end
 
-function BattleDataProxy.DispatchCustomWarning(arg_155_0, arg_155_1)
-	arg_155_0:DispatchEvent(ys.Event.New(BattleEvent.EDIT_CUSTOM_WARNING_LABEL, {
-		labelData = arg_155_1
+-- BattleSKillEditCustomWarning调用
+function BattleDataProxy.DispatchCustomWarning(self, labelData)
+	self:DispatchEvent(ys.Event.New(BattleEvent.EDIT_CUSTOM_WARNING_LABEL, {
+		labelData = labelData
 	}))
 end
 
-function BattleDataProxy.DispatchGridmanSkill(arg_156_0, arg_156_1, arg_156_2)
-	arg_156_0:DispatchEvent(ys.Event.New(BattleEvent.GRIDMAN_SKILL_FLOAT, {
-		type = arg_156_1,
-		IFF = arg_156_2
+-- BattleSkillGridmanFloat调用
+function BattleDataProxy.DispatchGridmanSkill(self, type, IFF)
+	self:DispatchEvent(ys.Event.New(BattleEvent.GRIDMAN_SKILL_FLOAT, {
+		type = type,
+		IFF = IFF
 	}))
 end
 

@@ -1,34 +1,36 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleAntiSeaBulletUnit = class("BattleAntiSeaBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleAntiSeaBulletUnit.__name = "BattleAntiSeaBulletUnit"
+ys.Battle.BattleAntiSeaBulletUnit = class("BattleAntiSeaBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleAntiSeaBulletUnit.__name = "BattleAntiSeaBulletUnit"
 
-local var_0_1 = var_0_0.Battle.BattleAntiSeaBulletUnit
+local BattleAntiSeaBulletUnit = ys.Battle.BattleAntiSeaBulletUnit
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 对应ANTI_SEA类型子弹
+-- 实际实现跟ANTI_AIR类型子弹完全一样, 只是换了个名字
+function BattleAntiSeaBulletUnit.Ctor(self, UID, IFF)
+	BattleAntiSeaBulletUnit.super.Ctor(self, UID, IFF)
 end
 
-function var_0_1.Update(arg_2_0, arg_2_1)
+function BattleAntiSeaBulletUnit.Update(self, timeStamp)
 	return
 end
 
-function var_0_1.IsOutRange(arg_3_0)
+function BattleAntiSeaBulletUnit.IsOutRange(self)
 	return false
 end
 
-function var_0_1.SetDirectHitUnit(arg_4_0, arg_4_1)
-	arg_4_0._directHitUnit = arg_4_1
+function BattleAntiSeaBulletUnit.SetDirectHitUnit(self, directHitUnit)
+	self._directHitUnit = directHitUnit
 end
 
-function var_0_1.GetDirectHitUnit(arg_5_0)
-	return arg_5_0._directHitUnit
+function BattleAntiSeaBulletUnit.GetDirectHitUnit(self)
+	return self._directHitUnit
 end
 
-function var_0_1.Dispose(arg_6_0)
-	arg_6_0._directHitUnit = nil
+function BattleAntiSeaBulletUnit.Dispose(self)
+	self._directHitUnit = nil
 
-	var_0_1.super.Dispose(arg_6_0)
+	BattleAntiSeaBulletUnit.super.Dispose(self)
 end

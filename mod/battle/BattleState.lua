@@ -444,9 +444,9 @@ function BattleState.CacheTimescaler(arg_41_0, arg_41_1)
 	arg_41_0._timescalerCache = arg_41_1
 end
 
-function ys.Battle.PlayBattleSFX(arg_42_0)
-	if arg_42_0 ~= "" then
-		pg.CriMgr.GetInstance():PlaySoundEffect_V3("event:/" .. arg_42_0)
+function ys.Battle.PlayBattleSFX(SFXID)
+	if SFXID ~= "" then
+		pg.CriMgr.GetInstance():PlaySoundEffect_V3("event:/" .. SFXID)
 	end
 end
 

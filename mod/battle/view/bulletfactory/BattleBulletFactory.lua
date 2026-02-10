@@ -23,7 +23,8 @@ function BattleBulletFactory.Clear(arg_3_0)
 		arg_3_0._tempGOPool = nil
 	end
 end
--- TODO
+
+-- 创建子弹(View侧)
 function BattleBulletFactory.CreateBullet(self, tf, bullet, position, fireFXID, direction)
 	bullet:SetOutRangeCallback(self.OutRangeFunc)
 

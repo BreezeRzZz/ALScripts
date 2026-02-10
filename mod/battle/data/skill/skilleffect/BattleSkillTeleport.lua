@@ -1,23 +1,24 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSkillTeleport", var_0_0.Battle.BattleSkillEffect)
+local ys = ys
+local BattleSkillTeleport = class("BattleSkillTeleport", ys.Battle.BattleSkillEffect)
 
-var_0_0.Battle.BattleSkillTeleport = var_0_1
-var_0_1.__name = "BattleSkillTeleport"
+ys.Battle.BattleSkillTeleport = BattleSkillTeleport
+BattleSkillTeleport.__name = "BattleSkillTeleport"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+-- 此类SkillEffect的作用是将单位传送到指定位置
+function BattleSkillTeleport.Ctor(self, template, level)
+	BattleSkillTeleport.super.Ctor(self, template, level)
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0.calcCorrdinate(arg_2_0._tempData.arg_list, arg_2_1, arg_2_2)
+function BattleSkillTeleport.DoDataEffect(self, caster, target)
+	local corrdinate = self.calcCorrdinate(self._tempData.arg_list, caster, target)
 
-	arg_2_1:SetPosition(var_2_0)
+	caster:SetPosition(corrdinate)
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0.calcCorrdinate(arg_3_0._tempData.arg_list, arg_3_1)
+function BattleSkillTeleport.DoDataEffectWithoutTarget(self, caster)
+	local corrdinate = self.calcCorrdinate(self._tempData.arg_list, caster)
 
-	arg_3_1:SetPosition(var_3_0)
+	caster:SetPosition(corrdinate)
 end

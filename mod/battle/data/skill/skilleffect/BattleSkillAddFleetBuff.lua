@@ -8,6 +8,8 @@ ys.Battle.BattleSkillAddFleetBuff.__name = "BattleSkillAddFleetBuff"
 
 local BattleSkillAddFleetBuff = ys.Battle.BattleSkillAddFleetBuff
 
+-- 此类SkillEffect会在目标的舰队上添加一个FleetBuff
+-- 使用例: 致盲
 function BattleSkillAddFleetBuff.Ctor(self, template, level)
 	BattleSkillAddFleetBuff.super.Ctor(self, template, level)
 

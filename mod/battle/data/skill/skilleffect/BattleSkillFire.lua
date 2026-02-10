@@ -8,6 +8,9 @@ local BattleSkillFire = class("BattleSkillFire", ys.Battle.BattleSkillEffect)
 ys.Battle.BattleSkillFire = BattleSkillFire
 BattleSkillFire.__name = "BattleSkillFire"
 
+-- 核心SkillEffect之一
+-- 此类SkillEffect会提供给caster一个临时武器，并让这个武器开火(SingleFire)
+-- 使用例: 几乎所有的弹幕都是这样实现的
 function BattleSkillFire.Ctor(self, template, level)
 	BattleSkillFire.super.Ctor(self, template, level)
 

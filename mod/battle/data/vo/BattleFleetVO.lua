@@ -413,12 +413,13 @@ function BattleFleetVO.RemovePlayerUnit(arg_26_0, arg_26_1, arg_26_2)
 	end
 end
 
-function BattleFleetVO.OverrideJoyStickAutoBot(arg_28_0, arg_28_1)
-	arg_28_0._autoBotAIID = arg_28_1
+-- BattleSkillOverrideAutoPilot.DoDataEffect调用
+function BattleFleetVO.OverrideJoyStickAutoBot(self, aiID)
+	self._autoBotAIID = aiID
 
-	local var_28_0 = ys.Event.New(ys.Battle.BattleEvent.OVERRIDE_AUTO_BOT)
-
-	arg_28_0:DispatchEvent(var_28_0)
+	local overrideAutoBotEvent = ys.Event.New(ys.Battle.BattleEvent.OVERRIDE_AUTO_BOT)
+	-- 接收者: BattleControllerWeaponCommand.onOverrideAutoBot
+	self:DispatchEvent(overrideAutoBotEvent)
 end
 
 function BattleFleetVO.SnapShot(arg_29_0)
@@ -1374,69 +1375,78 @@ function BattleFleetVO.UnleashSubmarineSpecial(arg_104_0)
 	arg_104_0._manualSubUnit:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FREE_SPECIAL)
 end
 
-function BattleFleetVO.FixSubRefLine(arg_105_0, arg_105_1)
-	arg_105_0._fixedSubRefLine = arg_105_1
+-- BattleFleetBuffFixSubRefLine
+function BattleFleetVO.FixSubRefLine(self, refLine)
+	self._fixedSubRefLine = refLine
 end
 
-function var_0_8.AppendIndieSonar(arg_106_0, arg_106_1, arg_106_2)
-	if not arg_106_0._motionReferenceUnit then
+-- BattleSkillSonar
+function BattleFleetVO.AppendIndieSonar(self, range, duration)
+	if not self._motionReferenceUnit then
 		return
 	end
 
-	local var_106_0 = ys.Battle.BattleIndieSonar.New(arg_106_0, arg_106_1, arg_106_2)
+	local indieSonar = ys.Battle.BattleIndieSonar.New(self, range, duration)
 
-	var_106_0:SwitchHost(arg_106_0._motionReferenceUnit)
+	indieSonar:SwitchHost(self._motionReferenceUnit)
 
-	arg_106_0._indieSonarList[var_106_0] = true
+	self._indieSonarList[indieSonar] = true
 
-	var_106_0:Detect()
+	indieSonar:Detect()
 end
 
-function BattleFleetVO.RemoveIndieSonar(arg_107_0, arg_107_1)
-	for iter_107_0, iter_107_1 in pairs(arg_107_0._indieSonarList) do
-		if arg_107_1 == iter_107_0 then
-			arg_107_0._indieSonarList[iter_107_0] = nil
+function BattleFleetVO.RemoveIndieSonar(self, indieSonar)
+	for sonar, _ in pairs(self._indieSonarList) do
+		if indieSonar == sonar then
+			self._indieSonarList[sonar] = nil
 
 			break
 		end
 	end
 end
 
-function BattleFleetVO.AttachFleetBuff(arg_108_0, arg_108_1)
-	local var_108_0 = arg_108_1:GetID()
-	local var_108_1 = arg_108_0:GetFleetBuff(var_108_0)
+-- 添加FleetBuff
+-- FleetBuff是属于舰队的Buff，而不是属于某个Unit的Buff
+-- 被BattleSkillAddFleetBuff.DoDataEffect调用
+function BattleFleetVO.AttachFleetBuff(self, fleetBuff)
+	local fleetBuffID = fleetBuff:GetID()
+	local _fleetBuff = self:GetFleetBuff(fleetBuffID)
 
-	if var_108_1 then
-		var_108_1:Stack(arg_108_0)
+	if _fleetBuff then
+		_fleetBuff:Stack(self)
 	else
-		arg_108_0._buffList[var_108_0] = arg_108_1
-
-		arg_108_1:Attach(arg_108_0)
+		self._buffList[fleetBuffID] = fleetBuff
+		--- fleetBuff: BattleFleetBuffUnit
+		fleetBuff:Attach(self)
 	end
 end
 
-function BattleFleetVO.RemoveFleetBuff(arg_109_0, arg_109_1)
-	local var_109_0 = arg_109_0:GetFleetBuff(arg_109_1)
+function BattleFleetVO.RemoveFleetBuff(self, fleetBuffID)
+	local fleetBuff = self:GetFleetBuff(fleetBuffID)
 
-	if var_109_0 then
-		var_109_0:Remove()
+	if fleetBuff then
+		fleetBuff:Remove()
 	end
 end
 
-function BattleFleetVO.GetFleetBuff(arg_110_0, arg_110_1)
-	return arg_110_0._buffList[arg_110_1]
+function BattleFleetVO.GetFleetBuff(self, fleetBuffID)
+	return self._buffList[fleetBuffID]
 end
 
-function BattleFleetVO.GetFleetBuffList(arg_111_0)
-	return arg_111_0._buffList
+function BattleFleetVO.GetFleetBuffList(self)
+	return self._buffList
 end
 
-function BattleFleetVO.AttachFleetAttr(arg_112_0)
-	arg_112_0._fleetAttr = ys.Battle.BattleFleetAttrComponent.New(arg_112_0)
+--- FleetAttr相关 ---
+-- 与Unit的Attr是一个简单的表相比(只依靠BattleAttr做相关操作),FleetAttr则是一个组件(单独类)
+-- 一般来说, FleetAttr主要是为了实现这类一般需求: 队友做了XXX操作能够积累XXX(其实常规Buff靠tag应该也能做，但会很麻烦)...而这艘船可以根据积累的XXX/消耗XXX来触发一些效果
+-- 具体请看对应类代码. 可以对FleetAttr有更详细的了解(其实比BattleAttr是简化非常多的)
+function BattleFleetVO.AttachFleetAttr(self)
+	self._fleetAttr = ys.Battle.BattleFleetAttrComponent.New(self)
 end
 
-function BattleFleetVO.GetFleetAttr(arg_113_0)
-	return arg_113_0._fleetAttr
+function BattleFleetVO.GetFleetAttr(self)
+	return self._fleetAttr
 end
 
 function BattleFleetVO.Jamming(arg_114_0, arg_114_1)

@@ -1,26 +1,28 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSkillGridmanFloat = class("BattleSkillGridmanFloat", var_0_0.Battle.BattleSkillEffect)
-var_0_0.Battle.BattleSkillGridmanFloat.__name = "BattleSkillGridmanFloat"
+ys.Battle.BattleSkillGridmanFloat = class("BattleSkillGridmanFloat", ys.Battle.BattleSkillEffect)
+ys.Battle.BattleSkillGridmanFloat.__name = "BattleSkillGridmanFloat"
 
-local var_0_1 = var_0_0.Battle.BattleSkillGridmanFloat
+local BattleSkillGridmanFloat = ys.Battle.BattleSkillGridmanFloat
 
-function var_0_1.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattleSkillGridmanFloat.Ctor(self, template, level)
+	BattleSkillGridmanFloat.super.Ctor(self, template, level)
 
-	arg_1_0._iconType = arg_1_0._tempData.arg_list.icon_type
+	self._iconType = self._tempData.arg_list.icon_type
 end
 
-function var_0_1.DoDataEffect(arg_2_0, arg_2_1)
-	arg_2_0:doGridmanSkillFloat(arg_2_1)
+-- 此类SkillEffect似乎和CustomWarning是差不多的, 用来在古力特变身时显示漂浮的图标
+-- 使用例: 古力特变身的那几个技能(如宝多六花的专属装备技能)
+function BattleSkillGridmanFloat.DoDataEffect(self, caster)
+	self:doGridmanSkillFloat(caster)
 end
 
-function var_0_1.DoDataEffectWithoutTarget(arg_3_0, arg_3_1)
-	arg_3_0:doGridmanSkillFloat(arg_3_1)
+function BattleSkillGridmanFloat.DoDataEffectWithoutTarget(self, caster)
+	self:doGridmanSkillFloat(caster)
 end
 
-function var_0_1.doGridmanSkillFloat(arg_4_0, arg_4_1)
-	var_0_0.Battle.BattleDataProxy.GetInstance():DispatchGridmanSkill(arg_4_0._iconType, arg_4_1:GetIFF())
+function BattleSkillGridmanFloat.doGridmanSkillFloat(self, caster)
+	ys.Battle.BattleDataProxy.GetInstance():DispatchGridmanSkill(self._iconType, caster:GetIFF())
 end

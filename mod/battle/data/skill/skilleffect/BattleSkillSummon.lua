@@ -8,6 +8,9 @@ ys.Battle.BattleSkillSummon.__name = "BattleSkillSummon"
 
 local BattleSkillSummon = ys.Battle.BattleSkillSummon
 
+-- 核心SkillEfect之一
+-- 此类SkillEffect的作用是根据配置召唤单位
+-- 使用例: 非常多, 略
 function BattleSkillSummon.Ctor(self, template)
 	BattleSkillSummon.super.Ctor(self, template, lv)
 

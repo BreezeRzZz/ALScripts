@@ -1,28 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleFleetBuffSonarExtraRange = class("BattleFleetBuffSonarExtraRange", var_0_0.Battle.BattleFleetBuffEffect)
-var_0_0.Battle.BattleFleetBuffSonarExtraRange.__name = "BattleFleetBuffSonarExtraRange"
+ys.Battle.BattleFleetBuffSonarExtraRange = class("BattleFleetBuffSonarExtraRange", ys.Battle.BattleFleetBuffEffect)
+ys.Battle.BattleFleetBuffSonarExtraRange.__name = "BattleFleetBuffSonarExtraRange"
 
-local var_0_1 = var_0_0.Battle.BattleFleetBuffSonarExtraRange
+local BattleFleetBuffSonarExtraRange = ys.Battle.BattleFleetBuffSonarExtraRange
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_1.super.Ctor(arg_1_0, arg_1_1)
+-- 为舰队声纳(FleetSonar)提供额外范围(与技能声纳IndieSonar区分开)
+function BattleFleetBuffSonarExtraRange.Ctor(self, tempData)
+	BattleFleetBuffSonarExtraRange.super.Ctor(self, tempData)
 end
 
-function var_0_1.SetArgs(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._extraRange = arg_2_0._tempData.arg_list.range
+function BattleFleetBuffSonarExtraRange.SetArgs(self, fleetVO, fleetBuff)
+	self._extraRange = self._tempData.arg_list.range
 end
 
-function var_0_1.onAttach(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0:appendRange(arg_3_1)
+function BattleFleetBuffSonarExtraRange.onAttach(self, fleetVO, fleetBuff)
+	self:appendRange(fleetVO)
 end
 
-function var_0_1.onStack(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_0:appendRange(arg_4_1)
+function BattleFleetBuffSonarExtraRange.onStack(self, fleetVO, fleetBuff)
+	self:appendRange(fleetVO)
 end
 
-function var_0_1.appendRange(arg_5_0, arg_5_1)
-	arg_5_1:GetFleetSonar():AppendExtraSkillRange(arg_5_0._extraRange)
+function BattleFleetBuffSonarExtraRange.appendRange(self, fleetVO)
+	fleetVO:GetFleetSonar():AppendExtraSkillRange(self._extraRange)
 end
