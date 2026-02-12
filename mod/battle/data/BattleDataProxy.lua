@@ -252,20 +252,41 @@ function var_0_9.InitData(arg_18_0, arg_18_1)
 		local var_18_0 = arg_18_0._expeditionTmp.map_id
 
 		if #var_18_0 == 1 then
-			arg_18_0._mapId = var_18_0[1][1]
+			local var_18_1 = var_18_0[1]
+
+			if type(var_18_1) == "table" then
+				arg_18_0._mapId = var_18_1[1]
+			else
+				arg_18_0._mapId = var_18_1
+			end
 		else
 			local var_18_1 = {}
 
 			for iter_18_0, iter_18_1 in ipairs(var_18_0) do
-				local var_18_2 = iter_18_1[2] * 100
+				local var_18_2
+				local var_18_3
 
-				table.insert(var_18_1, {
-					rst = iter_18_1[1],
-					weight = var_18_2
-				})
+				if type(iter_18_1) == "table" then
+					var_18_2 = iter_18_1[1]
+					var_18_3 = iter_18_1[2]
+				else
+					var_18_2 = iter_18_1
+					var_18_3 = 1
+				end
+
+				var_18_3 = (tonumber(var_18_3) or 1) * 100
+
+				if var_18_2 ~= nil then
+					table.insert(var_18_1, {
+						rst = var_18_2,
+						weight = var_18_3
+					})
+				end
 			end
 
-			arg_18_0._mapId = var_0_2.WeightRandom(var_18_1)
+			if #var_18_1 > 0 then
+				arg_18_0._mapId = var_0_2.WeightRandom(var_18_1)
+			end
 		end
 	end
 

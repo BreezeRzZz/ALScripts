@@ -2947,7 +2947,7 @@ pg.skill_data_template = setmetatable({
 }, confHX)
 pg.base = pg.base or {}
 pg.base.skill_data_template = {
-	{
+	[1] = {
 		desc_get = "",
 		name = "战列底座用",
 		id = 1,
@@ -2961,7 +2961,7 @@ pg.base.skill_data_template = {
 		desc_get_add = {},
 		desc_add = {}
 	},
-	{
+	[2] = {
 		desc_get = "",
 		name = "战列底座用",
 		id = 2,
