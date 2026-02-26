@@ -102,8 +102,8 @@ function BattleWeaponButton.ConfigSkin(arg_7_0, arg_7_1)
 
 	arg_7_0._animtor = arg_7_1:GetComponent(typeof(Animator))
 	arg_7_0._bgEff = arg_7_1:Find("ActCtl/bg_eff")
-	arg_7_0._chargeEff = arg_7_1:Find("ActCtl/gizmos_1")
-	arg_7_0._fullChargeEff = arg_7_1:Find("ActCtl/gizmos_xue")
+	arg_7_0._gizmos1 = arg_7_1:Find("ActCtl/gizmos_1")
+	arg_7_0._gizmosXue = arg_7_1:Find("ActCtl/gizmos_xue")
 end
 
 function BattleWeaponButton.GetSkin(arg_9_0)
@@ -221,9 +221,9 @@ function BattleWeaponButton.OnCountChange(arg_21_0)
 		arg_21_0:SwitchIconEffect(var_21_2)
 	end
 
-	if arg_21_0._chargeEff then
-		SetActive(arg_21_0._chargeEff, var_21_0 > 0)
-		SetActive(arg_21_0._fullChargeEff, var_21_0 == var_21_1)
+	if arg_21_0._gizmos1 then
+		SetActive(arg_21_0._gizmos1, var_21_0 > 0)
+		SetActive(arg_21_0._gizmosXue, var_21_0 == var_21_1)
 	end
 end
 
@@ -340,9 +340,9 @@ function BattleWeaponButton.SetToCombatUIPreview(arg_30_0, arg_30_1)
 
 		arg_30_0._countTxt.text = "1/1"
 
-		if arg_30_0._chargeEff then
-			SetActive(arg_30_0._chargeEff, true)
-			SetActive(arg_30_0._fullChargeEff, true)
+		if arg_30_0._gizmos1 then
+			SetActive(arg_30_0._gizmos1, true)
+			SetActive(arg_30_0._gizmosXue, true)
 		end
 	else
 		SetActive(arg_30_0._unfill, true)
@@ -356,9 +356,9 @@ function BattleWeaponButton.SetToCombatUIPreview(arg_30_0, arg_30_1)
 
 		arg_30_0._countTxt.text = "0/0"
 
-		if arg_30_0._chargeEff then
-			SetActive(arg_30_0._chargeEff, false)
-			SetActive(arg_30_0._fullChargeEff, false)
+		if arg_30_0._gizmos1 then
+			SetActive(arg_30_0._gizmos1, false)
+			SetActive(arg_30_0._gizmosXue, false)
 		end
 	end
 end

@@ -308,6 +308,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 	local cldPos = extraInfo.cldPos
 	local incorrupt = extraInfo.incorrupt
 	local isReflect = extraInfo.isReflect
+	local isSpectreBullet = extraInfo.spectreBullet
 	local preShieldHP
 	local damageInfo
 	-- 表示这次更新是来自于受到了伤害
@@ -406,7 +407,9 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 		updateHPargs.posOffset = position - actualCldPos
 	end
 
-	self:UpdateHPAction(updateHPargs)
+	if not isSpectreBullet then
+		self:UpdateHPAction(updateHPargs)
+	end
 
 	if not self:IsAlive() and isAliveBeforeUpdate then
 		self:SetDeathReason(extraInfo.damageReason)

@@ -1031,3 +1031,7 @@ end
 function BattleBulletUnit.SetImmuneCLS(self, immuneCLS)
 	self._immuneCLS = immuneCLS
 end
+
+function var_0_10.IsSpectreBullet(arg_115_0)
+	return arg_115_0:GetTemplate().extra_param.spectre
+end

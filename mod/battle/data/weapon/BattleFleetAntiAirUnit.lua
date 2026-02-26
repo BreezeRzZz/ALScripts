@@ -88,8 +88,10 @@ function BattleFleetAntiAirUnit.flush(self)
 
 	local weightRstList = {}
 	local fleetAANum = 0
+	local totalExtraAntiAirRange = 0
 	-- 对每个舰船的每个防空炮进行遍历，计算整体属性
 	for crewUnit, fleetAAList in pairs(self._crewUnitList) do
+		totalExtraAntiAirRange = totalExtraAntiAirRange + crewUnit:GetAttrByName("extraAntiAirRange")
 		for _, fleetAA in ipairs(fleetAAList) do
 			fleetAANum = fleetAANum + 1
 			self._interval = self._interval + fleetAA:GetReloadTime()
@@ -119,7 +121,7 @@ function BattleFleetAntiAirUnit.flush(self)
 		end
 	else
 		-- 防空炮的索敌范围为平均范围
-		self._range = self._range / fleetAANum
+		self._range = self._range / fleetAANum + totalExtraAntiAirRange
 		-- 防空炮的开火间隔为平均间隔+0.5秒
 		self._interval = self._interval / fleetAANum + 0.5
 		self._weightList, self._totalWeight = BattleFormulas.GenerateWeightList(weightRstList)

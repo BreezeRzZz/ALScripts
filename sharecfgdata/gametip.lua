@@ -863,6 +863,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_character_unlock = {
+		tip = "等级达到$1后解锁"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.word_soundfiles_update_end = {
 		tip = "更新完成"
 	}
@@ -1647,6 +1653,12 @@ end)()
 (function()
 	_G.pg.base.gametip.clue_got = {
 		tip = "已领取"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_story_title = {
+		tip = "客栈故事"
 	}
 end)()
 
@@ -2753,6 +2765,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.spring_present_tips2 = {
+		tip = "当前秘书舰无法收取春日同心之礼，请指挥官更换秘书舰再进行尝试哦～"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.courtyard_label_week = {
 		tip = "一周内"
 	}
@@ -3374,6 +3392,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_update_unlock = {
+		tip = "客栈等级达到$1"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.word_votes = {
 		tip = "得票数量"
 	}
@@ -3634,6 +3658,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloorTaskUI_title = {
+		tip = "经营要务"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.ssssmedal_name = {
 		tip = "<color=#946EFF>名字：</color>"
 	}
@@ -3784,6 +3814,12 @@ end)()
 (function()
 	_G.pg.base.gametip.dorm3d_talk = {
 		tip = "对话"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.loveactivity_ui_4_1 = {
+		tip = "是否给予<color=#3DC6FFFF>$1</color>额外<color=#3DC6FFFF>500</color>甜蜜回忆？\n 给予后<color=#FF5C5CFF>无法更改</color>，注意选定邀约角色哦。"
 	}
 end)()
 
@@ -9405,6 +9441,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.spring_present_tips3 = {
+		tip = "邮件收取成功，请指挥官前往邮箱查看并收取她为您准备的礼物。"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.guild_tech_non_admin = {
 		tip = "操作权限不足，需要副司令以上职位方可进行舰队科技研发操作"
 	}
@@ -9425,6 +9467,12 @@ end)()
 (function()
 	_G.pg.base.gametip.exercise_count_insufficient = {
 		tip = "演习<color=#92fc63>次数不足</color>"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.spring_present_tips1 = {
+		tip = "指挥官，您将通过邮件收到第一栏位秘书舰的春日同心之礼，是否确认?"
 	}
 end)()
 
@@ -9455,6 +9503,24 @@ end)()
 (function()
 	_G.pg.base.gametip.help_build_2 = {
 		tip = "\t\t\t\t\t   <size=25>$1建造概率分布</size>\n\n\t\t\t\t\t\t\t<color=#ffde38>超稀有舰船</color>：$2%\n\t\t\t\t\t\t\t <color=#d797ff>精锐舰船</color>：$3%\n\t\t\t\t\t\t\t <color=#3dc6ff>稀有舰船</color>：$4%\n\t\t\t\t\t\t\t 普通舰船：$5%"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.spring_present_tips0 = {
+		tip = "当前为随机秘书组，请关闭随机秘书组后再进行尝试哦"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.courtyard_label_time = {
+		tip = "时间"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.spring_present_tips_btn = {
+		tip = "春日同心"
 	}
 end)()
 
@@ -9512,6 +9578,52 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.loveactivity_help_tips = {
+		tip = {
+			{
+				icon = {
+					atlas = "helpbg/love_help_1",
+					path = ""
+				}
+			},
+			{
+				icon = {
+					atlas = "helpbg/love_help_2",
+					path = ""
+				}
+			},
+			{
+				icon = {
+					atlas = "helpbg/love_help_3",
+					path = ""
+				}
+			},
+			{
+				icon = {
+					atlas = "helpbg/love_help_4",
+					path = ""
+				}
+			},
+			disableScroll = true,
+			pageMode = true,
+			ImageMode = true,
+			defaultpage = 1,
+			windowSize = {
+				x = 1263,
+				y = 873
+			},
+			windowPos = {
+				y = -70
+			},
+			helpSize = {
+				x = 1176,
+				y = 1024
+			}
+		}
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.island_index_potency = {
 		tip = "能力未满"
 	}
@@ -9524,8 +9636,50 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.dorm3d_nengdai_minigame_day1 = {
+		tip = "周一"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_custom_theme_name_tip = {
+		tip = "是否要将当前布置保存为模板"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_gold_get = {
+		tip = "收取金币"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.mail_storeroom_resourcetaken = {
 		tip = "取出资源"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloorTaskUI_got = {
+		tip = "已领取"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloorTaskUI_get = {
+		tip = "领取"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloorTaskUI_go = {
+		tip = "前往"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_request = {
+		tip = "申请"
 	}
 end)()
 
@@ -9542,8 +9696,48 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_gold_max_tip = {
+		tip = "金币容量已达上限"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_story_title_3 = {
+		tip = "神秘邂逅"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.black5_bundle_help = {
+		tip = {
+			{
+				info = "若已购买部分皮肤，可通过补差价方式获取剩余礼包内容。\n本礼包购买时不支持使用换装抵扣券，如需使用，可在皮肤商店单独购买皮肤时使用。"
+			}
+		}
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_update = {
+		tip = "升级"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.word_equipment_small_cannon = {
 		tip = "小型舰炮"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_gold = {
+		tip = "每秒产量"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.ship_formationUI_fleetName_extra_ss = {
+		tip = "EX潜艇编队"
 	}
 end)()
 
@@ -9578,6 +9772,12 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_character_tip = {
+		tip = "角色入住，每隔一段时间可以获得额外的金币，同时入住角色出击获得的好感度提升"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.word_study = {
 		tip = "学习"
 	}
@@ -9590,8 +9790,20 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_character_num = {
+		tip = "角色容量"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.login_newPlayerScene_name_tooShort = {
 		tip = "名字太短"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.battle_result_max_combo = {
+		tip = "最高COMBO："
 	}
 end)()
 
@@ -9614,6 +9826,30 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.vote_love_confirm = {
+		tip = "是否消耗一次真爱投票机会进行一次额外投票"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_story_go = {
+		tip = "前往"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_story_title_4 = {
+		tip = "客\n栈\n故\n事"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_story_title_2 = {
+		tip = "檐下趣闻"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip["card_battle_card details_switchto_deck"] = {
 		tip = "查看待抽取指令 "
 	}
@@ -9632,14 +9868,50 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_story_title_1 = {
+		tip = "经营日记"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_level = {
+		tip = "客栈等级"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.LiquorFloor_title_en = {
+		tip = "Springtide"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.levelScene_chapter_win = {
 		tip = "BOSS击破，关卡攻略完成"
 	}
 end)()
 
 (function()
+	_G.pg.base.gametip.LiquorFloor_title = {
+		tip = "春满客栈Online"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_quick_delegation_notenough_onduty = {
+		tip = "$1正在进行其他工作，无法委派"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.island_word_place = {
 		tip = "布置"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_quick_delegation_notenough_encourage = {
+		tip = "$1体力不足，无法委派"
 	}
 end)()
 
@@ -9662,14 +9934,44 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.collection_hadAward = {
+		tip = "奖励已领取"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_chara_gather_no_target = {
+		tip = "无剩余可采集目标"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.SuperBulin2_tip4 = {
 		tip = "从后宅中寻找密码burin！"
 	}
 end)()
 
 (function()
+	_G.pg.base.gametip.island_chara_gather_done = {
+		tip = "采集完成"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.word_status_inFight = {
+		tip = "已出击"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.child2_status_time1 = {
 		tip = "$1回合"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_chara_gather_tag_2 = {
+		tip = "矿物及木材"
 	}
 end)()
 
@@ -9692,8 +9994,26 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.island_chara_gather_tag_1 = {
+		tip = "野外采集物"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.grapihcs3d_setting_bloom_intensity_0 = {
 		tip = "关"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_chara_gather_start = {
+		tip = "出发"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.ship_remould_need_level = {
+		tip = "需要等级:$1"
 	}
 end)()
 
@@ -9704,8 +10024,26 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.gametip.island_chara_gather_money = {
+		tip = "消耗资金"
+	}
+end)()
+
+(function()
 	_G.pg.base.gametip.main_mailLayer_quest_clear = {
 		tip = "确定要删除所有已读邮件吗？<color=#238c40>（未领取附件的邮件将会保留）</color>"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_chara_gather_power = {
+		tip = "消耗体力"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.island_skill_desc = {
+		tip = "技能详情"
 	}
 end)()
 
@@ -9728,20 +10066,14 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.drawdiary_ui_2026 = {
-		tip = "绘图日记"
+	_G.pg.base.gametip.island_gift_tip = {
+		tip = "继续赠送该礼物将会超出体力上限，是否继续赠送"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.technology_refresh_sucess = {
-		tip = "刷新研发列表成功"
-	}
-end)()
-
-(function()
-	_G.pg.base.gametip.island_request = {
-		tip = "申请"
+	_G.pg.base.gametip.word_shipskin = {
+		tip = "特殊"
 	}
 end)()
 
@@ -9752,6 +10084,36 @@ end)()
 				info = "活动说明：\n1.活动期间可以通过<color=#92fc63>「飞云大冒险」</color>、<color=#92fc63>「绘图日记」</color>、<color=#92fc63>「伏波的完美计划」</color>、<color=#92fc63>「新春烟花会」</color>获得红包，开启红包可以获得钻石及其他丰厚奖励\n2.红包分为bonus和普通红包，其中有<color=#92fc63>15</color>个bonus红包，其余为普通红包，开启红包时优先开启bonus红包，bonus红包开完后开启普通红包\n3.累计打开<color=#92fc63>15</color>个红包，可获得<color=#92fc63>「抚顺」限定换装</color>，累计打开<color=#92fc63>25</color>个红包，可获得<color=#92fc63>「长岛」限定换装</color>"
 			}
 		}
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.loveactivity_ui_20 = {
+		tip = "累计幸福共鸣勋章等级奖励"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.equip_ammo_type_5 = {
+		tip = "通常"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.technology_refresh_sucess = {
+		tip = "刷新研发列表成功"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.shipyard_gift_non_existent = {
+		tip = "没有可赠送的礼物。"
+	}
+end)()
+
+(function()
+	_G.pg.base.gametip.loveactivity_ui_16 = {
+		tip = "暂无奖励可领取"
 	}
 end)()
 
@@ -9780,14 +10142,14 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_20 = {
-		tip = "累计幸福共鸣等级奖励"
+	_G.pg.base.gametip.courtyard_label_filter = {
+		tip = "筛选"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.equip_ammo_type_5 = {
-		tip = "通常"
+	_G.pg.base.gametip.loveactivity_ui_14 = {
+		tip = "$1幸福共鸣勋章"
 	}
 end)()
 
@@ -9804,8 +10166,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.shipyard_gift_non_existent = {
-		tip = "没有可赠送的礼物。"
+	_G.pg.base.gametip.loveactivity_ui_13 = {
+		tip = "新的情人节信件已解锁"
 	}
 end)()
 
@@ -9826,14 +10188,14 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_16 = {
-		tip = "暂无奖励可领取"
+	_G.pg.base.gametip.loveactivity_ui_12 = {
+		tip = "※只有邀约对象可获得关卡及签到产出的甜蜜回忆（切换次数$1/$2）"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.courtyard_label_filter = {
-		tip = "筛选"
+	_G.pg.base.gametip.danmachi_award_name2 = {
+		tip = "琉·璃昂"
 	}
 end)()
 
@@ -9862,26 +10224,26 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_14 = {
-		tip = "$1幸福共鸣勋章"
+	_G.pg.base.gametip.tec_target_catchup_dr_char = {
+		tip = "决战方案"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_13 = {
-		tip = "新的情人节信件已解锁"
+	_G.pg.base.gametip.loveactivity_ui_9 = {
+		tip = "$1年情人节礼物"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_12 = {
-		tip = "※活动中可随时更换邀约对象（剩余$1/$2）"
+	_G.pg.base.gametip.loveactivity_ui_8 = {
+		tip = "回忆 "
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.danmachi_award_name2 = {
-		tip = "琉·璃昂"
+	_G.pg.base.gametip.loveactivity_ui_7 = {
+		tip = "※用于回忆的情人节礼物不会被消耗"
 	}
 end)()
 
@@ -9926,8 +10288,21 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.tec_target_catchup_dr_char = {
-		tip = "决战方案"
+	_G.pg.base.gametip.idol3rd_houshan = {
+		tip = {
+			{
+				info = "<color=#92fc63>4.25-5.9</color>期间开启限时活动「共鸣的Passion」"
+			},
+			{
+				info = "1.通过特别作战获取「共鸣徽章」，在「累计奖励」和\n「补给商店」处兑换丰厚奖励"
+			},
+			{
+				info = "2.在「演唱歌房」完成音乐小游戏，获取B评价以上时\n可以收集「演唱音符」，收集<color=#92fc63>7</color>次「演唱音符」可以获\n得限定装备「μ兵装三期LIVE纪念票」\n<color=#92fc63>注意：</color>每日可获得一次机会，可累计7次，未达到B评价\n以上时不会消耗次数，次数用尽后仍然可以进行音乐小\n游戏"
+			},
+			{
+				info = "3.在活动中收集全部<color=#92fc63>12</color>个「周边」道具后，可在「纪念\n章」处获取「共鸣舞台微缩模型」\n详细获取条件可在「纪念章」界面查看\n4.点击「限时建造」可以前往建造界面\n5.点击「换装商店」可以前往换装商店界面"
+			}
+		}
 	}
 end)()
 
@@ -9938,14 +10313,14 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_9 = {
-		tip = "$1年情人节礼物"
+	_G.pg.base.gametip.loveactivity_ui_5 = {
+		tip = "珍藏回忆 "
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_8 = {
-		tip = "回忆 "
+	_G.pg.base.gametip.blueprint_simulation_confirm_49907 = {
+		tip = "<size=28>\n是否开始战术模拟？(模拟中我方舰船将受到某些特殊加成影响，\n<color=#ff5c5c>实际性能以获得舰船为准</color>）\n使用装备：<color=#92fc63>\n试作型双联装406mmSKC主炮\n双联装TbtsKC36式150mm主炮\n试作型四联装30mm机炮\n</color></size>"
 	}
 end)()
 
@@ -9962,27 +10337,14 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_7 = {
-		tip = "※用于回忆的情人节礼物不会被消耗"
+	_G.pg.base.gametip.loveactivity_ui_4_2 = {
+		tip = "是否给予<color=#3DC6FFFF>$1</color>额外<color=#3DC6FFFF>800</color>甜蜜回忆？\n 给予后<color=#FF5C5CFF>无法更改</color>，注意选定邀约角色哦。"
 	}
 end)()
 
 (function()
-	_G.pg.base.gametip.idol3rd_houshan = {
-		tip = {
-			{
-				info = "<color=#92fc63>4.25-5.9</color>期间开启限时活动「共鸣的Passion」"
-			},
-			{
-				info = "1.通过特别作战获取「共鸣徽章」，在「累计奖励」和\n「补给商店」处兑换丰厚奖励"
-			},
-			{
-				info = "2.在「演唱歌房」完成音乐小游戏，获取B评价以上时\n可以收集「演唱音符」，收集<color=#92fc63>7</color>次「演唱音符」可以获\n得限定装备「μ兵装三期LIVE纪念票」\n<color=#92fc63>注意：</color>每日可获得一次机会，可累计7次，未达到B评价\n以上时不会消耗次数，次数用尽后仍然可以进行音乐小\n游戏"
-			},
-			{
-				info = "3.在活动中收集全部<color=#92fc63>12</color>个「周边」道具后，可在「纪念\n章」处获取「共鸣舞台微缩模型」\n详细获取条件可在「纪念章」界面查看\n4.点击「限时建造」可以前往建造界面\n5.点击「换装商店」可以前往换装商店界面"
-			}
-		}
+	_G.pg.base.gametip.loveactivity_ui_4 = {
+		tip = "是否给予$1额外甜蜜回忆。\n 甜蜜回忆给予后无法进行更改。"
 	}
 end)()
 
@@ -10069,8 +10431,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_5 = {
-		tip = "珍藏回忆 "
+	_G.pg.base.gametip.mingshi_task_tip_10 = {
+		tip = "被发现了喵？\n暗号是……<<color=#92fc63>H</color>>\n最后的目标是……<<color=#92fc63>悲喜交织之地</color>>"
 	}
 end)()
 
@@ -10081,8 +10443,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.loveactivity_ui_4 = {
-		tip = "是否给予$1额外甜蜜回忆"
+	_G.pg.base.gametip.drawdiary_ui_2026 = {
+		tip = "绘图日记"
 	}
 end)()
 
@@ -10099,8 +10461,12 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.mingshi_task_tip_10 = {
-		tip = "被发现了喵？\n暗号是……<<color=#92fc63>H</color>>\n最后的目标是……<<color=#92fc63>悲喜交织之地</color>>"
+	_G.pg.base.gametip.LiquorFloor_tip = {
+		tip = {
+			{
+				info = "活动简介：\n「春满客栈Online」：经营客栈，获得活动限定奖励\n1.酒楼、水榭楼台、花园、池塘提供金币产出，升级这四个建筑可以提高金币产出效率，每个建筑产出的金币最多留存6小时\n2.神秘仓库可以用来存放金币，升级建筑可以提升金币容量上限\n3.旅舍可以被用来邀请角色入住，角色入住期间每隔一段时间就会提供额外的金币产出，同时携带这些角色出击也将获得好感度提升。升级建筑后，可以邀请更多角色入住\n4.建筑达到一定等级时，继续升级需要消耗元宝。元宝可以通过完成经营要务中的通关活动关卡来获得\n5.客栈等级的提升，需要累积获得一定数量的金币\n6.客栈故事将在客栈等级或指定建筑升级至对应等级后解锁\n7.完成经营要务可以获得头像框、限定家具等活动奖励"
+			}
+		}
 	}
 end)()
 
@@ -10407,8 +10773,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.blueprint_simulation_confirm_49907 = {
-		tip = "<size=28>\n是否开始战术模拟？(模拟中我方舰船将受到某些特殊加成影响，\n<color=#ff5c5c>实际性能以获得舰船为准</color>）\n使用装备：<color=#92fc63>\n试作型双联装406mmSKC主炮\n双联装TbtsKC36式150mm主炮\n试作型四联装30mm机炮\n</color></size>"
+	_G.pg.base.gametip.loveactivity_ui_4_3 = {
+		tip = "是否给予<color=#3DC6FFFF>$1</color>额外<color=#3DC6FFFF>1500</color>甜蜜回忆？\n 给予后<color=#FF5C5CFF>无法更改</color>，注意选定邀约角色哦。"
 	}
 end)()
 
@@ -12590,12 +12956,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.black5_bundle_help = {
-		tip = {
-			{
-				info = "若已购买部分皮肤，可通过补差价方式获取剩余礼包内容。\n本礼包购买时不支持使用换装抵扣券，如需使用，可在皮肤商店单独购买皮肤时使用。"
-			}
-		}
+	_G.pg.base.gametip.LiquorFloor_update_max = {
+		tip = "已达满级"
 	}
 end)()
 
@@ -12937,8 +13299,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.island_custom_theme_name_tip = {
-		tip = "是否要将当前布置保存为模板"
+	_G.pg.base.gametip.MoscowURCoreActivity_subtitle_1 = {
+		tip = "春满客栈Online"
 	}
 end)()
 
@@ -18755,8 +19117,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.island_skill_desc = {
-		tip = "技能详情"
+	_G.pg.base.gametip.island_chara_gather_tip = {
+		tip = "采集"
 	}
 end)()
 
@@ -28907,8 +29269,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.courtyard_label_time = {
-		tip = "时间"
+	_G.pg.base.gametip.spring_present_tips_time = {
+		tip = "活动时间: 2.17 0时~3.3 24时"
 	}
 end)()
 
@@ -29665,8 +30027,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.dorm3d_nengdai_minigame_day1 = {
-		tip = "周一"
+	_G.pg.base.gametip.MoscowURCoreActivity_subtitle_2 = {
+		tip = "客栈补给站"
 	}
 end)()
 
@@ -37553,8 +37915,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.collection_hadAward = {
-		tip = "奖励已领取"
+	_G.pg.base.gametip.island_quick_delegation = {
+		tip = "再次委派"
 	}
 end)()
 
@@ -37565,8 +37927,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.ship_formationUI_fleetName_extra_ss = {
-		tip = "EX潜艇编队"
+	_G.pg.base.gametip.LiquorFloor_gold_num = {
+		tip = "金币容量"
 	}
 end)()
 
@@ -38335,7 +38697,7 @@ end)()
 	_G.pg.base.gametip.lanternRiddles_gametip = {
 		tip = {
 			{
-				info = "活动简介：\n「啾啾灯会」：参与答题小游戏获取丰富奖励 \n1.每天解锁1次答题机会，共14次机会，前<color=#92fc63>7</color>次答对题目后会获得奖励，答错题目后需要等待一段时间重新答题 \n2.回答题目后若答对则会消耗答题机会，无答题机会则无法选择题目和作答；点进题目不作答或答错不消耗答题机会，此时可以更换题目选择。 \n3.奖励包括：\n第一次答对：T2随机改造图*2，300物资 \n第二次答对：T2随机部件*3，100石油 \n第三次答对：T2随机教材*2，300物资 \n第四次答对：T3防御教材*2，100石油 \n第五次答对：T3通用改造部件*3，300物资 \n第六次答对：T3攻击教材*2，100石油 \n第七次答对：<color=#92fc63>高级定向蓝图七期*2</color>，300物资"
+				info = "活动简介：\n「啾啾灯会」：参与答题小游戏获取丰富奖励 \n1.每天解锁1次答题机会，共14次机会，前<color=#92fc63>7</color>次答对题目后会获得奖励，答错题目后需要等待一段时间重新答题 \n2.回答题目后若答对则会消耗答题机会，无答题机会则无法选择题目和作答；点进题目不作答或答错不消耗答题机会，此时可以更换题目选择。 \n3.奖励包括：\n第一次答对：T2随机改造图*2，300物资 \n第二次答对：T2随机部件*3，100石油 \n第三次答对：T2随机教材*2，300物资 \n第四次答对：T3防御教材*2，100石油 \n第五次答对：T3通用改造部件*3，300物资 \n第六次答对：T3攻击教材*2，100石油 \n第七次答对：<color=#92fc63>高级定向蓝图八期*2</color>，300物资"
 			}
 		}
 	}
@@ -39417,8 +39779,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.vote_love_confirm = {
-		tip = "是否消耗一次真爱投票机会进行一次额外投票"
+	_G.pg.base.gametip.LiquorFloor_story_get = {
+		tip = "领取"
 	}
 end)()
 
@@ -40232,7 +40594,7 @@ end)()
 
 (function()
 	_G.pg.base.gametip.loveactivity_ui_10 = {
-		tip = "累计幸福共鸣等级"
+		tip = "累计幸福共鸣勋章等级"
 	}
 end)()
 
@@ -42954,8 +43316,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.ship_remould_need_level = {
-		tip = "需要等级:$1"
+	_G.pg.base.gametip.island_chara_gather_range = {
+		tip = "选择采集目标"
 	}
 end)()
 
@@ -46720,8 +47082,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.battle_result_max_combo = {
-		tip = "最高COMBO："
+	_G.pg.base.gametip.LiquorFloor_story_got = {
+		tip = "已领取"
 	}
 end)()
 
@@ -48011,7 +48373,7 @@ end)()
 
 (function()
 	_G.pg.base.gametip.buildship_new_tip = {
-		tip = "弗朗西斯科·卡拉乔洛 等角色建造概率UP！"
+		tip = "每累计建造200次可获得海上传奇舰船 莫斯科(最多4次)"
 	}
 end)()
 
@@ -49164,8 +49526,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.word_status_inFight = {
-		tip = "已出击"
+	_G.pg.base.gametip.island_chara_gather_skill_effect = {
+		tip = "体力消耗"
 	}
 end)()
 
@@ -49318,8 +49680,8 @@ end)()
 end)()
 
 (function()
-	_G.pg.base.gametip.word_shipskin = {
-		tip = "特殊"
+	_G.pg.base.gametip.island_gift_tip_title = {
+		tip = "体力"
 	}
 end)()
 

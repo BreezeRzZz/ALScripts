@@ -62,7 +62,7 @@ function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 
 	bullet:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BULLET_COLLIDE, args)
 
-	if ship:GetUnitType() == BattleConst.UnitType.PLAYER_UNIT and ship:GetIFF() == BattleConfig.FRIENDLY_CODE then
+	if ship:GetUnitType() == BattleConst.UnitType.PLAYER_UNIT and ship:GetIFF() == BattleConfig.FRIENDLY_CODE and not bullet:IsSpectreBullet() then
 		ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[BattleConst.ShakeType.HIT])
 	end
 
@@ -105,6 +105,8 @@ function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance
 
 	local weaponType = weaponTemplate.type
 	local equipIndex = weapon:GetEquipmentIndex()
+	local isSpectreBullet = bullet:IsSpectreBullet()
+	damage = isSpectreBullet and 0 or damage
 	local bulletHitArgs = {
 		target = target,
 		damage = damage,
@@ -119,7 +121,8 @@ function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance
 		attr = damageAttr,
 		font = damageFont,
 		cldPos = bullet:GetPosition(),
-		srcID = weaponHostAttr.hostUID or weaponHostAttr.battleUID
+		srcID = weaponHostAttr.hostUID or weaponHostAttr.battleUID,
+		spectreBullet = isSpectreBullet
 	}
 
 	bullet:GetWeapon():WeaponStatistics(damage, isCri, isMiss)
