@@ -121,6 +121,7 @@ end
 
 --- @return nil
 --- 生成子弹
+--- 被各种PrimalIteration调用
 function BattleBulletEmitter.GenerateBullet(self)
 	local barrageData = self._convertedDirBarrage[self._primalCounter]
 	local offsetX = barrageData.OffsetX

@@ -141,15 +141,15 @@ function BattleState.EnterBattle(self, battleData, prePause)
 	self:Active()
 	self:ResetTimer()
 
-	arg_9_0._dataProxy = arg_9_0:AddDataProxy(var_0_0.Battle.BattleDataProxy.GetInstance())
-	arg_9_0._uiMediator = arg_9_0:AddMediator(var_0_0.Battle.BattleUIMediator.New())
-	arg_9_0._battleType = arg_9_1.battleType
+	self._dataProxy = self:AddDataProxy(ys.Battle.BattleDataProxy.GetInstance())
+	self._uiMediator = self:AddMediator(ys.Battle.BattleUIMediator.New())
+	self._battleType = battleData.battleType
 
-	local var_9_0 = var_0_0.Battle.BattleFacadeGate.CommandGates[arg_9_0._battleType] or var_0_0.Battle.BattleSingleDungeonCommand
+	local command = ys.Battle.BattleFacadeGate.CommandGates[self._battleType] or ys.Battle.BattleSingleDungeonCommand
 
-	arg_9_0._battleCommand = arg_9_0:AddCommand(var_9_0.New())
-	arg_9_0._sceneMediator = arg_9_0:AddMediator(var_0_0.Battle.BattleSceneMediator.New())
-	arg_9_0._weaponCommand = arg_9_0:AddCommand(var_0_0.Battle.BattleControllerWeaponCommand.New())
+	self._battleCommand = self:AddCommand(command.New())
+	self._sceneMediator = self:AddMediator(ys.Battle.BattleSceneMediator.New())
+	self._weaponCommand = self:AddCommand(ys.Battle.BattleControllerWeaponCommand.New())
 
 	self._dataProxy:InitBattle(battleData)
 

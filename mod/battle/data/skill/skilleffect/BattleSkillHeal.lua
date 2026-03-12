@@ -7,7 +7,8 @@ ys.Battle.BattleSkillHeal.__name = "BattleSkillHeal"
 
 -- 核心SkillEffect之一
 -- 此类SkillEffect用于治疗目标单位
--- 使用例: 几乎所有的回血技能
+-- 使用例: 部分回血技能
+-- 与BattleBuffHP区别在于, BattleSkillHeal一定是自己给自己的治疗, 而BattleBuffHP则不一定. 例如, 也可以是给队友治疗的BuffEffect
 function ys.Battle.BattleSkillHeal.Ctor(self, template, level)
 	ys.Battle.BattleSkillHeal.super.Ctor(self, template, level)
 

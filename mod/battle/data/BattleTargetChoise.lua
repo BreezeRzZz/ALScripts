@@ -197,25 +197,26 @@ function BattleTargetChoise.TargetHelpLeastHP(arg_13_0, arg_13_1, arg_13_2)
 	}
 end
 
-function BattleTargetChoise.TargetHelpLeastHPRatio(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1 = arg_14_1 or {}
+function BattleTargetChoise.TargetHelpLeastHPRatio(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_14_0
+	local target
 
-	if arg_14_0 then
-		local var_14_1 = 100
-		local var_14_2 = arg_14_2 or BattleTargetChoise.getShipListByIFF(arg_14_0:GetIFF())
+	if caster then
+		local leastHPRatio = 100
+		local _candidateList = candidateList or BattleTargetChoise.getShipListByIFF(caster:GetIFF())
 
-		for iter_14_0, iter_14_1 in pairs(var_14_2) do
-			if iter_14_1:IsAlive() and var_14_1 > iter_14_1:GetHPRate() then
-				var_14_0 = iter_14_1
-				var_14_1 = iter_14_1:GetHPRate()
+		for _, candidate in pairs(_candidateList) do
+			-- GetHPRate返回的是当前耐久与最大耐久之比，因此最大值为1
+			if candidate:IsAlive() and leastHPRatio > candidate:GetHPRate() then
+				target = candidate
+				leastHPRatio = candidate:GetHPRate()
 			end
 		end
 	end
 
 	return {
-		var_14_0
+		target
 	}
 end
 

@@ -1368,6 +1368,8 @@ end
 --- @return BattleBulletUnit
 --- 生成武器的子弹
 --- 调用的时候用到了三个参数，不知道还有一个在哪，可能是可变参数...
+--- 实际是被BattleBulletEmitter._spawnFunc(在createMajorEmitter作为闭包传入)调用
+--- _spawnFunc又来自BattleBulletEmitter.GenerateBullet
 function BattleWeaponUnit.Spawn(self, bulletID, target)
 	local targetPos
 
@@ -1508,6 +1510,7 @@ end
 --- @param trigger number
 --- @return nil
 --- 触发子弹生成时的Buff
+--- BattleWeaponUnit.Spawn调用
 function BattleWeaponUnit.TriggerBuffWhenSpawn(self, bullet, trigger)
 	local trigger = trigger or BattleConst.BuffEffectType.ON_BULLET_CREATE
 

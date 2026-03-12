@@ -96,7 +96,6 @@ function BattleSingleDungeonCommand.onInitBattle(self)
 	self._waveUpdater:SetWavesData(self._dataProxy:GetStageInfo())
 end
 
--- TODO
 function BattleSingleDungeonCommand.initWaveModule(self)
 	-- 刷怪的回调函数
 	local function spawnFunc(spawnItem, waveIndex, enemyType)

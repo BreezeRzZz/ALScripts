@@ -433,7 +433,7 @@ end
 --- @return nil
 --- 发送更新血量的事件
 --- 对应的Event: BattleUnitEvent.UPDATE_HP
---- 对应的Listener: 较多，举其中一个例子: BattleFleeVO.onUnitUpdateHP
+--- 对应的Listener: 较多，举其中一个例子: BattleFleetVO.onUnitUpdateHP
 function BattleUnit.UpdateHPAction(self, args)
 	self:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_HP, args))
 end

@@ -13,24 +13,24 @@ ys.Battle.BattlePlayerUnit.__name = "BattlePlayerUnit"
 
 local BattlePlayerUnit = ys.Battle.BattlePlayerUnit
 
-function BattlePlayerUnit.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	BattlePlayerUnit.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+function BattlePlayerUnit.Ctor(self, uid, iff)
+	BattlePlayerUnit.super.Ctor(self, uid, iff)
 
-	arg_1_0._type = BattleConst.battleUnitType.PLAYER_UNIT
+	self._type = BattleConst.battleUnitType.PLAYER_UNIT
 end
 
-function BattlePlayerUnit.Retreat(arg_2_0)
-	BattlePlayerUnit.super.Retreat(arg_2_0)
-	arg_2_0:SetDeathReason(BattleConst.UnitDeathReason.LEAVE)
-	arg_2_0:DeacActionClear()
-	arg_2_0._battleProxy:ShutdownPlayerUnit(arg_2_0:GetUniqueID())
-	arg_2_0._battleProxy:KillUnit(arg_2_0:GetUniqueID())
+function BattlePlayerUnit.Retreat(self)
+	BattlePlayerUnit.super.Retreat(self)
+	self:SetDeathReason(BattleConst.UnitDeathReason.LEAVE)
+	self:DeacActionClear()
+	self._battleProxy:ShutdownPlayerUnit(self:GetUniqueID())
+	self._battleProxy:KillUnit(self:GetUniqueID())
 end
 
-function BattlePlayerUnit.DeadActionEvent(arg_3_0)
-	arg_3_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.WILL_DIE, {}))
-	arg_3_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.SHUT_DOWN_PLAYER, {}))
-	arg_3_0._unitState:ChangeState(ys.Battle.UnitState.STATE_DEAD)
+function BattlePlayerUnit.DeadActionEvent(self)
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.WILL_DIE, {}))
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.SHUT_DOWN_PLAYER, {}))
+	self._unitState:ChangeState(ys.Battle.UnitState.STATE_DEAD)
 end
 
 function BattlePlayerUnit.IsSpectre(self)
@@ -49,29 +49,31 @@ function BattlePlayerUnit.IsSpectre(self)
 	return battleUnitType <= BattleConfig.SPECTRE_UNIT_TYPE, battleUnitType
 end
 
-function BattlePlayerUnit.InitCurrentHP(arg_5_0, arg_5_1)
-	arg_5_0:SetCurrentHP(math.ceil(arg_5_0:GetMaxHP() * arg_5_1))
-	arg_5_0:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {})
+function BattlePlayerUnit.InitCurrentHP(self, initHPRate)
+	-- 此处会再做一次ceil?
+	self:SetCurrentHP(math.ceil(self:GetMaxHP() * initHPRate))
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {})
 end
 
-function BattlePlayerUnit.SetSkinId(arg_6_0, arg_6_1)
-	arg_6_0._skinId = arg_6_1
+function BattlePlayerUnit.SetSkinId(self, skinId)
+	self._skinId = skinId
 end
 
-function BattlePlayerUnit.GetSkinID(arg_7_0)
-	return arg_7_0._skinId
+function BattlePlayerUnit.GetSkinID(self)
+	return self._skinId
 end
 
-function BattlePlayerUnit.GetDefaultSkinID(arg_8_0)
-	return arg_8_0._tmpData.skin_id
+function BattlePlayerUnit.GetDefaultSkinID(self)
+	return self._tmpData.skin_id
 end
 
-function BattlePlayerUnit.ActionKeyOffsetUseable(arg_9_0)
-	return arg_9_0._skinData.spine_action_offset
+-- note
+function BattlePlayerUnit.ActionKeyOffsetUseable(self)
+	return self._skinData.spine_action_offset
 end
 
-function BattlePlayerUnit.GetShipName(arg_10_0)
-	return arg_10_0._shipName or arg_10_0._tmpData.name
+function BattlePlayerUnit.GetShipName(self)
+	return self._shipName or self._tmpData.name
 end
 
 function BattlePlayerUnit.SetShipName(arg_11_0, arg_11_1)

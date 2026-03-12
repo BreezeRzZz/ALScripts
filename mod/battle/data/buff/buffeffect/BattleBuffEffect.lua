@@ -460,15 +460,15 @@ function BattleBuffEffect.onFoeAircraftDying(self, arg_56_1, arg_56_2, arg_56_3)
 	end
 end
 
-function BattleBuffEffect.onFoeDying(self, arg_57_1, arg_57_2, arg_57_3)
+function BattleBuffEffect.onFoeDying(self, owner, buff, args)
 	if self._tempData.arg_list.killer then
-		if self:killerRequire(self._tempData.arg_list.killer, arg_57_3.killer, arg_57_1) then
-			self:onTrigger(arg_57_1, arg_57_2)
+		if self:killerRequire(self._tempData.arg_list.killer, args.killer, owner) then
+			self:onTrigger(owner, buff)
 		end
-	elseif self:victimRequire(arg_57_3.unit, arg_57_1) then
-		self:onTrigger(arg_57_1, arg_57_2)
+	elseif self:victimRequire(args.unit, owner) then
+		self:onTrigger(owner, buff)
 	else
-		self:onTrigger(arg_57_1, arg_57_2)
+		self:onTrigger(owner, buff)
 	end
 end
 
@@ -488,41 +488,42 @@ function BattleBuffEffect.deathCauseRequire(arg_59_0, arg_59_1)
 	return table.contains(arg_59_0._deathCauseRequire, var_59_0)
 end
 
-function BattleBuffEffect.killerRequire(arg_60_0, arg_60_1, arg_60_2, arg_60_3)
-	if not arg_60_2 then
+
+function BattleBuffEffect.killerRequire(self, requiredKiller, killer, owner)
+	if not killer then
 		return false
 	end
 
-	local var_60_0
-	local var_60_1
-	local var_60_2 = arg_60_2.__name
+	local actualKiller
+	local killerMother
+	local killerName = killer.__name
 
-	if var_60_2 == ys.Battle.BattlePlayerUnit.__name or var_60_2 == ys.Battle.BattleNPCUnit.__name or var_60_2 == ys.Battle.BattleMinionUnit.__name or var_60_2 == ys.Battle.BattleEnemyUnit.__name or var_60_2 == ys.Battle.BattleAircraftUnit.__name or var_60_2 == ys.Battle.BattleAirFighterUnit.__name then
-		var_60_0 = arg_60_2
+	if killerName == ys.Battle.BattlePlayerUnit.__name or killerName == ys.Battle.BattleNPCUnit.__name or killerName == ys.Battle.BattleMinionUnit.__name or killerName == ys.Battle.BattleEnemyUnit.__name or killerName == ys.Battle.BattleAircraftUnit.__name or killerName == ys.Battle.BattleAirFighterUnit.__name then
+		actualKiller = killer
 	else
-		var_60_0 = arg_60_2:GetHost()
+		actualKiller = killer:GetHost()
 	end
 
-	if var_60_0 then
-		local var_60_3 = var_60_0.__name
+	if actualKiller then
+		local actualKillerName = actualKiller.__name
 
-		if var_60_3 == ys.Battle.BattleAircraftUnit.__name then
-			var_60_1 = var_60_0:GetMotherUnit()
-		elseif var_60_3 == ys.Battle.BattleMinionUnit.__name then
-			var_60_1 = var_60_0:GetMaster()
+		if actualKillerName == ys.Battle.BattleAircraftUnit.__name then
+			killerMother = actualKiller:GetMotherUnit()
+		elseif actualKillerName == ys.Battle.BattleMinionUnit.__name then
+			killerMother = actualKiller:GetMaster()
 		else
-			var_60_1 = var_60_0
-			var_60_0 = nil
+			killerMother = actualKiller
+			actualKiller = nil
 		end
 	else
 		return false
 	end
 
-	if arg_60_1 == "self" then
-		if var_60_1 == arg_60_3 and not var_60_0 then
+	if requiredKiller == "self" then
+		if killerMother == owner and not actualKiller then
 			return true
 		end
-	elseif arg_60_1 == "child" and var_60_1 == arg_60_3 and var_60_0 then
+	elseif requiredKiller == "child" and killerMother == owner and actualKiller then
 		return true
 	end
 
