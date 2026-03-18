@@ -187,6 +187,7 @@ function Chapter.IsEXChapter(arg_22_0)
 end
 
 function Chapter.getConfig(arg_23_0, arg_23_1)
+	-- 周回模式的处理
 	if arg_23_0:isLoop() then
 		local var_23_0 = pg.chapter_template_loop[arg_23_0.id]
 

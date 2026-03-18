@@ -1,13 +1,13 @@
-local var_0_0 = ys.Battle.BattleDataProxy
+local BattleDataProxy = ys.Battle.BattleDataProxy
 local var_0_1 = ys.Battle.BattleEvent
 local var_0_2 = ys.Battle.BattleFormulas
 local var_0_3 = ys.Battle.BattleConst
 local var_0_4 = ys.Battle.BattleConfig
-local var_0_5 = ys.Battle.BattleDataFunction
+local BattleDataFunction = ys.Battle.BattleDataFunction
 local var_0_6 = ys.Battle.BattleAttr
 local var_0_7 = ys.Battle.BattleVariable
 -- TODO
-function var_0_0.StatisticsInit(arg_1_0, arg_1_1)
+function BattleDataProxy.StatisticsInit(arg_1_0, arg_1_1)
 	arg_1_0._statistics = {}
 	arg_1_0._statistics._battleScore = var_0_3.BattleScore.D
 	arg_1_0._statistics.kill_id_list = {}
@@ -36,7 +36,7 @@ function var_0_0.StatisticsInit(arg_1_0, arg_1_1)
 	arg_1_0._statistics._autoCount = 0
 end
 
-function var_0_0.InitAidUnitStatistics(arg_2_0, arg_2_1)
+function BattleDataProxy.InitAidUnitStatistics(arg_2_0, arg_2_1)
 	local var_2_0 = {
 		id = arg_2_1:GetAttrByName("id")
 	}
@@ -52,7 +52,7 @@ function var_0_0.InitAidUnitStatistics(arg_2_0, arg_2_1)
 	arg_2_0._statistics.submarineAid = true
 end
 
-function var_0_0.InitSpecificEnemyStatistics(arg_3_0, arg_3_1)
+function BattleDataProxy.InitSpecificEnemyStatistics(arg_3_0, arg_3_1)
 	local var_3_0 = {
 		id = arg_3_1:GetAttrByName("id")
 	}
@@ -68,7 +68,7 @@ function var_0_0.InitSpecificEnemyStatistics(arg_3_0, arg_3_1)
 	arg_3_0._statistics[var_3_0.id] = var_3_0
 end
 
-function var_0_0.RivalInit(arg_4_0, arg_4_1)
+function BattleDataProxy.RivalInit(arg_4_0, arg_4_1)
 	arg_4_0._statistics._rivalInfo = {}
 
 	for iter_4_0, iter_4_1 in ipairs(arg_4_1) do
@@ -79,7 +79,7 @@ function var_0_0.RivalInit(arg_4_0, arg_4_1)
 	end
 end
 
-function var_0_0.DodgemCountInit(arg_5_0)
+function BattleDataProxy.DodgemCountInit(arg_5_0)
 	arg_5_0._dodgemStatistics = {}
 	arg_5_0._dodgemStatistics.kill = 0
 	arg_5_0._dodgemStatistics.combo = 0
@@ -89,36 +89,42 @@ function var_0_0.DodgemCountInit(arg_5_0)
 	arg_5_0._dodgemStatistics.maxCombo = 0
 end
 
-function var_0_0.SubmarineRunInit(arg_6_0)
+function BattleDataProxy.SubmarineRunInit(arg_6_0)
 	arg_6_0._subRunStatistics = {}
 	arg_6_0._subRunStatistics.score = 0
 end
 
-function var_0_0.SetFlagShipID(arg_7_0, arg_7_1)
+function BattleDataProxy.SetFlagShipID(arg_7_0, arg_7_1)
 	if arg_7_1 then
 		arg_7_0._statistics._flagShipID = arg_7_1:GetAttrByName("id")
 	end
 end
 
 -- TODO
-function var_0_0.DamageStatistics(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	if arg_8_0._statistics[arg_8_1] then
-		arg_8_0._statistics[arg_8_1].output = arg_8_0._statistics[arg_8_1].output + arg_8_3
-		arg_8_0._statistics[arg_8_1].maxDamageOnce = math.max(arg_8_0._statistics[arg_8_1].maxDamageOnce, arg_8_3)
+-- 更新伤害统计核心
+-- 关于调用点：HandleDamage/HandleDirectDamage中，以dHP为准
+function BattleDataProxy.DamageStatistics(self, srcID, targetID, damage)
+	-- output: 造成的伤害
+	-- damage: 受到的伤害
+
+	-- DOT这类没有Caster的，不会计入造成伤害统计，但在受到伤害统计中正常计入
+	if self._statistics[srcID] then
+		self._statistics[srcID].output = self._statistics[srcID].output + damage
+		self._statistics[srcID].maxDamageOnce = math.max(self._statistics[srcID].maxDamageOnce, damage)
 	end
 
-	if arg_8_0._statistics[arg_8_2] then
-		arg_8_0._statistics[arg_8_2].damage = arg_8_0._statistics[arg_8_2].damage + arg_8_3
+	if self._statistics[targetID] then
+		self._statistics[targetID].damage = self._statistics[targetID].damage + damage
 	end
 end
 
-function var_0_0.KillCountStatistics(arg_9_0, arg_9_1, arg_9_2)
+function BattleDataProxy.KillCountStatistics(arg_9_0, arg_9_1, arg_9_2)
 	if arg_9_0._statistics[arg_9_1] then
 		arg_9_0._statistics[arg_9_1].kill_count = arg_9_0._statistics[arg_9_1].kill_count + 1
 	end
 end
 
-function var_0_0.HPRatioStatistics(arg_10_0)
+function BattleDataProxy.HPRatioStatistics(arg_10_0)
 	for iter_10_0, iter_10_1 in pairs(arg_10_0._fleetList) do
 		iter_10_1:UndoFusion()
 	end
@@ -130,13 +136,13 @@ function var_0_0.HPRatioStatistics(arg_10_0)
 	end
 end
 
-function var_0_0.BotPercentage(arg_11_0, arg_11_1)
+function BattleDataProxy.BotPercentage(arg_11_0, arg_11_1)
 	local var_11_0 = arg_11_0._currentStageData.timeCount - arg_11_0._countDown
 
 	arg_11_0._statistics._botPercentage = Mathf.Clamp(math.floor(arg_11_1 / var_11_0 * 100), 0, 100)
 end
 
-function var_0_0.CalcBattleScoreWhenDead(arg_12_0, arg_12_1)
+function BattleDataProxy.CalcBattleScoreWhenDead(arg_12_0, arg_12_1)
 	local var_12_0 = arg_12_1:GetIFF()
 
 	if var_12_0 == var_0_4.FRIENDLY_CODE then
@@ -148,29 +154,29 @@ function var_0_0.CalcBattleScoreWhenDead(arg_12_0, arg_12_1)
 	end
 end
 
-function var_0_0.AddScoreWhenBossDestruct(arg_13_0)
+function BattleDataProxy.AddScoreWhenBossDestruct(arg_13_0)
 	arg_13_0._statistics._boss_destruct = arg_13_0._statistics._boss_destruct + 1
 end
 
-function var_0_0.AddScoreWhenEnemyDead(arg_14_0, arg_14_1)
+function BattleDataProxy.AddScoreWhenEnemyDead(arg_14_0, arg_14_1)
 	if arg_14_1:GetDeathReason() == var_0_3.UnitDeathReason.KILLED then
 		arg_14_0._statistics.kill_id_list[#arg_14_0._statistics.kill_id_list + 1] = arg_14_1:GetTemplateID()
 	end
 end
 
-function var_0_0.DelScoreWhenPlayerDead(arg_15_0, arg_15_1)
+function BattleDataProxy.DelScoreWhenPlayerDead(arg_15_0, arg_15_1)
 	arg_15_0._statistics._deadCount = arg_15_0._statistics._deadCount + 1
 end
 
-function var_0_0.CalcBPWhenPlayerLeave(arg_16_0, arg_16_1)
+function BattleDataProxy.CalcBPWhenPlayerLeave(arg_16_0, arg_16_1)
 	arg_16_0._statistics[arg_16_1:GetAttrByName("id")].bp = math.ceil(arg_16_1:GetHPRate() * 10000)
 end
 
-function var_0_0.isTimeOut(arg_17_0)
+function BattleDataProxy.isTimeOut(arg_17_0)
 	return arg_17_0._currentStageData.timeCount - arg_17_0._countDown >= 180
 end
 
-function var_0_0.CalcCardPuzzleScoreAtEnd(arg_18_0, arg_18_1)
+function BattleDataProxy.CalcCardPuzzleScoreAtEnd(arg_18_0, arg_18_1)
 	arg_18_0._statistics._deadUnit = true
 	arg_18_0._statistics._badTime = true
 
@@ -187,7 +193,7 @@ function var_0_0.CalcCardPuzzleScoreAtEnd(arg_18_0, arg_18_1)
 	arg_18_0:AirFightInit()
 end
 
-function var_0_0.CalcSingleDungeonScoreAtEnd(arg_19_0, arg_19_1)
+function BattleDataProxy.CalcSingleDungeonScoreAtEnd(arg_19_0, arg_19_1)
 	arg_19_0._statistics._deadUnit = true
 	arg_19_0._statistics._badTime = true
 
@@ -258,11 +264,11 @@ function var_0_0.CalcSingleDungeonScoreAtEnd(arg_19_0, arg_19_1)
 	end
 end
 
-function var_0_0.CalcMaxRestHPRateBossRate(arg_20_0, arg_20_1)
-	arg_20_0._statistics._maxBossHP = arg_20_1
+function BattleDataProxy.CalcMaxRestHPRateBossRate(self, maxRestHPRateBossRate)
+	self._statistics._maxBossHP = maxRestHPRateBossRate
 end
 
-function var_0_0.CalcDuelScoreAtTimesUp(arg_21_0, arg_21_1, arg_21_2, arg_21_3, arg_21_4)
+function BattleDataProxy.CalcDuelScoreAtTimesUp(arg_21_0, arg_21_1, arg_21_2, arg_21_3, arg_21_4)
 	arg_21_0._statistics._deadUnit = true
 	arg_21_0._statistics._badTime = true
 	arg_21_0._statistics._timeout = false
@@ -286,7 +292,7 @@ function var_0_0.CalcDuelScoreAtTimesUp(arg_21_0, arg_21_1, arg_21_2, arg_21_3, 
 	end
 end
 
-function var_0_0.CalcDuelScoreAtEnd(arg_22_0, arg_22_1, arg_22_2)
+function BattleDataProxy.CalcDuelScoreAtEnd(arg_22_0, arg_22_1, arg_22_2)
 	arg_22_0._statistics._deadUnit = true
 	arg_22_0._statistics._badTime = true
 
@@ -312,7 +318,7 @@ function var_0_0.CalcDuelScoreAtEnd(arg_22_0, arg_22_1, arg_22_2)
 	arg_22_0._statistics._timeout = arg_22_0:isTimeOut()
 end
 
-function var_0_0.CalcSimulationScoreAtEnd(arg_23_0, arg_23_1, arg_23_2)
+function BattleDataProxy.CalcSimulationScoreAtEnd(arg_23_0, arg_23_1, arg_23_2)
 	arg_23_0._statistics._deadUnit = true
 	arg_23_0._statistics._badTime = true
 
@@ -345,7 +351,7 @@ function var_0_0.CalcSimulationScoreAtEnd(arg_23_0, arg_23_1, arg_23_2)
 	arg_23_0:overwriteRivalStatistics(arg_23_2)
 end
 
-function var_0_0.CalcSimulationScoreAtTimesUp(arg_24_0, arg_24_1, arg_24_2, arg_24_3, arg_24_4, arg_24_5)
+function BattleDataProxy.CalcSimulationScoreAtTimesUp(arg_24_0, arg_24_1, arg_24_2, arg_24_3, arg_24_4, arg_24_5)
 	arg_24_0._statistics._deadUnit = true
 	arg_24_0._statistics._badTime = true
 	arg_24_0._statistics._timeout = false
@@ -363,7 +369,7 @@ function var_0_0.CalcSimulationScoreAtTimesUp(arg_24_0, arg_24_1, arg_24_2, arg_
 	arg_24_0:overwriteRivalStatistics(arg_24_5)
 end
 
-function var_0_0.overwriteRivalStatistics(arg_25_0, arg_25_1)
+function BattleDataProxy.overwriteRivalStatistics(arg_25_0, arg_25_1)
 	for iter_25_0, iter_25_1 in pairs(arg_25_0._statistics._rivalInfo) do
 		local var_25_0 = false
 
@@ -382,7 +388,7 @@ function var_0_0.overwriteRivalStatistics(arg_25_0, arg_25_1)
 	end
 end
 
-function var_0_0.CalcChallengeScore(arg_26_0, arg_26_1)
+function BattleDataProxy.CalcChallengeScore(arg_26_0, arg_26_1)
 	if arg_26_1 then
 		arg_26_0._statistics._battleScore = var_0_3.BattleScore.S
 	else
@@ -392,7 +398,7 @@ function var_0_0.CalcChallengeScore(arg_26_0, arg_26_1)
 	arg_26_0._statistics._totalTime = arg_26_0._totalTime
 end
 
-function var_0_0.CalcDodgemCount(arg_27_0, arg_27_1)
+function BattleDataProxy.CalcDodgemCount(arg_27_0, arg_27_1)
 	local var_27_0 = arg_27_1:GetDeathReason()
 	local var_27_1 = arg_27_1:GetTemplate().type
 
@@ -423,7 +429,7 @@ function var_0_0.CalcDodgemCount(arg_27_0, arg_27_1)
 	end
 end
 
-function var_0_0.GetScorePoint(arg_28_0)
+function BattleDataProxy.GetScorePoint(arg_28_0)
 	local var_28_0
 
 	if arg_28_0._dodgemStatistics.combo == 1 then
@@ -437,7 +443,7 @@ function var_0_0.GetScorePoint(arg_28_0)
 	return var_28_0
 end
 
-function var_0_0.CalcDodgemScore(arg_29_0)
+function BattleDataProxy.CalcDodgemScore(arg_29_0)
 	if arg_29_0._dodgemStatistics.score >= var_0_4.BATTLE_DODGEM_PASS_SCORE then
 		arg_29_0._statistics._battleScore = var_0_3.BattleScore.S
 	else
@@ -447,72 +453,72 @@ function var_0_0.CalcDodgemScore(arg_29_0)
 	arg_29_0._statistics.dodgemResult = arg_29_0._dodgemStatistics
 end
 
-function var_0_0.CalcActBossDamageInfo(arg_30_0, arg_30_1)
-	local var_30_0 = var_0_5.GetSpecificEnemyList(arg_30_1, arg_30_0._expeditionID)
+function BattleDataProxy.CalcActBossDamageInfo(arg_30_0, arg_30_1)
+	local var_30_0 = BattleDataFunction.GetSpecificEnemyList(arg_30_1, arg_30_0._expeditionID)
 
 	arg_30_0:CalcSpecificEnemyInfo(var_30_0)
 end
 
-function var_0_0.CalcWorldBossDamageInfo(arg_31_0, arg_31_1, arg_31_2, arg_31_3)
-	local var_31_0 = var_0_5.GetSpecificWorldJointEnemyList(arg_31_1, arg_31_2, arg_31_3)
+function BattleDataProxy.CalcWorldBossDamageInfo(self, actID, bossConfigID, bossLevel)
+	local enemyID = BattleDataFunction.GetSpecificWorldJointEnemyList(actID, bossConfigID, bossLevel)
 
-	arg_31_0:CalcSpecificEnemyInfo(var_31_0)
+	self:CalcSpecificEnemyInfo(enemyID)
 end
 
-function var_0_0.CalcGuildBossEnemyInfo(arg_32_0, arg_32_1)
-	local var_32_0 = var_0_5.GetSpecificGuildBossEnemyList(arg_32_1, arg_32_0._expeditionID)
+function BattleDataProxy.CalcGuildBossEnemyInfo(arg_32_0, arg_32_1)
+	local var_32_0 = BattleDataFunction.GetSpecificGuildBossEnemyList(arg_32_1, arg_32_0._expeditionID)
 
 	arg_32_0:CalcSpecificEnemyInfo(var_32_0)
 end
 
-function var_0_0.CalcSpecificEnemyInfo(arg_33_0, arg_33_1)
-	arg_33_0._statistics.specificDamage = 0
+function BattleDataProxy.CalcSpecificEnemyInfo(self, enemyID)
+	self._statistics.specificDamage = 0
 
-	for iter_33_0, iter_33_1 in ipairs(arg_33_1) do
-		if arg_33_0._statistics["enemy_" .. iter_33_1] then
-			local var_33_0 = arg_33_0._statistics["enemy_" .. iter_33_1].damage
+	for _, id in ipairs(enemyID) do
+		if self._statistics["enemy_" .. id] then
+			local damage = self._statistics["enemy_" .. id].damage
 
-			if table.contains(arg_33_0._statistics.kill_id_list, iter_33_1) then
-				var_33_0 = arg_33_0._statistics["enemy_" .. iter_33_1].init_hp
+			if table.contains(self._statistics.kill_id_list, id) then
+				damage = self._statistics["enemy_" .. id].init_hp
 			end
 
-			arg_33_0._statistics.specificDamage = arg_33_0._statistics.specificDamage + var_33_0
+			self._statistics.specificDamage = self._statistics.specificDamage + damage
 
-			local var_33_1 = {
-				id = iter_33_1,
-				damage = var_33_0,
-				totalHp = arg_33_0._statistics["enemy_" .. iter_33_1].max_hp
+			local enemyInfo = {
+				id = id,
+				damage = damage,
+				totalHp = self._statistics["enemy_" .. id].max_hp
 			}
 
-			table.insert(arg_33_0._statistics._enemyInfoList, var_33_1)
+			table.insert(self._statistics._enemyInfoList, enemyInfo)
 		end
 	end
 end
 
-function var_0_0.CalcKillingSupplyShip(arg_34_0)
+function BattleDataProxy.CalcKillingSupplyShip(arg_34_0)
 	arg_34_0._subRunStatistics.score = arg_34_0._subRunStatistics.score + 1
 end
 
-function var_0_0.CalcSubRunTimeUp(arg_35_0)
+function BattleDataProxy.CalcSubRunTimeUp(arg_35_0)
 	arg_35_0._statistics._battleScore = var_0_3.BattleScore.B
 	arg_35_0._statistics.subRunResult = arg_35_0._subRunStatistics
 end
 
-function var_0_0.CalcSubRunScore(arg_36_0)
+function BattleDataProxy.CalcSubRunScore(arg_36_0)
 	arg_36_0._statistics._battleScore = var_0_3.BattleScore.S
 	arg_36_0._statistics.subRunResult = arg_36_0._subRunStatistics
 end
 
-function var_0_0.CalcSubRunDead(arg_37_0)
+function BattleDataProxy.CalcSubRunDead(arg_37_0)
 	arg_37_0._statistics._battleScore = var_0_3.BattleScore.D
 	arg_37_0._statistics.subRunResult = arg_37_0._subRunStatistics
 end
 
-function var_0_0.CalcKillingSupplyShip(arg_38_0)
+function BattleDataProxy.CalcKillingSupplyShip(arg_38_0)
 	arg_38_0._subRunStatistics.score = arg_38_0._subRunStatistics.score + 1
 end
 
-function var_0_0.CalcSubRountineTimeUp(arg_39_0)
+function BattleDataProxy.CalcSubRountineTimeUp(arg_39_0)
 	arg_39_0._statistics._badTime = true
 
 	arg_39_0:CalcSubRoutineScore()
@@ -520,7 +526,7 @@ function var_0_0.CalcSubRountineTimeUp(arg_39_0)
 	arg_39_0._statistics._battleScore = var_0_3.BattleScore.C
 end
 
-function var_0_0.CalcSubRountineElimate(arg_40_0)
+function BattleDataProxy.CalcSubRountineElimate(arg_40_0)
 	arg_40_0._statistics._elimated = true
 
 	arg_40_0:CalcSubRoutineScore()
@@ -528,7 +534,7 @@ function var_0_0.CalcSubRountineElimate(arg_40_0)
 	arg_40_0._statistics._battleScore = var_0_3.BattleScore.D
 end
 
-function var_0_0.CalcSubRoutineScore(arg_41_0)
+function BattleDataProxy.CalcSubRoutineScore(arg_41_0)
 	local var_41_0 = arg_41_0._statistics._deadCount * var_0_4.SR_CONFIG.DEAD_POINT
 	local var_41_1 = arg_41_0._subRunStatistics.score * var_0_4.SR_CONFIG.POINT
 	local var_41_2 = (arg_41_0._statistics._badTime or arg_41_0._statistics._elimated) and 0 or var_0_4.SR_CONFIG.BASE_POINT
@@ -552,7 +558,7 @@ function var_0_0.CalcSubRoutineScore(arg_41_0)
 	arg_41_0._statistics.subRunResult = arg_41_0._subRunStatistics
 end
 
-function var_0_0.AirFightInit(arg_42_0)
+function BattleDataProxy.AirFightInit(arg_42_0)
 	arg_42_0._statistics._airFightStatistics = {}
 	arg_42_0._statistics._airFightStatistics.kill = 0
 	arg_42_0._statistics._airFightStatistics.score = 0
@@ -561,7 +567,7 @@ function var_0_0.AirFightInit(arg_42_0)
 	arg_42_0._statistics._airFightStatistics.total = 0
 end
 
-function var_0_0.AddAirFightScore(arg_43_0, arg_43_1)
+function BattleDataProxy.AddAirFightScore(arg_43_0, arg_43_1)
 	arg_43_0._statistics._airFightStatistics.score = arg_43_0._statistics._airFightStatistics.score + arg_43_1
 	arg_43_0._statistics._airFightStatistics.kill = arg_43_0._statistics._airFightStatistics.kill + 1
 	arg_43_0._statistics._airFightStatistics.total = math.max(arg_43_0._statistics._airFightStatistics.score - arg_43_0._statistics._airFightStatistics.lose, 0)
@@ -571,7 +577,7 @@ function var_0_0.AddAirFightScore(arg_43_0, arg_43_1)
 	}))
 end
 
-function var_0_0.DecreaseAirFightScore(arg_44_0, arg_44_1)
+function BattleDataProxy.DecreaseAirFightScore(arg_44_0, arg_44_1)
 	arg_44_0._statistics._airFightStatistics.lose = arg_44_0._statistics._airFightStatistics.lose + arg_44_1
 	arg_44_0._statistics._airFightStatistics.hit = arg_44_0._statistics._airFightStatistics.hit + 1
 	arg_44_0._statistics._airFightStatistics.total = math.max(arg_44_0._statistics._airFightStatistics.score - arg_44_0._statistics._airFightStatistics.lose, 0)
@@ -581,15 +587,15 @@ function var_0_0.DecreaseAirFightScore(arg_44_0, arg_44_1)
 	}))
 end
 
-function var_0_0.CalcAirFightScore(arg_45_0)
+function BattleDataProxy.CalcAirFightScore(arg_45_0)
 	arg_45_0._statistics._battleScore = var_0_3.BattleScore.S
 end
 
-function var_0_0.AddScenarioSubStrikeBoss(arg_46_0, arg_46_1)
+function BattleDataProxy.AddScenarioSubStrikeBoss(arg_46_0, arg_46_1)
 	arg_46_0._statistics._scenarioSubStrikebossUnit = arg_46_1
 end
 
-function var_0_0.CalcScenarioSubStrikeScoreAtEnd(arg_47_0)
+function BattleDataProxy.CalcScenarioSubStrikeScoreAtEnd(arg_47_0)
 	local var_47_0 = arg_47_0._statistics._scenarioSubStrikebossUnit
 
 	if not var_47_0 then
@@ -624,7 +630,7 @@ function var_0_0.CalcScenarioSubStrikeScoreAtEnd(arg_47_0)
 	end
 end
 
-function var_0_0.AutoStatistics(arg_48_0, arg_48_1)
+function BattleDataProxy.AutoStatistics(arg_48_0, arg_48_1)
 	if not arg_48_0._statistics._autoInit then
 		arg_48_0._statistics._autoInit = not arg_48_1 and 1 or 0
 	else

@@ -285,10 +285,10 @@ function BattleSingleDungeonCommand.GetMaxRestHPRateBossRate(arg_29_0)
 	return var_29_1 * 10000
 end
 
-function BattleSingleDungeonCommand.CalcStatistic(arg_30_0)
-	arg_30_0._dataProxy:CalcSingleDungeonScoreAtEnd(arg_30_0._userFleet)
+function BattleSingleDungeonCommand.CalcStatistic(self)
+	self._dataProxy:CalcSingleDungeonScoreAtEnd(self._userFleet)
 
-	local var_30_0 = arg_30_0:GetMaxRestHPRateBossRate()
+	local maxRestHPRateBossRate = self:GetMaxRestHPRateBossRate()
 
-	arg_30_0._dataProxy:CalcMaxRestHPRateBossRate(var_30_0)
+	self._dataProxy:CalcMaxRestHPRateBossRate(maxRestHPRateBossRate)
 end

@@ -497,14 +497,19 @@ function ChapterLevelData.getNextValidIndex(arg_38_0)
 	return 0
 end
 
-function ChapterLevelData.getAmbushRate(arg_39_0, arg_39_1, arg_39_2)
-	local var_39_0 = arg_39_1:getInvestSums()
-	local var_39_1 = arg_39_0:getConfig("investigation_ratio")
-	local var_39_2 = var_39_1 / (var_39_1 + var_39_0) / 4
-	local var_39_3 = _.detect(arg_39_0:getConfig("ambush_ratio_extra"), function(arg_40_0)
+-- 计算走到某个格子时的受伏击概率
+-- LevelStageView.updateAmbushRate调用
+function ChapterLevelData.getAmbushRate(self, fleet, arg_39_2)
+	-- 侦查值：这个值是计算全队的航空+机动之和，再开0.66次方得到的
+	local investSums = fleet:getInvestSums()
+	local investigation_ratio = self:getConfig("investigation_ratio")
+	-- investigation_ratio是章节配置中的一个值(调查值)
+	local ambushFactor = investigation_ratio / (investigation_ratio + investSums) / 4
+	-- underscore.detect: 返回第一个满足条件的元素
+	local var_39_3 = _.detect(self:getConfig("ambush_ratio_extra"), function(arg_40_0)
 		return arg_40_0[1] == arg_39_2.row and arg_40_0[2] == arg_39_2.column
 	end)
-	local var_39_4 = _.detect(arg_39_0:getConfig("ambush_ratio_extra"), function(arg_41_0)
+	local var_39_4 = _.detect(self:getConfig("ambush_ratio_extra"), function(arg_41_0)
 		return #arg_41_0 == 1
 	end)
 	local var_39_5
@@ -512,13 +517,13 @@ function ChapterLevelData.getAmbushRate(arg_39_0, arg_39_1, arg_39_2)
 	var_39_5 = var_39_3 and var_39_3[3] / 10000 or 0
 
 	local var_39_6 = var_39_5 + (var_39_4 and var_39_4[1] / 10000 or 0)
-	local var_39_7 = 0.05 + var_39_2 * math.max(arg_39_1.step - 1, 0) + var_39_6
+	local ambushRate = 0.05 + ambushFactor * math.max(fleet.step - 1, 0) + var_39_6
 
 	if var_39_6 == 0 then
-		var_39_7 = var_39_7 - arg_39_1:getEquipAmbushRateReduce()
+		ambushRate = ambushRate - fleet:getEquipAmbushRateReduce()
 	end
 
-	return (math.clamp(var_39_7, 0, 1))
+	return (math.clamp(ambushRate, 0, 1))
 end
 
 function ChapterLevelData.getAmbushDodge(arg_42_0, arg_42_1)
@@ -563,6 +568,7 @@ function ChapterLevelData.getStartTime(arg_47_0)
 	return math.max(arg_47_0.dueTime - arg_47_0:getConfig("time"), 0)
 end
 
+-- avoid_require
 function ChapterLevelData.GetWillActiveAmbush(arg_48_0)
 	if not arg_48_0:existAmbush() then
 		return false

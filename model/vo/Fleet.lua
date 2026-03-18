@@ -365,6 +365,7 @@ function Fleet.findSkills(arg_20_0, arg_20_1)
 	end)
 end
 
+-- TODO
 function Fleet.updateShips(arg_22_0, arg_22_1)
 	arg_22_0.ships = {}
 	arg_22_0.vanguardShips = {}
@@ -853,16 +854,16 @@ function Fleet.RemoveUnusedItems(arg_56_0)
 	local var_56_0 = Clone(arg_56_0.ships)
 	local var_56_1 = getProxy(BayProxy)
 
-	for iter_60_0, iter_60_1 in ipairs(var_60_0) do
+	for iter_60_0, iter_60_1 in ipairs(bayProxy) do
 		if not var_60_1:getShipById(iter_60_1) then
-			arg_60_0:removeShipById(iter_60_1)
+			self:removeShipById(iter_60_1)
 		end
 	end
 
 	local var_60_2 = getProxy(CommanderProxy)
 	local var_60_3 = {}
 
-	for iter_60_2, iter_60_3 in pairs(arg_60_0.commanderIds) do
+	for iter_60_2, iter_60_3 in pairs(self.commanderIds) do
 		if not var_60_2:getCommanderById(iter_60_3) then
 			table.insert(var_60_3, iter_60_2)
 		end
@@ -870,12 +871,12 @@ function Fleet.RemoveUnusedItems(arg_56_0)
 
 	if #var_60_3 > 0 then
 		for iter_60_4, iter_60_5 in pairs(var_60_3) do
-			arg_60_0.commanderIds[iter_60_5] = nil
+			self.commanderIds[iter_60_5] = nil
 		end
 
-		arg_60_0.skills = {}
+		self.skills = {}
 
-		arg_60_0:updateCommanderSkills()
+		self:updateCommanderSkills()
 	end
 end
 
@@ -971,18 +972,19 @@ function Fleet.GetFleetSonarRange(arg_59_0)
 	return sonarRange + extraSonarRange
 end
 
-function Fleet.getInvestSums(arg_60_0)
-	local var_60_0 = getProxy(BayProxy)
+-- ChapterLevelData.getAmbushRate调用
+function Fleet.getInvestSums(self)
+	local bayProxy = getProxy(BayProxy)
+	-- 计算舰船的航空+机动(带猫)
+	local function getShipInvest(memo, shipID)
+		local shipProperties = bayProxy:getShipById(shipID):getProperties(self:getCommanders())
 
-	local function var_64_1(arg_65_0, arg_65_1)
-		local var_65_0 = var_64_0:getShipById(arg_65_1):getProperties(arg_64_0:getCommanders())
-
-		return arg_65_0 + var_65_0[AttributeType.Air] + var_65_0[AttributeType.Dodge]
+		return memo + shipProperties[AttributeType.Air] + shipProperties[AttributeType.Dodge]
 	end
 
-	local var_64_2 = _.reduce(arg_64_0.ships, 0, var_64_1)
-
-	return math.pow(var_64_2, 0.6666666666666666)
+	local investSum = _.reduce(self.ships, 0, getShipInvest)
+	-- 结果开0.66次方
+	return math.pow(investSum, 0.6666666666666666)
 end
 
 function Fleet.ExistActNpcShip(arg_62_0)
@@ -1003,10 +1005,10 @@ function Fleet.GetName(arg_63_0)
 	return noEmptyStr(arg_63_0.name) or Fleet.DEFAULT_NAME[arg_63_0.id]
 end
 
-function Fleet.ChangeToElite(arg_64_0)
-	local var_64_0 = arg_64_0:getFleetType()
-	local var_64_1 = {
-		id = arg_64_0.id,
+function Fleet.ChangeToElite(self)
+	local bayProxy = self:getFleetType()
+	local getShipInvest = {
+		id = self.id,
 		[TeamType.FormShips] = {},
 		[TeamType.FormCommander] = {
 			0,
@@ -1014,23 +1016,23 @@ function Fleet.ChangeToElite(arg_64_0)
 		}
 	}
 
-	for iter_64_0, iter_64_1 in ipairs(arg_64_0.commanderIds) do
-		var_64_1[TeamType.FormCommander][iter_64_0] = iter_64_1
+	for iter_64_0, iter_64_1 in ipairs(self.commanderIds) do
+		getShipInvest[TeamType.FormCommander][iter_64_0] = iter_64_1
 	end
 
-	switch(var_64_0, {
+	switch(bayProxy, {
 		[FleetType.Normal] = function()
-			var_64_1[TeamType.FormShips] = table.mergeArray(arg_64_0.mainShips, arg_64_0.vanguardShips)
+			getShipInvest[TeamType.FormShips] = table.mergeArray(self.mainShips, self.vanguardShips)
 		end,
 		[FleetType.Submarine] = function()
-			var_64_1[TeamType.FormShips] = underscore.to_array(arg_64_0.subShips)
+			getShipInvest[TeamType.FormShips] = underscore.to_array(self.subShips)
 		end,
 		[FleetType.Support] = function()
-			var_64_1[TeamType.FormShips] = underscore.to_array(arg_64_0.mainShips)
+			getShipInvest[TeamType.FormShips] = underscore.to_array(self.mainShips)
 		end
 	})
 
-	return var_64_1, var_64_0
+	return getShipInvest, bayProxy
 end
 
 function Fleet.allClear(arg_72_0)

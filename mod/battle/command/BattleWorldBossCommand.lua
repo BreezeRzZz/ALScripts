@@ -3,16 +3,16 @@ ys = ys or {}
 local var_0_0 = ys
 local var_0_1 = var_0_0.Battle.BattleUnitEvent
 local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleWorldBossCommand", var_0_0.Battle.BattleSingleDungeonCommand)
+local BattleWorldBossCommand = class("BattleWorldBossCommand", var_0_0.Battle.BattleSingleDungeonCommand)
 
-var_0_0.Battle.BattleWorldBossCommand = var_0_3
-var_0_3.__name = "BattleWorldBossCommand"
+var_0_0.Battle.BattleWorldBossCommand = BattleWorldBossCommand
+BattleWorldBossCommand.__name = "BattleWorldBossCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleWorldBossCommand.Ctor(arg_1_0)
+	BattleWorldBossCommand.super.Ctor(arg_1_0)
 end
 
-function var_0_3.initWaveModule(arg_2_0)
+function BattleWorldBossCommand.initWaveModule(arg_2_0)
 	local function var_2_0(arg_3_0, arg_3_1, arg_3_2)
 		arg_2_0._dataProxy:SpawnMonster(arg_3_0, arg_3_1, arg_3_2, var_0_0.Battle.BattleConfig.FOE_CODE)
 	end
@@ -43,16 +43,16 @@ function var_0_3.initWaveModule(arg_2_0)
 	arg_2_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_2_0, var_2_1, var_2_2, var_2_3)
 end
 
-function var_0_3.onInitBattle(arg_7_0)
-	var_0_3.super.onInitBattle(arg_7_0)
+function BattleWorldBossCommand.onInitBattle(arg_7_0)
+	BattleWorldBossCommand.super.onInitBattle(arg_7_0)
 
 	local var_7_0 = arg_7_0._dataProxy:GetInitData()
 
 	arg_7_0._specificEnemyList = var_0_0.Battle.BattleDataFunction.GetSpecificWorldJointEnemyList(var_7_0.ActID, var_7_0.bossConfigId, var_7_0.bossLevel)
 end
 
-function var_0_3.onAddUnit(arg_8_0, arg_8_1)
-	var_0_3.super.onAddUnit(arg_8_0, arg_8_1)
+function BattleWorldBossCommand.onAddUnit(arg_8_0, arg_8_1)
+	BattleWorldBossCommand.super.onAddUnit(arg_8_0, arg_8_1)
 
 	local var_8_0 = arg_8_1.Data.unit
 
@@ -61,7 +61,7 @@ function var_0_3.onAddUnit(arg_8_0, arg_8_1)
 	end
 end
 
-function var_0_3.onPlayerShutDown(arg_9_0, arg_9_1)
+function BattleWorldBossCommand.onPlayerShutDown(arg_9_0, arg_9_1)
 	if arg_9_0._state:GetState() ~= arg_9_0._state.BATTLE_STATE_FIGHT then
 		return
 	end
@@ -83,7 +83,7 @@ function var_0_3.onPlayerShutDown(arg_9_0, arg_9_1)
 	end
 end
 
-function var_0_3.onUpdateCountDown(arg_10_0, arg_10_1)
+function BattleWorldBossCommand.onUpdateCountDown(arg_10_0, arg_10_1)
 	if arg_10_0._dataProxy:GetCountDown() <= 0 then
 		arg_10_0._dataProxy:EnemyEscape()
 		arg_10_0:CalcStatistic()
@@ -92,8 +92,8 @@ function var_0_3.onUpdateCountDown(arg_10_0, arg_10_1)
 	end
 end
 
-function var_0_3.calcDamageData(arg_11_0)
-	local var_11_0 = arg_11_0._dataProxy:GetInitData()
+function BattleWorldBossCommand.calcDamageData(self)
+	local initData = self._dataProxy:GetInitData()
 
-	arg_11_0._dataProxy:CalcWorldBossDamageInfo(var_11_0.ActID, var_11_0.bossConfigId, var_11_0.bossLevel)
+	self._dataProxy:CalcWorldBossDamageInfo(initData.ActID, initData.bossConfigId, initData.bossLevel)
 end

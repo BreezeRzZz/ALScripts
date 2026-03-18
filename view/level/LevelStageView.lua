@@ -519,6 +519,7 @@ function LevelStageView.updateStageInfo(arg_35_0)
 	end
 end
 
+-- TODO
 function LevelStageView.updateAmbushRate(arg_37_0, arg_37_1, arg_37_2)
 	local var_37_0 = arg_37_0.contextData.chapterVO
 

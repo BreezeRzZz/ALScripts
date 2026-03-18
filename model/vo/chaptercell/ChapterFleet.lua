@@ -517,6 +517,7 @@ function ChapterFleet.getCost(arg_45_0)
 	return var_45_0, var_45_1
 end
 
+-- TODO
 function ChapterFleet.getInvestSums(arg_47_0, arg_47_1)
 	local function var_47_0(arg_48_0, arg_48_1)
 		local var_48_0 = arg_48_1:getProperties(arg_47_0:getCommanders())
