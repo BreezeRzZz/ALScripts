@@ -207,29 +207,29 @@ function BattleState.Vertify()
 	return true, -1
 end
 
-function BattleState.ChangeState(arg_18_0, arg_18_1)
-	arg_18_0._state = arg_18_1
+function BattleState.ChangeState(self, state)
+	self._state = state
 
-	if arg_18_1 == BattleState.BATTLE_STATE_OPENING then
-		arg_18_0._dataProxy:Start()
+	if state == BattleState.BATTLE_STATE_OPENING then
+		self._dataProxy:Start()
 
-		local var_18_0 = arg_18_0._dataProxy._dungeonInfo.beginStoy
+		local beginStory = self._dataProxy._dungeonInfo.beginStoy
 
-		if var_18_0 then
-			pg.NewStoryMgr.GetInstance():Play(var_18_0, function()
-				arg_18_0._battleCommand:DoPrologue()
+		if beginStory then
+			pg.NewStoryMgr.GetInstance():Play(beginStory, function()
+				self._battleCommand:DoPrologue()
 			end)
 		else
-			arg_18_0._battleCommand:DoPrologue()
+			self._battleCommand:DoPrologue()
 		end
-	elseif arg_18_1 == BattleState.BATTLE_STATE_FIGHT then
-		arg_18_0:ActiveAutoComponentTimer()
+	elseif state == BattleState.BATTLE_STATE_FIGHT then
+		self:ActiveAutoComponentTimer()
 
-		if not arg_18_0._dataProxy:GetFleetLegal(ys.Battle.BattleConfig.FRIENDLY_CODE, arg_18_0:GetBattleType()) then
-			arg_18_0._battleCommand:CalcStatistic()
-			arg_18_0:BattleEnd()
+		if not self._dataProxy:GetFleetLegal(ys.Battle.BattleConfig.FRIENDLY_CODE, self:GetBattleType()) then
+			self._battleCommand:CalcStatistic()
+			self:BattleEnd()
 		end
-	elseif arg_18_1 == BattleState.BATTLE_STATE_REPORT then
+	elseif state == BattleState.BATTLE_STATE_REPORT then
 		-- block empty
 	end
 end
