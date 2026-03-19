@@ -216,7 +216,7 @@ function BattleState.ChangeState(self, state)
 		local beginStory = self._dataProxy._dungeonInfo.beginStoy
 
 		if beginStory then
-			pg.NewStoryMgr.GetInstance():Play(beginStory, function()
+			pg.NewStoryMgr.GetInstance():ForceAutoPlay(var_18_0, function()
 				self._battleCommand:DoPrologue()
 			end)
 		else
