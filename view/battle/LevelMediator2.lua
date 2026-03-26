@@ -1564,6 +1564,7 @@ function var_0_0.OnExitChapter(arg_118_0, arg_118_1, arg_118_2, arg_118_3)
 	})
 end
 
+-- TODO
 function var_0_0.DisplayContinuousWindow(arg_133_0, arg_133_1, arg_133_2, arg_133_3, arg_133_4)
 	local var_133_0 = arg_133_1:getConfig("oil")
 

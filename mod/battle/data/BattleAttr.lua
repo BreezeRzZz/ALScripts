@@ -478,6 +478,8 @@ function BattleAttr.SetPlayerAttrFromOutBattle(playerUnit, templateData, extraIn
 	attr.guardian = {}
 	attr.injureRatioKamikazeAir = 1
 	attr.injureRatioKamikazeShip = 1
+	-- 现在nationality也作为属性了，不只是模板数据
+	attr.nationality = playerUnit:GetTemplate().nationality
 
 	BattleAttr.SetBaseAttr(playerUnit)
 end
@@ -546,6 +548,7 @@ function BattleAttr.SetEnemyAttr(enemy)
 	enemyAttr.luck = enemyTemplateData.luck + enemyTemplateData.luck_growth * growthRatio
 	enemyAttr.bulletSpeedRatio = 0
 	enemyAttr.id = "enemy_" .. tostring(enemyTemplateData.id)
+	enemyAttr.nationality = enemyTemplateData.nationality
 	enemyAttr.repressReduce = 1
 	enemyAttr.healingRate = 1
 	enemyAttr.comboTag = "combo_" .. enemyAttr.battleUID
@@ -676,6 +679,7 @@ function BattleAttr.SetMinionAttr(minion)
 	minionAttr.labelTag = {}
 	minionAttr.TargetChoise = {}
 	minionAttr.guardian = {}
+	minionAttr.nationality = minionTemplateData.nationality
 
 	BattleAttr.SetBaseAttr(minion)
 end

@@ -839,22 +839,23 @@ function ChapterFleet.canClearTorpedo(arg_87_0)
 	end)
 end
 
-function ChapterFleet.getHuntingRange(arg_89_0, arg_89_1)
-	if arg_89_0:getFleetType() ~= FleetType.Submarine then
+function ChapterFleet.getHuntingRange(self, pos)
+	if self:getFleetType() ~= FleetType.Submarine then
 		assert(false)
 
 		return {}
 	end
 
-	local var_89_0 = arg_89_1 or arg_89_0.startPos
-	local var_89_1 = arg_89_0:getShipsByTeam(TeamType.Submarine, true)[1]
-	local var_89_2 = arg_89_0:triggerSkill(FleetSkill.TypeHuntingLv) or 0
-	local var_89_3 = var_89_1:getHuntingRange(var_89_1:getHuntingLv() + var_89_2)
+	local position = pos or self.startPos
+	-- 用潜艇舰队的旗舰计算狩猎范围
+	local submarineFlagship = self:getShipsByTeam(TeamType.Submarine, true)[1]
+	local extraHuntingLv = self:triggerSkill(FleetSkill.TypeHuntingLv) or 0
+	local huntingRangeTable = submarineFlagship:getHuntingRange(submarineFlagship:getHuntingLv() + extraHuntingLv)
 
-	return (_.map(var_89_3, function(arg_90_0)
+	return (_.map(huntingRangeTable, function(grid)
 		return {
-			row = var_89_0.row + arg_90_0[1],
-			column = var_89_0.column + arg_90_0[2]
+			row = position.row + grid[1],
+			column = position.column + grid[2]
 		}
 	end))
 end

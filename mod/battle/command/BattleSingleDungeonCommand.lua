@@ -102,8 +102,8 @@ function BattleSingleDungeonCommand.initWaveModule(self)
 		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 	-- 敌方飞机的生成回调函数
-	local function airFighterFunc(arg_14_0)
-		self._dataProxy:SpawnAirFighter(arg_14_0)
+	local function airFighterFunc(tmpData)
+		self._dataProxy:SpawnAirFighter(tmpData)
 	end
 	-- 战斗结束的回调函数
 	local function clearFunc()

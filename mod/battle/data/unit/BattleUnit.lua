@@ -1584,8 +1584,8 @@ function BattleUnit.GetAttr(arg_175_0)
 	return BattleAttr.GetAttr(arg_175_0)
 end
 
-function BattleUnit.GetAttrByName(arg_176_0, arg_176_1)
-	return BattleAttr.GetCurrent(arg_176_0, arg_176_1)
+function BattleUnit.GetAttrByName(self, attrName)
+	return BattleAttr.GetCurrent(self, attrName)
 end
 
 function BattleUnit.GetMaxHP(arg_177_0)

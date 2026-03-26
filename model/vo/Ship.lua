@@ -2293,26 +2293,28 @@ function Ship.IsBenefitSkillActive(arg_151_0, arg_151_1)
 	return var_152_0
 end
 
-function Ship.getMaxHuntingLv(arg_152_0)
-	return #arg_152_0:getConfig("hunting_range")
+function Ship.getMaxHuntingLv(self)
+	return #self:getConfig("hunting_range")
 end
 
-function Ship.getHuntingRange(arg_153_0, arg_153_1)
-	local var_153_0 = arg_153_0:getConfig("hunting_range")
-	local var_153_1 = Clone(var_153_0[1])
-	local var_153_2 = arg_153_1 or arg_153_0:getHuntingLv()
-	local var_153_3 = math.min(var_153_2, arg_153_0:getMaxHuntingLv())
+-- ChapterFleet.getHuntingRange调用
+function Ship.getHuntingRange(self, level)
+	local hunting_range = self:getConfig("hunting_range")
+	local huntingRangeTable = Clone(hunting_range[1])
+	local huntingLevel = level or self:getHuntingLv()
+	local finalLevel = math.min(huntingLevel, self:getMaxHuntingLv())
 
-	for iter_154_0 = 2, var_154_3 do
-		_.each(var_154_0[iter_154_0], function(arg_155_0)
-			table.insert(var_154_1, {
-				arg_155_0[1],
-				arg_155_0[2]
+	-- 将后续等级的依次追加
+	for i = 2, finalLevel do
+		_.each(hunting_range[i], function(grid)
+			table.insert(huntingRangeTable, {
+				grid[1],
+				grid[2]
 			})
 		end)
 	end
 
-	return var_154_1
+	return huntingRangeTable
 end
 
 -- 被BattleMediator.GenBattleData调用

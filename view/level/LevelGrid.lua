@@ -1,10 +1,10 @@
-local var_0_0 = class("LevelGrid", import("..base.BasePanel"))
-local var_0_1 = require("Mgr/Pool/PoolPlural")
+local LevelGrid = class("LevelGrid", import("..base.BasePanel"))
+local PoolPlural = require("Mgr/Pool/PoolPlural")
 
-var_0_0.MapDefaultPos = Vector3(420, -1000, -1000)
+LevelGrid.MapDefaultPos = Vector3(420, -1000, -1000)
 
-function var_0_0.init(arg_1_0)
-	var_0_0.super.init(arg_1_0)
+function LevelGrid.init(arg_1_0)
+	LevelGrid.super.init(arg_1_0)
 
 	arg_1_0.levelCam = GameObject.Find("LevelCamera"):GetComponent(typeof(Camera))
 	GameObject.Find("LevelCamera/Canvas"):GetComponent(typeof(Canvas)).sortingOrder = ChapterConst.PriorityMin - 1
@@ -33,13 +33,13 @@ function var_0_0.init(arg_1_0)
 	arg_1_0.loader = AutoLoader.New()
 end
 
-function var_0_0.ExtendItem(arg_2_0, arg_2_1, arg_2_2)
+function LevelGrid.ExtendItem(arg_2_0, arg_2_1, arg_2_2)
 	if IsNil(arg_2_0[arg_2_1]) then
 		arg_2_0[arg_2_1] = arg_2_2
 	end
 end
 
-function var_0_0.getFleetPool(arg_3_0, arg_3_1)
+function LevelGrid.getFleetPool(arg_3_0, arg_3_1)
 	local var_3_0 = "fleet_" .. arg_3_1
 	local var_3_1 = arg_3_0.pools[var_3_0]
 
@@ -52,14 +52,14 @@ function var_0_0.getFleetPool(arg_3_0, arg_3_1)
 			var_3_2 = arg_3_0.transportTpl
 		end
 
-		var_3_1 = var_0_1.New(var_3_2.gameObject, 2)
+		var_3_1 = PoolPlural.New(var_3_2.gameObject, 2)
 		arg_3_0.pools[var_3_0] = var_3_1
 	end
 
 	return var_3_1
 end
 
-function var_0_0.getChampionPool(arg_4_0, arg_4_1)
+function LevelGrid.getChampionPool(arg_4_0, arg_4_1)
 	local var_4_0 = "champion_" .. arg_4_1
 	local var_4_1 = arg_4_0.pools[var_4_0]
 
@@ -72,14 +72,14 @@ function var_0_0.getChampionPool(arg_4_0, arg_4_1)
 			var_4_2 = arg_4_0.enemyTpl
 		end
 
-		var_4_1 = var_0_1.New(var_4_2.gameObject, 3)
+		var_4_1 = PoolPlural.New(var_4_2.gameObject, 3)
 		arg_4_0.pools[var_4_0] = var_4_1
 	end
 
 	return var_4_1
 end
 
-function var_0_0.AddEdgePool(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
+function LevelGrid.AddEdgePool(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
 	if arg_5_0.edgePools[arg_5_1] then
 		return
 	end
@@ -87,7 +87,7 @@ function var_0_0.AddEdgePool(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_
 	local var_5_0 = GameObject.New(arg_5_1)
 
 	var_5_0:AddComponent(typeof(Image)).enabled = false
-	arg_5_0.edgePools[arg_5_1] = var_0_1.New(var_5_0, 32)
+	arg_5_0.edgePools[arg_5_1] = PoolPlural.New(var_5_0, 32)
 
 	local var_5_1
 
@@ -135,7 +135,7 @@ function var_0_0.AddEdgePool(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_
 	end)
 end
 
-function var_0_0.GetEdgePool(arg_10_0, arg_10_1)
+function LevelGrid.GetEdgePool(arg_10_0, arg_10_1)
 	assert(arg_10_1, "Missing Key")
 
 	local var_10_0 = arg_10_0.edgePools[arg_10_1]
@@ -145,7 +145,7 @@ function var_0_0.GetEdgePool(arg_10_0, arg_10_1)
 	return var_10_0
 end
 
-function var_0_0.initAll(arg_11_0, arg_11_1)
+function LevelGrid.initAll(arg_11_0, arg_11_1)
 	seriesAsync({
 		function(arg_12_0)
 			arg_11_0:initPlane()
@@ -215,7 +215,7 @@ function var_0_0.initAll(arg_11_0, arg_11_1)
 	})
 end
 
-function var_0_0.clearAll(arg_20_0)
+function LevelGrid.clearAll(arg_20_0)
 	for iter_20_0, iter_20_1 in pairs(arg_20_0.tweens) do
 		LeanTween.cancel(iter_20_0)
 	end
@@ -294,19 +294,19 @@ end
 
 local var_0_2 = 640
 
-function var_0_0.initDrag(arg_21_0)
+function LevelGrid.initDrag(arg_21_0)
 	local var_21_0, var_21_1, var_21_2 = getSizeRate()
 	local var_21_3 = arg_21_0.contextData.chapterVO
 	local var_21_4 = var_21_3.theme
 	local var_21_5 = var_21_2 * 0.5 / math.tan(math.deg2Rad * var_21_4.fov * 0.5)
 	local var_21_6 = math.deg2Rad * var_21_4.angle
 	local var_21_7 = Vector3(0, -math.sin(var_21_6), -math.cos(var_21_6))
-	local var_21_8 = Vector3(var_21_4.offsetx, var_21_4.offsety, var_21_4.offsetz) + var_0_0.MapDefaultPos
+	local var_21_8 = Vector3(var_21_4.offsetx, var_21_4.offsety, var_21_4.offsetz) + LevelGrid.MapDefaultPos
 	local var_21_9 = Vector3.Dot(var_21_7, var_21_8)
 	local var_21_10 = var_21_0 * math.clamp((var_21_5 - var_21_9) / var_21_5, 0, 1)
 	local var_21_11 = arg_21_0.plane:Find("display").anchoredPosition
 	local var_21_12 = var_0_2 - var_21_8.x - var_21_11.x
-	local var_21_13 = var_0_0.MapDefaultPos.y - var_21_8.y - var_21_11.y
+	local var_21_13 = LevelGrid.MapDefaultPos.y - var_21_8.y - var_21_11.y
 	local var_21_14, var_21_15, var_21_16, var_21_17 = var_21_3:getDragExtend()
 
 	arg_21_0.leftBound = var_21_12 - var_21_15
@@ -326,7 +326,7 @@ function var_0_0.initDrag(arg_21_0)
 	end)
 end
 
-function var_0_0.initPlane(arg_23_0)
+function LevelGrid.initPlane(arg_23_0)
 	local var_23_0 = arg_23_0.contextData.chapterVO
 	local var_23_1 = var_23_0.theme
 
@@ -343,7 +343,7 @@ function var_0_0.initPlane(arg_23_0)
 
 	var_23_2:SetParent(arg_23_0._tf, false)
 
-	var_23_2.anchoredPosition3D = Vector3(var_23_1.offsetx, var_23_1.offsety, var_23_1.offsetz) + var_0_0.MapDefaultPos
+	var_23_2.anchoredPosition3D = Vector3(var_23_1.offsetx, var_23_1.offsety, var_23_1.offsetz) + LevelGrid.MapDefaultPos
 	arg_23_0.cellRoot = var_23_2:Find("cells")
 	arg_23_0.quadRoot = var_23_2:Find("quads")
 	arg_23_0.bottomMarkRoot = var_23_2:Find("buttomMarks")
@@ -496,7 +496,7 @@ function var_0_0.initPlane(arg_23_0)
 	end
 end
 
-function var_0_0.updatePoisonArea(arg_26_0)
+function LevelGrid.updatePoisonArea(arg_26_0)
 	local var_26_0 = arg_26_0._tf:Find("plane/display/mask")
 	local var_26_1 = GetOrAddComponent(var_26_0, "RawImage")
 
@@ -507,7 +507,7 @@ function var_0_0.updatePoisonArea(arg_26_0)
 	var_26_1.texture = arg_26_0:getPoisonTex()
 end
 
-function var_0_0.getPoisonTex(arg_27_0)
+function LevelGrid.getPoisonTex(arg_27_0)
 	local var_27_0 = arg_27_0.contextData.chapterVO
 	local var_27_1 = arg_27_0._tf:Find("plane/display")
 	local var_27_2 = var_27_1.sizeDelta.x / var_27_1.sizeDelta.y
@@ -555,7 +555,7 @@ function var_0_0.getPoisonTex(arg_27_0)
 	return var_27_5
 end
 
-function var_0_0.showFleetPoisonDamage(arg_29_0, arg_29_1, arg_29_2)
+function LevelGrid.showFleetPoisonDamage(arg_29_0, arg_29_1, arg_29_2)
 	local var_29_0 = arg_29_0.contextData.chapterVO.fleets[arg_29_1].id
 	local var_29_1 = arg_29_0.cellFleets[var_29_0]
 
@@ -564,7 +564,7 @@ function var_0_0.showFleetPoisonDamage(arg_29_0, arg_29_1, arg_29_2)
 	end
 end
 
-function var_0_0.clearPlane(arg_30_0)
+function LevelGrid.clearPlane(arg_30_0)
 	arg_30_0:killQuadTws()
 	arg_30_0:killPresentTws()
 	arg_30_0:ClearEdges()
@@ -588,7 +588,7 @@ function var_0_0.clearPlane(arg_30_0)
 	pg.PoolMgr.GetInstance():ReturnPrefab("chapter/plane", "", var_30_0.gameObject)
 end
 
-function var_0_0.initFleets(arg_31_0, arg_31_1)
+function LevelGrid.initFleets(arg_31_0, arg_31_1)
 	if arg_31_0.cellFleets then
 		existCall(arg_31_1)
 
@@ -608,7 +608,7 @@ function var_0_0.initFleets(arg_31_0, arg_31_1)
 	end, arg_31_1)
 end
 
-function var_0_0.InitFleetCell(arg_33_0, arg_33_1, arg_33_2)
+function LevelGrid.InitFleetCell(arg_33_0, arg_33_1, arg_33_2)
 	local var_33_0 = arg_33_0.contextData.chapterVO
 	local var_33_1 = var_33_0:getFleetById(arg_33_1)
 
@@ -651,7 +651,7 @@ function var_0_0.InitFleetCell(arg_33_0, arg_33_1, arg_33_2)
 	arg_33_0:RefreshFleetCell(arg_33_1, arg_33_2)
 end
 
-function var_0_0.RefreshFleetCells(arg_34_0, arg_34_1)
+function LevelGrid.RefreshFleetCells(arg_34_0, arg_34_1)
 	if not arg_34_0.cellFleets then
 		arg_34_0:initFleets(arg_34_1)
 
@@ -684,7 +684,7 @@ function var_0_0.RefreshFleetCells(arg_34_0, arg_34_1)
 	end, arg_34_1)
 end
 
-function var_0_0.RefreshFleetCell(arg_36_0, arg_36_1, arg_36_2)
+function LevelGrid.RefreshFleetCell(arg_36_0, arg_36_1, arg_36_2)
 	local var_36_0 = arg_36_0.contextData.chapterVO
 	local var_36_1 = var_36_0:getFleetById(arg_36_1)
 	local var_36_2 = arg_36_0.cellFleets[arg_36_1]
@@ -730,7 +730,7 @@ function var_0_0.RefreshFleetCell(arg_36_0, arg_36_1, arg_36_2)
 	end
 end
 
-function var_0_0.clearFleets(arg_39_0)
+function LevelGrid.clearFleets(arg_39_0)
 	if arg_39_0.cellFleets then
 		for iter_39_0, iter_39_1 in pairs(arg_39_0.cellFleets) do
 			arg_39_0:ClearFleetCell(iter_39_0)
@@ -740,7 +740,7 @@ function var_0_0.clearFleets(arg_39_0)
 	end
 end
 
-function var_0_0.ClearFleetCell(arg_40_0, arg_40_1)
+function LevelGrid.ClearFleetCell(arg_40_0, arg_40_1)
 	local var_40_0 = arg_40_0.cellFleets[arg_40_1]
 
 	if not var_40_0 then
@@ -762,7 +762,7 @@ function var_0_0.ClearFleetCell(arg_40_0, arg_40_1)
 	arg_40_0.cellFleets[arg_40_1] = nil
 end
 
-function var_0_0.UpdateFleets(arg_41_0, arg_41_1)
+function LevelGrid.UpdateFleets(arg_41_0, arg_41_1)
 	local var_41_0 = arg_41_0.contextData.chapterVO
 
 	table.ParallelIpairsAsync(var_41_0.fleets, function(arg_42_0, arg_42_1, arg_42_2)
@@ -774,7 +774,7 @@ function var_0_0.UpdateFleets(arg_41_0, arg_41_1)
 	end, arg_41_1)
 end
 
-function var_0_0.updateFleet(arg_43_0, arg_43_1, arg_43_2)
+function LevelGrid.updateFleet(arg_43_0, arg_43_1, arg_43_2)
 	local var_43_0 = arg_43_0.contextData.chapterVO
 	local var_43_1 = arg_43_0.cellFleets[arg_43_1]
 	local var_43_2 = var_43_0:getFleetById(arg_43_1)
@@ -981,17 +981,17 @@ function var_0_0.updateFleet(arg_43_0, arg_43_1, arg_43_2)
 	existCall(arg_43_2)
 end
 
-function var_0_0.UpdateOpBtns(arg_48_0)
+function LevelGrid.UpdateOpBtns(arg_48_0)
 	table.Foreach(arg_48_0.opBtns, function(arg_49_0, arg_49_1)
 		setActive(arg_49_1, arg_48_0.quadState == ChapterConst.QuadStateNormal)
 	end)
 end
 
-function var_0_0.GetCellFleet(arg_50_0, arg_50_1)
+function LevelGrid.GetCellFleet(arg_50_0, arg_50_1)
 	return arg_50_0.cellFleets[arg_50_1]
 end
 
-function var_0_0.initTargetArrow(arg_51_0)
+function LevelGrid.initTargetArrow(arg_51_0)
 	local var_51_0 = arg_51_0.contextData.chapterVO
 
 	arg_51_0.arrowTarget = cloneTplTo(arg_51_0.arrowTpl, arg_51_0._tf)
@@ -1006,7 +1006,7 @@ function var_0_0.initTargetArrow(arg_51_0)
 	setActive(arg_51_0.arrowTarget, false)
 end
 
-function var_0_0.updateTargetArrow(arg_52_0, arg_52_1)
+function LevelGrid.updateTargetArrow(arg_52_0, arg_52_1)
 	local var_52_0 = arg_52_0.contextData.chapterVO
 	local var_52_1 = ChapterCell.Line2Name(arg_52_1.row, arg_52_1.column)
 	local var_52_2 = arg_52_0.cellRoot:Find(var_52_1)
@@ -1054,7 +1054,7 @@ function var_0_0.updateTargetArrow(arg_52_0, arg_52_1)
 	end
 end
 
-function var_0_0.clearTargetArrow(arg_54_0)
+function LevelGrid.clearTargetArrow(arg_54_0)
 	if not IsNil(arg_54_0.arrowTarget) then
 		Destroy(arg_54_0.arrowTarget)
 
@@ -1062,7 +1062,7 @@ function var_0_0.clearTargetArrow(arg_54_0)
 	end
 end
 
-function var_0_0.InitDestinationMark(arg_55_0)
+function LevelGrid.InitDestinationMark(arg_55_0)
 	local var_55_0 = cloneTplTo(arg_55_0.destinationMarkTpl, arg_55_0._tf)
 
 	pg.ViewUtils.SetLayer(tf(var_55_0), Layer.UI)
@@ -1077,7 +1077,7 @@ function var_0_0.InitDestinationMark(arg_55_0)
 	arg_55_0.destinationMark = tf(var_55_0)
 end
 
-function var_0_0.UpdateDestinationMark(arg_56_0, arg_56_1)
+function LevelGrid.UpdateDestinationMark(arg_56_0, arg_56_1)
 	if not arg_56_1 then
 		arg_56_0.destinationMark:SetParent(arg_56_0._tf)
 		setActive(go(arg_56_0.destinationMark), false)
@@ -1101,7 +1101,7 @@ function var_0_0.UpdateDestinationMark(arg_56_0, arg_56_1)
 	end
 end
 
-function var_0_0.ClearDestinationMark(arg_57_0)
+function LevelGrid.ClearDestinationMark(arg_57_0)
 	if not IsNil(arg_57_0.destinationMark) then
 		Destroy(arg_57_0.destinationMark)
 
@@ -1109,7 +1109,7 @@ function var_0_0.ClearDestinationMark(arg_57_0)
 	end
 end
 
-function var_0_0.initChampions(arg_58_0, arg_58_1)
+function LevelGrid.initChampions(arg_58_0, arg_58_1)
 	if arg_58_0.cellChampions then
 		existCall(arg_58_1)
 
@@ -1131,7 +1131,7 @@ function var_0_0.initChampions(arg_58_0, arg_58_1)
 	end, arg_58_1)
 end
 
-function var_0_0.InitChampion(arg_60_0, arg_60_1, arg_60_2)
+function LevelGrid.InitChampion(arg_60_0, arg_60_1, arg_60_2)
 	local var_60_0 = arg_60_0.contextData.chapterVO
 	local var_60_1 = var_60_0.champions[arg_60_1]
 	local var_60_2 = var_60_1:getPoolType()
@@ -1186,13 +1186,13 @@ function var_0_0.InitChampion(arg_60_0, arg_60_1, arg_60_2)
 	end
 end
 
-function var_0_0.updateChampions(arg_63_0, arg_63_1)
+function LevelGrid.updateChampions(arg_63_0, arg_63_1)
 	table.ParallelIpairsAsync(arg_63_0.cellChampions, function(arg_64_0, arg_64_1, arg_64_2)
 		arg_63_0:updateChampion(arg_64_0, arg_64_2)
 	end, arg_63_1)
 end
 
-function var_0_0.updateChampion(arg_65_0, arg_65_1, arg_65_2)
+function LevelGrid.updateChampion(arg_65_0, arg_65_1, arg_65_2)
 	local var_65_0 = arg_65_0.contextData.chapterVO
 	local var_65_1 = arg_65_0.cellChampions[arg_65_1]
 	local var_65_2 = var_65_0.champions[arg_65_1]
@@ -1202,7 +1202,7 @@ function var_0_0.updateChampion(arg_65_0, arg_65_1, arg_65_2)
 	end
 end
 
-function var_0_0.updateOni(arg_66_0)
+function LevelGrid.updateOni(arg_66_0)
 	local var_66_0 = arg_66_0.contextData.chapterVO
 	local var_66_1
 
@@ -1219,7 +1219,7 @@ function var_0_0.updateOni(arg_66_0)
 	end
 end
 
-function var_0_0.clearChampions(arg_67_0)
+function LevelGrid.clearChampions(arg_67_0)
 	if arg_67_0.cellChampions then
 		for iter_67_0, iter_67_1 in ipairs(arg_67_0.cellChampions) do
 			if iter_67_1 then
@@ -1235,7 +1235,7 @@ function var_0_0.clearChampions(arg_67_0)
 	end
 end
 
-function var_0_0.initCell(arg_68_0, arg_68_1, arg_68_2)
+function LevelGrid.initCell(arg_68_0, arg_68_1, arg_68_2)
 	local var_68_0 = arg_68_0.contextData.chapterVO
 	local var_68_1 = var_68_0:getChapterCell(arg_68_1, arg_68_2)
 
@@ -1299,7 +1299,7 @@ function var_0_0.initCell(arg_68_0, arg_68_1, arg_68_2)
 	end
 end
 
-function var_0_0.clearCell(arg_72_0, arg_72_1, arg_72_2)
+function LevelGrid.clearCell(arg_72_0, arg_72_1, arg_72_2)
 	local var_72_0 = ChapterCell.Line2Name(arg_72_1, arg_72_2)
 	local var_72_1 = ChapterCell.Line2QuadName(arg_72_1, arg_72_2)
 	local var_72_2 = arg_72_0.cellRoot:Find(var_72_0)
@@ -1325,7 +1325,7 @@ function var_0_0.clearCell(arg_72_0, arg_72_1, arg_72_2)
 	end
 end
 
-function var_0_0.UpdateItemCells(arg_73_0)
+function LevelGrid.UpdateItemCells(arg_73_0)
 	local var_73_0 = arg_73_0.contextData.chapterVO
 
 	if not var_73_0 then
@@ -1341,7 +1341,7 @@ function var_0_0.UpdateItemCells(arg_73_0)
 	end
 end
 
-function var_0_0.updateAttachments(arg_74_0)
+function LevelGrid.updateAttachments(arg_74_0)
 	for iter_74_0 = 0, ChapterConst.MaxRow - 1 do
 		for iter_74_1 = 0, ChapterConst.MaxColumn - 1 do
 			arg_74_0:updateAttachment(iter_74_0, iter_74_1)
@@ -1353,7 +1353,7 @@ function var_0_0.updateAttachments(arg_74_0)
 	arg_74_0:displayEscapeGrid()
 end
 
-function var_0_0.UpdateFloor(arg_75_0)
+function LevelGrid.UpdateFloor(arg_75_0)
 	local var_75_0 = arg_75_0.contextData.chapterVO
 	local var_75_1 = var_75_0.cells
 	local var_75_2 = {}
@@ -1476,7 +1476,7 @@ function var_0_0.UpdateFloor(arg_75_0)
 	end
 end
 
-function var_0_0.updateExtraAttachments(arg_78_0)
+function LevelGrid.updateExtraAttachments(arg_78_0)
 	local var_78_0 = arg_78_0.contextData.chapterVO
 	local var_78_1 = var_78_0:GetChapterCellAttachemnts()
 
@@ -1519,7 +1519,7 @@ function var_0_0.updateExtraAttachments(arg_78_0)
 	end
 end
 
-function var_0_0.updateAttachment(arg_79_0, arg_79_1, arg_79_2)
+function LevelGrid.updateAttachment(arg_79_0, arg_79_1, arg_79_2)
 	local var_79_0 = arg_79_0.contextData.chapterVO
 	local var_79_1 = var_79_0:getChapterCell(arg_79_1, arg_79_2)
 
@@ -1646,7 +1646,7 @@ function var_0_0.updateAttachment(arg_79_0, arg_79_1, arg_79_2)
 	end
 end
 
-function var_0_0.InitWalls(arg_81_0)
+function LevelGrid.InitWalls(arg_81_0)
 	local var_81_0 = arg_81_0.contextData.chapterVO
 
 	for iter_81_0 = arg_81_0.indexMin.x, arg_81_0.indexMax.x do
@@ -1691,7 +1691,7 @@ local var_0_3 = {
 	}
 }
 
-function var_0_0.InitWallDirection(arg_82_0, arg_82_1, arg_82_2)
+function LevelGrid.InitWallDirection(arg_82_0, arg_82_1, arg_82_2)
 	local var_82_0 = arg_82_0.contextData.chapterVO
 
 	if bit.band(arg_82_1.forbiddenDirections, arg_82_2) == 0 then
@@ -1732,7 +1732,7 @@ function var_0_0.InitWallDirection(arg_82_0, arg_82_1, arg_82_2)
 	var_82_7.BanCount = var_82_7.BanCount + (var_82_5 and 2 or 1)
 end
 
-function var_0_0.UpdateWeatherCells(arg_83_0, arg_83_1)
+function LevelGrid.UpdateWeatherCells(arg_83_0, arg_83_1)
 	local var_83_0 = arg_83_0.contextData.chapterVO
 
 	arg_83_1 = arg_83_1 or underscore.keys(var_83_0.cells)
@@ -1786,7 +1786,7 @@ function var_0_0.UpdateWeatherCells(arg_83_0, arg_83_1)
 	end
 end
 
-function var_0_0.updateFogCells(arg_84_0)
+function LevelGrid.updateFogCells(arg_84_0)
 	local var_84_0 = arg_84_0.contextData.chapterVO
 
 	for iter_84_0, iter_84_1 in pairs(var_84_0.cells) do
@@ -1797,7 +1797,7 @@ function var_0_0.updateFogCells(arg_84_0)
 	end
 end
 
-function var_0_0.updateQuadCells(arg_85_0, arg_85_1)
+function LevelGrid.updateQuadCells(arg_85_0, arg_85_1)
 	arg_85_1 = arg_85_1 or ChapterConst.QuadStateNormal
 	arg_85_0.quadState = arg_85_1
 
@@ -1818,7 +1818,7 @@ function var_0_0.updateQuadCells(arg_85_0, arg_85_1)
 	arg_85_0:UpdateOpBtns()
 end
 
-function var_0_0.PlayQuadsParallelAnim(arg_86_0, arg_86_1)
+function LevelGrid.PlayQuadsParallelAnim(arg_86_0, arg_86_1)
 	arg_86_0:frozen()
 	table.ParallelIpairsAsync(arg_86_1, function(arg_87_0, arg_87_1, arg_87_2)
 		local var_87_0 = ChapterCell.Line2QuadName(arg_87_1.row, arg_87_1.column)
@@ -1837,7 +1837,7 @@ function var_0_0.PlayQuadsParallelAnim(arg_86_0, arg_86_1)
 	end)
 end
 
-function var_0_0.updateQuadBase(arg_89_0)
+function LevelGrid.updateQuadBase(arg_89_0)
 	local var_89_0 = arg_89_0.contextData.chapterVO
 
 	if var_89_0.fleet == nil then
@@ -1923,7 +1923,7 @@ function var_0_0.updateQuadBase(arg_89_0)
 	end
 end
 
-function var_0_0.UpdateQuadStateNormal(arg_91_0)
+function LevelGrid.UpdateQuadStateNormal(arg_91_0)
 	local var_91_0 = arg_91_0.contextData.chapterVO
 	local var_91_1 = var_91_0.fleet
 	local var_91_2
@@ -1967,7 +1967,7 @@ function var_0_0.UpdateQuadStateNormal(arg_91_0)
 	end)
 end
 
-function var_0_0.UpdateQuadStateBarrierSetting(arg_94_0)
+function LevelGrid.UpdateQuadStateBarrierSetting(arg_94_0)
 	local var_94_0 = 1
 	local var_94_1 = arg_94_0.contextData.chapterVO
 	local var_94_2 = var_94_1.fleet
@@ -2007,7 +2007,7 @@ function var_0_0.UpdateQuadStateBarrierSetting(arg_94_0)
 	end)
 end
 
-function var_0_0.UpdateQuadStateTeleportSub(arg_97_0)
+function LevelGrid.UpdateQuadStateTeleportSub(arg_97_0)
 	local var_97_0 = arg_97_0.contextData.chapterVO
 	local var_97_1 = _.detect(var_97_0.fleets, function(arg_98_0)
 		return arg_98_0:getFleetType() == FleetType.Submarine
@@ -2025,7 +2025,7 @@ function var_0_0.UpdateQuadStateTeleportSub(arg_97_0)
 	arg_97_0:PlayQuadsParallelAnim(var_97_3)
 end
 
-function var_0_0.UpdateQuadStateMissileStrike(arg_100_0)
+function LevelGrid.UpdateQuadStateMissileStrike(arg_100_0)
 	local var_100_0 = arg_100_0.contextData.chapterVO
 	local var_100_1 = _.filter(_.values(var_100_0.cells), function(arg_101_0)
 		return arg_101_0:IsWalkable() and not var_100_0:getQuadCellPic(arg_101_0)
@@ -2034,7 +2034,7 @@ function var_0_0.UpdateQuadStateMissileStrike(arg_100_0)
 	arg_100_0:PlayQuadsParallelAnim(var_100_1)
 end
 
-function var_0_0.UpdateQuadStateAirExpel(arg_102_0)
+function LevelGrid.UpdateQuadStateAirExpel(arg_102_0)
 	local var_102_0 = arg_102_0.contextData.chapterVO
 	local var_102_1 = arg_102_0.airSupportTarget
 
@@ -2054,7 +2054,7 @@ function var_0_0.UpdateQuadStateAirExpel(arg_102_0)
 	arg_102_0:PlayQuadsParallelAnim(var_102_4)
 end
 
-function var_0_0.ClickGridCell(arg_104_0, arg_104_1)
+function LevelGrid.ClickGridCell(arg_104_0, arg_104_1)
 	if arg_104_0.quadState == ChapterConst.QuadStateBarrierSetting then
 		arg_104_0:OnBarrierSetting(arg_104_1)
 	elseif arg_104_0.quadState == ChapterConst.QuadStateTeleportSub then
@@ -2070,7 +2070,7 @@ function var_0_0.ClickGridCell(arg_104_0, arg_104_1)
 	end
 end
 
-function var_0_0.OnBarrierSetting(arg_105_0, arg_105_1)
+function LevelGrid.OnBarrierSetting(arg_105_0, arg_105_1)
 	local var_105_0 = 1
 	local var_105_1 = arg_105_0.contextData.chapterVO
 	local var_105_2 = var_105_1.fleet.line
@@ -2098,7 +2098,7 @@ function var_0_0.OnBarrierSetting(arg_105_0, arg_105_1)
 	end)(arg_105_1.row, arg_105_1.column)
 end
 
-function var_0_0.PrepareSubTeleport(arg_108_0)
+function LevelGrid.PrepareSubTeleport(arg_108_0)
 	local var_108_0 = arg_108_0.contextData.chapterVO
 	local var_108_1 = var_108_0:GetSubmarineFleet()
 	local var_108_2 = arg_108_0.cellFleets[var_108_1.id]
@@ -2128,7 +2128,7 @@ function var_0_0.PrepareSubTeleport(arg_108_0)
 	var_108_2:ResetCanvasOrder()
 end
 
-function var_0_0.TurnOffSubTeleport(arg_110_0)
+function LevelGrid.TurnOffSubTeleport(arg_110_0)
 	arg_110_0.subTeleportTargetLine = nil
 
 	local var_110_0 = arg_110_0.contextData.chapterVO
@@ -2155,7 +2155,7 @@ function var_0_0.TurnOffSubTeleport(arg_110_0)
 	arg_110_0:ShowHuntingRange()
 end
 
-function var_0_0.OnTeleportConfirm(arg_112_0, arg_112_1)
+function LevelGrid.OnTeleportConfirm(arg_112_0, arg_112_1)
 	local var_112_0 = arg_112_0.contextData.chapterVO
 	local var_112_1 = var_112_0:getChapterCell(arg_112_1.row, arg_112_1.column)
 
@@ -2183,7 +2183,7 @@ function var_0_0.OnTeleportConfirm(arg_112_0, arg_112_1)
 	end
 end
 
-function var_0_0.ShowPathInArrows(arg_113_0, arg_113_1)
+function LevelGrid.ShowPathInArrows(arg_113_0, arg_113_1)
 	local var_113_0 = arg_113_0.contextData.chapterVO
 	local var_113_1 = Clone(arg_113_1)
 
@@ -2219,7 +2219,7 @@ function var_0_0.ShowPathInArrows(arg_113_0, arg_113_1)
 	end
 end
 
-function var_0_0.ShowMissileAimingMarks(arg_114_0, arg_114_1)
+function LevelGrid.ShowMissileAimingMarks(arg_114_0, arg_114_1)
 	_.each(arg_114_1, function(arg_115_0)
 		arg_114_0.loader:GetPrefabBYGroup("ui/miaozhun02", "miaozhun02", function(arg_116_0)
 			setParent(arg_116_0, arg_114_0.restrictMap)
@@ -2232,11 +2232,11 @@ function var_0_0.ShowMissileAimingMarks(arg_114_0, arg_114_1)
 	end)
 end
 
-function var_0_0.HideMissileAimingMarks(arg_117_0)
+function LevelGrid.HideMissileAimingMarks(arg_117_0)
 	arg_117_0.loader:ReturnGroup("MissileAimingMarks")
 end
 
-function var_0_0.ShowMissileAimingMark(arg_118_0, arg_118_1)
+function LevelGrid.ShowMissileAimingMark(arg_118_0, arg_118_1)
 	arg_118_0.loader:GetPrefab("ui/miaozhun02", "miaozhun02", function(arg_119_0)
 		setParent(arg_119_0, arg_118_0.restrictMap)
 
@@ -2247,18 +2247,18 @@ function var_0_0.ShowMissileAimingMark(arg_118_0, arg_118_1)
 	end, "MissileAimingMark")
 end
 
-function var_0_0.HideMissileAimingMark(arg_120_0)
+function LevelGrid.HideMissileAimingMark(arg_120_0)
 	arg_120_0.loader:ClearRequest("MissileAimingMark")
 end
 
-function var_0_0.OnMissileAiming(arg_121_0, arg_121_1)
+function LevelGrid.OnMissileAiming(arg_121_0, arg_121_1)
 	arg_121_0:HideMissileAimingMark()
 	arg_121_0:ShowMissileAimingMark(arg_121_1)
 
 	arg_121_0.missileStrikeTargetLine = arg_121_1
 end
 
-function var_0_0.ShowAirSupportAimingMark(arg_122_0, arg_122_1)
+function LevelGrid.ShowAirSupportAimingMark(arg_122_0, arg_122_1)
 	arg_122_0.loader:GetPrefab("ui/miaozhun03", "miaozhun03", function(arg_123_0)
 		setParent(arg_123_0, arg_122_0.restrictMap)
 
@@ -2269,18 +2269,18 @@ function var_0_0.ShowAirSupportAimingMark(arg_122_0, arg_122_1)
 	end, "AirSupportAimingMark")
 end
 
-function var_0_0.HideAirSupportAimingMark(arg_124_0)
+function LevelGrid.HideAirSupportAimingMark(arg_124_0)
 	arg_124_0.loader:ClearRequest("AirSupportAimingMark")
 end
 
-function var_0_0.OnAirSupportAiming(arg_125_0, arg_125_1)
+function LevelGrid.OnAirSupportAiming(arg_125_0, arg_125_1)
 	arg_125_0:HideAirSupportAimingMark()
 	arg_125_0:ShowAirSupportAimingMark(arg_125_1)
 
 	arg_125_0.missileStrikeTargetLine = arg_125_1
 end
 
-function var_0_0.ShowAirExpelAimingMark(arg_126_0)
+function LevelGrid.ShowAirExpelAimingMark(arg_126_0)
 	local var_126_0 = arg_126_0.airSupportTarget
 
 	if not var_126_0 or not var_126_0.source then
@@ -2340,11 +2340,11 @@ function var_0_0.ShowAirExpelAimingMark(arg_126_0)
 	end, "AirExpelAimingMark")
 end
 
-function var_0_0.HideAirExpelAimingMark(arg_130_0)
+function LevelGrid.HideAirExpelAimingMark(arg_130_0)
 	arg_130_0.loader:ReturnGroup("AirExpelAimingMark")
 end
 
-function var_0_0.OnAirExpelSelect(arg_131_0, arg_131_1)
+function LevelGrid.OnAirExpelSelect(arg_131_0, arg_131_1)
 	local var_131_0 = arg_131_0.contextData.chapterVO
 
 	local function var_131_1()
@@ -2436,11 +2436,11 @@ function var_0_0.OnAirExpelSelect(arg_131_0, arg_131_1)
 	end
 end
 
-function var_0_0.CleanAirSupport(arg_134_0)
+function LevelGrid.CleanAirSupport(arg_134_0)
 	arg_134_0.airSupportTarget = nil
 end
 
-function var_0_0.startQuadTween(arg_135_0, arg_135_1, arg_135_2, arg_135_3, arg_135_4)
+function LevelGrid.startQuadTween(arg_135_0, arg_135_1, arg_135_2, arg_135_3, arg_135_4)
 	if arg_135_0.presentTws[arg_135_1] then
 		LeanTween.cancel(arg_135_0.presentTws[arg_135_1].uniqueId)
 
@@ -2462,7 +2462,7 @@ function var_0_0.startQuadTween(arg_135_0, arg_135_1, arg_135_2, arg_135_3, arg_
 	end
 end
 
-function var_0_0.cancelQuadTween(arg_136_0, arg_136_1, arg_136_2)
+function LevelGrid.cancelQuadTween(arg_136_0, arg_136_1, arg_136_2)
 	if arg_136_0.quadTws[arg_136_1] then
 		LeanTween.cancel(arg_136_0.quadTws[arg_136_1].uniqueId)
 
@@ -2472,7 +2472,7 @@ function var_0_0.cancelQuadTween(arg_136_0, arg_136_1, arg_136_2)
 	setImageAlpha(arg_136_2, ChapterConst.CellEaseOutAlpha)
 end
 
-function var_0_0.killQuadTws(arg_137_0)
+function LevelGrid.killQuadTws(arg_137_0)
 	for iter_137_0, iter_137_1 in pairs(arg_137_0.quadTws) do
 		LeanTween.cancel(iter_137_1.uniqueId)
 	end
@@ -2480,7 +2480,7 @@ function var_0_0.killQuadTws(arg_137_0)
 	arg_137_0.quadTws = {}
 end
 
-function var_0_0.killPresentTws(arg_138_0)
+function LevelGrid.killPresentTws(arg_138_0)
 	for iter_138_0, iter_138_1 in pairs(arg_138_0.presentTws) do
 		LeanTween.cancel(iter_138_1.uniqueId)
 	end
@@ -2488,7 +2488,7 @@ function var_0_0.killPresentTws(arg_138_0)
 	arg_138_0.presentTws = {}
 end
 
-function var_0_0.startMarkTween(arg_139_0, arg_139_1, arg_139_2, arg_139_3, arg_139_4)
+function LevelGrid.startMarkTween(arg_139_0, arg_139_1, arg_139_2, arg_139_3, arg_139_4)
 	if not arg_139_0.markTws[arg_139_1] then
 		arg_139_3 = arg_139_3 or 1
 		arg_139_4 = arg_139_4 or 0.2
@@ -2504,7 +2504,7 @@ function var_0_0.startMarkTween(arg_139_0, arg_139_1, arg_139_2, arg_139_3, arg_
 	end
 end
 
-function var_0_0.cancelMarkTween(arg_140_0, arg_140_1, arg_140_2, arg_140_3)
+function LevelGrid.cancelMarkTween(arg_140_0, arg_140_1, arg_140_2, arg_140_3)
 	if arg_140_0.markTws[arg_140_1] then
 		LeanTween.cancel(arg_140_0.markTws[arg_140_1].uniqueId)
 
@@ -2514,7 +2514,7 @@ function var_0_0.cancelMarkTween(arg_140_0, arg_140_1, arg_140_2, arg_140_3)
 	setImageAlpha(arg_140_2, arg_140_3 or ChapterConst.CellEaseOutAlpha)
 end
 
-function var_0_0.moveFleet(arg_141_0, arg_141_1, arg_141_2, arg_141_3, arg_141_4)
+function LevelGrid.moveFleet(arg_141_0, arg_141_1, arg_141_2, arg_141_3, arg_141_4)
 	local var_141_0 = arg_141_0.contextData.chapterVO
 	local var_141_1 = var_141_0:IsFogStage()
 	local var_141_2 = var_141_0.fleet
@@ -2585,7 +2585,7 @@ function var_0_0.moveFleet(arg_141_0, arg_141_1, arg_141_2, arg_141_3, arg_141_4
 	arg_141_0:moveCellView(var_141_4, arg_141_1, arg_141_2, var_141_6, var_141_7, var_141_8)
 end
 
-function var_0_0.moveSub(arg_146_0, arg_146_1, arg_146_2, arg_146_3, arg_146_4)
+function LevelGrid.moveSub(arg_146_0, arg_146_1, arg_146_2, arg_146_3, arg_146_4)
 	local var_146_0 = arg_146_0.contextData.chapterVO
 	local var_146_1 = var_146_0.fleets[arg_146_1]
 	local var_146_2 = arg_146_0.cellFleets[var_146_1.id]
@@ -2616,7 +2616,7 @@ function var_0_0.moveSub(arg_146_0, arg_146_1, arg_146_2, arg_146_3, arg_146_4)
 	arg_146_0:teleportSubView(var_146_2, var_146_2:GetLine(), var_146_3, var_146_4, var_146_5, var_146_6)
 end
 
-function var_0_0.moveChampion(arg_150_0, arg_150_1, arg_150_2, arg_150_3, arg_150_4)
+function LevelGrid.moveChampion(arg_150_0, arg_150_1, arg_150_2, arg_150_3, arg_150_4)
 	local var_150_0 = arg_150_0.contextData.chapterVO
 	local var_150_1 = var_150_0.champions[arg_150_1]
 	local var_150_2 = arg_150_0.cellChampions[arg_150_1]
@@ -2649,7 +2649,7 @@ function var_0_0.moveChampion(arg_150_0, arg_150_1, arg_150_2, arg_150_3, arg_15
 	end
 end
 
-function var_0_0.moveTransport(arg_154_0, arg_154_1, arg_154_2, arg_154_3, arg_154_4)
+function LevelGrid.moveTransport(arg_154_0, arg_154_1, arg_154_2, arg_154_3, arg_154_4)
 	local var_154_0 = arg_154_0.contextData.chapterVO.fleets[arg_154_1]
 	local var_154_1 = arg_154_0.cellFleets[var_154_0.id]
 
@@ -2672,7 +2672,7 @@ function var_0_0.moveTransport(arg_154_0, arg_154_1, arg_154_2, arg_154_3, arg_1
 	arg_154_0:moveCellView(var_154_1, arg_154_2, arg_154_3, var_154_2, var_154_3, var_154_4)
 end
 
-function var_0_0.moveCellView(arg_158_0, arg_158_1, arg_158_2, arg_158_3, arg_158_4, arg_158_5, arg_158_6)
+function LevelGrid.moveCellView(arg_158_0, arg_158_1, arg_158_2, arg_158_3, arg_158_4, arg_158_5, arg_158_6)
 	local var_158_0 = arg_158_0.contextData.chapterVO
 	local var_158_1
 
@@ -2757,7 +2757,7 @@ function var_0_0.moveCellView(arg_158_0, arg_158_1, arg_158_2, arg_158_3, arg_15
 	var_158_2()
 end
 
-function var_0_0.moveStep(arg_166_0, arg_166_1, arg_166_2, arg_166_3, arg_166_4, arg_166_5)
+function LevelGrid.moveStep(arg_166_0, arg_166_1, arg_166_2, arg_166_3, arg_166_4, arg_166_5)
 	local var_166_0 = arg_166_0.contextData.chapterVO
 	local var_166_1 = var_166_0:GetQuickPlayFlag() and ChapterConst.ShipStepQuickPlayScale or 1
 	local var_166_2
@@ -2795,7 +2795,7 @@ function var_0_0.moveStep(arg_166_0, arg_166_1, arg_166_2, arg_166_3, arg_166_4,
 	end))
 end
 
-function var_0_0.teleportSubView(arg_168_0, arg_168_1, arg_168_2, arg_168_3, arg_168_4, arg_168_5, arg_168_6)
+function LevelGrid.teleportSubView(arg_168_0, arg_168_1, arg_168_2, arg_168_3, arg_168_4, arg_168_5, arg_168_6)
 	local var_168_0 = arg_168_0.contextData.chapterVO
 
 	local function var_168_1()
@@ -2808,7 +2808,7 @@ function var_0_0.teleportSubView(arg_168_0, arg_168_1, arg_168_2, arg_168_3, arg
 	arg_168_0:PlaySubAnimation(arg_168_1, true, var_168_1)
 end
 
-function var_0_0.CellToScreen(arg_170_0, arg_170_1, arg_170_2)
+function LevelGrid.CellToScreen(arg_170_0, arg_170_1, arg_170_2)
 	local var_170_0 = arg_170_0._tf:Find(ChapterConst.PlaneName .. "/cells")
 
 	assert(var_170_0, "plane not exist.")
@@ -2865,7 +2865,7 @@ local var_0_5 = {
 	}
 }
 
-function var_0_0.AddCellEdge(arg_171_0, arg_171_1, arg_171_2, ...)
+function LevelGrid.AddCellEdge(arg_171_0, arg_171_1, arg_171_2, ...)
 	local var_171_0 = 0
 	local var_171_1 = 1
 
@@ -2886,7 +2886,7 @@ function var_0_0.AddCellEdge(arg_171_0, arg_171_1, arg_171_2, ...)
 	arg_171_0:CreateEdge(var_171_0, arg_171_2, ...)
 end
 
-function var_0_0.AddOutlines(arg_173_0, arg_173_1, arg_173_2, arg_173_3, arg_173_4, arg_173_5)
+function LevelGrid.AddOutlines(arg_173_0, arg_173_1, arg_173_2, arg_173_3, arg_173_4, arg_173_5)
 	local var_173_0 = {}
 	local var_173_1 = {}
 
@@ -2927,11 +2927,11 @@ function var_0_0.AddOutlines(arg_173_0, arg_173_1, arg_173_2, arg_173_3, arg_173
 	arg_173_0:CreateOutlineCorners(var_173_1, arg_173_2, arg_173_3, arg_173_4, arg_173_5 .. "_corner")
 end
 
-function var_0_0.isHuntingRangeVisible(arg_178_0)
+function LevelGrid.isHuntingRangeVisible(arg_178_0)
 	return arg_178_0.contextData.huntingRangeVisibility % 2 == 0
 end
 
-function var_0_0.toggleHuntingRange(arg_179_0)
+function LevelGrid.toggleHuntingRange(arg_179_0)
 	arg_179_0:hideQuadMark(ChapterConst.MarkHuntingRange)
 	arg_179_0:ClearEdges("SubmarineHunting")
 
@@ -2945,32 +2945,32 @@ function var_0_0.toggleHuntingRange(arg_179_0)
 	arg_179_0:updateChampions()
 end
 
-function var_0_0.ShowHuntingRange(arg_180_0)
-	local var_180_0 = arg_180_0.contextData.chapterVO
-	local var_180_1 = var_180_0:GetSubmarineFleet()
+function LevelGrid.ShowHuntingRange(self)
+	local chapterVO = self.contextData.chapterVO
+	local submarineFleet = chapterVO:GetSubmarineFleet()
 
-	if not var_180_1 then
+	if not submarineFleet then
 		return
 	end
 
-	local var_180_2 = var_180_1:getHuntingRange()
+	local var_180_2 = submarineFleet:getHuntingRange()
 	local var_180_3 = _.filter(var_180_2, function(arg_181_0)
-		local var_181_0 = var_180_0:getChapterCell(arg_181_0.row, arg_181_0.column)
+		local var_181_0 = chapterVO:getChapterCell(arg_181_0.row, arg_181_0.column)
 
 		return var_181_0 and var_181_0:IsWalkable()
 	end)
 
-	arg_180_0:RefreshHuntingRange(var_180_3, false)
+	self:RefreshHuntingRange(var_180_3, false)
 end
 
-function var_0_0.RefreshHuntingRange(arg_182_0, arg_182_1, arg_182_2)
+function LevelGrid.RefreshHuntingRange(arg_182_0, arg_182_1, arg_182_2)
 	arg_182_0:showQuadMark(arg_182_1, ChapterConst.MarkHuntingRange, "cell_hunting_range", Vector2(100, 100), arg_182_0.material_Add, arg_182_2)
 	_.each(arg_182_1, function(arg_183_0)
 		arg_182_0:AddCellEdge(arg_182_1, arg_183_0, not arg_182_2, nil, nil, "SubmarineHunting")
 	end)
 end
 
-function var_0_0.ShowStaticHuntingRange(arg_184_0)
+function LevelGrid.ShowStaticHuntingRange(arg_184_0)
 	arg_184_0:hideQuadMark(ChapterConst.MarkHuntingRange)
 	arg_184_0:ClearEdges("SubmarineHunting")
 
@@ -2991,7 +2991,7 @@ function var_0_0.ShowStaticHuntingRange(arg_184_0)
 	arg_184_0:RefreshHuntingRange(var_184_3, true)
 end
 
-function var_0_0.ShowTargetHuntingRange(arg_186_0, arg_186_1)
+function LevelGrid.ShowTargetHuntingRange(arg_186_0, arg_186_1)
 	arg_186_0:hideQuadMark(ChapterConst.MarkHuntingRange)
 	arg_186_0:ClearEdges("SubmarineHunting")
 
@@ -3023,7 +3023,7 @@ function var_0_0.ShowTargetHuntingRange(arg_186_0, arg_186_1)
 	arg_186_0:updateChampions()
 end
 
-function var_0_0.OnChangeSubAutoAttack(arg_189_0)
+function LevelGrid.OnChangeSubAutoAttack(arg_189_0)
 	local var_189_0 = arg_189_0.contextData.chapterVO
 	local var_189_1 = var_189_0:GetSubmarineFleet()
 
@@ -3045,7 +3045,7 @@ function var_0_0.OnChangeSubAutoAttack(arg_189_0)
 	end)
 end
 
-function var_0_0.displayEscapeGrid(arg_191_0)
+function LevelGrid.displayEscapeGrid(arg_191_0)
 	local var_191_0 = arg_191_0.contextData.chapterVO
 
 	if not var_191_0:existOni() then
@@ -3063,15 +3063,15 @@ function var_0_0.displayEscapeGrid(arg_191_0)
 	end), ChapterConst.MarkEscapeGrid, "cell_escape_grid", Vector2(105, 105))
 end
 
-function var_0_0.showQuadMark(arg_193_0, arg_193_1, arg_193_2, arg_193_3, arg_193_4, arg_193_5, arg_193_6)
+function LevelGrid.showQuadMark(arg_193_0, arg_193_1, arg_193_2, arg_193_3, arg_193_4, arg_193_5, arg_193_6)
 	arg_193_0:ShowAnyQuadMark(arg_193_1, arg_193_2, arg_193_3, arg_193_4, arg_193_5, false, arg_193_6)
 end
 
-function var_0_0.ShowTopQuadMark(arg_194_0, arg_194_1, arg_194_2, arg_194_3, arg_194_4, arg_194_5, arg_194_6)
+function LevelGrid.ShowTopQuadMark(arg_194_0, arg_194_1, arg_194_2, arg_194_3, arg_194_4, arg_194_5, arg_194_6)
 	arg_194_0:ShowAnyQuadMark(arg_194_1, arg_194_2, arg_194_3, arg_194_4, arg_194_5, true, arg_194_6)
 end
 
-function var_0_0.ShowAnyQuadMark(arg_195_0, arg_195_1, arg_195_2, arg_195_3, arg_195_4, arg_195_5, arg_195_6, arg_195_7)
+function LevelGrid.ShowAnyQuadMark(arg_195_0, arg_195_1, arg_195_2, arg_195_3, arg_195_4, arg_195_5, arg_195_6, arg_195_7)
 	local var_195_0 = arg_195_0.contextData.chapterVO
 
 	for iter_195_0, iter_195_1 in pairs(arg_195_1) do
@@ -3118,7 +3118,7 @@ function var_0_0.ShowAnyQuadMark(arg_195_0, arg_195_1, arg_195_2, arg_195_3, arg
 	end
 end
 
-function var_0_0.hideQuadMark(arg_197_0, arg_197_1)
+function LevelGrid.hideQuadMark(arg_197_0, arg_197_1)
 	if arg_197_1 and not arg_197_0.markQuads[arg_197_1] then
 		return
 	end
@@ -3139,11 +3139,11 @@ function var_0_0.hideQuadMark(arg_197_0, arg_197_1)
 	end
 end
 
-function var_0_0.CreateEdgeIndex(arg_198_0, arg_198_1, arg_198_2, arg_198_3)
+function LevelGrid.CreateEdgeIndex(arg_198_0, arg_198_1, arg_198_2, arg_198_3)
 	return ChapterCell.Line2Name(arg_198_0, arg_198_1) .. (arg_198_3 and "_" .. arg_198_3 or "") .. "_" .. arg_198_2
 end
 
-function var_0_0.CreateEdge(arg_199_0, arg_199_1, arg_199_2, arg_199_3, arg_199_4, arg_199_5, arg_199_6)
+function LevelGrid.CreateEdge(arg_199_0, arg_199_1, arg_199_2, arg_199_3, arg_199_4, arg_199_5, arg_199_6)
 	if arg_199_1 <= 0 or arg_199_1 >= 16 then
 		return
 	end
@@ -3200,7 +3200,7 @@ function var_0_0.CreateEdge(arg_199_0, arg_199_1, arg_199_2, arg_199_3, arg_199_
 	end
 end
 
-function var_0_0.ClearEdge(arg_200_0, arg_200_1)
+function LevelGrid.ClearEdge(arg_200_0, arg_200_1)
 	for iter_200_0, iter_200_1 in pairs(arg_200_0.cellEdges) do
 		for iter_200_2 = 1, 4 do
 			local var_200_0 = arg_200_0.CreateEdgeIndex(arg_200_1.row, arg_200_1.column, iter_200_2, iter_200_0)
@@ -3218,7 +3218,7 @@ function var_0_0.ClearEdge(arg_200_0, arg_200_1)
 	end
 end
 
-function var_0_0.ClearEdges(arg_201_0, arg_201_1)
+function LevelGrid.ClearEdges(arg_201_0, arg_201_1)
 	if not next(arg_201_0.cellEdges) then
 		return
 	end
@@ -3237,7 +3237,7 @@ function var_0_0.ClearEdges(arg_201_0, arg_201_1)
 	end
 end
 
-function var_0_0.CreateOutlines(arg_202_0, arg_202_1, arg_202_2, arg_202_3, arg_202_4, arg_202_5)
+function LevelGrid.CreateOutlines(arg_202_0, arg_202_1, arg_202_2, arg_202_3, arg_202_4, arg_202_5)
 	local var_202_0 = arg_202_0.contextData.chapterVO
 	local var_202_1 = var_202_0.theme.cellSize + var_202_0.theme.cellSpace
 
@@ -3305,7 +3305,7 @@ function var_0_0.CreateOutlines(arg_202_0, arg_202_1, arg_202_2, arg_202_3, arg_
 	end
 end
 
-function var_0_0.CreateOutlineCorners(arg_203_0, arg_203_1, arg_203_2, arg_203_3, arg_203_4, arg_203_5)
+function LevelGrid.CreateOutlineCorners(arg_203_0, arg_203_1, arg_203_2, arg_203_3, arg_203_4, arg_203_5)
 	local var_203_0 = arg_203_0.contextData.chapterVO
 
 	for iter_203_0, iter_203_1 in pairs(arg_203_1) do
@@ -3348,14 +3348,14 @@ function var_0_0.CreateOutlineCorners(arg_203_0, arg_203_1, arg_203_2, arg_203_3
 	end
 end
 
-function var_0_0.updateCoastalGunAttachArea(arg_204_0)
+function LevelGrid.updateCoastalGunAttachArea(arg_204_0)
 	local var_204_0 = arg_204_0.contextData.chapterVO:getCoastalGunArea()
 
 	arg_204_0:hideQuadMark(ChapterConst.MarkCoastalGun)
 	arg_204_0:showQuadMark(var_204_0, ChapterConst.MarkCoastalGun, "cell_coastal_gun", Vector2(110, 110), nil, false)
 end
 
-function var_0_0.InitIdolsAnim(arg_205_0)
+function LevelGrid.InitIdolsAnim(arg_205_0)
 	local var_205_0 = arg_205_0.contextData.chapterVO
 	local var_205_1 = pg.chapter_pop_template[var_205_0.id]
 
@@ -3385,7 +3385,7 @@ function var_0_0.InitIdolsAnim(arg_205_0)
 	end
 end
 
-function var_0_0.ClearIdolsAnim(arg_206_0)
+function LevelGrid.ClearIdolsAnim(arg_206_0)
 	if arg_206_0.idols then
 		for iter_206_0, iter_206_1 in ipairs(arg_206_0.idols) do
 			iter_206_1:Clear()
@@ -3397,7 +3397,7 @@ function var_0_0.ClearIdolsAnim(arg_206_0)
 	end
 end
 
-function var_0_0.GetEnemyCellView(arg_207_0, arg_207_1)
+function LevelGrid.GetEnemyCellView(arg_207_0, arg_207_1)
 	local var_207_0 = _.detect(arg_207_0.cellChampions, function(arg_208_0)
 		local var_208_0 = arg_208_0:GetLine()
 
@@ -3413,14 +3413,14 @@ function var_0_0.GetEnemyCellView(arg_207_0, arg_207_1)
 	return var_207_0
 end
 
-function var_0_0.TransformLine2PlanePos(arg_209_0, arg_209_1)
+function LevelGrid.TransformLine2PlanePos(arg_209_0, arg_209_1)
 	local var_209_0 = string.char(string.byte("A") + arg_209_1.column - arg_209_0.indexMin.y)
 	local var_209_1 = string.char(string.byte("1") + arg_209_1.row - arg_209_0.indexMin.x)
 
 	return var_209_0 .. var_209_1
 end
 
-function var_0_0.AlignListContainer(arg_210_0, arg_210_1)
+function LevelGrid.AlignListContainer(arg_210_0, arg_210_1)
 	local var_210_0 = arg_210_0.childCount
 
 	for iter_210_0 = arg_210_1, var_210_0 - 1 do
@@ -3440,13 +3440,13 @@ function var_0_0.AlignListContainer(arg_210_0, arg_210_1)
 	end
 end
 
-function var_0_0.frozen(arg_211_0)
+function LevelGrid.frozen(arg_211_0)
 	arg_211_0.forzenCount = (arg_211_0.forzenCount or 0) + 1
 
 	arg_211_0.parent:frozen()
 end
 
-function var_0_0.unfrozen(arg_212_0)
+function LevelGrid.unfrozen(arg_212_0)
 	if arg_212_0.exited then
 		return
 	end
@@ -3456,11 +3456,11 @@ function var_0_0.unfrozen(arg_212_0)
 	arg_212_0.parent:unfrozen()
 end
 
-function var_0_0.isfrozen(arg_213_0)
+function LevelGrid.isfrozen(arg_213_0)
 	return arg_213_0.parent.frozenCount > 0
 end
 
-function var_0_0.clear(arg_214_0)
+function LevelGrid.clear(arg_214_0)
 	arg_214_0:clearAll()
 
 	if (arg_214_0.forzenCount or 0) > 0 then
@@ -3468,4 +3468,4 @@ function var_0_0.clear(arg_214_0)
 	end
 end
 
-return var_0_0
+return LevelGrid

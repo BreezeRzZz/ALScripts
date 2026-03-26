@@ -543,7 +543,8 @@ function LevelStageView.updateAmbushRate(arg_37_0, arg_37_1, arg_37_2)
 		setTextColor(var_37_6, Color.New(0.4, 0.4, 0.4))
 	else
 		local var_37_7 = var_37_0:getAmbushRate(var_37_1, arg_37_1)
-		local var_37_8, var_37_9 = ChapterConst.GetAmbushDisplay((not arg_37_2 or not var_37_0:existEnemy(ChapterConst.SubjectPlayer, arg_37_1.row, arg_37_1.column)) and var_37_7)
+		local var_37_8, var_37_9 = ChapterConst.GetAmbushDisplay((not arg_37_2 or not var_37_0:existEnemy(ChapterConst.SubjectPlayer, arg_37_1.row, arg_37_1.column)) and
+		var_37_7)
 
 		setText(var_37_6, var_37_8)
 		setTextColor(var_37_6, var_37_9)
@@ -634,7 +635,8 @@ function LevelStageView.updateBombPanel(arg_43_0, arg_43_1)
 	setActive(arg_43_0.bombPanel, var_43_0:isPlayingWithBombEnemy())
 
 	if var_43_0:isPlayingWithBombEnemy() then
-		setText(arg_43_0.bombPanel:Find("tx_step"), var_43_0:getBombChapterInfo().action_times - math.floor(var_43_0.roundIndex / 2))
+		setText(arg_43_0.bombPanel:Find("tx_step"),
+			var_43_0:getBombChapterInfo().action_times - math.floor(var_43_0.roundIndex / 2))
 
 		local var_43_1 = arg_43_0.bombPanel:Find("tx_score")
 		local var_43_2 = tonumber(getText(var_43_1))
@@ -647,7 +649,8 @@ function LevelStageView.updateBombPanel(arg_43_0, arg_43_1)
 
 			local var_43_4 = (var_43_3 - var_43_2) * 0.1
 
-			LeanTween.value(go(var_43_1), var_43_2, var_43_3, var_43_4):setOnUpdate(System.Action_float(function(arg_44_0)
+			LeanTween.value(go(var_43_1), var_43_2, var_43_3, var_43_4):setOnUpdate(System.Action_float(function(
+				arg_44_0)
 				setText(var_43_1, math.floor(arg_44_0))
 			end)):setOnComplete(System.Action(function()
 				setText(var_43_1, var_43_3)
@@ -852,7 +855,8 @@ function LevelStageView.updateEnemyCount(arg_57_0)
 	local var_57_0 = arg_57_0.contextData.chapterVO
 	local var_57_1 = findTF(arg_57_0.topStage, "icon_list/enemy_count")
 	local var_57_2 = tobool(underscore.detect(var_57_0.achieves, function(arg_58_0)
-		return (arg_58_0.type == ChapterConst.AchieveType3 or arg_58_0.type == ChapterConst.AchieveType6) and not ChapterConst.IsAchieved(arg_58_0)
+		return (arg_58_0.type == ChapterConst.AchieveType3 or arg_58_0.type == ChapterConst.AchieveType6) and
+		not ChapterConst.IsAchieved(arg_58_0)
 	end))
 
 	setActive(var_57_1, var_57_2)
@@ -926,7 +930,8 @@ function LevelStageView.updateChapterBuff(arg_61_0)
 					"passstate",
 					var_61_3 .. "_icon"
 				},
-				content = i18n("level_risk_level_mitigation_rate", var_61_0:getRemainPassCount(), var_61_0:getMitigationRate())
+				content = i18n("level_risk_level_mitigation_rate", var_61_0:getRemainPassCount(),
+					var_61_0:getMitigationRate())
 			})
 		end, SFX_PANEL)
 	end
@@ -1377,10 +1382,11 @@ function LevelStageView.updateSupportFleet(arg_91_0)
 		local function var_91_8(arg_92_0)
 			setActive(var_91_6, true)
 			setActive(var_91_7, true)
-			shiftPanel(var_91_7, nil, arg_92_0 and -325.1 or -855, 0.3, 0, true, nil, LeanTweenType.easeOutSine, function()
-				setActive(var_91_6, not arg_92_0)
-				setActive(var_91_7, arg_92_0)
-			end)
+			shiftPanel(var_91_7, nil, arg_92_0 and -325.1 or -855, 0.3, 0, true, nil, LeanTweenType.easeOutSine,
+				function()
+					setActive(var_91_6, not arg_92_0)
+					setActive(var_91_7, arg_92_0)
+				end)
 			shiftPanel(var_91_6, nil, arg_92_0 and -1017 or -563.97, 0.3, 0, true, nil, LeanTweenType.easeOutSine)
 		end
 
@@ -1401,10 +1407,12 @@ function LevelStageView.ShiftStagePanelIn(arg_96_0, arg_96_1)
 end
 
 function LevelStageView.ShiftStagePanelOut(arg_97_0, arg_97_1)
-	shiftPanel(arg_97_0.topStage, 0, arg_97_0.topStage.rect.height, 0.3, 0, true, nil, LeanTweenType.easeOutSine, arg_97_1)
+	shiftPanel(arg_97_0.topStage, 0, arg_97_0.topStage.rect.height, 0.3, 0, true, nil, LeanTweenType.easeOutSine,
+		arg_97_1)
 	arg_97_0:ShiftBottomStage(false)
 	shiftPanel(arg_97_0.leftStage, -arg_97_0.leftStage.rect.width - 200, 0, 0.3, 0, true, nil, LeanTweenType.easeOutSine)
-	shiftPanel(arg_97_0.rightStage, arg_97_0.rightStage.rect.width + 300, 0, 0.3, 0, true, nil, LeanTweenType.easeOutSine)
+	shiftPanel(arg_97_0.rightStage, arg_97_0.rightStage.rect.width + 300, 0, 0.3, 0, true, nil, LeanTweenType
+	.easeOutSine)
 end
 
 function LevelStageView.ShiftBottomStage(arg_98_0, arg_98_1)
@@ -1432,7 +1440,8 @@ function LevelStageView.SwitchSubTeleportBottomStage(arg_99_0)
 		local var_100_4 = var_100_0:findPath(nil, var_100_2, var_100_3)
 		local var_100_5 = arg_99_0.grid:TransformLine2PlanePos(var_100_2)
 		local var_100_6 = arg_99_0.grid:TransformLine2PlanePos(var_100_3)
-		local var_100_7 = math.ceil(pg.strategy_data_template[ChapterConst.StrategySubTeleport].arg[2] * #var_100_1:getShips(false) * var_100_4 - 1e-05)
+		local var_100_7 = math.ceil(pg.strategy_data_template[ChapterConst.StrategySubTeleport].arg[2] *
+		#var_100_1:getShips(false) * var_100_4 - 1e-05)
 
 		pg.MsgboxMgr.GetInstance():ShowMsgBox({
 			content = i18n("tips_confirm_teleport_sub", var_100_5, var_100_6, var_100_4, var_100_7),
@@ -1466,7 +1475,7 @@ function LevelStageView.SwitchMissileBottomStagePanel(arg_103_0)
 
 		local var_104_1 = arg_103_0.contextData.chapterVO.fleet
 
-		;(function()
+		; (function()
 			arg_103_0:emit(LevelMediator2.ON_OP, {
 				type = ChapterConst.OpStrategy,
 				id = var_104_1.id,
@@ -1496,7 +1505,7 @@ function LevelStageView.SwitchAirSupportBottomStagePanel(arg_107_0)
 
 		local var_108_1 = arg_107_0.contextData.chapterVO:getChapterSupportFleet()
 
-		;(function()
+		; (function()
 			arg_107_0:emit(LevelMediator2.ON_OP, {
 				type = ChapterConst.OpStrategy,
 				id = var_108_1.id,
@@ -1547,7 +1556,8 @@ function LevelStageView.ClickGridCellNormal(arg_117_0, arg_117_1)
 	local var_117_0 = arg_117_0.contextData.chapterVO
 	local var_117_1 = var_117_0.fleet
 	local var_117_2 = _.detect(var_117_0.fleets, function(arg_118_0)
-		return arg_118_0:getFleetType() == FleetType.Normal and arg_118_0.line.row == arg_117_1.row and arg_118_0.line.column == arg_117_1.column
+		return arg_118_0:getFleetType() == FleetType.Normal and arg_118_0.line.row == arg_117_1.row and
+		arg_118_0.line.column == arg_117_1.column
 	end)
 
 	if var_117_2 and var_117_2:isValid() and var_117_2.id ~= var_117_1.id then
@@ -1580,11 +1590,12 @@ function LevelStageView.ClickGridCellNormal(arg_117_0, arg_117_1)
 	elseif not var_117_0:considerAsStayPoint(ChapterConst.SubjectPlayer, arg_117_1.row, arg_117_1.column) then
 		return
 	elseif var_117_0:existMoveLimit() then
-		local var_117_5 = var_117_0:calcWalkableCells(ChapterConst.SubjectPlayer, var_117_1.line.row, var_117_1.line.column, var_117_1:getSpeed())
+		local var_117_5 = var_117_0:calcWalkableCells(ChapterConst.SubjectPlayer, var_117_1.line.row,
+			var_117_1.line.column, var_117_1:getSpeed())
 
 		if not _.any(var_117_5, function(arg_119_0)
-			return arg_119_0.row == arg_117_1.row and arg_119_0.column == arg_117_1.column
-		end) then
+				return arg_119_0.row == arg_117_1.row and arg_119_0.column == arg_117_1.column
+			end) then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("destination_not_in_range"))
 
 			return
@@ -1753,16 +1764,16 @@ function LevelStageView.tryAutoAction(arg_120_0, arg_120_1)
 		end,
 		function(arg_131_0)
 			if not (function()
-				local var_132_0 = getProxy(ChapterProxy):GetLastDefeatedEnemy(var_120_0.id)
+					local var_132_0 = getProxy(ChapterProxy):GetLastDefeatedEnemy(var_120_0.id)
 
-				if not var_132_0 then
-					return
-				end
+					if not var_132_0 then
+						return
+					end
 
-				local var_132_1 = pg.expedition_data_template[var_132_0.attachmentId]
+					local var_132_1 = pg.expedition_data_template[var_132_0.attachmentId]
 
-				return var_132_1 and var_132_1.type == ChapterConst.ExpeditionTypeMulBoss
-			end)() then
+					return var_132_1 and var_132_1.type == ChapterConst.ExpeditionTypeMulBoss
+				end)() then
 				return arg_131_0()
 			end
 
@@ -1833,7 +1844,7 @@ function LevelStageView.tryAutoAction(arg_120_0, arg_120_1)
 			end
 
 			arg_120_0:emit(LevelUIConst.UN_FROZEN)
-			;(function()
+			; (function()
 				local var_140_0 = getProxy(ChapterProxy)
 				local var_140_1 = var_140_0:getActiveChapter(true)
 
@@ -2125,7 +2136,8 @@ function LevelStageView.DoBreakAction(arg_157_0)
 					var_157_3(arg_162_0)
 				end,
 				function(arg_163_0)
-					local var_163_0 = var_157_0:getConfig("win_condition_display") and #var_163_0 > 0 and var_163_0 .. "_tip"
+					local var_163_0 = var_157_0:getConfig("win_condition_display") and #var_163_0 > 0 and
+					var_163_0 .. "_tip"
 
 					if var_163_0 and pg.gametip[var_163_0] then
 						pg.TipsMgr.GetInstance():ShowTips(i18n(var_163_0))
@@ -2240,18 +2252,18 @@ function LevelStageView.TryAutoFight(self)
 	if not chapterVO:IsAutoFight() then
 		return
 	end
-	
+
 	--- @type table<number, ChapterCell>
 	-- 获取场上的所有敌人列表(包括BOSS)
 	local enemyList = chapterVO:GetAllEnemies()
 	-- underscore.detect: 找到第一个满足条件的元素并返回
-		-- 这里找到第一个是Boss的敌人Cell
+	-- 这里找到第一个是Boss的敌人Cell
 	--- @param enemyCell ChapterCell
 	local bossCell = _.detect(enemyList, function(enemyCell)
 		return ChapterConst.IsBossCell(enemyCell)
 	end)
 	-- tobool: support/helpers/LuaSupport.lua, 参数非空时返回true，否则返回false
-		-- 这里只要获取到了bossCell就返回true，否则返回false
+	-- 这里只要获取到了bossCell就返回true，否则返回false
 	-- 返回符合职责的舰队
 	--- @type ChapterFleet
 	local fleetOfDuty = chapterVO:GetFleetOfDuty(tobool(bossCell))
@@ -2279,8 +2291,8 @@ function LevelStageView.TryAutoFight(self)
 
 	for _, attachType in ipairs(chapterVO:getConfig("box_auto_pick")) do
 		-- underscore.filter(items, func): 移除不符合条件(func(item)返回false)的item，返回符合条件的元素列表
-			-- switch: support/helpers/M02.lua, 这里根据attachType选择不同的函数进行调用
-			-- 总体来说，这里通过switch获取符合attachType的Cell列表，然后通过匿名函数过滤掉被禁用的Cell
+		-- switch: support/helpers/M02.lua, 这里根据attachType选择不同的函数进行调用
+		-- 总体来说，这里通过switch获取符合attachType的Cell列表，然后通过匿名函数过滤掉被禁用的Cell
 		-- findChapterCells: model/vo/ChapterLevelData.lua, 获取符合attachType的Cell列表
 		local attachList = underscore.filter(switch(attachType, {
 			[ChapterConst.AttachBox] = function()
@@ -2306,8 +2318,8 @@ function LevelStageView.TryAutoFight(self)
 		-- 下面，对上面的attachList进行路径查找，存入candidateTable
 		for _, cell in ipairs(attachList) do
 			-- 查找当前舰队到cell的路径和priority值
-				-- priorty值实际更类似cost，例如空格子是1，障碍物是1000
-				-- findPath会基于prioirty做BFS
+			-- priorty值实际更类似cost，例如空格子是1，障碍物是1000
+			-- findPath会基于prioirty做BFS
 			local priority, path = chapterVO:findPath(ChapterConst.SubjectPlayer, fleetOfDuty.line, cell)
 
 			if priority < PathFinding.PrioObstacle then
@@ -2366,7 +2378,7 @@ function LevelStageView.TryAutoFight(self)
 		else
 			--- @param enemyCell ChapterCell
 			-- underscore.map(items, func): 对items中的每个元素调用func，并将结果组成一个新表返回
-				-- 这里对每个敌人Cell进行路径查找，存入candidateTable
+			-- 这里对每个敌人Cell进行路径查找，存入candidateTable
 			candidateTable = underscore.map(enemyList, function(enemyCell)
 				local priority, path = chapterVO:findPath(ChapterConst.SubjectPlayer, fleetOfDuty.line, enemyCell)
 
@@ -2392,48 +2404,50 @@ function LevelStageView.TryAutoFight(self)
 
 				-- model/const/ChapterConst.lua
 				-- 关于expedition的type，这里列举一些：
-					-- 小型侦查舰队：1
-					-- 中型侦查舰队：2
-					-- 大型侦查舰队：3
-					-- 小型主力舰队：4
-					-- 中型主力舰队：5
-					-- 大型主力舰队：6
-					-- 小型航空舰队：7
-					-- 中型航空舰队：8
-					-- 大型航空舰队：9
-					-- 小型运输舰队：10
-					-- 中型运输舰队：11
-					-- 大型运输舰队：12
-					-- 航空编队：13
-					-- 伪旗舰(15-3和15-4出现):94
-					-- 各种精英舰队：95～98
-					-- 旗舰: 99
+				-- 小型侦查舰队：1
+				-- 中型侦查舰队：2
+				-- 大型侦查舰队：3
+				-- 小型主力舰队：4
+				-- 中型主力舰队：5
+				-- 大型主力舰队：6
+				-- 小型航空舰队：7
+				-- 中型航空舰队：8
+				-- 大型航空舰队：9
+				-- 小型运输舰队：10
+				-- 中型运输舰队：11
+				-- 大型运输舰队：12
+				-- 航空编队：13
+				-- 伪旗舰(15-3和15-4出现):94
+				-- 各种精英舰队：95～98
+				-- 旗舰: 99
 				-- 对于主线关卡出现的道中敌人(type 1~13)，preference都是1，因此这个部分不产生影响
 				return ChapterConst.EnemyPreference[expeditionData.type]
 			end
 
 			if chapterVO.id == 1604 then
 				-- table.sort(items, compareFunc): 对items的每两个元素调用compareFunc进行比较，从而排序items
-			-- CompareFuncs: support/helpers/M02.lua, 多个比较函数组合成一个比较函数
+				-- CompareFuncs: support/helpers/M02.lua, 多个比较函数组合成一个比较函数
 				-- 多个比较函数存在优先级，按顺序优先级从高到低
-			table.sort(candidateTable, CompareFuncs({
+				table.sort(candidateTable, CompareFuncs({
 					-- 优先级1：需要避开障碍物
-				function(candidate)
+					function(candidate)
 						return candidate.priority < PathFinding.PrioObstacle and 0 or 1
 					end,
 					-- 优先级2：Preference
-				-- 因为是升序排列，所以这里取负数，表示preference高的排前面
-				-- 例如，-99 < -1，所以preference = 99的敌人排在前面
-				function(candidate)
+					-- 因为是升序排列，所以这里取负数，表示preference高的排前面
+					-- 例如，-99 < -1，所以preference = 99的敌人排在前面
+					function(candidate)
 						return -getEnemyPreference(candidate)
 					end,
 					-- 优先级3：priority更低的排前面
-				function(candidate)
+					function(candidate)
 						return candidate.priority
 					end,
+					-- 优先级4: 行数更小的排前面
 					function(candidate)
 						return candidate.target.row
 					end,
+					-- 优先级5: 列数更大的排前面
 					function(candidate)
 						return -candidate.target.column
 					end
@@ -2482,7 +2496,8 @@ end
 function LevelStageView.UpdateAutoFightPanel(arg_183_0)
 	if arg_183_0.contextData.chapterVO:CanActivateAutoFight() then
 		if not arg_183_0.autoFightPanel then
-			arg_183_0.autoFightPanel = LevelStageAutoFightPanel.New(arg_183_0.rightStage:Find("event/collapse"), arg_183_0.event, arg_183_0.contextData)
+			arg_183_0.autoFightPanel = LevelStageAutoFightPanel.New(arg_183_0.rightStage:Find("event/collapse"),
+				arg_183_0.event, arg_183_0.contextData)
 
 			arg_183_0.autoFightPanel:Load()
 
