@@ -980,12 +980,12 @@ BattleAttr._attrFunc = {
 	[false] = BattleAttr._getSecondaryAttr
 }
 
-function BattleAttr.GetBase(arg_55_0, arg_55_1)
-	return arg_55_0._baseAttr[arg_55_1] or 0
+function BattleAttr.GetBase(host, attr)
+	return host._baseAttr[attr] or 0
 end
 
-function BattleAttr.GetCurrentTags(arg_56_0)
-	return arg_56_0._attr.labelTag or {}
+function BattleAttr.GetCurrentTags(host)
+	return host._attr.labelTag or {}
 end
 
 function BattleAttr.Increase(unit, attrType, number)

@@ -530,33 +530,36 @@ function BattleDataFunction.GetShipSkillTriggerCount(arg_16_0, arg_16_1)
 	return var_16_3 + var_16_0(var_16_5)
 end
 
-function BattleDataFunction.GetSongList(arg_18_0)
-	local var_18_0 = {
+-- BattleDataProxy.initBGM调用
+-- 对给定的BuffList，选出与BGM相关的
+function BattleDataFunction.GetSongList(buffIDList)
+	local songList = {
 		initList = {},
 		otherList = {}
 	}
 
-	for iter_18_0, iter_18_1 in pairs(arg_18_0) do
-		local var_18_1 = BattleDataFunction.GetBuffTemplate(iter_18_0, 1)
+	for buffID, _ in pairs(buffIDList) do
+		local buffTmpData = BattleDataFunction.GetBuffTemplate(buffID, 1)
 
-		for iter_18_2, iter_18_3 in ipairs(var_18_1.effect_list) do
-			if iter_18_3.type == ys.Battle.BattleBuffDiva.__name then
-				if table.contains(iter_18_3.trigger, "onInitGame") then
-					for iter_18_4, iter_18_5 in ipairs(iter_18_3.arg_list.bgm_list) do
-						var_18_0.initList[iter_18_5] = true
+		for _, effect in ipairs(buffTmpData.effect_list) do
+			-- 判定是否为BattleBuffDiva
+			if effect.type == ys.Battle.BattleBuffDiva.__name then
+				if table.contains(effect.trigger, "onInitGame") then
+					for _, bgm in ipairs(effect.arg_list.bgm_list) do
+						songList.initList[bgm] = true
 					end
 				end
-
-				if not table.contains(iter_18_3.trigger, "onInitGame") or #iter_18_3.trigger > 1 then
-					for iter_18_6, iter_18_7 in ipairs(iter_18_3.arg_list.bgm_list) do
-						var_18_0.otherList[iter_18_7] = true
+				-- 非onInitGame在otherList中
+				if not table.contains(effect.trigger, "onInitGame") or #effect.trigger > 1 then
+					for _, bgm in ipairs(effect.arg_list.bgm_list) do
+						songList.otherList[bgm] = true
 					end
 				end
 			end
 		end
 	end
 
-	return var_18_0
+	return songList
 end
 
 function BattleDataFunction.GetCardRes(arg_19_0)

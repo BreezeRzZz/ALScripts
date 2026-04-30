@@ -5,21 +5,21 @@ ChapterFleet.DUTY_KILLBOSS = 2
 ChapterFleet.DUTY_KILLALL = 3
 ChapterFleet.DUTY_IDLE = 4
 
-function ChapterFleet.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0:updateNpcShipList(arg_1_2)
+function ChapterFleet.Ctor(self, arg_1_1, arg_1_2)
+	self:updateNpcShipList(arg_1_2)
 
-	arg_1_0.id = arg_1_1.id
-	arg_1_0.name = nil
-	arg_1_0.fleetId = arg_1_1.fleet_id
-	arg_1_0.fleetType = arg_1_1.fleetType
+	self.id = arg_1_1.id
+	self.name = nil
+	self.fleetId = arg_1_1.fleet_id
+	self.fleetType = arg_1_1.fleetType
 
 	if arg_1_1.fleet_id then
 		local var_1_0 = getProxy(FleetProxy):getFleetById(arg_1_1.fleet_id)
 
-		arg_1_0.name = var_1_0 and var_1_0:GetName() or Fleet.DEFAULT_NAME[arg_1_1.fleet_id]
+		self.name = var_1_0 and var_1_0:GetName() or Fleet.DEFAULT_NAME[arg_1_1.fleet_id]
 	end
 
-	arg_1_0.name = arg_1_0.name or Fleet.DEFAULT_NAME[arg_1_0.id]
+	self.name = self.name or Fleet.DEFAULT_NAME[self.id]
 
 	local var_1_1 = {}
 	local var_1_2 = {}
@@ -40,37 +40,37 @@ function ChapterFleet.Ctor(arg_1_0, arg_1_1, arg_1_2)
 	if not _.detect(var_1_3, function(arg_5_0)
 		return pg.strategy_data_template[arg_5_0].type == ChapterConst.StgTypeForm
 	end) then
-		table.insert(var_1_3, arg_1_0:getFormationStg())
+		table.insert(var_1_3, self:getFormationStg())
 	end
 
-	arg_1_0.stgPicked = var_1_1
-	arg_1_0.stgUsed = var_1_2
-	arg_1_0.stgIds = var_1_3
-	arg_1_0.line = {
+	self.stgPicked = var_1_1
+	self.stgUsed = var_1_2
+	self.stgIds = var_1_3
+	self.line = {
 		row = arg_1_1.pos.row,
 		column = arg_1_1.pos.column
 	}
-	arg_1_0.step = arg_1_1.step_count
-	arg_1_0.restAmmo = arg_1_1.bullet
-	arg_1_0.startPos = {
+	self.step = arg_1_1.step_count
+	self.restAmmo = arg_1_1.bullet
+	self.startPos = {
 		row = arg_1_1.start_pos.row,
 		column = arg_1_1.start_pos.column
 	}
 
-	arg_1_0:prepareShips(arg_1_1.ship_list)
-	arg_1_0:updateShips(arg_1_1.ship_list)
+	self:prepareShips(arg_1_1.ship_list)
+	self:updateShips(arg_1_1.ship_list)
 
-	arg_1_0.baseSpeed = arg_1_0:calcBaseSpeed()
-	arg_1_0.rotation = Quaternion.identity
-	arg_1_0.slowSpeedFactor = arg_1_1.move_step_down
-	arg_1_0.defeatEnemies = arg_1_1.kill_count or 0
-	arg_1_0.visibleLevel = arg_1_1.vision_lv or 0
+	self.baseSpeed = self:calcBaseSpeed()
+	self.rotation = Quaternion.identity
+	self.slowSpeedFactor = arg_1_1.move_step_down
+	self.defeatEnemies = arg_1_1.kill_count or 0
+	self.visibleLevel = arg_1_1.vision_lv or 0
 
-	arg_1_0:updateCommanders(arg_1_1.commander_list)
+	self:updateCommanders(arg_1_1.commander_list)
 
-	arg_1_0.skills = {}
+	self.skills = {}
 
-	arg_1_0:updateCommanderSkills()
+	self:updateCommanderSkills()
 end
 
 function ChapterFleet.setup(arg_6_0, arg_6_1)
@@ -306,26 +306,26 @@ function ChapterFleet.getShip(arg_32_0, arg_32_1)
 	return arg_32_0.ships[arg_32_1]
 end
 
-function ChapterFleet.getShips(arg_33_0, arg_33_1)
-	local var_33_0 = {}
-	local var_33_1 = arg_33_0:getFleetType()
+function ChapterFleet.getShips(self, includingDead)
+	local ships = {}
+	local fleetType = self:getFleetType()
 
-	if var_33_1 == FleetType.Normal then
-		table.insertto(var_33_0, arg_33_0:getShipsByTeam(TeamType.Main, arg_33_1))
-		table.insertto(var_33_0, arg_33_0:getShipsByTeam(TeamType.Vanguard, arg_33_1))
-	elseif var_33_1 == FleetType.Submarine then
-		table.insertto(var_33_0, arg_33_0:getShipsByTeam(TeamType.Submarine, arg_33_1))
-	elseif var_33_1 == FleetType.Support then
-		for iter_33_0, iter_33_1 in ipairs({
+	if fleetType == FleetType.Normal then
+		table.insertto(ships, self:getShipsByTeam(TeamType.Main, includingDead))
+		table.insertto(ships, self:getShipsByTeam(TeamType.Vanguard, includingDead))
+	elseif fleetType == FleetType.Submarine then
+		table.insertto(ships, self:getShipsByTeam(TeamType.Submarine, includingDead))
+	elseif fleetType == FleetType.Support then
+		for _, teamType in ipairs({
 			TeamType.Main,
 			TeamType.Vanguard,
 			TeamType.Submarine
 		}) do
-			table.insertto(var_33_0, arg_33_0:getShipsByTeam(iter_33_1, arg_33_1))
+			table.insertto(ships, self:getShipsByTeam(teamType, includingDead))
 		end
 	end
 
-	return var_33_0
+	return ships
 end
 
 -- 根据队伍类型获取舰船列表
@@ -663,35 +663,41 @@ function ChapterFleet.increaseSlowSpeedFactor(arg_66_0)
 	arg_66_0.slowSpeedFactor = arg_66_0.slowSpeedFactor + 1
 end
 
-function ChapterFleet.getSpeed(arg_67_0)
-	local var_67_0 = arg_67_0:triggerSkill(FleetSkill.TypeMoveSpeed) or 0
+-- LevelStageView.ClickGridCellNormal调用
+function ChapterFleet.getSpeed(self)
+	local skillMoveSpeed = self:triggerSkill(FleetSkill.TypeMoveSpeed) or 0
 
-	return math.max(arg_67_0.baseSpeed + var_67_0 - arg_67_0.slowSpeedFactor, 1)
+	return math.max(self.baseSpeed + skillMoveSpeed - self.slowSpeedFactor, 1)
 end
 
-function ChapterFleet.calcBaseSpeed(arg_68_0)
-	local var_68_0 = arg_68_0:getShips(true)
-	local var_68_1 = _.reduce(var_68_0, 0, function(arg_69_0, arg_69_1)
-		return arg_69_0 + arg_69_1:getProperties()[AttributeType.Speed]
-	end) / #var_68_0 * (1 - 0.02 * (#var_68_0 - 1))
-	local var_68_2
-	local var_68_3
-	local var_68_4 = arg_68_0:getFleetType()
+-- ChapterFleet.Ctor调用
+function ChapterFleet.calcBaseSpeed(self)
+	local ships = self:getShips(true)
+	local speedFactor = _.reduce(ships, 0, function(speedSum, ship)
+		return speedSum + ship:getProperties()[AttributeType.Speed]
+	end) / #ships * (1 - 0.02 * (#ships - 1))
+	local moveSpeed1
+	local moveSpeed2
+	local fleetType = self:getFleetType()
 
-	if var_68_4 == FleetType.Normal then
-		var_68_2 = pg.gameset.chapter_move_speed_1.key_value
-		var_68_3 = pg.gameset.chapter_move_speed_2.key_value
-	elseif var_68_4 == FleetType.Submarine then
-		var_68_2 = pg.gameset.submarine_move_speed_1.key_value
-		var_68_3 = pg.gameset.submarine_move_speed_2.key_value
-	elseif var_68_4 == FleetType.Support then
-		var_68_2 = pg.gameset.chapter_move_speed_1.key_value
-		var_68_3 = pg.gameset.chapter_move_speed_2.key_value
+	if fleetType == FleetType.Normal then
+		-- chapter_move_speed_1 = 25
+		moveSpeed1 = pg.gameset.chapter_move_speed_1.key_value
+		-- chapter_move_speed_2 = 36
+		moveSpeed2 = pg.gameset.chapter_move_speed_2.key_value
+	elseif fleetType == FleetType.Submarine then
+		-- submarine_move_speed_1 = 10
+		moveSpeed1 = pg.gameset.submarine_move_speed_1.key_value
+		-- submarine_move_speed_2 = 25
+		moveSpeed2 = pg.gameset.submarine_move_speed_2.key_value
+	elseif fleetType == FleetType.Support then
+		moveSpeed1 = pg.gameset.chapter_move_speed_1.key_value
+		moveSpeed2 = pg.gameset.chapter_move_speed_2.key_value
 	end
 
-	if var_68_1 <= var_68_2 then
+	if speedFactor <= moveSpeed1 then
 		return 2
-	elseif var_68_3 < var_68_1 then
+	elseif moveSpeed2 < speedFactor then
 		return 4
 	else
 		return 3
@@ -936,8 +942,9 @@ function ChapterFleet.findSkills(arg_103_0, arg_103_1)
 	end)
 end
 
-function ChapterFleet.triggerSkill(arg_105_0, arg_105_1)
-	return arg_105_0.chapter:triggerSkill(arg_105_0, arg_105_1)
+function ChapterFleet.triggerSkill(self, skillType)
+	-- ChapterLevelData.triggerSkill
+	return self.chapter:triggerSkill(self, skillType)
 end
 
 function ChapterFleet.findCommanderBySkillId(arg_106_0, arg_106_1)

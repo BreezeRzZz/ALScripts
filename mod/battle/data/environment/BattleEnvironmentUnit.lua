@@ -5,7 +5,7 @@ local var_0_1 = var_0_0.Battle.BattleConst
 local var_0_2 = var_0_0.Battle.BattleConfig
 local var_0_3 = var_0_0.Battle.BattleDataFunction
 local var_0_4 = class("BattleEnvironmentUnit")
-
+-- TODO
 var_0_0.Battle.BattleEnvironmentUnit = var_0_4
 var_0_4.__name = "BattleEnvironmentUnit"
 

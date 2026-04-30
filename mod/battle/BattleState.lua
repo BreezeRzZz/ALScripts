@@ -250,16 +250,16 @@ function BattleState.ConfigBattleEndFunc(arg_22_0, arg_22_1)
 	arg_22_0._endFunc = arg_22_1
 end
 
-function BattleState.BattleEnd(arg_23_0)
-	arg_23_0:disableCommon()
-
-	if arg_23_0._dataProxy:GetStatistics()._battleScore >= ys.Battle.BattleConst.BattleScore.B then
-		arg_23_0._dataProxy:CelebrateVictory(arg_23_0._dataProxy:GetFriendlyCode())
-		arg_23_0:reportDelayTimer(function()
-			arg_23_0:DoResult()
+function BattleState.BattleEnd(self)
+	self:disableCommon()
+	-- 大于等于B评分，庆祝胜利，否则直接结算
+	if self._dataProxy:GetStatistics()._battleScore >= ys.Battle.BattleConst.BattleScore.B then
+		self._dataProxy:CelebrateVictory(self._dataProxy:GetFriendlyCode())
+		self:reportDelayTimer(function()
+			self:DoResult()
 		end, ys.Battle.BattleConfig.CelebrateDuration)
 	else
-		arg_23_0:DoResult()
+		self:DoResult()
 	end
 end
 

@@ -233,6 +233,7 @@ function BattleSingleDungeonCommand.onUnitDying(arg_26_0, arg_26_1)
 	arg_26_0._dataProxy:KillUnit(var_26_0)
 end
 
+-- note: 单位死亡时的回调函数，涉及结算BP、分数、以及Boss死亡后是否结束战斗等逻辑
 function BattleSingleDungeonCommand.onWillDie(arg_27_0, arg_27_1)
 	local var_27_0 = arg_27_1.Dispatcher
 	local var_27_1 = ys.Battle.BattleConst.UnitDeathReason

@@ -7,51 +7,50 @@ ys.Battle.BattleBombBulletFactory.__name = "BattleBombBulletFactory"
 
 local BattleBombBulletFactory = ys.Battle.BattleBombBulletFactory
 
-function BattleBombBulletFactory.Ctor(arg_1_0)
-	BattleBombBulletFactory.super.Ctor(arg_1_0)
+function BattleBombBulletFactory.Ctor(self)
+	BattleBombBulletFactory.super.Ctor(self)
 end
 
--- TODO
--- 炸弹类子弹的伤害结算流程
-function BattleBombBulletFactory.OutRangeFunc(arg_2_0)
-	local var_2_0 = arg_2_0:GetTemplate()
-	local var_2_1 = var_2_0.hit_type
-	local var_2_2 = BattleBombBulletFactory.GetDataProxy()
-	local var_2_3 = var_2_0.extra_param
-	local var_2_4 = arg_2_0:GetDiveFilter()
-	local var_2_5 = {
-		_bullet = arg_2_0,
-		equipIndex = arg_2_0:GetWeapon():GetEquipmentIndex(),
-		bulletTag = arg_2_0:GetExtraTag()
+-- Important: 炸弹类子弹的伤害结算流程
+function BattleBombBulletFactory.OutRangeFunc(bullet)
+	local bulletTmpData = bullet:GetTemplate()
+	local hit_type = bulletTmpData.hit_type
+	local battleDataProxy = BattleBombBulletFactory.GetDataProxy()
+	local extra_param = bulletTmpData.extra_param
+	local diveFilter = bullet:GetDiveFilter()
+	local args = {
+		_bullet = bullet,
+		equipIndex = bullet:GetWeapon():GetEquipmentIndex(),
+		bulletTag = bullet:GetExtraTag()
 	}
 
-	arg_2_0:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG, var_2_5)
+	bullet:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG, args)
 
-	if var_2_3.directDMG then
-		local var_2_6 = var_2_3.buff_id
-		local var_2_7 = var_2_3.buff_level or 1
-		local var_2_8 = var_2_3.area_FX or var_2_0.hit_fx
+	if extra_param.directDMG then
+		local buff_id = extra_param.buff_id
+		local buff_level = extra_param.buff_level or 1
+		local fx = extra_param.area_FX or bulletTmpData.hit_fx
 
 		local function var_2_9(arg_3_0)
-			if arg_2_0:CanDealDamage() then
+			if bullet:CanDealDamage() then
 				for iter_3_0, iter_3_1 in ipairs(arg_3_0) do
 					if iter_3_1.Active then
 						local var_3_0 = iter_3_1.UID
 						local var_3_1 = BattleBombBulletFactory.GetSceneMediator():GetCharacter(var_3_0):GetUnitData()
-						local var_3_2 = ys.Battle.BattleBuffUnit.New(var_2_6, var_2_7)
+						local var_3_2 = ys.Battle.BattleBuffUnit.New(buff_id, buff_level)
 
 						var_3_1:AddBuff(var_3_2)
-						var_2_2:HandleDirectDamage(var_3_1, var_2_3.directDMG, arg_2_0)
+						battleDataProxy:HandleDirectDamage(var_3_1, extra_param.directDMG, bullet)
 					end
 				end
 
-				arg_2_0:DealDamage()
+				bullet:DealDamage()
 			end
 		end
 
 		local function var_2_10(arg_4_0)
 			if arg_4_0.Active then
-				BattleBombBulletFactory:GetSceneMediator():GetCharacter(arg_4_0.UID):GetUnitData():RemoveBuff(var_2_6)
+				BattleBombBulletFactory:GetSceneMediator():GetCharacter(arg_4_0.UID):GetUnitData():RemoveBuff(buff_id)
 			end
 		end
 
@@ -61,21 +60,21 @@ function BattleBombBulletFactory.OutRangeFunc(arg_2_0)
 					local var_5_0 = BattleBombBulletFactory:GetSceneMediator():GetCharacter(iter_5_1.UID):GetUnitData()
 
 					if var_5_0:IsAlive() then
-						var_5_0:RemoveBuff(var_2_6)
+						var_5_0:RemoveBuff(buff_id)
 					end
 				end
 			end
 
-			var_2_2:RemoveBulletUnit(arg_2_0:GetUniqueID())
+			battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 		end
 
-		var_2_2:SpawnLastingColumnArea(arg_2_0:GetEffectField(), arg_2_0:GetIFF(), arg_2_0:GetExplodePostion(), var_2_1.range, var_2_1.time, var_2_9, var_2_10, false, var_2_8, var_2_11, true):SetDiveFilter(var_2_4)
-		arg_2_0:HideBullet()
+		battleDataProxy:SpawnLastingColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_9, var_2_10, false, fx, var_2_11, true):SetDiveFilter(diveFilter)
+		bullet:HideBullet()
 	else
 		local var_2_12
 
 		local function var_2_13(arg_6_0)
-			local var_6_0 = var_2_1.decay
+			local var_6_0 = hit_type.decay
 
 			if var_6_0 then
 				var_2_12:UpdateDistanceInfo()
@@ -87,26 +86,26 @@ function BattleBombBulletFactory.OutRangeFunc(arg_2_0)
 					local var_6_2 = 0
 
 					if var_6_0 then
-						var_6_2 = var_2_12:GetDistance(var_6_1) / (var_2_1.range * 0.5) * var_6_0
+						var_6_2 = var_2_12:GetDistance(var_6_1) / (hit_type.range * 0.5) * var_6_0
 					end
 
 					local var_6_3 = BattleBombBulletFactory.GetSceneMediator():GetCharacter(var_6_1):GetUnitData()
 
-					var_2_2:HandleDamage(arg_2_0, var_6_3, var_6_2)
+					battleDataProxy:HandleDamage(bullet, var_6_3, var_6_2)
 				end
 			end
 		end
 
-		var_2_12 = var_2_2:SpawnColumnArea(arg_2_0:GetEffectField(), arg_2_0:GetIFF(), arg_2_0:GetExplodePostion(), var_2_1.range, var_2_1.time, var_2_13)
+		var_2_12 = battleDataProxy:SpawnColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_13)
 
-		var_2_12:SetDiveFilter(var_2_4)
+		var_2_12:SetDiveFilter(diveFilter)
 
-		if var_2_3.friendlyFire then
-			var_2_2:SpawnColumnArea(arg_2_0:GetEffectField(), var_2_2.GetOppoSideCode(arg_2_0:GetIFF()), arg_2_0:GetExplodePostion(), var_2_1.range, var_2_1.time, var_2_13):SetDiveFilter(var_2_4)
+		if extra_param.friendlyFire then
+			battleDataProxy:SpawnColumnArea(bullet:GetEffectField(), battleDataProxy.GetOppoSideCode(bullet:GetIFF()), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_13):SetDiveFilter(diveFilter)
 		end
 
-		var_2_12:SetIndiscriminate(var_2_3.indiscriminate)
-		var_2_2:RemoveBulletUnit(arg_2_0:GetUniqueID())
+		var_2_12:SetIndiscriminate(extra_param.indiscriminate)
+		battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 	end
 end
 

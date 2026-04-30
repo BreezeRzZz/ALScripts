@@ -140,57 +140,59 @@ function BattleDataProxy.TriggerBattleStartBuffs(self)
 
 		local supportUnitList = fleet:GetSupportUnitList()
 
-		for iter_6_10, iter_6_11 in ipairs(var_6_12) do
-			underscore.each(arg_6_0._battleInitData.ChapterBuffIDs or {}, function(arg_9_0)
-				local var_9_0 = BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(arg_9_0)
+		for _, supportUnit in ipairs(supportUnitList) do
+			underscore.each(self._battleInitData.ChapterBuffIDs or {}, function(buffID)
+				local strategyBuff = BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(buffID)
 
-				if var_9_0 and var_9_0.type == ChapterConst.AirDominanceStrategyBuffType then
-					local var_9_1 = ys.Battle.BattleBuffUnit.New(arg_9_0)
+				if strategyBuff and strategyBuff.type == ChapterConst.AirDominanceStrategyBuffType then
+					local buff = ys.Battle.BattleBuffUnit.New(buffID)
 
-					iter_6_11:AddBuff(var_9_1)
+					supportUnit:AddBuff(buff)
 				end
 			end)
 		end
 	end
 end
 
-function BattleDataProxy.InitAllFleetUnitsWeaponCD(arg_10_0)
-	for iter_10_0, iter_10_1 in pairs(arg_10_0._fleetList) do
-		local var_10_0 = iter_10_1:GetUnitList()
+-- BattleSingleDungeonCommand.DoPrologue调用
+function BattleDataProxy.InitAllFleetUnitsWeaponCD(self)
+	for _, fleet in pairs(self._fleetList) do
+		local unitList = fleet:GetUnitList()
 
-		for iter_10_2, iter_10_3 in ipairs(var_10_0) do
-			BattleDataProxy.InitUnitWeaponCD(iter_10_3)
+		for _, unit in ipairs(unitList) do
+			BattleDataProxy.InitUnitWeaponCD(unit)
 		end
 	end
 end
 
-function BattleDataProxy.InitUnitWeaponCD(arg_11_0)
-	arg_11_0:CheckWeaponInitial()
+-- 这是一个静态函数，参数是一个BattleUnit对象
+function BattleDataProxy.InitUnitWeaponCD(unit)
+	unit:CheckWeaponInitial()
 end
 
-function BattleDataProxy.StartCardPuzzle(arg_12_0)
-	for iter_12_0, iter_12_1 in pairs(arg_12_0._fleetList) do
-		iter_12_1:GetCardPuzzleComponent():Start()
+function BattleDataProxy.StartCardPuzzle(self)
+	for _, fleet in pairs(self._fleetList) do
+		fleet:GetCardPuzzleComponent():Start()
 	end
 end
 
-function BattleDataProxy.PausePuzzleComponent(arg_13_0)
-	for iter_13_0, iter_13_1 in pairs(arg_13_0._fleetList) do
-		local var_13_0 = iter_13_1:GetCardPuzzleComponent()
+function BattleDataProxy.PausePuzzleComponent(self)
+	for _, fleet in pairs(self._fleetList) do
+		local cardPuzzleComponent = fleet:GetCardPuzzleComponent()
 
-		if var_13_0 then
-			var_13_0:BlockComponentByCard(true)
+		if cardPuzzleComponent then
+			cardPuzzleComponent:BlockComponentByCard(true)
 		end
 	end
 end
 
-function BattleDataProxy.ResumePuzzleComponent(arg_14_0)
+function BattleDataProxy.ResumePuzzleComponent(self)
 	onDelayTick(function()
-		for iter_15_0, iter_15_1 in pairs(arg_14_0._fleetList) do
-			local var_15_0 = iter_15_1:GetCardPuzzleComponent()
+		for _, fleet in pairs(self._fleetList) do
+			local cardPuzzleComponent = fleet:GetCardPuzzleComponent()
 
-			if var_15_0 then
-				var_15_0:BlockComponentByCard(false)
+			if cardPuzzleComponent then
+				cardPuzzleComponent:BlockComponentByCard(false)
 			end
 		end
 	end, 0.06)
@@ -318,170 +320,174 @@ function BattleDataProxy.InitData(self, battleData)
 	self:initBGM()
 end
 
-function BattleDataProxy.initBGM(arg_19_0)
-	arg_19_0._initBGMList = {}
-	arg_19_0._otherBGMList = {}
+-- BattleDataProxy.InitData中调用，主要是为了根据舰船数据生成bgm列表
+function BattleDataProxy.initBGM(self)
+	self._initBGMList = {}
+	self._otherBGMList = {}
 
-	local var_19_0 = {}
-	local var_19_1 = {}
+	local initList = {}
+	local otherList = {}
 
-	local function var_19_2(arg_20_0)
-		for iter_20_0, iter_20_1 in ipairs(arg_20_0) do
-			local var_20_0 = {}
+	local function getSongList(unitList)
+		for _, unitData in ipairs(unitList) do
+			local buffIDList = {}
 
-			if iter_20_1.skills then
-				for iter_20_2, iter_20_3 in ipairs(iter_20_1.skills) do
-					table.insert(var_20_0, iter_20_3)
+			if unitData.skills then
+				for _, buffID in ipairs(unitData.skills) do
+					table.insert(buffIDList, buffID)
 				end
 			end
 
-			if iter_20_1.equipment then
-				local var_20_1 = BattleDataFunction.GetEquipSkill(iter_20_1.equipment, arg_19_0._battleInitData.battleType)
+			if unitData.equipment then
+				local equipBuffIDList = BattleDataFunction.GetEquipSkill(unitData.equipment, self._battleInitData.battleType)
 
-				for iter_20_4, iter_20_5 in ipairs(var_20_1) do
-					var_20_0[iter_20_5.buffID] = {
-						id = iter_20_5.buffID,
-						level = iter_20_5.buffLV
+				for _, equipBuffID in ipairs(equipBuffIDList) do
+					buffIDList[equipBuffID.buffID] = {
+						id = equipBuffID.buffID,
+						level = equipBuffID.buffLV
 					}
 				end
 			end
 
-			local var_20_2 = BattleDataFunction.GetSongList(var_20_0)
+			local songList = BattleDataFunction.GetSongList(buffIDList)
 
-			for iter_20_6, iter_20_7 in pairs(var_20_2.initList) do
-				var_19_0[iter_20_6] = true
+			for bgm, _ in pairs(songList.initList) do
+				initList[bgm] = true
 			end
 
-			for iter_20_8, iter_20_9 in pairs(var_20_2.otherList) do
-				var_19_1[iter_20_8] = true
+			for bgm, _ in pairs(songList.otherList) do
+				otherList[bgm] = true
 			end
 		end
 	end
 
-	var_19_2(arg_19_0._battleInitData.MainUnitList)
-	var_19_2(arg_19_0._battleInitData.VanguardUnitList)
-	var_19_2(arg_19_0._battleInitData.SubUnitList)
+	getSongList(self._battleInitData.MainUnitList)
+	getSongList(self._battleInitData.VanguardUnitList)
+	getSongList(self._battleInitData.SubUnitList)
 
-	if arg_19_0._battleInitData.RivalMainUnitList then
-		var_19_2(arg_19_0._battleInitData.RivalMainUnitList)
+	if self._battleInitData.RivalMainUnitList then
+		getSongList(self._battleInitData.RivalMainUnitList)
 	end
 
-	if arg_19_0._battleInitData.RivalVanguardUnitList then
-		var_19_2(arg_19_0._battleInitData.RivalVanguardUnitList)
+	if self._battleInitData.RivalVanguardUnitList then
+		getSongList(self._battleInitData.RivalVanguardUnitList)
 	end
 
-	for iter_19_0, iter_19_1 in pairs(var_19_0) do
-		table.insert(arg_19_0._initBGMList, iter_19_0)
+	for bgm, _ in pairs(initList) do
+		table.insert(self._initBGMList, bgm)
 	end
 
-	for iter_19_2, iter_19_3 in pairs(var_19_1) do
-		table.insert(arg_19_0._otherBGMList, iter_19_2)
+	for bgm, _ in pairs(otherList) do
+		table.insert(self._otherBGMList, bgm)
 	end
 end
 
-function BattleDataProxy.initCommanderBuff(arg_21_0)
-	local var_21_0 = {}
+function BattleDataProxy.initCommanderBuff(buffInfoList)
+	local commanderBuffList = {}
 
-	for iter_21_0, iter_21_1 in ipairs(arg_21_0) do
-		local var_21_1 = iter_21_1[1]
-		local var_21_2 = var_21_1:getSkills()[1]:getLevel()
+	for _, buffInfo in ipairs(buffInfoList) do
+		local commander = buffInfo[1]
+		local level = commander:getSkills()[1]:getLevel()
 
-		for iter_21_2, iter_21_3 in ipairs(iter_21_1[2]) do
-			table.insert(var_21_0, {
-				id = iter_21_3,
-				level = var_21_2,
-				commander = var_21_1
+		for _, buffID in ipairs(buffInfo[2]) do
+			table.insert(commanderBuffList, {
+				id = buffID,
+				level = level,
+				commander = commander
 			})
 		end
 	end
 
-	return var_21_0
+	return commanderBuffList
 end
 
-function BattleDataProxy.Clear(arg_22_0)
-	for iter_22_0, iter_22_1 in pairs(arg_22_0._teamList) do
-		arg_22_0:KillNPCTeam(iter_22_1)
+function BattleDataProxy.Clear(self)
+	-- 清空队伍
+	for _, team in pairs(self._teamList) do
+		self:KillNPCTeam(team)
 	end
 
-	arg_22_0._teamList = nil
+	self._teamList = nil
 
-	for iter_22_2, iter_22_3 in pairs(arg_22_0._bulletList) do
-		arg_22_0:RemoveBulletUnit(iter_22_2)
+	-- 清空子弹实体
+	for bullet, _ in pairs(self._bulletList) do
+		self:RemoveBulletUnit(bullet)
 	end
 
-	arg_22_0._bulletList = nil
+	self._bulletList = nil
 
-	for iter_22_4, iter_22_5 in pairs(arg_22_0._unitList) do
-		arg_22_0:KillUnit(iter_22_4)
+	-- 清空单位
+	for unit, _ in pairs(self._unitList) do
+		self:KillUnit(unit)
 	end
 
-	arg_22_0._unitList = nil
+	self._unitList = nil
 
-	for iter_22_6, iter_22_7 in ipairs(arg_22_0._deadUnitList) do
-		iter_22_7:Dispose()
+	for _, deadUnit in ipairs(self._deadUnitList) do
+		deadUnit:Dispose()
 	end
 
-	arg_22_0._deadUnitList = nil
+	self._deadUnitList = nil
 
-	for iter_22_8, iter_22_9 in pairs(arg_22_0._aircraftList) do
-		arg_22_0:KillAircraft(iter_22_8)
+	for _, aircraft in pairs(self._aircraftList) do
+		self:KillAircraft(aircraft)
 	end
 
-	arg_22_0._aircraftList = nil
+	self._aircraftList = nil
 
-	for iter_22_10, iter_22_11 in pairs(arg_22_0._fleetList) do
-		iter_22_11:Dispose()
-
-		arg_22_0._fleetList[iter_22_10] = nil
+	for _, fleet in pairs(self._fleetList) do
+		fleet:Dispose()
 	end
 
-	arg_22_0._fleetList = nil
+	self._fleetList = nil
 
-	for iter_22_12, iter_22_13 in pairs(arg_22_0._aidUnitList) do
-		iter_22_13:Dispose()
+	self._fleetList = nil
+
+	for _, aidUnit in pairs(self._aidUnitList) do
+		aidUnit:Dispose()
 	end
 
-	arg_22_0._aidUnitList = nil
+	self._aidUnitList = nil
 
-	for iter_22_14, iter_22_15 in pairs(arg_22_0._environmentList) do
-		arg_22_0:RemoveEnvironment(iter_22_15:GetUniqueID())
+	for _, environment in pairs(self._environmentList) do
+		self:RemoveEnvironment(environment:GetUniqueID())
 	end
 
-	arg_22_0._environmentList = nil
+	self._environmentList = nil
 
-	for iter_22_16, iter_22_17 in pairs(arg_22_0._AOEList) do
-		arg_22_0:RemoveAreaOfEffect(iter_22_16)
+	for AOE, _ in pairs(self._AOEList) do
+		self:RemoveAreaOfEffect(AOE)
 	end
 
-	arg_22_0._AOEList = nil
+	self._AOEList = nil
 
-	arg_22_0._cldSystem:Dispose()
+	self._cldSystem:Dispose()
 
-	arg_22_0._cldSystem = nil
-	arg_22_0._dungeonInfo = nil
-	arg_22_0._flagShipUnit = nil
-	arg_22_0._friendlyShipList = nil
-	arg_22_0._foeShipList = nil
-	arg_22_0._spectreShipList = nil
-	arg_22_0._friendlyAircraftList = nil
-	arg_22_0._foeAircraftList = nil
-	arg_22_0._fleetList = nil
-	arg_22_0._freeShipList = nil
-	arg_22_0._countDown = nil
-	arg_22_0._lastUpdateTime = nil
-	arg_22_0._statistics = nil
-	arg_22_0._battleInitData = nil
-	arg_22_0._currentStageData = nil
+	self._cldSystem = nil
+	self._dungeonInfo = nil
+	self._flagShipUnit = nil
+	self._friendlyShipList = nil
+	self._foeShipList = nil
+	self._spectreShipList = nil
+	self._friendlyAircraftList = nil
+	self._foeAircraftList = nil
+	self._fleetList = nil
+	self._freeShipList = nil
+	self._countDown = nil
+	self._lastUpdateTime = nil
+	self._statistics = nil
+	self._battleInitData = nil
+	self._currentStageData = nil
 
-	arg_22_0:ClearFormulas()
-	BattleDataFunction.ClearDungeonCfg(arg_22_0._dungeonID)
+	self:ClearFormulas()
+	BattleDataFunction.ClearDungeonCfg(self._dungeonID)
 end
 
-function BattleDataProxy.DeactiveProxy(arg_23_0)
-	arg_23_0._state = nil
+function BattleDataProxy.DeactiveProxy(self)
+	self._state = nil
 
-	arg_23_0:Clear()
-	ys.Battle.BattleDataProxy.super.DeactiveProxy(arg_23_0)
+	self:Clear()
+	ys.Battle.BattleDataProxy.super.DeactiveProxy(self)
 end
 
 -- note: 战斗初始化，生成我方舰船数据结构
@@ -574,28 +580,29 @@ function BattleDataProxy.InitWeatherData(self)
 	for _, weather in ipairs(self._weahter) do
 		-- 目前其实只有一种天气: 夜战
 		if weather == BattleConst.WEATHER.NIGHT then
-			for iter_29_2, iter_29_3 in pairs(self._fleetList) do
-				iter_29_3:AttachNightCloak()
+			for _, fleet in pairs(self._fleetList) do
+				fleet:AttachNightCloak()
 			end
 
-			for iter_29_4, iter_29_5 in pairs(self._unitList) do
-				BattleDataFunction.AttachWeather(iter_29_5, self._weahter)
+			for _, unit in pairs(self._unitList) do
+				BattleDataFunction.AttachWeather(unit, self._weahter)
 			end
 		end
 	end
 end
 
-function BattleDataProxy.CelebrateVictory(arg_30_0, arg_30_1)
-	local var_30_0
+-- BattleState.BattleEnd中调用
+function BattleDataProxy.CelebrateVictory(self, IFF)
+	local shipList
 
-	if arg_30_1 == arg_30_0:GetFoeCode() then
-		var_30_0 = arg_30_0._foeShipList
+	if IFF == self:GetFoeCode() then
+		shipList = self._foeShipList
 	else
-		var_30_0 = arg_30_0._friendlyShipList
+		shipList = self._friendlyShipList
 	end
-
-	for iter_30_0, iter_30_1 in pairs(var_30_0) do
-		iter_30_1:StateChange(ys.Battle.UnitState.STATE_VICTORY)
+	-- 播放对应的胜利动画
+	for _, ship in pairs(shipList) do
+		ship:StateChange(ys.Battle.UnitState.STATE_VICTORY)
 	end
 end
 
@@ -682,25 +689,25 @@ function BattleDataProxy.GetUnitBoundByIFF(self, IFF)
 	end
 end
 
-function BattleDataProxy.GetFleetBoundByIFF(arg_37_0, arg_37_1)
-	if arg_37_1 == BattleConfig.FRIENDLY_CODE then
-		return arg_37_0._leftZoneUpperBound, arg_37_0._leftZoneLowerBound, arg_37_0._leftZoneLeftBound, arg_37_0._leftZoneRightBound
-	elseif arg_37_1 == BattleConfig.FOE_CODE then
-		return arg_37_0._rightZoneUpperBound, arg_37_0._rightZoneLowerBound, arg_37_0._rightZoneLeftBound, arg_37_0._rightZoneRightBound
+function BattleDataProxy.GetFleetBoundByIFF(self, IFF)
+	if IFF == BattleConfig.FRIENDLY_CODE then
+		return self._leftZoneUpperBound, self._leftZoneLowerBound, self._leftZoneLeftBound, self._leftZoneRightBound
+	elseif IFF == BattleConfig.FOE_CODE then
+		return self._rightZoneUpperBound, self._rightZoneLowerBound, self._rightZoneLeftBound, self._rightZoneRightBound
 	end
 end
 
-function BattleDataProxy.ShiftFleetBound(arg_38_0, arg_38_1, arg_38_2)
-	arg_38_1:GetUnitBound():SwtichDuelAggressive()
-	arg_38_1:SetAutobotBound(arg_38_0:GetFleetBoundByIFF(arg_38_2))
-	arg_38_1:UpdateScoutUnitBound()
+function BattleDataProxy.ShiftFleetBound(self, fleet, IFF)
+	fleet:GetUnitBound():SwtichDuelAggressive()
+	fleet:SetAutobotBound(self:GetFleetBoundByIFF(IFF))
+	fleet:UpdateScoutUnitBound()
 end
 
-function BattleDataProxy.GetFieldBound(arg_39_0)
-	if arg_39_0._battleInitData and arg_39_0._battleInitData.battleType == SYSTEM_DUEL then
-		return arg_39_0:GetTotalBounds()
+function BattleDataProxy.GetFieldBound(self)
+	if self._battleInitData and self._battleInitData.battleType == SYSTEM_DUEL then
+		return self:GetTotalBounds()
 	else
-		return arg_39_0._totalUpperBound, arg_39_0._totalLowerBound, arg_39_0._leftFieldBound, arg_39_0._rightFieldBound
+		return self._totalUpperBound, self._totalLowerBound, self._leftFieldBound, self._rightFieldBound
 	end
 end
 
@@ -735,32 +742,32 @@ function BattleDataProxy.GetFleetByIFF(self, IFF)
 	return self._fleetList[IFF]
 end
 
-function BattleDataProxy.GetAidUnit(arg_41_0)
-	return arg_41_0._aidUnitList
+function BattleDataProxy.GetAidUnit(self)
+	return self._aidUnitList
 end
 
-function BattleDataProxy.GetFleetList(arg_42_0)
-	return arg_42_0._fleetList
+function BattleDataProxy.GetFleetList(self)
+	return self._fleetList
 end
 
-function BattleDataProxy.GetEnemySubmarineCount(arg_43_0)
-	return arg_43_0._enemySubmarineCount
+function BattleDataProxy.GetEnemySubmarineCount(self)
+	return self._enemySubmarineCount
 end
 
-function BattleDataProxy.GetCommander(arg_44_0)
-	return arg_44_0._commander
+function BattleDataProxy.GetCommander(self)
+	return self._commander
 end
 
-function BattleDataProxy.GetCommanderBuff(arg_45_0)
-	return arg_45_0._commanderBuff, arg_45_0._subCommanderBuff
+function BattleDataProxy.GetCommanderBuff(self)
+	return self._commanderBuff, self._subCommanderBuff
 end
 
-function BattleDataProxy.GetStageInfo(arg_46_0)
-	return arg_46_0._currentStageData
+function BattleDataProxy.GetStageInfo(self)
+	return self._currentStageData
 end
 
-function BattleDataProxy.GetWinningStreak(arg_47_0)
-	return arg_47_0._chapterWinningStreak
+function BattleDataProxy.GetWinningStreak(self)
+	return self._chapterWinningStreak
 end
 
 -- 被BattleBuffDiva.onXXX调用
@@ -772,24 +779,24 @@ function BattleDataProxy.GetBGMList(self, isOther)
 	end
 end
 
-function BattleDataProxy.GetDungeonLevel(arg_49_0)
-	return arg_49_0._dungeonLevel
+function BattleDataProxy.GetDungeonLevel(self)
+	return self._dungeonLevel
 end
 
-function BattleDataProxy.SetDungeonLevel(arg_50_0, arg_50_1)
-	arg_50_0._dungeonLevel = arg_50_1
+function BattleDataProxy.SetDungeonLevel(self, level)
+	self._dungeonLevel = level
 end
 
-function BattleDataProxy.IsCompletelyRepress(arg_51_0)
-	return arg_51_0._completelyRepress
+function BattleDataProxy.IsCompletelyRepress(self)
+	return self._completelyRepress
 end
 
-function BattleDataProxy.GetRepressReduce(arg_52_0)
-	return arg_52_0._repressReduce
+function BattleDataProxy.GetRepressReduce(self)
+	return self._repressReduce
 end
 
-function BattleDataProxy.GetRepressLevel(arg_53_0)
-	return arg_53_0._repressLevel
+function BattleDataProxy.GetRepressLevel(self)
+	return self._repressLevel
 end
 
 function BattleDataProxy.updateInit(self, timeStamp)
@@ -1100,28 +1107,28 @@ function BattleDataProxy.UpdateWeather(self, timeStamp)
 	end
 end
 
-function BattleDataProxy.UpdateEscapeOnly(arg_58_0, arg_58_1)
-	for iter_58_0, iter_58_1 in pairs(arg_58_0._foeShipList) do
-		iter_58_1:Update(arg_58_1)
+function BattleDataProxy.UpdateEscapeOnly(self, timeStamp)
+	for _, foeShip in pairs(self._foeShipList) do
+		foeShip:Update(timeStamp)
 	end
 end
 
-function BattleDataProxy.UpdateCountDown(arg_59_0, arg_59_1)
-	arg_59_0._lastUpdateTime = arg_59_0._lastUpdateTime or arg_59_1
+function BattleDataProxy.UpdateCountDown(self, timeStamp)
+	self._lastUpdateTime = self._lastUpdateTime or timeStamp
+	-- 新的倒计时 = 旧的倒计时 - (当前时间戳 - 上次更新时间戳)
+	local newCountDown = self._countDown - (timeStamp - self._lastUpdateTime)
 
-	local var_59_0 = arg_59_0._countDown - (arg_59_1 - arg_59_0._lastUpdateTime)
-
-	if var_59_0 <= 0 then
-		var_59_0 = 0
+	if newCountDown <= 0 then
+		newCountDown = 0
 	end
 
-	if math.floor(arg_59_0._countDown - var_59_0) == 0 or var_59_0 == 0 then
-		arg_59_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_COUNT_DOWN, {}))
+	if math.floor(self._countDown - newCountDown) == 0 or newCountDown == 0 then
+		self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_COUNT_DOWN, {}))
 	end
 
-	arg_59_0._countDown = var_59_0
-	arg_59_0._totalTime = arg_59_1 - arg_59_0._startTimeStamp
-	arg_59_0._lastUpdateTime = arg_59_1
+	self._countDown = newCountDown
+	self._totalTime = timeStamp - self._startTimeStamp
+	self._lastUpdateTime = timeStamp
 end
 
 -- IMPORTANT: 敌人生成主函数逻辑
@@ -1179,9 +1186,9 @@ function BattleDataProxy.SpawnMonster(self, spawnItem, waveIndex, enemyType, IFF
 	enemyUnit:SetAI(spawnItem.pilotAITemplateID or monsterTmpData.pilot_ai_template_id)
 	self:setShipUnitBound(enemyUnit)
 
-	if table.contains(ShipType.SubShipType, var_60_1.type) then
-		var_60_8:InitOxygen()
-		arg_60_0:UpdateHostileSubmarine(true)
+	if table.contains(ShipType.SubShipType, monsterTmpData.type) then
+		enemyUnit:InitOxygen()	
+		self:UpdateHostileSubmarine(true)
 	end
 
 	BattleDataFunction.AttachWeather(enemyUnit, self._weahter)
@@ -1189,7 +1196,7 @@ function BattleDataProxy.SpawnMonster(self, spawnItem, waveIndex, enemyType, IFF
 	self._freeShipList[monsterUID] = enemyUnit
 	self._unitList[monsterUID] = enemyUnit
 
-	--敌人幽灵不可见，也没有碰撞体
+	--敌人幽灵(大部分)不可见，也没有碰撞体
 	if enemyUnit:IsSpectre() then
 		enemyUnit:UpdateBlindInvisibleBySpectre()
 	else
@@ -1298,14 +1305,14 @@ function BattleDataProxy.SpawnMonster(self, spawnItem, waveIndex, enemyType, IFF
 	return enemyUnit
 end
 
-function BattleDataProxy.UpdateHostileSubmarine(arg_62_0, arg_62_1)
-	if arg_62_1 then
-		arg_62_0._enemySubmarineCount = arg_62_0._enemySubmarineCount + 1
+function BattleDataProxy.UpdateHostileSubmarine(self, isAdding)
+	if isAdding then
+		self._enemySubmarineCount = self._enemySubmarineCount + 1
 	else
-		arg_62_0._enemySubmarineCount = arg_62_0._enemySubmarineCount - 1
+		self._enemySubmarineCount = self._enemySubmarineCount - 1
 	end
 
-	arg_62_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_HOSTILE_SUBMARINE))
+	self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_HOSTILE_SUBMARINE))
 end
 
 function BattleDataProxy.SpawnNPC(self, spawnData, caster)
@@ -1403,33 +1410,37 @@ function BattleDataProxy.SpawnNPC(self, spawnData, caster)
 	return unit
 end
 
-function BattleDataProxy.EnemyEscape(arg_65_0)
-	for iter_65_0, iter_65_1 in pairs(arg_65_0._foeShipList) do
-		if iter_65_1:ContainsLabelTag(BattleConfig.ESCAPE_EXPLO_TAG) then
-			iter_65_1:SetDeathReason(BattleConst.UnitDeathReason.CLS)
-			iter_65_1:DeadAction()
+-- 可能用于类似鱼雷艇的超时撤退
+-- BattleSingleDungeonCommand.onUpdateCountDown调用
+function BattleDataProxy.EnemyEscape(self)
+	for _, foeShip in pairs(self._foeShipList) do
+		-- "unexit"
+		if foeShip:ContainsLabelTag(BattleConfig.ESCAPE_EXPLO_TAG) then
+			foeShip:SetDeathReason(BattleConst.UnitDeathReason.CLS)
+			foeShip:DeadAction()
 		else
-			iter_65_1:RemoveAllAutoWeapon()
-			iter_65_1:SetAI(BattleConfig.COUNT_DOWN_ESCAPE_AI_ID)
+			foeShip:RemoveAllAutoWeapon()
+			-- 80006
+			foeShip:SetAI(BattleConfig.COUNT_DOWN_ESCAPE_AI_ID)
 		end
 	end
 end
 
-function BattleDataProxy.GetNPCTeam(arg_66_0, arg_66_1)
-	if not arg_66_0._teamList[arg_66_1] then
-		arg_66_0._teamList[arg_66_1] = ys.Battle.BattleTeamVO.New(arg_66_1)
+function BattleDataProxy.GetNPCTeam(self, teamID)
+	if not self._teamList[teamID] then
+		self._teamList[teamID] = ys.Battle.BattleTeamVO.New(teamID)
 	end
 
-	return arg_66_0._teamList[arg_66_1]
+	return self._teamList[teamID]
 end
 
-function BattleDataProxy.KillNPCTeam(arg_67_0, arg_67_1)
-	local var_67_0 = arg_67_0._teamList[arg_67_1]
+function BattleDataProxy.KillNPCTeam(self, teamID)
+	local team = self._teamList[teamID]
 
-	if var_67_0 then
-		var_67_0:Dispose()
+	if team then
+		team:Dispose()
 
-		arg_67_0._teamList[arg_67_1] = nil
+		self._teamList[teamID] = nil
 	end
 end
 
@@ -1526,20 +1537,20 @@ function BattleDataProxy.SpawnSub(self, subUnitData, IFF)
 end
 
 -- 破交作战生成潜艇
-function BattleDataProxy.SpawnManualSub(arg_71_0, arg_71_1, arg_71_2)
-	local var_71_0 = arg_71_0:GetVanguardBornCoordinate(arg_71_2)
-	local var_71_1 = arg_71_0:generatePlayerUnit(arg_71_1, arg_71_2, BuildVector3(var_71_0), arg_71_0._commanderBuff)
+function BattleDataProxy.SpawnManualSub(self, arg_71_1, arg_71_2)
+	local var_71_0 = self:GetVanguardBornCoordinate(arg_71_2)
+	local var_71_1 = self:generatePlayerUnit(arg_71_1, arg_71_2, BuildVector3(var_71_0), self._commanderBuff)
 
-	arg_71_0:GetFleetByIFF(arg_71_2):AddManualSubmarine(var_71_1)
-	arg_71_0:setShipUnitBound(var_71_1)
-	arg_71_0._cldSystem:InitShipCld(var_71_1)
+	self:GetFleetByIFF(arg_71_2):AddManualSubmarine(var_71_1)
+	self:setShipUnitBound(var_71_1)
+	self._cldSystem:InitShipCld(var_71_1)
 
 	local var_71_2 = {
 		type = BattleConst.UnitType.SUB_UNIT,
 		unit = var_71_1
 	}
 
-	arg_71_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_71_2))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_71_2))
 
 	return var_71_1
 end
