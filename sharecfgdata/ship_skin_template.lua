@@ -106780,6 +106780,130 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.ship_skin_template[301052] = {
+		name = "niconico",
+		change_skin = "",
+		desc = "新着動画、発見です…指揮官、あとで生放送でも一緒にどうです？",
+		illustrator2 = -1,
+		ship_group = 30105,
+		group_index = 2,
+		purchase_offset = "",
+		painting = "lingbo_3",
+		bg_sp = "",
+		skin_type = 0,
+		shop_type_id = 9999,
+		l2d_ignore_drag = 0,
+		hand_id = 14,
+		lip_smoothing = 0,
+		l2d_animations = "",
+		bgm = "",
+		special_effects = "",
+		bg = "",
+		gyro = 0,
+		spine_use_live2d = 0,
+		spine_action_offset = false,
+		spine_offset_profile = "",
+		shop_offset = "",
+		ship_l2d_id = "",
+		id = 301052,
+		voice_actor_2 = -1,
+		l2d_drag_rate = "",
+		part_scale = "",
+		get_showing = "",
+		prefab = "lingbo_3",
+		l2d_se = "",
+		shop_dynamic_hx = 0,
+		double_char = 0,
+		main_UI_FX = "",
+		shop_id = 0,
+		voice_actor = 32,
+		skeleton_default_skin = "",
+		spine_offset = "",
+		illustrator = 2,
+		rarity_bg = "",
+		time = "",
+		l2d_para_range = "",
+		lip_sync_gain = 0,
+		live2d_offset_profile = "",
+		show_skin = "stand",
+		l2d_voice_calibrate = "",
+		tag = {},
+		live2d_offset = {
+			0,
+			0,
+			0
+		},
+		fx_container = {
+			{
+				0,
+				1.99185,
+				1.15
+			},
+			{
+				0,
+				0,
+				0
+			},
+			{
+				0,
+				0.75,
+				-1.299
+			},
+			{
+				0,
+				0,
+				0
+			}
+		},
+		bound_bone = {
+			cannon = {
+				{
+					0.83,
+					0.97,
+					0
+				}
+			},
+			vicegun = {
+				{
+					0.83,
+					0.97,
+					0
+				}
+			},
+			torpedo = {
+				{
+					0.11,
+					0.09,
+					0
+				}
+			},
+			antiaircraft = {
+				{
+					0.83,
+					0.97,
+					0
+				}
+			}
+		},
+		smoke = {
+			{
+				50,
+				{
+					{
+						"smoke",
+						{
+							-0.35,
+							2.29,
+							0
+						}
+					}
+				}
+			}
+		}
+	}
+end)()
+
+(function()
 	_G.pg.base.ship_skin_template[301053] = {
 		ship_group = 30105,
 		name = "乐队型鬼神",
@@ -152642,7 +152766,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "指挥官，快看快看，风、林、火、山！{namecode:142}给我设计的，这样我也可以和{namecode:143}一起玩战国游戏啦！哼哼，大将{namecode:75}可是超厉害的！指挥官不来一起玩吗？为什么呀？",
+		desc =
+		"指挥官，快看快看，风、林、火、山！{namecode:142}给我设计的，这样我也可以和{namecode:143}一起玩战国游戏啦！哼哼，大将{namecode:75}可是超厉害的！指挥官不来一起玩吗？为什么呀？",
 		voice_actor = 19,
 		spine_offset = "",
 		change_skin = "",
@@ -300006,7 +300131,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "——那么，这里是什么地方呢？哼……看样子，事态开始变得麻烦起来了呢。虽然很想向你详细解释一番，但既然我在这里的话，那个孩子想必也……啊，不必在意。我是DEAD MASTER，出于某些原因，接下来就承蒙你的关照了。",
+		desc =
+		"——那么，这里是什么地方呢？哼……看样子，事态开始变得麻烦起来了呢。虽然很想向你详细解释一番，但既然我在这里的话，那个孩子想必也……啊，不必在意。我是DEAD MASTER，出于某些原因，接下来就承蒙你的关照了。",
 		voice_actor = -1,
 		spine_offset = "",
 		change_skin = "",
@@ -324715,7 +324841,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "不要被发现……不要穿帮……好好藏起来……呀！对不起！我马上离开……嗯？耳朵和尾巴……啊，这是……！狐狸的，cosplay……欸？这里有和我一样的女孩子？那样的话……那个，我是雫，妖狐雫。可以在这里待一段时间……吗？",
+		desc =
+		"不要被发现……不要穿帮……好好藏起来……呀！对不起！我马上离开……嗯？耳朵和尾巴……啊，这是……！狐狸的，cosplay……欸？这里有和我一样的女孩子？那样的话……那个，我是雫，妖狐雫。可以在这里待一段时间……吗？",
 		voice_actor = 350,
 		spine_offset = "",
 		change_skin = "",
@@ -332571,7 +332698,8 @@ end)()
 		l2d_se = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "这种程度的工作，对妾身而言理应是轻而易举……但没想到，竟然是如此棘手的事，妾身终于明白其中的难度了。看来，并不如传闻那般简单啊……话说回来，汝就这么站在那里一言不发地看着，妾身可是不会高兴的。难道不打算过来帮帮忙吗？",
+		desc =
+		"这种程度的工作，对妾身而言理应是轻而易举……但没想到，竟然是如此棘手的事，妾身终于明白其中的难度了。看来，并不如传闻那般简单啊……话说回来，汝就这么站在那里一言不发地看着，妾身可是不会高兴的。难道不打算过来帮帮忙吗？",
 		voice_actor = 350,
 		change_skin = "",
 		rarity_bg = "",
@@ -336325,7 +336453,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "——那么，这里是什么地方呢？哼……看样子，事态开始变得麻烦起来了呢。虽然很想向你详细解释一番，但既然我在这里的话，那个孩子想必也……啊，不必在意。我是DEAD MASTER，出于某些原因，接下来就承蒙你的关照了。",
+		desc =
+		"——那么，这里是什么地方呢？哼……看样子，事态开始变得麻烦起来了呢。虽然很想向你详细解释一番，但既然我在这里的话，那个孩子想必也……啊，不必在意。我是DEAD MASTER，出于某些原因，接下来就承蒙你的关照了。",
 		voice_actor = 104,
 		spine_offset = "",
 		change_skin = "",
@@ -338356,7 +338485,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "你是何人。敌人——看来不是。……嗯。什么，这里是与我所在之处不同的世界吗？难怪有这么多没见过的东西。——嗯，我叫夜刀神十香。是非常重要的名字，希望你记住。看来这段时间要承蒙你关照了。话说……我肚子有些饿了，有什么吃的吗？ ",
+		desc =
+		"你是何人。敌人——看来不是。……嗯。什么，这里是与我所在之处不同的世界吗？难怪有这么多没见过的东西。——嗯，我叫夜刀神十香。是非常重要的名字，希望你记住。看来这段时间要承蒙你关照了。话说……我肚子有些饿了，有什么吃的吗？ ",
 		voice_actor = 148,
 		spine_offset = "",
 		change_skin = "",
@@ -338480,7 +338610,8 @@ end)()
 		l2d_se = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "嗯？怎么了？啊，这个吗？是别人说“请当点心吃”然后给我的！我当然没打算独吞哦？会好好分给你的！你想要哪种口味？香草的？巧克力的？还是草莓的？——唔，这个不行。这款黄豆粉冰淇淋是我的！……很想吃？嗯……只能一点点哦……？",
+		desc =
+		"嗯？怎么了？啊，这个吗？是别人说“请当点心吃”然后给我的！我当然没打算独吞哦？会好好分给你的！你想要哪种口味？香草的？巧克力的？还是草莓的？——唔，这个不行。这款黄豆粉冰淇淋是我的！……很想吃？嗯……只能一点点哦……？",
 		voice_actor = 148,
 		change_skin = "",
 		rarity_bg = "",
@@ -339825,7 +339956,8 @@ end)()
 		l2d_voice_calibrate = "",
 		main_UI_FX = "",
 		special_effects = "",
-		desc = "呵呵呵，我们是横扫万象的飓风巫女！八舞耶俱矢和——「同样。八舞夕弦。」……咦？这里是什么地方？「疑问。好像来到别的世界了。」真，真的吗……？怎怎怎怎怎么办夕弦！「冷静。不要慌乱。先确认下现在的状况吧。——所以，那边那位，请告诉我们这里的状况。」 ",
+		desc =
+		"呵呵呵，我们是横扫万象的飓风巫女！八舞耶俱矢和——「同样。八舞夕弦。」……咦？这里是什么地方？「疑问。好像来到别的世界了。」真，真的吗……？怎怎怎怎怎么办夕弦！「冷静。不要慌乱。先确认下现在的状况吧。——所以，那边那位，请告诉我们这里的状况。」 ",
 		voice_actor = 487,
 		spine_offset = "",
 		change_skin = "",
@@ -358662,4 +358794,3 @@ end)()
 		}
 	}
 end)()
-
