@@ -263,13 +263,13 @@ end
 --- 获取心情配置
 --- - 参考sharecfg/energy_template.lua
 function Ship.getEnergeConfig(self)
-	local energy_template = pg.energy_template
 	local energy = self:getEnergy()
 
-	for index, template in pairs(energy_template) do
-		-- 判定：在[lower_bound, upper_bound]范围内
-		if type(index) == "number" and energy >= template.lower_bound and energy <= template.upper_bound then
-			return template
+	for _, index in ipairs(pg.energy_template.all) do
+		local energyTemplate = pg.energy_template[index]
+
+		if type(index) == "number" and energy >= energyTemplate.lower_bound and energy <= energyTemplate.upper_bound then
+			return energyTemplate
 		end
 	end
 
@@ -373,10 +373,10 @@ end
 --- 获取好感度等级
 function Ship.getIntimacyLevel(self)
 	local intimacyLevel = 0
-	local intimacy_template = pg.intimacy_template
 
-	for index, template in pairs(intimacy_template) do
-		-- 判定：在[lower_bound, upper_bound]范围内
+	for _, index in ipairs(pg.intimacy_template.all) do
+		local template = pg.intimacy_template[index]
+
 		if type(index) == "number" and self:getIntimacy() >= template.lower_bound and self:getIntimacy() <= template.upper_bound then
 			intimacyLevel = index
 

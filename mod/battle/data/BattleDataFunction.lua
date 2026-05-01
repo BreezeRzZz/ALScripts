@@ -123,559 +123,573 @@ function BattleDataFunction.GetBuffBulletRes(arg_9_0, arg_9_1, arg_9_2, arg_9_3,
 	local var_9_2 = BattleDataFunction.GetPlayerShipModelFromID(arg_9_0)
 
 	local function var_9_3(arg_10_0)
-		for iter_10_0, iter_10_1 in ipairs(arg_10_0) do
-			local var_10_0
+		if not arg_9_4 then
+			return arg_10_0
+		end
 
-			if arg_9_1[iter_10_1] then
-				var_10_0 = arg_9_1[iter_10_1].level
+		if table.contains(var_9_2.hide_buff_list, arg_10_0) then
+			return arg_9_4:RemapHiddenSkillId(arg_10_0)
+		end
+
+		local var_10_0 = arg_9_4:RemapHiddenSkillId(arg_10_0)
+
+		if var_10_0 == arg_10_0 then
+			var_10_0 = arg_9_4:RemapSkillId(arg_10_0)
+		end
+
+		return var_10_0
+	end
+
+	local function var_9_4(arg_11_0)
+		for iter_11_0, iter_11_1 in ipairs(arg_11_0) do
+			local var_11_0
+
+			if arg_9_1[iter_11_1] then
+				var_11_0 = arg_9_1[iter_11_1].level
 			else
-				var_10_0 = 1
+				var_11_0 = 1
 			end
 
-			iter_10_1 = arg_9_4 and arg_9_4:RemapSkillId(iter_10_1, true) or iter_10_1
+			iter_11_1 = var_9_3(iter_11_1)
 
-			local var_10_1 = BattleDataFunction.SkillTranform(arg_9_2, iter_10_1)
-			local var_10_2 = BattleDataFunction.GetResFromBuff(var_10_1, var_10_0, var_9_1, arg_9_3)
+			local var_11_1 = BattleDataFuncion.SkillTranform(arg_9_2, iter_11_1)
+			local var_11_2 = BattleDataFuncion.GetResFromBuff(var_11_1, var_11_0, var_9_1, arg_9_3)
 
-			for iter_10_2, iter_10_3 in ipairs(var_10_2) do
-				var_9_0[#var_9_0 + 1] = iter_10_3
+			for iter_11_2, iter_11_3 in ipairs(var_11_2) do
+				var_9_0[#var_9_0 + 1] = iter_11_3
 			end
 		end
 	end
 
-	var_9_3(var_9_2.buff_list)
-	var_9_3(var_9_2.hide_buff_list)
+	var_9_4(var_9_2.buff_list)
+	var_9_4(var_9_2.hide_buff_list)
 
-	local var_9_4 = {}
+	local var_9_5 = {}
 
 	for iter_9_0, iter_9_1 in pairs(arg_9_1) do
-		table.insert(var_9_4, iter_9_0)
+		table.insert(var_9_5, iter_9_0)
 	end
 
-	var_9_3(var_9_4)
+	var_9_4(var_9_5)
 
-	local var_9_5 = var_9_2.airassist_time
+	local var_9_6 = var_9_2.airassist_time
 
-	for iter_9_2, iter_9_3 in ipairs(var_9_5) do
-		local var_9_6 = BattleDataFunction.GetResFromSkill(iter_9_3, 1, nil, arg_9_3)
+	for iter_9_2, iter_9_3 in ipairs(var_9_6) do
+		local var_9_7 = BattleDataFuncion.GetResFromSkill(iter_9_3, 1, nil, arg_9_3)
 
-		for iter_9_4, iter_9_5 in ipairs(var_9_6) do
+		for iter_9_4, iter_9_5 in ipairs(var_9_7) do
 			var_9_0[#var_9_0 + 1] = iter_9_5
 		end
 	end
 
-	local var_9_7 = BattleDataFunction.GetShipTransformDataTemplate(arg_9_0)
+	local var_9_8 = BattleDataFuncion.GetShipTransformDataTemplate(arg_9_0)
 
-	if var_9_7 and var_9_7.skill_id ~= 0 and pg.transform_data_template[var_9_7.skill_id].skill_id ~= 0 then
-		local var_9_8 = pg.transform_data_template[var_9_7.skill_id].skill_id
-		local var_9_9
+	if var_9_8 and var_9_8.skill_id ~= 0 and pg.transform_data_template[var_9_8.skill_id].skill_id ~= 0 then
+		local var_9_9 = pg.transform_data_template[var_9_8.skill_id].skill_id
+		local var_9_10
 
-		if arg_9_1[var_9_8] then
-			var_9_9 = arg_9_1[var_9_8].level
+		if arg_9_1[var_9_9] then
+			var_9_10 = arg_9_1[var_9_9].level
 		else
-			var_9_9 = 1
+			var_9_10 = 1
 		end
 
-		local var_9_10 = BattleDataFunction.GetResFromBuff(var_9_8, var_9_9, var_9_1, arg_9_3)
+		local var_9_11 = BattleDataFuncion.GetResFromBuff(var_9_9, var_9_10, var_9_1, arg_9_3)
 
-		for iter_9_6, iter_9_7 in ipairs(var_9_10) do
+		for iter_9_6, iter_9_7 in ipairs(var_9_11) do
 			var_9_0[#var_9_0 + 1] = iter_9_7
 		end
 	end
 
-	if BattleDataFunction.GetShipMetaFromDataTemplate(arg_9_0) then
-		var_9_3(var_9_2.buff_list_display)
+	if BattleDataFuncion.GetShipMetaFromDataTemplate(arg_9_0) then
+		var_9_4(var_9_2.buff_list_display)
 	end
 
 	return var_9_0
 end
 
-function BattleDataFunction.getWeaponResource(arg_11_0, arg_11_1)
-	local var_11_0 = ys.Battle.BattleResourceManager.GetWeaponResource(arg_11_0)
+function BattleDataFuncion.getWeaponResource(arg_12_0, arg_12_1)
+	local var_12_0 = var_0_0.Battle.BattleResourceManager.GetWeaponResource(arg_12_0)
 
-	for iter_11_0, iter_11_1 in ipairs(var_11_0) do
-		arg_11_1[#arg_11_1 + 1] = iter_11_1
+	for iter_12_0, iter_12_1 in ipairs(var_12_0) do
+		arg_12_1[#arg_12_1 + 1] = iter_12_1
 	end
 end
 
-function BattleDataFunction.GetResFromBuff(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
-	local var_12_0 = {}
-	local var_12_1 = arg_12_0 .. "_" .. arg_12_1
+function BattleDataFuncion.GetResFromBuff(arg_13_0, arg_13_1, arg_13_2, arg_13_3)
+	local var_13_0 = {}
+	local var_13_1 = arg_13_0 .. "_" .. arg_13_1
 
-	if arg_12_2[var_12_1] then
-		return var_12_0
+	if arg_13_2[var_13_1] then
+		return var_13_0
 	else
-		arg_12_2[var_12_1] = true
+		arg_13_2[var_13_1] = true
 	end
 
-	local var_12_2 = BattleDataFunction.GetBuffTemplate(arg_12_0, arg_12_1)
+	local var_13_2 = BattleDataFuncion.GetBuffTemplate(arg_13_0, arg_13_1)
 
-	if var_12_2.init_effect and var_12_2.init_effect ~= "" then
-		local var_12_3 = var_12_2.init_effect
+	if var_13_2.init_effect and var_13_2.init_effect ~= "" then
+		local var_13_3 = var_13_2.init_effect
 
-		if var_12_2.skin_adapt then
-			var_12_3 = BattleDataFunction.SkinAdaptFXID(var_12_3, arg_12_3)
+		if var_13_2.skin_adapt then
+			var_13_3 = BattleDataFuncion.SkinAdaptFXID(var_13_3, arg_13_3)
 		end
 
-		var_12_0[#var_12_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(var_12_3)
+		var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_13_3)
 	end
 
-	if var_12_2.last_effect and var_12_2.last_effect ~= "" then
-		local var_12_4 = type(var_12_2.last_effect) == "table" and var_12_2.last_effect or {
-			var_12_2.last_effect
+	if var_13_2.last_effect and var_13_2.last_effect ~= "" then
+		local var_13_4 = type(var_13_2.last_effect) == "table" and var_13_2.last_effect or {
+			var_13_2.last_effect
 		}
 
-		for iter_12_0, iter_12_1 in ipairs(var_12_4) do
-			var_12_0[#var_12_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(iter_12_1)
+		for iter_13_0, iter_13_1 in ipairs(var_13_4) do
+			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(iter_13_1)
 		end
 	end
 
-	if var_12_2.last_effect_stack_list then
-		for iter_12_2, iter_12_3 in pairs(var_12_2.last_effect_stack_list) do
-			var_12_0[#var_12_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(iter_12_3)
+	if var_13_2.last_effect_stack_list then
+		for iter_13_2, iter_13_3 in pairs(var_13_2.last_effect_stack_list) do
+			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(iter_13_3)
 		end
 	end
 
-	for iter_12_4, iter_12_5 in ipairs(var_12_2.effect_list) do
-		local var_12_5 = iter_12_5.arg_list.skill_id
+	for iter_13_4, iter_13_5 in ipairs(var_13_2.effect_list) do
+		local var_13_5 = iter_13_5.arg_list.skill_id
 
-		if var_12_5 ~= nil then
-			local var_12_6 = BattleDataFunction.GetResFromSkill(var_12_5, arg_12_1, arg_12_2, arg_12_3)
+		if var_13_5 ~= nil then
+			local var_13_6 = BattleDataFuncion.GetResFromSkill(var_13_5, arg_13_1, arg_13_2, arg_13_3)
 
-			for iter_12_6, iter_12_7 in ipairs(var_12_6) do
-				var_12_0[#var_12_0 + 1] = iter_12_7
+			for iter_13_6, iter_13_7 in ipairs(var_13_6) do
+				var_13_0[#var_13_0 + 1] = iter_13_7
 			end
 		end
 
-		local var_12_7 = iter_12_5.arg_list.skill_id_list
+		local var_13_7 = iter_13_5.arg_list.skill_id_list
 
-		if var_12_7 ~= nil then
-			for iter_12_8, iter_12_9 in ipairs(var_12_7) do
-				local var_12_8 = BattleDataFunction.GetResFromSkill(iter_12_9, arg_12_1, arg_12_2, arg_12_3)
+		if var_13_7 ~= nil then
+			for iter_13_8, iter_13_9 in ipairs(var_13_7) do
+				local var_13_8 = BattleDataFuncion.GetResFromSkill(iter_13_9, arg_13_1, arg_13_2, arg_13_3)
 
-				for iter_12_10, iter_12_11 in ipairs(var_12_8) do
-					var_12_0[#var_12_0 + 1] = iter_12_11
+				for iter_13_10, iter_13_11 in ipairs(var_13_8) do
+					var_13_0[#var_13_0 + 1] = iter_13_11
 				end
 			end
 		end
 
-		local var_12_9 = iter_12_5.arg_list.damage_attr_list
+		local var_13_9 = iter_13_5.arg_list.damage_attr_list
 
-		if var_12_9 ~= nil then
-			for iter_12_12, iter_12_13 in pairs(var_12_9) do
-				local var_12_10 = BattleDataFunction.GetResFromSkill(iter_12_13, arg_12_1, arg_12_2, arg_12_3)
+		if var_13_9 ~= nil then
+			for iter_13_12, iter_13_13 in pairs(var_13_9) do
+				local var_13_10 = BattleDataFuncion.GetResFromSkill(iter_13_13, arg_13_1, arg_13_2, arg_13_3)
 
-				for iter_12_14, iter_12_15 in ipairs(var_12_10) do
-					var_12_0[#var_12_0 + 1] = iter_12_15
+				for iter_13_14, iter_13_15 in ipairs(var_13_10) do
+					var_13_0[#var_13_0 + 1] = iter_13_15
 				end
 			end
 		end
 
-		local var_12_11 = iter_12_5.arg_list.bullet_id
+		local var_13_11 = iter_13_5.arg_list.bullet_id
 
-		if var_12_11 then
-			local var_12_12 = ys.Battle.BattleResourceManager.GetBulletResource(var_12_11)
+		if var_13_11 then
+			local var_13_12 = var_0_0.Battle.BattleResourceManager.GetBulletResource(var_13_11)
 
-			for iter_12_16, iter_12_17 in ipairs(var_12_12) do
-				var_12_0[#var_12_0 + 1] = iter_12_17
+			for iter_13_16, iter_13_17 in ipairs(var_13_12) do
+				var_13_0[#var_13_0 + 1] = iter_13_17
 			end
 		end
 
-		local var_12_13 = iter_12_5.arg_list.weapon_id
+		local var_13_13 = iter_13_5.arg_list.weapon_id
 
-		if var_12_13 then
-			BattleDataFunction.getWeaponResource(var_12_13, var_12_0)
+		if var_13_13 then
+			BattleDataFuncion.getWeaponResource(var_13_13, var_13_0)
 		end
 
-		local var_12_14 = iter_12_5.arg_list.aircraft_id_list
+		local var_13_14 = iter_13_5.arg_list.aircraft_id_list
 
-		if var_12_14 then
-			for iter_12_18, iter_12_19 in ipairs(var_12_14) do
-				BattleDataFunction.getWeaponResource(iter_12_19, var_12_0)
+		if var_13_14 then
+			for iter_13_18, iter_13_19 in ipairs(var_13_14) do
+				BattleDataFuncion.getWeaponResource(iter_13_19, var_13_0)
 			end
 		end
 
-		local var_12_15 = iter_12_5.arg_list.skin_id
+		local var_13_15 = iter_13_5.arg_list.skin_id
 
-		if var_12_15 then
-			local var_12_16 = ys.Battle.BattleResourceManager.GetEquipSkinBulletRes(var_12_15)
+		if var_13_15 then
+			local var_13_16 = var_0_0.Battle.BattleResourceManager.GetEquipSkinBulletRes(var_13_15)
 
-			for iter_12_20, iter_12_21 in ipairs(var_12_16) do
-				var_12_0[#var_12_0 + 1] = iter_12_21
+			for iter_13_20, iter_13_21 in ipairs(var_13_16) do
+				var_13_0[#var_13_0 + 1] = iter_13_21
 			end
 		end
 
-		local var_12_17 = iter_12_5.arg_list.ship_skin_id
+		local var_13_17 = iter_13_5.arg_list.ship_skin_id
 
-		if var_12_17 then
-			local var_12_18 = BattleDataFunction.GetPlayerShipSkinDataFromID(var_12_17)
+		if var_13_17 then
+			local var_13_18 = BattleDataFuncion.GetPlayerShipSkinDataFromID(var_13_17)
 
-			var_12_0[#var_12_0 + 1] = ys.Battle.BattleResourceManager.GetCharacterPath(var_12_18.prefab)
+			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetCharacterPath(var_13_18.prefab)
 		end
 
-		local var_12_19 = iter_12_5.arg_list.buff_id
+		local var_13_19 = iter_13_5.arg_list.buff_id
 
-		if var_12_19 then
-			local var_12_20 = BattleDataFunction.GetResFromBuff(var_12_19, arg_12_1, arg_12_2, arg_12_3)
+		if var_13_19 then
+			local var_13_20 = BattleDataFuncion.GetResFromBuff(var_13_19, arg_13_1, arg_13_2, arg_13_3)
 
-			for iter_12_22, iter_12_23 in ipairs(var_12_20) do
-				if type(iter_12_23) == "string" then
-					var_12_0[#var_12_0 + 1] = iter_12_23
-				elseif type(iter_12_23) == "table" then
-					for iter_12_24, iter_12_25 in ipairs(iter_12_23) do
-						var_12_0[#var_12_0 + 1] = iter_12_25
+			for iter_13_22, iter_13_23 in ipairs(var_13_20) do
+				if type(iter_13_23) == "string" then
+					var_13_0[#var_13_0 + 1] = iter_13_23
+				elseif type(iter_13_23) == "table" then
+					for iter_13_24, iter_13_25 in ipairs(iter_13_23) do
+						var_13_0[#var_13_0 + 1] = iter_13_25
 					end
 				end
 			end
 		end
 
-		local var_12_21 = iter_12_5.arg_list.buff_skin_id
+		local var_13_21 = iter_13_5.arg_list.buff_skin_id
 
-		if var_12_21 then
-			local var_12_22 = BattleDataFunction.GetResFromBuff(var_12_21, arg_12_1, arg_12_2, arg_12_3)
+		if var_13_21 then
+			local var_13_22 = BattleDataFuncion.GetResFromBuff(var_13_21, arg_13_1, arg_13_2, arg_13_3)
 
-			for iter_12_26, iter_12_27 in ipairs(var_12_22) do
-				if type(iter_12_27) == "string" then
-					var_12_0[#var_12_0 + 1] = iter_12_27
-				elseif type(iter_12_27) == "table" then
-					for iter_12_28, iter_12_29 in ipairs(iter_12_27) do
-						var_12_0[#var_12_0 + 1] = iter_12_29
+			for iter_13_26, iter_13_27 in ipairs(var_13_22) do
+				if type(iter_13_27) == "string" then
+					var_13_0[#var_13_0 + 1] = iter_13_27
+				elseif type(iter_13_27) == "table" then
+					for iter_13_28, iter_13_29 in ipairs(iter_13_27) do
+						var_13_0[#var_13_0 + 1] = iter_13_29
 					end
 				end
 			end
 		end
 
-		local var_12_23 = iter_12_5.arg_list.effect
+		local var_13_23 = iter_13_5.arg_list.effect
 
-		if var_12_23 then
-			var_12_0[#var_12_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(var_12_23)
-		end
-	end
-
-	return var_12_0
-end
-
-function BattleDataFunction.GetBuffListRes(arg_13_0, arg_13_1, arg_13_2)
-	local var_13_0 = {}
-	local var_13_1 = {}
-
-	for iter_13_0, iter_13_1 in ipairs(arg_13_0) do
-		local var_13_2 = iter_13_1.id
-		local var_13_3 = iter_13_1.level
-
-		for iter_13_2, iter_13_3 in ipairs(BattleDataFunction.GetResFromBuff(var_13_2, var_13_3, var_13_1, arg_13_2)) do
-			var_13_0[#var_13_0 + 1] = iter_13_3
+		if var_13_23 then
+			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_13_23)
 		end
 	end
 
 	return var_13_0
 end
 
-function BattleDataFunction.GetResFromSkill(arg_14_0, arg_14_1, arg_14_2, arg_14_3)
-	arg_14_1 = arg_14_1 or 1
-
+function BattleDataFuncion.GetBuffListRes(arg_14_0, arg_14_1, arg_14_2)
 	local var_14_0 = {}
-	local var_14_1 = BattleDataFunction.GetSkillTemplate(arg_14_0, arg_14_1)
+	local var_14_1 = {}
 
-	local function var_14_2(arg_15_0)
-		for iter_15_0, iter_15_1 in ipairs(arg_15_0) do
-			if iter_15_1.type == "BattleBuffShieldWall" then
-				print(iter_15_1.arg_list.effect)
-			end
+	for iter_14_0, iter_14_1 in ipairs(arg_14_0) do
+		local var_14_2 = iter_14_1.id
+		local var_14_3 = iter_14_1.level
 
-			if iter_15_1.type == ys.Battle.BattleSkillGridmanFloat.__name then
-				table.insert(var_14_0, "UI/combatgridmanskillfloat")
-			end
-
-			if iter_15_1.type == ys.Battle.BattleSkillFusion.__name then
-				local var_15_0 = iter_15_1.arg_list
-				local var_15_1 = ys.Battle.BattleResourceManager.GetShipResource(var_15_0.fusion_id, var_15_0.ship_skin_id)
-
-				for iter_15_2, iter_15_3 in ipairs(var_15_1) do
-					table.insert(var_14_0, iter_15_3)
-				end
-
-				local var_15_2 = var_15_0.weapon_id_list
-
-				for iter_15_4, iter_15_5 in ipairs(var_15_2) do
-					BattleDataFunction.getWeaponResource(iter_15_5, var_14_0)
-				end
-
-				local var_15_3 = var_15_0.buff_list
-
-				for iter_15_6, iter_15_7 in ipairs(var_15_3) do
-					local var_15_4 = BattleDataFunction.GetResFromBuff(iter_15_7, arg_14_1, arg_14_2)
-
-					for iter_15_8, iter_15_9 in ipairs(var_15_4) do
-						var_14_0[#var_14_0 + 1] = iter_15_9
-					end
-				end
-			end
-
-			local var_15_5 = iter_15_1.arg_list.weapon_id
-
-			if var_15_5 ~= nil then
-				BattleDataFunction.getWeaponResource(var_15_5, var_14_0)
-			end
-
-			local var_15_6 = iter_15_1.arg_list.buff_id
-
-			if var_15_6 then
-				local var_15_7 = BattleDataFunction.GetResFromBuff(var_15_6, arg_14_1, arg_14_2)
-
-				for iter_15_10, iter_15_11 in ipairs(var_15_7) do
-					var_14_0[#var_14_0 + 1] = iter_15_11
-				end
-			end
-
-			local var_15_8 = iter_15_1.arg_list.damage_buff_id
-
-			if var_15_8 then
-				local var_15_9 = iter_15_1.arg_list.damage_buff_lv or 1
-				local var_15_10 = BattleDataFunction.GetResFromBuff(var_15_8, var_15_9, arg_14_2)
-
-				for iter_15_12, iter_15_13 in ipairs(var_15_10) do
-					var_14_0[#var_14_0 + 1] = iter_15_13
-				end
-			end
-
-			local var_15_11 = iter_15_1.arg_list.effect
-
-			if var_15_11 then
-				var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(var_15_11)
-			end
-
-			local var_15_12 = iter_15_1.arg_list.finale_effect
-
-			if var_15_12 then
-				var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetFXPath(var_15_12)
-			end
-
-			local var_15_13 = iter_15_1.arg_list.spawnData
-
-			if var_15_13 then
-				local var_15_14 = ys.Battle.BattleResourceManager.GetMonsterRes(var_15_13)
-
-				for iter_15_14, iter_15_15 in ipairs(var_15_14) do
-					var_14_0[#var_14_0 + 1] = iter_15_15
-				end
-			end
+		for iter_14_2, iter_14_3 in ipairs(BattleDataFuncion.GetResFromBuff(var_14_2, var_14_3, var_14_1, arg_14_2)) do
+			var_14_0[#var_14_0 + 1] = iter_14_3
 		end
-	end
-
-	if type(var_14_1.painting) == "string" then
-		var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetHrzIcon(var_14_1.painting)
-		var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetSquareIcon(var_14_1.painting)
-	end
-
-	if type(var_14_1.castCV) == "table" then
-		ys.Battle.BattleResourceManager.GetInstance():AddPreloadCV(var_14_1.castCV.skinID)
-	end
-
-	if var_14_1.focus_duration then
-		if var_14_1.cutin_cover then
-			var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_14_1.cutin_cover)
-		elseif var_14_1.cutin_cover_DAL then
-			var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_14_1.cutin_cover_DAL)
-			var_14_0[#var_14_0 + 1] = "UI/SkillPaintingDAL"
-		elseif arg_14_3 then
-			local var_14_3 = BattleDataFunction.GetPlayerShipSkinDataFromID(arg_14_3).painting
-
-			var_14_0[#var_14_0 + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_14_3)
-		end
-	end
-
-	var_14_2(var_14_1.effect_list)
-
-	for iter_14_0, iter_14_1 in ipairs(var_14_1) do
-		var_14_2(iter_14_1.effect_list)
 	end
 
 	return var_14_0
 end
 
-function BattleDataFunction.GetShipSkillTriggerCount(arg_16_0, arg_16_1)
-	local function var_16_0(arg_17_0)
-		local var_17_0 = 0
+function BattleDataFuncion.GetResFromSkill(arg_15_0, arg_15_1, arg_15_2, arg_15_3)
+	arg_15_1 = arg_15_1 or 1
 
-		for iter_17_0, iter_17_1 in pairs(arg_17_0) do
-			local var_17_1 = BattleDataFunction.GetBuffTemplate(iter_17_1.id).effect_list
+	local var_15_0 = {}
+	local var_15_1 = BattleDataFuncion.GetSkillTemplate(arg_15_0, arg_15_1)
 
-			for iter_17_2, iter_17_3 in ipairs(var_17_1) do
-				local var_17_2 = iter_17_3.trigger
+	local function var_15_2(arg_16_0)
+		for iter_16_0, iter_16_1 in ipairs(arg_16_0) do
+			if iter_16_1.type == "BattleBuffShieldWall" then
+				print(iter_16_1.arg_list.effect)
+			end
 
-				for iter_17_4, iter_17_5 in ipairs(var_17_2) do
-					if table.contains(arg_16_1, iter_17_5) then
-						var_17_0 = var_17_0 + 1
+			if iter_16_1.type == var_0_0.Battle.BattleSkillGridmanFloat.__name then
+				table.insert(var_15_0, "UI/combatgridmanskillfloat")
+			end
+
+			if iter_16_1.type == var_0_0.Battle.BattleSkillFusion.__name then
+				local var_16_0 = iter_16_1.arg_list
+				local var_16_1 = var_0_0.Battle.BattleResourceManager.GetShipResource(var_16_0.fusion_id, var_16_0.ship_skin_id)
+
+				for iter_16_2, iter_16_3 in ipairs(var_16_1) do
+					table.insert(var_15_0, iter_16_3)
+				end
+
+				local var_16_2 = var_16_0.weapon_id_list
+
+				for iter_16_4, iter_16_5 in ipairs(var_16_2) do
+					BattleDataFuncion.getWeaponResource(iter_16_5, var_15_0)
+				end
+
+				local var_16_3 = var_16_0.buff_list
+
+				for iter_16_6, iter_16_7 in ipairs(var_16_3) do
+					local var_16_4 = BattleDataFuncion.GetResFromBuff(iter_16_7, arg_15_1, arg_15_2)
+
+					for iter_16_8, iter_16_9 in ipairs(var_16_4) do
+						var_15_0[#var_15_0 + 1] = iter_16_9
+					end
+				end
+			end
+
+			local var_16_5 = iter_16_1.arg_list.weapon_id
+
+			if var_16_5 ~= nil then
+				BattleDataFuncion.getWeaponResource(var_16_5, var_15_0)
+			end
+
+			local var_16_6 = iter_16_1.arg_list.buff_id
+
+			if var_16_6 then
+				local var_16_7 = BattleDataFuncion.GetResFromBuff(var_16_6, arg_15_1, arg_15_2)
+
+				for iter_16_10, iter_16_11 in ipairs(var_16_7) do
+					var_15_0[#var_15_0 + 1] = iter_16_11
+				end
+			end
+
+			local var_16_8 = iter_16_1.arg_list.damage_buff_id
+
+			if var_16_8 then
+				local var_16_9 = iter_16_1.arg_list.damage_buff_lv or 1
+				local var_16_10 = BattleDataFuncion.GetResFromBuff(var_16_8, var_16_9, arg_15_2)
+
+				for iter_16_12, iter_16_13 in ipairs(var_16_10) do
+					var_15_0[#var_15_0 + 1] = iter_16_13
+				end
+			end
+
+			local var_16_11 = iter_16_1.arg_list.effect
+
+			if var_16_11 then
+				var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_16_11)
+			end
+
+			local var_16_12 = iter_16_1.arg_list.finale_effect
+
+			if var_16_12 then
+				var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_16_12)
+			end
+
+			local var_16_13 = iter_16_1.arg_list.spawnData
+
+			if var_16_13 then
+				local var_16_14 = var_0_0.Battle.BattleResourceManager.GetMonsterRes(var_16_13)
+
+				for iter_16_14, iter_16_15 in ipairs(var_16_14) do
+					var_15_0[#var_15_0 + 1] = iter_16_15
+				end
+			end
+		end
+	end
+
+	if type(var_15_1.painting) == "string" then
+		var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetHrzIcon(var_15_1.painting)
+		var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetSquareIcon(var_15_1.painting)
+	end
+
+	if type(var_15_1.castCV) == "table" then
+		var_0_0.Battle.BattleResourceManager.GetInstance():AddPreloadCV(var_15_1.castCV.skinID)
+	end
+
+	if var_15_1.focus_duration then
+		if var_15_1.cutin_cover then
+			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_1.cutin_cover)
+		elseif var_15_1.cutin_cover_DAL then
+			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_1.cutin_cover_DAL)
+			var_15_0[#var_15_0 + 1] = "UI/SkillPaintingDAL"
+		elseif arg_15_3 then
+			local var_15_3 = BattleDataFuncion.GetPlayerShipSkinDataFromID(arg_15_3).painting
+
+			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_3)
+		end
+	end
+
+	var_15_2(var_15_1.effect_list)
+
+	for iter_15_0, iter_15_1 in ipairs(var_15_1) do
+		var_15_2(iter_15_1.effect_list)
+	end
+
+	return var_15_0
+end
+
+function BattleDataFuncion.GetShipSkillTriggerCount(arg_17_0, arg_17_1)
+	local function var_17_0(arg_18_0)
+		local var_18_0 = 0
+
+		for iter_18_0, iter_18_1 in pairs(arg_18_0) do
+			local var_18_1 = BattleDataFuncion.GetBuffTemplate(iter_18_1.id).effect_list
+
+			for iter_18_2, iter_18_3 in ipairs(var_18_1) do
+				local var_18_2 = iter_18_3.trigger
+
+				for iter_18_4, iter_18_5 in ipairs(var_18_2) do
+					if table.contains(arg_17_1, iter_18_5) then
+						var_18_0 = var_18_0 + 1
 					end
 				end
 			end
 		end
 
-		return var_17_0
+		return var_18_0
 	end
 
-	local var_16_1 = 0
-	local var_16_2 = arg_16_0.skills or {}
-	local var_16_3 = var_16_1 + var_16_0(var_16_2)
-	local var_16_4 = BattleDataFunction.GetEquipSkill(arg_16_0.equipment)
-	local var_16_5 = {}
+	local var_17_1 = 0
+	local var_17_2 = arg_17_0.skills or {}
+	local var_17_3 = var_17_1 + var_17_0(var_17_2)
+	local var_17_4 = BattleDataFuncion.GetEquipSkill(arg_17_0.equipment)
+	local var_17_5 = {}
 
-	for iter_16_0, iter_16_1 in ipairs(var_16_4) do
-		table.insert(var_16_5, {
-			id = iter_16_1.buffID
+	for iter_17_0, iter_17_1 in ipairs(var_17_4) do
+		table.insert(var_17_5, {
+			id = iter_17_1.buffID
 		})
 	end
 
-	return var_16_3 + var_16_0(var_16_5)
+	return var_17_3 + var_17_0(var_17_5)
 end
 
--- BattleDataProxy.initBGM调用
--- 对给定的BuffList，选出与BGM相关的
-function BattleDataFunction.GetSongList(buffIDList)
-	local songList = {
+function BattleDataFuncion.GetSongList(arg_19_0)
+	local var_19_0 = {
 		initList = {},
 		otherList = {}
 	}
 
-	for buffID, _ in pairs(buffIDList) do
-		local buffTmpData = BattleDataFunction.GetBuffTemplate(buffID, 1)
+	for iter_19_0, iter_19_1 in pairs(arg_19_0) do
+		local var_19_1 = BattleDataFuncion.GetBuffTemplate(iter_19_0, 1)
 
-		for _, effect in ipairs(buffTmpData.effect_list) do
-			-- 判定是否为BattleBuffDiva
-			if effect.type == ys.Battle.BattleBuffDiva.__name then
-				if table.contains(effect.trigger, "onInitGame") then
-					for _, bgm in ipairs(effect.arg_list.bgm_list) do
-						songList.initList[bgm] = true
+		for iter_19_2, iter_19_3 in ipairs(var_19_1.effect_list) do
+			if iter_19_3.type == var_0_0.Battle.BattleBuffDiva.__name then
+				if table.contains(iter_19_3.trigger, "onInitGame") then
+					for iter_19_4, iter_19_5 in ipairs(iter_19_3.arg_list.bgm_list) do
+						var_19_0.initList[iter_19_5] = true
 					end
 				end
-				-- 非onInitGame在otherList中
-				if not table.contains(effect.trigger, "onInitGame") or #effect.trigger > 1 then
-					for _, bgm in ipairs(effect.arg_list.bgm_list) do
-						songList.otherList[bgm] = true
+
+				if not table.contains(iter_19_3.trigger, "onInitGame") or #iter_19_3.trigger > 1 then
+					for iter_19_6, iter_19_7 in ipairs(iter_19_3.arg_list.bgm_list) do
+						var_19_0.otherList[iter_19_7] = true
 					end
 				end
 			end
-		end
-	end
-
-	return songList
-end
-
-function BattleDataFunction.GetCardRes(arg_19_0)
-	local var_19_0 = {}
-	local var_19_1 = ys.Battle.BattleCardPuzzleCard.GetCardEffectConfig(arg_19_0)
-
-	for iter_19_0, iter_19_1 in ipairs(var_19_1.effect_list) do
-		local var_19_2 = BattleDataFunction.GetCardFXRes(iter_19_1)
-
-		for iter_19_2, iter_19_3 in ipairs(var_19_2) do
-			table.insert(var_19_0, iter_19_3)
-		end
-	end
-
-	for iter_19_4, iter_19_5 in pairs(var_19_1.effect_list) do
-		local var_19_3 = BattleDataFunction.GetCardFXRes(iter_19_5)
-
-		for iter_19_6, iter_19_7 in ipairs(var_19_3) do
-			table.insert(var_19_0, iter_19_7)
 		end
 	end
 
 	return var_19_0
 end
 
-function BattleDataFunction.GetCardFXRes(arg_20_0)
+function BattleDataFuncion.GetCardRes(arg_20_0)
 	local var_20_0 = {}
+	local var_20_1 = var_0_0.Battle.BattleCardPuzzleCard.GetCardEffectConfig(arg_20_0)
 
-	for iter_20_0, iter_20_1 in ipairs(arg_20_0) do
-		if iter_20_1.type == "BattleCardPuzzleSkillCreateCard" then
-			local var_20_1 = BattleDataFunction.GetCardRes(iter_20_1.arg_list.card_id)
+	for iter_20_0, iter_20_1 in ipairs(var_20_1.effect_list) do
+		local var_20_2 = BattleDataFuncion.GetCardFXRes(iter_20_1)
 
-			for iter_20_2, iter_20_3 in ipairs(var_20_1) do
-				table.insert(var_20_0, iter_20_3)
-			end
-		elseif iter_20_1.type == "BattleCardPuzzleSkillFire" then
-			local var_20_2 = ys.Battle.BattleResourceManager.GetWeaponResource(iter_20_1.arg_list.weapon_id)
+		for iter_20_2, iter_20_3 in ipairs(var_20_2) do
+			table.insert(var_20_0, iter_20_3)
+		end
+	end
 
-			for iter_20_4, iter_20_5 in ipairs(var_20_2) do
-				table.insert(var_20_0, iter_20_5)
-			end
-		elseif iter_20_1.type == "BattleCardPuzzleSkillAddBuff" then
-			local var_20_3 = BattleDataFunction.GetResFromBuff(iter_20_1.arg_list.buff_id, 1, {})
+	for iter_20_4, iter_20_5 in pairs(var_20_1.effect_list) do
+		local var_20_3 = BattleDataFuncion.GetCardFXRes(iter_20_5)
 
-			for iter_20_6, iter_20_7 in ipairs(var_20_3) do
-				table.insert(var_20_0, iter_20_7)
-			end
+		for iter_20_6, iter_20_7 in ipairs(var_20_3) do
+			table.insert(var_20_0, iter_20_7)
 		end
 	end
 
 	return var_20_0
 end
 
-function BattleDataFunction.NeedSkillPainting(arg_21_0)
-	local var_21_0 = false
+function BattleDataFuncion.GetCardFXRes(arg_21_0)
+	local var_21_0 = {}
 
-	if BattleDataFunction.GetSkillTemplate(arg_21_0).focus_duration then
-		var_21_0 = true
+	for iter_21_0, iter_21_1 in ipairs(arg_21_0) do
+		if iter_21_1.type == "BattleCardPuzzleSkillCreateCard" then
+			local var_21_1 = BattleDataFuncion.GetCardRes(iter_21_1.arg_list.card_id)
+
+			for iter_21_2, iter_21_3 in ipairs(var_21_1) do
+				table.insert(var_21_0, iter_21_3)
+			end
+		elseif iter_21_1.type == "BattleCardPuzzleSkillFire" then
+			local var_21_2 = var_0_0.Battle.BattleResourceManager.GetWeaponResource(iter_21_1.arg_list.weapon_id)
+
+			for iter_21_4, iter_21_5 in ipairs(var_21_2) do
+				table.insert(var_21_0, iter_21_5)
+			end
+		elseif iter_21_1.type == "BattleCardPuzzleSkillAddBuff" then
+			local var_21_3 = BattleDataFuncion.GetResFromBuff(iter_21_1.arg_list.buff_id, 1, {})
+
+			for iter_21_6, iter_21_7 in ipairs(var_21_3) do
+				table.insert(var_21_0, iter_21_7)
+			end
+		end
 	end
 
 	return var_21_0
 end
 
-function BattleDataFunction.SkinAdaptFXID(arg_22_0, arg_22_1)
-	return arg_22_0 .. "_" .. arg_22_1
-end
+function BattleDataFuncion.NeedSkillPainting(arg_22_0)
+	local var_22_0 = false
 
-function BattleDataFunction.GetFleetReload(arg_23_0)
-	return BattleFormulas.GetFleetReload(arg_23_0)
-end
-
-function BattleDataFunction.GetFleetTorpedoPower(arg_24_0)
-	return BattleFormulas.GetFleetTorpedoPower(arg_24_0)
-end
-
--- 被BattleFleetVO.refreshFleetFormation调用
-function BattleDataFunction.SortFleetList(currentUnitList, previousUnitList)
-	local unitList = {}
-
-	for currentIndex, unit in ipairs(currentUnitList) do
-		unitList[#unitList + 1] = previousUnitList[unit]
-
-		unitList[currentIndex]:SetFormationIndex(currentIndex)
+	if BattleDataFuncion.GetSkillTemplate(arg_22_0).focus_duration then
+		var_22_0 = true
 	end
 
-	return unitList
+	return var_22_0
 end
 
-function BattleDataFunction.GetLimitAttributeRange(arg_26_0, arg_26_1)
-	if pg.battle_attribute_range[arg_26_0] then
-		return math.clamp(arg_26_1, pg.battle_attribute_range[arg_26_0].min / 10000, pg.battle_attribute_range[arg_26_0].max / 10000)
+function BattleDataFuncion.SkinAdaptFXID(arg_23_0, arg_23_1)
+	return arg_23_0 .. "_" .. arg_23_1
+end
+
+function BattleDataFuncion.GetFleetReload(arg_24_0)
+	return var_0_2.GetFleetReload(arg_24_0)
+end
+
+function BattleDataFuncion.GetFleetTorpedoPower(arg_25_0)
+	return var_0_2.GetFleetTorpedoPower(arg_25_0)
+end
+
+function BattleDataFuncion.SortFleetList(arg_26_0, arg_26_1)
+	local var_26_0 = {}
+
+	for iter_26_0, iter_26_1 in ipairs(arg_26_0) do
+		var_26_0[#var_26_0 + 1] = arg_26_1[iter_26_1]
+
+		var_26_0[iter_26_0]:SetFormationIndex(iter_26_0)
 	end
 
-	return arg_26_1
+	return var_26_0
 end
 
-function BattleDataFunction.GetPuzzleCardDataTemplate(arg_27_0)
-	assert(puzzle_card_template[arg_27_0] ~= nil, ">>puzzle_card_template<< 找不到卡牌配置：" .. arg_27_0)
+function BattleDataFuncion.GetLimitAttributeRange(arg_27_0, arg_27_1)
+	if pg.battle_attribute_range[arg_27_0] then
+		return math.clamp(arg_27_1, pg.battle_attribute_range[arg_27_0].min / 10000, pg.battle_attribute_range[arg_27_0].max / 10000)
+	end
 
-	return puzzle_card_template[arg_27_0]
+	return arg_27_1
 end
 
-function BattleDataFunction.GetPuzzleShipDataTemplate(arg_28_0)
-	assert(puzzle_ship_template[arg_28_0] ~= nil, ">>puzzle_ship_template<< 找不到卡牌舰船配置：" .. arg_28_0)
+function BattleDataFuncion.GetPuzzleCardDataTemplate(arg_28_0)
+	assert(var_0_4[arg_28_0] ~= nil, ">>puzzle_card_template<< 找不到卡牌配置：" .. arg_28_0)
 
-	return puzzle_ship_template[arg_28_0]
+	return var_0_4[arg_28_0]
 end
 
-function BattleDataFunction.GetPuzzleDungeonTemplate(arg_29_0)
-	assert(puzzle_combat_template[arg_29_0] ~= nil, ">>puzzle_combat_template<< 找不到卡牌关卡配置：" .. arg_29_0)
+function BattleDataFuncion.GetPuzzleShipDataTemplate(arg_29_0)
+	assert(var_0_5[arg_29_0] ~= nil, ">>puzzle_ship_template<< 找不到卡牌舰船配置：" .. arg_29_0)
 
-	return puzzle_combat_template[arg_29_0]
+	return var_0_5[arg_29_0]
 end
 
-function BattleDataFunction.GetPuzzleCardAffixDataTemplate(arg_30_0)
-	assert(puzzle_card_affix[arg_30_0] ~= nil, ">>puzzle_card_affix<< 找不到卡牌关卡配置：" .. arg_30_0)
+function BattleDataFuncion.GetPuzzleDungeonTemplate(arg_30_0)
+	assert(var_0_6[arg_30_0] ~= nil, ">>puzzle_combat_template<< 找不到卡牌关卡配置：" .. arg_30_0)
 
-	return puzzle_card_affix[arg_30_0]
+	return var_0_6[arg_30_0]
+end
+
+function BattleDataFuncion.GetPuzzleCardAffixDataTemplate(arg_31_0)
+	assert(var_0_7[arg_31_0] ~= nil, ">>puzzle_card_affix<< 找不到卡牌关卡配置：" .. arg_31_0)
+
+	return var_0_7[arg_31_0]
 end
