@@ -194951,7 +194951,9 @@ end)()
 		},
 		ammo_info = {},
 		equip_info = {},
-		weapon_id = {},
+		weapon_id = {
+			180000
+		},
 		skill_id = {},
 		hidden_skill_id = {},
 		part_main = {},
