@@ -1,125 +1,135 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleConfig
-local var_0_3 = var_0_0.Battle.BattleCardPuzzleEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleConfig = ys.Battle.BattleCardPuzzleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 
-var_0_0.Battle.CardPuzzleFleetIconList = class("CardPuzzleFleetIconList")
+ys.Battle.CardPuzzleFleetIconList = class("CardPuzzleFleetIconList")
 
-local var_0_4 = var_0_0.Battle.CardPuzzleFleetIconList
+local CardPuzzleFleetIconList = ys.Battle.CardPuzzleFleetIconList
 
-var_0_4.__name = "CardPuzzleFleetIconList"
+CardPuzzleFleetIconList.__name = "CardPuzzleFleetIconList"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图舰队图标列表视图
+--- 显示舰队属性和增益Buff的图标列表（类似其他游戏中的状态栏）
 
-	arg_1_0:init()
+function CardPuzzleFleetIconList.Ctor(self, go)
+	self._go = go
+
+	self:init()
 end
 
-function var_0_4.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	var_0_0.EventListener.AttachEventListener(arg_2_0)
+--- 设置关联的卡牌拼图组件
+function CardPuzzleFleetIconList.SetCardPuzzleComponent(self, info)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_2_0._info = arg_2_1
-	arg_2_0._attrManager = arg_2_0._info:GetAttrManager()
-	arg_2_0._buffManager = arg_2_0._info:GetBuffManager()
+	self._info = info
+	self._attrManager = self._info:GetAttrManager()
+	self._buffManager = self._info:GetBuffManager()
 
-	arg_2_0._info:RegisterEventListener(arg_2_0, var_0_3.UPDATE_FLEET_ATTR, arg_2_0.onUpdateFleetAttr)
+	self._info:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_FLEET_ATTR, self.onUpdateFleetAttr)
 end
 
-function var_0_4.init(arg_3_0)
-	arg_3_0._buffIconList = {}
-	arg_3_0._attrIconList = {}
-	arg_3_0._tf = arg_3_0._go.transform
-	arg_3_0._iconTpl = arg_3_0._tf:Find("icon_tpl")
-	arg_3_0._iconContainer = arg_3_0._tf:Find("icon_list")
+function CardPuzzleFleetIconList.init(self)
+	self._buffIconList = {}
+	self._attrIconList = {}
+	self._tf = self._go.transform
+	self._iconTpl = self._tf:Find("icon_tpl")
+	self._iconContainer = self._tf:Find("icon_list")
 end
 
-function var_0_4.AddBuffIcon(arg_4_0, arg_4_1)
-	local var_4_0 = cloneTplTo(arg_4_0._iconTpl, arg_4_0._iconContainer)
-	local var_4_1 = var_4_0:Find("count_bg/count_label")
-	local var_4_2 = var_4_0:Find("icon")
-	local var_4_3 = var_4_0:Find("buff_duration"):GetComponent(typeof(Image))
-	local var_4_4 = {
-		tf = var_4_0,
-		count = var_4_1,
-		durationIMG = var_4_3,
-		buffID = arg_4_1
+--- 添加一个增益图标
+function CardPuzzleFleetIconList.AddBuffIcon(self, buffID)
+	local iconTF = cloneTplTo(self._iconTpl, self._iconContainer)
+	local countLabel = iconTF:Find("count_bg/count_label")
+	local iconImage = iconTF:Find("icon")
+	local durationIMG = iconTF:Find("buff_duration"):GetComponent(typeof(Image))
+	local iconData = {
+		tf = iconTF,
+		count = countLabel,
+		durationIMG = durationIMG,
+		buffID = buffID
 	}
 
-	arg_4_0._buffIconList[arg_4_1] = var_4_4
+	self._buffIconList[buffID] = iconData
 
-	arg_4_0:updateBuffIcon(var_4_4)
+	self:updateBuffIcon(iconData)
 end
 
-function var_0_4.AddAttrIcon(arg_5_0, arg_5_1)
-	local var_5_0 = cloneTplTo(arg_5_0._iconTpl, arg_5_0._iconContainer)
-	local var_5_1 = var_5_0:Find("count_bg/count_label")
-	local var_5_2 = var_5_0:Find("icon")
-	local var_5_3 = {
-		tf = var_5_0,
-		count = var_5_1,
-		attr = arg_5_1
+--- 添加一个属性图标
+function CardPuzzleFleetIconList.AddAttrIcon(self, attrName)
+	local iconTF = cloneTplTo(self._iconTpl, self._iconContainer)
+	local countLabel = iconTF:Find("count_bg/count_label")
+	local iconImage = iconTF:Find("icon")
+	local iconData = {
+		tf = iconTF,
+		count = countLabel,
+		attr = attrName
 	}
 
-	arg_5_0._attrIconList[arg_5_1] = var_5_3
+	self._attrIconList[attrName] = iconData
 
-	arg_5_0:updateAttrIcon(var_5_3)
+	self:updateAttrIcon(iconData)
 end
 
-function var_0_4.onUpdateFleetAttr(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_1.Data.attrName
+--- 舰队属性更新事件回调
+function CardPuzzleFleetIconList.onUpdateFleetAttr(self, event)
+	local attrName = event.Data.attrName
 
-	if var_0_2.FleetIconRegisterAttr[var_6_0] then
-		local var_6_1 = arg_6_0._attrIconList[var_6_0]
+	if BattleCardPuzzleConfig.FleetIconRegisterAttr[attrName] then
+		local iconData = self._attrIconList[attrName]
 
-		if var_6_1 then
-			arg_6_0:updateAttrIcon(var_6_1)
+		if iconData then
+			self:updateAttrIcon(iconData)
 		else
-			arg_6_0:AddAttrIcon(var_6_0)
+			self:AddAttrIcon(attrName)
 		end
 	end
 end
 
-function var_0_4.updateAttrIcon(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_1.count
-	local var_7_1 = arg_7_1.attr
-	local var_7_2 = arg_7_0._attrManager:GetCurrent(var_7_1)
+--- 更新属性图标的数值
+function CardPuzzleFleetIconList.updateAttrIcon(self, iconData)
+	local countTF = iconData.count
+	local attrName = iconData.attr
+	local currentValue = self._attrManager:GetCurrent(attrName)
 
-	setText(var_7_0, var_7_2)
+	setText(countTF, currentValue)
 end
 
-function var_0_4.updateBuffIcon(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_1.buffID
-	local var_8_1 = arg_8_0._buffManager:GetCardPuzzleBuff(var_8_0)
-	local var_8_2 = arg_8_1.count
-	local var_8_3 = var_8_1:GetStack()
+--- 更新增益图标的层数和持续时间
+function CardPuzzleFleetIconList.updateBuffIcon(self, iconData)
+	local buffID = iconData.buffID
+	local buff = self._buffManager:GetCardPuzzleBuff(buffID)
+	local countTF = iconData.count
+	local stackCount = buff:GetStack()
 
-	setText(var_8_2, var_8_3)
+	setText(countTF, stackCount)
 
-	arg_8_1.durationIMG.fillAmount = var_8_1:GetDurationRate()
+	iconData.durationIMG.fillAmount = buff:GetDurationRate()
 end
 
-function var_0_4.Update(arg_9_0)
-	local var_9_0 = arg_9_0._buffManager:GetCardPuzzleBuffList()
+--- 每帧更新：检测新增的Buff并动态创建图标
+function CardPuzzleFleetIconList.Update(self)
+	local buffList = self._buffManager:GetCardPuzzleBuffList()
 
-	for iter_9_0, iter_9_1 in pairs(var_9_0) do
-		if var_0_2.FleetIconRegisterBuff[iter_9_0] then
-			local var_9_1 = arg_9_0._buffIconList[iter_9_0]
+	for buffID, buff in pairs(buffList) do
+		if BattleCardPuzzleConfig.FleetIconRegisterBuff[buffID] then
+			local iconData = self._buffIconList[buffID]
 
-			if var_9_1 == nil then
-				arg_9_0:AddBuffIcon(iter_9_0)
+			if iconData == nil then
+				self:AddBuffIcon(buffID)
 			else
-				arg_9_0:updateBuffIcon(var_9_1)
+				self:updateBuffIcon(iconData)
 			end
 		end
 	end
 end
 
-function var_0_4.Dispose(arg_10_0)
-	arg_10_0._buffIconList = nil
-	arg_10_0._attrIconList = nil
-	arg_10_0._tf = nil
-	arg_10_0._iconTpl = nil
-	arg_10_0._iconContainer = nil
+function CardPuzzleFleetIconList.Dispose(self)
+	self._buffIconList = nil
+	self._attrIconList = nil
+	self._tf = nil
+	self._iconTpl = nil
+	self._iconContainer = nil
 end

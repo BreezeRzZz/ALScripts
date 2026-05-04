@@ -1,72 +1,80 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleWeaponButtonSkinElite_20250520", var_0_0.Battle.BattleWeaponButtonSkinNormal_20250227)
+local ys = ys
+local BattleWeaponButtonSkinElite_20250520 = class("BattleWeaponButtonSkinElite_20250520", ys.Battle.BattleWeaponButtonSkinNormal_20250227)
 
-var_0_0.Battle.BattleWeaponButtonSkinElite_20250520 = var_0_1
-var_0_1.__name = "BattleWeaponButtonSkinElite_20250520"
+ys.Battle.BattleWeaponButtonSkinElite_20250520 = BattleWeaponButtonSkinElite_20250520
+BattleWeaponButtonSkinElite_20250520.__name = "BattleWeaponButtonSkinElite_20250520"
 
-function var_0_1.OnTotalChange(arg_1_0, arg_1_1)
-	if arg_1_0._progressInfo:GetTotal() <= 0 then
-		arg_1_0._block:SetActive(true)
+--- 2025年5月20日精英武器按钮皮肤
+--- 继承自 BattleWeaponButtonSkinNormal_20250227，用于精英活动期间的武器按钮样式
 
-		arg_1_0._progressBar.fillAmount = 0
-		arg_1_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
-		arg_1_0._text:GetComponent(typeof(Text)).text = "0/0"
+function BattleWeaponButtonSkinElite_20250520.OnTotalChange(self, event)
+	if self._progressInfo:GetTotal() <= 0 then
+		self._block:SetActive(true)
 
-		arg_1_0:SetControllerActive(false)
-		SetActive(arg_1_0._glowEff, false)
-		arg_1_0:OnUnfill()
-		arg_1_0:OnUnSelect()
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+		self._text:GetComponent(typeof(Text)).text = "0/0"
+
+		self:SetControllerActive(false)
+		SetActive(self._glowEff, false)
+		self:OnUnfill()
+		self:OnUnSelect()
 	else
-		if arg_1_0._progressInfo:GetTotal() == arg_1_0._progressInfo:GetCount() then
-			SetActive(arg_1_0._glowEff, true)
+		-- 满弹时显示发光特效
+		if self._progressInfo:GetTotal() == self._progressInfo:GetCount() then
+			SetActive(self._glowEff, true)
 		end
 
-		arg_1_0:OnCountChange()
-		arg_1_0:SetControllerActive(true)
+		self:OnCountChange()
+		self:SetControllerActive(true)
 
-		if arg_1_1 then
-			local var_1_0 = arg_1_1.Data.index
+		if event then
+			local index = event.Data.index
 
-			if var_1_0 and var_1_0 == 1 then
-				arg_1_0:OnUnSelect()
+			if index and index == 1 then
+				self:OnUnSelect()
 			end
 		end
 	end
 end
 
-function var_0_1.OnCountChange(arg_2_0)
-	var_0_1.super.OnCountChange(arg_2_0)
-	SetActive(arg_2_0._gizmos1, arg_2_0._progressInfo:GetCount() > 0)
+function BattleWeaponButtonSkinElite_20250520.OnCountChange(self)
+	BattleWeaponButtonSkinElite_20250520.super.OnCountChange(self)
+	-- 有弹药时显示 gizmos1 特效
+	SetActive(self._gizmos1, self._progressInfo:GetCount() > 0)
 end
 
-function var_0_1.OnOverLoadChange(arg_3_0, arg_3_1)
-	if arg_3_0._progressInfo:IsOverLoad() then
-		arg_3_0._block:SetActive(true)
-		arg_3_0:OnUnfill()
+--- 过载状态变化处理
+function BattleWeaponButtonSkinElite_20250520.OnOverLoadChange(self, event)
+	if self._progressInfo:IsOverLoad() then
+		self._block:SetActive(true)
+		self:OnUnfill()
 	else
-		arg_3_0._block:SetActive(false)
-		arg_3_0:OnFilled()
+		self._block:SetActive(false)
+		self:OnFilled()
 	end
 
-	if arg_3_0._progressInfo:GetCount() >= 1 and arg_3_1 and arg_3_1.Data then
-		local var_3_0 = arg_3_1.Data.preCast
+	-- 有弹药且非过载时，根据预装填/充能状态播放动画
+	if self._progressInfo:GetCount() >= 1 and event and event.Data then
+		local preCast = event.Data.preCast
 
-		if var_3_0 then
-			if var_3_0 == 0 then
-				quickCheckAndPlayAnimator(arg_3_0._skin, "weapon_button_progress_filled")
-			elseif var_3_0 > 0 then
-				quickCheckAndPlayAnimator(arg_3_0._skin, "weapon_button_progress_charge")
+		if preCast then
+			if preCast == 0 then
+				quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
+			elseif preCast > 0 then
+				quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_charge")
 			end
 		end
 	end
 
-	if arg_3_1 and arg_3_1.Data and arg_3_1.Data.postCast then
-		quickCheckAndPlayAnimator(arg_3_0._skin, "weapon_button_progress_use")
+	-- 后装填时播放使用动画
+	if event and event.Data and event.Data.postCast then
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_use")
 	end
 
-	if arg_3_0._progressInfo:GetTotal() > 0 then
-		arg_3_0:updateProgressBar()
+	if self._progressInfo:GetTotal() > 0 then
+		self:updateProgressBar()
 	end
 end

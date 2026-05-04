@@ -11,40 +11,41 @@ ys.Battle.BattleShrapnelBulletFactory.__name = "BattleShrapnelBulletFactory"
 
 local BattleShrapnelBulletFactory = ys.Battle.BattleShrapnelBulletFactory
 
-BattleShrapnelBulletFactory.INHERIT_NONE = 0
-BattleShrapnelBulletFactory.INHERIT_ANGLE = 1
-BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE = 2
-BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE = 1
-BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT = 2
-BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT = 1
-BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT = 2
+-- 角度继承模式
+BattleShrapnelBulletFactory.INHERIT_NONE = 0               -- 不继承角度
+BattleShrapnelBulletFactory.INHERIT_ANGLE = 1               -- 继承母弹发射角度
+BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE = 2     -- 继承母弹当前运动方向
+-- 速度继承模式
+BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE = 1   -- 重设速度为模板速度
+BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT = 2    -- 继承母弹当前速度大小
+-- 易碎模式（fragile）
+BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT = 1    -- 造成伤害但不分裂
+BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT = 2 -- 不造成伤害也不分裂（直接消失）
 
---- @class BattleShrapnelBulletFactory
---- @return nil
 --- 构造函数
 function BattleShrapnelBulletFactory.Ctor(self)
 	BattleShrapnelBulletFactory.super.Ctor(self)
 end
 
---- @class BattleShrapnelBulletFactory
+--- 创建Shrapnel类型BulletUnit View
 --- @return BattleShrapnelBullet
---- 生成Shrapnel子弹
 function BattleShrapnelBulletFactory.MakeBullet(self)
 	return ys.Battle.BattleShrapnelBullet.New()
 end
 
---- @class BattleShrapnelBulletFactory
+--- 创建Shrapnel子弹视图
+--- 与父类CreateBullet类似，但额外处理：
+--- 1. 非rangeAA类型：创建时立即触发bulletSplit（初始分裂）
+--- 2. rangeAA类型：延期到命中时触发areaSplit
 --- @param tf Transform
 --- @param bullet BattleShrapnelBulletUnit
 --- @param position Vector3
 --- @param fxID string
 --- @param direction number
 --- @return BattleShrapnelBullet
---- 创建Shaprnel子弹视图(视觉效果)
 function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, position, fxID, direction)
 	bullet:SetOutRangeCallback(self.OutRangeFunc)
 
-	--- @type BattleShrapnelBullet
 	local bulletView = self:MakeBullet()
 
 	bulletView:SetFactory(self)
@@ -54,7 +55,8 @@ function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, position, fx
 	if fxID and fxID ~= "" then
 		self:PlayFireFX(tf, bullet, position, fxID, direction, nil)
 	end
-	-- 不是rangeAA的情况
+
+	-- 非rangeAA类型：创建时立即进行初始分裂
 	if not bullet:GetTemplate().extra_param.rangeAA then
 		BattleShrapnelBulletFactory.bulletSplit(bulletView)
 	end
@@ -62,66 +64,74 @@ function BattleShrapnelBulletFactory.CreateBullet(self, tf, bullet, position, fx
 	return bulletView
 end
 
+--- Shrapnel命中回调
+--- 复杂的命中状态机，根据子弹当前状态和extra_param配置决定行为：
+--- - fragile模式：命中后不分裂（造成伤害或直接消失）
+--- - STATE_SPLIT / STATE_SPIN：正在分裂/旋转中，跳过伤害
+--- - STATE_FINAL_SPLIT：最终阶段，跳过
+--- - 有穿透次数：走普通炮弹命中逻辑
+--- - 其余情况：命中特效 + 分裂
+---
+--- @param uid number 命中单位UID
+--- @param unitType number 单位类型
 function BattleShrapnelBulletFactory.onBulletHitFunc(self, uid, unitType)
-	--- @type BattleDataProxy
-	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
-	--- @type BattleShrapnelBulletUnit
+	local dataProxy = BattleShrapnelBulletFactory.GetDataProxy()
 	local bullet = self:GetBulletData()
-	--- @type string
-	--- 参考BattleShrapnelBulletUnit.lua中的STATE定义
 	local currentState = bullet:GetCurrentState()
 	local bulletTemplate = bullet:GetTemplate()
 	local shrapnel = bulletTemplate.extra_param.shrapnel
 	local fragile = bulletTemplate.extra_param.fragile
 	local hitSplitOnly = bulletTemplate.extra_param.hitSplitOnly
 
+	-- hitSplitOnly模式：未命中任何单位时直接移除子弹
 	if not uid and hitSplitOnly then
-		battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+		dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 
 		return
 	end
-	-- fragile应该是决定命中时的表现
+
+	-- fragile模式：命中时根据fragile值决定是否分裂
 	if fragile and uid then
 		if fragile == BattleShrapnelBulletFactory.FRAGILE_DAMAGE_NOT_SPLIT then
-			-- 普通子弹的命中处理，造成伤害，不分裂
+			-- 仅造成伤害（走普通炮弹逻辑），不分裂
 			ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(self, uid, unitType)
 		elseif fragile == BattleShrapnelBulletFactory.FRAGILE_NOT_DAMAGE_NOT_SPLIT then
-			-- 命中直接消失，没有伤害，也不分裂
-			battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+			-- 直接消失，无伤害也不分裂
+			dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 		end
 
 		return
 	end
-	-- 检查BattleShrapnelBulletUnit的状态
-	-- Spin/Split状态下的子弹，没有伤害判定
+
+	-- 根据子弹状态决定是否处理伤害
+	-- SPLIT/SPIN状态：正在进行分裂/旋转动画，不结算伤害
 	if currentState == bullet.STATE_SPLIT or currentState == bullet.STATE_SPIN then
-		-- block empty
-	-- final_split同样没有伤害判定，且直接返回
+		-- 空块：延迟到动画完成后再处理
+	-- FINAL_SPLIT状态：已完成最终分裂，直接返回
 	elseif currentState == bullet.STATE_FINAL_SPLIT then
 		return
-	-- 剩下的是normal状态，还存在穿透次数的情况，进行普通命中处理
-	--
+	-- 普通状态且有穿透次数：走普通炮弹命中逻辑
 	elseif bullet:GetPierceCount() > 0 then
 		ys.Battle.BattleCannonBulletFactory.onBulletHitFunc(self, uid, unitType)
 
 		return
 	end
 
+	-- 播放命中特效（在命中单位上添加FX，敌方单位翻转朝向）
 	if uid ~= nil and unitType ~= nil then
-		--- @type BattleCharacter
 		local character
-		-- 如果命中的是飞机或角色
+
 		if table.contains(AircraftUnitType, unitType) then
 			character = BattleShrapnelBulletFactory.GetSceneMediator():GetAircraft(uid)
 		elseif table.contains(CharacterUnitType, unitType) then
 			character = BattleShrapnelBulletFactory.GetSceneMediator():GetCharacter(uid)
 		end
-		--- unit是指命中的单位
-		--- @type BattleUnit
+
 		local unit = character:GetUnitData()
 		local fx = character:AddFX(self:GetFXID())
-		-- 命中的是敌人则调整特效朝向
-		if unit:GetIFF() == battleDataProxy:GetFoeCode() then
+
+		-- 敌方单位：翻转特效Y轴
+		if unit:GetIFF() == dataProxy:GetFoeCode() then
 			local tf = fx.transform
 			local localRotation = tf.localRotation
 
@@ -130,65 +140,81 @@ function BattleShrapnelBulletFactory.onBulletHitFunc(self, uid, unitType)
 	end
 
 	ys.Battle.PlayBattleSFX(bullet:GetHitSFX())
-	-- 如果rangeAA为true，则进行范围分裂
-	-- 否则进行普通子弹分裂
-	-- 一般来讲，只有防空弹会进行范围分裂
+
+	-- 根据rangeAA决定分裂方式
 	if bulletTemplate.extra_param.rangeAA then
+		-- 范围分裂：由WeaponUnit执行DoAreaSplit
 		BattleShrapnelBulletFactory.areaSplit(self)
 	else
+		-- 普通子弹分裂：从shrapnel配置生成子子弹
 		BattleShrapnelBulletFactory.bulletSplit(self, true)
 	end
 end
 
+--- 范围分裂（防空弹）
+--- 委托给WeaponUnit.DoAreaSplit处理（仅BattleFleetRangeAntiAirUnit有此方法）
+--- @param self BattleShrapnelBullet View层子弹
 function BattleShrapnelBulletFactory.areaSplit(self)
-	--- @type BattleDataProxy
-	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
-	--- @type BattleShrapnelBulletUnit
+	local dataProxy = BattleShrapnelBulletFactory.GetDataProxy()
 	local bullet = self:GetBulletData()
-	-- 对应的WeaponUnit执行DoAreaSplit方法
-	-- 看了一下，只有BattleFleetRangeAntiAirUnit才有这个方法
+
 	bullet:GetWeapon():DoAreaSplit(bullet)
-	battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+	dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 end
 
+--- 子弹分裂：从母弹的shrapnel配置生成子子弹
+--- 这是shrapnel子弹的核心机制 —— 在母弹碰撞点创建多个子子弹发射器
+--- 每个shrapnel项可配置：
+--- - bullet_ID：子子弹模板ID
+--- - barrage_ID：弹幕模板ID
+--- - emitterType：发射器类型（默认SHOTGUN）
+--- - inheritAngle：角度继承模式
+--- - inheritSpeed：速度继承模式
+--- - reaim：是否重新瞄准目标
+--- - rotateOffset：是否根据母弹角度旋转偏移
+--- - initialSplit：是否为初始分裂（false则hitSplit时触发）
+--- - damage：覆盖标伤值
+---
+--- @param self BattleShrapnelBullet View层子弹
+--- @param hitSplit boolean 是否由命中触发（true）还是初始分裂（nil/false）
 function BattleShrapnelBulletFactory.bulletSplit(self, hitSplit)
-	--- @type BattleShrapnelBulletUnit
 	local bullet = self:GetBulletData()
-	--- @type BattleDataProxy
-	local battleDataProxy = BattleShrapnelBulletFactory.GetDataProxy()
+	local dataProxy = BattleShrapnelBulletFactory.GetDataProxy()
 	local bulletTemplate = bullet:GetTemplate()
 	local shrapnel = bulletTemplate.extra_param.shrapnel
-	--- @type BattleUnit
 	local srcHost = bullet:GetSrcHost()
-	--- @type BattleWeaponUnit
 	local weapon = bullet:GetWeapon()
 
+	-- 播放分裂特效FXID
 	if bulletTemplate.extra_param.FXID ~= nil then
 		local fx, fxPosition = BattleShrapnelBulletFactory.GetFXPool():GetFX(bulletTemplate.extra_param.FXID)
-		-- 在对应的位置播放特效
+
 		pg.EffectMgr.GetInstance():PlayBattleEffect(fx, fxPosition:Add(self:GetPosition()), true)
 	end
 
+	-- 母弹的X轴方向角：正X速度=0度，负X速度=180度
 	local axisAngle = bullet:GetSpeed().x > 0 and 0 or 180
 
-	for _, shrapnelItem in ipairs(shrapnel) do
+	for index, shrapnelItem in ipairs(shrapnel) do
+		-- initialSplit匹配：初始分裂只处理initialSplit=true的项，命中分裂只处理false的项
 		if hitSplit ~= shrapnelItem.initialSplit then
 			local barrageID = shrapnelItem.barrage_ID
 			local bulletID = shrapnelItem.bullet_ID
-			-- 此处默认用SHOTGUN emitter
 			local emitterType = shrapnelItem.emitterType or ys.Battle.BattleWeaponUnit.EMITTER_SHOTGUN
 			local inheritAngle = shrapnelItem.inheritAngle
 			local inheritSpeed = shrapnelItem.inheritSpeed
 			local reaim = shrapnelItem.reaim
 			local rotateOffset = shrapnelItem.rotateOffset
 
+			-- 单个子子弹的生成函数（由Emitter调用）
 			local function spawnFunc(offsetX, offsetZ, barrageAngle, isOffsetPriority)
-				-- 创建的是孩子子弹
-				local _bullet = battleDataProxy:CreateBulletUnit(bulletID, srcHost, weapon, Vector3.zero)
-				-- 重载标伤
-				_bullet:OverrideCorrectedDMG(shrapnelItem.damage)
-				_bullet:SetOffsetPriority(isOffsetPriority)
+				local childBullet = dataProxy:CreateBulletUnit(bulletID, srcHost, weapon, Vector3.zero)
 
+				-- 覆盖标伤
+				childBullet:OverrideCorrectedDMG(shrapnelItem.damage)
+				childBullet:SetOffsetPriority(isOffsetPriority)
+
+				-- rotateOffset：根据母弹Y轴角度旋转偏移方向
 				if rotateOffset then
 					local distance = math.sqrt(offsetX * offsetX + offsetZ * offsetZ)
 					local angle = math.atan2(offsetZ, offsetX)
@@ -200,67 +226,66 @@ function BattleShrapnelBulletFactory.bulletSplit(self, hitSplit)
 					offsetZ = distance * math.sin(resAngle) * (2 - cosAngle)
 				end
 
-				_bullet:SetShiftInfo(offsetX, offsetZ)
+				childBullet:SetShiftInfo(offsetX, offsetZ)
 
 				local baseAngle = axisAngle
 
-				-- inheritAngle的类型
-				-- nil/0: 不继承
-				-- 1: 继承母弹发射角度
-				-- 2: 继承母弹当前运动方向
+				-- 角度继承
 				if inheritAngle == BattleShrapnelBulletFactory.INHERIT_ANGLE then
 					baseAngle = bullet:GetYAngle()
 				elseif inheritAngle == BattleShrapnelBulletFactory.INHERIT_SPEED_NORMALIZE then
 					baseAngle = bullet:GetCurrentYAngle()
 				end
 
+				-- 重新瞄准：选择目标并设置旋转朝向
 				if reaim then
 					local target
 					local host = bullet:GetWeapon():GetHost()
 
 					if type(reaim) == "table" and host then
+						-- 表格式：链式调用多个TargetChoise筛选函数
 						local reaimParam = shrapnelItem.reaimParam
 						local candidateList
 
-						for _, targetType in ipairs(reaim) do
+						for targetIndex, targetType in ipairs(reaim) do
 							candidateList = ys.Battle.BattleTargetChoise[targetType](host, reaimParam, candidateList)
 						end
-						-- 选满足tag的第一个目标
+
 						target = candidateList[1]
 					else
-						-- 选最近的目标
+						-- 简单模式：选最近的目标
 						target = ys.Battle.BattleTargetChoise.TargetHarmNearest(bullet)[1]
 					end
 
 					if target == nil then
-						_bullet:SetRotateInfo(nil, baseAngle, barrageAngle)
+						childBullet:SetRotateInfo(nil, baseAngle, barrageAngle)
 					else
-						_bullet:SetRotateInfo(target:GetBeenAimedPosition(), baseAngle, barrageAngle)
+						childBullet:SetRotateInfo(target:GetBeenAimedPosition(), baseAngle, barrageAngle)
 					end
 				else
-					_bullet:SetRotateInfo(nil, baseAngle, barrageAngle)
+					childBullet:SetRotateInfo(nil, baseAngle, barrageAngle)
 				end
 
-				-- inheritSpeed的类型
-				-- 1: 重设速度为模板速度
-				-- 2: 继承母弹当前速度大小
+				-- 速度继承
 				if inheritSpeed == BattleShrapnelBulletFactory.INHERIT_VELOCITY_TEMPLATE then
-					_bullet:ResetVelocity(bullet:GetVelocity())
+					childBullet:ResetVelocity(bullet:GetVelocity())
 				elseif inheritSpeed == BattleShrapnelBulletFactory.INHERIT_VELOCITY_CURRENT then
-					_bullet:InheritSpeed(bullet:GetSpeed())
+					childBullet:InheritSpeed(bullet:GetSpeed())
 				end
 
-				BattleShrapnelBulletFactory.GetFactoryList()[_bullet:GetTemplate().type]:CreateBullet(self:GetTf(), _bullet, self:GetPosition())
+				-- 通过工厂映射创建子子弹的视觉表现
+				BattleShrapnelBulletFactory.GetFactoryList()[childBullet:GetTemplate().type]:CreateBullet(self:GetTf(), childBullet, self:GetPosition())
 			end
 
 			local emitter
 
+			-- Emitter停止回调：所有子子弹发射完毕后销毁母弹
 			local function stopFunc()
 				emitter:Destroy()
 				bullet:SplitFinishCount()
-				-- 完成分裂后，母弹销毁
+
 				if bullet:IsAllSplitFinish() then
-					battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+					dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 				end
 			end
 
@@ -272,29 +297,27 @@ function BattleShrapnelBulletFactory.bulletSplit(self, hitSplit)
 		end
 	end
 
+	-- 命中触发的分裂完成后，母弹切换到FINAL_SPLIT状态
 	if hitSplit then
-		-- 直接切换到final_split状态
 		bullet:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_FINAL_SPLIT)
 	end
 end
 
+--- Shrapnel未命中回调（空实现）
 function BattleShrapnelBulletFactory.onBulletMissFunc(self)
 	return
 end
 
---- @class BattleShrapnelBulletFactory
---- @param bulletView BattleShrapnelBullet
+--- 创建Shrapnel的视觉模型
+--- @param bulletView BattleShrapnelBullet View层子弹
 --- @param position Vector3
 --- @param fxID string
 --- @param direction number
---- @return nil
---- 创建子弹模型(视觉效果)
 function BattleShrapnelBulletFactory.MakeModel(self, bulletView, position, fxID, direction)
-	--- @type BattleShrapnelBulletUnit
 	local bullet = bulletView:GetBulletData()
 
-	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(arg_11_0)
-		bulletView:AddModel(arg_11_0)
+	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
 		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
@@ -304,11 +327,9 @@ function BattleShrapnelBulletFactory.MakeModel(self, bulletView, position, fxID,
 	self:GetSceneMediator():AddBullet(bulletView)
 end
 
---- @class BattleShrapnelBulletFactory
---- @return nil
---- 子弹出界回调
---- - 如果是在出界时分裂，则切换到spin状态
---- - 否则切换到split状态
+--- Shrapnel超出范围回调
+--- - 如果是由边界触发出界（IsOutRange）：切换到SPIN状态（旋转分裂）
+--- - 否则（主动分裂触发）：切换到SPLIT状态（直线分裂）
 function BattleShrapnelBulletFactory.OutRangeFunc(self)
 	if self:IsOutRange() then
 		self:ChangeShrapnelState(ys.Battle.BattleShrapnelBulletUnit.STATE_SPIN)

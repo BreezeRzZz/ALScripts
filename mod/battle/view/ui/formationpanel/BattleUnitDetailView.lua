@@ -1,22 +1,26 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleAttr
-local var_0_2 = var_0_0.Battle.BattleDataFunction
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleUnitEvent
-local var_0_5 = var_0_0.Battle.BattleConst.EquipmentType
-local var_0_6 = class("BattleUnitDetailView")
+local ys = ys
+local BattleAttr = ys.Battle.BattleAttr
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local EquipmentType = ys.Battle.BattleConst.EquipmentType
+local BattleUnitDetailView = class("BattleUnitDetailView")
 
-var_0_0.Battle.BattleUnitDetailView = var_0_6
-var_0_6.__name = "BattleUnitDetailView"
-var_0_6.DefaultActive = {
+ys.Battle.BattleUnitDetailView = BattleUnitDetailView
+BattleUnitDetailView.__name = "BattleUnitDetailView"
+-- 默认激活的面板
+BattleUnitDetailView.DefaultActive = {
 	"attr_panels",
 	"attr_panels/buff"
 }
-var_0_6.EnemyMarkList = {}
-var_0_6.HIGH_LIGHT_BUFF = {}
-var_0_6.PrimalAttr = {
+-- 敌方标记列表
+BattleUnitDetailView.EnemyMarkList = {}
+-- 高亮Buff列表
+BattleUnitDetailView.HIGH_LIGHT_BUFF = {}
+-- 基础属性列表（主要面板显示）
+BattleUnitDetailView.PrimalAttr = {
 	"cannonPower",
 	"torpedoPower",
 	"airPower",
@@ -27,7 +31,8 @@ var_0_6.PrimalAttr = {
 	"attackRating",
 	"velocity"
 }
-var_0_6.BaseEnhancement = {
+-- 基础强化属性映射：属性名 -> UI路径
+BattleUnitDetailView.BaseEnhancement = {
 	damageRatioByCannon = "damage/damageRatioByCannon",
 	injureRatioByBulletTorpedo = "injure/injureRatioByBulletTorpedo",
 	damageRatioByBulletTorpedo = "damage/damageRatioByBulletTorpedo",
@@ -37,500 +42,549 @@ var_0_6.BaseEnhancement = {
 	injureRatioByAir = "injure/injureRatioByAir",
 	damageRatioByAir = "damage/damageRatioByAir"
 }
-var_0_6.SecondaryAttrListener = {}
+-- 需要监听的二级属性列表
+BattleUnitDetailView.SecondaryAttrListener = {}
 
-function var_0_6.Ctor(arg_1_0)
-	pg.DelegateInfo.New(arg_1_0)
+--- 战斗单位详情面板视图
+--- 显示单位的详细属性（基础属性、强化、Buff、武器、技能等），用于调试/开发
+
+function BattleUnitDetailView.Ctor(self)
+	pg.DelegateInfo.New(self)
 end
 
-function var_0_6.SetUnit(arg_2_0, arg_2_1)
-	var_0_0.EventListener.AttachEventListener(arg_2_0)
+--- 设置要查看的单位
+function BattleUnitDetailView.SetUnit(self, unit)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_2_0._unit = arg_2_1
+	self._unit = unit
 
-	if arg_2_0._unit:GetUnitType() == var_0_3.UnitType.PLAYER_UNIT then
-		local var_2_0 = var_0_0.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(arg_2_0._unit:GetTemplate().painting)
+	-- 玩家单位：加载立绘Q版头像和星级
+	if self._unit:GetUnitType() == BattleConst.UnitType.PLAYER_UNIT then
+		local qIcon = ys.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(self._unit:GetTemplate().painting)
 
-		setImageSprite(arg_2_0._icon, var_2_0)
+		setImageSprite(self._icon, qIcon)
 
-		for iter_2_0 = 1, arg_2_0._unit:GetTemplate().star do
-			local var_2_1 = cloneTplTo(arg_2_0._starTpl, arg_2_0._stars)
+		for starIndex = 1, self._unit:GetTemplate().star do
+			local starClone = cloneTplTo(self._starTpl, self._stars)
 
-			setActive(var_2_1, true)
+			setActive(starClone, true)
 		end
 	end
 
-	setText(arg_2_0._templateID, arg_2_0._unit:GetTemplate().id)
-	setText(arg_2_0._name, arg_2_0._unit:GetTemplate().name)
-	setText(arg_2_0._lv, arg_2_0._unit:GetAttrByName("level"))
+	setText(self._templateID, self._unit:GetTemplate().id)
+	setText(self._name, self._unit:GetTemplate().name)
+	setText(self._lv, self._unit:GetAttrByName("level"))
 
-	arg_2_0._preAttrList = {}
+	self._preAttrList = {}
 
-	for iter_2_1, iter_2_2 in ipairs(var_0_6.PrimalAttr) do
-		local var_2_2 = var_0_1.GetBase(arg_2_0._unit, iter_2_2)
+	-- 初始化基础属性显示
+	for _, attrName in ipairs(BattleUnitDetailView.PrimalAttr) do
+		local baseValue = BattleAttr.GetBase(self._unit, attrName)
 
-		setText(arg_2_0._attrView:Find(iter_2_2 .. "/base"), var_2_2)
+		setText(self._attrView:Find(attrName .. "/base"), baseValue)
 
-		arg_2_0._preAttrList[iter_2_2] = var_2_2
+		self._preAttrList[attrName] = baseValue
 	end
 
-	arg_2_0._baseEhcList = {}
+	self._baseEhcList = {}
 
-	for iter_2_3, iter_2_4 in pairs(var_0_6.BaseEnhancement) do
-		arg_2_0._baseEhcList[iter_2_3] = 0
+	-- 初始化基础强化缓存
+	for ehcKey, ehcPath in pairs(BattleUnitDetailView.BaseEnhancement) do
+		self._baseEhcList[ehcKey] = 0
 	end
 
-	arg_2_0._secondaryAttrList = {}
-	arg_2_0._buffList = {}
-	arg_2_0._aaList = {}
-	arg_2_0._weaponList = {}
-	arg_2_0._skillList = {}
+	self._secondaryAttrList = {}
+	self._buffList = {}
+	self._aaList = {}
+	self._weaponList = {}
+	self._skillList = {}
 
-	arg_2_0:updateWeaponList()
+	self:updateWeaponList()
 end
 
-function var_0_6.Update(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(var_0_6.PrimalAttr) do
-		arg_3_0:updatePrimalAttr(iter_3_1)
+--- 每帧更新所有属性面板
+function BattleUnitDetailView.Update(self)
+	-- 更新基础属性
+	for _, attrName in ipairs(BattleUnitDetailView.PrimalAttr) do
+		self:updatePrimalAttr(attrName)
 	end
 
-	for iter_3_2, iter_3_3 in pairs(var_0_6.BaseEnhancement) do
-		arg_3_0:updateBaseEnhancement(iter_3_2, iter_3_3)
+	-- 更新基础强化
+	for attrName, path in pairs(BattleUnitDetailView.BaseEnhancement) do
+		self:updateBaseEnhancement(attrName, path)
 	end
 
-	local var_3_0 = arg_3_0._unit:GetAttr()
+	-- 更新二级属性（标签相关）
+	local attrDict = self._unit:GetAttr()
 
-	for iter_3_4, iter_3_5 in pairs(var_3_0) do
-		if string.find(iter_3_4, "DMG_TAG_EHC_") or string.find(iter_3_4, "DMG_FROM_TAG_") or table.contains(var_0_6.SecondaryAttrListener, iter_3_4) then
-			arg_3_0:updateSecondaryAttr(iter_3_4, iter_3_5)
+	for attrName, attrValue in pairs(attrDict) do
+		if string.find(attrName, "DMG_TAG_EHC_") or string.find(attrName, "DMG_FROM_TAG_") or table.contains(BattleUnitDetailView.SecondaryAttrListener, attrName) then
+			self:updateSecondaryAttr(attrName, attrValue)
 		end
 	end
 
-	arg_3_0:updateHP()
-	arg_3_0:updateBuffList()
-	arg_3_0:updateWeaponProgress()
-	arg_3_0:updateSkillList()
+	self:updateHP()
+	self:updateBuffList()
+	self:updateWeaponProgress()
+	self:updateSkillList()
 end
 
-function var_0_6.ConfigSkin(arg_4_0, arg_4_1)
-	arg_4_0._go = arg_4_1
+--- 配置UI皮肤，初始化所有Transform引用
+function BattleUnitDetailView.ConfigSkin(self, go)
+	self._go = go
 
-	local var_4_0 = arg_4_1.transform
+	local tf = go.transform
 
-	arg_4_0._tf = var_4_0
-	arg_4_0._iconView = var_4_0:Find("icon")
-	arg_4_0._icon = arg_4_0._iconView:Find("icon")
-	arg_4_0._stars = arg_4_0._iconView:Find("stars")
-	arg_4_0._starTpl = arg_4_0._stars:Find("star_tpl")
-	arg_4_0._templateView = var_4_0:Find("template")
-	arg_4_0._templateID = arg_4_0._templateView:Find("template/text")
-	arg_4_0._name = arg_4_0._templateView:Find("name/text")
-	arg_4_0._lv = arg_4_0._templateView:Find("level/text")
-	arg_4_0._totalHP = arg_4_0._templateView:Find("totalHP/text")
-	arg_4_0._currentHP = arg_4_0._templateView:Find("currentHP/text")
-	arg_4_0._shield = arg_4_0._templateView:Find("shield/text")
-	arg_4_0._attrView = var_4_0:Find("attr_panels/primal_attr")
-	arg_4_0._baseEnhanceView = var_4_0:Find("attr_panels/basic_ehc")
-	arg_4_0._secondaryAttrView = var_4_0:Find("attr_panels/tag_ehc")
-	arg_4_0._secondaryAttrContainer = arg_4_0._secondaryAttrView:Find("tag_container")
-	arg_4_0._secondaryAttrTpl = arg_4_0._secondaryAttrView:Find("tag_attr_tpl")
-	arg_4_0._buffView = var_4_0:Find("attr_panels/buff")
-	arg_4_0._buffContainer = arg_4_0._buffView:Find("buff_container")
-	arg_4_0._buffTpl = arg_4_0._buffView:Find("buff_tpl")
-	arg_4_0._weaponView = var_4_0:Find("panel_container/weapon_panels")
-	arg_4_0._weaponContainer = arg_4_0._weaponView:Find("weapon_container")
-	arg_4_0._weaponTpl = arg_4_0._weaponView:Find("weapon_tpl")
-	arg_4_0._skillView = var_4_0:Find("panel_container/skill_panel")
-	arg_4_0._skillContainer = arg_4_0._skillView:Find("skill_container")
-	arg_4_0._skillTpl = arg_4_0._skillView:Find("skill_tpl")
+	self._tf = tf
+	self._iconView = tf:Find("icon")
+	self._icon = self._iconView:Find("icon")
+	self._stars = self._iconView:Find("stars")
+	self._starTpl = self._stars:Find("star_tpl")
+	self._templateView = tf:Find("template")
+	self._templateID = self._templateView:Find("template/text")
+	self._name = self._templateView:Find("name/text")
+	self._lv = self._templateView:Find("level/text")
+	self._totalHP = self._templateView:Find("totalHP/text")
+	self._currentHP = self._templateView:Find("currentHP/text")
+	self._shield = self._templateView:Find("shield/text")
+	self._attrView = tf:Find("attr_panels/primal_attr")
+	self._baseEnhanceView = tf:Find("attr_panels/basic_ehc")
+	self._secondaryAttrView = tf:Find("attr_panels/tag_ehc")
+	self._secondaryAttrContainer = self._secondaryAttrView:Find("tag_container")
+	self._secondaryAttrTpl = self._secondaryAttrView:Find("tag_attr_tpl")
+	self._buffView = tf:Find("attr_panels/buff")
+	self._buffContainer = self._buffView:Find("buff_container")
+	self._buffTpl = self._buffView:Find("buff_tpl")
+	self._weaponView = tf:Find("panel_container/weapon_panels")
+	self._weaponContainer = self._weaponView:Find("weapon_container")
+	self._weaponTpl = self._weaponView:Find("weapon_tpl")
+	self._skillView = tf:Find("panel_container/skill_panel")
+	self._skillContainer = self._skillView:Find("skill_container")
+	self._skillTpl = self._skillView:Find("skill_tpl")
 
-	SetActive(arg_4_0._go, true)
+	SetActive(self._go, true)
 
-	for iter_4_0, iter_4_1 in ipairs(var_0_6.DefaultActive) do
-		SetActive(var_4_0:Find(iter_4_1), true)
+	-- 激活默认面板
+	for _, panelPath in ipairs(BattleUnitDetailView.DefaultActive) do
+		SetActive(tf:Find(panelPath), true)
 	end
 end
 
-function var_0_6.updateHP(arg_5_0)
-	local var_5_0, var_5_1 = arg_5_0._unit:GetHP()
-	local var_5_2 = arg_5_0._unit:GetHPRate()
+--- 更新HP和护盾显示
+function BattleUnitDetailView.updateHP(self)
+	local currentHP, totalHP = self._unit:GetHP()
+	local hpRate = self._unit:GetHPRate()
 
-	setText(arg_5_0._totalHP, var_5_1)
-	setText(arg_5_0._currentHP, var_5_0)
+	setText(self._totalHP, totalHP)
+	setText(self._currentHP, currentHP)
 
-	local var_5_3 = arg_5_0._unit:GetBuffList()
-	local var_5_4 = 0
+	-- 遍历所有Buff计算总护盾值
+	local buffList = self._unit:GetBuffList()
+	local totalShield = 0
 
-	for iter_5_0, iter_5_1 in pairs(var_5_3) do
-		for iter_5_2, iter_5_3 in ipairs(iter_5_1:GetEffectList()) do
-			if iter_5_3.__name == "BattleBuffShield" or iter_5_3.__name == "BattleBuffRecordShield" then
-				var_5_4 = var_5_4 + math.max(0, iter_5_3:GetEffectAttachData())
+	for buffID, buff in pairs(buffList) do
+		for _, effect in ipairs(buff:GetEffectList()) do
+			if effect.__name == "BattleBuffShield" or effect.__name == "BattleBuffRecordShield" then
+				totalShield = totalShield + math.max(0, effect:GetEffectAttachData())
 			end
 		end
 	end
 
-	setText(arg_5_0._shield, var_5_4)
+	setText(self._shield, totalShield)
 end
 
-function var_0_6.updatePrimalAttr(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_0._unit:GetAttrByName(arg_6_1)
+--- 更新单个基础属性显示（含变化量）
+function BattleUnitDetailView.updatePrimalAttr(self, attrName)
+	local currentValue = self._unit:GetAttrByName(attrName)
 
-	setText(arg_6_0._attrView:Find(arg_6_1 .. "/current"), var_6_0)
+	setText(self._attrView:Find(attrName .. "/current"), currentValue)
 
-	local var_6_1 = var_6_0 - arg_6_0._preAttrList[arg_6_1]
+	-- 与上一帧比较，显示变化量
+	local deltaChange = currentValue - self._preAttrList[attrName]
 
-	if var_6_1 ~= 0 then
-		local var_6_2 = arg_6_0._attrView:Find(arg_6_1 .. "/change")
+	if deltaChange ~= 0 then
+		local changeTF = self._attrView:Find(attrName .. "/change")
 
-		var_0_6.setDeltaText(var_6_2, var_6_1)
+		BattleUnitDetailView.setDeltaText(changeTF, deltaChange)
 
-		arg_6_0._preAttrList[arg_6_1] = var_6_0
+		self._preAttrList[attrName] = currentValue
 	end
 
-	local var_6_3 = var_6_0 - var_0_1.GetBase(arg_6_0._unit, arg_6_1)
+	-- 与基础值比较，显示总增量
+	local deltaFromBase = currentValue - BattleAttr.GetBase(self._unit, attrName)
 
-	if var_6_3 ~= 0 then
-		local var_6_4 = arg_6_0._attrView:Find(arg_6_1 .. "/delta")
+	if deltaFromBase ~= 0 then
+		local deltaTF = self._attrView:Find(attrName .. "/delta")
 
-		var_0_6.setDeltaText(var_6_4, var_6_3)
-	end
-end
-
-function var_0_6.updateBaseEnhancement(arg_7_0, arg_7_1, arg_7_2)
-	local var_7_0 = arg_7_0._baseEnhanceView:Find(arg_7_2)
-	local var_7_1 = arg_7_0._unit:GetAttrByName(arg_7_1)
-	local var_7_2 = var_7_1 - arg_7_0._baseEhcList[arg_7_1]
-
-	setText(var_7_0:Find("current"), var_7_1)
-
-	if var_7_2 ~= 0 then
-		var_0_6.setDeltaText(var_7_0:Find("change"), var_7_2)
+		BattleUnitDetailView.setDeltaText(deltaTF, deltaFromBase)
 	end
 end
 
-function var_0_6.updateSecondaryAttr(arg_8_0, arg_8_1, arg_8_2)
-	if not arg_8_0._secondaryAttrList[arg_8_1] then
-		local var_8_0 = cloneTplTo(arg_8_0._secondaryAttrTpl, arg_8_0._secondaryAttrContainer)
+--- 更新单个基础强化属性显示
+function BattleUnitDetailView.updateBaseEnhancement(self, attrName, uiPath)
+	local ehcTF = self._baseEnhanceView:Find(uiPath)
+	local currentValue = self._unit:GetAttrByName(attrName)
+	local deltaChange = currentValue - self._baseEhcList[attrName]
+
+	setText(ehcTF:Find("current"), currentValue)
+
+	if deltaChange ~= 0 then
+		BattleUnitDetailView.setDeltaText(ehcTF:Find("change"), deltaChange)
+	end
+end
+
+--- 更新二级属性显示（动态创建TF）
+function BattleUnitDetailView.updateSecondaryAttr(self, attrName, attrValue)
+	if not self._secondaryAttrList[attrName] then
+		local attrTF = cloneTplTo(self._secondaryAttrTpl, self._secondaryAttrContainer)
 
 		Canvas.ForceUpdateCanvases()
-		setText(var_8_0:Find("tag_name"), arg_8_1)
-		setActive(var_8_0, true)
+		setText(attrTF:Find("tag_name"), attrName)
+		setActive(attrTF, true)
 
-		local var_8_1 = {
+		local attrData = {
 			value = 0,
-			tf = var_8_0
+			tf = attrTF
 		}
 
-		arg_8_0._secondaryAttrList[arg_8_1] = var_8_1
+		self._secondaryAttrList[attrName] = attrData
 	end
 
-	local var_8_2 = arg_8_0._secondaryAttrList[arg_8_1].tf
-	local var_8_3 = arg_8_0._unit:GetAttrByName(arg_8_1)
-	local var_8_4 = arg_8_0._secondaryAttrList[arg_8_1].value
+	local entryTF = self._secondaryAttrList[attrName].tf
+	local currentValue = self._unit:GetAttrByName(attrName)
+	local prevValue = self._secondaryAttrList[attrName].value
 
-	if var_8_4 ~= arg_8_2 then
-		setText(var_8_2:Find("current"), arg_8_2)
+	if prevValue ~= attrValue then
+		setText(entryTF:Find("current"), attrValue)
 
-		local var_8_5 = var_8_3 - var_8_4
+		local deltaChange = currentValue - prevValue
 
-		var_0_6.setDeltaText(var_8_2:Find("delta"), var_8_5)
+		BattleUnitDetailView.setDeltaText(entryTF:Find("delta"), deltaChange)
 	end
 end
 
-function var_0_6.updateBuffList(arg_9_0)
-	local var_9_0 = arg_9_0._unit:GetBuffList()
+--- 更新Buff列表：移除过期Buff，添加新Buff，更新层数
+function BattleUnitDetailView.updateBuffList(self)
+	local buffList = self._unit:GetBuffList()
 
-	for iter_9_0, iter_9_1 in pairs(arg_9_0._buffList) do
-		if not var_9_0[iter_9_0] then
-			GameObject.Destroy(iter_9_1.gameObject)
+	-- 移除已经不存在的Buff UI
+	for buffID, buffTF in pairs(self._buffList) do
+		if not buffList[buffID] then
+			GameObject.Destroy(buffTF.gameObject)
 
-			arg_9_0._buffList[iter_9_0] = nil
+			self._buffList[buffID] = nil
 		end
 	end
 
-	for iter_9_2, iter_9_3 in pairs(var_9_0) do
-		if not arg_9_0._buffList[iter_9_2] then
-			arg_9_0:addBuff(iter_9_2, iter_9_3)
+	-- 添加新Buff或更新层数
+	for buffID, buff in pairs(buffList) do
+		if not self._buffList[buffID] then
+			self:addBuff(buffID, buff)
 		else
-			local var_9_1 = arg_9_0._buffList[iter_9_2]
+			local buffViewTF = self._buffList[buffID]
 
-			if iter_9_3._stack > 1 then
-				local var_9_2 = var_9_1:Find("buff_stack")
+			if buff._stack > 1 then
+				local stackTF = buffViewTF:Find("buff_stack")
 
-				setActive(var_9_2, true)
-				setText(var_9_2, "x" .. iter_9_3._stack)
+				setActive(stackTF, true)
+				setText(stackTF, "x" .. buff._stack)
 			end
 		end
 	end
 
-	for iter_9_4, iter_9_5 in pairs(var_9_0) do
-		local var_9_3 = iter_9_5:GetEffectList()
+	-- 检测Buff中的技能施放效果，添加到技能列表
+	for _, buff in pairs(buffList) do
+		local effectList = buff:GetEffectList()
 
-		for iter_9_6, iter_9_7 in ipairs(var_9_3) do
-			if iter_9_7.__name == var_0_0.Battle.BattleBuffCastSkill.__name and (not arg_9_0._skillList[iter_9_7._skill_id] or not table.contains(arg_9_0._skillList[iter_9_7._skill_id].effectList, iter_9_7)) then
-				arg_9_0:addSkillCaster(iter_9_7)
+		for _, effect in ipairs(effectList) do
+			if effect.__name == ys.Battle.BattleBuffCastSkill.__name and (not self._skillList[effect._skill_id] or not table.contains(self._skillList[effect._skill_id].effectList, effect)) then
+				self:addSkillCaster(effect)
 			end
 		end
 	end
 end
 
-function var_0_6.updateWeaponList(arg_10_0)
-	local var_10_0 = arg_10_0._unit:GetAirAssistList()
+--- 更新武器列表显示
+function BattleUnitDetailView.updateWeaponList(self)
+	-- 空袭辅助武器
+	local aaList = self._unit:GetAirAssistList()
 
-	if var_10_0 then
-		for iter_10_0, iter_10_1 in ipairs(var_10_0) do
-			local var_10_1 = cloneTplTo(arg_10_0._weaponTpl, arg_10_0._weaponContainer)
+	if aaList then
+		for _, aaWeapon in ipairs(aaList) do
+			local aaWeaponTF = cloneTplTo(self._weaponTpl, self._weaponContainer)
 
 			Canvas.ForceUpdateCanvases()
 
-			local var_10_2 = var_10_1:Find("common/icon")
+			local icon = aaWeaponTF:Find("common/icon")
 
-			GetImageSpriteFromAtlasAsync("skillicon/2130", "", var_10_2)
-			setText(var_10_1:Find("common/index"), "空袭")
-			setText(var_10_1:Find("common/templateID"), iter_10_1:GetStrikeSkillID())
+			GetImageSpriteFromAtlasAsync("skillicon/2130", "", icon)
+			setText(aaWeaponTF:Find("common/index"), "空袭")
+			setText(aaWeaponTF:Find("common/templateID"), aaWeapon:GetStrikeSkillID())
 
-			arg_10_0._aaList[iter_10_1] = var_10_1
+			self._aaList[aaWeapon] = aaWeaponTF
 		end
 	end
 
-	local var_10_3 = arg_10_0._unit:GetAllWeapon()
+	-- 所有常规武器
+	local weaponList = self._unit:GetAllWeapon()
 
-	for iter_10_2, iter_10_3 in ipairs(var_10_3) do
-		local var_10_4 = iter_10_3:GetType()
+	for _, weapon in ipairs(weaponList) do
+		local weaponType = weapon:GetType()
 
-		if var_10_4 ~= var_0_5.STRIKE_AIRCRAFT and var_10_4 ~= var_0_5.FLEET_ANTI_AIR then
-			local var_10_5 = cloneTplTo(arg_10_0._weaponTpl, arg_10_0._weaponContainer)
+		-- 跳过空袭和舰队防空武器
+		if weaponType ~= EquipmentType.STRIKE_AIRCRAFT and weaponType ~= EquipmentType.FLEET_ANTI_AIR then
+			local weaponTF = cloneTplTo(self._weaponTpl, self._weaponContainer)
 
 			Canvas.ForceUpdateCanvases()
-			setText(var_10_5:Find("common/index"), iter_10_3:GetEquipmentIndex())
-			setText(var_10_5:Find("common/templateID"), iter_10_3:GetTemplateData().id)
+			setText(weaponTF:Find("common/index"), weapon:GetEquipmentIndex())
+			setText(weaponTF:Find("common/templateID"), weapon:GetTemplateData().id)
 
-			local var_10_6 = iter_10_3:GetSrcEquipmentID()
-			local var_10_7 = var_10_5:Find("common/icon")
+			local equipmentID = weapon:GetSrcEquipmentID()
+			local iconTF = weaponTF:Find("common/icon")
 
-			if var_10_6 then
-				local var_10_8 = var_0_2.GetWeaponDataFromID(var_10_6).icon
+			if equipmentID then
+				local iconPath = BattleDataFunction.GetWeaponDataFromID(equipmentID).icon
 
-				GetImageSpriteFromAtlasAsync("equips/" .. var_10_8, "", var_10_7)
+				GetImageSpriteFromAtlasAsync("equips/" .. iconPath, "", iconTF)
 			else
-				setActive(var_10_7, false)
+				setActive(iconTF, false)
 			end
 
-			arg_10_0._weaponList[iter_10_3] = {
-				tf = var_10_5,
+			self._weaponList[weapon] = {
+				tf = weaponTF,
 				data = {}
 			}
 
-			onToggle(arg_10_0, var_10_5:Find("common/sector"), function(arg_11_0)
-				arg_10_0._unit:ActiveWeaponSectorView(iter_10_3, arg_11_0)
+			-- 武器射界开关
+			onToggle(self, weaponTF:Find("common/sector"), function(isOn)
+				self._unit:ActiveWeaponSectorView(weapon, isOn)
 			end)
-			arg_10_0:updateBulletAttrBuff(iter_10_3)
+			self:updateBulletAttrBuff(weapon)
 		end
 	end
 
-	local var_10_9 = arg_10_0._unit:GetFleetRangeAAWeapon()
+	-- 舰队远程防空武器
+	local fleetAA = self._unit:GetFleetRangeAAWeapon()
 
-	if var_10_9 then
-		local var_10_10 = cloneTplTo(arg_10_0._weaponTpl, arg_10_0._weaponContainer)
+	if fleetAA then
+		local fleetAATF = cloneTplTo(self._weaponTpl, self._weaponContainer)
 
 		Canvas.ForceUpdateCanvases()
 
-		local var_10_11 = var_10_10:Find("common/icon")
+		local icon = fleetAATF:Find("common/icon")
 
-		GetImageSpriteFromAtlasAsync("skillicon/2130", "", var_10_11)
-		setText(var_10_10:Find("common/index"), "远程防空")
-		setText(var_10_10:Find("common/templateID"), "N/A")
-		onToggle(arg_10_0, var_10_10:Find("common/sector"), function(arg_12_0)
-			arg_10_0._unit:ActiveWeaponSectorView(var_10_9, arg_12_0)
+		GetImageSpriteFromAtlasAsync("skillicon/2130", "", icon)
+		setText(fleetAATF:Find("common/index"), "远程防空")
+		setText(fleetAATF:Find("common/templateID"), "N/A")
+		onToggle(self, fleetAATF:Find("common/sector"), function(isOn)
+			self._unit:ActiveWeaponSectorView(fleetAA, isOn)
 		end)
 	end
 end
 
-function var_0_6.updateWeaponProgress(arg_13_0)
-	for iter_13_0, iter_13_1 in pairs(arg_13_0._weaponList) do
-		local var_13_0 = iter_13_1.tf
-		local var_13_1 = iter_13_0:GetReloadRate()
+--- 更新武器进度显示（装填率、伤害、暴击率、命中率）
+function BattleUnitDetailView.updateWeaponProgress(self)
+	for weapon, weaponData in pairs(self._weaponList) do
+		local weaponTF = weaponData.tf
+		local reloadRate = weapon:GetReloadRate()
 
-		arg_13_0.updateBarProgress(var_13_0, var_13_1)
-		setText(var_13_0:Find("sum/damageSum"), iter_13_0:GetDamageSUM())
-		setText(var_13_0:Find("sum/CTRate"), string.format("%.2f", iter_13_0:GetCTRate() * 100) .. "%")
-		setText(var_13_0:Find("sum/ACCRate"), string.format("%.2f", iter_13_0:GetACCRate() * 100) .. "%")
-		arg_13_0:updateBulletAttrBuff(iter_13_0)
+		BattleUnitDetailView.updateBarProgress(weaponTF, reloadRate)
+		setText(weaponTF:Find("sum/damageSum"), weapon:GetDamageSUM())
+		setText(weaponTF:Find("sum/CTRate"), string.format("%.2f", weapon:GetCTRate() * 100) .. "%")
+		setText(weaponTF:Find("sum/ACCRate"), string.format("%.2f", weapon:GetACCRate() * 100) .. "%")
+		self:updateBulletAttrBuff(weapon)
 	end
 
-	for iter_13_2, iter_13_3 in pairs(arg_13_0._aaList) do
-		local var_13_2 = iter_13_2:GetReloadRate()
+	for aaWeapon, aaTF in pairs(self._aaList) do
+		local reloadRate = aaWeapon:GetReloadRate()
 
-		arg_13_0.updateBarProgress(iter_13_3, var_13_2)
+		BattleUnitDetailView.updateBarProgress(aaTF, reloadRate)
 
-		local var_13_3, var_13_4 = iter_13_2:GetDamageSUM()
+		local currentDamage, totalDamage = aaWeapon:GetDamageSUM()
 
-		setText(iter_13_3:Find("sum/damageSum"), var_13_3 .. " + " .. var_13_4)
+		setText(aaTF:Find("sum/damageSum"), currentDamage .. " + " .. totalDamage)
 	end
 end
 
-function var_0_6.updateBarProgress(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_0:Find("common/reload_progress/blood"):GetComponent(typeof(Image))
+--- 更新进度条填充量（装填率）
+--- @param weaponTF Transform 武器面板的Transform
+--- @param reloadRate number 装填率（0=装填完毕）
+function BattleUnitDetailView.updateBarProgress(weaponTF, reloadRate)
+	local progressBar = weaponTF:Find("common/reload_progress/blood"):GetComponent(typeof(Image))
 
-	var_14_0.fillAmount = 1 - arg_14_1
+	progressBar.fillAmount = 1 - reloadRate
 
-	if arg_14_1 == 0 then
-		var_14_0.color = Color.green
+	if reloadRate == 0 then
+		progressBar.color = Color.green
 	else
-		var_14_0.color = Color.red
+		progressBar.color = Color.red
 	end
 end
 
-function var_0_6.updateBulletAttrBuff(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_0._weaponList[arg_15_1]
-	local var_15_1 = var_15_0.tf
-	local var_15_2 = var_15_0.data
-	local var_15_3 = var_15_1:Find("weapon_attr_tpl")
-	local var_15_4 = var_15_1:Find("weapon_attr_container")
-	local var_15_5 = {}
+--- 更新武器子弹属性Buff显示
+function BattleUnitDetailView.updateBulletAttrBuff(self, weapon)
+	local weaponData = self._weaponList[weapon]
+	local weaponTF = weaponData.tf
+	local dataDict = weaponData.data
+	local attrTpl = weaponTF:Find("weapon_attr_tpl")
+	local attrContainer = weaponTF:Find("weapon_attr_container")
+	local expireFlags = {}
 
-	for iter_15_0, iter_15_1 in pairs(var_15_2) do
-		var_15_5[iter_15_0] = true
+	-- 标记所有现有属性为"过期"
+	for effectKey, _ in pairs(dataDict) do
+		expireFlags[effectKey] = true
 	end
 
-	for iter_15_2, iter_15_3 in pairs(arg_15_0._unit:GetBuffList()) do
-		for iter_15_4, iter_15_5 in ipairs(iter_15_3:GetEffectList()) do
-			if iter_15_5.__name == var_0_0.Battle.BattleBuffAddBulletAttr.__name then
-				local var_15_6 = arg_15_1:GetEquipmentIndex()
+	-- 遍历单位Buff列表，查找子弹属性Buff
+	for _, buff in pairs(self._unit:GetBuffList()) do
+		for _, effect in ipairs(buff:GetEffectList()) do
+			if effect.__name == ys.Battle.BattleBuffAddBulletAttr.__name then
+				local equipIndex = weapon:GetEquipmentIndex()
 
-				if iter_15_5:equipIndexRequire(var_15_6) then
-					local var_15_7 = var_15_2[iter_15_5]
+				if effect:equipIndexRequire(equipIndex) then
+					local attrTF = dataDict[effect]
 
-					if not var_15_7 then
-						var_15_7 = cloneTplTo(var_15_3, var_15_4)
+					if not attrTF then
+						attrTF = cloneTplTo(attrTpl, attrContainer)
 
-						setText(var_15_7:Find("tag_name"), iter_15_5._attr)
-						setText(var_15_7:Find("src_buff"), iter_15_3:GetID())
+						setText(attrTF:Find("tag_name"), effect._attr)
+						setText(attrTF:Find("src_buff"), buff:GetID())
 						Canvas.ForceUpdateCanvases()
 
-						var_15_7:Find("src_buff"):GetComponent(typeof(Text)).color = Color.green
-						var_15_2[iter_15_5] = var_15_7
+						attrTF:Find("src_buff"):GetComponent(typeof(Text)).color = Color.green
+						dataDict[effect] = attrTF
 					end
 
-					setText(var_15_7:Find("current"), iter_15_5._number)
+					setText(attrTF:Find("current"), effect._number)
 
-					var_15_5[iter_15_5] = false
+					expireFlags[effect] = false
 				end
 			end
 		end
 	end
 
-	for iter_15_6, iter_15_7 in pairs(var_15_5) do
-		if iter_15_7 then
-			local var_15_8 = var_15_2[iter_15_6]
+	-- 标记已过期的属性（Buff已失效）
+	for effectKey, isExpired in pairs(expireFlags) do
+		if isExpired then
+			local expiredTF = dataDict[effectKey]
 
-			SetActive(var_15_8:Find("expire"), true)
+			SetActive(expiredTF:Find("expire"), true)
 		end
 	end
 end
 
-function var_0_6.addBuff(arg_16_0, arg_16_1, arg_16_2)
-	local var_16_0 = cloneTplTo(arg_16_0._buffTpl, arg_16_0._buffContainer)
+--- 添加Buff UI条目
+function BattleUnitDetailView.addBuff(self, buffID, buff)
+	local buffTF = cloneTplTo(self._buffTpl, self._buffContainer)
 
 	Canvas.ForceUpdateCanvases()
-	setText(var_16_0:Find("buff_id"), "buff_" .. arg_16_1)
+	setText(buffTF:Find("buff_id"), "buff_" .. buffID)
 
-	if table.contains(var_0_6.HIGH_LIGHT_BUFF, arg_16_1) then
-		local var_16_1 = var_16_0:Find("high_light")
+	-- 高亮Buff特殊标记
+	if table.contains(BattleUnitDetailView.HIGH_LIGHT_BUFF, buffID) then
+		local highlightTF = buffTF:Find("high_light")
 
-		setActive(var_16_1, true)
+		setActive(highlightTF, true)
 	end
 
-	if arg_16_2._stack > 1 then
-		local var_16_2 = var_16_0:Find("buff_stack")
+	if buff._stack > 1 then
+		local stackTF = buffTF:Find("buff_stack")
 
-		setActive(var_16_2, true)
-		setText(var_16_2, "x" .. arg_16_2._stack)
+		setActive(stackTF, true)
+		setText(stackTF, "x" .. buff._stack)
 	end
 
-	setActive(var_16_0, true)
+	setActive(buffTF, true)
 
-	arg_16_0._buffList[arg_16_1] = var_16_0
+	self._buffList[buffID] = buffTF
 end
 
-function var_0_6.addSkillCaster(arg_17_0, arg_17_1)
-	local var_17_0 = arg_17_1._skill_id
-	local var_17_1 = arg_17_1._srcBuff:GetLv()
+--- 添加技能施放者记录（用于统计技能伤害和次数）
+function BattleUnitDetailView.addSkillCaster(self, effect)
+	local skillID = effect._skill_id
+	local skillLv = effect._srcBuff:GetLv()
 
-	if not var_0_0.Battle.BattleSkillUnit.IsFireSkill(var_17_0, var_17_1) then
+	-- 只统计会实际开火的技能
+	if not ys.Battle.BattleSkillUnit.IsFireSkill(skillID, skillLv) then
 		return
 	end
 
-	local var_17_2 = arg_17_0._skillList[var_17_0]
+	local skillData = self._skillList[skillID]
 
-	if not var_17_2 then
-		local var_17_3 = cloneTplTo(arg_17_0._skillTpl, arg_17_0._skillContainer)
-		local var_17_4 = var_17_3:Find("common")
+	if not skillData then
+		local skillTF = cloneTplTo(self._skillTpl, self._skillContainer)
+		local commonTF = skillTF:Find("common")
 
-		setText(var_17_4:Find("skillID"), arg_17_1._skill_id)
+		setText(commonTF:Find("skillID"), effect._skill_id)
 
-		local var_17_5 = var_17_3:Find("common/icon")
-		local var_17_6 = arg_17_1._srcBuff._tempData.icon or 10120
+		local iconTF = skillTF:Find("common/icon")
+		local iconID = effect._srcBuff._tempData.icon or 10120
 
-		GetImageSpriteFromAtlasAsync("skillicon/" .. var_17_6, "", var_17_5)
+		GetImageSpriteFromAtlasAsync("skillicon/" .. iconID, "", iconTF)
 		Canvas.ForceUpdateCanvases()
 
-		var_17_2 = {
-			tf = var_17_3,
+		skillData = {
+			tf = skillTF,
 			effectList = {}
 		}
-		arg_17_0._skillList[var_17_0] = var_17_2
+		self._skillList[skillID] = skillData
 	end
 
-	table.insert(var_17_2.effectList, arg_17_1)
-	arg_17_0:updateCastEffectTpl(var_17_0)
+	table.insert(skillData.effectList, effect)
+	self:updateCastEffectTpl(skillID)
 end
 
-function var_0_6.updateSkillList(arg_18_0)
-	for iter_18_0, iter_18_1 in pairs(arg_18_0._skillList) do
-		arg_18_0:updateCastEffectTpl(iter_18_0)
+--- 更新技能列表所有技能的施放统计
+function BattleUnitDetailView.updateSkillList(self)
+	for skillID, skillData in pairs(self._skillList) do
+		self:updateCastEffectTpl(skillID)
 	end
 end
 
-function var_0_6.updateCastEffectTpl(arg_19_0, arg_19_1)
-	local var_19_0 = arg_19_0._skillList[arg_19_1]
-	local var_19_1 = var_19_0.tf
-	local var_19_2 = var_19_0.effectList
-	local var_19_3 = 0
-	local var_19_4 = 0
+--- 更新单个技能的施放统计模板
+function BattleUnitDetailView.updateCastEffectTpl(self, skillID)
+	local skillData = self._skillList[skillID]
+	local skillTF = skillData.tf
+	local effectList = skillData.effectList
+	local totalCast = 0
+	local totalDamage = 0
 
-	for iter_19_0, iter_19_1 in ipairs(var_19_2) do
-		var_19_3 = var_19_3 + iter_19_1:GetCastCount()
-		var_19_4 = var_19_4 + iter_19_1:GetSkillFireDamageSum()
+	for _, effect in ipairs(effectList) do
+		totalCast = totalCast + effect:GetCastCount()
+		totalDamage = totalDamage + effect:GetSkillFireDamageSum()
 	end
 
-	local var_19_5 = var_19_1:Find("common")
+	local commonTF = skillTF:Find("common")
 
-	setText(var_19_5:Find("count"), var_19_3)
-	setText(var_19_5:Find("damageSum"), var_19_4)
+	setText(commonTF:Find("count"), totalCast)
+	setText(commonTF:Find("damageSum"), totalDamage)
 end
 
-function var_0_6.Dispose(arg_20_0)
-	pg.DelegateInfo.Dispose(arg_20_0)
+function BattleUnitDetailView.Dispose(self)
+	pg.DelegateInfo.Dispose(self)
 
-	arg_20_0._unit = nil
-	arg_20_0._secondaryAttrList = nil
-	arg_20_0._buffList = nil
-	arg_20_0._weaponList = nil
+	self._unit = nil
+	self._secondaryAttrList = nil
+	self._buffList = nil
+	self._weaponList = nil
 
-	GameObject.Destroy(arg_20_0._go)
-	var_0_0.EventListener.DetachEventListener(arg_20_0)
+	GameObject.Destroy(self._go)
+	ys.EventListener.DetachEventListener(self)
 end
 
-function var_0_6.setDeltaText(arg_21_0, arg_21_1)
-	setText(arg_21_0, arg_21_1)
+--- 设置增量文本（正数绿色、负数红色）
+--- @param tf Transform 文本所在的Transform
+--- @param value number 增量值
+function BattleUnitDetailView.setDeltaText(tf, value)
+	setText(tf, value)
 
-	local var_21_0 = arg_21_1 > 0 and Color.green or Color.red
+	local color = value > 0 and Color.green or Color.red
 
-	arg_21_0:GetComponent(typeof(Text)).color = var_21_0
+	tf:GetComponent(typeof(Text)).color = color
 end
 
-var_0_6.WeaponForger = {}
-var_0_6.BulletForger = {}
-var_0_6.BarrageForger = {}
-var_0_6.AircraftForger = {}
+-- 武器/子弹/弹幕/飞机的 Forger 引用（留空，运行时赋值）
+BattleUnitDetailView.WeaponForger = {}
+BattleUnitDetailView.BulletForger = {}
+BattleUnitDetailView.BarrageForger = {}
+BattleUnitDetailView.AircraftForger = {}

@@ -1,80 +1,92 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleDataFunction
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
 
-var_0_0.Battle.CardPuzzleCardDetail = class("CardPuzzleCardDetail")
+ys.Battle.CardPuzzleCardDetail = class("CardPuzzleCardDetail")
 
-local var_0_3 = var_0_0.Battle.CardPuzzleCardDetail
+local CardPuzzleCardDetail = ys.Battle.CardPuzzleCardDetail
 
-var_0_3.__name = "CardPuzzleCardDetail"
+CardPuzzleCardDetail.__name = "CardPuzzleCardDetail"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_0._go.transform
-	arg_1_0._desc = arg_1_0._tf:Find("Desc")
-	arg_1_0._affixList = arg_1_0._tf:Find("affixList")
-	arg_1_0._affixContainer = arg_1_0._affixList:Find("container")
-	arg_1_0._affixTpl = arg_1_0._tf:Find("tpl")
-	arg_1_0._affixViewList = {}
-	arg_1_0._bound = 960 - rtf(arg_1_0._tf).rect.width * 0.5
+--- 卡牌拼图卡牌详情弹窗
+--- 点击卡牌时显示卡牌描述、词缀（affix）列表等详细信息
+
+function CardPuzzleCardDetail.Ctor(self, go)
+	self._go = go
+	self._tf = self._go.transform
+	self._desc = self._tf:Find("Desc")
+	self._affixList = self._tf:Find("affixList")
+	self._affixContainer = self._affixList:Find("container")
+	self._affixTpl = self._tf:Find("tpl")
+	self._affixViewList = {}
+	-- 计算显示边界（右侧不超出屏幕）
+	self._bound = 960 - rtf(self._tf).rect.width * 0.5
 end
 
-function var_0_3.Dispose(arg_2_0)
-	arg_2_0._affixList = nil
-	arg_2_0._affixContainer = nil
-	arg_2_0._affixTpl = nil
-	arg_2_0._desc = nil
-	arg_2_0._tf = nil
-	arg_2_0._go = nil
+function CardPuzzleCardDetail.Dispose(self)
+	self._affixList = nil
+	self._affixContainer = nil
+	self._affixTpl = nil
+	self._desc = nil
+	self._tf = nil
+	self._go = nil
 end
 
-function var_0_3.Active(arg_3_0, arg_3_1)
-	setActive(arg_3_0._go, arg_3_1)
+--- 激活/隐藏详情面板
+function CardPuzzleCardDetail.Active(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_3.SetReferenceCard(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_1:GetCardInfo():GetCardID()
-	local var_4_1 = var_0_2.GetPuzzleCardDataTemplate(var_4_0)
+--- 设置参考卡牌，根据卡牌数据更新描述和词缀列表
+--- @param card CardPuzzleCombatCard 参考卡牌对象
+function CardPuzzleCardDetail.SetReferenceCard(self, card)
+	local cardID = card:GetCardInfo():GetCardID()
+	local cardTemplate = BattleDataFunction.GetPuzzleCardDataTemplate(cardID)
 
-	setText(arg_4_0._desc, var_4_1.discript)
+	setText(self._desc, cardTemplate.discript)
 
-	local var_4_2 = #var_4_1.label
-	local var_4_3 = 0
+	-- 动态生成词缀视图
+	local labelCount = #cardTemplate.label
+	local filledCount = 0
 
-	while var_4_3 < var_4_2 do
-		var_4_3 = var_4_3 + 1
+	while filledCount < labelCount do
+		filledCount = filledCount + 1
 
-		local var_4_4 = arg_4_0._affixViewList[var_4_3]
+		local affixView = self._affixViewList[filledCount]
 
-		if var_4_4 == nil then
-			local var_4_5 = cloneTplTo(arg_4_0._affixTpl, arg_4_0._affixContainer)
+		if affixView == nil then
+			local affixClone = cloneTplTo(self._affixTpl, self._affixContainer)
 
-			var_4_4 = var_0_0.Battle.CardPuzzleCardDetailAffix.New(var_4_5)
+			affixView = ys.Battle.CardPuzzleCardDetailAffix.New(affixClone)
 
-			table.insert(arg_4_0._affixViewList, var_4_4)
+			table.insert(self._affixViewList, affixView)
 		end
 
-		var_4_4:SetAffixID(var_4_1.label[var_4_3])
+		affixView:SetAffixID(cardTemplate.label[filledCount])
 	end
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._affixViewList) do
-		local var_4_6 = iter_4_0 <= var_4_3
+	-- 隐藏多余的词缀视图
+	for i, affixView in ipairs(self._affixViewList) do
+		local isUsed = i <= filledCount
 
-		iter_4_1:SetActive(var_4_6)
+		affixView:SetActive(isUsed)
 	end
 
-	arg_4_0._pos = arg_4_0._pos or Vector3.New(0, 0, 0)
+	-- 计算弹窗位置
+	self._pos = self._pos or Vector3.New(0, 0, 0)
 
-	local var_4_7 = arg_4_1:GetUIPos()
+	local cardPos = card:GetUIPos()
 
-	if var_4_7.x > arg_4_0._bound then
-		arg_4_0._pos.x = arg_4_0._bound
+	-- X方向边界保护
+	if cardPos.x > self._bound then
+		self._pos.x = self._bound
 	else
-		arg_4_0._pos.x = var_4_7.x
+		self._pos.x = cardPos.x
 	end
 
-	arg_4_0._pos.y = var_4_7.y + 130
-	arg_4_0._tf.anchoredPosition = arg_4_0._pos
+	-- Y方向偏移显示在卡牌上方
+	self._pos.y = cardPos.y + 130
+	self._tf.anchoredPosition = self._pos
 end

@@ -1,126 +1,149 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourMovement", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourMovement = class("BattleEnvironmentBehaviourMovement", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourMovement = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourMovement"
+ys.Battle.BattleEnvironmentBehaviourMovement = BattleEnvironmentBehaviourMovement
+BattleEnvironmentBehaviourMovement.__name = "BattleEnvironmentBehaviourMovement"
 
-function var_0_3.Ctor(arg_1_0)
-	arg_1_0._movebeginTime = nil
-	arg_1_0._moveEndTime = nil
-	arg_1_0._lastPosition = nil
-	arg_1_0._destPosition = nil
-	arg_1_0._targetIndex = 1
+--- @class BattleEnvironmentBehaviourMovement : BattleEnvironmentBehaviour
+--- 环境移动行为：AOE区域沿预设路线移动，路线耗尽后随机游走
+--- @field _movebeginTime number 当前段移动开始时间
+--- @field _moveEndTime number 当前段移动结束时间
+--- @field _lastPosition Vector3 上一个到达位置
+--- @field _destPosition Vector3 目标位置
+--- @field _targetIndex number 当前路线点索引
+--- @field _route table 预设路线（可选）
+--- @field _bounds table 移动边界（玩家舰队边界+碰撞数据偏移）
+--- @field _random_duration table 随机持续时间范围 {min, max}
+--- @field _random_speed number 随机速度
+--- @field _randomRangeX number X轴随机范围
+--- @field _randomRangeZ number Z轴随机范围
+--- @field _resetRandomRange boolean 是否需要刷新随机边界
+function BattleEnvironmentBehaviourMovement.Ctor(self)
+	self._movebeginTime = nil
+	self._moveEndTime = nil
+	self._lastPosition = nil
+	self._destPosition = nil
+	self._targetIndex = 1
 
-	var_0_3.super.Ctor(arg_1_0)
+	BattleEnvironmentBehaviourMovement.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取移动参数：路线、随机时长/速度、边界和起始位置
+--- @param tmpData table
+function BattleEnvironmentBehaviourMovement.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourMovement.super.SetTemplate(self, tmpData)
 
-	arg_2_0._route = arg_2_1.route or {}
-	arg_2_0._random_duration = arg_2_1.random_duration or {
+	self._route = tmpData.route or {}
+	self._random_duration = tmpData.random_duration or {
 		1,
 		5
 	}
-	arg_2_0._random_speed = arg_2_1.random_speed or 1
+	self._random_speed = tmpData.random_speed or 1
 
-	local var_2_0 = arg_2_0._unit:GetTemplate()
-	local var_2_1
-	local var_2_2
+	local template = self._unit:GetTemplate()
+	local cldX
+	local cldZ
 
-	if #var_2_0.cld_data == 1 then
-		var_2_1 = var_2_0.cld_data[1]
-		var_2_2 = var_2_1
-	elseif #var_2_0.cld_data == 2 then
-		var_2_1, var_2_2 = unpack(var_2_0.cld_data)
+	if #template.cld_data == 1 then
+		cldX = template.cld_data[1]
+		cldZ = cldX
+	elseif #template.cld_data == 2 then
+		cldX, cldZ = unpack(template.cld_data)
 	end
 
-	local var_2_3 = {
-		var_0_0.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(var_0_2.FRIENDLY_CODE)
+	local bounds = {
+		ys.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(BattleConfig.FRIENDLY_CODE)
 	}
 
-	var_2_3[3] = var_2_3[3] + var_2_1
-	var_2_3[4] = var_2_3[4] - var_2_1
-	var_2_3[2] = var_2_3[2] + var_2_2
-	var_2_3[1] = var_2_3[1] - var_2_2
-	arg_2_0._bounds = var_2_3
-	arg_2_0._lastPosition = Vector3(unpack(var_2_0.coordinate))
+	bounds[3] = bounds[3] + cldX
+	bounds[4] = bounds[4] - cldX
+	bounds[2] = bounds[2] + cldZ
+	bounds[1] = bounds[1] - cldZ
+	self._bounds = bounds
+	self._lastPosition = Vector3(unpack(template.coordinate))
 
-	if arg_2_1.random_range then
-		arg_2_0._randomRangeX = arg_2_1.random_range[1]
-		arg_2_0._randomRangeZ = arg_2_1.random_range[2]
-		arg_2_0._resetRandomRange = true
+	if tmpData.random_range then
+		self._randomRangeX = tmpData.random_range[1]
+		self._randomRangeZ = tmpData.random_range[2]
+		self._resetRandomRange = true
 	end
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	local var_3_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 每帧计算Lerp插值位置；当前段结束时切换到下一路线点或生成随机目标
+function BattleEnvironmentBehaviourMovement.doBehaviour(self)
+	local now = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	if not arg_3_0._moveEndTime then
-		local var_3_1 = arg_3_0._route[arg_3_0._targetIndex]
+	if not self._moveEndTime then
+		local routeEntry = self._route[self._targetIndex]
 
-		arg_3_0._movebeginTime = var_3_0
+		self._movebeginTime = now
 
-		if var_3_1 then
-			arg_3_0._destPosition = Vector3(unpack(var_3_1))
-			arg_3_0._moveEndTime = var_3_0 + var_3_1[4]
-			arg_3_0._targetIndex = arg_3_0._targetIndex + 1
+		if routeEntry then
+			self._destPosition = Vector3(unpack(routeEntry))
+			self._moveEndTime = now + routeEntry[4]
+			self._targetIndex = self._targetIndex + 1
 		else
-			local var_3_2 = arg_3_0:GenerateRandomPlayerAreaPoint()
-			local var_3_3 = math.random(unpack(arg_3_0._random_duration))
-			local var_3_4 = var_3_3 * arg_3_0._random_speed
-			local var_3_5 = (var_3_2 - arg_3_0._lastPosition):Magnitude()
+			-- 路线耗尽，生成随机游走目标
+			local randomPos = self:GenerateRandomPlayerAreaPoint()
+			local duration = math.random(unpack(self._random_duration))
+			local maxDistance = duration * self._random_speed
+			local distance = (randomPos - self._lastPosition):Magnitude()
 
-			if var_3_5 < var_3_4 then
-				var_3_3 = var_3_5 / arg_3_0._random_speed
+			if distance < maxDistance then
+				duration = distance / self._random_speed
 			else
-				var_3_2 = Vector3.Lerp(arg_3_0._lastPosition, var_3_2, var_3_4 / var_3_5)
+				randomPos = Vector3.Lerp(self._lastPosition, randomPos, maxDistance / distance)
 			end
 
-			arg_3_0._moveEndTime = var_3_0 + var_3_3
-			arg_3_0._destPosition = var_3_2
+			self._moveEndTime = now + duration
+			self._destPosition = randomPos
 		end
 	end
 
-	if var_3_0 < arg_3_0._moveEndTime then
-		local var_3_6 = Vector3.Lerp(arg_3_0._lastPosition, arg_3_0._destPosition, (var_3_0 - arg_3_0._movebeginTime) / (arg_3_0._moveEndTime - arg_3_0._movebeginTime))
+	if now < self._moveEndTime then
+		local lerpPos = Vector3.Lerp(self._lastPosition, self._destPosition, (now - self._movebeginTime) / (self._moveEndTime - self._movebeginTime))
 
-		arg_3_0._unit._aoeData:SetPosition(var_3_6)
+		self._unit._aoeData:SetPosition(lerpPos)
 	else
-		arg_3_0._unit._aoeData:SetPosition(arg_3_0._destPosition)
+		self._unit._aoeData:SetPosition(self._destPosition)
 
-		arg_3_0._lastPosition = arg_3_0._destPosition
-		arg_3_0._moveEndTime = nil
+		self._lastPosition = self._destPosition
+		self._moveEndTime = nil
 	end
 
-	var_0_3.super.doBehaviour(arg_3_0)
+	BattleEnvironmentBehaviourMovement.super.doBehaviour(self)
 end
 
-function var_0_3.GenerateRandomPlayerAreaPoint(arg_4_0)
-	local var_4_0 = arg_4_0._bounds
-	local var_4_1 = math.random(var_4_0[3], var_4_0[4])
-	local var_4_2 = math.random(var_4_0[2], var_4_0[1])
+--- 在玩家舰队边界内随机生成一个目标点
+--- @return Vector3
+function BattleEnvironmentBehaviourMovement.GenerateRandomPlayerAreaPoint(self)
+	local bounds = self._bounds
+	local randX = math.random(bounds[3], bounds[4])
+	local randZ = math.random(bounds[2], bounds[1])
 
-	if arg_4_0._resetRandomRange then
-		arg_4_0:resetRandomBound(var_4_1, var_4_2)
+	if self._resetRandomRange then
+		self:resetRandomBound(randX, randZ)
 	end
 
-	return Vector3(var_4_1, 0, var_4_2)
+	return Vector3(randX, 0, randZ)
 end
 
-function var_0_3.resetRandomBound(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._bounds[3] = arg_5_1 - arg_5_0._randomRangeX
-	arg_5_0._bounds[4] = arg_5_1 + arg_5_0._randomRangeX
-	arg_5_0._bounds[2] = arg_5_2 - arg_5_0._randomRangeZ
-	arg_5_0._bounds[1] = arg_5_2 + arg_5_0._randomRangeZ
-	arg_5_0._resetRandomRange = false
+--- 以随机目标点为中心重置边界（用于random_range收缩搜索范围）
+--- @param centerX number 新边界中心X
+--- @param centerZ number 新边界中心Z
+function BattleEnvironmentBehaviourMovement.resetRandomBound(self, centerX, centerZ)
+	self._bounds[3] = centerX - self._randomRangeX
+	self._bounds[4] = centerX + self._randomRangeX
+	self._bounds[2] = centerZ - self._randomRangeZ
+	self._bounds[1] = centerZ + self._randomRangeZ
+	self._resetRandomRange = false
 end
 
-function var_0_3.Dispose(arg_6_0)
-	var_0_3.super.Dispose(arg_6_0)
-	table.clear(arg_6_0)
+function BattleEnvironmentBehaviourMovement.Dispose(self)
+	BattleEnvironmentBehaviourMovement.super.Dispose(self)
+	table.clear(self)
 end

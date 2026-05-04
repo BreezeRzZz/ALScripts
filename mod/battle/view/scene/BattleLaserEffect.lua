@@ -1,45 +1,60 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleLaserEffect", var_0_0.Battle.BattleEffectArea)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleLaserEffect = class("BattleLaserEffect", ys.Battle.BattleEffectArea)
 
-var_0_0.Battle.BattleLaserEffect = var_0_2
-var_0_2.__name = "BattleLaserEffect"
+ys.Battle.BattleLaserEffect = BattleLaserEffect
+BattleLaserEffect.__name = "BattleLaserEffect"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleLaserEffect : BattleEffectArea
+--- 激光特效渲染器（继承自BattleEffectArea）
+--- 使用LaserScript组件控制LineRenderer绘制激光束
+--- 每帧更新激光宽度、长度和角度，带波浪动画效果
+--- @param go GameObject 激光特效GameObject（挂载LaserScript组件）
+--- @param aoeData BattleAOEData AoE数据对象
+function BattleLaserEffect.Ctor(self, go, aoeData)
+	BattleLaserEffect.super.Ctor(self, go, aoeData)
 end
 
-function var_0_2.SetStatic(arg_2_0)
+--- 设置为静态（激光不支持静态，空实现）
+function BattleLaserEffect.SetStatic(self)
 	return
 end
 
-function var_0_2.Init(arg_3_0)
-	arg_3_0._tf = arg_3_0._go.transform
-	arg_3_0._laserScript = GetComponent(arg_3_0._go, "LaserScript")
-	arg_3_0._waveCount = 0
+--- 初始化：获取LaserScript组件，初始化波次计数
+function BattleLaserEffect.Init(self)
+	self._tf = self._go.transform
+	self._laserScript = GetComponent(self._go, "LaserScript")
+	self._waveCount = 0
 
-	arg_3_0:Update()
+	self:Update()
 end
 
-function var_0_2.Update(arg_4_0)
-	arg_4_0:updateLineRenderer()
-	arg_4_0:UpdatePosition()
+--- 每帧更新：先更新LineRenderer参数，再更新位置
+function BattleLaserEffect.Update(self)
+	self:updateLineRenderer()
+	self:UpdatePosition()
 end
 
-function var_0_2.updateLineRenderer(arg_5_0)
-	local var_5_0 = arg_5_0._aoeData:GetHeight()
+--- 更新LineRenderer的宽度、长度和角度
+--- 宽度 = height + cos(波次 * 3°)，产生周期性波浪效果
+--- 长度 = AoE width（沿激光方向的长度）
+--- 角度根据IFF处理：敌方旋转180度
+function BattleLaserEffect.updateLineRenderer(self)
+	local lineWidth = self._aoeData:GetHeight()
 
-	arg_5_0._laserScript.width = var_5_0 + math.cos(arg_5_0._waveCount * math.deg2Rad * 3)
-	arg_5_0._waveCount = arg_5_0._waveCount + 1
-	arg_5_0._laserScript.length = arg_5_0._aoeData:GetWidth()
+	-- 宽度 = 基础宽度 + 余弦波浪效果（waveCount控制波浪频率）
+	self._laserScript.width = lineWidth + math.cos(self._waveCount * math.deg2Rad * 3)
+	self._waveCount = self._waveCount + 1
+	self._laserScript.length = self._aoeData:GetWidth()
 
-	local var_5_1 = arg_5_0._aoeData:GetAngle() * math.deg2Rad
+	-- 角度处理：IFF为敌方(-1)时旋转180度
+	local lineAngle = self._aoeData:GetAngle() * math.deg2Rad
 
-	if arg_5_0._aoeData:GetIFF() == -1 then
-		var_5_1 = var_5_1 + math.pi
+	if self._aoeData:GetIFF() == -1 then
+		lineAngle = lineAngle + math.pi
 	end
 
-	arg_5_0._laserScript.angle = var_5_1
+	self._laserScript.angle = lineAngle
 end

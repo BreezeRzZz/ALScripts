@@ -1,92 +1,111 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleAirFighterUnit
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleAirFighterUnit = ys.Battle.BattleAirFighterUnit
 
-var_0_0.Battle.BattleAirFighterCharacter = class("BattleAirFighterCharacter", var_0_0.Battle.BattleAircraftCharacter)
-var_0_0.Battle.BattleAirFighterCharacter.__name = "BattleAirFighterCharacter"
+ys.Battle.BattleAirFighterCharacter = class("BattleAirFighterCharacter", ys.Battle.BattleAircraftCharacter)
+ys.Battle.BattleAirFighterCharacter.__name = "BattleAirFighterCharacter"
 
-local var_0_3 = var_0_0.Battle.BattleAirFighterCharacter
+local BattleAirFighterCharacter = ys.Battle.BattleAirFighterCharacter
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- 构造函数：初始化缩放向量
+function BattleAirFighterCharacter.Ctor(self)
+	BattleAirFighterCharacter.super.Ctor(self)
 
-	arg_1_0._scaleVector = Vector3(1, 1, 1)
+	self._scaleVector = Vector3(1, 1, 1)
 end
 
-function var_0_3.SetUnitData(arg_2_0, arg_2_1)
-	arg_2_0._unitData = arg_2_1
+--- 设置UnitData并标记为不可选中
+--- @param unitData BattleAirFighterUnitData 战斗机单位数据
+function BattleAirFighterCharacter.SetUnitData(self, unitData)
+	self._unitData = unitData
 
-	arg_2_0:AddUnitEvent()
-	arg_2_1:SetUnVisitable()
+	self:AddUnitEvent()
+	unitData:SetUnVisitable()
 end
 
-function var_0_3.AddModel(arg_3_0, arg_3_1)
-	arg_3_0:SetGO(arg_3_1)
-	arg_3_0:SetBoneList()
-	arg_3_0._unitData:ActiveCldBox()
+--- 添加战斗机模型
+--- @param modelGO GameObject 模型GameObject
+function BattleAirFighterCharacter.AddModel(self, modelGO)
+	self:SetGO(modelGO)
+	self:SetBoneList()
+	self._unitData:ActiveCldBox()
 end
 
-function var_0_3.Update(arg_4_0)
-	arg_4_0:UpdateMatrix()
-	arg_4_0:UpdateUIComponentPosition()
-	arg_4_0:UpdateHPPop()
-	arg_4_0:UpdateHPPopContainerPosition()
-	arg_4_0:UpdateHPBarPosition()
-	arg_4_0:UpdatePosition()
-	arg_4_0:UpdateHpBar()
+--- 每帧Update：矩阵、UI、HP条、位置、阴影（仅在俯冲/攻击/爬升状态）
+function BattleAirFighterCharacter.Update(self)
+	self:UpdateMatrix()
+	self:UpdateUIComponentPosition()
+	self:UpdateHPPop()
+	self:UpdateHPPopContainerPosition()
+	self:UpdateHPBarPosition()
+	self:UpdatePosition()
+	self:UpdateHpBar()
 
-	local var_4_0 = arg_4_0._unitData:GetStrikeState()
+	local strikeState = self._unitData:GetStrikeState()
 
-	if var_4_0 == var_0_2.STRIKE_STATE_DOWN or var_4_0 == var_0_2.STRIKE_STATE_ATTACK or var_4_0 == var_0_2.STRIKE_STATE_UP then
-		arg_4_0:UpdateShadow()
+	-- 俯冲、攻击、爬升状态下更新阴影
+	if strikeState == BattleAirFighterUnit.STRIKE_STATE_DOWN or strikeState == BattleAirFighterUnit.STRIKE_STATE_ATTACK or strikeState == BattleAirFighterUnit.STRIKE_STATE_UP then
+		self:UpdateShadow()
 	end
 end
 
-function var_0_3.AddUnitEvent(arg_5_0)
-	var_0_3.super.AddUnitEvent(arg_5_0)
-	arg_5_0._unitData:RegisterEventListener(arg_5_0, var_0_1.AIR_STRIKE_STATE_CHANGE, arg_5_0.onStrikeStateChange)
+--- 注册空袭状态变化事件
+function BattleAirFighterCharacter.AddUnitEvent(self)
+	BattleAirFighterCharacter.super.AddUnitEvent(self)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.AIR_STRIKE_STATE_CHANGE, self.onStrikeStateChange)
 end
 
-function var_0_3.RemoveUnitEvent(arg_6_0)
-	var_0_3.super.RemoveUnitEvent(arg_6_0)
-	arg_6_0._unitData:UnregisterEventListener(arg_6_0, var_0_1.AIR_STRIKE_STATE_CHANGE)
+--- 移除空袭状态变化事件
+function BattleAirFighterCharacter.RemoveUnitEvent(self)
+	BattleAirFighterCharacter.super.RemoveUnitEvent(self)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.AIR_STRIKE_STATE_CHANGE)
 end
 
-function var_0_3.onStrikeStateChange(arg_7_0)
-	local var_7_0 = arg_7_0._unitData:GetStrikeState()
+--- 空袭状态变化：根据STRIKE状态调整模型缩放和UI可见性
+---
+--- 状态说明：
+--- - FLY: 编队飞行，放大模型，隐藏阴影
+--- - BACK: 返航（朝左），HP条和阴影显示
+--- - BACKWARD: 返航（朝右）
+--- - DOWN/ATTACK/UP: 俯冲轰炸三阶段，不改变缩放
+function BattleAirFighterCharacter.onStrikeStateChange(self)
+	local strikeState = self._unitData:GetStrikeState()
 
-	if var_7_0 == var_0_2.STRIKE_STATE_FLY then
-		local var_7_1 = (12 / (arg_7_0._unitData:GetFormationIndex() + 3) + 1) * arg_7_0._unitData:GetSize()
+	if strikeState == BattleAirFighterUnit.STRIKE_STATE_FLY then
+		-- 编队飞行：根据编队索引放大模型
+		local flyScale = (12 / (self._unitData:GetFormationIndex() + 3) + 1) * self._unitData:GetSize()
 
-		arg_7_0._scaleVector:Set(var_7_1, var_7_1, var_7_1)
+		self._scaleVector:Set(flyScale, flyScale, flyScale)
 
-		arg_7_0._tf.localScale = arg_7_0._scaleVector
+		self._tf.localScale = self._scaleVector
 
-		arg_7_0._shadow:SetActive(false)
-	elseif var_7_0 == var_0_2.STRIKE_STATE_BACK then
-		local var_7_2 = arg_7_0._unitData:GetSize()
+		self._shadow:SetActive(false)
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_BACK then
+		-- 返航（朝左）
+		local backScale = self._unitData:GetSize()
 
-		arg_7_0._scaleVector:Set(-var_7_2, var_7_2, var_7_2)
+		self._scaleVector:Set(-backScale, backScale, backScale)
 
-		arg_7_0._tf.localScale = arg_7_0._scaleVector
+		self._tf.localScale = self._scaleVector
 
-		arg_7_0._HPBar:SetActive(true)
-		arg_7_0._shadow:SetActive(true)
-	elseif var_7_0 == var_0_2.STRIKE_STATE_DOWN then
-		-- block empty
-	elseif var_7_0 == var_0_2.STRIKE_STATE_ATTACK then
-		-- block empty
-	elseif var_7_0 == var_0_2.STRIKE_STATE_UP then
-		-- block empty
-	elseif var_7_0 == var_0_2.STRIKE_STATE_FREE then
-		-- block empty
-	elseif var_7_0 == var_0_2.STRIKE_STATE_BACKWARD then
-		local var_7_3 = arg_7_0._unitData:GetSize()
+		self._HPBar:SetActive(true)
+		self._shadow:SetActive(true)
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_DOWN then
+		-- 俯冲中，不改变视觉效果
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_ATTACK then
+		-- 攻击中
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_UP then
+		-- 爬升中
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_FREE then
+		-- 自由状态
+	elseif strikeState == BattleAirFighterUnit.STRIKE_STATE_BACKWARD then
+		-- 返航（朝右）
+		local backwardScale = self._unitData:GetSize()
 
-		arg_7_0._scaleVector:Set(var_7_3, var_7_3, var_7_3)
+		self._scaleVector:Set(backwardScale, backwardScale, backwardScale)
 
-		arg_7_0._tf.localScale = arg_7_0._scaleVector
+		self._tf.localScale = self._scaleVector
 	end
 end

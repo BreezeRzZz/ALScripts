@@ -1,161 +1,186 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleSkillEditCustomWarning
-local var_0_3 = class("BattleCommonWarningView")
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleSkillEditCustomWarning = ys.Battle.BattleSkillEditCustomWarning
+local BattleCommonWarningView = class("BattleCommonWarningView")
 
-var_0_0.Battle.BattleCommonWarningView = var_0_3
-var_0_3.__name = "BattleCommonWarningView"
-var_0_3.WARNING_TYPE_SUBMARINE = "submarine"
-var_0_3.WARNING_TYPE_ARTILLERY = "artillery"
+ys.Battle.BattleCommonWarningView = BattleCommonWarningView
+BattleCommonWarningView.__name = "BattleCommonWarningView"
+BattleCommonWarningView.WARNING_TYPE_SUBMARINE = "submarine"
+BattleCommonWarningView.WARNING_TYPE_ARTILLERY = "artillery"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._submarineCount = 0
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._subIcon = arg_1_0._tf:Find("submarineIcon")
-	arg_1_0._tips = arg_1_0._tf:Find("warningTips")
-	arg_1_0._subWarn = arg_1_0._tf:Find("submarineWarningTips")
-	arg_1_0._warningRequestTable = {
+--- 战斗中的通用警告视图，管理潜艇警告和炮击警告
+--- @param go GameObject 警告UI的GameObject
+function BattleCommonWarningView.Ctor(self, go)
+	self._submarineCount = 0
+	self._go = go
+	self._tf = go.transform
+	self._subIcon = self._tf:Find("submarineIcon")
+	self._tips = self._tf:Find("warningTips")
+	self._subWarn = self._tf:Find("submarineWarningTips")
+	-- 警告请求表：按优先级排列，靠前的优先级更高
+	self._warningRequestTable = {
 		{
 			flag = false,
-			type = var_0_3.WARNING_TYPE_ARTILLERY,
-			tf = arg_1_0._tips
+			type = BattleCommonWarningView.WARNING_TYPE_ARTILLERY,
+			tf = self._tips
 		},
 		{
 			flag = false,
-			type = var_0_3.WARNING_TYPE_SUBMARINE,
-			tf = arg_1_0._subWarn
+			type = BattleCommonWarningView.WARNING_TYPE_SUBMARINE,
+			tf = self._subWarn
 		}
 	}
-	arg_1_0._customWarningTpl = arg_1_0._tf:Find("customWarningTpl")
-	arg_1_0._customWarningContainer = arg_1_0._tf:Find("customWarningContainer")
-	arg_1_0._customWarningList = {}
+	self._customWarningTpl = self._tf:Find("customWarningTpl")
+	self._customWarningContainer = self._tf:Find("customWarningContainer")
+	self._customWarningList = {}
 end
 
-function var_0_3.UpdateHostileSubmarineCount(arg_2_0, arg_2_1)
-	if arg_2_1 > 0 and arg_2_0._submarineCount <= 0 then
-		arg_2_0:activeSubmarineWarning()
-	elseif arg_2_0._submarineCount > 0 and arg_2_1 <= 0 then
-		arg_2_0:deactiveSubmarineWarning()
+--- 更新敌方潜艇数量，控制潜艇警告的显示/隐藏
+--- @param count number 敌方潜艇数量
+function BattleCommonWarningView.UpdateHostileSubmarineCount(self, count)
+	if count > 0 and self._submarineCount <= 0 then
+		self:activeSubmarineWarning()
+	elseif self._submarineCount > 0 and count <= 0 then
+		self:deactiveSubmarineWarning()
 	end
 
-	arg_2_0._submarineCount = arg_2_1
+	self._submarineCount = count
 end
 
-function var_0_3.GetCount(arg_3_0)
-	return arg_3_0._submarineCount
+--- @return number 当前敌方潜艇数量
+function BattleCommonWarningView.GetCount(self)
+	return self._submarineCount
 end
 
-function var_0_3.ActiveWarning(arg_4_0, arg_4_1)
-	local var_4_0 = false
-	local var_4_1 = #arg_4_0._warningRequestTable
+--- 激活指定类型的警告
+--- 按优先级排列，只有优先级最高（最靠前）的警告才会被显示
+--- @param warningType string 警告类型
+function BattleCommonWarningView.ActiveWarning(self, warningType)
+	local alreadyActive = false
+	local topActiveIndex = #self._warningRequestTable
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._warningRequestTable) do
-		if arg_4_1 == iter_4_1.type then
-			iter_4_1.flag = true
+	for index, entry in ipairs(self._warningRequestTable) do
+		if warningType == entry.type then
+			entry.flag = true
 
-			if not var_4_0 then
-				SetActive(iter_4_1.tf, true)
+			if not alreadyActive then
+				-- 尚未有更高优先级的警告在显示，则显示当前警告
+				SetActive(entry.tf, true)
 
-				var_4_1 = iter_4_0
+				topActiveIndex = index
 			else
 				break
 			end
 		else
-			var_4_0 = var_4_0 or iter_4_1.flag
+			alreadyActive = alreadyActive or entry.flag
 
-			if iter_4_1.flag and var_4_1 < iter_4_0 then
-				SetActive(iter_4_1.tf, false)
+			-- 隐藏比当前激活警告优先级更低的警告
+			if entry.flag and topActiveIndex < index then
+				SetActive(entry.tf, false)
 			end
 		end
 	end
 end
 
-function var_0_3.DeactiveWarning(arg_5_0, arg_5_1)
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._warningRequestTable) do
-		if arg_5_1 == iter_5_1.type then
-			iter_5_1.flag = false
+--- 取消激活指定类型的警告
+--- 如果取消后还有其他激活的警告，则重新激活最高优先级的那个
+--- @param warningType string 警告类型
+function BattleCommonWarningView.DeactiveWarning(self, warningType)
+	for _, entry in ipairs(self._warningRequestTable) do
+		if warningType == entry.type then
+			entry.flag = false
 
-			SetActive(iter_5_1.tf, false)
-		elseif iter_5_1.flag then
-			arg_5_0:ActiveWarning(iter_5_1.type)
+			SetActive(entry.tf, false)
+		elseif entry.flag then
+			-- 存在其他激活的警告，重新激活它
+			self:ActiveWarning(entry.type)
 
 			break
 		end
 	end
 end
 
-function var_0_3.EditCustomWarning(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_1.op
-	local var_6_1 = arg_6_1.key
+--- 编辑自定义警告（技能脚本触发的自定义提示）
+--- @param data table 警告数据，含op、key等字段
+function BattleCommonWarningView.EditCustomWarning(self, data)
+	local op = data.op
+	local key = data.key
 
-	if var_6_0 == var_0_2.OP_ADD then
-		local var_6_2 = cloneTplTo(arg_6_0._customWarningTpl, arg_6_0._customWarningContainer)
-		local var_6_3 = var_0_0.Battle.BattleCustomWarningLabel.New(var_6_2)
+	if op == BattleSkillEditCustomWarning.OP_ADD then
+		-- 添加一个新的自定义警告标签
+		local labelGO = cloneTplTo(self._customWarningTpl, self._customWarningContainer)
+		local label = ys.Battle.BattleCustomWarningLabel.New(labelGO)
 
-		var_6_3:ConfigData(arg_6_1)
+		label:ConfigData(data)
 
-		arg_6_0._customWarningList[var_6_1] = var_6_3
-	elseif var_6_0 == var_0_2.OP_REMOVE then
-		local var_6_4 = arg_6_0._customWarningList[var_6_1]
+		self._customWarningList[key] = label
+	elseif op == BattleSkillEditCustomWarning.OP_REMOVE then
+		-- 通过key移除指定警告
+		local label = self._customWarningList[key]
 
-		if var_6_4 then
-			var_6_4:SetExpire()
+		if label then
+			label:SetExpire()
 		end
-	elseif var_6_0 == var_0_2.OP_REMOVE_PERMANENT then
-		for iter_6_0, iter_6_1 in pairs(arg_6_0._customWarningList) do
-			if iter_6_1:GetDuration() <= 0 then
-				iter_6_1:SetExpire()
+	elseif op == BattleSkillEditCustomWarning.OP_REMOVE_PERMANENT then
+		-- 移除所有永久性（duration<=0）的警告
+		for _, label in pairs(self._customWarningList) do
+			if label:GetDuration() <= 0 then
+				label:SetExpire()
 			end
 		end
-	elseif var_6_0 == var_0_2.OP_REMOVE_TEMPLATE then
-		for iter_6_2, iter_6_3 in pairs(arg_6_0._customWarningList) do
-			if iter_6_3:GetDuration() > 0 then
-				iter_6_3:SetExpire()
+	elseif op == BattleSkillEditCustomWarning.OP_REMOVE_TEMPLATE then
+		-- 移除所有带持续时间（duration>0）的警告
+		for _, label in pairs(self._customWarningList) do
+			if label:GetDuration() > 0 then
+				label:SetExpire()
 			end
 		end
 	end
 end
 
-function var_0_3.Update(arg_7_0)
-	for iter_7_0, iter_7_1 in pairs(arg_7_0._customWarningList) do
-		iter_7_1:Update()
+--- 更新自定义警告列表，移除已过期的标签
+function BattleCommonWarningView.Update(self)
+	for key, label in pairs(self._customWarningList) do
+		label:Update()
 
-		if iter_7_1:IsExpire() then
-			iter_7_1:Dispose()
+		if label:IsExpire() then
+			label:Dispose()
 
-			arg_7_0._customWarningList[iter_7_0] = nil
+			self._customWarningList[key] = nil
 		end
 	end
 end
 
-function var_0_3.activeSubmarineWarning(arg_8_0)
-	SetActive(arg_8_0._subIcon, true)
-	arg_8_0:ActiveWarning(var_0_3.WARNING_TYPE_SUBMARINE)
-	LeanTween.cancel(go(arg_8_0._subIcon))
-	LeanTween.alpha(rtf(arg_8_0._subIcon), 1, 2):setFrom(0)
+--- 激活潜艇警告的入场动画
+function BattleCommonWarningView.activeSubmarineWarning(self)
+	SetActive(self._subIcon, true)
+	self:ActiveWarning(BattleCommonWarningView.WARNING_TYPE_SUBMARINE)
+	LeanTween.cancel(go(self._subIcon))
+	LeanTween.alpha(rtf(self._subIcon), 1, 2):setFrom(0)
 end
 
-function var_0_3.deactiveSubmarineWarning(arg_9_0)
-	LeanTween.cancel(go(arg_9_0._subIcon))
-	LeanTween.alpha(rtf(arg_9_0._subIcon), 0, 1):setFrom(1):setOnComplete(System.Action(function()
-		SetActive(arg_9_0._subIcon, false)
-		arg_9_0:DeactiveWarning(var_0_3.WARNING_TYPE_SUBMARINE)
+--- 激活潜艇警告的退出动画
+function BattleCommonWarningView.deactiveSubmarineWarning(self)
+	LeanTween.cancel(go(self._subIcon))
+	LeanTween.alpha(rtf(self._subIcon), 0, 1):setFrom(1):setOnComplete(System.Action(function()
+		SetActive(self._subIcon, false)
+		self:DeactiveWarning(BattleCommonWarningView.WARNING_TYPE_SUBMARINE)
 	end))
 end
 
-function var_0_3.Dispose(arg_11_0)
-	for iter_11_0, iter_11_1 in pairs(arg_11_0._customWarningList) do
-		iter_11_1:Dispose()
+--- 清理所有警告标签
+function BattleCommonWarningView.Dispose(self)
+	for key, label in pairs(self._customWarningList) do
+		label:Dispose()
 
-		arg_11_0._customWarningList[iter_11_0] = nil
+		self._customWarningList[key] = nil
 	end
 
-	arg_11_0._customWarningList = nil
-	arg_11_0._go = nil
-	arg_11_0._tf = nil
-	arg_11_0._icon = nil
-	arg_11_0._tips = nil
+	self._customWarningList = nil
+	self._go = nil
+	self._tf = nil
+	self._icon = nil
+	self._tips = nil
 end

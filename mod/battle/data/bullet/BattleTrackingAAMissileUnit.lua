@@ -1,223 +1,244 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = Vector3.up
-local var_0_2 = var_0_0.Battle.BattleTargetChoise
-local var_0_3 = class("BattleTrackingAAMissileUnit", var_0_0.Battle.BattleBulletUnit)
+local ys = ys
+local vector3Up = Vector3.up
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleTrackingAAMissileUnit = class("BattleTrackingAAMissileUnit", ys.Battle.BattleBulletUnit)
 
-var_0_3.__name = "BattleTrackingAAMissileUnit"
-var_0_0.Battle.BattleTrackingAAMissileUnit = var_0_3
+BattleTrackingAAMissileUnit.__name = "BattleTrackingAAMissileUnit"
+ys.Battle.BattleTrackingAAMissileUnit = BattleTrackingAAMissileUnit
 
-function var_0_3.doAccelerate(arg_1_0, arg_1_1)
-	local var_1_0, var_1_1 = arg_1_0:GetAcceleration(arg_1_1)
+--- @class BattleTrackingAAMissileUnit : BattleBulletUnit
+--- 追踪防空导弹子弹：继承自BattleBulletUnit，可同时进行追踪和加速，
+--- 支持按距离和角度筛选目标，带有瞄准标记特效
+--- 加速度逻辑：计算u/v方向加速度叠加到速度向量上
+function BattleTrackingAAMissileUnit.doAccelerate(self, timeStamp)
+	local accU, accV = self:GetAcceleration(timeStamp)
 
-	if var_1_0 == 0 and var_1_1 == 0 then
+	if accU == 0 and accV == 0 then
 		return
 	end
 
-	if var_1_0 < 0 and arg_1_0._speedLength + var_1_0 < 0 then
-		arg_1_0:reverseAcceleration()
+	if accU < 0 and self._speedLength + accU < 0 then
+		self:reverseAcceleration()
 	end
 
-	arg_1_0._speed:Set(arg_1_0._speed.x + arg_1_0._speedNormal.x * var_1_0 + arg_1_0._speedCross.x * var_1_1, arg_1_0._speed.y + arg_1_0._speedNormal.y * var_1_0 + arg_1_0._speedCross.y * var_1_1, arg_1_0._speed.z + arg_1_0._speedNormal.z * var_1_0 + arg_1_0._speedCross.z * var_1_1)
+	self._speed:Set(self._speed.x + self._speedNormal.x * accU + self._speedCross.x * accV, self._speed.y + self._speedNormal.y * accU + self._speedCross.y * accV, self._speed.z + self._speedNormal.z * accU + self._speedCross.z * accV)
 
-	arg_1_0._speedLength = arg_1_0._speed:Magnitude()
+	self._speedLength = self._speed:Magnitude()
 
-	if arg_1_0._speedLength ~= 0 then
-		arg_1_0._speedNormal:Copy(arg_1_0._speed)
-		arg_1_0._speedNormal:Div(arg_1_0._speedLength)
+	if self._speedLength ~= 0 then
+		self._speedNormal:Copy(self._speed)
+		self._speedNormal:Div(self._speedLength)
 	end
 
-	arg_1_0._speedCross:Copy(arg_1_0._speedNormal)
-	arg_1_0._speedCross:Cross2(var_0_1)
+	self._speedCross:Copy(self._speedNormal)
+	self._speedCross:Cross2(vector3Up)
 end
 
-function var_0_3.doTrack(arg_2_0)
-	if arg_2_0:getTrackingTarget() == nil then
-		local var_2_0 = arg_2_0:GetFilteredList()
-		local var_2_1 = var_0_2.TargetWeightiest(arg_2_0, nil, var_2_0)[1]
+--- 追踪逻辑：用FilteredList+TargetWeightiest选择最佳目标，直接转向（无角度限制，全程追踪）
+function BattleTrackingAAMissileUnit.doTrack(self)
+	if self:getTrackingTarget() == nil then
+		local filteredList = self:GetFilteredList()
+		local bestTarget = BattleTargetChoise.TargetWeightiest(self, nil, filteredList)[1]
 
-		if var_2_1 ~= nil then
-			arg_2_0:setTrackingTarget(var_2_1)
+		if bestTarget ~= nil then
+			self:setTrackingTarget(bestTarget)
 		end
 	end
 
-	local var_2_2 = arg_2_0:getTrackingTarget()
+	local target = self:getTrackingTarget()
 
-	if var_2_2 == nil or var_2_2 == -1 then
+	if target == nil or target == -1 then
 		return
-	elseif not var_2_2:IsAlive() then
-		arg_2_0:CleanAimMark()
-		arg_2_0:setTrackingTarget(-1)
+	elseif not target:IsAlive() then
+		self:CleanAimMark()
+		self:setTrackingTarget(-1)
 
-		return
-	end
-
-	local var_2_3 = var_2_2:GetBeenAimedPosition()
-
-	if not var_2_3 then
 		return
 	end
 
-	local var_2_4 = var_2_3 - arg_2_0:GetPosition()
+	local aimPosition = target:GetBeenAimedPosition()
 
-	var_2_4:SetNormalize()
+	if not aimPosition then
+		return
+	end
 
-	local var_2_5 = Vector3.Normalize(arg_2_0._speed)
-	local var_2_6 = Vector3.Dot(var_2_5, var_2_4)
-	local var_2_7 = var_2_5.z * var_2_4.x - var_2_5.x * var_2_4.z
-	local var_2_8 = arg_2_0:GetSpeedRatio()
-	local var_2_9 = var_2_6
-	local var_2_10 = var_2_7
-	local var_2_11 = arg_2_0._speed.x * var_2_9 + arg_2_0._speed.z * var_2_10
-	local var_2_12 = arg_2_0._speed.z * var_2_9 - arg_2_0._speed.x * var_2_10
+	local direction = aimPosition - self:GetPosition()
 
-	arg_2_0._speed:Set(var_2_11, 0, var_2_12)
+	direction:SetNormalize()
+
+	local speedDir = Vector3.Normalize(self._speed)
+	local cosAngle = Vector3.Dot(speedDir, direction)
+	local sinAngle = speedDir.z * direction.x - speedDir.x * direction.z
+	local speedRatio = self:GetSpeedRatio()
+	local cosAngularActual = cosAngle
+	local sinAngularActual = sinAngle
+	-- 直接转向目标方向（无角度限制）
+	local speedX = self._speed.x * cosAngularActual + self._speed.z * sinAngularActual
+	local speedZ = self._speed.z * cosAngularActual - self._speed.x * sinAngularActual
+
+	self._speed:Set(speedX, 0, speedZ)
 end
 
-function var_0_3.doNothing(arg_3_0)
-	if arg_3_0._gravity ~= 0 then
-		arg_3_0._verticalSpeed = arg_3_0._verticalSpeed + arg_3_0._gravity * arg_3_0:GetSpeedRatio()
+--- 仅处理重力
+function BattleTrackingAAMissileUnit.doNothing(self)
+	if self._gravity ~= 0 then
+		self._verticalSpeed = self._verticalSpeed + self._gravity * self:GetSpeedRatio()
 	end
 end
 
-function var_0_3.GetFilteredList(arg_4_0)
-	local var_4_0 = var_0_2.TargetAllHarm(arg_4_0)
-	local var_4_1 = arg_4_0:FilterRange(var_4_0)
+--- @return table<number, BattleUnit> 经过距离和角度筛选的目标列表
+function BattleTrackingAAMissileUnit.GetFilteredList(self)
+	local allHarm = BattleTargetChoise.TargetAllHarm(self)
+	local filteredByRange = self:FilterRange(allHarm)
 
-	return (arg_4_0:FilterAngle(var_4_1))
+	return (self:FilterAngle(filteredByRange))
 end
 
-function var_0_3.FilterRange(arg_5_0, arg_5_1)
-	if not arg_5_0._trackDist then
-		return arg_5_1
+--- @param targets table<number, BattleUnit>
+--- @return table<number, BattleUnit> 在追踪距离内的目标
+function BattleTrackingAAMissileUnit.FilterRange(self, targets)
+	if not self._trackDist then
+		return targets
 	end
 
-	for iter_5_0 = #arg_5_1, 1, -1 do
-		if arg_5_0:IsOutOfRange(arg_5_1[iter_5_0]) then
-			table.remove(arg_5_1, iter_5_0)
+	for iter_5_0 = #targets, 1, -1 do
+		if self:IsOutOfRange(targets[iter_5_0]) then
+			table.remove(targets, iter_5_0)
 		end
 	end
 
-	return arg_5_1
+	return targets
 end
 
-function var_0_3.IsOutOfRange(arg_6_0, arg_6_1)
-	if not arg_6_0._trackDist then
+--- @param target BattleUnit
+--- @return boolean 是否超出追踪距离
+function BattleTrackingAAMissileUnit.IsOutOfRange(self, target)
+	if not self._trackDist then
 		return true
 	end
 
-	return arg_6_0:GetDistance(arg_6_1) > arg_6_0._trackDist
+	return self:GetDistance(target) > self._trackDist
 end
 
-function var_0_3.FilterAngle(arg_7_0, arg_7_1)
-	if not arg_7_0._trackAngle or arg_7_0._trackAngle >= 360 then
-		return arg_7_1
+--- @param targets table<number, BattleUnit>
+--- @return table<number, BattleUnit> 在追踪角度内的目标
+function BattleTrackingAAMissileUnit.FilterAngle(self, targets)
+	if not self._trackAngle or self._trackAngle >= 360 then
+		return targets
 	end
 
-	for iter_7_0 = #arg_7_1, 1, -1 do
-		if arg_7_0:IsOutOfAngle(arg_7_1[iter_7_0]) then
-			table.remove(arg_7_1, iter_7_0)
+	for iter_7_0 = #targets, 1, -1 do
+		if self:IsOutOfAngle(targets[iter_7_0]) then
+			table.remove(targets, iter_7_0)
 		end
 	end
 
-	return arg_7_1
+	return targets
 end
 
-function var_0_3.IsOutOfAngle(arg_8_0, arg_8_1)
-	if not arg_8_0._trackAngle or arg_8_0._trackAngle >= 360 then
+--- @param target BattleUnit
+--- @return boolean 是否超出追踪角度
+function BattleTrackingAAMissileUnit.IsOutOfAngle(self, target)
+	if not self._trackAngle or self._trackAngle >= 360 then
 		return false
 	end
 
-	local var_8_0 = arg_8_0:GetPosition()
-	local var_8_1 = arg_8_1:GetPosition() - var_8_0
-	local var_8_2 = arg_8_0._speedNormal
-	local var_8_3 = Vector3.Dot(var_8_1, var_8_2) / var_8_1:Magnitude()
-	local var_8_4 = math.acos(var_8_3)
+	local bulletPos = self:GetPosition()
+	local toTarget = target:GetPosition() - bulletPos
+	local speedNormal = self._speedNormal
+	local cosValue = Vector3.Dot(toTarget, speedNormal) / toTarget:Magnitude()
+	local angle = math.acos(cosValue)
 
-	return var_8_4 > arg_8_0._trackRadian or var_8_4 < -arg_8_0._trackRadian
+	return angle > self._trackRadian or angle < -self._trackRadian
 end
 
-function var_0_3.SetTrackingFXData(arg_9_0, arg_9_1)
-	arg_9_0._trackingFXData = arg_9_1
+--- @param fxData table 追踪特效数据
+function BattleTrackingAAMissileUnit.SetTrackingFXData(self, fxData)
+	self._trackingFXData = fxData
 end
 
-function var_0_3.InitSpeed(arg_10_0, arg_10_1)
-	if arg_10_0._yAngle == nil then
-		if arg_10_0._targetPos ~= nil then
-			arg_10_0._yAngle = arg_10_1 + arg_10_0._barrageAngle
+--- @param angle number 发射角度
+--- 组合updateSpeed函数链：追踪 + 加速 + doNothing（顺序调用）
+function BattleTrackingAAMissileUnit.InitSpeed(self, angle)
+	if self._yAngle == nil then
+		if self._targetPos ~= nil then
+			self._yAngle = angle + self._barrageAngle
 		else
-			arg_10_0._yAngle = arg_10_0._baseAngle + arg_10_0._barrageAngle
+			self._yAngle = self._baseAngle + self._barrageAngle
 		end
 	end
 
-	arg_10_0:calcSpeed()
+	self:calcSpeed()
 
-	local var_10_0 = {}
+	local speedFuncs = {}
 
-	local function var_10_1(arg_11_0, arg_11_1)
-		for iter_11_0, iter_11_1 in ipairs(var_10_0) do
-			iter_11_1(arg_11_0, arg_11_1)
+	local function updateSpeedWrapper(arg_11_0, arg_11_1)
+		for _, func in ipairs(speedFuncs) do
+			func(arg_11_0, arg_11_1)
 		end
 
-		local var_11_0 = arg_10_0:getTrackingTarget()
+		local trackingTarget = self:getTrackingTarget()
 
-		if var_11_0 and var_11_0 ~= -1 and not arg_10_0._trackingFXData.aimingFX and arg_10_0._trackingFXData.fxName and arg_10_0._trackingFXData.fxName ~= "" then
-			local var_11_1 = var_0_0.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(var_11_0:GetUniqueID())
+		if trackingTarget and trackingTarget ~= -1 and not self._trackingFXData.aimingFX and self._trackingFXData.fxName and self._trackingFXData.fxName ~= "" then
+			local character = ys.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(trackingTarget:GetUniqueID())
 
-			arg_10_0._trackingFXData.aimingFX = var_11_1:AddFX(arg_10_0._trackingFXData.fxName)
+			self._trackingFXData.aimingFX = character:AddFX(self._trackingFXData.fxName)
 		end
 	end
 
-	if arg_10_0:IsTracker() then
-		local var_10_2 = arg_10_0._accTable.tracker
+	if self:IsTracker() then
+		local tracker = self._accTable.tracker
 
-		arg_10_0._trackAngle = 360
-		arg_10_0._trackDist = var_10_2.range
+		self._trackAngle = 360
+		self._trackDist = tracker.range
 
-		if var_10_2.angular then
-			arg_10_0._trackRadian = math.deg2Rad * arg_10_0._trackAngle * 0.5
+		if tracker.angular then
+			self._trackRadian = math.deg2Rad * self._trackAngle * 0.5
 		end
 
-		table.insert(var_10_0, arg_10_0.doTrack)
+		table.insert(speedFuncs, self.doTrack)
 	end
 
-	if arg_10_0:HasAcceleration() then
-		arg_10_0._speedLength = arg_10_0._speed:Magnitude()
-		arg_10_0._speedNormal = arg_10_0._speed / arg_10_0._speedLength
-		arg_10_0._speedCross = Vector3.Cross(arg_10_0._speedNormal, var_0_1)
+	if self:HasAcceleration() then
+		self._speedLength = self._speed:Magnitude()
+		self._speedNormal = self._speed / self._speedLength
+		self._speedCross = Vector3.Cross(self._speedNormal, vector3Up)
 
-		table.insert(var_10_0, function(arg_12_0, ...)
-			arg_10_0._speedLength = arg_10_0._speed:Magnitude()
-			arg_10_0._speedNormal = arg_10_0._speed / arg_10_0._speedLength
-			arg_10_0._speedCross = Vector3.Cross(arg_10_0._speedNormal, var_0_1)
+		table.insert(speedFuncs, function(arg_12_0, ...)
+			self._speedLength = self._speed:Magnitude()
+			self._speedNormal = self._speed / self._speedLength
+			self._speedCross = Vector3.Cross(self._speedNormal, vector3Up)
 
-			arg_10_0.doAccelerate(arg_12_0, ...)
+			self.doAccelerate(arg_12_0, ...)
 		end)
 	end
 
-	if #var_10_0 == 0 then
-		table.insert(var_10_0, arg_10_0.doNothing)
+	if #speedFuncs == 0 then
+		table.insert(speedFuncs, self.doNothing)
 	end
 
-	arg_10_0.updateSpeed = var_10_1
+	self.updateSpeed = updateSpeedWrapper
 end
 
-function var_0_3.CleanAimMark(arg_13_0)
-	local var_13_0 = arg_13_0:getTrackingTarget()
+--- 清除追踪目标上的瞄准特效
+function BattleTrackingAAMissileUnit.CleanAimMark(self)
+	local target = self:getTrackingTarget()
 
-	if var_13_0 and var_13_0 ~= -1 and arg_13_0._trackingFXData.aimingFX then
-		local var_13_1 = var_0_0.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(var_13_0:GetUniqueID())
+	if target and target ~= -1 and self._trackingFXData.aimingFX then
+		local character = ys.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(target:GetUniqueID())
 
-		if var_13_1 then
-			var_13_1:RemoveFX(arg_13_0._trackingFXData.aimingFX)
+		if character then
+			character:RemoveFX(self._trackingFXData.aimingFX)
 		end
 
-		arg_13_0._trackingFXData.aimingFX = nil
+		self._trackingFXData.aimingFX = nil
 	end
 end
 
-function var_0_3.OutRange(arg_14_0, ...)
-	arg_14_0:CleanAimMark()
-	var_0_3.super.OutRange(arg_14_0, ...)
+--- 超出射程时先清除瞄准标记
+function BattleTrackingAAMissileUnit.OutRange(self, ...)
+	self:CleanAimMark()
+	BattleTrackingAAMissileUnit.super.OutRange(self, ...)
 end

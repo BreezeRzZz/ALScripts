@@ -1,21 +1,27 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = class("BattleTriggerAOEData", var_0_0.Battle.BattleAOEData)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleTriggerAOEData = class("BattleTriggerAOEData", ys.Battle.BattleAOEData)
 
-var_0_0.Battle.BattleTriggerAOEData = var_0_2
-var_0_2.__name = "BattleTriggerAOEData"
+ys.Battle.BattleTriggerAOEData = BattleTriggerAOEData
+BattleTriggerAOEData.__name = "BattleTriggerAOEData"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
+--- @class BattleTriggerAOEData : BattleAOEData
+--- @param areaUID number 区域唯一ID
+--- @param IFF number 敌我识别
+--- @param areaCldFunc function 碰撞回调函数
+--- 触发型AOE：构造同父类
+function BattleTriggerAOEData.Ctor(self, areaUID, IFF, areaCldFunc)
+	BattleTriggerAOEData.super.Ctor(self, areaUID, IFF, areaCldFunc)
 end
 
-function var_0_2.Settle(arg_2_0)
-	if #arg_2_0._cldObjList > 0 then
-		arg_2_0.SortCldObjList(arg_2_0._cldObjList)
-		arg_2_0._cldComponent:GetCldData().func(arg_2_0._cldObjList)
+--- 触发型AOE结算：有碰撞对象时执行一次碰撞回调后立即标记失效
+function BattleTriggerAOEData.Settle(self)
+	if #self._cldObjList > 0 then
+		self.SortCldObjList(self._cldObjList)
+		self._cldComponent:GetCldData().func(self._cldObjList)
 
-		arg_2_0._flag = false
+		self._flag = false
 	end
 end

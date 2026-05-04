@@ -1,42 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourDamage", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourDamage = class("BattleEnvironmentBehaviourDamage", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourDamage = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourDamage"
+ys.Battle.BattleEnvironmentBehaviourDamage = BattleEnvironmentBehaviourDamage
+BattleEnvironmentBehaviourDamage.__name = "BattleEnvironmentBehaviourDamage"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- @class BattleEnvironmentBehaviourDamage : BattleEnvironmentBehaviour
+--- 环境伤害行为：对区域内单位造成基于血量比例的伤害
+function BattleEnvironmentBehaviourDamage.Ctor(self)
+	BattleEnvironmentBehaviourDamage.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取伤害参数：hp_rate(比例) / damage(固定值) / offset(随机浮动)
+--- @param tmpData table
+function BattleEnvironmentBehaviourDamage.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourDamage.super.SetTemplate(self, tmpData)
 
-	arg_2_0._rate = arg_2_0._tmpData.hp_rate or 0
-	arg_2_0._damage = arg_2_0._tmpData.damage or 0
-	arg_2_0._offset = arg_2_0._tmpData.offset or 0
+	self._rate = self._tmpData.hp_rate or 0
+	self._damage = self._tmpData.damage or 0
+	self._offset = self._tmpData.offset or 0
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._cldUnitList) do
-		local var_3_0 = {
+--- 执行伤害：damage = max(0, floor(curHP * hp_rate) + damage + random(-offset, offset))
+--- 单位死亡时调用Spirit沉没和AppendInvincible无敌保护
+function BattleEnvironmentBehaviourDamage.doBehaviour(self)
+	for _, unit in ipairs(self._cldUnitList) do
+		local damageAttr = {
 			isMiss = false,
 			isCri = false,
 			isHeal = false
 		}
-		local var_3_1, var_3_2 = iter_3_1:GetHP()
-		local var_3_3 = math.max(0, math.floor(var_3_2 * arg_3_0._rate) + arg_3_0._damage + math.random(-arg_3_0._offset, arg_3_0._offset))
+		local maxHP, curHP = unit:GetHP()
+		local damage = math.max(0, math.floor(curHP * self._rate) + self._damage + math.random(-self._offset, self._offset))
 
-		iter_3_1:UpdateHP(-var_3_3, var_3_0)
+		unit:UpdateHP(-damage, damageAttr)
 
-		if not iter_3_1:IsAlive() then
-			var_0_0.Battle.BattleAttr.Spirit(iter_3_1)
-			var_0_0.Battle.BattleAttr.AppendInvincible(iter_3_1)
+		if not unit:IsAlive() then
+			ys.Battle.BattleAttr.Spirit(unit)
+			ys.Battle.BattleAttr.AppendInvincible(unit)
 		end
 	end
 
-	var_0_3.super.doBehaviour(arg_3_0)
+	BattleEnvironmentBehaviourDamage.super.doBehaviour(self)
 end

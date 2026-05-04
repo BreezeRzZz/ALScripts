@@ -1,28 +1,35 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleJammingWave = class("BattleJammingWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleJammingWave.__name = "BattleJammingWave"
+ys.Battle.BattleJammingWave = class("BattleJammingWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleJammingWave.__name = "BattleJammingWave"
 
-local var_0_1 = var_0_0.Battle.BattleJammingWave
+local BattleJammingWave = ys.Battle.BattleJammingWave
 
-var_0_1.JAMMING_ENGAGE = 1
-var_0_1.JAMMING_DODGE = 2
+--- 电子干扰类型常量
+BattleJammingWave.JAMMING_ENGAGE = 1  -- 干扰命中（降低命中率）
+BattleJammingWave.JAMMING_DODGE = 2  -- 干扰闪避（降低闪避率）
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 波次类型：电子干扰波
+--- 对场上友方单位施加电子干扰效果（KizunaJamming）。
+--- KizunaJamming 是绊爱联动活动的特殊机制，会影响命中/闪避属性。
+function BattleJammingWave.Ctor(self)
+	BattleJammingWave.super.Ctor(self)
 end
 
-function var_0_1.DoWave(arg_2_0)
-	var_0_1.super.DoWave(arg_2_0)
+--- 执行波次：检查关卡 KizunaJamming 配置 -> 若包含 ENGAGE 类型则施加干扰 -> doFinish
+--- KizunaJamming 数据来自 BattleInitData，由关卡配置预设
+function BattleJammingWave.DoWave(self)
+	BattleJammingWave.super.DoWave(self)
 
-	local var_2_0 = var_0_0.Battle.BattleDataProxy.GetInstance()
-	local var_2_1 = var_2_0:GetInitData().KizunaJamming
+	local dataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local kizunaJamming = dataProxy:GetInitData().KizunaJamming
 
-	if var_2_1 and table.contains(var_2_1, var_0_1.JAMMING_ENGAGE) then
-		var_2_0:KizunaJamming()
+	-- 如果关卡配置了 KizunaJamming 且包含 JAMMING_ENGAGE 类型，施加干扰效果
+	if kizunaJamming and table.contains(kizunaJamming, BattleJammingWave.JAMMING_ENGAGE) then
+		dataProxy:KizunaJamming()
 	end
 
-	arg_2_0:doFinish()
+	self:doFinish()
 end

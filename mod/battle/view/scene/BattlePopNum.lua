@@ -1,83 +1,105 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
 
-var_0_0.Battle.BattlePopNum = class("BattlePopNum")
-var_0_0.Battle.BattlePopNum.__name = "BattlePopNum"
+ys.Battle.BattlePopNum = class("BattlePopNum")
+ys.Battle.BattlePopNum.__name = "BattlePopNum"
 
-local var_0_2 = var_0_0.Battle.BattlePopNum
+local BattlePopNum = ys.Battle.BattlePopNum
 
-var_0_2.NUM_INIT_OFFSET = Vector3(0, 1.6, 0)
+--- 伤害数字的初始偏移量（从参考点向上偏移1.6单位）
+BattlePopNum.NUM_INIT_OFFSET = Vector3(0, 1.6, 0)
 
-local var_0_3 = Vector3(10000, 10000)
-local var_0_4 = Vector2(1, 1)
+--- 回收时移出屏幕的隐藏位置
+local hiddenPosition = Vector3(10000, 10000)
+--- 回收时重置的缩放值
+local hiddenScale = Vector2(1, 1)
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0.bundle = arg_1_2.bundle
-	arg_1_0.pool = arg_1_1
+--- @class BattlePopNum
+--- @param pool LuaObPool 所属的对象池
+--- @param initData table {template: GameObject, parentTF: Transform, bundle: BattlePopNumBundle}
+--- 构造函数：从模板实例化伤害数字GameObject，挂载到指定父节点，注册动画结束回调回池
+function BattlePopNum.Ctor(self, pool, initData)
+	self.bundle = initData.bundle
+	self.pool = pool
 
-	local var_1_0 = Object.Instantiate(arg_1_2.template)
+	local go = Object.Instantiate(initData.template)
 
-	arg_1_0._go = var_1_0
-	arg_1_0._tf = var_1_0.transform
+	self._go = go
+	self._tf = go.transform
 
-	arg_1_0:SetParent(arg_1_2.parentTF)
+	self:SetParent(initData.parentTF)
 
-	arg_1_0._animator = var_1_0:GetComponent(typeof(Animator))
+	self._animator = go:GetComponent(typeof(Animator))
 
-	local var_1_1 = arg_1_0._tf:Find("text")
+	-- 获取文字组件（伤害数字可能有不同字体样式的子节点）
+	local textTF = self._tf:Find("text")
 
-	if var_1_1 then
-		arg_1_0.textCom = var_1_1:GetComponent(typeof(Text))
+	if textTF then
+		self.textCom = textTF:GetComponent(typeof(Text))
 	end
 
-	var_1_0:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(arg_2_0)
-		arg_1_1:Recycle(arg_1_0)
+	-- 动画播放完毕自动回池
+	go:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(eventName)
+		pool:Recycle(self)
 	end)
 
-	arg_1_0._offsetVector = Vector3.zero
+	self._offsetVector = Vector3.zero
 end
 
-function var_0_2.SetParent(arg_3_0, arg_3_1)
-	arg_3_0._tf:SetParent(arg_3_1, false)
+--- 设置父节点Transform
+--- @param parentTF Transform 新的父节点
+function BattlePopNum.SetParent(self, parentTF)
+	self._tf:SetParent(parentTF, false)
 end
 
-function var_0_2.SetText(arg_4_0, arg_4_1)
-	arg_4_0.textCom.text = tostring(arg_4_1)
+--- 设置显示的文字内容
+--- @param text string|number 要显示的伤害数字
+function BattlePopNum.SetText(self, text)
+	self.textCom.text = tostring(text)
 end
 
-function var_0_2.SetReferenceCharacter(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._offsetVector.x = arg_5_2.x
+--- 设置参考坐标（用于定位在世界空间中）
+--- @param referencePoint any 提供GetReferenceVector方法的参考对象
+--- @param offset Vector3 额外偏移
+function BattlePopNum.SetReferenceCharacter(self, referencePoint, offset)
+	self._offsetVector.x = offset.x
 
-	local var_5_0 = arg_5_1:GetReferenceVector(arg_5_0._offsetVector)
+	local worldPos = referencePoint:GetReferenceVector(self._offsetVector)
 
-	var_5_0:Add(var_0_2.NUM_INIT_OFFSET)
+	worldPos:Add(BattlePopNum.NUM_INIT_OFFSET)
 
-	arg_5_0._tf.position = var_5_0
+	self._tf.position = worldPos
 end
 
-function var_0_2.Play(arg_6_0)
-	arg_6_0._animator.enabled = true
+--- 启动伤害数字弹出动画
+function BattlePopNum.Play(self)
+	self._animator.enabled = true
 end
 
-function var_0_2.SetScale(arg_7_0, arg_7_1)
-	arg_7_0._tf.localScale = Vector2(arg_7_1, arg_7_1)
+--- 设置数字缩放
+--- @param scale number 缩放倍率
+function BattlePopNum.SetScale(self, scale)
+	self._tf.localScale = Vector2(scale, scale)
 end
 
-function var_0_2.Init(arg_8_0)
-	arg_8_0._go:SetActive(true)
+--- 初始化：激活GameObject（从对象池取出时调用）
+function BattlePopNum.Init(self)
+	self._go:SetActive(true)
 end
 
-function var_0_2.Recycle(arg_9_0)
-	arg_9_0._animator.enabled = false
-	arg_9_0._tf.position = var_0_3
-	arg_9_0._tf.localScale = var_0_4
+--- 回收：关闭动画并移到屏幕外隐藏位置（回池时调用）
+function BattlePopNum.Recycle(self)
+	self._animator.enabled = false
+	self._tf.position = hiddenPosition
+	self._tf.localScale = hiddenScale
 end
 
-function var_0_2.Dispose(arg_10_0)
-	arg_10_0._go:SetActive(false)
+--- 销毁：禁用GameObject，清空引用
+function BattlePopNum.Dispose(self)
+	self._go:SetActive(false)
 
-	arg_10_0._go = nil
-	arg_10_0._tf = nil
+	self._go = nil
+	self._tf = nil
 end

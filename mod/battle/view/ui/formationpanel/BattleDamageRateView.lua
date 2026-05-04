@@ -1,71 +1,86 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleDamageRateView = class("BattleDamageRateView")
-var_0_0.Battle.BattleDamageRateView.__name = "BattleDamageRateView"
+ys.Battle.BattleDamageRateView = class("BattleDamageRateView")
+ys.Battle.BattleDamageRateView.__name = "BattleDamageRateView"
 
-function var_0_0.Battle.BattleDamageRateView.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0.tick_bar = arg_1_1.transform:Find("tick_bar"):GetComponent(typeof(Image))
-	arg_1_0.tickBarOb = arg_1_0.tick_bar.gameObject
-	arg_1_0.tick_bar.fillAmount = 0
+--- 战斗伤害评分进度条视图（C/B/A/S评分条）
+--- @param go GameObject 评分条的GameObject
+function ys.Battle.BattleDamageRateView.Ctor(self, go)
+	self._go = go
+	self.tick_bar = go.transform:Find("tick_bar"):GetComponent(typeof(Image))
+	self.tickBarOb = self.tick_bar.gameObject
+	self.tick_bar.fillAmount = 0
 end
 
-function var_0_0.Battle.BattleDamageRateView.UpdateScore(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_0:CalScore(arg_2_1, arg_2_2)
+--- 根据当前分数和章节ID更新评分条
+--- @param score number 当前战斗分数
+--- @param chapterID number 章节ID
+function ys.Battle.BattleDamageRateView.UpdateScore(self, score, chapterID)
+	local targetFill = self:CalScore(score, chapterID)
 
-	LeanTween.cancel(arg_2_0.tickBarOb)
-	LeanTween.value(arg_2_0.tickBarOb, arg_2_0.tick_bar.fillAmount, var_2_0, 0.5):setOnUpdate(System.Action_float(function(arg_3_0)
-		arg_2_0.tick_bar.fillAmount = arg_3_0
+	LeanTween.cancel(self.tickBarOb)
+	-- 平滑过渡到目标填充率
+	LeanTween.value(self.tickBarOb, self.tick_bar.fillAmount, targetFill, 0.5):setOnUpdate(System.Action_float(function(fillValue)
+		self.tick_bar.fillAmount = fillValue
 	end))
 end
 
-function var_0_0.Battle.BattleDamageRateView.CalScore(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = pg.expedition_data_template[arg_4_2]
-	local var_4_1 = {
+--- 计算分数对应的评分条填充率
+--- @param score number 当前分数
+--- @param chapterID number 章节ID，用于查询expedition_data_template
+--- @return number 填充率（0~1）
+function ys.Battle.BattleDamageRateView.CalScore(self, score, chapterID)
+	local chapterData = pg.expedition_data_template[chapterID]
+	-- 分数档位键名列表
+	local scoreKeys = {
 		"c_score_point",
 		"b_score_point",
 		"a_score_point",
 		"s_score_point",
 		"score_max"
 	}
-	local var_4_2 = {
+	-- 对应填充率
+	local fillRatios = {
 		0,
 		0.445,
 		0.7,
 		0.88,
 		1
 	}
-	local var_4_3 = 0
+	local tierIndex = 0
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_1) do
-		if arg_4_1 < var_4_0[iter_4_1] then
+	-- 找到当前分数所在的档位
+	for i, scoreKey in ipairs(scoreKeys) do
+		if score < chapterData[scoreKey] then
 			break
 		end
 
-		var_4_3 = iter_4_0
+		tierIndex = i
 	end
 
-	local var_4_4 = 0
+	-- 在档位之间做线性插值
+	local fillAmount = 0
 
-	if var_4_3 < #var_4_1 then
-		local var_4_5 = var_4_0[var_4_1[var_4_3]]
+	if tierIndex < #scoreKeys then
+		local lowerBound = chapterData[scoreKeys[tierIndex]]
 
-		if var_4_5 < 0 then
-			var_4_5 = 0
+		if lowerBound < 0 then
+			lowerBound = 0
 		end
 
-		local var_4_6 = (arg_4_1 - var_4_5) / (var_4_0[var_4_1[var_4_3 + 1]] - var_4_5)
+		local ratioInTier = (score - lowerBound) / (chapterData[scoreKeys[tierIndex + 1]] - lowerBound)
 
-		var_4_4 = (var_4_2[var_4_3 + 1] - var_4_2[var_4_3]) * var_4_6 + var_4_2[var_4_3]
+		fillAmount = (fillRatios[tierIndex + 1] - fillRatios[tierIndex]) * ratioInTier + fillRatios[tierIndex]
 	else
-		var_4_4 = 1
+		fillAmount = 1
 	end
 
-	return var_4_4
+	return fillAmount
 end
 
-function var_0_0.Battle.BattleDamageRateView.Dispose(arg_5_0)
-	LeanTween.cancel(arg_5_0.tickBarOb)
+--- 取消缓动动画
+function ys.Battle.BattleDamageRateView.Dispose(self)
+	LeanTween.cancel(self.tickBarOb)
 end

@@ -104,6 +104,7 @@ function BattleUIMediator.ActiveDebugConsole(arg_11_0)
 	arg_11_0._debugConsoleView:SetActive(true)
 end
 
+-- TODO
 function BattleUIMediator.OpeningEffect(arg_12_0, arg_12_1, arg_12_2)
 	arg_12_0._uiMGR:SetActive(false)
 

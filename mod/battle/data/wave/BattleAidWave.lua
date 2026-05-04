@@ -1,110 +1,127 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleAidWave = class("BattleAidWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleAidWave.__name = "BattleAidWave"
+ys.Battle.BattleAidWave = class("BattleAidWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleAidWave.__name = "BattleAidWave"
 
-local var_0_2 = var_0_0.Battle.BattleAidWave
+local BattleAidWave = ys.Battle.BattleAidWave
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+--- 波次类型：友军增援波
+--- 在战斗中生成友方增援单位（先锋、主力、潜艇）。
+--- 支持"撤退击杀列表"：先将指定 templateID 的友方单位撤退，再生成增援。
+--- 生成完成后初始化装备 CD 和统计数据，然后 doPass。
+function BattleAidWave.Ctor(self)
+	BattleAidWave.super.Ctor(self)
 end
 
-function var_0_2.SetWaveData(arg_2_0, arg_2_1)
-	var_0_2.super.SetWaveData(arg_2_0, arg_2_1)
+--- 设置波次数据，读取增援配置
+--- @param waveData table 关卡配置中对应的 wave 数据
+function BattleAidWave.SetWaveData(self, waveData)
+	BattleAidWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._vanguardUnitList = arg_2_0._param.vanguard_unitList
-	arg_2_0._mainUnitList = arg_2_0._param.main_unitList
-	arg_2_0._subUnitList = arg_2_0._param.sub_unitList
-	arg_2_0._killList = arg_2_0._param.kill_list
+	self._vanguardUnitList = self._param.vanguard_unitList  -- 先锋增援列表
+	self._mainUnitList     = self._param.main_unitList      -- 主力增援列表
+	self._subUnitList      = self._param.sub_unitList       -- 潜艇增援列表
+	self._killList         = self._param.kill_list          -- 需要先撤退的 unit templateID 列表
 end
 
-function var_0_2.DoWave(arg_3_0)
-	var_0_2.super.DoWave(arg_3_0)
+--- 执行波次：
+--- 1. 如果有 killList，遍历场上友方单位，匹配 templateID 后撤退
+--- 2. 依次生成 vanguardUnitList、mainUnitList、subUnitList 中的增援单位
+--- 3. 每个单位生成后初始化武器 CD 和统计数据
+--- 4. 所有操作完成后 doPass
+function BattleAidWave.DoWave(self)
+	BattleAidWave.super.DoWave(self)
 
-	local var_3_0 = var_0_0.Battle.BattleDataProxy.GetInstance()
+	local dataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-	if arg_3_0._killList ~= nil then
-		local var_3_1 = var_3_0:GetFriendlyShipList()
+	-- Step 1：处理撤退列表。先撤退场上指定模板的友方单位
+	if self._killList ~= nil then
+		local friendlyShipList = dataProxy:GetFriendlyShipList()
 
-		for iter_3_0, iter_3_1 in ipairs(arg_3_0._killList) do
-			for iter_3_2, iter_3_3 in pairs(var_3_1) do
-				if iter_3_3:GetTemplateID() == iter_3_1 then
-					iter_3_3:Retreat()
+		for _, killTemplateID in ipairs(self._killList) do
+			for _, shipUnit in pairs(friendlyShipList) do
+				if shipUnit:GetTemplateID() == killTemplateID then
+					shipUnit:Retreat()
 				end
 			end
 		end
 	end
 
-	if arg_3_0._vanguardUnitList ~= nil then
-		for iter_3_4, iter_3_5 in ipairs(arg_3_0._vanguardUnitList) do
-			local var_3_2 = {}
+	-- Step 2：生成先锋增援
+	if self._vanguardUnitList ~= nil then
+		for _, vanguardUnit in ipairs(self._vanguardUnitList) do
+			-- 构建装备列表：{ skin = 0, id = equipmentID }
+			local equipmentList = {}
 
-			for iter_3_6, iter_3_7 in ipairs(iter_3_5.equipment) do
-				var_3_2[#var_3_2 + 1] = {
+			for _, equipmentID in ipairs(vanguardUnit.equipment) do
+				equipmentList[#equipmentList + 1] = {
 					skin = 0,
-					id = iter_3_7
+					id   = equipmentID,
 				}
 			end
 
-			local var_3_3 = Clone(iter_3_5)
+			local unitData = Clone(vanguardUnit)
 
-			var_3_3.equipment = var_3_2
-			var_3_3.baseProperties = iter_3_5.properties
+			unitData.equipment      = equipmentList
+			unitData.baseProperties = vanguardUnit.properties
 
-			local var_3_4 = var_3_0:SpawnVanguard(var_3_3, var_0_1.FRIENDLY_CODE)
+			-- 生成先锋单位（以友方 IFF 加入战场）
+			local spawnedUnit = dataProxy:SpawnVanguard(unitData, BattleConfig.FRIENDLY_CODE)
 
-			var_3_0.InitUnitWeaponCD(var_3_4)
-			var_3_0:InitAidUnitStatistics(var_3_4)
+			dataProxy.InitUnitWeaponCD(spawnedUnit)
+			dataProxy:InitAidUnitStatistics(spawnedUnit)
 		end
 	end
 
-	if arg_3_0._mainUnitList ~= nil then
-		for iter_3_8, iter_3_9 in ipairs(arg_3_0._mainUnitList) do
-			local var_3_5 = {}
+	-- Step 3：生成主力增援
+	if self._mainUnitList ~= nil then
+		for _, mainUnit in ipairs(self._mainUnitList) do
+			local equipmentList = {}
 
-			for iter_3_10, iter_3_11 in ipairs(iter_3_9.equipment) do
-				var_3_5[#var_3_5 + 1] = {
+			for _, equipmentID in ipairs(mainUnit.equipment) do
+				equipmentList[#equipmentList + 1] = {
 					skin = 0,
-					id = iter_3_11
+					id   = equipmentID,
 				}
 			end
 
-			local var_3_6 = Clone(iter_3_9)
+			local unitData = Clone(mainUnit)
 
-			var_3_6.equipment = var_3_5
-			var_3_6.baseProperties = iter_3_9.properties
+			unitData.equipment      = equipmentList
+			unitData.baseProperties = mainUnit.properties
 
-			local var_3_7 = var_3_0:SpawnMain(var_3_6, var_0_1.FRIENDLY_CODE)
+			local spawnedUnit = dataProxy:SpawnMain(unitData, BattleConfig.FRIENDLY_CODE)
 
-			var_3_0.InitUnitWeaponCD(var_3_7)
-			var_3_0:InitAidUnitStatistics(var_3_7)
+			dataProxy.InitUnitWeaponCD(spawnedUnit)
+			dataProxy:InitAidUnitStatistics(spawnedUnit)
 		end
 	end
 
-	if arg_3_0._subUnitList ~= nil then
-		for iter_3_12, iter_3_13 in ipairs(arg_3_0._subUnitList) do
-			local var_3_8 = {}
+	-- Step 4：生成潜艇增援
+	if self._subUnitList ~= nil then
+		for _, subUnit in ipairs(self._subUnitList) do
+			local equipmentList = {}
 
-			for iter_3_14, iter_3_15 in ipairs(iter_3_13.equipment) do
-				var_3_8[#var_3_8 + 1] = {
+			for _, equipmentID in ipairs(subUnit.equipment) do
+				equipmentList[#equipmentList + 1] = {
 					skin = 0,
-					id = iter_3_15
+					id   = equipmentID,
 				}
 			end
 
-			local var_3_9 = Clone(iter_3_13)
+			local unitData = Clone(subUnit)
 
-			var_3_9.equipment = var_3_8
-			var_3_9.baseProperties = iter_3_13.properties
+			unitData.equipment      = equipmentList
+			unitData.baseProperties = subUnit.properties
 
-			local var_3_10 = var_3_0:SpawnSub(var_3_9, var_0_1.FRIENDLY_CODE)
+			local spawnedUnit = dataProxy:SpawnSub(unitData, BattleConfig.FRIENDLY_CODE)
 
-			var_3_0:InitAidUnitStatistics(var_3_10)
+			dataProxy:InitAidUnitStatistics(spawnedUnit)
 		end
 	end
 
-	arg_3_0:doPass()
+	self:doPass()
 end

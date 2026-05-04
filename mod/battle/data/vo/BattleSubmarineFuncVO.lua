@@ -1,86 +1,122 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleSubmarineFuncVO = class("BattleSubmarineFuncVO")
-var_0_0.Battle.BattleSubmarineFuncVO.__name = "BattleSubmarineFuncVO"
+ys.Battle.BattleSubmarineFuncVO = class("BattleSubmarineFuncVO")
+ys.Battle.BattleSubmarineFuncVO.__name = "BattleSubmarineFuncVO"
 
-local var_0_3 = var_0_0.Battle.BattleSubmarineFuncVO
+local BattleSubmarineFuncVO = ys.Battle.BattleSubmarineFuncVO
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+--- @class BattleSubmarineFuncVO
+--- @param self BattleSubmarineFuncVO
+--- @param maxValue number 最大CD时间（下潜/上浮/冲刺/切换的冷却时长）
+--- 构造函数，设置初始充能值为maxValue，激活状态为true
+function BattleSubmarineFuncVO.Ctor(self, maxValue)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0._current = arg_1_1
-	arg_1_0._defaultMax = arg_1_1
-	arg_1_0._active = true
+	self._current = maxValue
+	self._defaultMax = maxValue
+	self._active = true
 
-	arg_1_0:ResetMax()
+	self:ResetMax()
 end
 
-function var_0_3.Update(arg_2_0, arg_2_1)
-	if arg_2_0._active and arg_2_0._current < arg_2_0._max then
-		local var_2_0 = arg_2_1 - arg_2_0._reloadStartTime
+--- 每帧更新：若激活且充能未满，根据时间差更新充能进度
+--- @param self BattleSubmarineFuncVO
+--- @param timeStamp number 当前战斗时间戳
+function BattleSubmarineFuncVO.Update(self, timeStamp)
+	if self._active and self._current < self._max then
+		-- 从上次重置开始算起经过的时间
+		local elapsed = timeStamp - self._reloadStartTime
 
-		if var_2_0 >= arg_2_0._max then
-			arg_2_0:ResetMax()
+		if elapsed >= self._max then
+			-- CD已完成，恢复到最大值
+			self:ResetMax()
 
-			arg_2_0._current = arg_2_0._max
-			arg_2_0._reloadStartTime = nil
+			self._current = self._max
+			self._reloadStartTime = nil
 
-			arg_2_0:DispatchOverLoadChange()
+			self:DispatchOverLoadChange()
 		else
-			arg_2_0._current = var_2_0
+			-- CD进行中，更新当前充能
+			self._current = elapsed
 		end
 	end
 end
 
-function var_0_3.SetActive(arg_3_0, arg_3_1)
-	arg_3_0._active = arg_3_1
+--- 设置激活状态（控制是否允许充能恢复）
+--- @param self BattleSubmarineFuncVO
+--- @param active boolean 是否激活
+function BattleSubmarineFuncVO.SetActive(self, active)
+	self._active = active
 end
 
-function var_0_3.ResetCurrent(arg_4_0)
-	arg_4_0._current = 0
-	arg_4_0._reloadStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 重置当前充能为0，记录开始充能的时间
+--- @param self BattleSubmarineFuncVO
+function BattleSubmarineFuncVO.ResetCurrent(self)
+	self._current = 0
+	self._reloadStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	arg_4_0:DispatchOverLoadChange()
+	self:DispatchOverLoadChange()
 end
 
-function var_0_3.ResetMax(arg_5_0)
-	arg_5_0._max = arg_5_0._defaultMax
+--- 将最大值重置为默认最大值
+--- @param self BattleSubmarineFuncVO
+function BattleSubmarineFuncVO.ResetMax(self)
+	self._max = self._defaultMax
 end
 
-function var_0_3.SetMax(arg_6_0, arg_6_1)
-	arg_6_0._max = arg_6_1
+--- 手动设置最大值（用于Buff等动态修改CD）
+--- @param self BattleSubmarineFuncVO
+--- @param max number 新的最大值
+function BattleSubmarineFuncVO.SetMax(self, max)
+	self._max = max
 end
 
-function var_0_3.GetMax(arg_7_0)
-	return arg_7_0._max
+--- 获取当前最大值
+--- @param self BattleSubmarineFuncVO
+--- @return number 当前最大CD值
+function BattleSubmarineFuncVO.GetMax(self)
+	return self._max
 end
 
-function var_0_3.GetTotal(arg_8_0)
+--- 获取总容量（潜艇功能VO固定返回0，用_count代替）
+--- @param self BattleSubmarineFuncVO
+--- @return number 0
+function BattleSubmarineFuncVO.GetTotal(self)
 	return 0
 end
 
-function var_0_3.GetCurrent(arg_9_0)
-	return arg_9_0._current
+--- 获取当前充能值
+--- @param self BattleSubmarineFuncVO
+--- @return number 当前充能值
+function BattleSubmarineFuncVO.GetCurrent(self)
+	return self._current
 end
 
-function var_0_3.IsOverLoad(arg_10_0)
-	return arg_10_0._current < arg_10_0._max
+--- 判断是否处于过载状态（充能未满）
+--- @param self BattleSubmarineFuncVO
+--- @return boolean 是否过载
+function BattleSubmarineFuncVO.IsOverLoad(self)
+	return self._current < self._max
 end
 
-function var_0_3.DispatchOverLoadChange(arg_11_0)
-	local var_11_0 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE)
+--- 派发过载状态变更事件
+--- @param self BattleSubmarineFuncVO
+function BattleSubmarineFuncVO.DispatchOverLoadChange(self)
+	local overLoadEvent = ys.Event.New(ys.Battle.BattleEvent.OVER_LOAD_CHANGE)
 
-	arg_11_0:DispatchEvent(var_11_0)
+	self:DispatchEvent(overLoadEvent)
 end
 
-function var_0_3.Dispose(arg_12_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_12_0._focusTimer)
+--- 销毁清理：移除定时器并分离事件分发器
+--- @param self BattleSubmarineFuncVO
+function BattleSubmarineFuncVO.Dispose(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 
-	arg_12_0._focusTimer = nil
+	self._focusTimer = nil
 
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_12_0)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end

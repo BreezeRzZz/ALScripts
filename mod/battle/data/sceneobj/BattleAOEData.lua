@@ -1,15 +1,22 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
 local BattleAOEData = class("BattleAOEData")
 
-var_0_0.Battle.BattleAOEData = BattleAOEData
+ys.Battle.BattleAOEData = BattleAOEData
 BattleAOEData.__name = "BattleAOEData"
 BattleAOEData.ALIGNMENT_LEFT = "left"
 BattleAOEData.ALIGNMENT_RIGHT = "right"
 BattleAOEData.ALIGNMENT_MIDDLE = "middle"
+BattleAOEData.SOURCE_BULLET_9 = "bulletType9"
 
+--- @class BattleAOEData
+--- @param areaUID number 区域唯一ID
+--- @param IFF number 敌我识别
+--- @param areaCldFunc function 碰撞回调函数
+--- @param endFunc function 结束回调函数
+--- AOE区域数据构造
 function BattleAOEData.Ctor(self, areaUID, IFF, areaCldFunc, endFunc)
 	self._areaUniqueID = areaUID
 	self._areaCldFunc = areaCldFunc
@@ -27,292 +34,314 @@ function BattleAOEData.Ctor(self, areaUID, IFF, areaCldFunc, endFunc)
 	self._timeExemptKey = "aoe_" .. self._areaUniqueID
 end
 
-function BattleAOEData.StartTimer(arg_2_0)
-	if arg_2_0._lifeTime == -1 then
-		arg_2_0._flag = false
+--- 启动生命计时器。若生命周期为-1则永久存在
+function BattleAOEData.StartTimer(self)
+	if self._lifeTime == -1 then
+		self._flag = false
 
 		return
 	end
 
-	arg_2_0._flag = true
+	self._flag = true
 
-	if arg_2_0._lifeTime > 0 then
-		arg_2_0._lifeTimer = pg.TimeMgr.GetInstance():AddBattleTimer("areaTimer", 0, arg_2_0._lifeTime, function()
-			arg_2_0:RemoveTimer()
+	if self._lifeTime > 0 then
+		self._lifeTimer = pg.TimeMgr.GetInstance():AddBattleTimer("areaTimer", 0, self._lifeTime, function()
+			self:RemoveTimer()
 		end, true)
 	end
 end
 
-function BattleAOEData.GetTimeRationExemptKey(arg_4_0)
-	return arg_4_0._timeExemptKey
+--- 获取时间豁免key，用于区分不同AOE的区域豁免
+function BattleAOEData.GetTimeRationExemptKey(self)
+	return self._timeExemptKey
 end
 
-function BattleAOEData.RemoveTimer(arg_5_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_5_0._lifeTimer)
+--- 移除生命周期计时器
+function BattleAOEData.RemoveTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._lifeTimer)
 
-	arg_5_0._lifeTimer = nil
-	arg_5_0._flag = false
+	self._lifeTimer = nil
+	self._flag = false
 end
 
-function BattleAOEData.ClearCLDList(arg_6_0)
-	arg_6_0._cldObjList = {}
+--- 清空碰撞对象列表
+function BattleAOEData.ClearCLDList(self)
+	self._cldObjList = {}
 end
 
-function BattleAOEData.AppendCldObj(arg_7_0, arg_7_1)
-	arg_7_0._cldObjList[#arg_7_0._cldObjList + 1] = arg_7_1
+--- @param obj BattleUnit 要加入碰撞检测的对象
+function BattleAOEData.AppendCldObj(self, obj)
+	self._cldObjList[#self._cldObjList + 1] = obj
 end
 
-function BattleAOEData.Settle(arg_8_0)
-	arg_8_0.SortCldObjList(arg_8_0._cldObjList)
-	arg_8_0._cldComponent:GetCldData().func(arg_8_0._cldObjList)
+--- AOE结算：对碰撞列表排序后执行碰撞函数
+function BattleAOEData.Settle(self)
+	self.SortCldObjList(self._cldObjList)
+	self._cldComponent:GetCldData().func(self._cldObjList)
 end
 
-function BattleAOEData.SettleFinale(arg_9_0)
-	if arg_9_0._endFunc then
-		arg_9_0.SortCldObjList(arg_9_0._cldObjList)
-		arg_9_0._endFunc(arg_9_0._cldObjList)
+--- AOE终结结算：若存在endFunc则在碰撞列表排序后执行
+function BattleAOEData.SettleFinale(self)
+	if self._endFunc then
+		self.SortCldObjList(self._cldObjList)
+		self._endFunc(self._cldObjList)
 	end
 end
 
-function BattleAOEData.ForceExit(arg_10_0)
+--- 强制退出（子类可覆写）
+function BattleAOEData.ForceExit(self)
 	return
 end
 
-function BattleAOEData.SortCldObjList(arg_11_0)
-	table.sort(arg_11_0, BattleAOEData._Fun_SortCldObjList)
+--- 碰撞列表排序：Boss优先，同优先级按UID升序
+function BattleAOEData.SortCldObjList(self)
+	table.sort(self, BattleAOEData._Fun_SortCldObjList)
 end
 
-function BattleAOEData._Fun_SortCldObjList(arg_12_0, arg_12_1)
-	if arg_12_0.IsBoss ~= arg_12_1.IsBoss then
-		if arg_12_1.IsBoss then
+--- 碰撞排序比较函数：Boss靠前，否则按UID升序
+function BattleAOEData._Fun_SortCldObjList(a, b)
+	if a.IsBoss ~= b.IsBoss then
+		if b.IsBoss then
 			return true
 		else
 			return false
 		end
 	else
-		return arg_12_0.UID < arg_12_1.UID
+		return a.UID < b.UID
 	end
 end
 
-function BattleAOEData.SetOpponentAffected(arg_13_0, arg_13_1)
-	arg_13_0._opponentAffected = arg_13_1
+function BattleAOEData.SetOpponentAffected(self, opponentAffected)
+	self._opponentAffected = opponentAffected
 end
 
-function BattleAOEData.OpponentAffected(arg_14_0)
-	return arg_14_0._opponentAffected
+function BattleAOEData.OpponentAffected(self)
+	return self._opponentAffected
 end
 
-function BattleAOEData.SetIndiscriminate(arg_15_0, arg_15_1)
-	arg_15_0._indicriminate = arg_15_1
+function BattleAOEData.SetIndiscriminate(self, indiscriminate)
+	self._indicriminate = indiscriminate
 end
 
-function BattleAOEData.GetIndiscriminate(arg_16_0)
-	return arg_16_0._indicriminate
+function BattleAOEData.GetIndiscriminate(self)
+	return self._indicriminate
 end
 
-function BattleAOEData.GetActiveFlag(arg_17_0)
-	return arg_17_0._flag
+function BattleAOEData.GetActiveFlag(self)
+	return self._flag
 end
 
-function BattleAOEData.SetActiveFlag(arg_18_0, arg_18_1)
-	arg_18_0._flag = arg_18_1
+function BattleAOEData.SetActiveFlag(self, flag)
+	self._flag = flag
 end
 
-function BattleAOEData.Dispose(arg_19_0)
-	for iter_19_0, iter_19_1 in ipairs(arg_19_0._component) do
-		iter_19_1:Dispose()
+--- 销毁：遍历组件列表并释放，移除计时器
+function BattleAOEData.Dispose(self)
+	for _, component in ipairs(self._component) do
+		component:Dispose()
 	end
 
-	arg_19_0._component = nil
+	self._component = nil
 
-	arg_19_0:RemoveTimer()
+	self:RemoveTimer()
 
-	arg_19_0._cldObjList = nil
+	self._cldObjList = nil
 end
 
-function BattleAOEData.GetUniqueID(arg_20_0)
-	return arg_20_0._areaUniqueID
+function BattleAOEData.GetUniqueID(self)
+	return self._areaUniqueID
 end
 
-function BattleAOEData.GetIFF(arg_21_0)
-	return arg_21_0._IFF
+function BattleAOEData.GetIFF(self)
+	return self._IFF
 end
 
-function BattleAOEData.GetAreaType(arg_22_0)
-	return arg_22_0._areaType
+function BattleAOEData.GetAreaType(self)
+	return self._areaType
 end
 
-function BattleAOEData.GetPosition(arg_23_0)
-	return arg_23_0._pos
+function BattleAOEData.GetPosition(self)
+	return self._pos
 end
 
-function BattleAOEData.GetTickness(arg_24_0)
-	return arg_24_0._tickness
+function BattleAOEData.GetTickness(self)
+	return self._tickness
 end
 
-function BattleAOEData.GetLifeTime(arg_25_0)
-	return arg_25_0._lifeTime
+function BattleAOEData.GetLifeTime(self)
+	return self._lifeTime
 end
 
-function BattleAOEData.GetFieldType(arg_26_0)
-	return arg_26_0._fieldType
+function BattleAOEData.GetFieldType(self)
+	return self._fieldType
 end
 
-function BattleAOEData.GetDiveFilter(arg_27_0)
-	return arg_27_0._diveFilter
+function BattleAOEData.GetDiveFilter(self)
+	return self._diveFilter
 end
 
-function BattleAOEData.GetCldFunc(arg_28_0)
-	return arg_28_0._areaCldFunc
+function BattleAOEData.GetCldFunc(self)
+	return self._areaCldFunc
 end
 
-function BattleAOEData.GetHeight(arg_29_0)
-	return arg_29_0._height
+--- @return BattleUnit|nil AOE来源
+function BattleAOEData.GetSource(self)
+	return self._source
 end
 
-function BattleAOEData.GetWidth(arg_30_0)
-	return arg_30_0._width
+function BattleAOEData.GetHeight(self)
+	return self._height
 end
 
-function BattleAOEData.GetAngle(arg_31_0)
-	return arg_31_0._angle
+function BattleAOEData.GetWidth(self)
+	return self._width
 end
 
-function BattleAOEData.GetRange(arg_32_0)
-	return arg_32_0._range
+function BattleAOEData.GetAngle(self)
+	return self._angle
 end
 
-function BattleAOEData.GetSectorAngle(arg_33_0)
-	return arg_33_0._sectorAngle
+function BattleAOEData.GetRange(self)
+	return self._range
 end
 
-function BattleAOEData.SetAreaType(arg_34_0, arg_34_1)
-	arg_34_0._areaType = arg_34_1
-
-	arg_35_0:InitCldComponent()
+function BattleAOEData.GetSectorAngle(self)
+	return self._sectorAngle
 end
 
-function BattleAOEData.SetDiveFilter(arg_35_0, arg_35_1)
-	arg_35_0._diveFilter = arg_35_1
+--- 设置区域类型并初始化对应的碰撞组件
+function BattleAOEData.SetAreaType(self, areaType)
+	self._areaType = areaType
+
+	self:InitCldComponent()
 end
 
-function BattleAOEData.SetPosition(arg_36_0, arg_36_1)
-	arg_36_0._pos = arg_36_1
+function BattleAOEData.SetDiveFilter(self, diveFilter)
+	self._diveFilter = diveFilter
 end
 
-function BattleAOEData.SetTickness(arg_37_0, arg_37_1)
-	arg_37_0._tickness = arg_37_1
+function BattleAOEData.SetPosition(self, pos)
+	self._pos = pos
 end
 
-function BattleAOEData.SetFieldType(arg_38_0, arg_38_1)
-	arg_38_0._fieldType = arg_38_1
+function BattleAOEData.SetTickness(self, tickness)
+	self._tickness = tickness
 end
 
-function BattleAOEData.SetLifeTime(arg_39_0, arg_39_1)
-	arg_39_0._lifeTime = arg_39_1
+function BattleAOEData.SetFieldType(self, fieldType)
+	self._fieldType = fieldType
 end
 
-function BattleAOEData.SetSource(arg_41_0, arg_41_1)
-	arg_41_0._source = arg_41_1
+function BattleAOEData.SetLifeTime(self, lifeTime)
+	self._lifeTime = lifeTime
 end
 
-function BattleAOEData.SetHeight(arg_40_0, arg_40_1)
-	arg_40_0._height = arg_40_1
+function BattleAOEData.SetSource(self, source)
+	self._source = source
 end
 
-function BattleAOEData.SetWidth(arg_41_0, arg_41_1)
-	arg_41_0._width = arg_41_1
+function BattleAOEData.SetHeight(self, height)
+	self._height = height
 end
 
-function BattleAOEData.SetAngle(arg_42_0, arg_42_1)
-	arg_42_0._angle = arg_42_1
+function BattleAOEData.SetWidth(self, width)
+	self._width = width
 end
 
-function BattleAOEData.SetRange(arg_43_0, arg_43_1)
-	arg_43_0._range = arg_43_1
+function BattleAOEData.SetAngle(self, angle)
+	self._angle = angle
 end
 
-function BattleAOEData.SetSectorAngle(arg_44_0, arg_44_1, arg_44_2)
-	arg_44_0._sectorAngle = arg_44_1
-	arg_44_0._sectorDir = arg_44_2
+function BattleAOEData.SetRange(self, range)
+	self._range = range
+end
 
-	local var_46_0 = arg_46_0._sectorAngle / 2
+--- 设置扇形角度及方向，计算归一化相关偏移量
+function BattleAOEData.SetSectorAngle(self, sectorAngle, sectorDir)
+	self._sectorAngle = sectorAngle
+	self._sectorDir = sectorDir
 
-	arg_46_0._upperEdge = math.deg2Rad * var_46_0
-	arg_46_0._lowerEdge = -1 * arg_46_0._upperEdge
+	local halfAngle = self._sectorAngle / 2
 
-	local var_46_1 = 0
+	self._upperEdge = math.deg2Rad * halfAngle
+	self._lowerEdge = -1 * self._upperEdge
 
-	if arg_46_2 == var_0_1.UnitDir.LEFT then
-		arg_46_0._normalizeOffset = math.pi - var_46_1
-	elseif arg_46_2 == var_0_1.UnitDir.RIGHT then
-		arg_46_0._normalizeOffset = var_46_1
+	local angleOffset = 0
+
+	if sectorDir == BattleConst.UnitDir.LEFT then
+		self._normalizeOffset = math.pi - angleOffset
+	elseif sectorDir == BattleConst.UnitDir.RIGHT then
+		self._normalizeOffset = angleOffset
 	end
 
-	arg_46_0._wholeCircle = math.pi - arg_46_0._normalizeOffset
-	arg_46_0._negativeCircle = -math.pi - arg_46_0._normalizeOffset
-	arg_46_0._wholeCircleNormalizeOffset = arg_46_0._normalizeOffset - math.pi * 2
-	arg_46_0._negativeCircleNormalizeOffset = arg_46_0._normalizeOffset + math.pi * 2
+	self._wholeCircle = math.pi - self._normalizeOffset
+	self._negativeCircle = -math.pi - self._normalizeOffset
+	self._wholeCircleNormalizeOffset = self._normalizeOffset - math.pi * 2
+	self._negativeCircleNormalizeOffset = self._normalizeOffset + math.pi * 2
 end
 
-function BattleAOEData.SetAnchorPointAlignment(arg_45_0, arg_45_1)
-	if arg_45_1 == BattleAOEData.ALIGNMENT_LEFT then
-		arg_45_0._alignment = Vector3(arg_45_0._width * 0.5, 0, 0)
-	elseif arg_45_1 == BattleAOEData.ALIGNMENT_RIGHT then
-		arg_45_0._alignment = Vector3(arg_45_0._width * -0.5, 0, 0)
+--- 设置锚点对齐：左对齐/右对齐时调整alignment偏移
+function BattleAOEData.SetAnchorPointAlignment(self, alignment)
+	if alignment == BattleAOEData.ALIGNMENT_LEFT then
+		self._alignment = Vector3(self._width * 0.5, 0, 0)
+	elseif alignment == BattleAOEData.ALIGNMENT_RIGHT then
+		self._alignment = Vector3(self._width * -0.5, 0, 0)
 	end
 end
 
-function BattleAOEData.GetAnchorPointAlignment(arg_46_0)
-	return arg_46_0._alignment
+function BattleAOEData.GetAnchorPointAlignment(self)
+	return self._alignment
 end
 
-function BattleAOEData.GetFXStatic(arg_47_0)
-	return arg_47_0._fxStatic
+function BattleAOEData.GetFXStatic(self)
+	return self._fxStatic
 end
 
-function BattleAOEData.SetFXStatic(arg_48_0, arg_48_1)
-	arg_48_0._fxStatic = arg_48_1
+function BattleAOEData.SetFXStatic(self, fxStatic)
+	self._fxStatic = fxStatic
 end
 
-function BattleAOEData.AppendComponent(arg_49_0, arg_49_1)
-	table.insert(arg_49_0._component, arg_49_1)
+function BattleAOEData.AppendComponent(self, component)
+	table.insert(self._component, component)
 end
 
-function BattleAOEData.InitCldComponent(arg_50_0)
-	if arg_50_0._areaType == var_0_1.AreaType.CUBE or arg_50_0._areaType == var_0_1.AreaType.ELLIPSE then
-		arg_50_0._cldComponent = var_0_0.Battle.BattleCubeCldComponent.New(arg_50_0._width, arg_50_0._tickness, arg_50_0._height, 0, 0)
-	elseif arg_50_0._areaType == var_0_1.AreaType.COLUMN then
-		arg_50_0._cldComponent = var_0_0.Battle.BattleColumnCldComponent.New(arg_50_0._range, arg_50_0._tickness)
+--- 根据areaType初始化对应的碰撞组件（Cube/Ellipse/Column）
+function BattleAOEData.InitCldComponent(self)
+	if self._areaType == BattleConst.AreaType.CUBE or self._areaType == BattleConst.AreaType.ELLIPSE then
+		self._cldComponent = ys.Battle.BattleCubeCldComponent.New(self._width, self._tickness, self._height, 0, 0)
+	elseif self._areaType == BattleConst.AreaType.COLUMN then
+		self._cldComponent = ys.Battle.BattleColumnCldComponent.New(self._range, self._tickness)
 	end
 
-	local var_52_0 = {
-		type = var_0_1.CldType.AOE,
-		UID = arg_52_0:GetUniqueID(),
-		IFF = arg_52_0:GetIFF(),
-		func = arg_52_0:GetCldFunc()
+	local cldData = {
+		type = BattleConst.CldType.AOE,
+		UID = self:GetUniqueID(),
+		IFF = self:GetIFF(),
+		func = self:GetCldFunc()
 	}
 
-	arg_52_0._cldComponent:SetCldData(var_52_0)
-	arg_52_0._cldComponent:SetActive(true)
+	self._cldComponent:SetCldData(cldData)
+	self._cldComponent:SetActive(true)
 end
 
-function BattleAOEData.GetCldComponent(arg_51_0)
-	return arg_51_0._cldComponent
+function BattleAOEData.GetCldComponent(self)
+	return self._cldComponent
 end
 
-function BattleAOEData.DeactiveCldBox(arg_52_0)
-	arg_52_0._cldComponent:SetActive(false)
+function BattleAOEData.DeactiveCldBox(self)
+	self._cldComponent:SetActive(false)
 end
 
-function BattleAOEData.GetCldBox(arg_53_0)
-	return arg_53_0._cldComponent:GetCldBox(arg_53_0:GetPosition() + arg_53_0._alignment)
+function BattleAOEData.GetCldBox(self)
+	return self._cldComponent:GetCldBox(self:GetPosition() + self._alignment)
 end
 
-function BattleAOEData.GetCldData(arg_54_0)
-	return arg_54_0._cldComponent:GetCldData()
+function BattleAOEData.GetCldData(self)
+	return self._cldComponent:GetCldData()
 end
 
+--- 更新所有碰撞对象到AOE中心的距离信息
+--- 用于子类或碰撞后处理中获取距离
 function BattleAOEData.UpdateDistanceInfo(self)
 	for _, cldObj in ipairs(self._cldObjList) do
 		local distance
@@ -358,26 +387,27 @@ function BattleAOEData.UpdateDistanceInfo(self)
 	end
 end
 
-function BattleAOEData.GetDistance(arg_56_0, arg_56_1)
-	return arg_56_0._cldObjDistanceList[arg_56_1]
+function BattleAOEData.GetDistance(self, uid)
+	return self._cldObjDistanceList[uid]
 end
 
-function BattleAOEData.IsOutOfAngle(arg_57_0, arg_57_1)
-	if not arg_57_0._sectorAngle or arg_57_0._sectorAngle >= 360 then
+--- 判断目标是否在扇形区域角度之外
+function BattleAOEData.IsOutOfAngle(self, target)
+	if not self._sectorAngle or self._sectorAngle >= 360 then
 		return false
 	else
-		local var_59_0 = arg_59_1:GetPosition()
-		local var_59_1 = math.atan2(var_59_0.z - arg_59_0._pos.z, var_59_0.x - arg_59_0._pos.x)
+		local targetPos = target:GetPosition()
+		local angle = math.atan2(targetPos.z - self._pos.z, targetPos.x - self._pos.x)
 
-		if var_59_1 > arg_59_0._wholeCircle then
-			var_59_1 = var_59_1 + arg_59_0._wholeCircleNormalizeOffset
-		elseif var_59_1 < arg_59_0._negativeCircle then
-			var_59_1 = var_59_1 + arg_59_0._negativeCircleNormalizeOffset
+		if angle > self._wholeCircle then
+			angle = angle + self._wholeCircleNormalizeOffset
+		elseif angle < self._negativeCircle then
+			angle = angle + self._negativeCircleNormalizeOffset
 		else
-			var_59_1 = var_59_1 + arg_59_0._normalizeOffset
+			angle = angle + self._normalizeOffset
 		end
 
-		if var_59_1 > arg_59_0._lowerEdge and var_59_1 < arg_59_0._upperEdge then
+		if angle > self._lowerEdge and angle < self._upperEdge then
 			return false
 		else
 			return true

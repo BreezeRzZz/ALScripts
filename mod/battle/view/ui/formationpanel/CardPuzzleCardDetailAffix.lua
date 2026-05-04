@@ -1,39 +1,44 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleDataFunction
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
 
-var_0_0.Battle.CardPuzzleCardDetailAffix = class("CardPuzzleCardDetailAffix")
+ys.Battle.CardPuzzleCardDetailAffix = class("CardPuzzleCardDetailAffix")
 
-local var_0_3 = var_0_0.Battle.CardPuzzleCardDetailAffix
+local CardPuzzleCardDetailAffix = ys.Battle.CardPuzzleCardDetailAffix
 
-var_0_3.__name = "CardPuzzleCardDetailAffix"
+CardPuzzleCardDetailAffix.__name = "CardPuzzleCardDetailAffix"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_0._go.transform
-	arg_1_0._nameLabel = arg_1_0._tf:Find("name/labelCN")
-	arg_1_0._nameLabelEN = arg_1_0._tf:Find("name/labelEN")
-	arg_1_0._desc = arg_1_0._tf:Find("Desc")
+--- 卡牌拼图卡牌详情中的单个词缀视图
+--- 显示词缀的中英文名和描述
+
+function CardPuzzleCardDetailAffix.Ctor(self, go)
+	self._go = go
+	self._tf = self._go.transform
+	self._nameLabel = self._tf:Find("name/labelCN")
+	self._nameLabelEN = self._tf:Find("name/labelEN")
+	self._desc = self._tf:Find("Desc")
 end
 
-function var_0_3.SetActive(arg_2_0, arg_2_1)
-	setActive(arg_2_0._go, arg_2_1)
+function CardPuzzleCardDetailAffix.SetActive(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_3.SetAffixID(arg_3_0, arg_3_1)
-	local var_3_0 = var_0_2.GetPuzzleCardAffixDataTemplate(arg_3_1)
+--- 设置词缀ID，根据模板数据更新显示
+--- @param affixID number 词缀ID
+function CardPuzzleCardDetailAffix.SetAffixID(self, affixID)
+	local affixTemplate = BattleDataFunction.GetPuzzleCardAffixDataTemplate(affixID)
 
-	setText(arg_3_0._nameLabel, var_3_0.name)
-	setText(arg_3_0._nameLabelEN, var_3_0.name_EN)
-	setText(arg_3_0._desc, var_3_0.discript)
+	setText(self._nameLabel, affixTemplate.name)
+	setText(self._nameLabelEN, affixTemplate.name_EN)
+	setText(self._desc, affixTemplate.discript)
 end
 
-function var_0_3.Dispose(arg_4_0)
-	arg_4_0._nameLabel = nil
-	arg_4_0._nameLabelEN = nil
-	arg_4_0._desc = nil
-	arg_4_0._tf = nil
-	arg_4_0._go = nil
+function CardPuzzleCardDetailAffix.Dispose(self)
+	self._nameLabel = nil
+	self._nameLabelEN = nil
+	self._desc = nil
+	self._tf = nil
+	self._go = nil
 end

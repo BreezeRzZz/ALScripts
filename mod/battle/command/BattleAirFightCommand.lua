@@ -1,147 +1,175 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleAirFightCommand", var_0_0.Battle.BattleSingleDungeonCommand)
+--- @class BattleAirFightCommand : BattleSingleDungeonCommand
+--- 航空战斗（空战/空袭模式）指令。继承自 BattleSingleDungeonCommand。
+--- 核心机制：
+--- 1. 己方单位无敌 — 重载伤害计算，友方受到的伤害强制返回 1（miss+非暴击），
+---    敌方正常计算伤害。这意味着空战是纯"打靶"模式。
+--- 2. 击落计分 — 根据敌机的 ShipType 获得不同分数（鱼雷艇 200、金币船 300、自爆船 3000）。
+--- 3. 受击扣分 — 己方被命中时扣分（每次受击扣 10 分 × dHP 绝对值）。
+--- 4. 无飞机生成 — initWaveModule 中 airFighterFunc 和 spawnAreaFunc 均为 nil。
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleAirFightCommand = class("BattleAirFightCommand", ys.Battle.BattleSingleDungeonCommand)
 
-var_0_0.Battle.BattleAirFightCommand = var_0_3
-var_0_3.__name = "BattleAirFightCommand"
+ys.Battle.BattleAirFightCommand = BattleAirFightCommand
+BattleAirFightCommand.__name = "BattleAirFightCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleAirFightCommand.Ctor(self)
+	BattleAirFightCommand.super.Ctor(self)
 end
 
-function var_0_3.AddEvent(arg_2_0, ...)
-	var_0_3.super.AddEvent(arg_2_0, ...)
-	arg_2_0._dataProxy:RegisterEventListener(arg_2_0, var_0_2.COMMON_DATA_INIT_FINISH, arg_2_0.onBattleDataInitFinished)
+--- 重写 AddEvent，增加 COMMON_DATA_INIT_FINISH 事件监听用于空战初始化。
+function BattleAirFightCommand.AddEvent(self, ...)
+	BattleAirFightCommand.super.AddEvent(self, ...)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH, self.onBattleDataInitFinished)
 end
 
-function var_0_3.RemoveEvent(arg_3_0, ...)
-	arg_3_0._dataProxy:UnregisterEventListener(arg_3_0, var_0_2.COMMON_DATA_INIT_FINISH)
-	var_0_3.super.RemoveEvent(arg_3_0, ...)
+--- 重写 RemoveEvent，取消 COMMON_DATA_INIT_FINISH 事件。
+function BattleAirFightCommand.RemoveEvent(self, ...)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH)
+	BattleAirFightCommand.super.RemoveEvent(self, ...)
 end
 
-function var_0_3.DoPrologue(arg_4_0)
+--- 开场序幕。核心逻辑：
+--- 1. 重载伤害计算函数，使己方单位无敌（友方受到伤害视为 1，miss + 非暴击）。
+--- 2. 重载碰撞（Crush/Kamikaze）伤害计算，同样保护友方。
+--- 3. 显示空战计分条。
+function BattleAirFightCommand.DoPrologue(self)
 	pg.UIMgr.GetInstance():Marching()
 
-	local function var_4_0()
-		arg_4_0._uiMediator:OpeningEffect(function()
-			local var_6_0 = var_0_0.Battle.BattleFormulas
-			local var_6_1 = var_6_0.CreateContextCalculateDamage()
+	local function afterSeaSurfaceShift()
+		self._uiMediator:OpeningEffect(function()
+			local formulas = ys.Battle.BattleFormulas
+			local normalDamageCalc = formulas.CreateContextCalculateDamage()
 
-			local function var_6_2(arg_7_0, arg_7_1, ...)
-				local var_7_0 = arg_7_1:GetIFF()
+			-- 自定义伤害计算：友方无敌，敌方正常计算
+			local function customCalcDamage(host, target, ...)
+				local targetIFF = target:GetIFF()
 
-				if var_7_0 == var_0_0.Battle.BattleConfig.FRIENDLY_CODE then
+				if targetIFF == ys.Battle.BattleConfig.FRIENDLY_CODE then
+					-- 友方受击：伤害为 1，miss + 非暴击 + 无伤害减免
 					return 1, {
 						isMiss = false,
 						isCri = false,
 						isDamagePrevent = false
 					}
-				elseif var_7_0 == var_0_0.Battle.BattleConfig.FOE_CODE then
-					return var_6_1(arg_7_0, arg_7_1, ...)
+				elseif targetIFF == ys.Battle.BattleConfig.FOE_CODE then
+					return normalDamageCalc(host, target, ...)
 				end
 			end
 
-			local function var_6_3(arg_8_0, arg_8_1)
-				local var_8_0, var_8_1 = var_6_0.CalculateCrashDamage(arg_8_0, arg_8_1)
-				local var_8_2 = 1
+			-- 自定义碰撞伤害计算：友方受到碰撞伤害恒为 1
+			local function customCrashDamageCalc(host, target)
+				local dmgRatio, dmg = formulas.CalculateCrashDamage(host, target)
+				local dmgRatioResult = 1
 
-				var_8_1 = arg_8_1:GetIFF() == var_0_0.Battle.BattleConfig.FRIENDLY_CODE and 1 or var_8_1
+				dmg = target:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE and 1 or dmg
 
-				return var_8_2, var_8_1
+				return dmgRatioResult, dmg
 			end
 
-			arg_4_0._dataProxy:SetupCalculateDamage(var_6_2)
-			arg_4_0._dataProxy:SetupDamageKamikazeShip(var_0_0.Battle.BattleFormulas.CalcDamageLockS2M)
-			arg_4_0._dataProxy:SetupDamageCrush(var_6_3)
-			arg_4_0._uiMediator:ShowTimer()
-			arg_4_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
-			arg_4_0._waveUpdater:Start()
+			self._dataProxy:SetupCalculateDamage(customCalcDamage)
+			self._dataProxy:SetupDamageKamikazeShip(ys.Battle.BattleFormulas.CalcDamageLockS2M)
+			self._dataProxy:SetupDamageCrush(customCrashDamageCalc)
+			self._uiMediator:ShowTimer()
+			self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+			self._waveUpdater:Start()
 		end, SYSTEM_AIRFIGHT)
-		arg_4_0._dataProxy:InitAllFleetUnitsWeaponCD()
+		self._dataProxy:InitAllFleetUnitsWeaponCD()
 	end
 
-	arg_4_0._uiMediator:SeaSurfaceShift(1, 15, nil, var_4_0)
-	arg_4_0._dataProxy:AutoStatistics(0)
+	self._uiMediator:SeaSurfaceShift(1, 15, nil, afterSeaSurfaceShift)
+	self._dataProxy:AutoStatistics(0)
 
-	local var_4_1 = arg_4_0._state:GetSceneMediator()
+	local sceneMediator = self._state:GetSceneMediator()
 
-	arg_4_0._uiMediator:ShowAirFightScoreBar()
+	self._uiMediator:ShowAirFightScoreBar()
 end
 
-function var_0_3.initWaveModule(arg_9_0)
-	local function var_9_0(arg_10_0, arg_10_1, arg_10_2)
-		arg_9_0._dataProxy:SpawnMonster(arg_10_0, arg_10_1, arg_10_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+--- 初始化波次模块。空战模式不需要敌方飞机生成 (airFighterFunc=nil)
+--- 和区域效果生成 (spawnAreaFunc=nil)。
+function BattleAirFightCommand.initWaveModule(self)
+	local function spawnFunc(spawnItem, waveIndex, enemyType)
+		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
-	local function var_9_1()
-		if arg_9_0._vertifyFail then
+	local function clearFunc()
+		if self._vertifyFail then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_9_0._vertifyFail
+				reason = self._vertifyFail
 			})
 
 			return
 		end
 
-		arg_9_0._dataProxy:TriggerFinishBattle()
-		arg_9_0._dataProxy:CalcAirFightScore()
-		arg_9_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcAirFightScore()
+		self._state:BattleEnd()
 	end
 
-	arg_9_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_9_0, nil, var_9_1, nil)
+	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, nil, clearFunc, nil)
 end
 
-function var_0_3.onBattleDataInitFinished(arg_12_0)
-	arg_12_0._dataProxy:AirFightInit()
+--- 战斗数据通用初始化完成后的回调。执行空战初始化并隐藏前卫的 WaveFx。
+function BattleAirFightCommand.onBattleDataInitFinished(self)
+	self._dataProxy:AirFightInit()
 
-	local var_12_0 = arg_12_0._userFleet:GetScoutList()
+	local scoutList = self._userFleet:GetScoutList()
 
-	for iter_12_0, iter_12_1 in ipairs(var_12_0) do
-		iter_12_1:HideWaveFx()
-	end
-end
-
-function var_0_3.RegisterUnitEvent(arg_13_0, arg_13_1, ...)
-	var_0_3.super.RegisterUnitEvent(arg_13_0, arg_13_1, ...)
-
-	if arg_13_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_13_1:RegisterEventListener(arg_13_0, var_0_1.UPDATE_HP, arg_13_0.onPlayerHPUpdate)
+	for _, unit in ipairs(scoutList) do
+		unit:HideWaveFx()
 	end
 end
 
-function var_0_3.UnregisterUnitEvent(arg_14_0, arg_14_1, ...)
-	if arg_14_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_14_1:UnregisterEventListener(arg_14_0, var_0_1.UPDATE_HP)
-	end
+--- 重写 RegisterUnitEvent。为玩家单位增加 UPDATE_HP 事件监听。
+function BattleAirFightCommand.RegisterUnitEvent(self, unit, ...)
+	BattleAirFightCommand.super.RegisterUnitEvent(self, unit, ...)
 
-	var_0_3.super.UnregisterUnitEvent(arg_14_0, arg_14_1, ...)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onPlayerHPUpdate)
+	end
 end
 
-var_0_3.ShipType2Point = {
+--- 重写 UnregisterUnitEvent。取消玩家单位的 UPDATE_HP 事件。
+function BattleAirFightCommand.UnregisterUnitEvent(self, unit, ...)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
+	end
+
+	BattleAirFightCommand.super.UnregisterUnitEvent(self, unit, ...)
+end
+
+--- 击落敌机的分数表。按 ShipType 区分分值：
+--- 鱼雷艇=200，金币船=300，自爆船=3000。
+BattleAirFightCommand.ShipType2Point = {
 	[ShipType.YuLeiTing] = 200,
 	[ShipType.JinBi] = 300,
 	[ShipType.ZiBao] = 3000
 }
-var_0_3.BeenHitDecreasePoint = 10
+--- 每次被命中扣分值。
+BattleAirFightCommand.BeenHitDecreasePoint = 10
 
-function var_0_3.onWillDie(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_1.Dispatcher
-	local var_15_1 = var_15_0:GetDeathReason()
-	local var_15_2 = var_15_0:GetTemplate().type
+--- 单位即将死亡回调。若死因为撞击(CRUSH)或被击杀(KILLED)，且该舰种
+--- 在 ShipType2Point 表中有分数，则增加对应的空战得分。
+function BattleAirFightCommand.onWillDie(self, event)
+	local unit = event.Dispatcher
+	local deathReason = unit:GetDeathReason()
+	local shipType = unit:GetTemplate().type
 
-	if var_15_1 == var_0_0.Battle.BattleConst.UnitDeathReason.CRUSH or var_15_1 == var_0_0.Battle.BattleConst.UnitDeathReason.KILLED then
-		local var_15_3 = var_0_3.ShipType2Point[var_15_2]
+	if deathReason == ys.Battle.BattleConst.UnitDeathReason.CRUSH or deathReason == ys.Battle.BattleConst.UnitDeathReason.KILLED then
+		local point = BattleAirFightCommand.ShipType2Point[shipType]
 
-		if var_15_3 and var_15_3 > 0 then
-			arg_15_0._dataProxy:AddAirFightScore(var_15_3)
+		if point and point > 0 then
+			self._dataProxy:AddAirFightScore(point)
 		end
 	end
 end
 
-function var_0_3.onPlayerHPUpdate(arg_16_0, arg_16_1)
-	if arg_16_1.Data.dHP <= 0 then
-		arg_16_0._dataProxy:DecreaseAirFightScore(var_0_3.BeenHitDecreasePoint * -arg_16_1.Data.dHP)
+--- 玩家 HP 更新回调。当 dHP <= 0（受到伤害）时，按 (扣分值 × |dHP|) 扣减空战分数。
+function BattleAirFightCommand.onPlayerHPUpdate(self, event)
+	if event.Data.dHP <= 0 then
+		self._dataProxy:DecreaseAirFightScore(BattleAirFightCommand.BeenHitDecreasePoint * -event.Data.dHP)
 	end
 end

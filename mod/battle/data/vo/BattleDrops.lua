@@ -1,43 +1,53 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleDrops")
+local ys = ys
+local BattleDrops = class("BattleDrops")
 
-var_0_0.Battle.BattleDrops = var_0_1
-var_0_1.__name = "BattleDrops"
+ys.Battle.BattleDrops = BattleDrops
+BattleDrops.__name = "BattleDrops"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventDispatcher.AttachEventDispatcher(arg_1_0)
+--- @class BattleDrops
+--- @param dropDataTable table 掉落配置表，key为waveIndex，value为该波的掉落列表
+--- @return nil
+--- 战斗掉落管理类，管理每波敌舰的掉落数据
+function BattleDrops.Ctor(self, dropDataTable)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0._dropList = arg_1_1
-	arg_1_0._resourceCount = 0
-	arg_1_0._itemCount = 0
+	self._dropList = dropDataTable
+	self._resourceCount = 0
+	self._itemCount = 0
 end
 
-function var_0_1.CreateDrops(arg_2_0, arg_2_1)
-	local var_2_0 = {}
-	local var_2_1 = arg_2_0._dropList[arg_2_1]
+--- @param waveIndex number 波次索引
+--- @return table dropData 该波的掉落数据
+--- 创建指定波次的掉落，从掉落列表中取出最后一个元素（栈顶）
+function BattleDrops.CreateDrops(self, waveIndex)
+	local dropData = {}
+	local waveDropList = self._dropList[waveIndex]
 
-	if var_2_1 ~= nil and #var_2_1 > 0 then
-		var_2_0 = var_2_1[#var_2_1]
-		var_2_1[#var_2_1] = nil
+	if waveDropList ~= nil and #waveDropList > 0 then
+		dropData = waveDropList[#waveDropList]
+		waveDropList[#waveDropList] = nil
 	end
 
-	if var_2_0.resourceCount ~= nil then
-		arg_2_0._resourceCount = arg_2_0._resourceCount + var_2_0.resourceCount
+	if dropData.resourceCount ~= nil then
+		self._resourceCount = self._resourceCount + dropData.resourceCount
 	end
 
-	if var_2_0.itemCount ~= nil then
-		arg_2_0._itemCount = arg_2_0._itemCount + var_2_0.itemCount
+	if dropData.itemCount ~= nil then
+		self._itemCount = self._itemCount + dropData.itemCount
 	end
 
-	return var_2_0
+	return dropData
 end
 
-function var_0_1.GetDropped(arg_3_0)
-	return arg_3_0._resourceCount, arg_3_0._itemCount
+--- @return number resourceCount, number itemCount
+--- 获取已掉落的资源总数和道具总数
+function BattleDrops.GetDropped(self)
+	return self._resourceCount, self._itemCount
 end
 
-function var_0_1.Dispose(arg_4_0)
-	var_0_0.EventDispatcher.DetachEventDispatcher(arg_4_0)
+--- @return nil
+function BattleDrops.Dispose(self)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end

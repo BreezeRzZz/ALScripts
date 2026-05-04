@@ -1,80 +1,118 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleDataFunction
-local var_0_3 = class("BattleMissileWeaponUnit", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleDataFunction = ys.Battle.BattleDataFunction
 
-var_0_0.Battle.BattleMissileWeaponUnit = var_0_3
-var_0_3.__name = "BattleMissileWeaponUnit"
+local BattleMissileWeaponUnit = class("BattleMissileWeaponUnit", ys.Battle.BattleWeaponUnit)
 
-function var_0_3.CalculateFixedExplodePosition(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_1._range
-	local var_1_1 = (arg_1_0._host:GetDirection() == var_0_1.UnitDir.RIGHT and 1 or -1) * var_1_0
-	local var_1_2 = arg_1_0._host:GetPosition()
+ys.Battle.BattleMissileWeaponUnit = BattleMissileWeaponUnit
+BattleMissileWeaponUnit.__name = "BattleMissileWeaponUnit"
 
-	return Vector3(var_1_2.x + var_1_1, 0, 0)
+--- @class BattleMissileWeaponUnit : BattleWeaponUnit
+--- @param self BattleMissileWeaponUnit
+--- @param bullet BattleBulletUnit 子弹实例
+--- @return Vector3 固定爆炸位置
+--- 计算固定爆炸位置：根据宿主朝向和子弹射程确定X偏移
+function BattleMissileWeaponUnit.CalculateFixedExplodePosition(self, bullet)
+	local range = bullet._range
+	local offsetX = (self._host:GetDirection() == BattleConst.UnitDir.RIGHT and 1 or -1) * range
+	local hostPos = self._host:GetPosition()
+
+	return Vector3(hostPos.x + offsetX, 0, 0)
 end
 
-function var_0_3.CalculateRandTargetPosition(arg_2_0, arg_2_1, arg_2_2)
-	local var_2_0 = arg_2_2:GetCLDZCenterPosition()
-	local var_2_1 = arg_2_1:GetTemplate().extra_param
-	local var_2_2 = var_2_1.accuracy
-	local var_2_3 = 0
+--- 计算带随机散布的目标位置（受精度属性影响）
+--- @param self BattleMissileWeaponUnit
+--- @param weapon BattleWeaponUnit 武器实例（提供extra_param）
+--- @param target BattleUnit 目标单位
+--- @return Vector3 随机化后的实际目标位置
+function BattleMissileWeaponUnit.CalculateRandTargetPosition(self, weapon, target)
+	-- 获取目标碰撞体中心位置
+	local targetPos = target:GetCLDZCenterPosition()
+	local extraParam = weapon:GetTemplate().extra_param
+	local accuracyAttr = extraParam.accuracy
+	local accuracy = 0
 
-	if var_2_2 then
-		var_2_3 = arg_2_1:GetAttrByName(var_2_2)
+	-- 如果有精度属性则读取其值
+	if accuracyAttr then
+		accuracy = weapon:GetAttrByName(accuracyAttr)
 	end
 
-	local var_2_4 = var_2_1.randomOffsetX or 0
-	local var_2_5 = var_2_1.randomOffsetZ or 0
-	local var_2_6 = math.max(0, var_2_4 - var_2_3)
-	local var_2_7 = math.max(0, var_2_5 - var_2_3)
-	local var_2_8 = var_2_1.offsetX or 0
-	local var_2_9 = var_2_1.offsetZ or 0
+	-- 精度可减少随机偏移量（精度越高散布越小）
+	local randomOffsetX = extraParam.randomOffsetX or 0
+	local randomOffsetZ = extraParam.randomOffsetZ or 0
+	local adjustedRandomX = math.max(0, randomOffsetX - accuracy)
+	local adjustedRandomZ = math.max(0, randomOffsetZ - accuracy)
+	local offsetX = extraParam.offsetX or 0
+	local offsetZ = extraParam.offsetZ or 0
 
-	if var_2_6 ~= 0 then
-		var_2_6 = var_2_6 * (math.random() - 0.5) + var_2_8
+	-- X轴随机散布
+	if adjustedRandomX ~= 0 then
+		adjustedRandomX = adjustedRandomX * (math.random() - 0.5) + offsetX
 	end
 
-	if var_2_7 ~= 0 then
-		var_2_7 = var_2_7 * (math.random() - 0.5) + var_2_9
+	-- Z轴随机散布
+	if adjustedRandomZ ~= 0 then
+		adjustedRandomZ = adjustedRandomZ * (math.random() - 0.5) + offsetZ
 	end
 
-	local var_2_10 = var_2_1.targetOffsetX or 0
-	local var_2_11 = var_2_1.targetOffsetZ or 0
+	-- 固定目标偏移量
+	local targetOffsetX = extraParam.targetOffsetX or 0
+	local targetOffsetZ = extraParam.targetOffsetZ or 0
 
-	return Vector3(var_2_0.x + var_2_6 + var_2_10, 0, var_2_0.z + var_2_7 + var_2_11)
+	return Vector3(targetPos.x + adjustedRandomX + targetOffsetX, 0, targetPos.z + adjustedRandomZ + targetOffsetZ)
 end
 
-function var_0_3.createMajorEmitter(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4, arg_3_5)
-	local function var_3_0(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4)
-		local var_4_0 = arg_3_0._emitBulletIDList[arg_3_2]
-		local var_4_1 = arg_3_0:Spawn(var_4_0, arg_4_4, var_0_3.INTERNAL)
+--- 创建主发射器（导弹武器专用）
+--- @param self BattleMissileWeaponUnit
+--- @param barrageID number 弹幕ID
+--- @param index number 发射器序号
+--- @param offsetPriority number 偏移优先级
+--- @param target BattleUnit 目标单位
+--- @param type string 发射器类型
+--- @return BattleBulletEmitter 创建的发射器
+function BattleMissileWeaponUnit.createMajorEmitter(self, barrageID, index, offsetPriority, target, type)
+	--- 子弹生成回调：生成导弹子弹并设置偏移、旋转与空中回调
+	local function spawnFunc(offsetX, offsetZ, angle, offsetPriority, target)
+		local bulletID = self._emitBulletIDList[index]
+		local bullet = self:Spawn(bulletID, target, BattleMissileWeaponUnit.INTERNAL)
 
-		var_4_1:SetOffsetPriority(arg_4_3)
-		var_4_1:SetShiftInfo(arg_4_0, arg_4_1)
-		var_4_1:SetRotateInfo(nil, arg_3_0:GetBaseAngle(), arg_4_2)
-		var_4_1:RegisterOnTheAir(arg_3_0:ChoiceOntheAir(var_4_1))
-		arg_3_0:DispatchBulletEvent(var_4_1)
+		bullet:SetOffsetPriority(offsetPriority)
+		bullet:SetShiftInfo(offsetX, offsetZ)
+		bullet:SetRotateInfo(nil, self:GetBaseAngle(), angle)
+		-- 注册空中回调：计算爆炸位置并创建预警圈
+		bullet:RegisterOnTheAir(self:ChoiceOntheAir(bullet))
+		self:DispatchBulletEvent(bullet)
 	end
 
-	return var_0_3.super.createMajorEmitter(arg_3_0, arg_3_1, arg_3_2, arg_3_3, var_3_0, nil)
+	return BattleMissileWeaponUnit.super.createMajorEmitter(self, barrageID, index, offsetPriority, spawnFunc, nil)
 end
 
-function var_0_3.ChoiceOntheAir(arg_5_0, arg_5_1)
+--- 返回子弹升空时的回调闭包：计算爆炸位置并创建预警圈
+--- @param self BattleMissileWeaponUnit
+--- @param bullet BattleBulletUnit 子弹实例
+--- @return function 空中回调函数
+function BattleMissileWeaponUnit.ChoiceOntheAir(self, bullet)
 	return function()
-		local var_6_0 = arg_5_1:GetMissileTargetPosition()
-		local var_6_1, var_6_2, var_6_3 = arg_5_1:GetRotateInfo()
-		local var_6_4, var_6_5 = arg_5_1:GetOffset()
+		-- 获取导弹目标位置
+		local targetPos = bullet:GetMissileTargetPosition()
+		-- 获取旋转信息：shiftX, shiftZ, angle
+		local shiftX, shiftZ, angle = bullet:GetRotateInfo()
+		-- 获取偏移
+		local offsetX, offsetZ = bullet:GetOffset()
 
-		var_6_0:Add(Vector3(var_6_4, 0, var_6_5))
+		-- 将偏移加至目标位置
+		targetPos:Add(Vector3(offsetX, 0, offsetZ))
 
-		local var_6_6 = Quaternion.Euler(0, var_6_3, 0)
-		local var_6_7 = pg.Tool.FilterY(var_6_0 - arg_5_1:GetSpawnPosition())
-		local var_6_8 = arg_5_1:GetSpawnPosition() + var_6_6 * var_6_7
+		-- 计算从生成位置到目标位置的旋转方向
+		local rotation = Quaternion.Euler(0, angle, 0)
+		local direction = pg.Tool.FilterY(targetPos - bullet:GetSpawnPosition())
+		-- 新爆炸位置 = 生成位置 + 旋转后的方向向量
+		local explodePos = bullet:GetSpawnPosition() + rotation * direction
 
-		arg_5_1:SetExplodePosition(var_6_8)
-		var_0_0.Battle.BattleMissileFactory.CreateBulletAlert(arg_5_1)
+		bullet:SetExplodePosition(explodePos)
+		-- 创建预警圈（红圈）
+		ys.Battle.BattleMissileFactory.CreateBulletAlert(bullet)
 	end
 end

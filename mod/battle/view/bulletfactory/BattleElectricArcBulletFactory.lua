@@ -1,49 +1,66 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConst.AircraftUnitType
-local var_0_3 = var_0_0.Battle.BattleConst.CharacterUnitType
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local AircraftUnitType = ys.Battle.BattleConst.AircraftUnitType
+local CharacterUnitType = ys.Battle.BattleConst.CharacterUnitType
 
-var_0_0.Battle.BattleElectricArcBulletFactory = singletonClass("BattleElectricArcBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleElectricArcBulletFactory.__name = "BattleElectricArcBulletFactory"
+ys.Battle.BattleElectricArcBulletFactory = singletonClass("BattleElectricArcBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleElectricArcBulletFactory.__name = "BattleElectricArcBulletFactory"
 
-local var_0_4 = var_0_0.Battle.BattleElectricArcBulletFactory
+local BattleElectricArcBulletFactory = ys.Battle.BattleElectricArcBulletFactory
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+function BattleElectricArcBulletFactory.Ctor(self)
+	BattleElectricArcBulletFactory.super.Ctor(self)
 end
 
-function var_0_4.CreateBullet(arg_2_0, arg_2_1, arg_2_2, arg_2_3, arg_2_4, arg_2_5)
-	arg_2_0:PlayFireFX(arg_2_1, arg_2_2, arg_2_3, arg_2_4, arg_2_5, nil)
+--- 创建电弧子弹（直接命中 + 电弧连线特效）
+--- 电弧子弹是一种特殊的直击子弹，除了在目标身上播放命中特效和结算伤害外，
+--- 还会在发射者（Host）和目标之间创建电弧连线特效
+---
+--- 视觉表现：
+--- 1. 发射特效（PlayFireFX）
+--- 2. 目标命中特效（hit_fx）
+--- 3. 电弧连线特效（AddArcEffect）：从Host连接到目标，使用子弹模板的modle_ID作为连线材质
+---    spawn_bound参数控制连线的边界起始位置
+--- @param tf Transform 发射Transform
+--- @param bullet BattleBulletUnit 子弹数据
+--- @param spawnPos Vector3 生成位置
+--- @param fireFXID string 发射特效ID
+--- @param dir BattleConst.UnitDir 方向
+function BattleElectricArcBulletFactory.CreateBullet(self, tf, bullet, spawnPos, fireFXID, dir)
+	self:PlayFireFX(tf, bullet, spawnPos, fireFXID, dir, nil)
 
-	local var_2_0 = arg_2_2:GetDirectHitUnit()
+	local directHitUnit = bullet:GetDirectHitUnit()
 
-	if var_2_0 == nil then
+	if directHitUnit == nil then
 		return
 	end
 
-	local var_2_1 = var_2_0:GetUniqueID()
-	local var_2_2 = var_2_0:GetUnitType()
-	local var_2_3
+	local targetUID = directHitUnit:GetUniqueID()
+	local unitType = directHitUnit:GetUnitType()
+	local targetUnit
 
-	if table.contains(var_0_2, var_2_2) then
-		var_2_3 = var_0_4.GetSceneMediator():GetAircraft(var_2_1)
-	elseif table.contains(var_0_3, var_2_2) then
-		var_2_3 = var_0_4.GetSceneMediator():GetCharacter(var_2_1)
+	if table.contains(AircraftUnitType, unitType) then
+		targetUnit = BattleElectricArcBulletFactory.GetSceneMediator():GetAircraft(targetUID)
+	elseif table.contains(CharacterUnitType, unitType) then
+		targetUnit = BattleElectricArcBulletFactory.GetSceneMediator():GetCharacter(targetUID)
 	end
 
-	if var_2_3 then
-		var_2_3:AddFX(arg_2_2:GetTemplate().hit_fx)
-		arg_2_0:GetDataProxy():HandleDamage(arg_2_2, var_2_0)
+	if targetUnit then
+		-- 目标命中特效和伤害
+		targetUnit:AddFX(bullet:GetTemplate().hit_fx)
+		self:GetDataProxy():HandleDamage(bullet, directHitUnit)
 
-		local var_2_4 = arg_2_2:GetWeapon():GetHost()
+		-- 创建电弧连线：从Host（发射者）连到目标
+		local host = bullet:GetWeapon():GetHost()
 
-		if var_2_4 then
-			local var_2_5 = arg_2_2:GetWeapon():GetTemplateData().spawn_bound
-			local var_2_6 = arg_2_0:GetSceneMediator():GetCharacter(var_2_4:GetUniqueID())
+		if host then
+			local spawnBound = bullet:GetWeapon():GetTemplateData().spawn_bound
+			local hostCharacter = self:GetSceneMediator():GetCharacter(host:GetUniqueID())
 
-			arg_2_0:GetSceneMediator():AddArcEffect(arg_2_2:GetTemplate().modle_ID, var_2_6, var_2_0, var_2_5)
+			-- modle_ID 用作电弧的连线材质/特效ID
+			self:GetSceneMediator():AddArcEffect(bullet:GetTemplate().modle_ID, hostCharacter, directHitUnit, spawnBound)
 		end
 	end
 end

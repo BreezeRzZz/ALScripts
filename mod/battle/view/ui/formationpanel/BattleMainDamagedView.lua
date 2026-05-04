@@ -1,47 +1,54 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleMainDamagedView = class("BattleMainDamagedView")
+ys.Battle.BattleMainDamagedView = class("BattleMainDamagedView")
 
-local var_0_2 = class("BattleMainDamagedView")
+local BattleMainDamagedView = class("BattleMainDamagedView")
 
-var_0_0.Battle.BattleMainDamagedView = var_0_2
-var_0_2.__name = "BattleMainDamagedView"
+ys.Battle.BattleMainDamagedView = BattleMainDamagedView
+BattleMainDamagedView.__name = "BattleMainDamagedView"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 旗舰受损时的屏幕出血特效视图
+--- 当旗舰受到伤害时播放红色出血动画
+--- @param go GameObject 出血特效的GameObject
+function BattleMainDamagedView.Ctor(self, go)
+	self._go = go
 
-	arg_1_0:Init()
+	self:Init()
 end
 
-function var_0_2.Init(arg_2_0)
-	arg_2_0._tf = arg_2_0._go.transform
-	arg_2_0._bleedView = findTF(arg_2_0._tf, "mainUnitDamaged")
-	arg_2_0._bleedAnimation = arg_2_0._bleedView:GetComponent(typeof(Animator))
+--- 初始化出血视图，绑定动画结束事件
+function BattleMainDamagedView.Init(self)
+	self._tf = self._go.transform
+	self._bleedView = findTF(self._tf, "mainUnitDamaged")
+	self._bleedAnimation = self._bleedView:GetComponent(typeof(Animator))
 
-	arg_2_0._bleedView:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(arg_3_0)
-		setActive(arg_2_0._bleedView, false)
+	-- 动画播放结束后自动隐藏
+	self._bleedView:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(_)
+		setActive(self._bleedView, false)
 
-		arg_2_0._isPlaying = false
+		self._isPlaying = false
 	end)
-	setActive(arg_2_0._bleedView, false)
+	setActive(self._bleedView, false)
 
-	arg_2_0._isPlaying = false
+	self._isPlaying = false
 end
 
-function var_0_2.Play(arg_4_0)
-	if not arg_4_0._isPlaying then
-		setActive(arg_4_0._bleedView, true)
+--- 播放出血特效（如果已经在播放则重新激活）
+function BattleMainDamagedView.Play(self)
+	if not self._isPlaying then
+		setActive(self._bleedView, true)
 	end
 
-	arg_4_0._isPlaying = true
+	self._isPlaying = true
 end
 
-function var_0_2.Dispose(arg_5_0)
-	arg_5_0._bleedView = nil
-	arg_5_0._bleedAnimation = nil
-	arg_5_0._tf = nil
-	arg_5_0._go = nil
+--- 清理视图引用
+function BattleMainDamagedView.Dispose(self)
+	self._bleedView = nil
+	self._bleedAnimation = nil
+	self._tf = nil
+	self._go = nil
 end

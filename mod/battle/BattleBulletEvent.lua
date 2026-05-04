@@ -1,10 +1,10 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleBulletEvent = {}
-var_0_0.Battle.BattleBulletEvent.HIT = "HIT"
-var_0_0.Battle.BattleBulletEvent.INTERCEPTED = "Intercepted"
-var_0_0.Battle.BattleBulletEvent.EXPLODE = "EXPLODE"
-var_0_0.Battle.BattleBulletEvent.OUT_RANGE = "OUT_RANGE"
-var_0_0.Battle.BattleBulletEvent.SPLIT = "SPLIT"
+ys.Battle.BattleBulletEvent = {}
+ys.Battle.BattleBulletEvent.HIT = "HIT"
+ys.Battle.BattleBulletEvent.INTERCEPTED = "Intercepted"
+ys.Battle.BattleBulletEvent.EXPLODE = "EXPLODE"
+ys.Battle.BattleBulletEvent.OUT_RANGE = "OUT_RANGE"
+ys.Battle.BattleBulletEvent.SPLIT = "SPLIT"

@@ -1,176 +1,209 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleDebugCommand", var_0_0.MVC.Command)
+--- @class BattleDebugCommand : ys.MVC.Command
+--- 调试战斗指令。继承自 ys.MVC.Command（而非 SingleDungeonCommand），
+--- 用于开发期间的战斗调试。
+--- 特性：
+--- - Dispose 时恢复 BattleDataProxy 的 Update 代理函数为正常版本
+--- - onPlayerShutDown 中当主力/前卫全灭时自动重刷己方单位（调试无限循环用）
+--- - onAddUnit 中含有一个永远为 false 的条件分支（可能是预留的调试逻辑）
+--- - 使用 SYSTEM_DEBUG 作为 OpeningEffect 的关卡类型
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleDebugCommand = class("BattleDebugCommand", ys.MVC.Command)
 
-var_0_0.Battle.BattleDebugCommand = var_0_3
-var_0_3.__name = "BattleDebugCommand"
+ys.Battle.BattleDebugCommand = BattleDebugCommand
+BattleDebugCommand.__name = "BattleDebugCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleDebugCommand.Ctor(self)
+	BattleDebugCommand.super.Ctor(self)
 end
 
-function var_0_3.Initialize(arg_2_0)
-	arg_2_0:Init()
-	var_0_3.super.Initialize(arg_2_0)
+--- 初始化指令。不调用 InitProtocol（无网络协议需求）。
+function BattleDebugCommand.Initialize(self)
+	self:Init()
+	BattleDebugCommand.super.Initialize(self)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
-	arg_2_0._uiMediator = arg_2_0._state:GetMediatorByName(var_0_0.Battle.BattleUIMediator.__name)
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
+	self._uiMediator = self._state:GetMediatorByName(ys.Battle.BattleUIMediator.__name)
 
-	arg_2_0:AddEvent()
+	self:AddEvent()
 end
 
-function var_0_3.DoPrologue(arg_3_0)
+--- 调试模式的开场，使用 SYSTEM_DEBUG 类型。
+function BattleDebugCommand.DoPrologue(self)
 	(function()
-		arg_3_0._uiMediator:OpeningEffect(function()
-			arg_3_0._uiMediator:ShowAutoBtn()
-			arg_3_0._uiMediator:ShowTimer()
-			arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
+		self._uiMediator:OpeningEffect(function()
+			self._uiMediator:ShowAutoBtn()
+			self._uiMediator:ShowTimer()
+			self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
 		end, SYSTEM_DEBUG)
-		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TriggerBattleStartBuffs()
+		self._dataProxy:InitAllFleetUnitsWeaponCD()
+		self._dataProxy:TirggerBattleStartBuffs()
 	end)()
 end
 
-function var_0_3.Init(arg_6_0)
-	arg_6_0._unitDataList = {}
+function BattleDebugCommand.Init(self)
+	self._unitDataList = {}
 end
 
-function var_0_3.Clear(arg_7_0)
-	for iter_7_0, iter_7_1 in pairs(arg_7_0._unitDataList) do
-		arg_7_0:UnregisterUnitEvent(iter_7_1)
+function BattleDebugCommand.Clear(self)
+	for unitID, unit in pairs(self._unitDataList) do
+		self:UnregisterUnitEvent(unit)
 
-		arg_7_0._unitDataList[iter_7_0] = nil
+		self._unitDataList[unitID] = nil
 	end
 end
 
-function var_0_3.Reinitialize(arg_8_0)
-	arg_8_0._state:Deactive()
-	arg_8_0:Clear()
-	arg_8_0:Init()
+function BattleDebugCommand.Reinitialize(self)
+	self._state:Deactive()
+	self:Clear()
+	self:Init()
 end
 
-function var_0_3.Dispose(arg_9_0)
-	var_0_0.Battle.BattleDataProxy.Update = var_0_0.Battle.BattleDebugConsole.ProxyUpdateNormal
-	var_0_0.Battle.BattleDataProxy.UpdateAutoComponent = var_0_0.Battle.BattleDebugConsole.ProxyUpdateAutoComponentNormal
+--- Dispose 时恢复 BattleDataProxy 的 Update 代理函数。
+--- 调试模式可能替换了 Proxy，退出时需要恢复为正常版本。
+function BattleDebugCommand.Dispose(self)
+	ys.Battle.BattleDataProxy.Update = ys.Battle.BattleDebugConsole.ProxyUpdateNormal
+	ys.Battle.BattleDataProxy.UpdateAutoComponent = ys.Battle.BattleDebugConsole.ProxyUpdateAutoComponentNormal
 
-	arg_9_0:Clear()
-	arg_9_0:RemoveEvent()
-	var_0_3.super.Dispose(arg_9_0)
+	self:Clear()
+	self:RemoveEvent()
+	BattleDebugCommand.super.Dispose(self)
 end
 
-function var_0_3.AddEvent(arg_10_0)
-	arg_10_0._dataProxy:RegisterEventListener(arg_10_0, var_0_2.STAGE_DATA_INIT_FINISH, arg_10_0.onInitBattle)
-	arg_10_0._dataProxy:RegisterEventListener(arg_10_0, var_0_2.ADD_UNIT, arg_10_0.onAddUnit)
-	arg_10_0._dataProxy:RegisterEventListener(arg_10_0, var_0_2.REMOVE_UNIT, arg_10_0.onRemoveUnit)
-	arg_10_0._dataProxy:RegisterEventListener(arg_10_0, var_0_2.SHUT_DOWN_PLAYER, arg_10_0.onPlayerShutDown)
+function BattleDebugCommand.AddEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onInitBattle)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER, self.onPlayerShutDown)
 end
 
-function var_0_3.RemoveEvent(arg_11_0)
-	arg_11_0._dataProxy:UnregisterEventListener(arg_11_0, var_0_2.STAGE_DATA_INIT_FINISH)
-	arg_11_0._dataProxy:UnregisterEventListener(arg_11_0, var_0_2.ADD_UNIT)
-	arg_11_0._dataProxy:UnregisterEventListener(arg_11_0, var_0_2.REMOVE_UNIT)
-	arg_11_0._dataProxy:UnregisterEventListener(arg_11_0, var_0_2.SHUT_DOWN_PLAYER)
+function BattleDebugCommand.RemoveEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER)
 end
 
-function var_0_3.onInitBattle(arg_12_0)
-	arg_12_0._userFleet = arg_12_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+--- 战斗数据初始化完成回调。获取己方舰队引用。
+function BattleDebugCommand.onInitBattle(self)
+	self._userFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 end
 
-function var_0_3.onAddUnit(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1.Data.type
-	local var_13_1 = arg_13_1.Data.unit
+--- 单位添加事件回调。
+--- 包含一个永远为 false 的条件分支：
+---   unitType != ENEMY and unitType != BOSS and unitType != MINION and unitType != NPC and unitType == BOSS
+--- 由于 unitType 不可能同时 != BOSS 又 == BOSS，这个分支永远不执行，
+--- 可能是开发者预留的调试逻辑占位。
+function BattleDebugCommand.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
 
-	arg_13_0:RegisterUnitEvent(var_13_1)
+	self:RegisterUnitEvent(unit)
 
-	arg_13_0._unitDataList[var_13_1:GetUniqueID()] = var_13_1
+	self._unitDataList[unit:GetUniqueID()] = unit
 
-	if var_13_0 ~= var_0_0.Battle.BattleConst.UnitType.ENEMY_UNIT and var_13_0 ~= var_0_0.Battle.BattleConst.UnitType.BOSS_UNIT and var_13_0 ~= var_0_0.Battle.BattleConst.UnitType.MINION_UNIT and var_13_0 ~= var_0_0.Battle.BattleConst.UnitType.NPC_UNIT and var_13_0 == var_0_0.Battle.BattleConst.UnitType.BOSS_UNIT then
+	if unitType ~= ys.Battle.BattleConst.UnitType.ENEMY_UNIT and unitType ~= ys.Battle.BattleConst.UnitType.BOSS_UNIT and unitType ~= ys.Battle.BattleConst.UnitType.MINION_UNIT and unitType ~= ys.Battle.BattleConst.UnitType.NPC_UNIT and unitType == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
 		-- block empty
 	end
 end
 
-function var_0_3.RegisterUnitEvent(arg_14_0, arg_14_1)
-	arg_14_1:RegisterEventListener(arg_14_0, var_0_1.WILL_DIE, arg_14_0.onWillDie)
-	arg_14_1:RegisterEventListener(arg_14_0, var_0_1.DYING, arg_14_0.onUnitDying)
+--- 为单位注册事件监听。玩家单位额外监听 SHUT_DOWN_PLAYER。
+function BattleDebugCommand.RegisterUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.WILL_DIE, self.onWillDie)
+	unit:RegisterEventListener(self, BattleUnitEvent.DYING, self.onUnitDying)
 
-	if arg_14_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_14_1:RegisterEventListener(arg_14_0, var_0_1.SHUT_DOWN_PLAYER, arg_14_0.onShutDownPlayer)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER, self.onShutDownPlayer)
 	end
 end
 
-function var_0_3.UnregisterUnitEvent(arg_15_0, arg_15_1)
-	arg_15_1:UnregisterEventListener(arg_15_0, var_0_1.WILL_DIE)
-	arg_15_1:UnregisterEventListener(arg_15_0, var_0_1.DYING)
+--- 取消单位的注册事件。
+function BattleDebugCommand.UnregisterUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.WILL_DIE)
+	unit:UnregisterEventListener(self, BattleUnitEvent.DYING)
 
-	if arg_15_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_15_1:UnregisterEventListener(arg_15_0, var_0_1.SHUT_DOWN_PLAYER)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:UnregisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER)
 	end
 end
 
-function var_0_3.onRemoveUnit(arg_16_0, arg_16_1)
-	local var_16_0 = arg_16_1.Data.UID
-	local var_16_1 = arg_16_0._unitDataList[var_16_0]
+--- 单位移除事件回调。
+function BattleDebugCommand.onRemoveUnit(self, event)
+	local uid = event.Data.UID
+	local unit = self._unitDataList[uid]
 
-	if var_16_1 == nil then
+	if unit == nil then
 		return
 	end
 
-	arg_16_0:UnregisterUnitEvent(var_16_1)
+	self:UnregisterUnitEvent(unit)
 
-	arg_16_0._unitDataList[var_16_0] = nil
+	self._unitDataList[uid] = nil
 end
 
-function var_0_3.onPlayerShutDown(arg_17_0, arg_17_1)
-	if arg_17_1.Data.unit == arg_17_0._userFleet:GetMainList() == 0 then
-		arg_17_0._dataProxy:KillAllAirStrike()
-		arg_17_0._dataProxy:KillAllEnemy()
-		arg_17_0._dataProxy:CLSBullet(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-		arg_17_0._dataProxy:CLSBullet(var_0_0.Battle.BattleConfig.FOE_CODE)
+--- 调试模式的玩家单位沉没问题。与正常模式不同：
+--- 主力全灭时自动清除所有敌方弹幕和敌人，重新生成己方主力。
+--- 前卫全灭时自动清除所有敌方弹幕和敌人，重新生成己方前卫。
+--- 这允许开发者在调试中无限循环测试而无需重新进入战斗。
+function BattleDebugCommand.onPlayerShutDown(self, event)
+	-- 注意：此条件 `event.Data.unit == self._userFleet:GetMainList() == 0` 存在逻辑问题
+	-- Lua 中比较是左结合的：(unit == GetMainList()) == 0，最终是 boolean == 0
+	-- 这总为 true（因为 boolean 永远不等于 0），所以主力总是会被重生。
+	-- 这可能是故意的调试行为：只要触发玩家沉没事件就重新生成。
+	if event.Data.unit == self._userFleet:GetMainList() == 0 then
+		self._dataProxy:KillAllAirStrike()
+		self._dataProxy:KillAllEnemy()
+		self._dataProxy:CLSBullet(ys.Battle.BattleConfig.FRIENDLY_CODE)
+		self._dataProxy:CLSBullet(ys.Battle.BattleConfig.FOE_CODE)
 
-		local var_17_0 = arg_17_0._dataProxy:GetInitData().MainUnitList
+		local mainUnitList = self._dataProxy:GetInitData().MainUnitList
 
-		for iter_17_0, iter_17_1 in ipairs(var_17_0) do
-			arg_17_0._dataProxy:SpawnMain(iter_17_1, var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+		for _, unitData in ipairs(mainUnitList) do
+			self._dataProxy:SpawnMain(unitData, ys.Battle.BattleConfig.FRIENDLY_CODE)
 		end
 	end
 
-	if #arg_17_0._userFleet:GetScoutList() == 0 then
-		arg_17_0._dataProxy:KillAllAirStrike()
-		arg_17_0._dataProxy:KillAllEnemy()
-		arg_17_0._dataProxy:CLSBullet(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-		arg_17_0._dataProxy:CLSBullet(var_0_0.Battle.BattleConfig.FOE_CODE)
+	-- 前卫全灭时重新生成前卫
+	if #self._userFleet:GetScoutList() == 0 then
+		self._dataProxy:KillAllAirStrike()
+		self._dataProxy:KillAllEnemy()
+		self._dataProxy:CLSBullet(ys.Battle.BattleConfig.FRIENDLY_CODE)
+		self._dataProxy:CLSBullet(ys.Battle.BattleConfig.FOE_CODE)
 
-		local var_17_1 = arg_17_0._dataProxy:GetInitData().VanguardUnitList
+		local vanguardUnitList = self._dataProxy:GetInitData().VanguardUnitList
 
-		for iter_17_2, iter_17_3 in ipairs(var_17_1) do
-			arg_17_0._dataProxy:SpawnVanguard(iter_17_3, var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+		for _, unitData in ipairs(vanguardUnitList) do
+			self._dataProxy:SpawnVanguard(unitData, ys.Battle.BattleConfig.FRIENDLY_CODE)
 		end
 	end
 end
 
-function var_0_3.onUnitDying(arg_18_0, arg_18_1)
-	local var_18_0 = arg_18_1.Dispatcher:GetUniqueID()
+--- 单位死亡回调。
+function BattleDebugCommand.onUnitDying(self, event)
+	local uid = event.Dispatcher:GetUniqueID()
 
-	arg_18_0._dataProxy:KillUnit(var_18_0)
+	self._dataProxy:KillUnit(uid)
 end
 
-function var_0_3.onWillDie(arg_19_0, arg_19_1)
-	local var_19_0 = arg_19_1.Dispatcher
+--- 单位即将死亡回调。计算死亡分数，若 Boss 死亡且没有其他 Boss 则清场。
+function BattleDebugCommand.onWillDie(self, event)
+	local unit = event.Dispatcher
 
-	arg_19_0._dataProxy:CalcBattleScoreWhenDead(var_19_0)
+	self._dataProxy:CalcBattleScoreWhenDead(unit)
 
-	local var_19_1 = arg_19_0._dataProxy:IsThereBoss()
+	local hasBoss = self._dataProxy:IsThereBoss()
 
-	if var_19_0:IsBoss() and not var_19_1 then
-		arg_19_0._dataProxy:KillAllEnemy()
+	if unit:IsBoss() and not hasBoss then
+		self._dataProxy:KillAllEnemy()
 	end
 end
 
-function var_0_3.onShutDownPlayer(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_1.Dispatcher:GetUniqueID()
+--- 玩家单位停机回调。
+function BattleDebugCommand.onShutDownPlayer(self, event)
+	local uid = event.Dispatcher:GetUniqueID()
 
-	arg_20_0._dataProxy:ShutdownPlayerUnit(var_20_0)
+	self._dataProxy:ShutdownPlayerUnit(uid)
 end

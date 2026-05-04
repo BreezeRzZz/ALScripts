@@ -1,42 +1,49 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.CardPuzzleCommonHPBar = class("CardPuzzleCommonHPBar")
+ys.Battle.CardPuzzleCommonHPBar = class("CardPuzzleCommonHPBar")
 
-local var_0_2 = var_0_0.Battle.CardPuzzleCommonHPBar
+local CardPuzzleCommonHPBar = ys.Battle.CardPuzzleCommonHPBar
 
-var_0_2.__name = "CardPuzzleCommonHPBar"
+CardPuzzleCommonHPBar.__name = "CardPuzzleCommonHPBar"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_0._go.transform
-	arg_1_0._hpTF = arg_1_0._tf:Find("fleetBlood/blood")
-	arg_1_0._hpProgress = arg_1_0._hpTF:GetComponent(typeof(Image))
+--- 卡牌拼图通用HP血条视图
+--- 显示战斗中公共HP的血条进度
+
+function CardPuzzleCommonHPBar.Ctor(self, go)
+	self._go = go
+	self._tf = self._go.transform
+	self._hpTF = self._tf:Find("fleetBlood/blood")
+	self._hpProgress = self._hpTF:GetComponent(typeof(Image))
 end
 
-function var_0_2.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	arg_2_0._info = arg_2_1
+--- 设置关联的卡牌拼图组件
+--- @param info CardPuzzleInfo 卡牌拼图信息对象
+function CardPuzzleCommonHPBar.SetCardPuzzleComponent(self, info)
+	self._info = info
 end
 
-function var_0_2.Update(arg_3_0)
-	arg_3_0:updateHPBar()
+--- 每帧更新
+function CardPuzzleCommonHPBar.Update(self)
+	self:updateHPBar()
 end
 
-function var_0_2.updateHPBar(arg_4_0)
-	local var_4_0 = arg_4_0._info:GetCurrentCommonHP() / arg_4_0._info:GetTotalCommonHP()
+--- 更新血条进度
+function CardPuzzleCommonHPBar.updateHPBar(self)
+	local ratio = self._info:GetCurrentCommonHP() / self._info:GetTotalCommonHP()
 
-	arg_4_0._hpProgress.fillAmount = var_4_0
+	self._hpProgress.fillAmount = ratio
 end
 
-function var_0_2.Dispose(arg_5_0)
-	arg_5_0._hpProgress = nil
-	arg_5_0._hpTF = nil
-	arg_5_0._tf = nil
-	arg_5_0._go = nil
+function CardPuzzleCommonHPBar.Dispose(self)
+	self._hpProgress = nil
+	self._hpTF = nil
+	self._tf = nil
+	self._go = nil
 end
 
-function var_0_2.updateResource(arg_6_0)
+function CardPuzzleCommonHPBar.updateResource(self)
 	return
 end

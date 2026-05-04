@@ -1,296 +1,330 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleDuelArenaCommand", var_0_0.MVC.Command)
+--- @class BattleDuelArenaCommand : ys.MVC.Command
+--- PvP 演习竞技场战斗指令。管理双方舰队的初始化、AI 机器人控制、
+--- 演习 HP 血条同步、验证防作弊、以及双前锋全灭后的主力狂暴 Buff 等逻辑。
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleDuelArenaCommand = class("BattleDuelArenaCommand", ys.MVC.Command)
 
-var_0_0.Battle.BattleDuelArenaCommand = var_0_3
-var_0_3.__name = "BattleDuelArenaCommand"
+ys.Battle.BattleDuelArenaCommand = BattleDuelArenaCommand
+BattleDuelArenaCommand.__name = "BattleDuelArenaCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleDuelArenaCommand.Ctor(self)
+	BattleDuelArenaCommand.super.Ctor(self)
 end
 
-function var_0_3.Initialize(arg_2_0)
-	arg_2_0:Init()
-	var_0_3.super.Initialize(arg_2_0)
+--- 初始化指令。获取 dataProxy 和 uiMediator，初始化协议并注册事件。
+function BattleDuelArenaCommand.Initialize(self)
+	self:Init()
+	BattleDuelArenaCommand.super.Initialize(self)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
-	arg_2_0._uiMediator = arg_2_0._state:GetMediatorByName(var_0_0.Battle.BattleUIMediator.__name)
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
+	self._uiMediator = self._state:GetMediatorByName(ys.Battle.BattleUIMediator.__name)
 
-	arg_2_0:InitProtocol()
-	arg_2_0:AddEvent()
+	self:InitProtocol()
+	self:AddEvent()
 end
 
-function var_0_3.DoPrologue(arg_3_0)
-	local var_3_0 = arg_3_0._dataProxy:GetInitData()
+--- 开场序幕。初始化敌方舰队数据、创建 AI 机器人、添加竞技场 Buff、
+--- 显示演习血条并激活双方武器自动射击。
+function BattleDuelArenaCommand.DoPrologue(self)
+	local initData = self._dataProxy:GetInitData()
 
-	arg_3_0._dataProxy:InitUserShipsData(var_3_0.RivalMainUnitList, var_3_0.RivalVanguardUnitList, var_0_0.Battle.BattleConfig.FOE_CODE, {})
-	arg_3_0._userFleet:SnapShot()
-	arg_3_0._rivalFleet:SnapShot()
+	-- 根据对手数据初始化敌方舰队
+	self._dataProxy:InitUserShipsData(initData.RivalMainUnitList, initData.RivalVanguardUnitList, ys.Battle.BattleConfig.FOE_CODE, {})
+	self._userFleet:SnapShot()
+	self._rivalFleet:SnapShot()
 
-	arg_3_0._rivalWeaponBot = var_0_0.Battle.BattleManualWeaponAutoBot.New(arg_3_0._rivalFleet)
-	arg_3_0._rivalJoyStickBot = var_0_0.Battle.BattleJoyStickAutoBot.New(arg_3_0._dataProxy, arg_3_0._rivalFleet)
+	-- 创建对手的武器自动射击机器人和摇杆机器人
+	self._rivalWeaponBot = ys.Battle.BattleManualWeaponAutoBot.New(self._rivalFleet)
+	self._rivalJoyStickBot = ys.Battle.BattleJoyStickAutoBot.New(self._dataProxy, self._rivalFleet)
 
-	arg_3_0._rivalJoyStickBot:SwitchStrategy(arg_3_0._rivalJoyStickBot.RANDOM)
+	-- 对手使用随机移动策略
+	self._rivalJoyStickBot:SwitchStrategy(self._rivalJoyStickBot.RANDOM)
 
-	local var_3_1 = arg_3_0._uiMediator:InitDuelRateBar()
-	local var_3_2 = getProxy(PlayerProxy):getData()
+	local duelRateBar = self._uiMediator:InitDuelRateBar()
+	local playerData = getProxy(PlayerProxy):getData()
 
-	var_3_1:SetFleetVO(arg_3_0._userFleet, {
-		name = var_3_2.name,
-		level = var_3_2.level
+	duelRateBar:SetFleetVO(self._userFleet, {
+		name = playerData.name,
+		level = playerData.level
 	})
 
-	local var_3_3 = arg_3_0._dataProxy:GetInitData().RivalVO
+	local rivalVO = self._dataProxy:GetInitData().RivalVO
 
-	var_3_1:SetFleetVO(arg_3_0._rivalFleet, {
-		name = var_3_3.name,
-		level = var_3_3.level
+	duelRateBar:SetFleetVO(self._rivalFleet, {
+		name = rivalVO.name,
+		level = rivalVO.level
 	})
-	arg_3_0._dataProxy:AutoStatistics(1)
-	arg_3_0._uiMediator:OpeningEffect(function()
-		arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
-		arg_3_0._weaponCommand:ActiveBot(true, false)
-		arg_3_0._rivalWeaponBot:SetActive(true, false)
-		arg_3_0._rivalJoyStickBot:SetActive(true)
-		arg_3_0._uiMediator:InitCameraGestureSlider()
-		arg_3_0._uiMediator:ShowTimer()
-		arg_3_0._uiMediator:ShowDuelBar()
-		arg_3_0._uiMediator:EnableJoystick(false)
-		arg_3_0._uiMediator:EnableWeaponButton(false)
+	self._dataProxy:AutoStatistics(1)
+	self._uiMediator:OpeningEffect(function()
+		self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+		self._weaponCommand:ActiveBot(true, false)
+		self._rivalWeaponBot:SetActive(true, false)
+		self._rivalJoyStickBot:SetActive(true)
+		self._uiMediator:InitCameraGestureSlider()
+		self._uiMediator:ShowTimer()
+		self._uiMediator:ShowDuelBar()
+		self._uiMediator:EnableJoystick(false)
+		self._uiMediator:EnableWeaponButton(false)
 	end)
 
-	local var_3_4 = arg_3_0._dataProxy:GetFleetList()
+	-- 为所有单位的舰种类型添加竞技场 Buff
+	local fleetList = self._dataProxy:GetFleetList()
 
-	for iter_3_0, iter_3_1 in pairs(var_3_4) do
-		iter_3_1:FleetWarcry()
+	for _, fleet in pairs(fleetList) do
+		fleet:FleetWarcry()
 
-		local var_3_5 = iter_3_1:GetUnitList()
+		local unitList = fleet:GetUnitList()
 
-		for iter_3_2, iter_3_3 in ipairs(var_3_5) do
-			local var_3_6 = iter_3_3:GetTemplate().type
-			local var_3_7 = var_0_0.Battle.BattleDataFunction.GetArenaBuffByShipType(var_3_6)
+		for _, unit in ipairs(unitList) do
+			local shipType = unit:GetTemplate().type
+			local arenaBuffs = ys.Battle.BattleDataFunction.GetArenaBuffByShipType(shipType)
 
-			for iter_3_4, iter_3_5 in ipairs(var_3_7) do
-				local var_3_8 = var_0_0.Battle.BattleBuffUnit.New(iter_3_5)
+			for _, buffID in ipairs(arenaBuffs) do
+				local buff = ys.Battle.BattleBuffUnit.New(buffID)
 
-				iter_3_3:AddBuff(var_3_8)
+				unit:AddBuff(buff)
 			end
 		end
 	end
 
-	arg_3_0._uiMediator:EnableWeaponButton(false)
-	arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-	arg_3_0._dataProxy:TirggerBattleStartBuffs()
+	self._uiMediator:EnableWeaponButton(false)
+	self._dataProxy:InitAllFleetUnitsWeaponCD()
+	self._dataProxy:TirggerBattleStartBuffs()
 
-	local var_3_9 = arg_3_0._userFleet:GetUnitList()
+	-- 给己方所有单位添加演习平衡 Buff
+	local userUnitList = self._userFleet:GetUnitList()
 
-	for iter_3_6, iter_3_7 in ipairs(var_3_9) do
-		local var_3_10 = var_0_0.Battle.BattleBuffUnit.New(var_0_0.Battle.BattleConfig.DULE_BALANCE_BUFF)
+	for _, unit in ipairs(userUnitList) do
+		local balanceBuff = ys.Battle.BattleBuffUnit.New(ys.Battle.BattleConfig.DULE_BALANCE_BUFF)
 
-		iter_3_7:AddBuff(var_3_10)
+		unit:AddBuff(balanceBuff)
 	end
 end
 
-function var_0_3.Update(arg_5_0)
-	arg_5_0._rivalWeaponBot:Update()
+--- 每帧更新对手武器机器人。
+function BattleDuelArenaCommand.Update(self)
+	self._rivalWeaponBot:Update()
 end
 
-function var_0_3.Init(arg_6_0)
-	arg_6_0._unitDataList = {}
+function BattleDuelArenaCommand.Init(self)
+	self._unitDataList = {}
 end
 
-function var_0_3.Clear(arg_7_0)
-	for iter_7_0, iter_7_1 in pairs(arg_7_0._unitDataList) do
-		arg_7_0:UnregisterUnitEvent(iter_7_1)
+function BattleDuelArenaCommand.Clear(self)
+	for unitID, unit in pairs(self._unitDataList) do
+		self:UnregisterUnitEvent(unit)
 
-		arg_7_0._unitDataList[iter_7_0] = nil
+		self._unitDataList[unitID] = nil
 	end
 end
 
-function var_0_3.Reinitialize(arg_8_0)
-	arg_8_0._state:Deactive()
-	arg_8_0:Clear()
-	arg_8_0:Init()
+function BattleDuelArenaCommand.Reinitialize(self)
+	self._state:Deactive()
+	self:Clear()
+	self:Init()
 end
 
-function var_0_3.Dispose(arg_9_0)
-	arg_9_0:Clear()
-	arg_9_0:RemoveEvent()
-	var_0_3.super.Dispose(arg_9_0)
+function BattleDuelArenaCommand.Dispose(self)
+	self:Clear()
+	self:RemoveEvent()
+	BattleDuelArenaCommand.super.Dispose(self)
 end
 
-function var_0_3.onInitBattle(arg_10_0)
-	arg_10_0._weaponCommand = arg_10_0._state:GetCommandByName(var_0_0.Battle.BattleControllerWeaponCommand.__name)
-	arg_10_0._userFleet = arg_10_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-	arg_10_0._rivalFleet = arg_10_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FOE_CODE)
+--- 战斗数据初始化完成后的回调，获取双方舰队引用和武器指令。
+function BattleDuelArenaCommand.onInitBattle(self)
+	self._weaponCommand = self._state:GetCommandByName(ys.Battle.BattleControllerWeaponCommand.__name)
+	self._userFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+	self._rivalFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FOE_CODE)
 end
 
-function var_0_3.InitProtocol(arg_11_0)
+function BattleDuelArenaCommand.InitProtocol(self)
 	return
 end
 
-function var_0_3.AddEvent(arg_12_0)
-	arg_12_0._dataProxy:RegisterEventListener(arg_12_0, var_0_2.ADD_UNIT, arg_12_0.onAddUnit)
-	arg_12_0._dataProxy:RegisterEventListener(arg_12_0, var_0_2.REMOVE_UNIT, arg_12_0.onRemoveUnit)
-	arg_12_0._dataProxy:RegisterEventListener(arg_12_0, var_0_2.STAGE_DATA_INIT_FINISH, arg_12_0.onInitBattle)
-	arg_12_0._dataProxy:RegisterEventListener(arg_12_0, var_0_2.SHUT_DOWN_PLAYER, arg_12_0.onPlayerShutDown)
-	arg_12_0._dataProxy:RegisterEventListener(arg_12_0, var_0_2.UPDATE_COUNT_DOWN, arg_12_0.onUpdateCountDown)
+function BattleDuelArenaCommand.AddEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onInitBattle)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER, self.onPlayerShutDown)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN, self.onUpdateCountDown)
 end
 
-function var_0_3.RemoveEvent(arg_13_0)
-	arg_13_0._dataProxy:UnregisterEventListener(arg_13_0, var_0_2.ADD_UNIT)
-	arg_13_0._dataProxy:UnregisterEventListener(arg_13_0, var_0_2.REMOVE_UNIT)
-	arg_13_0._dataProxy:UnregisterEventListener(arg_13_0, var_0_2.STAGE_DATA_INIT_FINISH)
-	arg_13_0._dataProxy:UnregisterEventListener(arg_13_0, var_0_2.SHUT_DOWN_PLAYER)
-	arg_13_0._dataProxy:UnregisterEventListener(arg_13_0, var_0_2.UPDATE_COUNT_DOWN)
+function BattleDuelArenaCommand.RemoveEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN)
 end
 
-function var_0_3.onAddUnit(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_1.Data.type
-	local var_14_1 = arg_14_1.Data.unit
+--- 单位添加事件回调。
+--- @param event table 包含 Data.type 和 Data.unit 的事件数据
+function BattleDuelArenaCommand.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
 
-	arg_14_0:RegisterUnitEvent(var_14_1)
+	self:RegisterUnitEvent(unit)
 
-	arg_14_0._unitDataList[var_14_1:GetUniqueID()] = var_14_1
+	self._unitDataList[unit:GetUniqueID()] = unit
 end
 
-function var_0_3.RegisterUnitEvent(arg_15_0, arg_15_1)
-	arg_15_1:RegisterEventListener(arg_15_0, var_0_1.DYING, arg_15_0.onUnitDying)
-	arg_15_1:RegisterEventListener(arg_15_0, var_0_1.UPDATE_HP, arg_15_0.onUpdateUnitHP)
+--- 为单位注册事件监听。同时监听 DYING、UPDATE_HP 和 PLAYER_UNIT 的 SHUT_DOWN_PLAYER。
+--- @param unit BattleUnit 要注册的单位
+function BattleDuelArenaCommand.RegisterUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.DYING, self.onUnitDying)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUpdateUnitHP)
 
-	if arg_15_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_15_1:RegisterEventListener(arg_15_0, var_0_1.SHUT_DOWN_PLAYER, arg_15_0.onShutDownPlayer)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER, self.onShutDownPlayer)
 	end
 end
 
-function var_0_3.UnregisterUnitEvent(arg_16_0, arg_16_1)
-	arg_16_1:UnregisterEventListener(arg_16_0, var_0_1.DYING)
-	arg_16_1:UnregisterEventListener(arg_16_0, var_0_1.UPDATE_HP)
+--- 取消单位的注册事件。
+function BattleDuelArenaCommand.UnregisterUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.DYING)
+	unit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
 
-	if arg_16_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_16_1:UnregisterEventListener(arg_16_0, var_0_1.SHUT_DOWN_PLAYER)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:UnregisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER)
 	end
 end
 
-function var_0_3.onRemoveUnit(arg_17_0, arg_17_1)
-	local var_17_0 = arg_17_1.Data.UID
-	local var_17_1 = arg_17_0._unitDataList[var_17_0]
+--- 单位移除事件回调。
+function BattleDuelArenaCommand.onRemoveUnit(self, event)
+	local uid = event.Data.UID
+	local unit = self._unitDataList[uid]
 
-	if var_17_1 == nil then
+	if unit == nil then
 		return
 	end
 
-	arg_17_0:UnregisterUnitEvent(var_17_1)
+	self:UnregisterUnitEvent(unit)
 
-	arg_17_0._unitDataList[var_17_0] = nil
+	self._unitDataList[uid] = nil
 end
 
-function var_0_3.onPlayerShutDown(arg_18_0, arg_18_1)
-	if arg_18_0._state:GetState() ~= arg_18_0._state.BATTLE_STATE_FIGHT then
+--- 玩家单位沉没问题。处理演习胜负判定：
+--- - 任一方舰队全灭时结算
+--- - 前卫全灭但对方前卫存活时，对方舰队越界并切换反主力策略
+--- - 双方前卫均全灭时，给双方主力添加狂暴 Buff（DUEL_MAIN_RAGE_BUFF）
+function BattleDuelArenaCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if arg_18_0._failReason == nil then
-		var_0_0.Battle.BattleState.GenerateVertifyData(1)
+	-- 第一次触发时进行防作弊验证
+	if self._failReason == nil then
+		ys.Battle.BattleState.GenerateVertifyData(1)
 
-		local var_18_0, var_18_1 = var_0_0.Battle.BattleState.Vertify()
+		local success, code = ys.Battle.BattleState.Vertify()
 
-		if not var_18_0 then
-			arg_18_0._failReason = 900 + var_18_1
+		if not success then
+			self._failReason = 900 + code
 		end
 	end
 
-	if #arg_18_0._userFleet:GetUnitList() == 0 or #arg_18_0._rivalFleet:GetUnitList() == 0 then
-		arg_18_0._dataProxy:CalcDuelScoreAtEnd(arg_18_0._userFleet, arg_18_0._rivalFleet)
+	-- 任一方舰队全灭 -> 战斗结束
+	if #self._userFleet:GetUnitList() == 0 or #self._rivalFleet:GetUnitList() == 0 then
+		self._dataProxy:CalcDuelScoreAtEnd(self._userFleet, self._rivalFleet)
 
-		if arg_18_0._failReason then
+		if self._failReason then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_18_0._failReason
+				reason = self._failReason
 			})
 
 			return
 		end
 
-		arg_18_0._failReason = nil
+		self._failReason = nil
 
-		arg_18_0._dataProxy:TriggerFinishBattle()
-		arg_18_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._state:BattleEnd()
 	end
 
-	local var_18_2 = #arg_18_0._userFleet:GetScoutList()
-	local var_18_3 = #arg_18_0._rivalFleet:GetScoutList()
+	local userScoutCount = #self._userFleet:GetScoutList()
+	local rivalScoutCount = #self._rivalFleet:GetScoutList()
 
-	if var_18_2 == 0 and var_18_3 ~= 0 then
-		arg_18_0._dataProxy:ShiftFleetBound(arg_18_0._rivalFleet, var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-		arg_18_0._rivalJoyStickBot:UpdateFleetArea()
-		arg_18_0._rivalJoyStickBot:SwitchStrategy(var_0_0.Battle.BattleJoyStickAutoBot.COUNTER_MAIN)
+	-- 己方前卫全灭，对方前卫存活 -> 对方越界切换反主力策略
+	if userScoutCount == 0 and rivalScoutCount ~= 0 then
+		self._dataProxy:ShiftFleetBound(self._rivalFleet, ys.Battle.BattleConfig.FRIENDLY_CODE)
+		self._rivalJoyStickBot:UpdateFleetArea()
+		self._rivalJoyStickBot:SwitchStrategy(ys.Battle.BattleJoyStickAutoBot.COUNTER_MAIN)
 	end
 
-	if var_18_3 == 0 and var_18_2 ~= 0 then
-		arg_18_0._dataProxy:ShiftFleetBound(arg_18_0._userFleet, var_0_0.Battle.BattleConfig.FOE_CODE)
-		arg_18_0._weaponCommand:GetStickBot():UpdateFleetArea()
-		arg_18_0._weaponCommand:GetStickBot():SwitchStrategy(var_0_0.Battle.BattleJoyStickAutoBot.COUNTER_MAIN)
+	-- 对方前卫全灭，己方前卫存活 -> 己方越界切换反主力策略
+	if rivalScoutCount == 0 and userScoutCount ~= 0 then
+		self._dataProxy:ShiftFleetBound(self._userFleet, ys.Battle.BattleConfig.FOE_CODE)
+		self._weaponCommand:GetStickBot():UpdateFleetArea()
+		self._weaponCommand:GetStickBot():SwitchStrategy(ys.Battle.BattleJoyStickAutoBot.COUNTER_MAIN)
 	end
 
-	if not arg_18_1.Data.unit:IsMainFleetUnit() and var_18_2 == 0 and var_18_3 == 0 then
-		local var_18_4 = arg_18_0._userFleet:GetMainList()
-		local var_18_5 = arg_18_0._rivalFleet:GetMainList()
+	-- 当沉没的并非主力单位，且双方前卫均已全灭时 -> 双方主力获得狂暴 Buff
+	if not event.Data.unit:IsMainFleetUnit() and userScoutCount == 0 and rivalScoutCount == 0 then
+		local userMainList = self._userFleet:GetMainList()
+		local rivalMainList = self._rivalFleet:GetMainList()
 
-		for iter_18_0, iter_18_1 in ipairs(var_18_4) do
-			local var_18_6 = var_0_0.Battle.BattleBuffUnit.New(var_0_0.Battle.BattleConfig.DUEL_MAIN_RAGE_BUFF)
+		for _, unit in ipairs(userMainList) do
+			local rageBuff = ys.Battle.BattleBuffUnit.New(ys.Battle.BattleConfig.DUEL_MAIN_RAGE_BUFF)
 
-			iter_18_1:AddBuff(var_18_6)
+			unit:AddBuff(rageBuff)
 		end
 
-		for iter_18_2, iter_18_3 in ipairs(var_18_5) do
-			local var_18_7 = var_0_0.Battle.BattleBuffUnit.New(var_0_0.Battle.BattleConfig.DUEL_MAIN_RAGE_BUFF)
+		for _, unit in ipairs(rivalMainList) do
+			local rageBuff = ys.Battle.BattleBuffUnit.New(ys.Battle.BattleConfig.DUEL_MAIN_RAGE_BUFF)
 
-			iter_18_3:AddBuff(var_18_7)
+			unit:AddBuff(rageBuff)
 		end
 
 		pg.TipsMgr.GetInstance():ShowTips(i18n("battle_duel_main_rage"))
 	end
 end
 
-function var_0_3.onUpdateCountDown(arg_19_0, arg_19_1)
-	if arg_19_0._dataProxy:GetCountDown() <= 0 then
-		local var_19_0, var_19_1 = arg_19_0._userFleet:GetDamageRatioResult()
-		local var_19_2, var_19_3 = arg_19_0._rivalFleet:GetDamageRatioResult()
+--- 倒计时归零时的时间到结算。比较双方伤害比例判定胜负。
+--- @param event table 倒计时更新事件
+function BattleDuelArenaCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		local userDmgRatio, userDmgNum = self._userFleet:GetDamageRatioResult()
+		local rivalDmgRatio, rivalDmgNum = self._rivalFleet:GetDamageRatioResult()
 
-		arg_19_0._dataProxy:TriggerFinishBattle()
-		arg_19_0._dataProxy:CalcDuelScoreAtTimesUp(var_19_0, var_19_2, var_19_1, var_19_3)
-		arg_19_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcDuelScoreAtTimesUp(userDmgRatio, rivalDmgRatio, userDmgNum, rivalDmgNum)
+		self._state:BattleEnd()
 	end
 end
 
-function var_0_3.onUpdateUnitHP(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_1.Dispatcher:GetFleetVO()
+--- HP 更新事件回调。将有效伤害变化同步到 FleetVO 的伤害统计。
+--- event.Data.validDHP 为有效 HP 变化量
+function BattleDuelArenaCommand.onUpdateUnitHP(self, event)
+	local fleetVO = event.Dispatcher:GetFleetVO()
 
-	if var_20_0 then
-		local var_20_1 = arg_20_1.Data.validDHP
+	if fleetVO then
+		local dHP = event.Data.validDHP
 
-		var_20_0:UpdateFleetDamage(var_20_1)
+		fleetVO:UpdateFleetDamage(dHP)
 	end
 end
 
-function var_0_3.onUnitDying(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_1.Dispatcher
-	local var_21_1 = var_21_0:GetUniqueID()
+--- 单位死亡回调。非召唤物才计分。
+function BattleDuelArenaCommand.onUnitDying(self, event)
+	local unit = event.Dispatcher
+	local uid = unit:GetUniqueID()
 
-	if var_21_0:GetUnitType() ~= var_0_0.Battle.BattleConst.UnitType.MINION_UNIT then
-		arg_21_0._dataProxy:CalcBattleScoreWhenDead(var_21_0)
+	if unit:GetUnitType() ~= ys.Battle.BattleConst.UnitType.MINION_UNIT then
+		self._dataProxy:CalcBattleScoreWhenDead(unit)
 	end
 
-	arg_21_0._dataProxy:KillUnit(var_21_1)
+	self._dataProxy:KillUnit(uid)
 end
 
-function var_0_3.onShutDownPlayer(arg_22_0, arg_22_1)
-	local var_22_0 = arg_22_1.Dispatcher
-	local var_22_1 = var_22_0:GetUniqueID()
+--- 玩家单位停机回调。记录溢出伤害后关闭该单位。
+function BattleDuelArenaCommand.onShutDownPlayer(self, event)
+	local unit = event.Dispatcher
+	local uid = unit:GetUniqueID()
 
-	var_22_0:GetFleetVO():UpdateFleetOverDamage(var_22_0)
-	arg_22_0._dataProxy:ShutdownPlayerUnit(var_22_1)
+	unit:GetFleetVO():UpdateFleetOverDamage(unit)
+	self._dataProxy:ShutdownPlayerUnit(uid)
 end

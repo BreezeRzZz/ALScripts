@@ -1,101 +1,200 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.StandState = class("StandState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.StandState.__name = "StandState"
+--- @class StandState : IUnitState
+--- 站立状态（登场动作）。单位进入战场时的现身/登场动画。
+---
+--- 关键机制：
+--- 1. 大多数状态切换被阻断，只允许 Interrupt、Diving、SkillStart。
+---    Stand 是一个过渡状态，用于播放登场亮相动画。
+--- 2. OnEnd → OnVictoryState() —— 站立动画结束后自动进入胜利状态！
+---    这说明 StandState 并非常规战斗循环的起点，而是战斗胜利后的"亮相"环节。
+---    战斗起点是初始 Idle 状态。
+--- 3. GetActionName 返回 STAND（"stand"）动画名。
+--- 4. CacheWeapon = true —— 站立状态允许缓存武器（虽然此时通常不开火）。
+--- 5. FreshActionKeyOffset = false —— 不支持 action 名称后缀。
+---    与 IdleState 一样，这是简单的固定动画名。
+ys.Battle.StandState = class("StandState", ys.Battle.IUnitState)
+ys.Battle.StandState.__name = "StandState"
 
-local var_0_2 = var_0_0.Battle.StandState
+local StandState = ys.Battle.StandState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class StandState
+--- @return nil
+--- 构造函数
+function StandState.Ctor(self)
+	StandState.super.Ctor()
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许切换 Idle
+function StandState.AddIdleState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许移动
+function StandState.AddMoveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许向左移动
+function StandState.AddMoveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许攻击
+function StandState.AddAttackState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许死亡
+function StandState.AddDeadState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许使用技能
+function StandState.AddSkillState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许施法
+function StandState.AddSpellState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许切换胜利
+function StandState.AddVictoryState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许切换胜利-潜水
+function StandState.AddVictorySwimState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 已在站立状态，无需切换
+function StandState.AddStandState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许下潜
+function StandState.AddDiveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许下潜(向左)
+function StandState.AddDiveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态允许被打断
+function StandState.AddInterruptState(self, unitState, args)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1:OnDivingState()
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态允许下潜过渡
+function StandState.AddDivingState(self, unitState, args)
+	unitState:OnDivingState()
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态允许技能开始
+function StandState.AddSkillStartState(self, unitState, args)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- @class StandState
+--- @param unitState UnitState
+--- @param args table
+--- 站立状态不允许技能结束
+function StandState.AddSkillEndState(self, unitState, args)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+--- @class StandState
+--- @param unitState UnitState
+--- 动画触发点（空实现）
+function StandState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- @class StandState
+--- @param unitState UnitState
+--- 动画开始（空实现）
+function StandState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:OnVictoryState()
+--- @class StandState
+--- @param unitState UnitState
+--- 站立动画结束：自动进入胜利状态（亮相完成）
+function StandState.OnEnd(self, unitState)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- @class StandState
+--- @return boolean: true
+--- 站立状态允许缓存武器
+function StandState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- @class StandState
+--- @return boolean: false
+--- 站立状态不支持 ActionKeyOffset 后缀
+function StandState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.STAND
+--- @class StandState
+--- @param unitState UnitState
+--- @return string: "stand"
+--- 获取站立状态的 Spine 动作名
+function StandState.GetActionName(self, unitState)
+	return ActionName.STAND
 end

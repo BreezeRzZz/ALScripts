@@ -1,147 +1,206 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = singletonClass("BattlePopNumManager")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattlePopNumManager = singletonClass("BattlePopNumManager")
 
-var_0_0.Battle.BattlePopNumManager = var_0_2
-var_0_2.__name = "BattlePopNumManager"
-var_0_2.CONTAINER_CHARACTER_HP = "HPTextCharacterContainer"
-var_0_2.POP_SCORE = "score"
-var_0_2.POP_MISS = "miss"
-var_0_2.POP_HEAL = "heal"
-var_0_2.POP_COMMON = "common"
-var_0_2.POP_UNBREAK = "unbreak"
-var_0_2.POP_NORMAL = "normal"
-var_0_2.POP_EXPLO = "explo"
-var_0_2.POP_PIERCE = "pierce"
-var_0_2.POP_CT_NORMAL = "critical_normal"
-var_0_2.POP_CT_EXPLO = "critical_explo"
-var_0_2.POP_CT_PIERCE = "critical_pierce"
-var_0_2.FontIndex = {
-	var_0_2.POP_NORMAL,
-	var_0_2.POP_PIERCE,
-	var_0_2.POP_EXPLO,
-	var_0_2.POP_UNBREAK
+ys.Battle.BattlePopNumManager = BattlePopNumManager
+BattlePopNumManager.__name = "BattlePopNumManager"
+
+-- ============================================================
+-- 伤害数字类型常量
+-- ============================================================
+--- 角色HP文字容器名称
+BattlePopNumManager.CONTAINER_CHARACTER_HP = "HPTextCharacterContainer"
+--- 分数弹出
+BattlePopNumManager.POP_SCORE = "score"
+--- 未命中
+BattlePopNumManager.POP_MISS = "miss"
+--- 治疗
+BattlePopNumManager.POP_HEAL = "heal"
+--- 常规伤害（非特殊类型）
+BattlePopNumManager.POP_COMMON = "common"
+--- 不可破坏护盾伤害
+BattlePopNumManager.POP_UNBREAK = "unbreak"
+--- 普通装甲伤害
+BattlePopNumManager.POP_NORMAL = "normal"
+--- 易爆装甲伤害
+BattlePopNumManager.POP_EXPLO = "explo"
+--- 穿甲伤害
+BattlePopNumManager.POP_PIERCE = "pierce"
+--- 暴击-普通装甲
+BattlePopNumManager.POP_CT_NORMAL = "critical_normal"
+--- 暴击-易爆装甲
+BattlePopNumManager.POP_CT_EXPLO = "critical_explo"
+--- 暴击-穿甲
+BattlePopNumManager.POP_CT_PIERCE = "critical_pierce"
+
+--- 常规字体索引（非暴击）: normal, pierce, explo, unbreak
+BattlePopNumManager.FontIndex = {
+	BattlePopNumManager.POP_NORMAL,
+	BattlePopNumManager.POP_PIERCE,
+	BattlePopNumManager.POP_EXPLO,
+	BattlePopNumManager.POP_UNBREAK
 }
-var_0_2.CTFontIndex = {
-	var_0_2.POP_CT_NORMAL,
-	var_0_2.POP_CT_PIERCE,
-	var_0_2.POP_CT_EXPLO,
-	var_0_2.POP_UNBREAK
+--- 暴击字体索引: critical_normal, critical_pierce, critical_explo, unbreak
+BattlePopNumManager.CTFontIndex = {
+	BattlePopNumManager.POP_CT_NORMAL,
+	BattlePopNumManager.POP_CT_PIERCE,
+	BattlePopNumManager.POP_CT_EXPLO,
+	BattlePopNumManager.POP_UNBREAK
 }
-var_0_2.AIR_UNIT_TYPE = {
-	var_0_1.UnitType.AIRCRAFT_UNIT,
-	var_0_1.UnitType.AIRFIGHTER_UNIT,
-	var_0_1.UnitType.FUNNEL_UNIT,
-	var_0_1.UnitType.UAV_UNIT
+--- 空军单位类型（使用SLIM弹窗样式）
+BattlePopNumManager.AIR_UNIT_TYPE = {
+	BattleConst.UnitType.AIRCRAFT_UNIT,
+	BattleConst.UnitType.AIRFIGHTER_UNIT,
+	BattleConst.UnitType.FUNNEL_UNIT,
+	BattleConst.UnitType.UAV_UNIT
 }
 
-function var_0_2.Ctor(arg_1_0)
+--- @class BattlePopNumManager : singletonClass
+--- 构造函数（singleton，空实现）
+function BattlePopNumManager.Ctor(self)
 	return
 end
 
-function var_0_2.Init(arg_2_0, arg_2_1)
-	arg_2_0._allBundlePool = {}
-	arg_2_0._activeList = {}
-	arg_2_0._popSkin = arg_2_1
+--- 初始化：创建bundle池和活跃列表，保存弹窗皮肤
+--- @param popSkin Transform 弹窗皮肤模板（不同活动可能有不同皮肤）
+function BattlePopNumManager.Init(self, popSkin)
+	self._allBundlePool = {}
+	self._activeList = {}
+	self._popSkin = popSkin
 end
 
-function var_0_2.GetPopSkin(arg_3_0)
-	return arg_3_0._popSkin
+--- 获取当前弹窗皮肤Transform
+--- @return Transform
+function BattlePopNumManager.GetPopSkin(self)
+	return self._popSkin
 end
 
-function var_0_2.InitialBundlePool(arg_4_0, arg_4_1)
-	arg_4_0._allBundlePool[var_0_0.Battle.BattlePopNumBundle.PRO] = pg.LuaObPool.New(var_0_0.Battle.BattlePopNumBundle, {
-		containerTpl = arg_4_1,
-		type = var_0_0.Battle.BattlePopNumBundle.PRO
+--- 为角色HP弹窗创建PRO和SLIM两种bundle对象池
+--- @param containerTpl Transform 容器模板
+function BattlePopNumManager.InitialBundlePool(self, containerTpl)
+	self._allBundlePool[ys.Battle.BattlePopNumBundle.PRO] = pg.LuaObPool.New(ys.Battle.BattlePopNumBundle, {
+		containerTpl = containerTpl,
+		type = ys.Battle.BattlePopNumBundle.PRO
 	}, 6)
-	arg_4_0._allBundlePool[var_0_0.Battle.BattlePopNumBundle.SLIM] = pg.LuaObPool.New(var_0_0.Battle.BattlePopNumBundle, {
-		containerTpl = arg_4_1,
-		type = var_0_0.Battle.BattlePopNumBundle.SLIM
+	self._allBundlePool[ys.Battle.BattlePopNumBundle.SLIM] = pg.LuaObPool.New(ys.Battle.BattlePopNumBundle, {
+		containerTpl = containerTpl,
+		type = ys.Battle.BattlePopNumBundle.SLIM
 	}, 4)
 end
 
-function var_0_2.InitialScorePool(arg_5_0, arg_5_1)
-	arg_5_0._allBundlePool[var_0_0.Battle.BattlePopNumBundle.PRO] = pg.LuaObPool.New(var_0_0.Battle.BattlePopNumBundle, {
+--- 为分数弹窗创建对象池
+--- @param containerTpl Transform 容器模板
+function BattlePopNumManager.InitialScorePool(self, containerTpl)
+	self._allBundlePool[ys.Battle.BattlePopNumBundle.PRO] = pg.LuaObPool.New(ys.Battle.BattlePopNumBundle, {
 		score = true,
-		containerTpl = arg_5_1,
-		type = var_0_0.Battle.BattlePopNumBundle.PRO
+		containerTpl = containerTpl,
+		type = ys.Battle.BattlePopNumBundle.PRO
 	}, 1)
-	arg_5_0._allBundlePool[var_0_0.Battle.BattlePopNumBundle.SLIM] = pg.LuaObPool.New(var_0_0.Battle.BattlePopNumBundle, {
+	self._allBundlePool[ys.Battle.BattlePopNumBundle.SLIM] = pg.LuaObPool.New(ys.Battle.BattlePopNumBundle, {
 		score = true,
-		containerTpl = arg_5_1,
-		type = var_0_0.Battle.BattlePopNumBundle.SLIM
+		containerTpl = containerTpl,
+		type = ys.Battle.BattlePopNumBundle.SLIM
 	}, 2)
 end
 
-function var_0_2.Clear(arg_6_0)
-	for iter_6_0, iter_6_1 in pairs(arg_6_0._allBundlePool) do
-		iter_6_1:Dispose()
+--- 清空所有bundle池和活跃列表
+function BattlePopNumManager.Clear(self)
+	for _, bundlePool in pairs(self._allBundlePool) do
+		bundlePool:Dispose()
 	end
 
-	arg_6_0._popSkin = nil
-	arg_6_0._activeList = {}
+	self._popSkin = nil
+	self._activeList = {}
 end
 
-function var_0_2.GetBundle(arg_7_0, arg_7_1)
-	local var_7_0 = var_0_2.getBundleType(arg_7_1)
+--- 获取一个bundle对象（根据unitType自动选择PRO或SLIM）
+--- @param unitType number 单位类型
+--- @return BattlePopNumBundle
+function BattlePopNumManager.GetBundle(self, unitType)
+	local bundleType = BattlePopNumManager.getBundleType(unitType)
 
-	return (arg_7_0._allBundlePool[var_7_0]:GetObject())
+	return (self._allBundlePool[bundleType]:GetObject())
 end
 
-function var_0_2.getType(arg_8_0, arg_8_1, arg_8_2, arg_8_3)
-	local var_8_0 = 1
-	local var_8_1
+--- 静态方法：根据isHeal/isCri/isMiss/font判定弹出文字类型和缩放
+--- @param isHeal boolean 是否为治疗
+--- @param isCri boolean 是否为暴击
+--- @param isMiss boolean 是否未命中
+--- @param font table {armorTypeIndex, scale} 来自武器/子弹的字体配置
+--- @return string popType 弹窗类型（POP_HEAL/POP_MISS/etc）
+--- @return number scale 缩放倍率
+function BattlePopNumManager.getType(isHeal, isCri, isMiss, font)
+	local scale = 1
+	local popType
 
-	if arg_8_0 and not arg_8_2 then
-		var_8_1 = var_0_2.POP_HEAL
-	elseif arg_8_2 then
-		var_8_1 = var_0_2.POP_MISS
-	elseif arg_8_3 then
-		local var_8_2 = arg_8_3[1]
-		local var_8_3 = arg_8_3[2]
+	if isHeal and not isMiss then
+		-- 治疗
+		popType = BattlePopNumManager.POP_HEAL
+	elseif isMiss then
+		-- 未命中
+		popType = BattlePopNumManager.POP_MISS
+	elseif font then
+		-- 有字体配置：按装甲类型和暴击状态选择
+		local armorTypeIndex = font[1]
+		local fontScale = font[2]
 
-		if arg_8_1 then
-			var_8_1 = var_0_2.CTFontIndex[var_8_2]
+		if isCri then
+			popType = BattlePopNumManager.CTFontIndex[armorTypeIndex]
 		else
-			var_8_1 = var_0_2.FontIndex[var_8_2]
+			popType = BattlePopNumManager.FontIndex[armorTypeIndex]
 		end
 
-		var_8_0 = arg_8_3[2]
-	elseif arg_8_1 then
-		var_8_1 = var_0_2.POP_CT_EXPLO
+		scale = font[2]
+	elseif isCri then
+		-- 暴击但无特定装甲类型配置
+		popType = BattlePopNumManager.POP_CT_EXPLO
 	else
-		var_8_1 = var_0_2.POP_COMMON
+		-- 默认常规伤害
+		popType = BattlePopNumManager.POP_COMMON
 	end
 
-	return var_8_1, var_8_0
+	return popType, scale
 end
 
-function var_0_2.getBundleType(arg_9_0)
-	local var_9_0
+--- 根据单位类型判断使用PRO还是SLIM样式的bundle
+--- 空军单位使用SLIM（小号），其他用PRO（大号）
+--- @param unitType number 单位类型
+--- @return number bundleType
+function BattlePopNumManager.getBundleType(unitType)
+	local bundleType
 
-	if table.contains(var_0_2.AIR_UNIT_TYPE, arg_9_0) then
-		var_9_0 = var_0_0.Battle.BattlePopNumBundle.SLIM
+	if table.contains(BattlePopNumManager.AIR_UNIT_TYPE, unitType) then
+		bundleType = ys.Battle.BattlePopNumBundle.SLIM
 	else
-		var_9_0 = var_0_0.Battle.BattlePopNumBundle.PRO
+		bundleType = ys.Battle.BattlePopNumBundle.PRO
 	end
 
-	return var_9_0
+	return bundleType
 end
 
-function var_0_2.generateTempPool(arg_10_0, arg_10_1, arg_10_2, arg_10_3, arg_10_4)
-	return pg.LuaObPool.New(var_0_0.Battle.BattlePopNum, {
-		template = arg_10_3.transform:Find(arg_10_1).gameObject,
-		parentTF = arg_10_2,
-		mgr = arg_10_0
-	}, arg_10_4)
+--- 生成一个临时BattlePopNum对象池
+--- @param popType string 弹窗类型（对应模板子节点名）
+--- @param parentTF Transform 父节点
+--- @param popSkin Transform 弹窗皮肤
+--- @param preloadCount number 预加载数量
+--- @return LuaObPool
+function BattlePopNumManager.generateTempPool(self, popType, parentTF, popSkin, preloadCount)
+	return pg.LuaObPool.New(ys.Battle.BattlePopNum, {
+		template = popSkin.transform:Find(popType).gameObject,
+		parentTF = parentTF,
+		mgr = self
+	}, preloadCount)
 end
 
-function var_0_2.resetPopParent(arg_11_0, arg_11_1, arg_11_2)
-	arg_11_1:UpdateInfo("parentTF", arg_11_2)
+--- 重置pop的父节点（用于UI切换时重新挂载）
+--- @param bundle BattlePopNumBundle
+--- @param newParentTF Transform 新的父节点
+function BattlePopNumManager.resetPopParent(self, bundle, newParentTF)
+	bundle:UpdateInfo("parentTF", newParentTF)
 
-	for iter_11_0, iter_11_1 in ipairs(arg_11_1.list) do
-		iter_11_1:SetParent(arg_11_2)
+	for _, popNum in ipairs(bundle.list) do
+		popNum:SetParent(newParentTF)
 	end
 end

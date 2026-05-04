@@ -1,174 +1,203 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleAircraftCharacter = class("BattleAircraftCharacter", var_0_0.Battle.BattleCharacter)
-var_0_0.Battle.BattleAircraftCharacter.__name = "BattleAircraftCharacter"
+ys.Battle.BattleAircraftCharacter = class("BattleAircraftCharacter", ys.Battle.BattleCharacter)
+ys.Battle.BattleAircraftCharacter.__name = "BattleAircraftCharacter"
 
-local var_0_2 = var_0_0.Battle.BattleAircraftCharacter
+local BattleAircraftCharacter = ys.Battle.BattleAircraftCharacter
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+--- 构造函数：设置HP条偏移、Y轴抖动参数、阴影参数
+function BattleAircraftCharacter.Ctor(self)
+	BattleAircraftCharacter.super.Ctor(self)
 
-	arg_1_0._hpBarOffset = Vector3(0, 1.6, 0)
+	self._hpBarOffset = Vector3(0, 1.6, 0)
 
-	arg_1_0:SetYShakeMin()
-	arg_1_0:SetYShakeMax()
+	self:SetYShakeMin()
+	self:SetYShakeMax()
 
-	arg_1_0.shadowScale = Vector3.one
-	arg_1_0.shadowPos = Vector3.zero
+	self.shadowScale = Vector3.one
+	self.shadowPos = Vector3.zero
 end
 
-function var_0_2.SetUnitData(arg_2_0, arg_2_1)
-	arg_2_0._unitData = arg_2_1
+--- 设置UnitData并注册事件
+--- @param unitData BattleAircraftUnitData 飞机单位数据
+function BattleAircraftCharacter.SetUnitData(self, unitData)
+	self._unitData = unitData
 
-	arg_2_0:AddUnitEvent()
+	self:AddUnitEvent()
 end
 
-function var_0_2.InitWeapon(arg_3_0)
-	arg_3_0._weapon = arg_3_0._unitData:GetWeapon()
+--- 初始化武器：从UnitData获取武器列表并注册子弹事件
+function BattleAircraftCharacter.InitWeapon(self)
+	self._weapon = self._unitData:GetWeapon()
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._weapon) do
-		iter_3_1:RegisterEventListener(arg_3_0, var_0_1.CREATE_BULLET, arg_3_0.onCreateBullet)
+	for _, weapon in ipairs(self._weapon) do
+		weapon:RegisterEventListener(self, BattleUnitEvent.CREATE_BULLET, self.onCreateBullet)
 	end
 end
 
-function var_0_2.GetModleID(arg_4_0)
-	return arg_4_0._unitData:GetSkinID()
+--- 获取模型prefab ID（使用皮肤ID）
+--- @return number|string 皮肤ID
+function BattleAircraftCharacter.GetModleID(self)
+	return self._unitData:GetSkinID()
 end
 
-function var_0_2.GetInitScale(arg_5_0)
+--- 飞机初始缩放固定为1
+--- @return number 1
+function BattleAircraftCharacter.GetInitScale(self)
 	return 1
 end
 
-function var_0_2.AddUnitEvent(arg_6_0)
+--- 飞机不注册默认单位事件（重写为空）
+function BattleAircraftCharacter.AddUnitEvent(self)
 	return
 end
 
-function var_0_2.RemoveUnitEvent(arg_7_0)
-	for iter_7_0, iter_7_1 in ipairs(arg_7_0._weapon) do
-		iter_7_1:UnregisterEventListener(arg_7_0, var_0_1.CREATE_BULLET)
+--- 移除武器事件：清理子弹创建监听和敌方飞机HP更新
+function BattleAircraftCharacter.RemoveUnitEvent(self)
+	for _, weapon in ipairs(self._weapon) do
+		weapon:UnregisterEventListener(self, BattleUnitEvent.CREATE_BULLET)
 	end
 
-	if arg_7_0._unitData:GetIFF() == var_0_0.Battle.BattleConfig.FOE_CODE then
-		arg_7_0._unitData:UnregisterEventListener(arg_7_0, var_0_1.UPDATE_AIR_CRAFT_HP)
+	if self._unitData:GetIFF() == ys.Battle.BattleConfig.FOE_CODE then
+		self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_AIR_CRAFT_HP)
 	end
 end
 
-function var_0_2.PlayAction(arg_8_0)
+--- 飞机不播放动作动画（重写为空）
+function BattleAircraftCharacter.PlayAction(self)
 	return
 end
 
-function var_0_2.Update(arg_9_0)
-	arg_9_0:UpdateMatrix()
-	arg_9_0:UpdateDirection()
-	arg_9_0:UpdateUIComponentPosition()
-	arg_9_0:UpdateShadow()
-	arg_9_0:UpdatePosition()
+--- 每帧Update：矩阵、朝向、UI组件、阴影、位置
+--- 敌方飞机额外更新HP相关UI
+function BattleAircraftCharacter.Update(self)
+	self:UpdateMatrix()
+	self:UpdateDirection()
+	self:UpdateUIComponentPosition()
+	self:UpdateShadow()
+	self:UpdatePosition()
 
-	if arg_9_0._unitData:GetIFF() == var_0_0.Battle.BattleConfig.FOE_CODE then
-		arg_9_0:UpdateHPPop()
-		arg_9_0:UpdateHPPopContainerPosition()
-		arg_9_0:UpdateHPBarPosition()
-		arg_9_0:UpdateHpBar()
+	if self._unitData:GetIFF() == ys.Battle.BattleConfig.FOE_CODE then
+		self:UpdateHPPop()
+		self:UpdateHPPopContainerPosition()
+		self:UpdateHPBarPosition()
+		self:UpdateHpBar()
 	end
 end
 
-function var_0_2.UpdatePosition(arg_10_0)
-	if not arg_10_0._unitData:IsOutViewBound() then
-		arg_10_0._tf.localPosition = arg_10_0._unitData:GetPosition()
+--- 更新飞机位置：视野外时不设置Transform
+function BattleAircraftCharacter.UpdatePosition(self)
+	if not self._unitData:IsOutViewBound() then
+		self._tf.localPosition = self._unitData:GetPosition()
 	end
 
-	arg_10_0._characterPos = arg_10_0._unitData:GetPosition()
+	self._characterPos = self._unitData:GetPosition()
 end
 
-function var_0_2.UpdateDirection(arg_11_0)
-	if arg_11_0._unitData:GetCurrentState() ~= arg_11_0._unitData.STATE_CREATE then
+--- 更新飞机朝向：根据飞行方向翻转模型
+function BattleAircraftCharacter.UpdateDirection(self)
+	if self._unitData:GetCurrentState() ~= self._unitData.STATE_CREATE then
 		return
 	end
 
-	local var_11_0 = arg_11_0._unitData:GetSize()
+	local size = self._unitData:GetSize()
 
-	if arg_11_0._unitData:GetDirection() == var_0_0.Battle.BattleConst.UnitDir.RIGHT then
-		arg_11_0._tf.localScale = Vector3(var_11_0, var_11_0, var_11_0)
-	elseif arg_11_0._unitData:GetDirection() == var_0_0.Battle.BattleConst.UnitDir.LEFT then
-		arg_11_0._tf.localScale = Vector3(-var_11_0, var_11_0, var_11_0)
+	if self._unitData:GetDirection() == ys.Battle.BattleConst.UnitDir.RIGHT then
+		self._tf.localScale = Vector3(size, size, size)
+	elseif self._unitData:GetDirection() == ys.Battle.BattleConst.UnitDir.LEFT then
+		self._tf.localScale = Vector3(-size, size, size)
 	end
 end
 
-function var_0_2.UpdateHPBarPosition(arg_12_0)
-	arg_12_0._hpBarPos:Copy(arg_12_0._referenceVector):Add(arg_12_0._hpBarOffset)
+--- 更新HP条位置
+function BattleAircraftCharacter.UpdateHPBarPosition(self)
+	self._hpBarPos:Copy(self._referenceVector):Add(self._hpBarOffset)
 
-	arg_12_0._HPBarTf.position = arg_12_0._hpBarPos
+	self._HPBarTf.position = self._hpBarPos
 end
 
-function var_0_2.UpdateShadow(arg_13_0)
-	if arg_13_0._shadow and arg_13_0._unitData:GetCurrentState() == arg_13_0._unitData.STATE_CREATE then
-		local var_13_0 = arg_13_0._unitData:GetPosition()
-		local var_13_1 = math.min(4, math.max(2, 4 - 4 * var_13_0.y / var_0_0.Battle.BattleConfig.AircraftHeight))
+--- 更新阴影缩放：根据飞机高度动态调整阴影大小（模拟高度感）
+--- 高度越高阴影越小（2~4范围）
+function BattleAircraftCharacter.UpdateShadow(self)
+	if self._shadow and self._unitData:GetCurrentState() == self._unitData.STATE_CREATE then
+		local unitPos = self._unitData:GetPosition()
+		local shadowScale = math.min(4, math.max(2, 4 - 4 * unitPos.y / ys.Battle.BattleConfig.AircraftHeight))
 
-		arg_13_0.shadowScale.x, arg_13_0.shadowScale.z = var_13_1, var_13_1
-		arg_13_0._shadowTF.localScale = arg_13_0.shadowScale
-		arg_13_0.shadowPos.x, arg_13_0.shadowPos.z = var_13_0.x, var_13_0.z
-		arg_13_0._shadowTF.position = arg_13_0.shadowPos
+		self.shadowScale.x, self.shadowScale.z = shadowScale, shadowScale
+		self._shadowTF.localScale = self.shadowScale
+		self.shadowPos.x, self.shadowPos.z = unitPos.x, unitPos.z
+		self._shadowTF.position = self.shadowPos
 	end
 end
 
-function var_0_2.GetYShake(arg_14_0)
-	arg_14_0._YShakeCurrent = arg_14_0._YShakeCurrent or 0
-	arg_14_0._YShakeDir = arg_14_0._YShakeDir or 1
-	arg_14_0._YShakeCurrent = arg_14_0._YShakeCurrent + 0.1 * arg_14_0._YShakeDir
+--- Y轴上下浮动模拟（simple harmonic-like motion）
+--- @return number 当前Y轴浮动偏移
+function BattleAircraftCharacter.GetYShake(self)
+	self._YShakeCurrent = self._YShakeCurrent or 0
+	self._YShakeDir = self._YShakeDir or 1
+	self._YShakeCurrent = self._YShakeCurrent + 0.1 * self._YShakeDir
 
-	if arg_14_0._YShakeCurrent > arg_14_0._YShakeMax and arg_14_0._YShakeDir == 1 then
-		arg_14_0._YShakeDir = -1
+	if self._YShakeCurrent > self._YShakeMax and self._YShakeDir == 1 then
+		self._YShakeDir = -1
 
-		arg_14_0:SetYShakeMin()
-	elseif arg_14_0._YShakeCurrent < arg_14_0._YShakeMin and arg_14_0._YShakeDir == -1 then
-		arg_14_0._YShakeDir = 1
+		self:SetYShakeMin()
+	elseif self._YShakeCurrent < self._YShakeMin and self._YShakeDir == -1 then
+		self._YShakeDir = 1
 
-		arg_14_0:SetYShakeMax()
+		self:SetYShakeMax()
 	end
 
-	return arg_14_0._YShakeCurrent
+	return self._YShakeCurrent
 end
 
-function var_0_2.SetYShakeMin(arg_15_0)
-	arg_15_0._YShakeMin = -1 - 2 * math.random()
+--- 设置Y轴抖动下限（-1 ~ -3 范围随机）
+function BattleAircraftCharacter.SetYShakeMin(self)
+	self._YShakeMin = -1 - 2 * math.random()
 end
 
-function var_0_2.SetYShakeMax(arg_16_0)
-	arg_16_0._YShakeMax = 1 + 2 * math.random()
+--- 设置Y轴抖动上限（1 ~ 3 范围随机）
+function BattleAircraftCharacter.SetYShakeMax(self)
+	self._YShakeMax = 1 + 2 * math.random()
 end
 
-function var_0_2.AddModel(arg_17_0, arg_17_1)
-	arg_17_0:SetGO(arg_17_1)
+--- 添加飞机模型：设置GameObject、碰撞盒和位置
+--- @param modelGO GameObject 飞机模型GameObject
+function BattleAircraftCharacter.AddModel(self, modelGO)
+	self:SetGO(modelGO)
 
-	arg_17_0._hpBarOffset = Vector3(0, arg_17_0._unitData:GetBoxSize().y, 0)
+	self._hpBarOffset = Vector3(0, self._unitData:GetBoxSize().y, 0)
 
-	arg_17_0:SetBoneList()
+	self:SetBoneList()
 
-	arg_17_0._tf.position = arg_17_0._unitData:GetPosition()
+	self._tf.position = self._unitData:GetPosition()
 
-	arg_17_0:UpdateMatrix()
-	arg_17_0._unitData:ActiveCldBox()
+	self:UpdateMatrix()
+	self._unitData:ActiveCldBox()
 end
 
-function var_0_2.AddShadow(arg_18_0, arg_18_1)
-	arg_18_0._shadow = arg_18_0:GetTf():Find("model/shadow").gameObject
-	arg_18_0._shadowTF = arg_18_0._shadow.transform
+--- 飞机阴影从model/shadow子节点获取
+--- @param shadowPlaceholder 未使用
+function BattleAircraftCharacter.AddShadow(self, shadowPlaceholder)
+	self._shadow = self:GetTf():Find("model/shadow").gameObject
+	self._shadowTF = self._shadow.transform
 end
 
-function var_0_2.AddHPBar(arg_19_0, arg_19_1)
-	arg_19_0._HPBar = arg_19_1
-	arg_19_0._HPBarTf = arg_19_1.transform
-	arg_19_0._HPProgress = arg_19_0._HPBarTf:Find("blood"):GetComponent(typeof(Image))
+--- 添加HP条（使用UPDATE_AIR_CRAFT_HP事件，与普通单位不同）
+--- @param hpBarObj GameObject HP条对象
+function BattleAircraftCharacter.AddHPBar(self, hpBarObj)
+	self._HPBar = hpBarObj
+	self._HPBarTf = hpBarObj.transform
+	self._HPProgress = self._HPBarTf:Find("blood"):GetComponent(typeof(Image))
 
-	arg_19_1:SetActive(true)
-	arg_19_0._unitData:RegisterEventListener(arg_19_0, var_0_1.UPDATE_AIR_CRAFT_HP, arg_19_0.OnUpdateHP)
-	arg_19_0:UpdateHpBar()
+	hpBarObj:SetActive(true)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_AIR_CRAFT_HP, self.OnUpdateHP)
+	self:UpdateHpBar()
 end
 
-function var_0_2.updateSomkeFX(arg_20_0)
+--- 飞机不使用烟雾特效（重写为空）
+function BattleAircraftCharacter.updateSomkeFX(self)
 	return
 end

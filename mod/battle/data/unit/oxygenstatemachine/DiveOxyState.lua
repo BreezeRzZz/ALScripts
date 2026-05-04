@@ -1,49 +1,86 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.DiveOxyState = class("DiveOxyState", var_0_0.Battle.IOxyState)
-var_0_0.Battle.DiveOxyState.__name = "DiveOxyState"
+--- @class DiveOxyState : IOxyState
+--- 下潜状态：潜艇完全没入水中，免疫非反潜武器的伤害。
+--- 此状态下不可见、不可被常规武器锁定、不可使用任何武器（空武器列表）。
+--- 碰撞数据设置为免疫状态(UnitCldImmune)。
+---
+--- 【武器可用性】无武器可用（返回空表{}）
+--- 【氧气消耗】无（基类DoUpdateOpy为空操作——氧气在OxyState.UpdateOxygen驱动下通过其他机制消耗）
+--- 【状态转换条件】无主动转换逻辑（转换由OxyState管理器调度）
+ys.Battle.DiveOxyState = class("DiveOxyState", ys.Battle.IOxyState)
+ys.Battle.DiveOxyState.__name = "DiveOxyState"
 
-local var_0_3 = var_0_0.Battle.DiveOxyState
+local DiveOxyState = ys.Battle.DiveOxyState
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- 构造函数
+--- @param self DiveOxyState
+--- @return nil
+function DiveOxyState.Ctor(self)
+	DiveOxyState.super.Ctor(self)
 end
 
-function var_0_3.GetWeaponUseableList(arg_2_0)
+--- 获取可使用的武器类型列表
+--- 下潜状态：无任何武器可用
+--- @param self DiveOxyState
+--- @return table: 空表
+function DiveOxyState.GetWeaponUseableList(self)
 	return {}
 end
 
-function var_0_3.UpdateCldData(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_2:GetDiveState()
-	local var_3_1 = arg_3_0:GetDiveState()
+--- 更新碰撞数据
+--- 将单位的碰撞状态设为DIVE（下潜），如果前后状态不同则设为碰撞免疫
+--- @param self DiveOxyState: 新状态
+--- @param unit BattleWalkUnit: 潜艇单位
+--- @param prevState IOxyState: 切换前状态
+--- @return nil
+function DiveOxyState.UpdateCldData(self, unit, prevState)
+	local prevDiveState = prevState:GetDiveState()
+	local currentDiveState = self:GetDiveState()
 
-	arg_3_1:GetCldData().Surface = var_3_1
+	unit:GetCldData().Surface = currentDiveState
 
-	if var_3_0 ~= var_3_1 then
-		var_0_2.UnitCldImmune(arg_3_1)
+	-- 潜航状态变化时，设置碰撞免疫（免疫非反潜武器）
+	if prevDiveState ~= currentDiveState then
+		BattleAttr.UnitCldImmune(unit)
 	end
 end
 
-function var_0_3.GetDiveState(arg_4_0)
-	return var_0_1.OXY_STATE.DIVE
+--- 获取潜航状态：DIVE（下潜）
+--- @param self DiveOxyState
+--- @return number: BattleConst.OXY_STATE.DIVE
+function DiveOxyState.GetDiveState(self)
+	return BattleConst.OXY_STATE.DIVE
 end
 
-function var_0_3.GetBubbleFlag(arg_5_0)
+--- 获取气泡标记：下潜时产生气泡（暴露位置）
+--- @param self DiveOxyState
+--- @return boolean: true
+function DiveOxyState.GetBubbleFlag(self)
 	return true
 end
 
-function var_0_3.IsVisible(arg_6_0)
+--- 下潜状态对敌方不可见（免疫常规武器锁定）
+--- @param self DiveOxyState
+--- @return boolean: false
+function DiveOxyState.IsVisible(self)
 	return false
 end
 
-function var_0_3.GetBarVisible(arg_7_0)
+--- 氧气条可见：下潜时需要显示氧气条
+--- @param self DiveOxyState
+--- @return boolean: true
+function DiveOxyState.GetBarVisible(self)
 	return true
 end
 
-function var_0_3.RunMode(arg_8_0)
+--- 非自由模式
+--- @param self DiveOxyState
+--- @return boolean: false
+function DiveOxyState.RunMode(self)
 	return false
 end

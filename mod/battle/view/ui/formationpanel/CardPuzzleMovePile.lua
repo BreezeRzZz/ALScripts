@@ -1,60 +1,66 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 
-var_0_0.Battle.CardPuzzleMovePile = class("CardPuzzleMovePile")
+ys.Battle.CardPuzzleMovePile = class("CardPuzzleMovePile")
 
-local var_0_3 = var_0_0.Battle.CardPuzzleMovePile
+local CardPuzzleMovePile = ys.Battle.CardPuzzleMovePile
 
-var_0_3.__name = "CardPuzzleMovePile"
+CardPuzzleMovePile.__name = "CardPuzzleMovePile"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图移动牌堆视图
+--- 显示"移动"卡牌堆的数量和生成进度（类似抽卡牌堆的另一种表现）
 
-	arg_1_0:init()
+function CardPuzzleMovePile.Ctor(self, go)
+	self._go = go
+
+	self:init()
 end
 
-function var_0_3.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	arg_2_0._cardPuzzleInfo = arg_2_1
-	arg_2_0._moveDeck = arg_2_0._cardPuzzleInfo:GetMoveDeck()
+--- 设置关联的卡牌拼图组件
+function CardPuzzleMovePile.SetCardPuzzleComponent(self, cardPuzzleInfo)
+	self._cardPuzzleInfo = cardPuzzleInfo
+	self._moveDeck = self._cardPuzzleInfo:GetMoveDeck()
 
-	arg_2_0._moveDeck:RegisterEventListener(arg_2_0, var_0_2.UPDATE_CARDS, arg_2_0.onUpdateMoveCards)
-	arg_2_0:onUpdateMoveCards()
+	self._moveDeck:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_CARDS, self.onUpdateMoveCards)
+	self:onUpdateMoveCards()
 end
 
-function var_0_3.onUpdateMoveCards(arg_3_0, arg_3_1)
-	setText(arg_3_0._moveCountLabel, "X" .. arg_3_0._moveDeck:GetLength())
+--- 移动牌堆卡牌更新回调
+function CardPuzzleMovePile.onUpdateMoveCards(self, event)
+	setText(self._moveCountLabel, "X" .. self._moveDeck:GetLength())
 end
 
-function var_0_3.Update(arg_4_0)
+function CardPuzzleMovePile.Update(self)
 	return
 end
 
-function var_0_3.init(arg_5_0)
-	var_0_0.EventListener.AttachEventListener(arg_5_0)
+function CardPuzzleMovePile.init(self)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_5_0._tf = arg_5_0._go.transform
-	arg_5_0._btnTF = arg_5_0._tf:Find("card")
-	arg_5_0._moveCountLabel = arg_5_0._btnTF:Find("count")
-	arg_5_0._moveProgress = arg_5_0._btnTF:Find("progress"):GetComponent(typeof(Image))
-	arg_5_0._moveProgress.fillAmount = 1
+	self._tf = self._go.transform
+	self._btnTF = self._tf:Find("card")
+	self._moveCountLabel = self._btnTF:Find("count")
+	self._moveProgress = self._btnTF:Find("progress"):GetComponent(typeof(Image))
+	self._moveProgress.fillAmount = 1
 end
 
-function var_0_3.updateMoveProgress(arg_6_0)
-	local var_6_0 = arg_6_0._moveDeck:GetGeneratePorcess()
+--- 更新移动卡牌生成进度
+function CardPuzzleMovePile.updateMoveProgress(self)
+	local progress = self._moveDeck:GetGeneratePorcess()
 
-	if var_6_0 ~= arg_6_0._progressCache then
-		arg_6_0._moveProgress.fillAmount = var_6_0
+	if progress ~= self._progressCache then
+		self._moveProgress.fillAmount = progress
 	end
 
-	arg_6_0._progressCache = var_6_0
+	self._progressCache = progress
 end
 
-function var_0_3.Dispose(arg_7_0)
-	arg_7_0._moveCountLabel = nil
-	arg_7_0._moveProgress = nil
-	arg_7_0._btnTF = nil
-	arg_7_0._tf = nil
+function CardPuzzleMovePile.Dispose(self)
+	self._moveCountLabel = nil
+	self._moveProgress = nil
+	self._btnTF = nil
+	self._tf = nil
 end

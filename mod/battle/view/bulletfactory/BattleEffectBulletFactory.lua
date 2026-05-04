@@ -1,56 +1,70 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleEffectBulletFactory = singletonClass("BattleEffectBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleEffectBulletFactory.__name = "BattleEffectBulletFactory"
+ys.Battle.BattleEffectBulletFactory = singletonClass("BattleEffectBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleEffectBulletFactory.__name = "BattleEffectBulletFactory"
 
-local var_0_1 = var_0_0.Battle.BattleEffectBulletFactory
+local BattleEffectBulletFactory = ys.Battle.BattleEffectBulletFactory
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleEffectBulletFactory.Ctor(self)
+	BattleEffectBulletFactory.super.Ctor(self)
 end
 
-function var_0_1.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleTorpedoBullet.New()
+--- 创建EffectBullet的BulletUnit View（复用TorpedoBullet类型）
+--- EffectBullet在数据层表现为区域效果子弹，但视觉层使用鱼雷的实例
+--- @return BattleTorpedoBullet
+function BattleEffectBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleTorpedoBullet.New()
 end
 
-function var_0_1.onBulletHitFunc(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = var_0_1.GetDataProxy()
-	local var_3_1 = arg_3_0:GetBulletData()
-	local var_3_2 = var_3_1:GetTemplate()
+--- EffectBullet命中回调
+--- 非Flare类型（照明弹）时生成区域效果（spawnArea）
+--- 播放命中特效和音效
+--- @param targetUID number
+--- @param unitType number
+function BattleEffectBulletFactory.onBulletHitFunc(self, targetUID, unitType)
+	local dataProxy = BattleEffectBulletFactory.GetDataProxy()
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
 
-	var_0_0.Battle.PlayBattleSFX(var_3_1:GetHitSFX())
+	ys.Battle.PlayBattleSFX(bulletData:GetHitSFX())
 
-	if not var_3_1:IsFlare() then
-		var_3_1:spawnArea()
+	-- Flare类型（照明弹）不生成区域效果
+	if not bulletData:IsFlare() then
+		bulletData:spawnArea()
 	end
 
-	local var_3_3, var_3_4 = var_0_1.GetFXPool():GetFX(arg_3_0:GetFXID())
-	local var_3_5 = arg_3_0:GetTf().localPosition
+	local hitFX, hitOffset = BattleEffectBulletFactory.GetFXPool():GetFX(self:GetFXID())
+	local hitPos = self:GetTf().localPosition
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_3_3, var_3_4:Add(var_3_5), true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(hitFX, hitOffset:Add(hitPos), true)
 
-	if var_3_1:GetPierceCount() <= 0 then
-		var_3_0:RemoveBulletUnit(var_3_1:GetUniqueID())
+	-- 穿透耗尽移除
+	if bulletData:GetPierceCount() <= 0 then
+		dataProxy:RemoveBulletUnit(bulletData:GetUniqueID())
 	end
 end
 
-function var_0_1.onBulletMissFunc(arg_4_0)
-	var_0_1.onBulletHitFunc(arg_4_0)
+--- EffectBullet未命中回调（与命中相同）
+function BattleEffectBulletFactory.onBulletMissFunc(self)
+	BattleEffectBulletFactory.onBulletHitFunc(self)
 end
 
-function var_0_1.MakeModel(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_1:GetBulletData():GetTemplate()
-	local var_5_1 = arg_5_0:GetDataProxy()
+--- 创建EffectBullet的视觉模型
+--- @param bulletView BattleBulletUnit View层子弹
+--- @param spawnPos Vector3
+function BattleEffectBulletFactory.MakeModel(self, bulletView, spawnPos)
+	local bulletTemplate = bulletView:GetBulletData():GetTemplate()
+	local dataProxy = self:GetDataProxy()
 
-	if not arg_5_0:GetBulletPool():InstBullet(arg_5_1:GetModleID(), function(arg_6_0)
-		arg_5_1:AddModel(arg_6_0)
+	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
-		arg_5_1:AddTempModel(arg_5_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_5_1:SetSpawn(arg_5_2)
-	arg_5_1:SetFXFunc(arg_5_0.onBulletHitFunc, arg_5_0.onBulletMissFunc)
-	arg_5_0:GetSceneMediator():AddBullet(arg_5_1)
+	bulletView:SetSpawn(spawnPos)
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 end

@@ -1,89 +1,97 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleWeaponButtonSkinElite_20251218", var_0_0.Battle.BattleWeaponButtonSkinElite_20250520)
+local ys = ys
+local BattleWeaponButtonSkinElite_20251218 = class("BattleWeaponButtonSkinElite_20251218", ys.Battle.BattleWeaponButtonSkinElite_20250520)
 
-var_0_0.Battle.BattleWeaponButtonSkinElite_20251218 = var_0_1
-var_0_1.__name = "BattleWeaponButtonSkinElite_20251218"
+ys.Battle.BattleWeaponButtonSkinElite_20251218 = BattleWeaponButtonSkinElite_20251218
+BattleWeaponButtonSkinElite_20251218.__name = "BattleWeaponButtonSkinElite_20251218"
 
-function var_0_1.OnTotalChange(arg_1_0, arg_1_1)
-	if arg_1_0._progressInfo:GetTotal() <= 0 then
-		arg_1_0._block:SetActive(true)
+--- 2025年12月18日精英武器按钮皮肤
+--- 继承自 BattleWeaponButtonSkinElite_20250520
 
-		arg_1_0._progressBar.fillAmount = 0
-		arg_1_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
-		arg_1_0._text:GetComponent(typeof(Text)).text = "0/0"
+function BattleWeaponButtonSkinElite_20251218.OnTotalChange(self, event)
+	if self._progressInfo:GetTotal() <= 0 then
+		self._block:SetActive(true)
 
-		arg_1_0:SetControllerActive(false)
-		SetActive(arg_1_0._glowEff, false)
-		arg_1_0:OnUnfill()
-		arg_1_0:OnUnSelect()
-		SetActive(arg_1_0._gizmos1, false)
-		SetActive(arg_1_0._gizmosXue, false)
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+		self._text:GetComponent(typeof(Text)).text = "0/0"
+
+		self:SetControllerActive(false)
+		SetActive(self._glowEff, false)
+		self:OnUnfill()
+		self:OnUnSelect()
+		-- 额外隐藏 gizmos 节点
+		SetActive(self._gizmos1, false)
+		SetActive(self._gizmosXue, false)
 	else
-		if arg_1_0._progressInfo:GetTotal() == arg_1_0._progressInfo:GetCount() then
-			SetActive(arg_1_0._glowEff, true)
+		-- 满弹时显示发光特效
+		if self._progressInfo:GetTotal() == self._progressInfo:GetCount() then
+			SetActive(self._glowEff, true)
 		end
 
-		arg_1_0:OnCountChange()
-		arg_1_0:SetControllerActive(true)
+		self:OnCountChange()
+		self:SetControllerActive(true)
 
-		if arg_1_1 then
-			local var_1_0 = arg_1_1.Data.index
+		if event then
+			local index = event.Data.index
 
-			if var_1_0 and var_1_0 == 1 then
-				arg_1_0:OnUnSelect()
+			if index and index == 1 then
+				self:OnUnSelect()
 			end
 		end
 	end
 end
 
-function var_0_1.OnCountChange(arg_2_0)
-	var_0_1.super.OnCountChange(arg_2_0)
-	SetActive(arg_2_0._gizmosXue, arg_2_0._progressInfo:GetCount() > 0)
+function BattleWeaponButtonSkinElite_20251218.OnCountChange(self)
+	BattleWeaponButtonSkinElite_20251218.super.OnCountChange(self)
+	-- 有弹药时显示雪（xue）特效
+	SetActive(self._gizmosXue, self._progressInfo:GetCount() > 0)
 end
 
-function var_0_1.SetToCombatUIPreview(arg_3_0, arg_3_1)
-	if arg_3_1 then
-		SetActive(arg_3_0._filled, true)
-		SetActive(arg_3_0._unfill, false)
+--- 设置战斗UI预览模式
+function BattleWeaponButtonSkinElite_20251218.SetToCombatUIPreview(self, isActive)
+	if isActive then
+		SetActive(self._filled, true)
+		SetActive(self._unfill, false)
 
-		arg_3_0._progressBar.fillAmount = 1
-		arg_3_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
-		arg_3_0._countTxt.text = "1/1"
+		self._progressBar.fillAmount = 1
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+		self._countTxt.text = "1/1"
 
-		if arg_3_0._gizmos1 then
-			SetActive(arg_3_0._gizmos1, true)
-			SetActive(arg_3_0._gizmosXue, true)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, true)
+			SetActive(self._gizmosXue, true)
 		end
 
-		SetActive(arg_3_0._glowEff, true)
-		quickCheckAndPlayAnimator(arg_3_0._skin, "weapon_button_progress_filled")
+		SetActive(self._glowEff, true)
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
 	else
-		SetActive(arg_3_0._unfill, true)
-		SetActive(arg_3_0._filled, false)
+		SetActive(self._unfill, true)
+		SetActive(self._filled, false)
 
-		arg_3_0._progressBar.fillAmount = 0
-		arg_3_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
-		arg_3_0._countTxt.text = "0/0"
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+		self._countTxt.text = "0/0"
 
-		SetActive(arg_3_0._glowEff, false)
+		SetActive(self._glowEff, false)
 
-		if arg_3_0._gizmos1 then
-			SetActive(arg_3_0._gizmos1, false)
-			SetActive(arg_3_0._gizmosXue, false)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, false)
+			SetActive(self._gizmosXue, false)
 		end
 	end
 end
 
-function var_0_1.updateProgressBar(arg_4_0)
-	local var_4_0 = arg_4_0._progressInfo:GetCurrent() / arg_4_0._progressInfo:GetMax()
+--- 更新进度条填充量
+function BattleWeaponButtonSkinElite_20251218.updateProgressBar(self)
+	local ratio = self._progressInfo:GetCurrent() / self._progressInfo:GetMax()
 
-	arg_4_0._progressBar.fillAmount = var_4_0
+	self._progressBar.fillAmount = ratio
 
-	if arg_4_0._progressInfo.GetCount and arg_4_0._progressInfo:GetCount() > 0 then
-		arg_4_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+	if self._progressInfo.GetCount and self._progressInfo:GetCount() > 0 then
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
 	else
-		arg_4_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = var_4_0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = ratio
 	end
 end

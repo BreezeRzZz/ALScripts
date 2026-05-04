@@ -1,936 +1,1119 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleEvent
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleVariable
-local var_0_6 = var_0_0.Battle.BattleTargetChoise
-local var_0_7 = class("BattleSceneMediator", var_0_0.MVC.Mediator)
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
 
-var_0_0.Battle.BattleSceneMediator = var_0_7
-var_0_7.__name = "BattleSceneMediator"
+--- @class BattleSceneMediator : ys.MVC.Mediator
+--- @classdesc 战斗场景中介者——战斗视图层（View）的核心协调器。
+--- 负责管理和协调所有战斗可见元素的生命周期：角色、子弹、飞机、区域特效（AOE）、
+--- 弧线特效、庇护所（Shelter）、瞄准偏差圈（Aim Bias）、防空圈/反潜圈等。
+---
+--- 监听事件列表（来自 BattleDataProxy 和 CameraUtil）：
+---   STAGE_DATA_INIT_FINISH  → 关卡数据初始化完成，开始注册舰队事件、初始化摄像机
+---   ADD_UNIT / REMOVE_UNIT   → 单位创建/销毁对应的场景角色
+---   REMOVE_BULLET            → 移除子弹场景对象
+---   REMOVE_AIR_CRAFT         → 移除舰载机场景对象
+---   ADD_AREA / REMOVE_AREA   → 添加/移除区域特效
+---   ADD_EFFECT               → 添加一次性特效
+---   ADD_SHELTER / REMOVE_SHELTER → 添加/移除庇护所特效
+---   ANTI_AIR_AREA            → 更新防空圈显示
+---   UPDATE_HOSTILE_SUBMARINE → 更新反潜圈显示
+---   ADD_CAMERA_FX            → 添加相机空间特效（如全屏震动、滤镜）
+---   ADD_AIM_BIAS / REMOVE_AIM_BIAS → 添加/移除瞄准偏差圈
+---   CAMERA_FOCUS_RESET       → 相机焦点重置
+---   BULLET_TIME              → 子弹时间特效
+---
+--- 核心更新循环：Update() 每帧遍历所有角色、飞机、子弹、区域、弧线特效并调用其 Update
+---
+--- @field _dataProxy BattleDataProxy 数据层代理
+--- @field _characterList table<number, BattleCharacter> 当前所有角色的场景对象（key=UID）
+--- @field _bulletList table<number, BattleBullet> 当前所有子弹的场景对象（key=UID）
+--- @field _particleBulletList table<BattleBullet, boolean> 含粒子系统的子弹集合（用于暂停/恢复）
+--- @field _aircraftList table<number, BattleAircraftCharacter> 当前所有飞机的场景对象
+--- @field _areaList table<number, BattleEffectArea> 当前区域特效映射
+--- @field _shelterList table<number, GameObject> 当前庇护所特效映射
+--- @field _arcEffectList table[] BattleArcEffect列表（弧线/抛射特效）
+--- @field _fxPool BattleFXPool 特效池引用
+--- @field _leftFleet BattleFleetVO 友方舰队
+--- @field _leftFleetMotion BattleFleetMotion 友方舰队运动组件
+local BattleSceneMediator = class("BattleSceneMediator", ys.MVC.Mediator)
 
-local var_0_8 = Vector3(0, 0.8, 0)
+ys.Battle.BattleSceneMediator = BattleSceneMediator
+BattleSceneMediator.__name = "BattleSceneMediator"
 
-function var_0_7.Ctor(arg_1_0)
-	var_0_7.super.Ctor(arg_1_0)
+-- 旗舰标记的UI偏移量（用于将相机空间坐标转为 UI 空间时微调）
+local FlagShipMarkOffset = Vector3(0, 0.8, 0)
 
-	arg_1_0.FlagShipUIPos = Vector3.zero
+function BattleSceneMediator.Ctor(self)
+	BattleSceneMediator.super.Ctor(self)
+
+	self.FlagShipUIPos = Vector3.zero
 end
 
-function var_0_7.Initialize(arg_2_0)
-	var_0_7.super.Initialize(arg_2_0)
+--- 初始化：获取 DataProxy，初始化角色工厂，注册事件
+function BattleSceneMediator.Initialize(self)
+	BattleSceneMediator.super.Initialize(self)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
 
-	arg_2_0:InitCharacterFactory()
-	arg_2_0:Init()
-	arg_2_0:AddEvent()
+	self:InitCharacterFactory()
+	self:Init()
+	self:AddEvent()
 end
 
-function var_0_7.Init(arg_3_0)
-	arg_3_0._characterList = {}
-	arg_3_0._bulletList = {}
-	arg_3_0._particleBulletList = {}
-	arg_3_0._aircraftList = {}
-	arg_3_0._areaList = {}
-	arg_3_0._shelterList = {}
-	arg_3_0._arcEffectList = {}
-	arg_3_0._bulletContainer = GameObject.Find("BulletContainer")
-	arg_3_0._fxPool = var_0_0.Battle.BattleFXPool.GetInstance()
-	arg_3_0._aimBiasTFList = {}
+--- 重置/初始化所有场景状态
+function BattleSceneMediator.Init(self)
+	self._characterList = {}
+	self._bulletList = {}
+	self._particleBulletList = {}
+	self._aircraftList = {}
+	self._areaList = {}
+	self._shelterList = {}
+	self._arcEffectList = {}
+	self._bulletContainer = GameObject.Find("BulletContainer")
+	self._fxPool = ys.Battle.BattleFXPool.GetInstance()
+	self._aimBiasTFList = {}
 
-	var_0_0.Battle.BattleCharacterFXContainersPool.GetInstance():Init()
-	arg_3_0:InitPlayerAntiAirArea()
-	arg_3_0:InitPlayerAntiSubArea()
-	arg_3_0:InitFlagShipMark()
-	arg_3_0:InitSkillAim()
+	-- 初始化特效容器池（角色身上挂载FX用的容器组）
+	ys.Battle.BattleCharacterFXContainersPool.GetInstance():Init()
+	self:InitPlayerAntiAirArea()
+	self:InitPlayerAntiSubArea()
+	self:InitFlagShipMark()
+	self:InitSkillAim()
 	pg.CameraFixMgr.GetInstance():Adapt()
 end
 
-function var_0_7.InitCamera(arg_4_0)
-	arg_4_0._cameraUtil = var_0_0.Battle.BattleCameraUtil.GetInstance()
+--- 初始化相机（获取 CameraUtil 并注册相机相关事件）
+function BattleSceneMediator.InitCamera(self)
+	self._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
 
-	arg_4_0._cameraUtil:RegisterEventListener(arg_4_0, var_0_1.CAMERA_FOCUS_RESET, arg_4_0.onCameraFocusReset)
-	arg_4_0._cameraUtil:RegisterEventListener(arg_4_0, var_0_1.BULLET_TIME, arg_4_0.onBulletTime)
+	self._cameraUtil:RegisterEventListener(self, BattleEvent.CAMERA_FOCUS_RESET, self.onCameraFocusReset)
+	self._cameraUtil:RegisterEventListener(self, BattleEvent.BULLET_TIME, self.onBulletTime)
 end
 
-function var_0_7.InitPopNumPool(arg_5_0)
-	local var_5_0 = var_0_0.Battle.BattlePopNumManager
+--- 初始化弹出数字池（伤害数字/得分数字）
+function BattleSceneMediator.InitPopNumPool(self)
+	local PopNumMgr = ys.Battle.BattlePopNumManager
 
-	arg_5_0._popNumMgr = var_5_0.GetInstance()
+	self._popNumMgr = PopNumMgr.GetInstance()
 
-	local var_5_1 = arg_5_0._state:GetUI()
+	local ui = self._state:GetUI()
 
-	if arg_5_0._dataProxy:GetInitData().battleType == SYSTEM_DODGEM then
-		arg_5_0._popNumMgr:InitialScorePool(var_5_1._tf:Find(var_5_0.CONTAINER_CHARACTER_HP .. "/container"))
+	-- Dodgem（躲避游戏）模式使用 ScorePool，普通战斗使用 BundlePool
+	if self._dataProxy:GetInitData().battleType == SYSTEM_DODGEM then
+		self._popNumMgr:InitialScorePool(ui._tf:Find(PopNumMgr.CONTAINER_CHARACTER_HP .. "/container"))
 	else
-		arg_5_0._popNumMgr:InitialBundlePool(var_5_1._tf:Find(var_5_0.CONTAINER_CHARACTER_HP .. "/container"))
+		self._popNumMgr:InitialBundlePool(ui._tf:Find(PopNumMgr.CONTAINER_CHARACTER_HP .. "/container"))
 	end
 end
 
-function var_0_7.InitFlagShipMark(arg_6_0)
-	local var_6_0 = arg_6_0._state:GetUI()._tf:Find("flagShipMark").gameObject
+--- 初始化旗舰标记（UI层显示旗舰位置的箭头/图标）
+function BattleSceneMediator.InitFlagShipMark(self)
+	local flagShipMarkObj = self._state:GetUI()._tf:Find("flagShipMark").gameObject
 
-	var_6_0:SetActive(true)
+	flagShipMarkObj:SetActive(true)
 
-	arg_6_0._goFlagShipMarkTf = var_6_0.transform
+	self._goFlagShipMarkTf = flagShipMarkObj.transform
 end
 
-function var_0_7.InitSkillAim(arg_7_0)
-	arg_7_0._cardAimTargetFilter = {}
-	arg_7_0._cardAimTargetList = {}
+--- 初始化技能瞄准系统（卡牌塔罗/技能手动瞄准的目标过滤器和目标列表）
+function BattleSceneMediator.InitSkillAim(self)
+	self._cardAimTargetFilter = {}
+	self._cardAimTargetList = {}
 end
 
-function var_0_7.InitCharacterFactory(arg_8_0)
-	local var_8_0 = arg_8_0._state:GetUI()
+--- 初始化角色工厂映射——根据 UnitType 关联对应的 CharacterFactory
+--- 这样 ADD_UNIT 事件到来时可以根据 unitType 找到正确的工厂来创建场景角色
+function BattleSceneMediator.InitCharacterFactory(self)
+	local ui = self._state:GetUI()
 
-	var_0_0.Battle.BattleHPBarManager.GetInstance():InitialPoolRoot(var_8_0._tf:Find(var_0_0.Battle.BattleHPBarManager.ROOT_NAME))
-	var_0_0.Battle.BattleArrowManager.GetInstance():Init(var_8_0._tf:Find(var_0_0.Battle.BattleArrowManager.ROOT_NAME))
+	-- 初始化 HP 条管理器和箭头管理器
+	ys.Battle.BattleHPBarManager.GetInstance():InitialPoolRoot(ui._tf:Find(ys.Battle.BattleHPBarManager.ROOT_NAME))
+	ys.Battle.BattleArrowManager.GetInstance():Init(ui._tf:Find(ys.Battle.BattleArrowManager.ROOT_NAME))
 
-	arg_8_0._characterFactoryList = {
-		[var_0_3.UnitType.PLAYER_UNIT] = var_0_0.Battle.BattlePlayerCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.ENEMY_UNIT] = var_0_0.Battle.BattleEnemyCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.MINION_UNIT] = var_0_0.Battle.BattleMinionCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.BOSS_UNIT] = var_0_0.Battle.BattleBossCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.AIRCRAFT_UNIT] = var_0_0.Battle.BattleAircraftCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.AIRFIGHTER_UNIT] = var_0_0.Battle.BattleAirFighterCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.SUB_UNIT] = var_0_0.Battle.BattleSubCharacterFactory.GetInstance(),
-		[var_0_3.UnitType.SUPPORT_UNIT] = var_0_0.Battle.BattleSupportCharacterFactory.GetInstance()
+	-- 工厂映射表：UnitType → CharacterFactory 单例
+	self._characterFactoryList = {
+		[BattleConst.UnitType.PLAYER_UNIT] = ys.Battle.BattlePlayerCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.ENEMY_UNIT] = ys.Battle.BattleEnemyCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.MINION_UNIT] = ys.Battle.BattleMinionCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.BOSS_UNIT] = ys.Battle.BattleBossCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.AIRCRAFT_UNIT] = ys.Battle.BattleAircraftCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.AIRFIGHTER_UNIT] = ys.Battle.BattleAirFighterCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.SUB_UNIT] = ys.Battle.BattleSubCharacterFactory.GetInstance(),
+		[BattleConst.UnitType.SUPPORT_UNIT] = ys.Battle.BattleSupportCharacterFactory.GetInstance(),
 	}
 end
 
-function var_0_7.InitPlayerAntiAirArea(arg_9_0)
-	arg_9_0._antiAirArea = arg_9_0._fxPool:GetFX("AntiAirArea")
-	arg_9_0._antiAirAreaTF = arg_9_0._antiAirArea.transform
+--- 初始化友方防空圈特效（蓝色圆圈，默认隐藏）
+function BattleSceneMediator.InitPlayerAntiAirArea(self)
+	self._antiAirArea = self._fxPool:GetFX("AntiAirArea")
+	self._antiAirAreaTF = self._antiAirArea.transform
 
-	arg_9_0._antiAirArea:SetActive(false)
+	self._antiAirArea:SetActive(false)
 end
 
-function var_0_7.InitPlayerAntiSubArea(arg_10_0)
-	arg_10_0._anitSubArea = arg_10_0._fxPool:GetFX("AntiSubArea")
-	arg_10_0._anitSubAreaTF = arg_10_0._anitSubArea.transform
+--- 初始化友方反潜圈特效（默认隐藏）
+function BattleSceneMediator.InitPlayerAntiSubArea(self)
+	self._anitSubArea = self._fxPool:GetFX("AntiSubArea")
+	self._anitSubAreaTF = self._anitSubArea.transform
 
-	arg_10_0._anitSubArea:SetActive(false)
+	self._anitSubArea:SetActive(false)
 
-	arg_10_0._antiSubScanAnima = arg_10_0._anitSubAreaTF:Find("Quad"):GetComponent(typeof(Animator))
-	arg_10_0._anitSubAreaTFList = {}
-	arg_10_0._anitSubAreaTFList[arg_10_0._anitSubAreaTF] = true
+	-- 反潜扫描动画组件
+	self._antiSubScanAnima = self._anitSubAreaTF:Find("Quad"):GetComponent(typeof(Animator))
+	self._anitSubAreaTFList = {}
+	self._anitSubAreaTFList[self._anitSubAreaTF] = true
 end
 
-function var_0_7.InitDetailAntiSubArea(arg_11_0)
-	local var_11_0, var_11_1, var_11_2, var_11_3 = arg_11_0._leftFleet:GetFleetSonar():GetTotalRangeDetail()
+--- 初始化详细反潜圈分层显示（Debug/开发用）
+--- 用不同颜色显示反潜圈的各层：基础直径/主力提供/装备提供/技能额外直径
+function BattleSceneMediator.InitDetailAntiSubArea(self)
+	local baseRange, mainRange, equipRange, skillRange = self._leftFleet:GetFleetSonar():GetTotalRangeDetail()
 
-	local function var_11_4(arg_12_0, arg_12_1, arg_12_2)
-		local var_12_0 = arg_11_0._fxPool:GetFX("AntiSubArea")
+	--- 创建一个反潜圈显示层
+	--- @param range number 该层的直径
+	--- @param color Color 该层的颜色
+	--- @param label string 该层的说明文本
+	local function createSubLayer(range, color, label)
+		local subArea = self._fxPool:GetFX("AntiSubArea")
+		subArea.name = label
 
-		var_12_0.name = arg_12_2
+		local subTf = subArea.transform
+		subTf.localScale = Vector3(range, 0, range)
+		subTf:Find("static"):GetComponent("SpriteRenderer").color = color
 
-		local var_12_1 = var_12_0.transform
+		subArea:SetActive(true)
 
-		var_12_1.localScale = Vector3(arg_12_0, 0, arg_12_0)
-		var_12_1:Find("static"):GetComponent("SpriteRenderer").color = arg_12_1
-
-		var_12_0:SetActive(true)
-
-		arg_11_0._anitSubAreaTFList[var_12_1] = true
+		self._anitSubAreaTFList[subTf] = true
 	end
 
-	var_11_4(var_11_0 + var_11_1 + var_11_2 + var_11_3, Color.New(1, 1, 1, 1), "技能额外直径：" .. var_11_3)
-	var_11_4(var_11_0 + var_11_1 + var_11_2, Color.New(0.07, 1, 0, 1), "装备提供直径：" .. var_11_2)
-	var_11_4(var_11_0 + var_11_1, Color.New(1, 0.32, 0, 1), "主力提供直径：" .. var_11_1)
-	var_11_4(var_11_0, Color.New(1, 0, 0, 1), "基础直径：" .. var_11_0)
+	-- 从最外层到最内层依次创建（白色=技能、绿色=装备、橙色=主力、红色=基础）
+	createSubLayer(baseRange + mainRange + equipRange + skillRange, Color.New(1, 1, 1, 1), "技能额外直径：" .. skillRange)
+	createSubLayer(baseRange + mainRange + equipRange, Color.New(0.07, 1, 0, 1), "装备提供直径：" .. equipRange)
+	createSubLayer(baseRange + mainRange, Color.New(1, 0.32, 0, 1), "主力提供直径：" .. mainRange)
+	createSubLayer(baseRange, Color.New(1, 0, 0, 1), "基础直径：" .. baseRange)
 end
 
-function var_0_7.AddEvent(arg_13_0)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.STAGE_DATA_INIT_FINISH, arg_13_0.onStageInitFinish)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_UNIT, arg_13_0.onAddUnit)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_UNIT, arg_13_0.onRemoveUnit)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_BULLET, arg_13_0.onRemoveBullet)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_AIR_CRAFT, arg_13_0.onRemoveAircraft)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_AIR_FIGHTER, arg_13_0.onRemoveAirFighter)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_AREA, arg_13_0.onAddArea)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_AREA, arg_13_0.onRemoveArea)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_EFFECT, arg_13_0.onAddEffect)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_SHELTER, arg_13_0.onAddShelter)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_SHELTER, arg_13_0.onRemoveShleter)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ANTI_AIR_AREA, arg_13_0.onAntiAirArea)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.UPDATE_HOSTILE_SUBMARINE, arg_13_0.onUpdateHostileSubmarine)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_CAMERA_FX, arg_13_0.onAddCameraFX)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.ADD_AIM_BIAS, arg_13_0.onAddAimBias)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_1.REMOVE_AIM_BIAS, arg_13_0.onRemoveAimBias)
+--- 注册所有数据层事件监听 + 相机宽高比更新事件
+function BattleSceneMediator.AddEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onStageInitFinish)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_BULLET, self.onRemoveBullet)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_AIR_CRAFT, self.onRemoveAircraft)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_AIR_FIGHTER, self.onRemoveAirFighter)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_AREA, self.onAddArea)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_AREA, self.onRemoveArea)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_EFFECT, self.onAddEffect)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_SHELTER, self.onAddShelter)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_SHELTER, self.onRemoveShleter)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ANTI_AIR_AREA, self.onAntiAirArea)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_HOSTILE_SUBMARINE, self.onUpdateHostileSubmarine)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_CAMERA_FX, self.onAddCameraFX)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_AIM_BIAS, self.onAddAimBias)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_AIM_BIAS, self.onRemoveAimBias)
 
-	arg_13_0._camEventId = pg.CameraFixMgr.GetInstance():bind(pg.CameraFixMgr.ASPECT_RATIO_UPDATE, function()
-		arg_13_0._dataProxy:OnCameraRatioUpdate()
+	-- 绑定相机宽高比更新事件（屏幕旋转/分屏时需要重新计算边界）
+	self._camEventId = pg.CameraFixMgr.GetInstance():bind(pg.CameraFixMgr.ASPECT_RATIO_UPDATE, function()
+		self._dataProxy:OnCameraRatioUpdate()
 	end)
 end
 
-function var_0_7.RemoveEvent(arg_15_0)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_1.SONAR_SCAN)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_1.SONAR_UPDATE)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_1.ADD_AIM_BIAS)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_AIM_BIAS)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_2.FLEET_MOVE_TO)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_2.UPDATE_CARD_TARGET_FILTER)
-	arg_15_0._leftFleet:UnregisterEventListener(arg_15_0, var_0_1.ON_BOARD_CLICK)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.STAGE_DATA_INIT_FINISH)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_UNIT)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_UNIT)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_BULLET)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_AIR_CRAFT)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_AIR_FIGHTER)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_AREA)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_AREA)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_EFFECT)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_SHELTER)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_SHELTER)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ANTI_AIR_AREA)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.UPDATE_HOSTILE_SUBMARINE)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_CAMERA_FX)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.ADD_AIM_BIAS)
-	arg_15_0._dataProxy:UnregisterEventListener(arg_15_0, var_0_1.REMOVE_AIM_BIAS)
-	arg_15_0._cameraUtil:UnregisterEventListener(arg_15_0, var_0_1.CAMERA_FOCUS_RESET)
-	arg_15_0._cameraUtil:UnregisterEventListener(arg_15_0, var_0_1.BULLET_TIME)
-	pg.CameraFixMgr.GetInstance():disconnect(arg_15_0._camEventId)
+--- 注销所有事件监听
+function BattleSceneMediator.RemoveEvent(self)
+	self._leftFleet:UnregisterEventListener(self, BattleEvent.SONAR_SCAN)
+	self._leftFleet:UnregisterEventListener(self, BattleEvent.SONAR_UPDATE)
+	self._leftFleet:UnregisterEventListener(self, BattleEvent.ADD_AIM_BIAS)
+	self._leftFleet:UnregisterEventListener(self, BattleEvent.REMOVE_AIM_BIAS)
+	self._leftFleet:UnregisterEventListener(self, BattleCardPuzzleEvent.FLEET_MOVE_TO)
+	self._leftFleet:UnregisterEventListener(self, BattleCardPuzzleEvent.UPDATE_CARD_TARGET_FILTER)
+	self._leftFleet:UnregisterEventListener(self, BattleEvent.ON_BOARD_CLICK)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_BULLET)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_AIR_CRAFT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_AIR_FIGHTER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_AREA)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_AREA)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_EFFECT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_SHELTER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_SHELTER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ANTI_AIR_AREA)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_HOSTILE_SUBMARINE)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_CAMERA_FX)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_AIM_BIAS)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_AIM_BIAS)
+	self._cameraUtil:UnregisterEventListener(self, BattleEvent.CAMERA_FOCUS_RESET)
+	self._cameraUtil:UnregisterEventListener(self, BattleEvent.BULLET_TIME)
+	pg.CameraFixMgr.GetInstance():disconnect(self._camEventId)
 end
 
-function var_0_7.onStageInitFinish(arg_16_0, arg_16_1)
-	arg_16_0._leftFleet = arg_16_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-	arg_16_0._leftFleetMotion = arg_16_0._leftFleet:GetMotion()
+-- ============================================================
+-- 事件处理函数
+-- ============================================================
 
-	arg_16_0:InitCamera()
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_1.SONAR_SCAN, arg_16_0.onSonarScan)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_1.SONAR_UPDATE, arg_16_0.onUpdateHostileSubmarine)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_1.ADD_AIM_BIAS, arg_16_0.onAddAimBias)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_1.REMOVE_AIM_BIAS, arg_16_0.onRemoveAimBias)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_2.FLEET_MOVE_TO, arg_16_0.onUpdateMoveMark)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_2.ON_BOARD_CLICK, arg_16_0.onBoardClick)
-	arg_16_0._leftFleet:RegisterEventListener(arg_16_0, var_0_2.UPDATE_CARD_TARGET_FILTER, arg_16_0.onUpdateSkillAim)
-	arg_16_0:InitPopNumPool()
+--- 关卡数据初始化完成：获取友方舰队，注册舰队级事件，初始化相机和弹出数字池
+function BattleSceneMediator.onStageInitFinish(self, event)
+	self._leftFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+	self._leftFleetMotion = self._leftFleet:GetMotion()
+
+	self:InitCamera()
+
+	-- 注册舰队事件：声纳扫描、声纳更新、瞄准偏差、卡牌移动、点击等
+	self._leftFleet:RegisterEventListener(self, BattleEvent.SONAR_SCAN, self.onSonarScan)
+	self._leftFleet:RegisterEventListener(self, BattleEvent.SONAR_UPDATE, self.onUpdateHostileSubmarine)
+	self._leftFleet:RegisterEventListener(self, BattleEvent.ADD_AIM_BIAS, self.onAddAimBias)
+	self._leftFleet:RegisterEventListener(self, BattleEvent.REMOVE_AIM_BIAS, self.onRemoveAimBias)
+	self._leftFleet:RegisterEventListener(self, BattleCardPuzzleEvent.FLEET_MOVE_TO, self.onUpdateMoveMark)
+	self._leftFleet:RegisterEventListener(self, BattleCardPuzzleEvent.ON_BOARD_CLICK, self.onBoardClick)
+	self._leftFleet:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_CARD_TARGET_FILTER, self.onUpdateSkillAim)
+
+	self:InitPopNumPool()
 end
 
-function var_0_7.onAddUnit(arg_17_0, arg_17_1)
-	local var_17_0 = arg_17_1.Data.type
-	local var_17_1 = arg_17_0._characterFactoryList[var_17_0]
-	local var_17_2 = arg_17_1.Data
+--- 单位添加：根据 unitType 找到对应的工厂，创建场景角色
+function BattleSceneMediator.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local factory = self._characterFactoryList[unitType]
+	local eventData = event.Data
 
-	var_17_1:CreateCharacter(var_17_2)
+	factory:CreateCharacter(eventData)
 end
 
-function var_0_7.onRemoveUnit(arg_18_0, arg_18_1)
-	local var_18_0 = arg_18_1.Data.UID
-	local var_18_1 = arg_18_1.Data.deadReason
-	local var_18_2 = arg_18_0._characterList[var_18_0]
+--- 单位移除：通过工厂移除场景角色
+function BattleSceneMediator.onRemoveUnit(self, event)
+	local unitUID = event.Data.UID
+	local deadReason = event.Data.deadReason
+	local character = self._characterList[unitUID]
 
-	if var_18_2 then
-		var_18_2:GetFactory():RemoveCharacter(var_18_2, var_18_1)
-
-		arg_18_0._characterList[var_18_0] = nil
+	if character then
+		character:GetFactory():RemoveCharacter(character, deadReason)
+		self._characterList[unitUID] = nil
 	end
 end
 
-function var_0_7.onRemoveAircraft(arg_19_0, arg_19_1)
-	local var_19_0 = arg_19_1.Data.UID
-	local var_19_1 = arg_19_0._aircraftList[var_19_0]
+--- 舰载机移除
+function BattleSceneMediator.onRemoveAircraft(self, event)
+	local aircraftUID = event.Data.UID
+	local aircraftCharacter = self._aircraftList[aircraftUID]
 
-	if var_19_1 then
-		var_19_1:GetFactory():RemoveCharacter(var_19_1)
-
-		arg_19_0._aircraftList[var_19_0] = nil
+	if aircraftCharacter then
+		aircraftCharacter:GetFactory():RemoveCharacter(aircraftCharacter)
+		self._aircraftList[aircraftUID] = nil
 	end
 end
 
-function var_0_7.onRemoveAirFighter(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_1.Data.UID
-	local var_20_1 = arg_20_0._aircraftList[var_20_0]
+--- 敌方飞机（AirFighter）移除
+function BattleSceneMediator.onRemoveAirFighter(self, event)
+	local fighterUID = event.Data.UID
+	local fighterCharacter = self._aircraftList[fighterUID]
 
-	if var_20_1 then
-		var_20_1:GetFactory():RemoveCharacter(var_20_1)
-
-		arg_20_0._aircraftList[var_20_0] = nil
+	if fighterCharacter then
+		fighterCharacter:GetFactory():RemoveCharacter(fighterCharacter)
+		self._aircraftList[fighterUID] = nil
 	end
 end
 
-function var_0_7.onRemoveBullet(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_1.Data.UID
+--- 子弹移除
+function BattleSceneMediator.onRemoveBullet(self, event)
+	local bulletUID = event.Data.UID
 
-	arg_21_0:RemoveBullet(var_21_0)
+	self:RemoveBullet(bulletUID)
 end
 
-function var_0_7.onAddArea(arg_22_0, arg_22_1)
-	local var_22_0 = arg_22_1.Data.FXID
-	local var_22_1 = arg_22_1.Data.area
+--- 区域特效（AOE）添加
+function BattleSceneMediator.onAddArea(self, event)
+	local fxID = event.Data.FXID
+	local area = event.Data.area
 
-	arg_22_0:AddArea(var_22_1, var_22_0)
+	self:AddArea(area, fxID)
 end
 
-function var_0_7.onRemoveArea(arg_23_0, arg_23_1)
-	local var_23_0 = arg_23_1.Data.id
+--- 区域特效移除
+function BattleSceneMediator.onRemoveArea(self, event)
+	local areaID = event.Data.id
 
-	arg_23_0:RemoveArea(var_23_0)
+	self:RemoveArea(areaID)
 end
 
-function var_0_7.onAddEffect(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_1.Data.FXID
-	local var_24_1 = arg_24_1.Data.position
-	local var_24_2 = arg_24_1.Data.localScale
+--- 一次性特效添加
+function BattleSceneMediator.onAddEffect(self, event)
+	local fxID = event.Data.FXID
+	local position = event.Data.position
+	local scale = event.Data.localScale
 
-	arg_24_0:AddEffect(var_24_0, var_24_1, var_24_2)
+	self:AddEffect(fxID, position, scale)
 end
 
-function var_0_7.onAddShelter(arg_25_0, arg_25_1)
-	local var_25_0 = arg_25_1.Data.shelter
-	local var_25_1, var_25_2 = arg_25_0._fxPool:GetFX(var_25_0:GetFXID())
-	local var_25_3 = var_25_0:GetPosition()
+--- 庇护所（Shelter）特效添加
+--- 庇护所是场景中的防护性特效（如技能产生的护盾墙视觉效果）
+function BattleSceneMediator.onAddShelter(self, event)
+	local shelter = event.Data.shelter
+	local shelterGO, offset = self._fxPool:GetFX(shelter:GetFXID())
+	local shelterPos = shelter:GetPosition()
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_25_1, var_25_3:Add(var_25_2), true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(shelterGO, shelterPos:Add(offset), true)
 
-	if var_25_0:GetIFF() == var_0_4.FOE_CODE then
-		local var_25_4 = var_25_1.transform
-		local var_25_5 = var_25_4.localEulerAngles
-
-		var_25_5.y = 180
-		var_25_4.localEulerAngles = var_25_5
+	-- 敌方庇护所需要Y轴翻转180度（因为敌方朝向与友方相反）
+	if shelter:GetIFF() == BattleConfig.FOE_CODE then
+		local shelterTf = shelterGO.transform
+		local euler = shelterTf.localEulerAngles
+		euler.y = 180
+		shelterTf.localEulerAngles = euler
 	end
 
-	arg_25_0._shelterList[var_25_0:GetUniqueID()] = var_25_1
+	self._shelterList[shelter:GetUniqueID()] = shelterGO
 end
 
-function var_0_7.onRemoveShleter(arg_26_0, arg_26_1)
-	local var_26_0 = arg_26_1.Data.uid
-	local var_26_1 = arg_26_0._shelterList[var_26_0]
+--- 庇护所特效移除
+function BattleSceneMediator.onRemoveShleter(self, event)
+	local shelterUID = event.Data.uid
+	local shelterGO = self._shelterList[shelterUID]
 
-	if var_26_1 then
-		var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(var_26_1)
-
-		arg_26_0._shelterList[var_26_0] = nil
+	if shelterGO then
+		ys.Battle.BattleResourceManager.GetInstance():DestroyOb(shelterGO)
+		self._shelterList[shelterUID] = nil
 	end
 end
 
-function var_0_7.onAntiAirArea(arg_27_0, arg_27_1)
-	local var_27_0 = arg_27_1.Data.isShow
+--- 更新防空圈显示——根据是否有敌方飞机来切换防空圈可见性和尺寸
+function BattleSceneMediator.onAntiAirArea(self, event)
+	local isShow = event.Data.isShow
 
-	if var_27_0 ~= nil then
-		arg_27_0._antiAirArea.gameObject:SetActive(arg_27_1.Data.isShow)
+	if isShow ~= nil then
+		self._antiAirArea.gameObject:SetActive(event.Data.isShow)
 
-		if var_27_0 == true then
-			local var_27_1 = arg_27_0._leftFleet:GetFleetAntiAirWeapon():GetRange() * 2
+		if isShow == true then
+			-- 防空圈直径 = 舰队防空武器射程 * 2
+			local range = self._leftFleet:GetFleetAntiAirWeapon():GetRange() * 2
 
-			arg_27_0._antiAirAreaTF.localScale = Vector3(var_27_1, 0, var_27_1)
+			self._antiAirAreaTF.localScale = Vector3(range, 0, range)
 		end
 	end
 end
 
-function var_0_7.onAntiAirOverload(arg_28_0, arg_28_1)
-	local var_28_0 = arg_28_1.Dispatcher
-	local var_28_1 = arg_28_0._antiAirAreaTF:Find("Quad"):GetComponent(typeof(Animator))
+--- 防空过载动画控制——过载时禁用防空圈的呼吸动画
+function BattleSceneMediator.onAntiAirOverload(self, event)
+	local antiAirWeapon = event.Dispatcher
+	local animator = self._antiAirAreaTF:Find("Quad"):GetComponent(typeof(Animator))
 
-	if var_28_0:IsOverLoad() then
-		var_28_1.enabled = false
+	if antiAirWeapon:IsOverLoad() then
+		animator.enabled = false
 	else
-		var_28_1.enabled = true
+		animator.enabled = true
 	end
 end
 
-function var_0_7.onUpdateHostileSubmarine(arg_29_0, arg_29_1)
-	arg_29_0:updateSonarView()
+--- 敌方潜艇数量变化时更新声纳视图
+function BattleSceneMediator.onUpdateHostileSubmarine(self, event)
+	self:updateSonarView()
 end
 
-function var_0_7.updateSonarView(arg_30_0)
-	local var_30_0 = arg_30_0._dataProxy:GetEnemySubmarineCount() > 0
+--- 更新声纳/反潜圈视图
+function BattleSceneMediator.updateSonarView(self)
+	local hasEnemySub = self._dataProxy:GetEnemySubmarineCount() > 0
 
-	arg_30_0._sonarActive = var_30_0
+	self._sonarActive = hasEnemySub
 
-	for iter_30_0, iter_30_1 in pairs(arg_30_0._characterList) do
-		iter_30_1:SonarAcitve(var_30_0)
+	-- 通知所有角色声纳状态变化（敌方角色头上的声纳标记）
+	for _, character in pairs(self._characterList) do
+		character:SonarAcitve(hasEnemySub)
 	end
 
-	local var_30_1 = arg_30_0._leftFleet:GetFleetSonar():GetCurrentState() ~= var_0_0.Battle.BattleFleetStaticSonar.STATE_DISABLE and var_30_0
+	-- 友方反潜圈：仅当声纳系统启用且存在敌方潜艇时才显示
+	local sonarEnabled = self._leftFleet:GetFleetSonar():GetCurrentState() ~= ys.Battle.BattleFleetStaticSonar.STATE_DISABLE and hasEnemySub
 
-	arg_30_0._anitSubArea.gameObject:SetActive(var_30_1)
+	self._anitSubArea.gameObject:SetActive(sonarEnabled)
 
-	if var_30_1 then
-		local var_30_2 = arg_30_0._leftFleet:GetFleetSonar():GetRange()
+	if sonarEnabled then
+		local sonarRange = self._leftFleet:GetFleetSonar():GetRange()
 
-		arg_30_0._anitSubAreaTF.localScale = Vector3(var_30_2, 0, var_30_2)
+		self._anitSubAreaTF.localScale = Vector3(sonarRange, 0, sonarRange)
 	end
 end
 
-function var_0_7.onSonarScan(arg_31_0, arg_31_1)
-	if arg_31_1.Data.indieSonar then
-		local var_31_0 = arg_31_0._fxPool:GetFX("AntiSubArea").transform
+--- 声纳扫描动画播放
+function BattleSceneMediator.onSonarScan(self, event)
+	if event.Data.indieSonar then
+		-- 独立声纳（单体反潜扫描）——创建一个新的扫描圈并播放动画
+		local scanAreaTf = self._fxPool:GetFX("AntiSubArea").transform
 
-		var_31_0.localScale = Vector3(100, 0, 100)
+		scanAreaTf.localScale = Vector3(100, 0, 100)
 
-		SetActive(var_31_0:Find("static"), false)
+		SetActive(scanAreaTf:Find("static"), false)
 
-		local var_31_1 = var_31_0:Find("Quad")
-		local var_31_2 = var_31_1:GetComponent(typeof(Animator))
+		local quadTf = scanAreaTf:Find("Quad")
+		local animator = quadTf:GetComponent(typeof(Animator))
 
-		var_31_2.enabled = true
+		animator.enabled = true
+		animator:Play("antiSubZoom", -1, 0)
 
-		var_31_2:Play("antiSubZoom", -1, 0)
+		self._anitSubAreaTFList[scanAreaTf] = true
 
-		arg_31_0._anitSubAreaTFList[var_31_0] = true
-
-		var_31_1:GetComponent("DftAniEvent"):SetEndEvent(function(arg_32_0)
-			arg_31_0._anitSubAreaTFList[var_31_0] = nil
+		-- 动画结束后从列表中移除
+		quadTf:GetComponent("DftAniEvent"):SetEndEvent(function()
+			self._anitSubAreaTFList[scanAreaTf] = nil
 		end)
-	elseif arg_31_0._antiSubScanAnima and arg_31_0._sonarActive then
-		arg_31_0._antiSubScanAnima.enabled = true
-
-		arg_31_0._antiSubScanAnima:Play("antiSubZoom", -1, 0)
+	elseif self._antiSubScanAnima and self._sonarActive then
+		-- 舰队反潜扫描——使用已有的扫描动画组件
+		self._antiSubScanAnima.enabled = true
+		self._antiSubScanAnima:Play("antiSubZoom", -1, 0)
 	end
 end
 
-function var_0_7.onAddAimBias(arg_33_0, arg_33_1)
-	local var_33_0 = arg_33_1.Data.aimBias
-	local var_33_1 = arg_33_0._fxPool:GetFX("AimBiasArea").transform
+--- 瞄准偏差圈（Aim Bias）添加——创建"瞄准偏差区域"特效的Transform并记录
+function BattleSceneMediator.onAddAimBias(self, event)
+	local aimBias = event.Data.aimBias
+	local aimBiasTf = self._fxPool:GetFX("AimBiasArea").transform
 
-	arg_33_0._aimBiasTFList[var_33_0] = {
-		tf = var_33_1,
-		vector = Vector3(5, 0, 5)
+	self._aimBiasTFList[aimBias] = {
+		tf = aimBiasTf,
+		vector = Vector3(5, 0, 5),
 	}
 end
 
-function var_0_7.onRemoveAimBias(arg_34_0, arg_34_1)
-	local var_34_0 = arg_34_1.Data.aimBias
-	local var_34_1 = arg_34_0._aimBiasTFList[var_34_0]
+--- 瞄准偏差圈移除——销毁对应的特效GameObject
+function BattleSceneMediator.onRemoveAimBias(self, event)
+	local aimBias = event.Data.aimBias
+	local aimBiasData = self._aimBiasTFList[aimBias]
 
-	if var_34_1 then
-		local var_34_2 = var_34_1.tf.gameObject
+	if aimBiasData then
+		local gobj = aimBiasData.tf.gameObject
 
-		var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(var_34_2)
-
-		arg_34_0._aimBiasTFList[var_34_0] = nil
+		ys.Battle.BattleResourceManager.GetInstance():DestroyOb(gobj)
+		self._aimBiasTFList[aimBias] = nil
 	end
 end
 
-function var_0_7.onUpdateMoveMark(arg_35_0, arg_35_1)
-	local var_35_0 = arg_35_1.Data.pos
+--- 卡牌塔罗模式：更新舰队移动标记位置
+function BattleSceneMediator.onUpdateMoveMark(self, event)
+	local targetPos = event.Data.pos
 
-	if not arg_35_0._moveMarkFXTF then
-		arg_35_0._moveMarkFX = arg_35_0._fxPool:GetFX("kapai_weizhi")
-		arg_35_0._moveMarkFXTF = arg_35_0._moveMarkFX.transform
+	-- 延迟创建移动标记FX（首次使用才从池中获取）
+	if not self._moveMarkFXTF then
+		self._moveMarkFX = self._fxPool:GetFX("kapai_weizhi")
+		self._moveMarkFXTF = self._moveMarkFX.transform
 	end
 
-	if var_35_0 then
-		setActive(arg_35_0._moveMarkFXTF, true)
-
-		arg_35_0._moveMarkFXTF.position = var_35_0
+	if targetPos then
+		setActive(self._moveMarkFXTF, true)
+		self._moveMarkFXTF.position = targetPos
 	else
-		setActive(arg_35_0._moveMarkFXTF, false)
+		setActive(self._moveMarkFXTF, false)
 	end
 end
 
-function var_0_7.onBoardClick(arg_36_0, arg_36_1)
-	local var_36_0 = arg_36_1.Data.click
-	local var_36_1 = arg_36_0._leftFleet:GetCardPuzzleComponent():GetTouchScreenPoint()
+--- 卡牌塔罗模式：处理棋盘点击（click/drag/release）
+function BattleSceneMediator.onBoardClick(self, event)
+	local clickState = event.Data.click
+	local touchPoint = self._leftFleet:GetCardPuzzleComponent():GetTouchScreenPoint()
 
-	if var_36_0 == var_0_0.Battle.CardPuzzleBoardClicker.CLICK_STATE_CLICK then
-		arg_36_0._clickMarkFxTF = arg_36_0._fxPool:GetFX("kapai_weizhi").transform
-		arg_36_0._clickMarkFxTF.position = var_36_1
-	elseif var_36_0 == var_0_0.Battle.CardPuzzleBoardClicker.CLICK_STATE_DRAG then
-		arg_36_0._clickMarkFxTF.position = var_36_1
-	elseif var_36_0 == var_0_0.Battle.CardPuzzleBoardClicker.CLICK_STATE_RELEASE and arg_36_0._clickMarkFxTF then
-		var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_36_0._clickMarkFxTF.gameObject)
+	if clickState == ys.Battle.CardPuzzleBoardClicker.CLICK_STATE_CLICK then
+		self._clickMarkFxTF = self._fxPool:GetFX("kapai_weizhi").transform
+		self._clickMarkFxTF.position = touchPoint
+	elseif clickState == ys.Battle.CardPuzzleBoardClicker.CLICK_STATE_DRAG then
+		self._clickMarkFxTF.position = touchPoint
+	elseif clickState == ys.Battle.CardPuzzleBoardClicker.CLICK_STATE_RELEASE and self._clickMarkFxTF then
+		ys.Battle.BattleResourceManager.GetInstance():DestroyOb(self._clickMarkFxTF.gameObject)
 	end
 end
 
-function var_0_7.onCameraFocusReset(arg_37_0, arg_37_1)
-	arg_37_0:ResetFocus()
+--- 相机焦点重置
+function BattleSceneMediator.onCameraFocusReset(self, event)
+	self:ResetFocus()
 end
 
-function var_0_7.onAddCameraFX(arg_38_0, arg_38_1)
-	local var_38_0 = arg_38_1.Data.FXID
-	local var_38_1 = arg_38_1.Data.position
-	local var_38_2 = arg_38_1.Data.localScale
-	local var_38_3 = arg_38_1.Data.orderDiff
+--- 相机空间特效添加（如从相机空间播放的全屏特效）
+function BattleSceneMediator.onAddCameraFX(self, event)
+	local fxID = event.Data.FXID
+	local position = event.Data.position
+	local localScale = event.Data.localScale
+	local orderDiff = event.Data.orderDiff
 
-	arg_38_0:AddCameraFX(var_38_3, var_38_0, var_38_1, var_38_2)
+	self:AddCameraFX(orderDiff, fxID, position, localScale)
 end
 
-function var_0_7.AddCameraFX(arg_39_0, arg_39_1, arg_39_2, arg_39_3, arg_39_4)
-	local var_39_0 = arg_39_0._fxPool:GetFX(arg_39_2)
-	local var_39_1 = arg_39_0._cameraUtil:Add2Camera(var_39_0, arg_39_1)
+--- 向相机空间添加特效（orderDiff控制层级，缩放需根据相机缩放系数调整）
+--- @param orderDiff number 相机层级偏移
+--- @param fxID string 特效ID
+--- @param position Vector3 世界坐标位置
+--- @param scale number|nil 缩放比例（默认1）
+function BattleSceneMediator.AddCameraFX(self, orderDiff, fxID, position, scale)
+	local fxGO = self._fxPool:GetFX(fxID)
+	local cameraScale = self._cameraUtil:Add2Camera(fxGO, orderDiff)
 
-	arg_39_4 = arg_39_4 or 1
-	var_39_0.transform.localScale = Vector3(arg_39_4 / var_39_1.x, arg_39_4 / var_39_1.y, arg_39_4 / var_39_1.z)
+	scale = scale or 1
+	fxGO.transform.localScale = Vector3(scale / cameraScale.x, scale / cameraScale.y, scale / cameraScale.z)
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_39_0, arg_39_3, true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(fxGO, position, true)
 end
 
-function var_0_7.onUpdateSkillAim(arg_40_0, arg_40_1)
-	arg_40_0._cardAimTargetFilter = arg_40_1.Data.targetFilterList
+--- 技能瞄准目标过滤器更新（卡牌模式）
+function BattleSceneMediator.onUpdateSkillAim(self, event)
+	self._cardAimTargetFilter = event.Data.targetFilterList
 end
 
-function var_0_7.Update(arg_41_0)
-	for iter_41_0, iter_41_1 in pairs(arg_41_0._characterList) do
-		iter_41_1:Update()
+-- ============================================================
+-- 核心更新循环
+-- ============================================================
+
+--- 每帧更新：遍历所有角色、飞机、子弹、区域、弧线特效并更新其状态
+function BattleSceneMediator.Update(self)
+	for _, character in pairs(self._characterList) do
+		character:Update()
 	end
 
-	for iter_41_2, iter_41_3 in pairs(arg_41_0._aircraftList) do
-		iter_41_3:Update()
+	for _, aircraftChar in pairs(self._aircraftList) do
+		aircraftChar:Update()
 	end
 
-	for iter_41_4, iter_41_5 in pairs(arg_41_0._bulletList) do
-		iter_41_5:Update()
+	for _, bullet in pairs(self._bulletList) do
+		bullet:Update()
 	end
 
-	for iter_41_6, iter_41_7 in pairs(arg_41_0._areaList) do
-		iter_41_7:Update()
+	for _, area in pairs(self._areaList) do
+		area:Update()
 	end
 
-	for iter_41_8, iter_41_9 in ipairs(arg_41_0._arcEffectList) do
-		iter_41_9:Update()
+	for _, arcEffect in ipairs(self._arcEffectList) do
+		arcEffect:Update()
 	end
 
-	arg_41_0:updateCardAim()
-	arg_41_0:UpdateAntiAirArea()
-	arg_41_0:UpdateAimBiasArea()
-	arg_41_0:UpdateFlagShipMark()
+	self:updateCardAim()
+	self:UpdateAntiAirArea()
+	self:UpdateAimBiasArea()
+	self:UpdateFlagShipMark()
 end
 
-function var_0_7.UpdatePause(arg_42_0)
-	for iter_42_0, iter_42_1 in pairs(arg_42_0._characterList) do
-		iter_42_1:UpdateUIComponentPosition()
-		iter_42_1:UpdateHPBarPosition()
+--- 暂停时的更新：仅更新UI组件位置和HP条位置（不更新动画/逻辑）
+function BattleSceneMediator.UpdatePause(self)
+	for _, character in pairs(self._characterList) do
+		character:UpdateUIComponentPosition()
+		character:UpdateHPBarPosition()
 	end
 
-	for iter_42_2, iter_42_3 in pairs(arg_42_0._aircraftList) do
-		iter_42_3:UpdateUIComponentPosition()
+	for _, aircraftChar in pairs(self._aircraftList) do
+		aircraftChar:UpdateUIComponentPosition()
 
-		if iter_42_3:GetUnitData():GetUniqueID() == var_0_4.FOE_CODE then
-			iter_42_3:UpdateHPBarPosition()
+		if aircraftChar:GetUnitData():GetUniqueID() == BattleConfig.FOE_CODE then
+			aircraftChar:UpdateHPBarPosition()
 		end
 	end
 
-	arg_42_0:UpdateFlagShipMark()
+	self:UpdateFlagShipMark()
 end
 
-function var_0_7.UpdateEscapeOnly(arg_43_0, arg_43_1)
-	for iter_43_0, iter_43_1 in pairs(arg_43_0._characterList) do
-		if iter_43_1.__name == var_0_0.Battle.BattleEnemyCharacter.__name or iter_43_1.__name == var_0_0.Battle.BattleBossCharacter.__name then
-			iter_43_1:Update(arg_43_1)
-		end
-	end
-end
-
-function var_0_7.Pause(arg_44_0)
-	arg_44_0:PauseCharacterAction(true)
-
-	for iter_44_0, iter_44_1 in pairs(arg_44_0._areaList) do
-		local var_44_0 = iter_44_1._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
-
-		for iter_44_2, iter_44_3 in ipairs(var_44_0) do
-			iter_44_3:Pause()
-		end
-	end
-
-	arg_44_0._cameraUtil:PauseShake()
-
-	for iter_44_4, iter_44_5 in ipairs(arg_44_0._arcEffectList) do
-		local var_44_1 = iter_44_5._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
-
-		for iter_44_6, iter_44_7 in ipairs(var_44_1) do
-			iter_44_7:Pause()
-		end
-	end
-
-	for iter_44_8, iter_44_9 in pairs(arg_44_0._particleBulletList) do
-		local var_44_2 = iter_44_8._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
-
-		for iter_44_10, iter_44_11 in ipairs(var_44_2) do
-			iter_44_11:Pause()
+--- 仅更新逃跑中的敌方角色（战斗结束倒计时阶段）
+function BattleSceneMediator.UpdateEscapeOnly(self, timeStamp)
+	for _, character in pairs(self._characterList) do
+		if character.__name == ys.Battle.BattleEnemyCharacter.__name or character.__name == ys.Battle.BattleBossCharacter.__name then
+			character:Update(timeStamp)
 		end
 	end
 end
 
-function var_0_7.Resume(arg_45_0)
-	arg_45_0:PauseCharacterAction(false)
+--- 暂停所有场景效果（角色动画 + 粒子系统 + 相机震动）
+function BattleSceneMediator.Pause(self)
+	self:PauseCharacterAction(true)
 
-	for iter_45_0, iter_45_1 in pairs(arg_45_0._areaList) do
-		local var_45_0 = iter_45_1._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
+	-- 暂停区域特效中的粒子系统
+	for _, area in pairs(self._areaList) do
+		local particles = area._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
 
-		for iter_45_2, iter_45_3 in ipairs(var_45_0) do
-			iter_45_3:Pause()
+		for _, ps in ipairs(particles) do
+			ps:Pause()
 		end
 	end
 
-	arg_45_0._cameraUtil:ResumeShake()
+	self._cameraUtil:PauseShake()
 
-	for iter_45_4, iter_45_5 in ipairs(arg_45_0._arcEffectList) do
-		local var_45_1 = iter_45_5._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
+	-- 暂停弧线特效中的粒子系统
+	for _, arcEffect in ipairs(self._arcEffectList) do
+		local particles = arcEffect._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
 
-		for iter_45_6, iter_45_7 in ipairs(var_45_1) do
-			iter_45_7:Pause()
+		for _, ps in ipairs(particles) do
+			ps:Pause()
 		end
 	end
 
-	for iter_45_8, iter_45_9 in pairs(arg_45_0._particleBulletList) do
-		local var_45_2 = iter_45_8._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
+	-- 暂停粒子子弹中的粒子系统
+	for _, particleBullet in pairs(self._particleBulletList) do
+		local particles = particleBullet._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
 
-		for iter_45_10, iter_45_11 in ipairs(var_45_2) do
-			iter_45_11:Pause()
+		for _, ps in ipairs(particles) do
+			ps:Pause()
 		end
 	end
 end
 
-function var_0_7.onBulletTime(arg_46_0, arg_46_1)
-	local var_46_0 = arg_46_1.Data
-	local var_46_1 = var_46_0.key
-	local var_46_2 = var_46_0.speed
+--- 恢复所有场景效果
+function BattleSceneMediator.Resume(self)
+	self:PauseCharacterAction(false)
 
-	if var_46_2 then
-		local var_46_3 = var_46_0.exemptUnit:GetUniqueID()
+	for _, area in pairs(self._areaList) do
+		local particles = area._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
 
-		var_0_5.AppendIFFFactor(var_0_4.FOE_CODE, var_46_1, var_46_2)
-		var_0_5.AppendIFFFactor(var_0_4.FRIENDLY_CODE, var_46_1, var_46_2)
+		for _, ps in ipairs(particles) do
+			ps:Pause()
+		end
+	end
 
-		for iter_46_0, iter_46_1 in pairs(arg_46_0._characterList) do
-			if iter_46_0 == var_46_3 then
-				iter_46_1:SetAnimaSpeed(1 / var_46_2)
+	self._cameraUtil:ResumeShake()
 
+	for _, arcEffect in ipairs(self._arcEffectList) do
+		local particles = arcEffect._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
+
+		for _, ps in ipairs(particles) do
+			ps:Pause()
+		end
+	end
+
+	for _, particleBullet in pairs(self._particleBulletList) do
+		local particles = particleBullet._go:GetComponentsInChildren(typeof(ParticleSystem)):ToTable()
+
+		for _, ps in ipairs(particles) do
+			ps:Pause()
+		end
+	end
+end
+
+--- 子弹时间（慢动作）处理
+--- 对两方（除豁免单位外）施加时间缩放因子，豁免单位动画速度为 1/speed 补偿
+function BattleSceneMediator.onBulletTime(self, event)
+	local bulletTimeData = event.Data
+	local speedKey = bulletTimeData.key
+	local speedValue = bulletTimeData.speed
+
+	if speedValue then
+		-- 进入子弹时间
+		local exemptUID = bulletTimeData.exemptUnit:GetUniqueID()
+
+		BattleVariable.AppendIFFFactor(BattleConfig.FOE_CODE, speedKey, speedValue)
+		BattleVariable.AppendIFFFactor(BattleConfig.FRIENDLY_CODE, speedKey, speedValue)
+
+		-- 豁免单位保持正常速度（补偿时间缩放）
+		for uid, character in pairs(self._characterList) do
+			if uid == exemptUID then
+				character:SetAnimaSpeed(1 / speedValue)
 				break
 			end
 		end
 	else
-		var_0_5.RemoveIFFFactor(var_0_4.FOE_CODE, var_46_1)
-		var_0_5.RemoveIFFFactor(var_0_4.FRIENDLY_CODE, var_46_1)
+		-- 退出子弹时间：移除速度因子，恢复所有动画速度
+		BattleVariable.RemoveIFFFactor(BattleConfig.FOE_CODE, speedKey)
+		BattleVariable.RemoveIFFFactor(BattleConfig.FRIENDLY_CODE, speedKey)
 
-		for iter_46_2, iter_46_3 in pairs(arg_46_0._characterList) do
-			iter_46_3:SetAnimaSpeed(1)
+		for _, character in pairs(self._characterList) do
+			character:SetAnimaSpeed(1)
 		end
 
-		for iter_46_4, iter_46_5 in pairs(arg_46_0._bulletList) do
-			iter_46_5:SetAnimaSpeed(1)
+		for _, bullet in pairs(self._bulletList) do
+			bullet:SetAnimaSpeed(1)
 		end
 	end
 end
 
-function var_0_7.ResetFocus(arg_47_0)
-	var_0_5.RemoveIFFFactor(var_0_4.FOE_CODE, var_0_4.SPEED_FACTOR_FOCUS_CHARACTER)
-	var_0_5.RemoveIFFFactor(var_0_4.FRIENDLY_CODE, var_0_4.SPEED_FACTOR_FOCUS_CHARACTER)
+--- 重置相机焦点：移除聚焦速度因子，恢复所有动画速度为1，平滑缩放回默认
+function BattleSceneMediator.ResetFocus(self)
+	BattleVariable.RemoveIFFFactor(BattleConfig.FOE_CODE, BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
+	BattleVariable.RemoveIFFFactor(BattleConfig.FRIENDLY_CODE, BattleConfig.SPEED_FACTOR_FOCUS_CHARACTER)
 
-	for iter_47_0, iter_47_1 in pairs(arg_47_0._characterList) do
-		iter_47_1:SetAnimaSpeed(1)
+	for _, character in pairs(self._characterList) do
+		character:SetAnimaSpeed(1)
 	end
 
-	for iter_47_2, iter_47_3 in pairs(arg_47_0._bulletList) do
-		iter_47_3:SetAnimaSpeed(1)
+	for _, bullet in pairs(self._bulletList) do
+		bullet:SetAnimaSpeed(1)
 	end
 
-	arg_47_0._cameraUtil:ZoomCamara(nil, nil, var_0_4.CAM_RESET_DURATION)
+	self._cameraUtil:ZoomCamara(nil, nil, BattleConfig.CAM_RESET_DURATION)
 end
 
-function var_0_7.UpdateFlagShipMark(arg_48_0)
-	local var_48_0 = arg_48_0.FlagShipUIPos:Copy(arg_48_0._leftFleetMotion:GetPos())
+-- ============================================================
+-- UI 位置更新
+-- ============================================================
 
-	arg_48_0._goFlagShipMarkTf.position = var_0_5.CameraPosToUICamera(var_48_0):Add(var_0_8)
+--- 更新旗舰标记的UI位置（跟随友方舰队移动）
+function BattleSceneMediator.UpdateFlagShipMark(self)
+	local fleetUIPos = self.FlagShipUIPos:Copy(self._leftFleetMotion:GetPos())
+
+	self._goFlagShipMarkTf.position = BattleVariable.CameraPosToUICamera(fleetUIPos):Add(FlagShipMarkOffset)
 end
 
-function var_0_7.UpdateAntiAirArea(arg_49_0)
-	arg_49_0._antiAirAreaTF.position = arg_49_0._leftFleetMotion:GetPos()
+--- 更新防空圈和反潜圈位置（跟随友方舰队移动）
+function BattleSceneMediator.UpdateAntiAirArea(self)
+	self._antiAirAreaTF.position = self._leftFleetMotion:GetPos()
 
-	for iter_49_0, iter_49_1 in pairs(arg_49_0._anitSubAreaTFList) do
-		iter_49_0.position = arg_49_0._leftFleetMotion:GetPos()
+	for subAreaTf, _ in pairs(self._anitSubAreaTFList) do
+		subAreaTf.position = self._leftFleetMotion:GetPos()
 	end
 end
 
-function var_0_7.UpdateAimBiasArea(arg_50_0)
-	for iter_50_0, iter_50_1 in pairs(arg_50_0._aimBiasTFList) do
-		local var_50_0 = iter_50_1.tf
-		local var_50_1 = iter_50_1.vector
-		local var_50_2 = iter_50_1.cacheState
-		local var_50_3 = iter_50_0:GetRange() * 2
+--- 更新瞄准偏差圈——根据瞄准偏差对象的位置和范围调整特效Transform
+function BattleSceneMediator.UpdateAimBiasArea(self)
+	for aimBias, aimBiasData in pairs(self._aimBiasTFList) do
+		local aimBiasTf = aimBiasData.tf
+		local scaleVector = aimBiasData.vector
+		local cachedState = aimBiasData.cacheState
+		local range = aimBias:GetRange() * 2
 
-		var_50_1:Set(var_50_3, 0, var_50_3)
+		scaleVector:Set(range, 0, range)
 
-		var_50_0.position = iter_50_0:GetPosition()
-		var_50_0.localScale = var_50_1
+		aimBiasTf.position = aimBias:GetPosition()
+		aimBiasTf.localScale = scaleVector
 
-		local var_50_4 = iter_50_0:GetCurrentState()
+		local currentState = aimBias:GetCurrentState()
 
-		if var_50_4 ~= var_50_2 then
-			setActive(var_50_0:Find("suofang/Quad"), var_50_4 ~= iter_50_0.STATE_SKILL_EXPOSE)
+		-- 当状态从 SKILL_EXPOSE 切换到其他时，显示"缩放"特效
+		if currentState ~= cachedState then
+			setActive(aimBiasTf:Find("suofang/Quad"), currentState ~= aimBias.STATE_SKILL_EXPOSE)
 		end
 
-		iter_50_1.cacheState = var_50_4
+		aimBiasData.cacheState = currentState
 	end
 end
 
-function var_0_7.updateCardAim(arg_51_0)
-	local var_51_0 = {}
+--- 更新卡牌塔罗模式下的技能瞄准标记
+function BattleSceneMediator.updateCardAim(self)
+	local targetUIDSet = {}
 
-	for iter_51_0, iter_51_1 in pairs(arg_51_0._cardAimTargetFilter) do
-		local var_51_1 = var_0_6.TargetFleetIndex(nil, {
-			fleetPos = iter_51_0
+	-- 根据目标过滤器计算当前应瞄准的单位UID集合
+	for fleetPos, filterList in pairs(self._cardAimTargetFilter) do
+		local fleetUnits = BattleTargetChoise.TargetFleetIndex(nil, {
+			fleetPos = fleetPos,
 		})[1]
 
-		for iter_51_2, iter_51_3 in ipairs(iter_51_1) do
-			local var_51_2
+		for _, targetList in ipairs(fleetUnits) do
+			local unitGroup
 
-			for iter_51_4, iter_51_5 in ipairs(iter_51_3) do
-				var_51_2 = var_0_6[iter_51_5](var_51_1, nil, var_51_2)
+			for _, filterFuncName in ipairs(targetList) do
+				unitGroup = BattleTargetChoise[filterFuncName](fleetUnits, nil, unitGroup)
 			end
 
-			for iter_51_6, iter_51_7 in ipairs(var_51_2) do
-				var_51_0[iter_51_7:GetUniqueID()] = true
+			for _, unit in ipairs(unitGroup) do
+				targetUIDSet[unit:GetUniqueID()] = true
 			end
 		end
 	end
 
-	for iter_51_8, iter_51_9 in pairs(arg_51_0._cardAimTargetList) do
-		if not var_51_0[iter_51_8] then
-			Object.Destroy(go(iter_51_9))
-
-			arg_51_0._cardAimTargetList[iter_51_8] = nil
+	-- 移除不再需要的瞄准标记
+	for uid, markGO in pairs(self._cardAimTargetList) do
+		if not targetUIDSet[uid] then
+			Object.Destroy(go(markGO))
+			self._cardAimTargetList[uid] = nil
 		end
 	end
 
-	for iter_51_10, iter_51_11 in pairs(var_51_0) do
-		local var_51_3 = arg_51_0._cardAimTargetList[iter_51_10] or arg_51_0:InstantiateCharacterComponent("SkillAimContainer/SkillAim").transform
+	-- 为新目标创建瞄准标记（或更新已有标记的位置）
+	for uid, _ in pairs(targetUIDSet) do
+		local markTf = self._cardAimTargetList[uid] or self:InstantiateCharacterComponent("SkillAimContainer/SkillAim").transform
 
-		arg_51_0._cardAimTargetList[iter_51_10] = var_51_3
+		self._cardAimTargetList[uid] = markTf
 
-		local var_51_4 = arg_51_0._characterList[iter_51_10]
+		local character = self._characterList[uid]
 
-		if var_51_4 then
-			var_51_3.position = var_51_4:GetReferenceVector(var_51_4.AIM_OFFSET)
+		if character then
+			markTf.position = character:GetReferenceVector(character.AIM_OFFSET)
 		end
 	end
 end
 
-function var_0_7.AddBullet(arg_52_0, arg_52_1)
-	local var_52_0 = arg_52_1:GetBulletData()
+-- ============================================================
+-- 子弹管理
+-- ============================================================
 
-	arg_52_0._bulletList[var_52_0:GetUniqueID()] = arg_52_1
+--- 添加子弹场景对象并处理粒子特效注册、时间缩放
+--- @param bulletView BattleBullet 子弹场景对象（由 BattleBulletFactory 创建）
+function BattleSceneMediator.AddBullet(self, bulletView)
+	local bulletData = bulletView:GetBulletData()
 
-	local var_52_1 = arg_52_1:GetGO()
+	self._bulletList[bulletData:GetUniqueID()] = bulletView
 
-	if var_52_1 and var_52_1:GetComponent(typeof(ParticleSystem)) then
-		arg_52_0._particleBulletList[arg_52_1] = true
+	-- 如果子弹有粒子系统组件，记录到粒子子弹列表（用于暂停/恢复）
+	local bulletGO = bulletView:GetGO()
+
+	if bulletGO and bulletGO:GetComponent(typeof(ParticleSystem)) then
+		self._particleBulletList[bulletView] = true
 	end
 
-	if var_0_5.focusExemptList[var_52_0:GetSpeedExemptKey()] then
-		local var_52_2 = arg_52_0._state:GetTimeScaleRate()
+	-- 如果该子弹的速度豁免键在焦点豁免列表中，应用时间缩放
+	if BattleVariable.focusExemptList[bulletData:GetSpeedExemptKey()] then
+		local timeScale = self._state:GetTimeScaleRate()
 
-		arg_52_1:SetAnimaSpeed(1 / var_52_2)
+		bulletView:SetAnimaSpeed(1 / timeScale)
 	end
 end
 
-function var_0_7.RemoveBullet(arg_53_0, arg_53_1)
-	local var_53_0 = arg_53_0._bulletList[arg_53_1]
+--- 移除子弹场景对象——从粒子列表移除，调用工厂的 RemoveBullet 回收子弹GO
+--- @param bulletUID number 子弹的UUniqueID
+function BattleSceneMediator.RemoveBullet(self, bulletUID)
+	local bulletView = self._bulletList[bulletUID]
 
-	if var_53_0 then
-		arg_53_0._particleBulletList[var_53_0] = nil
+	if bulletView then
+		self._particleBulletList[bulletView] = nil
 
-		var_53_0:GetFactory():RemoveBullet(var_53_0)
+		bulletView:GetFactory():RemoveBullet(bulletView)
 	end
 
-	arg_53_0._bulletList[arg_53_1] = nil
+	self._bulletList[bulletUID] = nil
 end
 
-function var_0_7.GetBulletRoot(arg_54_0)
-	return arg_54_0._bulletContainer
+--- 获取子弹根容器Transform（所有子弹实例的父节点）
+function BattleSceneMediator.GetBulletRoot(self)
+	return self._bulletContainer
 end
 
-function var_0_7.EnablePopContainer(arg_55_0, arg_55_1, arg_55_2)
-	setActive(arg_55_0._state:GetUI()._tf:Find(arg_55_1), arg_55_2)
+--- 启用/禁用弹出容器（伤害数字/得分数字的UI容器）
+function BattleSceneMediator.EnablePopContainer(self, containerPath, isActive)
+	setActive(self._state:GetUI()._tf:Find(containerPath), isActive)
 end
 
-function var_0_7.AddPlayerCharacter(arg_56_0, arg_56_1)
-	arg_56_0:AppendCharacter(arg_56_1)
+-- ============================================================
+-- 角色管理
+-- ============================================================
 
-	local var_56_0 = arg_56_0._dataProxy:GetInitData().battleType
-	local var_56_1 = arg_56_1:GetUnitData():IsMainFleetUnit()
+--- 添加玩家角色（额外处理HP条可见性逻辑：主力单位默认隐藏HP条）
+function BattleSceneMediator.AddPlayerCharacter(self, character)
+	self:AppendCharacter(character)
 
-	if var_56_0 == SYSTEM_DUEL then
+	local battleType = self._dataProxy:GetInitData().battleType
+	local isMainFleet = character:GetUnitData():IsMainFleetUnit()
+
+	if battleType == SYSTEM_DUEL then
+		-- 演习模式：不做额外处理
 		-- block empty
-	elseif var_56_0 == SYSTEM_SUBMARINE_RUN or var_56_0 == SYSTEM_SUB_ROUTINE then
-		arg_56_1:SetBarHidden(false, false)
+	elseif battleType == SYSTEM_SUBMARINE_RUN or battleType == SYSTEM_SUB_ROUTINE then
+		-- 潜艇模式：始终显示HP条
+		character:SetBarHidden(false, false)
 	else
-		arg_56_1:SetBarHidden(not var_56_1, var_56_1)
+		-- 普通模式：主力单位隐藏HP条（因为它们通常在屏幕外），先锋单位显示HP条
+		character:SetBarHidden(not isMainFleet, isMainFleet)
 	end
 end
 
-function var_0_7.AddEnemyCharacter(arg_57_0, arg_57_1)
-	arg_57_0:AppendCharacter(arg_57_1)
+--- 添加敌方角色（仅添加到角色列表，不修改HP条可见性）
+function BattleSceneMediator.AddEnemyCharacter(self, character)
+	self:AppendCharacter(character)
 end
 
-function var_0_7.AppendCharacter(arg_58_0, arg_58_1)
-	local var_58_0 = arg_58_1:GetUnitData()
+--- 将角色追加到 _characterList
+function BattleSceneMediator.AppendCharacter(self, character)
+	local unitData = character:GetUnitData()
 
-	arg_58_0._characterList[var_58_0:GetUniqueID()] = arg_58_1
+	self._characterList[unitData:GetUniqueID()] = character
 end
 
-function var_0_7.InstantiateCharacterComponent(arg_59_0, arg_59_1)
-	local var_59_0 = arg_59_0._state:GetUI()._tf:Find(arg_59_1)
+--- 实例化角色UI组件（从UI模板克隆）
+--- @param componentPath string UI组件路径（相对于UI根Transform）
+--- @return GameObject
+function BattleSceneMediator.InstantiateCharacterComponent(self, componentPath)
+	local template = self._state:GetUI()._tf:Find(componentPath)
 
-	return cloneTplTo(var_59_0, var_59_0.parent).gameObject
+	return cloneTplTo(template, template.parent).gameObject
 end
 
-function var_0_7.GetCharacterList(arg_60_0)
-	return arg_60_0._characterList
+--- 获取所有角色列表
+function BattleSceneMediator.GetCharacterList(self)
+	return self._characterList
 end
 
-function var_0_7.GetPopNumPool(arg_61_0)
-	return arg_61_0._popNumMgr
+--- 获取弹出数字管理器
+function BattleSceneMediator.GetPopNumPool(self)
+	return self._popNumMgr
 end
 
-function var_0_7.PauseCharacterAction(arg_62_0, arg_62_1)
-	for iter_62_0, iter_62_1 in pairs(arg_62_0._characterList) do
-		iter_62_1:PauseActionAnimation(arg_62_1)
+--- 暂停/恢复所有角色的动作动画
+function BattleSceneMediator.PauseCharacterAction(self, paused)
+	for _, character in pairs(self._characterList) do
+		character:PauseActionAnimation(paused)
 	end
 end
 
-function var_0_7.GetCharacter(arg_63_0, arg_63_1)
-	return arg_63_0._characterList[arg_63_1]
+--- 获取指定UID的角色
+function BattleSceneMediator.GetCharacter(self, uid)
+	return self._characterList[uid]
 end
 
-function var_0_7.GetAircraft(arg_64_0, arg_64_1)
-	return arg_64_0._aircraftList[arg_64_1]
+--- 获取指定UID的飞机场景对象
+function BattleSceneMediator.GetAircraft(self, uid)
+	return self._aircraftList[uid]
 end
 
-function var_0_7.AddAirCraftCharacter(arg_65_0, arg_65_1)
-	local var_65_0 = arg_65_1:GetUnitData()
+--- 添加飞机场景对象到飞机列表
+function BattleSceneMediator.AddAirCraftCharacter(self, aircraftCharacter)
+	local unitData = aircraftCharacter:GetUnitData()
 
-	arg_65_0._aircraftList[var_65_0:GetUniqueID()] = arg_65_1
+	self._aircraftList[unitData:GetUniqueID()] = aircraftCharacter
 end
 
-function var_0_7.AddArea(arg_66_0, arg_66_1, arg_66_2)
-	local var_66_0 = arg_66_0._fxPool:GetFX(arg_66_2)
-	local var_66_1 = pg.effect_offset[arg_66_2]
-	local var_66_2 = false
+-- ============================================================
+-- 区域特效管理
+-- ============================================================
 
-	if var_66_1 and var_66_1.top_cover_offset == true then
-		var_66_2 = true
+--- 添加区域特效（如照明弹、烟雾弹等持续性区域AOE）
+--- @param area table 数据层的AOE对象
+--- @param fxID string 特效ID
+function BattleSceneMediator.AddArea(self, area, fxID)
+	local fxGO = self._fxPool:GetFX(fxID)
+	local offsetConfig = pg.effect_offset[fxID]
+	local isTopCover = false
+
+	-- 检查是否需要顶盖偏移（top_cover_offset = true 时使用不同的渲染顺序）
+	if offsetConfig and offsetConfig.top_cover_offset == true then
+		isTopCover = true
 	end
 
-	local var_66_3 = var_0_0.Battle.BattleEffectArea.New(var_66_0, arg_66_1, var_66_2)
+	local effectArea = ys.Battle.BattleEffectArea.New(fxGO, area, isTopCover)
 
-	arg_66_0._areaList[arg_66_1:GetUniqueID()] = var_66_3
+	self._areaList[area:GetUniqueID()] = effectArea
 end
 
-function var_0_7.RemoveArea(arg_67_0, arg_67_1)
-	if arg_67_0._areaList[arg_67_1] then
-		arg_67_0._areaList[arg_67_1]:Dispose()
-
-		arg_67_0._areaList[arg_67_1] = nil
+--- 移除区域特效
+function BattleSceneMediator.RemoveArea(self, areaUID)
+	if self._areaList[areaUID] then
+		self._areaList[areaUID]:Dispose()
+		self._areaList[areaUID] = nil
 	end
 end
 
-function var_0_7.AddEffect(arg_68_0, arg_68_1, arg_68_2, arg_68_3)
-	local var_68_0 = arg_68_0._fxPool:GetFX(arg_68_1)
+--- 添加一次性特效（如命中火花、爆炸闪光）——立即播放，不跟踪生命周期
+--- @param fxID string 特效ID
+--- @param position Vector3 世界坐标
+--- @param scale number 缩放（默认1）
+function BattleSceneMediator.AddEffect(self, fxID, position, scale)
+	local fxGO = self._fxPool:GetFX(fxID)
 
-	arg_68_3 = arg_68_3 or 1
-	var_68_0.transform.localScale = Vector3(arg_68_3, 1, arg_68_3)
+	scale = scale or 1
+	fxGO.transform.localScale = Vector3(scale, 1, scale)
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_68_0, arg_68_2, true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(fxGO, position, true)
 end
 
-function var_0_7.AddArcEffect(arg_69_0, arg_69_1, arg_69_2, arg_69_3, arg_69_4)
-	local var_69_0 = arg_69_0._fxPool:GetFX(arg_69_1)
-	local var_69_1 = var_0_0.Battle.BattleArcEffect.New(var_69_0, arg_69_2, arg_69_3, arg_69_4)
+--- 添加弧线特效（如鱼雷轨迹、子弹飞行弧线）
+--- @param fxID string 特效ID
+--- @param startPos Vector3 起点
+--- @param endPos Vector3 终点
+--- @param duration number 持续时间
+function BattleSceneMediator.AddArcEffect(self, fxID, startPos, endPos, duration)
+	local fxGO = self._fxPool:GetFX(fxID)
+	local arcEffect = ys.Battle.BattleArcEffect.New(fxGO, startPos, endPos, duration)
 
-	local function var_69_2()
-		arg_69_0:RemoveArcEffect(var_69_1)
+	-- 结束后自动从列表中移除
+	local function onArcEnd()
+		self:RemoveArcEffect(arcEffect)
 	end
 
-	var_69_1:ConfigCallback(var_69_2)
-	table.insert(arg_69_0._arcEffectList, var_69_1)
+	arcEffect:ConfigCallback(onArcEnd)
+	table.insert(self._arcEffectList, arcEffect)
 end
 
-function var_0_7.RemoveArcEffect(arg_71_0, arg_71_1)
-	for iter_71_0, iter_71_1 in ipairs(arg_71_0._arcEffectList) do
-		if iter_71_1 == arg_71_1 then
-			iter_71_1:Dispose()
-			table.remove(arg_71_0._arcEffectList, iter_71_0)
-
+--- 移除弧线特效
+function BattleSceneMediator.RemoveArcEffect(self, arcEffect)
+	for index, existingArc in ipairs(self._arcEffectList) do
+		if existingArc == arcEffect then
+			existingArc:Dispose()
+			table.remove(self._arcEffectList, index)
 			break
 		end
 	end
 end
 
-function var_0_7.Reinitialize(arg_72_0)
-	arg_72_0:Clear()
-	arg_72_0:Init()
+-- ============================================================
+-- 全局操作
+-- ============================================================
+
+--- 重新初始化场景（先Clear再Init）
+function BattleSceneMediator.Reinitialize(self)
+	self:Clear()
+	self:Init()
 end
 
-function var_0_7.AllBulletNeutralize(arg_73_0)
-	for iter_73_0, iter_73_1 in pairs(arg_73_0._characterList) do
-		if iter_73_1.__name == var_0_0.Battle.BattlePlayerCharacter.__name or iter_73_1.__name == var_0_0.Battle.BattleSubCharacter.__name then
-			iter_73_1:DisableWeaponTrack()
+--- 中和所有子弹（战斗结束时调用，强制清理所有飞行中的子弹）
+function BattleSceneMediator.AllBulletNeutralize(self)
+	-- 禁用玩家/潜艇角色的武器追踪
+	for _, character in pairs(self._characterList) do
+		if character.__name == ys.Battle.BattlePlayerCharacter.__name or character.__name == ys.Battle.BattleSubCharacter.__name then
+			character:DisableWeaponTrack()
 		end
 	end
 
-	arg_73_0._antiAirArea:SetActive(false)
+	-- 关闭防空圈
+	self._antiAirArea:SetActive(false)
 
-	local var_73_0 = 0
+	local bulletCount = 0
 
-	for iter_73_2, iter_73_3 in pairs(arg_73_0._bulletList) do
-		var_73_0 = var_73_0 + 1
+	-- 逐个中和所有子弹
+	for _, bullet in pairs(self._bulletList) do
+		bulletCount = bulletCount + 1
 
-		iter_73_3:Neutrailze()
+		bullet:Neutrailze()
 	end
 
-	var_0_0.Battle.BattleBulletFactory.NeutralizeBullet()
+	-- 通过工厂清理剩余的子弹模板
+	ys.Battle.BattleBulletFactory.NeutralizeBullet()
 end
 
-function var_0_7.Clear(arg_74_0)
-	for iter_74_0, iter_74_1 in pairs(arg_74_0._characterList) do
-		iter_74_1:GetFactory():RemoveCharacter(iter_74_1)
+--- 清理所有场景元素（角色、飞机、子弹、区域、弧线特效、瞄准标记等）
+function BattleSceneMediator.Clear(self)
+	for _, character in pairs(self._characterList) do
+		character:GetFactory():RemoveCharacter(character)
 	end
 
-	for iter_74_2, iter_74_3 in pairs(arg_74_0._aircraftList) do
-		iter_74_3:GetFactory():RemoveCharacter(iter_74_3)
+	for _, aircraftChar in pairs(self._aircraftList) do
+		aircraftChar:GetFactory():RemoveCharacter(aircraftChar)
 	end
 
-	arg_74_0._characterList = nil
-	arg_74_0._characterFactoryList = nil
+	self._characterList = nil
+	self._characterFactoryList = nil
 
-	for iter_74_4, iter_74_5 in pairs(arg_74_0._bulletList) do
-		arg_74_0:RemoveBullet(iter_74_4)
+	for bulletUID, _ in pairs(self._bulletList) do
+		self:RemoveBullet(bulletUID)
 	end
 
-	local var_74_0 = var_0_0.Battle.BattleBulletFactory.GetFactoryList()
+	-- 清理所有子弹工厂
+	local factoryList = ys.Battle.BattleBulletFactory.GetFactoryList()
 
-	for iter_74_6, iter_74_7 in pairs(var_74_0) do
-		iter_74_7:Clear()
+	for _, factory in pairs(factoryList) do
+		factory:Clear()
 	end
 
-	arg_74_0._fxPool:Clear()
+	self._fxPool:Clear()
 
-	for iter_74_8, iter_74_9 in pairs(arg_74_0._areaList) do
-		arg_74_0:RemoveArea(iter_74_8)
+	for areaUID, _ in pairs(self._areaList) do
+		self:RemoveArea(areaUID)
 	end
 
-	arg_74_0._areaList = nil
+	self._areaList = nil
 
-	for iter_74_10, iter_74_11 in ipairs(arg_74_0._arcEffectList) do
-		iter_74_11:Dispose()
+	for _, arcEffect in ipairs(self._arcEffectList) do
+		arcEffect:Dispose()
 	end
 
-	arg_74_0._arcEffectList = nil
+	self._arcEffectList = nil
 
-	for iter_74_12, iter_74_13 in pairs(arg_74_0._cardAimTargetList) do
-		Object.Destroy(go(iter_74_13))
+	for _, markGO in pairs(self._cardAimTargetList) do
+		Object.Destroy(go(markGO))
 	end
 
-	arg_74_0._cardAimTargetList = nil
+	self._cardAimTargetList = nil
 
-	var_0_0.Battle.BattleCharacterFXContainersPool.GetInstance():Clear()
-	arg_74_0._popNumMgr:Clear()
-	var_0_0.Battle.BattleHPBarManager.GetInstance():Clear()
-	var_0_0.Battle.BattleArrowManager.GetInstance():Clear()
+	ys.Battle.BattleCharacterFXContainersPool.GetInstance():Clear()
+	self._popNumMgr:Clear()
+	ys.Battle.BattleHPBarManager.GetInstance():Clear()
+	ys.Battle.BattleArrowManager.GetInstance():Clear()
 
-	arg_74_0._anitSubAreaTFList = nil
+	self._anitSubAreaTFList = nil
 end
 
-function var_0_7.Dispose(arg_75_0)
-	arg_75_0:Clear()
-	arg_75_0:RemoveEvent()
-	var_0_7.super.Dispose(arg_75_0)
+--- 销毁中介者（清理场景 + 注销事件 + 调用父类Dispose）
+function BattleSceneMediator.Dispose(self)
+	self:Clear()
+	self:RemoveEvent()
+	BattleSceneMediator.super.Dispose(self)
 end

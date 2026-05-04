@@ -1,56 +1,63 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleEvent
-local var_0_3 = var_0_0.Battle.BattleDataFunction
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
+local BattleDataFunction = ys.Battle.BattleDataFunction
 
-var_0_0.Battle.CardPuzzleGoalRemind = class("CardPuzzleGoalRemind")
+ys.Battle.CardPuzzleGoalRemind = class("CardPuzzleGoalRemind")
 
-local var_0_4 = var_0_0.Battle.CardPuzzleGoalRemind
+local CardPuzzleGoalRemind = ys.Battle.CardPuzzleGoalRemind
 
-var_0_4.__name = "CardPuzzleGoalRemind"
+CardPuzzleGoalRemind.__name = "CardPuzzleGoalRemind"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图目标提示面板
+--- 显示当前迷宫副本的目标描述，点击可展开/收起详情
 
-	arg_1_0:init()
+function CardPuzzleGoalRemind.Ctor(self, go)
+	self._go = go
+
+	self:init()
 end
 
-function var_0_4.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_1:GetPuzzleDungeonID()
+--- 设置关联的卡牌拼图组件，加载迷宫模板数据
+function CardPuzzleGoalRemind.SetCardPuzzleComponent(self, cardPuzzleInfo)
+	local dungeonID = cardPuzzleInfo:GetPuzzleDungeonID()
 
-	arg_2_0._tmp = var_0_3.GetPuzzleDungeonTemplate(var_2_0)
+	self._tmp = BattleDataFunction.GetPuzzleDungeonTemplate(dungeonID)
 
-	setText(arg_2_0._bg:Find("text"), arg_2_0._tmp.description)
+	setText(self._bg:Find("text"), self._tmp.description)
 end
 
-function var_0_4.init(arg_3_0)
-	pg.DelegateInfo.New(arg_3_0)
+function CardPuzzleGoalRemind.init(self)
+	pg.DelegateInfo.New(self)
 
-	arg_3_0._tf = arg_3_0._go.transform
-	arg_3_0._bg = arg_3_0._tf:Find("bg")
+	self._tf = self._go.transform
+	self._bg = self._tf:Find("bg")
 
-	setText(arg_3_0._bg:Find("label_ch"), i18n("card_puzzel_goal_ch"))
-	setText(arg_3_0._bg:Find("label_en"), i18n("card_puzzel_goal_en"))
+	setText(self._bg:Find("label_ch"), i18n("card_puzzel_goal_ch"))
+	setText(self._bg:Find("label_en"), i18n("card_puzzel_goal_en"))
 
-	arg_3_0._arrow = arg_3_0._bg:Find("arrow")
-	arg_3_0._openFlag = 1
+	self._arrow = self._bg:Find("arrow")
+	-- 展开/收起标志：1=收起, -1=展开
+	self._openFlag = 1
 
-	onButton(arg_3_0, arg_3_0._bg, function()
-		local var_4_0 = rtf(arg_3_0._bg).rect
-		local var_4_1 = var_4_0.height + arg_3_0._openFlag * 150
+	-- 点击背景切换展开/收起
+	onButton(self, self._bg, function()
+		local bgRect = rtf(self._bg).rect
+		local newHeight = bgRect.height + self._openFlag * 150
 
-		rtf(arg_3_0._bg).sizeDelta = Vector2(var_4_0.width, var_4_1)
-		arg_3_0._openFlag = arg_3_0._openFlag * -1
-		arg_3_0._arrow.localScale = Vector3(1, arg_3_0._openFlag, 1)
+		rtf(self._bg).sizeDelta = Vector2(bgRect.width, newHeight)
+		self._openFlag = self._openFlag * -1
+		-- 箭头翻转
+		self._arrow.localScale = Vector3(1, self._openFlag, 1)
 	end)
 end
 
-function var_0_4.Dispose(arg_5_0)
-	pg.DelegateInfo.Dispose(arg_5_0)
+function CardPuzzleGoalRemind.Dispose(self)
+	pg.DelegateInfo.Dispose(self)
 
-	arg_5_0._arrow = nil
-	arg_5_0._bg = nil
-	arg_5_0._tf = nil
+	self._arrow = nil
+	self._bg = nil
+	self._tf = nil
 end

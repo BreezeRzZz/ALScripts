@@ -1,11 +1,19 @@
+--- 加农炮弹视图
+--- 最简单的子弹子类，直接继承 BattleBullet 的全部行为，无额外覆写。
+--- 加农炮弹的特点是由常规火炮发射，直线飞行，视觉上仅需要基础的模型旋转跟随速度方向。
+--- @class BattleCannonBullet : BattleBullet
+
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleResourceManager
+local ys = ys
+local BattleResourceManager = ys.Battle.BattleResourceManager
 
-var_0_0.Battle.BattleCannonBullet = class("BattleCannonBullet", var_0_0.Battle.BattleBullet)
-var_0_0.Battle.BattleCannonBullet.__name = "BattleCannonBullet"
+ys.Battle.BattleCannonBullet = class("BattleCannonBullet", ys.Battle.BattleBullet)
+ys.Battle.BattleCannonBullet.__name = "BattleCannonBullet"
 
-function var_0_0.Battle.BattleCannonBullet.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_0.Battle.BattleCannonBullet.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- 构造函数
+--- 直接调用父类 Ctor，无额外初始化
+--- @param ... 透传给 BattleBullet.Ctor
+function ys.Battle.BattleCannonBullet.Ctor(self, ...)
+    ys.Battle.BattleCannonBullet.super.Ctor(self, ...)
 end

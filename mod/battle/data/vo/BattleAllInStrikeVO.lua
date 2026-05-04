@@ -1,24 +1,34 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleAllInStrikeVO = class("BattleAllInStrikeVO", var_0_0.Battle.BattlePlayerWeaponVO)
-var_0_0.Battle.BattleAllInStrikeVO.__name = "BattleAllInStrikeVO"
+ys.Battle.BattleAllInStrikeVO = class("BattleAllInStrikeVO", ys.Battle.BattlePlayerWeaponVO)
+ys.Battle.BattleAllInStrikeVO.__name = "BattleAllInStrikeVO"
 
-local var_0_2 = var_0_0.Battle.BattleAllInStrikeVO
+local BattleAllInStrikeVO = ys.Battle.BattleAllInStrikeVO
 
-var_0_2.GCD = var_0_1.AirAssistCFG.GCD
+-- BattleConfig.AirAssistCFG.GCD
+-- 空袭支援的全局冷却时间
+BattleAllInStrikeVO.GCD = BattleConfig.AirAssistCFG.GCD
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0, var_0_2.GCD)
+--- @class BattleAllInStrikeVO : BattlePlayerWeaponVO
+--- @return nil
+--- 空袭VO的构造函数，GCD来自AirAssistCFG
+function BattleAllInStrikeVO.Ctor(self)
+	BattleAllInStrikeVO.super.Ctor(self, BattleAllInStrikeVO.GCD)
 end
 
-function var_0_2.AppendWeapon(arg_2_0, arg_2_1)
-	arg_2_1:SetAllInWeaponVO(arg_2_0)
-	var_0_2.super.AppendWeapon(arg_2_0, arg_2_1)
+--- @param airAssist BattleAllInStrikeUnit
+--- @return nil
+--- 添加空袭武器到VO，同时反向绑定
+function BattleAllInStrikeVO.AppendWeapon(self, airAssist)
+	airAssist:SetAllInWeaponVO(self)
+	BattleAllInStrikeVO.super.AppendWeapon(self, airAssist)
 end
 
-function var_0_2.GetCurrentWeaponIconIndex(arg_3_0)
+--- @return number
+--- 获取当前武器图标索引（空袭固定返回3）
+function BattleAllInStrikeVO.GetCurrentWeaponIconIndex(self)
 	return 3
 end

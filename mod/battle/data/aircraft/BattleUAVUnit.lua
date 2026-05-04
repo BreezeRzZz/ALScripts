@@ -1,119 +1,163 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleTargetChoise
-local var_0_3 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleUAVUnit = class("BattleUAVUnit", var_0_0.Battle.BattleAircraftUnit)
-var_0_0.Battle.BattleUAVUnit.__name = "BattleUAVUnit"
+ys.Battle.BattelUAVUnit = class("BattelUAVUnit", ys.Battle.BattleAircraftUnit)
+ys.Battle.BattelUAVUnit.__name = "BattelUAVUnit"
 
-local var_0_4 = var_0_0.Battle.BattleUAVUnit
+local BattelUAVUnit = ys.Battle.BattelUAVUnit
 
-var_0_4.MOVE_STATE = "MOVE_STATE"
-var_0_4.HOVER_STATE = "HOVER_STATE"
+BattelUAVUnit.MOVE_STATE = "MOVE_STATE"
+BattelUAVUnit.HOVER_STATE = "HOVER_STATE"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1)
+--- @class BattelUAVUnit
+--- @param UID number: 单位唯一ID
+--- @return nil
+--- 构造函数：设置方向为左、类型为UAV_UNIT
+function BattelUAVUnit.Ctor(self, UID)
+	BattelUAVUnit.super.Ctor(self, UID)
 
-	arg_1_0._dir = var_0_0.Battle.BattleConst.UnitDir.LEFT
-	arg_1_0._type = var_0_0.Battle.BattleConst.UnitType.UAV_UNIT
+	self._dir = ys.Battle.BattleConst.UnitDir.LEFT
+	self._type = ys.Battle.BattleConst.UnitType.UAV_UNIT
 end
 
-function var_0_4.Update(arg_2_0, arg_2_1)
-	arg_2_0:updatePatrol(arg_2_1)
+--- @class BattelUAVUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- UAV的Update函数：更新巡逻状态
+function BattelUAVUnit.Update(self, timeStamp)
+	self:updatePatrol(timeStamp)
 end
 
-function var_0_4.SetTemplate(arg_3_0, arg_3_1)
-	var_0_4.super.SetTemplate(arg_3_0, arg_3_1)
+--- @class BattelUAVUnit
+--- @param tmpData table: 模板数据(aircraft_template)
+--- @return nil
+--- 设置模板数据：计算悬停中心点和范围
+function BattelUAVUnit.SetTemplate(self, tmpData)
+	BattelUAVUnit.super.SetTemplate(self, tmpData)
 
-	local var_3_0 = arg_3_1.funnel_behavior.offsetX * arg_3_0:GetIFF()
-	local var_3_1 = arg_3_1.funnel_behavior.offsetZ
-	local var_3_2 = var_0_0.Battle.BattleDataProxy.GetInstance():GetVanguardBornCoordinate(arg_3_0:GetIFF())
+	-- offsetX乘以IFF以适配阵营方向
+	local offsetX = tmpData.funnel_behavior.offsetX * self:GetIFF()
+	local offsetZ = tmpData.funnel_behavior.offsetZ
+	local bornPos = ys.Battle.BattleDataProxy.GetInstance():GetVanguardBornCoordinate(self:GetIFF())
 
-	arg_3_0._centerPos = BuildVector3(var_3_2) + Vector3(var_3_0, 0, var_3_1)
-	arg_3_0._range = arg_3_1.funnel_behavior.hover_range
+	self._centerPos = BuildVector3(bornPos) + Vector3(offsetX, 0, offsetZ)
+	self._range = tmpData.funnel_behavior.hover_range
 end
 
-function var_0_4.changePartolState(arg_4_0, arg_4_1)
-	if arg_4_1 == var_0_4.MOVE_STATE then
-		arg_4_0:changeToMoveState()
-	elseif arg_4_1 == var_0_4.HOVER_STATE then
-		arg_4_0:changeToHoverState()
+--- @class BattelUAVUnit
+--- @param state string: 目标巡逻状态(MOVE_STATE/HOVER_STATE)
+--- @return nil
+--- 切换巡逻状态
+function BattelUAVUnit.changePartolState(self, state)
+	if state == BattelUAVUnit.MOVE_STATE then
+		self:changeToMoveState()
+	elseif state == BattelUAVUnit.HOVER_STATE then
+		self:changeToHoverState()
 	end
 
-	arg_4_0._portalState = arg_4_1
+	self._portalState = state
 end
 
-function var_0_4.AddCreateTimer(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._currentState = arg_5_0.STATE_CREATE
-	arg_5_0._speedDir = arg_5_1
-	arg_5_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(20)
-	arg_5_2 = arg_5_2 or 1.5
+--- @class BattelUAVUnit
+--- @param direction Vector3: 创建时的飞行方向
+--- @param delay number: 创建后延迟巡逻时间(默认1.5)
+--- @return nil
+--- 添加创建计时器：初始以20速度飞出，delay秒后进入MOVE巡逻状态
+function BattelUAVUnit.AddCreateTimer(self, direction, delay)
+	self._currentState = self.STATE_CREATE
+	self._speedDir = direction
+	self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(20)
+	delay = delay or 1.5
 
-	local function var_5_0()
-		arg_5_0._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_5_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(arg_5_0._tmpData.speed)
+	local function onTimerEnds()
+		self._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(self._tmpData.speed)
 
-		arg_5_0:changePartolState(var_0_4.MOVE_STATE)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_5_0._createTimer)
+		self:changePartolState(BattelUAVUnit.MOVE_STATE)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._createTimer)
 
-		arg_5_0._createTimer = nil
+		self._createTimer = nil
 	end
 
-	arg_5_0.updatePatrol = arg_5_0._updateCreate
-	arg_5_0._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, arg_5_2, var_5_0)
+	self.updatePatrol = self._updateCreate
+	self._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, delay, onTimerEnds)
 end
 
-function var_0_4._updateCreate(arg_7_0)
-	arg_7_0:UpdateSpeed()
+--- @class BattelUAVUnit
+--- @return nil
+--- 创建阶段的更新：更新速度和位置
+function BattelUAVUnit._updateCreate(self)
+	self:UpdateSpeed()
 
-	arg_7_0._pos = arg_7_0._pos + arg_7_0._speed
+	self._pos = self._pos + self._speed
 end
 
-function var_0_4.changeToMoveState(arg_8_0)
-	arg_8_0._cruiseLimit = arg_8_0._centerPos.x
-	arg_8_0.updatePatrol = arg_8_0._updateMove
+--- @class BattelUAVUnit
+--- @return nil
+--- 切换到移动状态：设置巡航目标X为_centerPos.x
+function BattelUAVUnit.changeToMoveState(self)
+	self._cruiseLimit = self._centerPos.x
+	self.updatePatrol = self._updateMove
 end
 
-function var_0_4._updateMove(arg_9_0, arg_9_1)
-	arg_9_0:UpdateSpeed()
+--- @class BattelUAVUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 移动状态的每帧更新：更新速度后向巡航目标移动，到达则进入悬停状态
+function BattelUAVUnit._updateMove(self, timeStamp)
+	self:UpdateSpeed()
 
-	arg_9_0._pos = arg_9_0._pos + arg_9_0._speed
+	self._pos = self._pos + self._speed
 
-	if arg_9_0._IFF == var_0_1.FRIENDLY_CODE then
-		if arg_9_0._pos.x > arg_9_0._cruiseLimit then
-			arg_9_0:changePartolState(var_0_4.HOVER_STATE)
+	-- 判断是否到达巡航目标X位置(友方往右飞、敌方往左飞)
+	if self._IFF == BattleConfig.FRIENDLY_CODE then
+		if self._pos.x > self._cruiseLimit then
+			self:changePartolState(BattelUAVUnit.HOVER_STATE)
 		end
-	elseif arg_9_0._IFF == var_0_1.FOE_CODE and arg_9_0._pos.x < arg_9_0._cruiseLimit then
-		arg_9_0:changePartolState(var_0_4.HOVER_STATE)
+	elseif self._IFF == BattleConfig.FOE_CODE and self._pos.x < self._cruiseLimit then
+		self:changePartolState(BattelUAVUnit.HOVER_STATE)
 	end
 end
 
-function var_0_4.changeToHoverState(arg_10_0)
-	arg_10_0._hoverStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_10_0.updatePatrol = arg_10_0._updateHover
+--- @class BattelUAVUnit
+--- @return nil
+--- 切换到悬停状态：记录悬停开始时间
+function BattelUAVUnit.changeToHoverState(self)
+	self._hoverStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self.updatePatrol = self._updateHover
 end
 
-function var_0_4._updateHover(arg_11_0, arg_11_1)
-	local var_11_0 = arg_11_1 - arg_11_0._hoverStartTime
+--- @class BattelUAVUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 悬停状态的每帧更新：沿圆形轨迹绕_centerPos旋转(高度固定15)
+function BattelUAVUnit._updateHover(self, timeStamp)
+	local elapsed = timeStamp - self._hoverStartTime
 
-	arg_11_0._pos = Vector3(math.sin(var_11_0) * arg_11_0._range, 15, math.cos(var_11_0) * arg_11_0._range):Add(arg_11_0._centerPos)
+	self._pos = Vector3(math.sin(elapsed) * self._range, 15, math.cos(elapsed) * self._range):Add(self._centerPos)
 end
 
-function var_0_4.GetSize(arg_12_0)
-	if arg_12_0._portalState == var_0_4.HOVER_STATE then
-		local var_12_0 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_12_0._hoverStartTime
-		local var_12_1 = math.cos(var_12_0)
+--- @class BattelUAVUnit
+--- @return number: 当前的视觉缩放值
+--- 获取UAV的显示大小：悬停状态下根据cos值动态变化(实现呼吸效果)
+function BattelUAVUnit.GetSize(self)
+	if self._portalState == BattelUAVUnit.HOVER_STATE then
+		local hoverDuration = pg.TimeMgr.GetInstance():GetCombatTime() - self._hoverStartTime
+		local scaleMultiplier = math.cos(hoverDuration)
 
-		if var_12_1 > 0 and var_12_1 < 0.2 then
-			var_12_1 = 0.2
-		elseif var_12_1 <= 0 and var_12_1 > -0.2 then
-			var_12_1 = -0.2
+		-- cos值接近0时锁定在正负0.2(避免完全不可见)
+		if scaleMultiplier > 0 and scaleMultiplier < 0.2 then
+			scaleMultiplier = 0.2
+		elseif scaleMultiplier <= 0 and scaleMultiplier > -0.2 then
+			scaleMultiplier = -0.2
 		end
 
-		return var_12_1
+		return scaleMultiplier
 	else
-		var_0_4.super.GetSize(arg_12_0)
+		BattelUAVUnit.super.GetSize(self)
 	end
 end

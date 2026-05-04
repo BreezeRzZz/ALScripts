@@ -1,84 +1,108 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleCastBar = class("BattleCastBar")
-var_0_0.Battle.BattleCastBar.__name = "BattleCastBar"
+ys.Battle.BattleCastBar = class("BattleCastBar")
+ys.Battle.BattleCastBar.__name = "BattleCastBar"
 
-local var_0_1 = var_0_0.Battle.BattleCastBar
+local BattleCastBar = ys.Battle.BattleCastBar
 
-var_0_1.OFFSET = Vector3(1.8, 2.3, 0)
+--- 施法条相对角色的偏移量
+BattleCastBar.OFFSET = Vector3(1.8, 2.3, 0)
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._castClockTF = arg_1_1
-	arg_1_0._castClockGO = arg_1_0._castClockTF.gameObject
-	arg_1_0._castProgress = arg_1_0._castClockTF:Find("cast_progress"):GetComponent(typeof(Image))
-	arg_1_0._interrupt = arg_1_0._castClockTF:Find("interrupt")
-	arg_1_0._casting = arg_1_0._castClockTF:Find("casting")
-	arg_1_0._danger = arg_1_0._castClockTF:Find("danger")
-	arg_1_0._clockCG = arg_1_0._castClockTF:GetComponent(typeof(CanvasGroup))
+--- @class BattleCastBar
+--- 武器施法条（读条）视图
+--- 在角色头顶显示圆形施法进度，支持casting状态、interrupt打断、danger动画
+--- 与BattleBarrierBar/BattleBuffClock共用相同的UI布局结构
+--- @param castClockTF Transform 施法条Transform预制体
+function BattleCastBar.Ctor(self, castClockTF)
+	self._castClockTF = castClockTF
+	self._castClockGO = self._castClockTF.gameObject
+	self._castProgress = self._castClockTF:Find("cast_progress"):GetComponent(typeof(Image))
+	self._interrupt = self._castClockTF:Find("interrupt")
+	self._casting = self._castClockTF:Find("casting")
+	self._danger = self._castClockTF:Find("danger")
+	self._clockCG = self._castClockTF:GetComponent(typeof(CanvasGroup))
 end
 
-function var_0_1.Casting(arg_2_0, arg_2_1, arg_2_2)
-	LeanTween.cancel(arg_2_0._castClockGO)
+--- 开始施法动画
+--- @param duration number 施法持续时间（秒）
+--- @param weapon BattleWeaponUnit 正在施法的武器实例
+function BattleCastBar.Casting(self, duration, weapon)
+	LeanTween.cancel(self._castClockGO)
 
-	arg_2_0._castClockTF.localScale = Vector3(0.1, 0.1, 1)
+	-- 从极小缩放到正常大小（弹出动画）
+	self._castClockTF.localScale = Vector3(0.1, 0.1, 1)
 
-	SetActive(arg_2_0._castClockTF, true)
-	SetActive(arg_2_0._casting, true)
-	SetActive(arg_2_0._interrupt, false)
-	LeanTween.scale(rtf(arg_2_0._castClockGO), Vector3.New(1, 1, 1), 0.1):setEase(LeanTweenType.easeInBack)
+	SetActive(self._castClockTF, true)
+	SetActive(self._casting, true)
+	SetActive(self._interrupt, false)
+	LeanTween.scale(rtf(self._castClockGO), Vector3.New(1, 1, 1), 0.1):setEase(LeanTweenType.easeInBack)
 
-	arg_2_0._castFinishTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_2_1
-	arg_2_0._castDuration = arg_2_1
+	-- 计算施法结束时间
+	self._castFinishTime = pg.TimeMgr.GetInstance():GetCombatTime() + duration
+	self._castDuration = duration
 
-	LeanTween.rotate(rtf(arg_2_0._danger), 360, 5):setLoopClamp()
+	-- 危险警告旋转动画（红色指针持续旋转）
+	LeanTween.rotate(rtf(self._danger), 360, 5):setLoopClamp()
 
-	arg_2_0._weapon = arg_2_2
+	self._weapon = weapon
 end
 
-function var_0_1.Interrupt(arg_3_0, arg_3_1)
-	arg_3_0._weapon = nil
+--- 施法被打断
+--- @param showInterrupt boolean 是否显示打断图标
+function BattleCastBar.Interrupt(self, showInterrupt)
+	self._weapon = nil
 
-	if arg_3_1 then
-		SetActive(arg_3_0._casting, false)
-		SetActive(arg_3_0._interrupt, true)
+	if showInterrupt then
+		SetActive(self._casting, false)
+		SetActive(self._interrupt, true)
 	end
 
-	LeanTween.cancel(go(arg_3_0._danger))
+	-- 停止旋转警告
+	LeanTween.cancel(go(self._danger))
 
+	-- 闪烁两轮：alpha 从1→0.3→1→0.3→1
 	for iter_3_0 = 1, 2 do
-		LeanTween.alphaCanvas(arg_3_0._clockCG, 0.3, 0.3):setFrom(1):setDelay(0.3 * (iter_3_0 - 1))
-		LeanTween.alphaCanvas(arg_3_0._clockCG, 1, 0.3):setDelay(0.3 * iter_3_0)
+		LeanTween.alphaCanvas(self._clockCG, 0.3, 0.3):setFrom(1):setDelay(0.3 * (iter_3_0 - 1))
+		LeanTween.alphaCanvas(self._clockCG, 1, 0.3):setDelay(0.3 * iter_3_0)
 	end
 
-	LeanTween.scale(rtf(arg_3_0._castClockGO), Vector3.New(0.1, 0.1, 1), 0.3):setEase(LeanTweenType.easeInBack):setDelay(1.25):setOnComplete(System.Action(function()
-		SetActive(arg_3_0._castClockTF, false)
+	-- 缩小消失
+	LeanTween.scale(rtf(self._castClockGO), Vector3.New(0.1, 0.1, 1), 0.3):setEase(LeanTweenType.easeInBack):setDelay(1.25):setOnComplete(System.Action(function()
+		SetActive(self._castClockTF, false)
 	end))
 end
 
-function var_0_1.GetCastingWeapon(arg_5_0)
-	return arg_5_0._weapon
+--- 获取当前正在施法的武器
+--- @return BattleWeaponUnit|nil
+function BattleCastBar.GetCastingWeapon(self)
+	return self._weapon
 end
 
-function var_0_1.UpdateCastClockPosition(arg_6_0, arg_6_1)
-	arg_6_0._castClockTF.position = arg_6_1 + var_0_1.OFFSET
+--- 更新施法条位置（跟随角色移动）
+--- @param worldPos Vector3 角色世界坐标
+function BattleCastBar.UpdateCastClockPosition(self, worldPos)
+	self._castClockTF.position = worldPos + BattleCastBar.OFFSET
 end
 
-function var_0_1.UpdateCastClock(arg_7_0)
-	local var_7_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 每帧更新施法进度条填充量
+--- 进度 = 1 - 剩余时间 / 总时长
+function BattleCastBar.UpdateCastClock(self)
+	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	arg_7_0._castProgress.fillAmount = 1 - (arg_7_0._castFinishTime - var_7_0) / arg_7_0._castDuration
+	self._castProgress.fillAmount = 1 - (self._castFinishTime - currentTime) / self._castDuration
 end
 
-function var_0_1.Dispose(arg_8_0)
-	arg_8_0._weapon = nil
+--- 销毁施法条
+function BattleCastBar.Dispose(self)
+	self._weapon = nil
 
-	Object.Destroy(arg_8_0._castClockGO)
+	Object.Destroy(self._castClockGO)
 
-	arg_8_0._castClockTF = nil
-	arg_8_0._castClockGO = nil
-	arg_8_0._castProgress = nil
-	arg_8_0._interrupt = nil
-	arg_8_0._casting = nil
+	self._castClockTF = nil
+	self._castClockGO = nil
+	self._castProgress = nil
+	self._interrupt = nil
+	self._casting = nil
 end

@@ -1,72 +1,105 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = singletonClass("BattleAircraftCharacterFactory", var_0_0.Battle.BattleCharacterFactory)
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local AircraftCharacterFactory = singletonClass("BattleAircraftCharacterFactory", ys.Battle.BattleCharacterFactory)
 
-var_0_0.Battle.BattleAircraftCharacterFactory = var_0_2
-var_0_2.__name = "BattleAircraftCharacterFactory"
-var_0_2.BOMB_FX_NAME = "feijibaozha"
+ys.Battle.BattleAircraftCharacterFactory = AircraftCharacterFactory
+--- 飞机角色工厂（舰载机/航空器）
+AircraftCharacterFactory.__name = "BattleAircraftCharacterFactory"
+--- 飞机专属爆炸特效资源名
+AircraftCharacterFactory.BOMB_FX_NAME = "feijibaozha"
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+--- @class BattleAircraftCharacterFactory
+--- @return nil
+--- 构造函数（无特殊初始化，HP_BAR_NAME等由MakeBloodBar动态判断）。
+function AircraftCharacterFactory.Ctor(self)
+	AircraftCharacterFactory.super.Ctor(self)
 end
 
-function var_0_2.MakeCharacter(arg_2_0)
-	return var_0_0.Battle.BattleAircraftCharacter.New()
+--- @class BattleAircraftCharacterFactory
+--- @return BattleAircraftCharacter: 飞机角色视觉对象
+--- 创建BattleAircraftCharacter实例。
+function AircraftCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleAircraftCharacter.New()
 end
 
-function var_0_2.MakeModel(arg_3_0, arg_3_1)
-	local function var_3_0(arg_4_0)
-		arg_3_1:AddModel(arg_4_0)
-		arg_3_1:InitWeapon()
+--- @class BattleAircraftCharacterFactory
+--- @param character BattleAircraftCharacter: 角色视觉对象
+--- @return nil
+--- 创建飞机视觉模型：
+--- 1) 通过InstAirCharacter（飞机专用加载）异步加载模型
+--- 2) 装配UI容器、特效挂点、阴影
+--- 3) 仅敌方飞机（IFF == FOE_CODE）显示HP条和伤害数字
+--- 注意：飞机不显示浪花和烟雾特效。
+function AircraftCharacterFactory.MakeModel(self, character)
+	local function onModelLoaded(modelObj)
+		character:AddModel(modelObj)
+		character:InitWeapon()
 
-		local var_4_0 = arg_3_0:GetSceneMediator()
+		local mediator = self:GetSceneMediator()
 
-		arg_3_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
-		var_4_0:AddAirCraftCharacter(arg_3_1)
-		arg_3_0:MakeUIComponentContainer(arg_3_1)
-		arg_3_0:MakeFXContainer(arg_3_1)
-		arg_3_0:MakeShadow(arg_3_1)
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
+		mediator:AddAirCraftCharacter(character)
+		self:MakeUIComponentContainer(character)
+		self:MakeFXContainer(character)
+		self:MakeShadow(character)
 
-		if arg_3_1:GetUnitData():GetIFF() == var_0_1.FOE_CODE then
-			arg_3_0:MakePopNumPool(arg_3_1)
-			arg_3_0:MakeBloodBar(arg_3_1)
+		-- 仅敌方飞机显示HP条和受击数字
+		if character:GetUnitData():GetIFF() == BattleConfig.FOE_CODE then
+			self:MakePopNumPool(character)
+			self:MakeBloodBar(character)
 		end
 	end
 
-	arg_3_0:GetCharacterPool():InstAirCharacter(arg_3_1:GetModleID(), function(arg_5_0)
-		var_3_0(arg_5_0)
+	self:GetCharacterPool():InstAirCharacter(character:GetModleID(), function(modelObj)
+		onModelLoaded(modelObj)
 	end)
 end
 
-function var_0_2.MakeBloodBar(arg_6_0, arg_6_1)
-	local var_6_0
+--- @class BattleAircraftCharacterFactory
+--- @param character BattleAircraftCharacter: 角色视觉对象
+--- @return nil
+--- 创建飞机HP血条：根据是否为玩家飞机选择友方/敌方血条。
+--- 友方飞机 = HP_BAR_FRIENDLY，敌方飞机 = HP_BAR_FOE。
+function AircraftCharacterFactory.MakeBloodBar(self, character)
+	local hpBar
 
-	if arg_6_1:GetUnitData():IsPlayerAircraft() then
-		var_6_0 = arg_6_0:GetHPBarPool():GetHPBar(var_0_0.Battle.BattleHPBarManager.HP_BAR_FRIENDLY)
+	if character:GetUnitData():IsPlayerAircraft() then
+		hpBar = self:GetHPBarPool():GetHPBar(ys.Battle.BattleHPBarManager.HP_BAR_FRIENDLY)
 	else
-		var_6_0 = arg_6_0:GetHPBarPool():GetHPBar(var_0_0.Battle.BattleHPBarManager.HP_BAR_FOE)
+		hpBar = self:GetHPBarPool():GetHPBar(ys.Battle.BattleHPBarManager.HP_BAR_FOE)
 	end
 
-	arg_6_1:AddHPBar(var_6_0)
-	arg_6_1:UpdateHPBarPosition()
+	character:AddHPBar(hpBar)
+	character:UpdateHPBarPosition()
 end
 
-function var_0_2.SetHPBarWidth(arg_7_0, arg_7_1, arg_7_2)
-	local var_7_0 = 40
-	local var_7_1 = arg_7_1.transform
-	local var_7_2 = var_7_1.rect.height
+--- @class BattleAircraftCharacterFactory
+--- @param character BattleAircraftCharacter: 角色视觉对象
+--- @param barObj GameObject: HP条GameObject
+--- @param extraWidth number: 额外宽度偏移
+--- @return nil
+--- 设置飞机HP条宽度：飞机使用固定40px宽度（而非模板数据），
+--- 因为飞机在屏幕上较小，不需要太长的血条。
+function AircraftCharacterFactory.SetHPBarWidth(self, character, barObj, extraWidth)
+	local fixedWidth = 40
+	local barTf = barObj.transform
+	local barHeight = barTf.rect.height
 
-	var_7_1.sizeDelta = Vector2(var_7_0, var_7_2)
+	barTf.sizeDelta = Vector2(fixedWidth, barHeight)
 
-	local var_7_3 = var_7_1:Find("blood").transform
-	local var_7_4 = var_7_3.rect.height
+	local bloodTf = barTf:Find("blood").transform
+	local bloodHeight = bloodTf.rect.height
 
-	var_7_3.sizeDelta = Vector2(var_7_0 - arg_7_2 or 0, var_7_4)
+	bloodTf.sizeDelta = Vector2(fixedWidth - extraWidth or 0, bloodHeight)
 end
 
-function var_0_2.MakeShadow(arg_8_0, arg_8_1)
-	arg_8_1:AddShadow()
-	arg_8_1:UpdateShadow()
+--- @class BattleAircraftCharacterFactory
+--- @param character BattleAircraftCharacter: 角色视觉对象
+--- @return nil
+--- 创建飞机阴影：飞机在地面上的投影阴影，增强高度感。
+function AircraftCharacterFactory.MakeShadow(self, character)
+	character:AddShadow()
+	character:UpdateShadow()
 end

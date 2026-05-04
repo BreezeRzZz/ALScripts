@@ -1,435 +1,499 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleCardPuzzleEvent
-local BattlePlayerCharacter = class("BattlePlayerCharacter", var_0_0.Battle.BattleCharacter)
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleConst = ys.Battle.BattleConst
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
+local BattlePlayerCharacter = class("BattlePlayerCharacter", ys.Battle.BattleCharacter)
 
-var_0_0.Battle.BattlePlayerCharacter = BattlePlayerCharacter
+ys.Battle.BattlePlayerCharacter = BattlePlayerCharacter
 BattlePlayerCharacter.__name = "BattlePlayerCharacter"
 
-function BattlePlayerCharacter.Ctor(arg_1_0)
-	BattlePlayerCharacter.super.Ctor(arg_1_0)
+--- 构造函数：调用父类初始化
+function BattlePlayerCharacter.Ctor(self)
+	BattlePlayerCharacter.super.Ctor(self)
 end
 
-function BattlePlayerCharacter.SetUnitData(arg_2_0, arg_2_1)
-	BattlePlayerCharacter.super.SetUnitData(arg_2_0, arg_2_1)
+--- 设置UnitData并初始化玩家特有武器系统
+--- - 蓄力武器列表（chargeWeapon）
+--- - 鱼雷武器列表（torpedo）
+--- - 空袭辅助列表（airAssist）
+--- - 武器扇区列表
+--- @param unitData BattlePlayerUnitData 玩家单位数据
+function BattlePlayerCharacter.SetUnitData(self, unitData)
+	BattlePlayerCharacter.super.SetUnitData(self, unitData)
 
-	arg_2_0._chargeWeaponList = {}
+	self._chargeWeaponList = {}
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_1:GetChargeList()) do
-		arg_2_0:InitChargeWeapon(iter_2_1)
+	for _, chargeWeapon in ipairs(unitData:GetChargeList()) do
+		self:InitChargeWeapon(chargeWeapon)
 	end
 
-	arg_2_0._torpedoWeaponList = {}
+	self._torpedoWeaponList = {}
 
-	for iter_2_2, iter_2_3 in ipairs(arg_2_1:GetTorpedoList()) do
-		arg_2_0:InitTorpedoWeapon(iter_2_3)
+	for _, torpedoWeapon in ipairs(unitData:GetTorpedoList()) do
+		self:InitTorpedoWeapon(torpedoWeapon)
 	end
 
-	arg_2_0._airAssistList = {}
+	self._airAssistList = {}
 
-	local var_2_0 = arg_2_1:GetAirAssistList()
+	local airAssistList = unitData:GetAirAssistList()
 
-	if var_2_0 ~= nil then
-		for iter_2_4, iter_2_5 in ipairs(var_2_0) do
-			arg_2_0:InitAirAssit(iter_2_5)
+	if airAssistList ~= nil then
+		for _, airAssist in ipairs(airAssistList) do
+			self:InitAirAssit(airAssist)
 		end
 	end
 
-	arg_2_0._weaponSectorList = {}
+	self._weaponSectorList = {}
 end
 
-function BattlePlayerCharacter.AddUnitEvent(arg_3_0)
-	BattlePlayerCharacter.super.AddUnitEvent(arg_3_0)
-	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.WILL_DIE, arg_3_0.onWillDie)
-	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.INIT_COOL_DOWN, arg_3_0.onInitWeaponCD)
-	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.WEAPON_SECTOR, arg_3_0.onActiveWeaponSector)
-	arg_3_0._unitData:RegisterEventListener(arg_3_0, var_0_1.CREATE_POINT_AIR_STRIKE, arg_3_0.onCreatePointAirStrike)
+--- 注册玩家特有事件监听（濒死、武器CD、扇区、空袭等）
+function BattlePlayerCharacter.AddUnitEvent(self)
+	BattlePlayerCharacter.super.AddUnitEvent(self)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.WILL_DIE, self.onWillDie)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.INIT_COOL_DOWN, self.onInitWeaponCD)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.WEAPON_SECTOR, self.onActiveWeaponSector)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.CREATE_POINT_AIR_STRIKE, self.onCreatePointAirStrike)
 
-	if arg_3_0._unitData:GetFleetRangeAAWeapon() then
-		arg_3_0:RegisterWeaponListener(arg_3_0._unitData:GetFleetRangeAAWeapon())
+	-- 舰队防空武器注册
+	if self._unitData:GetFleetRangeAAWeapon() then
+		self:RegisterWeaponListener(self._unitData:GetFleetRangeAAWeapon())
 	end
 end
 
-function BattlePlayerCharacter.RemoveUnitEvent(arg_4_0)
-	if arg_4_0._unitData:GetFleetRangeAAWeapon() then
-		arg_4_0:UnregisterWeaponListener(arg_4_0._unitData:GetFleetRangeAAWeapon())
+--- 移除所有事件监听
+function BattlePlayerCharacter.RemoveUnitEvent(self)
+	if self._unitData:GetFleetRangeAAWeapon() then
+		self:UnregisterWeaponListener(self._unitData:GetFleetRangeAAWeapon())
 	end
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._chargeWeaponList) do
-		iter_4_1:UnregisterEventListener(arg_4_0, var_0_1.CHARGE_WEAPON_FINISH)
-		arg_4_0:UnregisterWeaponListener(iter_4_1)
+	for _, chargeWeapon in ipairs(self._chargeWeaponList) do
+		chargeWeapon:UnregisterEventListener(self, BattleUnitEvent.CHARGE_WEAPON_FINISH)
+		self:UnregisterWeaponListener(chargeWeapon)
 	end
 
-	for iter_4_2, iter_4_3 in ipairs(arg_4_0._torpedoWeaponList) do
-		iter_4_3:UnregisterEventListener(arg_4_0, var_0_1.TORPEDO_WEAPON_FIRE)
-		iter_4_3:UnregisterEventListener(arg_4_0, var_0_1.TORPEDO_WEAPON_PREPAR)
-		iter_4_3:UnregisterEventListener(arg_4_0, var_0_1.TORPEDO_WEAPON_CANCEL)
-		iter_4_3:UnregisterEventListener(arg_4_0, var_0_1.TORPEDO_WEAPON_READY)
-		arg_4_0:UnregisterWeaponListener(iter_4_3)
+	for _, torpedoWeapon in ipairs(self._torpedoWeaponList) do
+		torpedoWeapon:UnregisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_FIRE)
+		torpedoWeapon:UnregisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_PREPAR)
+		torpedoWeapon:UnregisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_CANCEL)
+		torpedoWeapon:UnregisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_READY)
+		self:UnregisterWeaponListener(torpedoWeapon)
 	end
 
-	for iter_4_4, iter_4_5 in ipairs(arg_4_0._airAssistList) do
-		iter_4_5:UnregisterEventListener(arg_4_0, var_0_1.CHARGE_WEAPON_FINISH)
-		iter_4_5:UnregisterEventListener(arg_4_0, var_0_1.FIRE)
+	for _, airAssist in ipairs(self._airAssistList) do
+		airAssist:UnregisterEventListener(self, BattleUnitEvent.CHARGE_WEAPON_FINISH)
+		airAssist:UnregisterEventListener(self, BattleUnitEvent.FIRE)
 	end
 
-	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.WILL_DIE)
-	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.INIT_COOL_DOWN)
-	arg_4_0._unitData:UnregisterEventListener(arg_4_0, var_0_1.CREATE_POINT_AIR_STRIKE)
-	BattlePlayerCharacter.super.RemoveUnitEvent(arg_4_0)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.WILL_DIE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.INIT_COOL_DOWN)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.CREATE_POINT_AIR_STRIKE)
+	BattlePlayerCharacter.super.RemoveUnitEvent(self)
 end
 
-function BattlePlayerCharacter.Update(arg_5_0)
-	BattlePlayerCharacter.super.Update(arg_5_0)
-	arg_5_0:UpdatePosition()
-	arg_5_0:UpdateMatrix()
+--- 每帧Update：更新位置、矩阵、箭头、氧气条、隐藏槽
+function BattlePlayerCharacter.Update(self)
+	BattlePlayerCharacter.super.Update(self)
+	self:UpdatePosition()
+	self:UpdateMatrix()
 
-	if not arg_5_0._inViewArea or not arg_5_0._alwaysHideArrow then
-		arg_5_0:UpdateArrowBarPosition()
+	if not self._inViewArea or not self._alwaysHideArrow then
+		self:UpdateArrowBarPosition()
 	end
 
-	if arg_5_0._unitData:GetOxyState() then
-		arg_5_0:UpdateOxygenBar()
+	-- 更新潜艇氧气条
+	if self._unitData:GetOxyState() then
+		self:UpdateOxygenBar()
 	end
 
-	if arg_5_0._cloakBar then
-		arg_5_0._cloakBar:UpdateCloakProgress()
-		arg_5_0._hpCloakBar:UpdateCloakProgress()
+	-- 更新隐藏槽时钟
+	if self._cloakBar then
+		self._cloakBar:UpdateCloakProgress()
+		self._hpCloakBar:UpdateCloakProgress()
 
-		if not arg_5_0._inViewArea or not arg_5_0._alwaysHideArrow then
-			arg_5_0:UpdateCloakBarPosition()
+		if not self._inViewArea or not self._alwaysHideArrow then
+			self:UpdateCloakBarPosition()
 		end
 	end
 end
 
-function BattlePlayerCharacter.UpdateArrowBarPosition(arg_6_0)
-	BattlePlayerCharacter.super.UpdateArrowBarPosition(arg_6_0)
+--- 更新箭头位置，外加舰队左边界距离检测
+--- - 离左边界太近时降低箭头透明度
+--- - 镜像Q版图标支持（MIRROR_QICON）
+function BattlePlayerCharacter.UpdateArrowBarPosition(self)
+	BattlePlayerCharacter.super.UpdateArrowBarPosition(self)
 
-	local var_6_0 = arg_6_0._unitData:GetFleetVO():GetLeftBoundDistance()
+	local leftBoundDistance = self._unitData:GetFleetVO():GetLeftBoundDistance()
 
-	if arg_6_0._arrowCG and var_6_0 then
-		if var_6_0 < 6 then
-			arg_6_0._arrowCG.alpha = 0.1
+	-- 根据距离左边界调整箭头透明度
+	if self._arrowCG and leftBoundDistance then
+		if leftBoundDistance < 6 then
+			self._arrowCG.alpha = 0.1
 		else
-			arg_6_0._arrowCG.alpha = 1
+			self._arrowCG.alpha = 1
 		end
 	end
 
-	if arg_6_0._unitData:GetGroupID() and table.contains(var_0_2.MIRROR_QICON_SHIP_GROUP, arg_6_0._unitData:GetGroupID()) then
-		local var_6_1
+	-- 镜像Q版图标处理
+	if self._unitData:GetGroupID() and table.contains(BattleConfig.MIRROR_QICON_SHIP_GROUP, self._unitData:GetGroupID()) then
+		local paintingName
 
-		if arg_6_0._arrowVector.x > 0 then
-			var_6_1 = arg_6_0._unitData:GetTemplate().painting .. var_0_2.MIRROR_QICON_KEY
+		if self._arrowVector.x > 0 then
+			paintingName = self._unitData:GetTemplate().painting .. BattleConfig.MIRROR_QICON_KEY
 		else
-			var_6_1 = arg_6_0._unitData:GetTemplate().painting
+			paintingName = self._unitData:GetTemplate().painting
 		end
 
-		local var_6_2 = var_0_0.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(var_6_1)
+		local qIcon = ys.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(paintingName)
 
-		setImageSprite(findTF(arg_6_0._arrowBar, "icon"), var_6_2)
+		setImageSprite(findTF(self._arrowBar, "icon"), qIcon)
 	end
 end
 
-function BattlePlayerCharacter.UpdateHpBar(arg_7_0)
-	BattlePlayerCharacter.super.UpdateHpBar(arg_7_0)
+--- 更新HP条，外加卡牌迷题模式的矢量条更新
+function BattlePlayerCharacter.UpdateHpBar(self)
+	BattlePlayerCharacter.super.UpdateHpBar(self)
 
-	if arg_7_0._unitData.__name == var_0_0.Battle.BattleCardPuzzlePlayerUnit.__name then
-		arg_7_0:UpdateVectorBar()
+	if self._unitData.__name == ys.Battle.BattleCardPuzzlePlayerUnit.__name then
+		self:UpdateVectorBar()
 	end
 end
 
-function BattlePlayerCharacter.UpdateOxygenBar(arg_8_0)
-	arg_8_0._oxygenSlider.value = arg_8_0._unitData:GetOxygenProgress()
+--- 更新氧气条进度显示
+function BattlePlayerCharacter.UpdateOxygenBar(self)
+	self._oxygenSlider.value = self._unitData:GetOxygenProgress()
 end
 
-function BattlePlayerCharacter.UpdateVectorBar(arg_9_0)
-	local var_9_0 = arg_9_0._unitData:GetHPRate()
+--- 更新矢量HP条填充量（卡牌迷题模式使用）
+function BattlePlayerCharacter.UpdateVectorBar(self)
+	local hpRate = self._unitData:GetHPRate()
 
-	arg_9_0._vectorProgress.fillAmount = var_9_0
+	self._vectorProgress.fillAmount = hpRate
 end
 
-function BattlePlayerCharacter.UpdateUIComponentPosition(arg_10_0)
-	BattlePlayerCharacter.super.UpdateUIComponentPosition(arg_10_0)
+--- 更新UI组件参考坐标，同时处理出生点坐标
+function BattlePlayerCharacter.UpdateUIComponentPosition(self)
+	BattlePlayerCharacter.super.UpdateUIComponentPosition(self)
 
-	local var_10_0 = arg_10_0._unitData:GetBornPosition()
+	local bornPos = self._unitData:GetBornPosition()
 
-	if var_10_0 then
-		if not arg_10_0._referenceVectorBorn then
-			arg_10_0._referenceVectorBorn = Vector3.New(var_10_0.x, var_10_0.y, var_10_0.z)
+	if bornPos then
+		if not self._referenceVectorBorn then
+			self._referenceVectorBorn = Vector3.New(bornPos.x, bornPos.y, bornPos.z)
 		else
-			arg_10_0._referenceVectorBorn:Set(var_10_0.x, var_10_0.y, var_10_0.z)
+			self._referenceVectorBorn:Set(bornPos.x, bornPos.y, bornPos.z)
 		end
 
-		var_0_0.Battle.BattleVariable.CameraPosToUICameraByRef(arg_10_0._referenceVectorBorn)
+		ys.Battle.BattleVariable.CameraPosToUICameraByRef(self._referenceVectorBorn)
 	end
 end
 
-function BattlePlayerCharacter.AddArrowBar(arg_11_0, arg_11_1)
-	BattlePlayerCharacter.super.AddArrowBar(arg_11_0, arg_11_1)
+--- 添加箭头条并设置玩家特有元素：CanvasGroup、头像图标、排序
+function BattlePlayerCharacter.AddArrowBar(self, arrowBarObj)
+	BattlePlayerCharacter.super.AddArrowBar(self, arrowBarObj)
 
-	arg_11_0._arrowCG = GetOrAddComponent(arg_11_0._arrowBarTf, typeof(CanvasGroup))
-	arg_11_0._vectorProgress = arg_11_0._arrowBarTf:Find("HPBar/HPProgress"):GetComponent(typeof(Image))
+	self._arrowCG = GetOrAddComponent(self._arrowBarTf, typeof(CanvasGroup))
+	self._vectorProgress = self._arrowBarTf:Find("HPBar/HPProgress"):GetComponent(typeof(Image))
 
-	local var_11_0 = var_0_0.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(arg_11_0._unitData:GetTemplate().painting)
+	local qIcon = ys.Battle.BattleResourceManager.GetInstance():GetCharacterQIcon(self._unitData:GetTemplate().painting)
 
-	setImageSprite(findTF(arg_11_0._arrowBar, "icon"), var_11_0)
+	setImageSprite(findTF(self._arrowBar, "icon"), qIcon)
 
-	if arg_11_0._unitData:IsMainFleetUnit() and arg_11_0._unitData:GetFleetVO():GetMainList()[3] == arg_11_0._unitData then
-		arg_11_1.transform:SetSiblingIndex(arg_11_1.transform.parent.childCount - 3)
+	-- 旗舰（第3位）特殊排序处理
+	if self._unitData:IsMainFleetUnit() and self._unitData:GetFleetVO():GetMainList()[3] == self._unitData then
+		arrowBarObj.transform:SetSiblingIndex(arrowBarObj.transform.parent.childCount - 3)
 	end
 
-	arg_11_0:UpdateVectorBar()
+	self:UpdateVectorBar()
 end
 
-function BattlePlayerCharacter.GetReferenceVector(arg_12_0, arg_12_1)
-	if arg_12_0._inViewArea then
-		return BattlePlayerCharacter.super.GetReferenceVector(arg_12_0, arg_12_1)
+--- 获取参考坐标：视野内使用父类方法，视野外使用箭头位置
+--- @param comparePos Vector3|nil 比较坐标
+--- @return Vector3 参考坐标
+function BattlePlayerCharacter.GetReferenceVector(self, comparePos)
+	if self._inViewArea then
+		return BattlePlayerCharacter.super.GetReferenceVector(self, comparePos)
 	else
-		return arg_12_0._arrowVector
+		return self._arrowVector
 	end
 end
 
-function BattlePlayerCharacter.DisableWeaponTrack(arg_13_0)
-	if arg_13_0._torpedoTrack then
-		arg_13_0._torpedoTrack:SetActive(false)
+--- 禁用鱼雷轨道显示
+function BattlePlayerCharacter.DisableWeaponTrack(self)
+	if self._torpedoTrack then
+		self._torpedoTrack:SetActive(false)
 	end
 end
 
-function BattlePlayerCharacter.SonarAcitve(arg_14_0, arg_14_1)
-	if var_0_0.Battle.BattleAttr.HasSonar(arg_14_0._unitData) then
-		arg_14_0._sonar:GetComponent(typeof(Animator)).enabled = arg_14_1
+--- 声纳激活：控制声纳标注的Animator启用状态
+function BattlePlayerCharacter.SonarAcitve(self, isActive)
+	if ys.Battle.BattleAttr.HasSonar(self._unitData) then
+		self._sonar:GetComponent(typeof(Animator)).enabled = isActive
 	end
 end
 
-function BattlePlayerCharacter.UpdateDiveInvisible(arg_15_0)
-	BattlePlayerCharacter.super.UpdateDiveInvisible(arg_15_0)
+--- 更新下潜隐身：额外控制潜水标记和氧气条的显示
+function BattlePlayerCharacter.UpdateDiveInvisible(self)
+	BattlePlayerCharacter.super.UpdateDiveInvisible(self)
 
-	local var_15_0 = arg_15_0._unitData:GetDiveInvisible()
+	local diveInvisible = self._unitData:GetDiveInvisible()
 
-	SetActive(arg_15_0._diveMark, var_15_0)
+	SetActive(self._diveMark, diveInvisible)
 
-	local var_15_1 = arg_15_0._unitData:GetOxygenVisible()
+	local oxygenVisible = self._unitData:GetOxygenVisible()
 
-	SetActive(arg_15_0._oxygenBar, var_15_1)
+	SetActive(self._oxygenBar, oxygenVisible)
 end
 
-function BattlePlayerCharacter.Dispose(arg_16_0)
-	arg_16_0._torpedoIcons = nil
-	arg_16_0._renderer = nil
-	arg_16_0._sonar = nil
-	arg_16_0._diveMark = nil
-	arg_16_0._oxygenBar = nil
-	arg_16_0._oxygenSlider = nil
+--- 销毁玩家角色：清理鱼雷图标、声纳、武器扇区等
+function BattlePlayerCharacter.Dispose(self)
+	self._torpedoIcons = nil
+	self._renderer = nil
+	self._sonar = nil
+	self._diveMark = nil
+	self._oxygenBar = nil
+	self._oxygenSlider = nil
 
-	Object.Destroy(arg_16_0._arrowBar)
+	Object.Destroy(self._arrowBar)
 
-	for iter_16_0, iter_16_1 in ipairs(arg_16_0._weaponSectorList) do
-		iter_16_1:Dispose()
+	for _, sector in ipairs(self._weaponSectorList) do
+		sector:Dispose()
 	end
 
-	arg_16_0._weaponSectorList = nil
+	self._weaponSectorList = nil
 
-	BattlePlayerCharacter.super.Dispose(arg_16_0)
+	BattlePlayerCharacter.super.Dispose(self)
 end
 
-function BattlePlayerCharacter.GetModleID(arg_17_0)
-	return arg_17_0._unitData:GetTemplate().prefab
+--- @return string 模型prefab名称
+function BattlePlayerCharacter.GetModleID(self)
+	return self._unitData:GetTemplate().prefab
 end
 
-function BattlePlayerCharacter.OnUpdateHP(arg_18_0, arg_18_1)
-	BattlePlayerCharacter.super.OnUpdateHP(arg_18_0, arg_18_1)
-	arg_18_0:UpdateVectorBar()
+--- HP更新事件：更新矢量条
+--- @param event table HP更新事件数据
+function BattlePlayerCharacter.OnUpdateHP(self, event)
+	BattlePlayerCharacter.super.OnUpdateHP(self, event)
+	self:UpdateVectorBar()
 end
 
-function BattlePlayerCharacter.onInitWeaponCD(arg_19_0, arg_19_1)
-	arg_19_0:onTorepedoReady()
+--- 初始化武器CD完成回调
+function BattlePlayerCharacter.onInitWeaponCD(self, event)
+	self:onTorepedoReady()
 end
 
--- TODO
-function BattlePlayerCharacter.onCastBlink(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_1.Data.callbackFunc
-	local var_20_1 = arg_20_1.Data.timeScale
+--- 蓄力技能闪烁特效
+--- @param event table {Data = {callbackFunc, timeScale}}
+function BattlePlayerCharacter.onCastBlink(self, event)
+	local callbackFunc = event.Data.callbackFunc
+	local timeScale = event.Data.timeScale
 
-	arg_20_0:AddFX("jineng", false, var_20_1, var_20_0)
+	self:AddFX("jineng", false, timeScale, callbackFunc)
 end
 
-function BattlePlayerCharacter.onTorpedoWeaponFire(arg_21_0, arg_21_1)
-	arg_21_0._torpedoTrack:SetActive(false)
-	arg_21_0:onTorepedoReady()
+--- 鱼雷发射事件：隐藏轨道并更新弹药显示
+function BattlePlayerCharacter.onTorpedoWeaponFire(self, event)
+	self._torpedoTrack:SetActive(false)
+	self:onTorepedoReady()
 end
 
-function BattlePlayerCharacter.onTorpedoPrepar(arg_22_0, arg_22_1)
-	arg_22_0._torpedoTrack:SetActive(true)
+--- 鱼雷瞄准准备：显示鱼雷轨道并根据子弹模板设置缩放
+function BattlePlayerCharacter.onTorpedoPrepar(self, event)
+	self._torpedoTrack:SetActive(true)
 
-	local var_22_0 = var_0_0.Battle.BattleDataFunction.GetBulletTmpDataFromID(arg_22_1.Dispatcher:GetTemplateData().bullet_ID[1])
+	local bulletTemplate = ys.Battle.BattleDataFunction.GetBulletTmpDataFromID(event.Dispatcher:GetTemplateData().bullet_ID[1])
 
-	arg_22_0._torpedoTrack:SetScale(Vector3(var_22_0.range / var_0_2.SPINE_SCALE, var_22_0.cld_box[3] / var_0_2.SPINE_SCALE, 1))
+	self._torpedoTrack:SetScale(Vector3(bulletTemplate.range / BattleConfig.SPINE_SCALE, bulletTemplate.cld_box[3] / BattleConfig.SPINE_SCALE, 1))
 end
 
-function BattlePlayerCharacter.onTorpedoCancel(arg_23_0, arg_23_1)
-	arg_23_0._torpedoTrack:SetActive(false)
+--- 鱼雷取消：隐藏轨道
+function BattlePlayerCharacter.onTorpedoCancel(self, event)
+	self._torpedoTrack:SetActive(false)
 end
 
-function BattlePlayerCharacter.onTorepedoReady(arg_24_0, arg_24_1)
-	local var_24_0 = 0
+--- 更新鱼雷弹药图标数量显示
+function BattlePlayerCharacter.onTorepedoReady(self)
+	local readyCount = 0
 
-	for iter_24_0, iter_24_1 in ipairs(arg_24_0._torpedoWeaponList) do
-		if iter_24_1:GetCurrentState() == iter_24_1.STATE_READY then
-			var_24_0 = var_24_0 + 1
+	for _, torpedoWeapon in ipairs(self._torpedoWeaponList) do
+		if torpedoWeapon:GetCurrentState() == torpedoWeapon.STATE_READY then
+			readyCount = readyCount + 1
 		end
 	end
 
-	for iter_24_2 = 1, var_0_0.Battle.BattleConst.MAX_EQUIPMENT_COUNT do
-		LuaHelper.SetTFChildActive(arg_24_0._torpedoIcons, "torpedo_" .. iter_24_2, iter_24_2 <= var_24_0)
+	for i = 1, ys.Battle.BattleConst.MAX_EQUIPMENT_COUNT do
+		LuaHelper.SetTFChildActive(self._torpedoIcons, "torpedo_" .. i, i <= readyCount)
 	end
 end
 
-function BattlePlayerCharacter.onAAMissileWeaponFire(arg_25_0, arg_25_1)
-	arg_25_0:onAAMissileReady()
+--- 防空导弹发射后更新弹药显示
+function BattlePlayerCharacter.onAAMissileWeaponFire(self, event)
+	self:onAAMissileReady()
 end
 
-function BattlePlayerCharacter.onWillDie(arg_26_0, arg_26_1)
-	for iter_26_0, iter_26_1 in ipairs(arg_26_0._smokeList) do
-		if iter_26_1.active == true then
-			iter_26_1.active = false
+--- 濒死事件：关闭所有烟雾特效
+function BattlePlayerCharacter.onWillDie(self, event)
+	for _, smokeConfig in ipairs(self._smokeList) do
+		if smokeConfig.active == true then
+			smokeConfig.active = false
 
-			local var_26_0 = iter_26_1.smokes
+			local smokes = smokeConfig.smokes
 
-			for iter_26_2, iter_26_3 in pairs(var_26_0) do
-				if iter_26_2.unInitialize then
-					-- block empty
+			for fxData, fxObj in pairs(smokes) do
+				if fxData.unInitialize then
+					-- 尚未初始化的跳过
 				else
-					SetActive(iter_26_3, false)
+					SetActive(fxObj, false)
 				end
 			end
 		end
 	end
 end
 
-function BattlePlayerCharacter.AddHPBar(arg_27_0, arg_27_1)
-	BattlePlayerCharacter.super.AddHPBar(arg_27_0, arg_27_1)
+--- 添加HP条并设置玩家特有UI元素：鱼雷图标、声纳标记、下潜/氧气
+function BattlePlayerCharacter.AddHPBar(self, hpBarObj)
+	BattlePlayerCharacter.super.AddHPBar(self, hpBarObj)
 
-	arg_27_0._torpedoIcons = arg_27_0._HPBarTf:Find("torpedoIcons")
+	self._torpedoIcons = self._HPBarTf:Find("torpedoIcons")
 
-	if #arg_27_0._torpedoWeaponList <= 0 then
-		arg_27_0._torpedoIcons.gameObject:SetActive(false)
+	if #self._torpedoWeaponList <= 0 then
+		self._torpedoIcons.gameObject:SetActive(false)
 	end
 
-	arg_27_0._sonar = arg_27_0._HPBarTf:Find("sonarMark")
+	self._sonar = self._HPBarTf:Find("sonarMark")
 
-	if var_0_0.Battle.BattleAttr.HasSonar(arg_27_0._unitData) then
-		arg_27_0._sonar.gameObject:SetActive(true)
+	if ys.Battle.BattleAttr.HasSonar(self._unitData) then
+		self._sonar.gameObject:SetActive(true)
 	else
-		arg_27_0._sonar.gameObject:SetActive(false)
+		self._sonar.gameObject:SetActive(false)
 	end
 
-	arg_27_0._diveMark = arg_27_0._HPBarTf:Find("diveMark")
-	arg_27_0._oxygenBar = arg_27_0._HPBarTf:Find("oxygenBar")
-	arg_27_0._oxygenSlider = arg_27_0._oxygenBar:Find("oxygen"):GetComponent(typeof(Slider))
-	arg_27_0._oxygenSlider.value = 1
+	self._diveMark = self._HPBarTf:Find("diveMark")
+	self._oxygenBar = self._HPBarTf:Find("oxygenBar")
+	self._oxygenSlider = self._oxygenBar:Find("oxygen"):GetComponent(typeof(Slider))
+	self._oxygenSlider.value = 1
 
-	arg_27_0:onTorepedoReady()
+	self:onTorepedoReady()
 end
 
-function BattlePlayerCharacter.AddModel(arg_28_0, arg_28_1)
-	BattlePlayerCharacter.super.AddModel(arg_28_0, arg_28_1)
+--- 添加模型后缓存Renderer组件引用
+function BattlePlayerCharacter.AddModel(self, modelGO)
+	BattlePlayerCharacter.super.AddModel(self, modelGO)
 
-	arg_28_0._renderer = arg_28_0:GetTf():GetComponent(typeof(Renderer))
+	self._renderer = self:GetTf():GetComponent(typeof(Renderer))
 end
 
-function BattlePlayerCharacter.AddChargeArea(arg_29_0, arg_29_1)
-	arg_29_0._chargeWeaponArea = var_0_0.Battle.BattleChargeArea.New(arg_29_1)
+--- 添加蓄力区域对象
+--- @param chargeAreaObj GameObject 蓄力区域GameObject
+function BattlePlayerCharacter.AddChargeArea(self, chargeAreaObj)
+	self._chargeWeaponArea = ys.Battle.BattleChargeArea.New(chargeAreaObj)
 end
 
-function BattlePlayerCharacter.AddTorpedoTrack(arg_30_0, arg_30_1)
-	arg_30_0._torpedoTrack = var_0_0.Battle.BossSkillAlert.New(arg_30_1)
+--- 添加鱼雷瞄准轨道（BossSkillAlert组件）
+--- @param torpedoTrackObj GameObject 轨道GameObject
+function BattlePlayerCharacter.AddTorpedoTrack(self, torpedoTrackObj)
+	self._torpedoTrack = ys.Battle.BossSkillAlert.New(torpedoTrackObj)
 
-	arg_30_0._torpedoTrack:SetActive(false)
+	self._torpedoTrack:SetActive(false)
 end
 
-function BattlePlayerCharacter.AddCloakBar(arg_31_0, arg_31_1)
-	BattlePlayerCharacter.super.AddCloakBar(arg_31_0, arg_31_1)
+--- 添加隐藏槽并创建HP条内嵌隐藏条（FORM_BAR类型）
+function BattlePlayerCharacter.AddCloakBar(self, cloakBarObj)
+	BattlePlayerCharacter.super.AddCloakBar(self, cloakBarObj)
 
-	local var_31_0 = arg_31_0._HPBarTf:Find("cloakBar")
+	local hpCloakBarTF = self._HPBarTf:Find("cloakBar")
 
-	arg_31_0._hpCloakBar = var_0_0.Battle.BattleCloakBar.New(var_31_0, var_0_0.Battle.BattleCloakBar.FORM_BAR)
+	self._hpCloakBar = ys.Battle.BattleCloakBar.New(hpCloakBarTF, ys.Battle.BattleCloakBar.FORM_BAR)
 
-	arg_31_0._hpCloakBar:ConfigCloak(arg_31_0._unitData:GetCloak())
-	arg_31_0._hpCloakBar:UpdateCloakProgress()
-	arg_31_0._hpCloakBar:SetActive(true)
+	self._hpCloakBar:ConfigCloak(self._unitData:GetCloak())
+	self._hpCloakBar:UpdateCloakProgress()
+	self._hpCloakBar:SetActive(true)
 end
 
-function BattlePlayerCharacter.onUpdateCloakConfig(arg_32_0, arg_32_1)
-	BattlePlayerCharacter.super.onUpdateCloakConfig(arg_32_0, arg_32_1)
-	arg_32_0._hpCloakBar:UpdateCloakConfig()
+--- 隐藏配置更新：同时更新主隐藏条和内嵌隐藏条
+function BattlePlayerCharacter.onUpdateCloakConfig(self, event)
+	BattlePlayerCharacter.super.onUpdateCloakConfig(self, event)
+	self._hpCloakBar:UpdateCloakConfig()
 end
 
-function BattlePlayerCharacter.onUpdateCloakLock(arg_33_0, arg_33_1)
-	BattlePlayerCharacter.super.onUpdateCloakLock(arg_33_0, arg_33_1)
-	arg_33_0._hpCloakBar:UpdateCloakLock()
+--- 隐藏锁定更新
+function BattlePlayerCharacter.onUpdateCloakLock(self, event)
+	BattlePlayerCharacter.super.onUpdateCloakLock(self, event)
+	self._hpCloakBar:UpdateCloakLock()
 end
 
-function BattlePlayerCharacter.InitChargeWeapon(arg_34_0, arg_34_1)
-	arg_34_0._chargeWeaponList[#arg_34_0._chargeWeaponList + 1] = arg_34_1
+--- 初始化蓄力武器：注册武器监听和蓄力完成事件
+--- @param chargeWeapon BattleChargeWeaponUnit 蓄力武器
+function BattlePlayerCharacter.InitChargeWeapon(self, chargeWeapon)
+	self._chargeWeaponList[#self._chargeWeaponList + 1] = chargeWeapon
 
-	arg_34_0:RegisterWeaponListener(arg_34_1)
-	arg_34_1:RegisterEventListener(arg_34_0, var_0_1.CHARGE_WEAPON_FINISH, arg_34_0.onCastBlink)
+	self:RegisterWeaponListener(chargeWeapon)
+	chargeWeapon:RegisterEventListener(self, BattleUnitEvent.CHARGE_WEAPON_FINISH, self.onCastBlink)
 end
 
-function BattlePlayerCharacter.InitAirAssit(arg_35_0, arg_35_1)
-	arg_35_0._airAssistList[#arg_35_0._airAssistList + 1] = arg_35_1
+--- 初始化空袭辅助武器：注册蓄力完成和开火事件
+--- @param airAssist BattleAirAssistUnit 空袭辅助单位
+function BattlePlayerCharacter.InitAirAssit(self, airAssist)
+	self._airAssistList[#self._airAssistList + 1] = airAssist
 
-	arg_35_1:RegisterEventListener(arg_35_0, var_0_1.CHARGE_WEAPON_FINISH, arg_35_0.onCastBlink)
-	arg_35_1:RegisterEventListener(arg_35_0, var_0_1.FIRE, arg_35_0.onCannonFire)
+	airAssist:RegisterEventListener(self, BattleUnitEvent.CHARGE_WEAPON_FINISH, self.onCastBlink)
+	airAssist:RegisterEventListener(self, BattleUnitEvent.FIRE, self.onCannonFire)
 end
 
-function BattlePlayerCharacter.InitTorpedoWeapon(arg_36_0, arg_36_1)
-	arg_36_0._torpedoWeaponList[#arg_36_0._torpedoWeaponList + 1] = arg_36_1
+--- 初始化鱼雷武器：注册开火、准备、取消、就绪事件
+--- @param torpedoWeapon BattleTorpedoWeaponUnit 鱼雷武器
+function BattlePlayerCharacter.InitTorpedoWeapon(self, torpedoWeapon)
+	self._torpedoWeaponList[#self._torpedoWeaponList + 1] = torpedoWeapon
 
-	arg_36_0:RegisterWeaponListener(arg_36_1)
-	arg_36_1:RegisterEventListener(arg_36_0, var_0_1.TORPEDO_WEAPON_FIRE, arg_36_0.onTorpedoWeaponFire)
-	arg_36_1:RegisterEventListener(arg_36_0, var_0_1.TORPEDO_WEAPON_PREPAR, arg_36_0.onTorpedoPrepar)
-	arg_36_1:RegisterEventListener(arg_36_0, var_0_1.TORPEDO_WEAPON_CANCEL, arg_36_0.onTorpedoCancel)
-	arg_36_1:RegisterEventListener(arg_36_0, var_0_1.TORPEDO_WEAPON_READY, arg_36_0.onTorepedoReady)
+	self:RegisterWeaponListener(torpedoWeapon)
+	torpedoWeapon:RegisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_FIRE, self.onTorpedoWeaponFire)
+	torpedoWeapon:RegisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_PREPAR, self.onTorpedoPrepar)
+	torpedoWeapon:RegisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_CANCEL, self.onTorpedoCancel)
+	torpedoWeapon:RegisterEventListener(self, BattleUnitEvent.TORPEDO_WEAPON_READY, self.onTorepedoReady)
 end
 
-function BattlePlayerCharacter.onActiveWeaponSector(arg_37_0, arg_37_1)
-	local var_37_0 = arg_37_1.Data
-	local var_37_1 = var_37_0.isActive
-	local var_37_2 = var_37_0.weapon
+--- 武器扇区激活/停用：创建或销毁射界指示器
+--- @param event table {Data = {isActive, weapon}}
+function BattlePlayerCharacter.onActiveWeaponSector(self, event)
+	local sectorData = event.Data
+	local isActive = sectorData.isActive
+	local weapon = sectorData.weapon
 
-	if var_37_1 then
-		local var_37_3 = arg_37_0._factory:GetFXPool():GetCharacterFX("weaponrange", arg_37_0).transform
-		local var_37_4 = var_0_0.Battle.BattleWeaponRangeSector.New(var_37_3)
+	if isActive then
+		local sectorTf = self._factory:GetFXPool():GetCharacterFX("weaponrange", self).transform
+		local sector = ys.Battle.BattleWeaponRangeSector.New(sectorTf)
 
-		var_37_4:ConfigHost(arg_37_0._unitData, var_37_2)
+		sector:ConfigHost(self._unitData, weapon)
 
-		arg_37_0._weaponSectorList[var_37_2] = var_37_4
+		self._weaponSectorList[weapon] = sector
 	else
-		arg_37_0._weaponSectorList[var_37_2]:Dispose()
+		self._weaponSectorList[weapon]:Dispose()
 
-		arg_37_0._weaponSectorList[var_37_2] = nil
+		self._weaponSectorList[weapon] = nil
 	end
 end
 
-function BattlePlayerCharacter.onCreatePointAirStrike(arg_38_0, arg_38_1)
-	local var_38_0 = arg_38_1.Data.weapon
+--- 创建定点空袭武器事件
+--- @param event table {Data = {weapon}}
+function BattlePlayerCharacter.onCreatePointAirStrike(self, event)
+	local weapon = event.Data.weapon
 
-	arg_38_0:InitChargeWeapon(var_38_0)
+	self:InitChargeWeapon(weapon)
 end
 
-function BattlePlayerCharacter.OnAnimatorTrigger(arg_39_0)
-	arg_39_0._unitData:CharacterActionTriggerCallback()
+--- 动画触发回调：通知UnitData动作触发
+function BattlePlayerCharacter.OnAnimatorTrigger(self)
+	self._unitData:CharacterActionTriggerCallback()
 end
 
-function BattlePlayerCharacter.OnAnimatorEnd(arg_40_0)
-	arg_40_0._unitData:CharacterActionEndCallback()
+--- 动画结束回调：通知UnitData动作结束
+function BattlePlayerCharacter.OnAnimatorEnd(self)
+	self._unitData:CharacterActionEndCallback()
 end
 
-function BattlePlayerCharacter.OnAnimatorStart(arg_41_0)
-	arg_41_0._unitData:CharacterActionStartCallback()
+--- 动画开始回调：通知UnitData动作开始
+function BattlePlayerCharacter.OnAnimatorStart(self)
+	self._unitData:CharacterActionStartCallback()
 end

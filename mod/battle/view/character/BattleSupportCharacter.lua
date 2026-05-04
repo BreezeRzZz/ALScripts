@@ -1,105 +1,128 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleSupportCharacter = class("BattleSupportCharacter", var_0_0.Battle.BattleCharacter)
-var_0_0.Battle.BattleSupportCharacter.__name = "BattleSupportCharacter"
+ys.Battle.BattleSupportCharacter = class("BattleSupportCharacter", ys.Battle.BattleCharacter)
+ys.Battle.BattleSupportCharacter.__name = "BattleSupportCharacter"
 
-local var_0_4 = var_0_0.Battle.BattleSupportCharacter
+local BattleSupportCharacter = ys.Battle.BattleSupportCharacter
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+--- 构造函数：初始化前摇绑定标志
+function BattleSupportCharacter.Ctor(self)
+	BattleSupportCharacter.super.Ctor(self)
 
-	arg_1_0._preCastBound = false
+	self._preCastBound = false
 end
 
-function var_0_4.RegisterWeaponListener(arg_2_0, arg_2_1)
-	var_0_4.super.RegisterWeaponListener(arg_2_0, arg_2_1)
-	arg_2_1:RegisterEventListener(arg_2_0, var_0_3.WEAPON_PRE_CAST, arg_2_0.onWeaponPreCast)
-	arg_2_1:RegisterEventListener(arg_2_0, var_0_3.WEAPON_PRE_CAST_FINISH, arg_2_0.onWeaponPrecastFinish)
+--- 武器注册时额外绑定前摇事件
+--- @param weapon BattleWeaponUnit 武器实例
+function BattleSupportCharacter.RegisterWeaponListener(self, weapon)
+	BattleSupportCharacter.super.RegisterWeaponListener(self, weapon)
+	weapon:RegisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST, self.onWeaponPreCast)
+	weapon:RegisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST_FINISH, self.onWeaponPrecastFinish)
 end
 
-function var_0_4.UnregisterWeaponListener(arg_3_0, arg_3_1)
-	var_0_4.super.UnregisterWeaponListener(arg_3_0, arg_3_1)
-	arg_3_1:UnregisterEventListener(arg_3_0, var_0_3.WEAPON_PRE_CAST)
-	arg_3_1:UnregisterEventListener(arg_3_0, var_0_3.WEAPON_PRE_CAST_FINISH)
+--- 取消武器前摇事件
+function BattleSupportCharacter.UnregisterWeaponListener(self, weapon)
+	BattleSupportCharacter.super.UnregisterWeaponListener(self, weapon)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST_FINISH)
 end
 
-function var_0_4.Update(arg_4_0)
+--- 支援角色不执行Update（静态站位）
+function BattleSupportCharacter.Update(self)
 	return
 end
 
-function var_0_4.UpdateHPBarPosition(arg_5_0)
+--- 支援角色不更新HP条位置（静态站位）
+function BattleSupportCharacter.UpdateHPBarPosition(self)
 	return
 end
 
-function var_0_4.SpawnBullet(arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
-	local var_6_0 = arg_6_0._bulletFactoryList[arg_6_1:GetTemplate().type]
-	local var_6_1 = arg_6_0._unitData:GetPosition()
+--- 发射子弹：支援角色不使用骨骼位置，直接在单位位置生成
+--- @param bulletTmp BattleBulletTemplate 子弹模板
+--- @param spawnBone string 生成骨骼名（不使用）
+--- @param fireFxID string|nil 开火特效ID
+--- @param spawnPos Vector3|nil 指定生成位置（不使用）
+function BattleSupportCharacter.SpawnBullet(self, bulletTmp, spawnBone, fireFxID, spawnPos)
+	local bulletFactory = self._bulletFactoryList[bulletTmp:GetTemplate().type]
+	local unitPos = self._unitData:GetPosition()
 
-	var_6_0:CreateBullet(arg_6_0._tf, arg_6_1, var_6_1, arg_6_3, arg_6_0._unitData:GetDirection())
+	bulletFactory:CreateBullet(self._tf, bulletTmp, unitPos, fireFxID, self._unitData:GetDirection())
 end
 
-function var_0_4.AddFX(arg_7_0, arg_7_1, arg_7_2, arg_7_3, arg_7_4)
-	if arg_7_4 then
-		arg_7_4()
+--- 添加特效：支援角色只执行回调，不创建实际特效
+--- @param fxName string 特效名称
+--- @param useCache boolean|nil 是否缓存
+--- @param timeScale number|nil 时间缩放
+--- @param callback function|nil 回调
+function BattleSupportCharacter.AddFX(self, fxName, useCache, timeScale, callback)
+	if callback then
+		callback()
 	end
 end
 
-function var_0_4.updateComponentVisible(arg_8_0)
-	if arg_8_0._unitData:GetIFF() ~= var_0_2.FOE_CODE then
+--- 更新组件可见性：仅对敌方支援单位生效
+function BattleSupportCharacter.updateComponentVisible(self)
+	if self._unitData:GetIFF() ~= BattleConfig.FOE_CODE then
 		return
 	end
 
-	local var_8_0 = arg_8_0._unitData:GetExposed()
-	local var_8_1 = arg_8_0._unitData:GetDiveDetected()
-	local var_8_2 = arg_8_0._unitData:GetDiveInvisible()
-	local var_8_3 = var_8_0 and (not var_8_2 or not not var_8_1)
+	local exposed = self._unitData:GetExposed()
+	local diveDetected = self._unitData:GetDiveDetected()
+	local diveInvisible = self._unitData:GetDiveInvisible()
+	local isVisible = exposed and (not diveInvisible or not not diveDetected)
 
-	SetActive(arg_8_0._HPBarTf, var_8_3)
-	SetActive(arg_8_0._FXAttachPoint, var_8_3)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
 end
 
-function var_0_4.updateComponentDiveInvisible(arg_9_0)
-	local var_9_0 = arg_9_0._unitData:GetDiveDetected() and arg_9_0._unitData:GetIFF() == var_0_2.FOE_CODE
-	local var_9_1 = arg_9_0._unitData:GetDiveInvisible()
-	local var_9_2
-	local var_9_3 = (var_9_0 or not var_9_1) and true or false
+--- 更新潜入隐身时组件可见性
+function BattleSupportCharacter.updateComponentDiveInvisible(self)
+	local isDetected = self._unitData:GetDiveDetected() and self._unitData:GetIFF() == BattleConfig.FOE_CODE
+	local isDiveInvisible = self._unitData:GetDiveInvisible()
+	local isVisible = (isDetected or not isDiveInvisible) and true or false
 
-	SetActive(arg_9_0._HPBarTf, var_9_3)
-	SetActive(arg_9_0._FXAttachPoint, var_9_3)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
 end
 
-function var_0_4.Dispose(arg_10_0)
-	arg_10_0:AddShaderColor()
-	var_0_4.super.Dispose(arg_10_0)
+--- 销毁：恢复Shader颜色
+function BattleSupportCharacter.Dispose(self)
+	self:AddShaderColor()
+	BattleSupportCharacter.super.Dispose(self)
 end
 
-function var_0_4.GetModleID(arg_11_0)
-	return arg_11_0._unitData:GetTemplate().prefab
+--- @return string 模型prefab名称
+function BattleSupportCharacter.GetModleID(self)
+	return self._unitData:GetTemplate().prefab
 end
 
-function var_0_4.OnAnimatorTrigger(arg_12_0)
-	arg_12_0._unitData:CharacterActionTriggerCallback()
+--- 动画触发回调
+function BattleSupportCharacter.OnAnimatorTrigger(self)
+	self._unitData:CharacterActionTriggerCallback()
 end
 
-function var_0_4.OnAnimatorEnd(arg_13_0)
-	arg_13_0._unitData:CharacterActionEndCallback()
+--- 动画结束回调
+function BattleSupportCharacter.OnAnimatorEnd(self)
+	self._unitData:CharacterActionEndCallback()
 end
 
-function var_0_4.OnAnimatorStart(arg_14_0)
-	arg_14_0._unitData:CharacterActionStartCallback()
+--- 动画开始回调
+function BattleSupportCharacter.OnAnimatorStart(self)
+	self._unitData:CharacterActionStartCallback()
 end
 
-function var_0_4.UpdateAimBiasBar(arg_15_0)
-	var_0_4.super.UpdateAimBiasBar(arg_15_0)
+--- 更新瞄准偏斜条：同时缩放迷雾特效
+function BattleSupportCharacter.UpdateAimBiasBar(self)
+	BattleSupportCharacter.super.UpdateAimBiasBar(self)
 
-	if arg_15_0._fogFx then
-		local var_15_0 = arg_15_0:GetUnitData():GetAimBias():GetCurrentRate()
+	if self._fogFx then
+		local aimBiasRate = self:GetUnitData():GetAimBias():GetCurrentRate()
 
-		arg_15_0._fogFx.transform.localScale = Vector3(var_15_0, var_15_0, 1)
+		self._fogFx.transform.localScale = Vector3(aimBiasRate, aimBiasRate, 1)
 	end
 end

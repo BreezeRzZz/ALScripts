@@ -1,40 +1,62 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleMainFleetCharacterFactory = singletonClass("BattleMainFleetCharacterFactory", var_0_0.Battle.BattlePlayerCharacterFactory)
-var_0_0.Battle.BattleMainFleetCharacterFactory.__name = "BattleMainFleetCharacterFactory"
+--- @class BattleMainFleetCharacterFactory
+--- 主力舰队角色工厂（后排主力/旗舰）。继承自BattlePlayerCharacterFactory。
+--- 与父类的区别：箭头固定使用MainArrow（主箭头），不显示皮肤环绕特效、
+--- 不检查潜行/鱼雷轨道/AimBias。主力舰队角色通常在后排，UI组件更简洁。
+ys.Battle.BattleMainFleetCharacterFactory = singletonClass("BattleMainFleetCharacterFactory", ys.Battle.BattlePlayerCharacterFactory)
+ys.Battle.BattleMainFleetCharacterFactory.__name = "BattleMainFleetCharacterFactory"
 
-local var_0_1 = var_0_0.Battle.BattleMainFleetCharacterFactory
+local MainFleetCharacterFactory = ys.Battle.BattleMainFleetCharacterFactory
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- @class BattleMainFleetCharacterFactory
+--- @return nil
+--- 构造函数：覆盖箭头为MainArrow（主箭头，指向敌方），
+--- 主力舰队不使用SubArrow。
+function MainFleetCharacterFactory.Ctor(self)
+	MainFleetCharacterFactory.super.Ctor(self)
 
-	arg_1_0.ARROW_BAR_NAME = "EnemyArrowContainer/MainArrow"
+	self.ARROW_BAR_NAME = "EnemyArrowContainer/MainArrow"
 end
 
-function var_0_1.MakeCharacter(arg_2_0)
-	return var_0_0.Battle.BattleMainFleetCharacter.New()
+--- @class BattleMainFleetCharacterFactory
+--- @return BattleMainFleetCharacter: 主力舰队角色视觉对象
+--- 创建BattleMainFleetCharacter实例。
+function MainFleetCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleMainFleetCharacter.New()
 end
 
-function var_0_1.MakeModel(arg_3_0, arg_3_1, arg_3_2)
-	local function var_3_0(arg_4_0)
-		arg_3_1:AddModel(arg_4_0)
+--- @class BattleMainFleetCharacterFactory
+--- @param character BattleMainFleetCharacter: 角色视觉对象
+--- @param extraParam any|nil: 额外参数
+--- @return nil
+--- 创建主力舰队视觉模型：
+--- 1) 异步加载Spine模型 -> AddModel
+--- 2) 注册为玩家角色（AddPlayerCharacter）
+--- 3) 装配：UI容器、特效挂点、伤害数字、HP条、浪花、烟雾、箭头
+--- 注意：与父类BattlePlayerCharacterFactory.MakeModel不同，主力舰队：
+---   - 不创建皮肤环绕特效（MakeSkinOrbit）
+---   - 不检查潜行/鱼雷轨道/AimBias（后排不需要这些）
+function MainFleetCharacterFactory.MakeModel(self, character, extraParam)
+	local function onModelLoaded(modelObj)
+		character:AddModel(modelObj)
 
-		local var_4_0 = arg_3_0:GetSceneMediator()
+		local mediator = self:GetSceneMediator()
 
-		arg_3_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
-		var_4_0:AddPlayerCharacter(arg_3_1)
-		arg_3_0:MakeUIComponentContainer(arg_3_1)
-		arg_3_0:MakeFXContainer(arg_3_1)
-		arg_3_0:MakePopNumPool(arg_3_1)
-		arg_3_0:MakeBloodBar(arg_3_1)
-		arg_3_0:MakeWaveFX(arg_3_1)
-		arg_3_0:MakeSmokeFX(arg_3_1)
-		arg_3_0:MakeArrowBar(arg_3_1)
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
+		mediator:AddPlayerCharacter(character)
+		self:MakeUIComponentContainer(character)
+		self:MakeFXContainer(character)
+		self:MakePopNumPool(character)
+		self:MakeBloodBar(character)
+		self:MakeWaveFX(character)
+		self:MakeSmokeFX(character)
+		self:MakeArrowBar(character)
 	end
 
-	arg_3_0:GetCharacterPool():InstCharacter(arg_3_1:GetModleID(), function(arg_5_0)
-		var_3_0(arg_5_0)
+	self:GetCharacterPool():InstCharacter(character:GetModleID(), function(modelObj)
+		onModelLoaded(modelObj)
 	end)
 end

@@ -1,40 +1,49 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleMainFleetCharacter", var_0_0.Battle.BattlePlayerCharacter)
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleMainFleetCharacter = class("BattleMainFleetCharacter", ys.Battle.BattlePlayerCharacter)
 
-var_0_0.Battle.BattleMainFleetCharacter = var_0_3
-var_0_3.__name = "BattleMainFleetCharacter"
+ys.Battle.BattleMainFleetCharacter = BattleMainFleetCharacter
+BattleMainFleetCharacter.__name = "BattleMainFleetCharacter"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- 构造函数：调用父类初始化
+function BattleMainFleetCharacter.Ctor(self)
+	BattleMainFleetCharacter.super.Ctor(self)
 end
 
-function var_0_3.Update(arg_2_0)
-	var_0_3.super.Update(arg_2_0)
-	arg_2_0:UpdateArrowBarPosition()
+--- 每帧Update：额外调用箭头位置更新（主舰队始终需要）
+function BattleMainFleetCharacter.Update(self)
+	BattleMainFleetCharacter.super.Update(self)
+	self:UpdateArrowBarPosition()
 end
 
-function var_0_3.AddArrowBar(arg_3_0, arg_3_1)
-	var_0_3.super.AddArrowBar(arg_3_0, arg_3_1)
+--- 添加箭头条：主舰队使用独立的Q版图标加载方式（qicon/素材名）
+--- 与PlayerCharacter的箭头不同，不使用BattleResourceManager
+function BattleMainFleetCharacter.AddArrowBar(self, arrowBarObj)
+	BattleMainFleetCharacter.super.AddArrowBar(self, arrowBarObj)
 
-	local var_3_0 = LoadSprite("qicon/" .. arg_3_0._unitData:GetTemplate().painting) or LoadSprite("heroicon/unknown")
+	local qIcon = LoadSprite("qicon/" .. self._unitData:GetTemplate().painting) or LoadSprite("heroicon/unknown")
 
-	setImageSprite(findTF(arg_3_0._arrowBar, "icon"), var_3_0)
+	setImageSprite(findTF(self._arrowBar, "icon"), qIcon)
 end
 
-function var_0_3.UpdateHPBarPosition(arg_4_0)
-	if not arg_4_0._inViewArea then
-		var_0_3.super.UpdateHPBarPosition(arg_4_0)
+--- 更新HP条位置：视野外跳过（主舰队不在画面内时不显示HP条）
+function BattleMainFleetCharacter.UpdateHPBarPosition(self)
+	if not self._inViewArea then
+		BattleMainFleetCharacter.super.UpdateHPBarPosition(self)
 	end
 end
 
-function var_0_3.GetReferenceVector(arg_5_0, arg_5_1)
-	if not arg_5_0._inViewArea then
-		return var_0_3.super.GetReferenceVector(arg_5_0, arg_5_1)
+--- 获取参考坐标：视野外使用父类方法，视野内返回箭头位置（反转逻辑）
+--- 主舰队不在画面可见区域内，所以需要反转
+--- @param comparePos Vector3|nil 比较坐标
+--- @return Vector3 参考坐标
+function BattleMainFleetCharacter.GetReferenceVector(self, comparePos)
+	if not self._inViewArea then
+		return BattleMainFleetCharacter.super.GetReferenceVector(self, comparePos)
 	else
-		return arg_5_0._arrowVector
+		return self._arrowVector
 	end
 end

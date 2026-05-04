@@ -1,36 +1,59 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleCameraFollowPilot = class("BattleCameraFollowPilot")
-var_0_0.Battle.BattleCameraFollowPilot.__name = "BattleCameraFollowPilot"
+ys.Battle.BattleCameraFollowPilot = class("BattleCameraFollowPilot")
+ys.Battle.BattleCameraFollowPilot.__name = "BattleCameraFollowPilot"
 
-local var_0_3 = var_0_0.Battle.BattleCameraFollowPilot
+local BattleCameraFollowPilot = ys.Battle.BattleCameraFollowPilot
 
-function var_0_3.Ctor(arg_1_0)
-	arg_1_0.point = Vector3.zero
+--- @class BattleCameraFollowPilot
+--- 摄像机跟随舰队
+--- 用于让摄像机跟随舰队移动。通过 FleetVO 获取舰队的运动组件，
+--- 计算摄像机应处的位置（考虑黄金比例偏移、正常高度和透视修正）。
+--- 这是默认的摄像机跟随模式。
+
+--- @return nil
+--- 构造函数，初始化零向量缓存点
+function BattleCameraFollowPilot.Ctor(self)
+	self.point = Vector3.zero
 end
 
-function var_0_3.SetFleetVO(arg_2_0, arg_2_1)
-	arg_2_0._fleetMotion = arg_2_1:GetMotion()
+--- @param fleetVO BattleFleetVO 要跟随的舰队 VO
+--- @return nil
+--- 设置要跟随的舰队 VO，获取其运动组件
+function BattleCameraFollowPilot.SetFleetVO(self, fleetVO)
+	self._fleetMotion = fleetVO:GetMotion()
 end
 
-function var_0_3.SetGoldenRation(arg_3_0, arg_3_1)
-	arg_3_0._cameraGoldenOffset = arg_3_1
+--- @param goldenOffset number 黄金比例横向偏移值
+--- @return nil
+--- 设置黄金比例偏移量（用于将舰队置于屏幕黄金比例位置）
+--- 该值通过屏幕宽度 * 0.618 计算得出，并被转换为世界坐标偏移
+function BattleCameraFollowPilot.SetGoldenRation(self, goldenOffset)
+	self._cameraGoldenOffset = goldenOffset
 end
 
-function var_0_3.GetCameraPos(arg_4_0)
-	local var_4_0 = arg_4_0.point:Copy(arg_4_0._fleetMotion:GetPos())
+--- @return Vector3 跟随舰队的摄像机位置
+--- 获取跟随舰队时的摄像机位置
+--- 取舰队位置 + 黄金比例偏移 + 正常高度，再根据透视修正 z 轴
+function BattleCameraFollowPilot.GetCameraPos(self)
+	local fleetPos = self.point:Copy(self._fleetMotion:GetPos())
 
-	var_4_0.x = var_4_0.x + arg_4_0._cameraGoldenOffset
-	var_4_0.y = var_4_0.y + var_0_2.CameraNormalHeight
-	var_4_0.z = var_4_0.z - var_4_0.y / var_0_2._camera_radian_x_tan
+	-- x 轴叠加黄金比例偏移，使舰队位于画面视觉重心
+	fleetPos.x = fleetPos.x + self._cameraGoldenOffset
+	-- y 轴抬高到正常观察高度
+	fleetPos.y = fleetPos.y + BattleVariable.CameraNormalHeight
+	-- 根据高度进行透视修正：z 轴后退
+	fleetPos.z = fleetPos.z - fleetPos.y / BattleVariable._camera_radian_x_tan
 
-	return var_4_0
+	return fleetPos
 end
 
-function var_0_3.Dispose(arg_5_0)
-	arg_5_0._fleetMotion = nil
+--- @return nil
+--- 清理函数
+function BattleCameraFollowPilot.Dispose(self)
+	self._fleetMotion = nil
 end

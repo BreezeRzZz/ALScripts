@@ -1,56 +1,97 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.FreeFloatOxyState = class("FreeFloatOxyState", var_0_0.Battle.IOxyState)
-var_0_0.Battle.FreeFloatOxyState.__name = "FreeFloatOxyState"
+--- @class FreeFloatOxyState : IOxyState
+--- 自由上浮状态：自由模式(Free Mode)下的上浮状态。
+--- 与普通FloatOxyState类似，但RunMode返回true表示处于自由航行模式。
+--- 此状态下可见、潜航和浮航武器均可使用、氧气持续恢复。
+--- 氧气条可见(与普通FloatOxyState不同)。
+---
+--- 【武器可用性】潜航武器(DIVE) + 浮航武器(FLOAT) 均可使用
+--- 【氧气消耗/恢复】恢复氧气(OxyRecover, STATE_FREE_FLOAT)
+--- 【状态转换条件】无主动转换逻辑（RunMode标识自由模式）
+ys.Battle.FreeFloatOxyState = class("FreeFloatOxyState", ys.Battle.IOxyState)
+ys.Battle.FreeFloatOxyState.__name = "FreeFloatOxyState"
 
-local var_0_3 = var_0_0.Battle.FreeFloatOxyState
+local FreeFloatOxyState = ys.Battle.FreeFloatOxyState
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- 构造函数
+--- @param self FreeFloatOxyState
+--- @return nil
+function FreeFloatOxyState.Ctor(self)
+	FreeFloatOxyState.super.Ctor(self)
 end
 
-function var_0_3.GetWeaponUseableList(arg_2_0)
+--- 获取可使用的武器类型列表
+--- 自由上浮状态：潜航武器和浮航武器均可使用
+--- @param self FreeFloatOxyState
+--- @return table: {BattleConst.OXY_STATE.DIVE, BattleConst.OXY_STATE.FLOAT}
+function FreeFloatOxyState.GetWeaponUseableList(self)
 	return {
-		var_0_1.OXY_STATE.DIVE,
-		var_0_1.OXY_STATE.FLOAT
+		BattleConst.OXY_STATE.DIVE,
+		BattleConst.OXY_STATE.FLOAT
 	}
 end
 
-function var_0_3.UpdateCldData(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_2:GetDiveState()
-	local var_3_1 = arg_3_0:GetDiveState()
+--- 更新碰撞数据
+--- 将单位的碰撞状态设为FLOAT，如果前后状态不同则启用碰撞
+--- @param self FreeFloatOxyState: 新状态
+--- @param unit BattleWalkUnit: 潜艇单位
+--- @param prevState IOxyState: 切换前状态
+--- @return nil
+function FreeFloatOxyState.UpdateCldData(self, unit, prevState)
+	local prevDiveState = prevState:GetDiveState()
+	local currentDiveState = self:GetDiveState()
 
-	arg_3_1:GetCldData().Surface = var_3_1
+	unit:GetCldData().Surface = currentDiveState
 
-	if var_3_0 ~= var_3_1 then
-		var_0_2.UnitCldEnable(arg_3_1)
+	if prevDiveState ~= currentDiveState then
+		BattleAttr.UnitCldEnable(unit)
 	end
 end
 
-function var_0_3.GetDiveState(arg_4_0)
-	return var_0_1.OXY_STATE.FLOAT
+--- 获取潜航状态：FLOAT（自由上浮）
+--- @param self FreeFloatOxyState
+--- @return number: BattleConst.OXY_STATE.FLOAT
+function FreeFloatOxyState.GetDiveState(self)
+	return BattleConst.OXY_STATE.FLOAT
 end
 
-function var_0_3.GetBubbleFlag(arg_5_0)
+--- 获取气泡标记：自由上浮时不产生气泡
+--- @param self FreeFloatOxyState
+--- @return boolean: false
+function FreeFloatOxyState.GetBubbleFlag(self)
 	return false
 end
 
-function var_0_3.DoUpdateOxy(arg_6_0, arg_6_1)
-	arg_6_1:OxyRecover(var_0_0.Battle.OxyState.STATE_FREE_FLOAT)
+--- 执行氧气更新：自由上浮时恢复氧气（使用STATE_FREE_FLOAT速率）
+--- @param self FreeFloatOxyState
+--- @param oxyState OxyState: 氧气状态管理器
+--- @return nil
+function FreeFloatOxyState.DoUpdateOxy(self, oxyState)
+	oxyState:OxyRecover(ys.Battle.OxyState.STATE_FREE_FLOAT)
 end
 
-function var_0_3.IsVisible(arg_7_0)
+--- 自由上浮状态对敌方可见
+--- @param self FreeFloatOxyState
+--- @return boolean: true
+function FreeFloatOxyState.IsVisible(self)
 	return true
 end
 
-function var_0_3.GetBarVisible(arg_8_0)
+--- 氧气条可见：自由上浮时显示氧气条
+--- @param self FreeFloatOxyState
+--- @return boolean: true
+function FreeFloatOxyState.GetBarVisible(self)
 	return true
 end
 
-function var_0_3.RunMode(arg_9_0)
+--- 自由模式
+--- @param self FreeFloatOxyState
+--- @return boolean: true
+function FreeFloatOxyState.RunMode(self)
 	return true
 end

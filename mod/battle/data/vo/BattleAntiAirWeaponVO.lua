@@ -1,154 +1,189 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleAttr
-local var_0_3 = var_0_1.AntiAirConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleAttr = ys.Battle.BattleAttr
+local AntiAirConfig = BattleConfig.AntiAirConfig
 
-var_0_0.Battle.BattleAntiAirWeaponVO = class("BattleAntiAirWeaponVO", var_0_0.Battle.BattlePlayerWeaponVO)
-var_0_0.Battle.BattleAntiAirWeaponVO.__name = "BattleAntiAirWeaponVO"
+ys.Battle.BattleAntiAirWeaponVO = class("BattleAntiAirWeaponVO", ys.Battle.BattlePlayerWeaponVO)
+ys.Battle.BattleAntiAirWeaponVO.__name = "BattleAntiAirWeaponVO"
 
-local var_0_4 = var_0_0.Battle.BattleAntiAirWeaponVO
+local BattleAntiAirWeaponVO = ys.Battle.BattleAntiAirWeaponVO
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1)
+--- @class BattleAntiAirWeaponVO : BattlePlayerWeaponVO
+--- @param GCD number 防空炮全局冷却时间
+--- @return nil
+function BattleAntiAirWeaponVO.Ctor(self, GCD)
+	BattleAntiAirWeaponVO.super.Ctor(self, GCD)
 
-	arg_1_0._restoreDenominator = var_0_3.const_A
+	self._restoreDenominator = AntiAirConfig.const_A
 
-	arg_1_0:ResetCost()
+	self:ResetCost()
 
-	arg_1_0._restoreInterval = var_0_3.Restore_Interval
+	self._restoreInterval = AntiAirConfig.Restore_Interval
 end
 
-function var_0_4.SetBattleFleetVO(arg_2_0, arg_2_1)
-	arg_2_0._battleFleetVO = arg_2_1
+--- @param battleFleetVO BattleFleetVO 所属舰队VO
+--- @return nil
+function BattleAntiAirWeaponVO.SetBattleFleetVO(self, battleFleetVO)
+	self._battleFleetVO = battleFleetVO
 end
 
-function var_0_4.AppendWeapon(arg_3_0, arg_3_1)
-	var_0_4.super.AppendWeapon(arg_3_0, arg_3_1)
-	arg_3_1:SetTotalDurabilityInfo(arg_3_0)
+--- @param weapon BattleAntiAirWeaponUnit
+--- @return nil
+--- 添加防空武器，并设置耐久度信息
+function BattleAntiAirWeaponVO.AppendWeapon(self, weapon)
+	BattleAntiAirWeaponVO.super.AppendWeapon(self, weapon)
+	weapon:SetTotalDurabilityInfo(self)
 end
 
-function var_0_4.RemoveWeapon(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0.deleteElementFromArray(arg_4_1, arg_4_0._weaponList)
+--- @param weapon BattleAntiAirWeaponUnit
+--- @return number removedIndex 被移除的武器索引，-1表示未找到
+function BattleAntiAirWeaponVO.RemoveWeapon(self, weapon)
+	local removedIndex = self.deleteElementFromArray(weapon, self._weaponList)
 
-	arg_4_0._total = arg_4_0._total - 1
-	arg_4_0._count = arg_4_0._count - 1
+	self._total = self._total - 1
+	self._count = self._count - 1
 
-	return var_4_0
+	return removedIndex
 end
 
-function var_0_4.SetMax(arg_5_0, arg_5_1)
-	if arg_5_1 > arg_5_0._max then
-		arg_5_0._current = arg_5_0._current + (arg_5_1 - arg_5_0._max)
+--- @param maxCount number 最大弹药数
+--- @return nil
+--- 设置最大弹药数，同时按比例调整当前弹药
+function BattleAntiAirWeaponVO.SetMax(self, maxCount)
+	if maxCount > self._max then
+		self._current = self._current + (maxCount - self._max)
 	end
 
-	var_0_4.super.SetMax(arg_5_0, arg_5_1)
+	BattleAntiAirWeaponVO.super.SetMax(self, maxCount)
 
-	if arg_5_0._current > arg_5_0._max then
-		arg_5_0._current = arg_5_0._max
+	if self._current > self._max then
+		self._current = self._max
 	end
 end
 
-function var_0_4.SetAverageReload(arg_6_0, arg_6_1)
-	arg_6_0._fleetReload = arg_6_1
+--- @param fleetReload number 舰队平均装填值
+--- @return nil
+function BattleAntiAirWeaponVO.SetAverageReload(self, fleetReload)
+	self._fleetReload = fleetReload
 end
 
-function var_0_4.GetMaxRange(arg_7_0)
-	local var_7_0 = arg_7_0._battleFleetVO:GetScoutList()
-	local var_7_1 = 0
-	local var_7_2 = #var_7_0
+--- @return number maxRange
+--- 获取舰队中所有防空武器的最大射程
+function BattleAntiAirWeaponVO.GetMaxRange(self)
+	local scoutList = self._battleFleetVO:GetScoutList()
+	local maxRange = 0
+	local scoutCount = #scoutList
 
-	if var_7_2 > 0 then
-		local var_7_3
+	if scoutCount > 0 then
+		local firstScoutWithAA
 
-		for iter_7_0 = 1, var_7_2 do
-			if #var_7_0[iter_7_0]:GetAntiAirWeapon() > 0 then
-				var_7_3 = var_7_0[iter_7_0]
+		for i = 1, scoutCount do
+			if #scoutList[i]:GetAntiAirWeapon() > 0 then
+				firstScoutWithAA = scoutList[i]
 
 				break
 			end
 		end
 
-		if var_7_3 then
-			local var_7_4 = var_7_3:GetAntiAirWeapon()
+		if firstScoutWithAA then
+			local aaWeaponList = firstScoutWithAA:GetAntiAirWeapon()
 
-			for iter_7_1, iter_7_2 in ipairs(var_7_4) do
-				var_7_1 = math.max(var_7_1, iter_7_2:GetTemplateData().range)
+			for _, aaWeapon in ipairs(aaWeaponList) do
+				maxRange = math.max(maxRange, aaWeapon:GetTemplateData().range)
 			end
 		end
 	end
 
-	return var_7_1
+	return maxRange
 end
 
-function var_0_4.SetActive(arg_8_0, arg_8_1)
-	for iter_8_0, iter_8_1 in ipairs(arg_8_0._weaponList) do
-		iter_8_1:SetActive(arg_8_1)
+--- @param isActive boolean
+--- @return nil
+function BattleAntiAirWeaponVO.SetActive(self, isActive)
+	for _, weapon in ipairs(self._weaponList) do
+		weapon:SetActive(isActive)
 	end
 end
 
-function var_0_4.Restore(arg_9_0)
-	arg_9_0._current = arg_9_0._current + arg_9_0._fleetReload / arg_9_0._restoreDenominator
+--- @return nil
+--- 每帧恢复：current += fleetReload / restoreDenominator
+function BattleAntiAirWeaponVO.Restore(self)
+	self._current = self._current + self._fleetReload / self._restoreDenominator
 
-	arg_9_0:checkRestorState()
+	self:checkRestorState()
 end
 
-function var_0_4.RestoreRate(arg_10_0, arg_10_1)
-	arg_10_0._current = arg_10_0._current + arg_10_0._max * arg_10_1
+--- @param rate number 恢复比例（相对于max）
+--- @return nil
+--- 按比例恢复弹药
+function BattleAntiAirWeaponVO.RestoreRate(self, rate)
+	self._current = self._current + self._max * rate
 
-	arg_10_0:checkRestorState()
+	self:checkRestorState()
 end
 
-function var_0_4.checkRestorState(arg_11_0)
-	if arg_11_0._current >= arg_11_0._max then
-		arg_11_0._current = arg_11_0._max
-		arg_11_0._restoreDenominator = var_0_3.const_A
-		arg_11_0._isOverLoad = false
+--- @return nil
+--- 检查是否恢复到满，若满则重置回const_A恢复速率
+function BattleAntiAirWeaponVO.checkRestorState(self)
+	if self._current >= self._max then
+		self._current = self._max
+		self._restoreDenominator = AntiAirConfig.const_A
+		self._isOverLoad = false
 
-		arg_11_0:RemoveRestoreTimer()
-		arg_11_0:DispatchOverLoadChange()
+		self:RemoveRestoreTimer()
+		self:DispatchOverLoadChange()
 	end
 end
 
-function var_0_4.Consume(arg_12_0)
-	arg_12_0:RemoveRestoreTimer()
+--- @return nil
+--- 消耗一次防空弹药，若耗尽则切换到const_B（更慢的恢复速率）
+function BattleAntiAirWeaponVO.Consume(self)
+	self:RemoveRestoreTimer()
 
-	arg_12_0._current = arg_12_0._current - arg_12_0._consumeNormal
+	self._current = self._current - self._consumeNormal
 
-	if arg_12_0._current <= 0 then
-		arg_12_0._current = 0
-		arg_12_0._restoreDenominator = var_0_3.const_B
-		arg_12_0._isOverLoad = true
+	if self._current <= 0 then
+		self._current = 0
+		self._restoreDenominator = AntiAirConfig.const_B
+		self._isOverLoad = true
 
-		arg_12_0:DispatchOverLoadChange()
+		self:DispatchOverLoadChange()
 	end
 end
 
-function var_0_4.ResetCost(arg_13_0, arg_13_1)
-	arg_13_0._consumeNormal = arg_13_1 or var_0_3.const_N
+--- @param consumeNormal number 每次消耗量，默认取AntiAirConfig.const_N
+--- @return nil
+function BattleAntiAirWeaponVO.ResetCost(self, consumeNormal)
+	self._consumeNormal = consumeNormal or AntiAirConfig.const_N
 end
 
-function var_0_4.AddRestoreTimer(arg_14_0)
-	if arg_14_0._restoreTimer or arg_14_0._current >= arg_14_0._max then
+--- @return nil
+--- 添加防空弹药恢复计时器（无限循环）
+function BattleAntiAirWeaponVO.AddRestoreTimer(self)
+	if self._restoreTimer or self._current >= self._max then
 		return
 	end
 
-	local function var_14_0()
-		arg_14_0:Restore()
+	local function restoreFunc()
+		self:Restore()
 	end
 
-	arg_14_0._restoreTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AARestoreTimer", -1, arg_14_0._restoreInterval, var_14_0, true)
+	self._restoreTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AARestoreTimer", -1, self._restoreInterval, restoreFunc, true)
 end
 
-function var_0_4.RemoveRestoreTimer(arg_16_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_16_0._restoreTimer)
+--- @return nil
+--- 移除恢复计时器
+function BattleAntiAirWeaponVO.RemoveRestoreTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._restoreTimer)
 
-	arg_16_0._restoreTimer = nil
+	self._restoreTimer = nil
 end
 
-function var_0_4.Dispose(arg_17_0)
-	arg_17_0._battleFleetVO = nil
+--- @return nil
+function BattleAntiAirWeaponVO.Dispose(self)
+	self._battleFleetVO = nil
 
-	var_0_4.super.Dispose(arg_17_0)
+	BattleAntiAirWeaponVO.super.Dispose(self)
 end

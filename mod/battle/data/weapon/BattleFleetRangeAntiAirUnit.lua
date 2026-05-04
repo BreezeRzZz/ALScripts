@@ -1,315 +1,341 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = var_0_0.Battle.BattleVariable
-local var_0_8 = var_0_3.WeaponSearchType
-local var_0_9 = var_0_3.WeaponSuppressType
-local var_0_10 = class("BattleFleetRangeAntiAirUnit", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local WeaponSearchType = BattleConst.WeaponSearchType
+local WeaponSuppressType = BattleConst.WeaponSuppressType
+local BattleFleetRangeAntiAirUnit = class("BattleFleetRangeAntiAirUnit", ys.Battle.BattleWeaponUnit)
 
-var_0_0.Battle.BattleFleetRangeAntiAirUnit = var_0_10
-var_0_10.__name = "BattleFleetRangeAntiAirUnit"
+ys.Battle.BattleFleetRangeAntiAirUnit = BattleFleetRangeAntiAirUnit
+BattleFleetRangeAntiAirUnit.__name = "BattleFleetRangeAntiAirUnit"
 
-function var_0_10.Ctor(arg_1_0)
-	var_0_10.super.Ctor(arg_1_0)
+--- @class BattleFleetRangeAntiAirUnit : BattleWeaponUnit
+--- 舰队范围防空单元：继承自BattleWeaponUnit，由多个船员单元的远程防空武器组成，对指定区域内的敌机造成AOE伤害
+function BattleFleetRangeAntiAirUnit.Ctor(self)
+	BattleFleetRangeAntiAirUnit.super.Ctor(self)
 
-	arg_1_0._currentState = var_0_10.STATE_DISABLE
+	self._currentState = BattleFleetRangeAntiAirUnit.STATE_DISABLE
 
-	arg_1_0:init()
+	self:init()
 end
 
-function var_0_10.init(arg_2_0)
-	arg_2_0._crewUnitList = {}
-	arg_2_0._hitFXResIDList = {}
-	arg_2_0._range = 0
-	arg_2_0._majorEmitterList = {}
-	arg_2_0._GCD = 0.5
-	arg_2_0._tmpData = {}
-	arg_2_0._tmpData.bullet_ID = {
-		var_0_4.AntiAirConfig.RangeBulletID
+--- 初始化各项属性，构造临时的武器模板数据
+function BattleFleetRangeAntiAirUnit.init(self)
+	self._crewUnitList = {}
+	self._hitFXResIDList = {}
+	self._range = 0
+	self._majorEmitterList = {}
+	self._GCD = 0.5
+	self._tmpData = {}
+	self._tmpData.bullet_ID = {
+		BattleConfig.AntiAirConfig.RangeBulletID
 	}
-	arg_2_0._tmpData.barrage_ID = {
-		var_0_4.AntiAirConfig.RangeBarrageID
+	self._tmpData.barrage_ID = {
+		BattleConfig.AntiAirConfig.RangeBarrageID
 	}
-	arg_2_0._tmpData.aim_type = var_0_3.WeaponAimType.AIM
-	arg_2_0._tmpData.axis_angle = 0
-	arg_2_0._tmpData.search_type = var_0_8.SECTOR
-	arg_2_0._tmpData.suppress = var_0_9.NONE
-	arg_2_0._tmpData.queue = 0
-	arg_2_0._tmpData.action_index = ""
-	arg_2_0._tmpData.fire_sfx = "battle/cannon-air"
-	arg_2_0._tmpData.spawn_bound = var_0_4.AntiAirConfig.RangeAntiAirBone
-	arg_2_0._tmpData.shakescreen = 0
-	arg_2_0._tmpData.fire_fx_loop_type = 0
-	arg_2_0._tmpData.attack_attribute = var_0_3.WeaponDamageAttr.AIR
-	arg_2_0._tmpData.attack_attribute_ratio = 100
-	arg_2_0._tmpData.expose = 0
-	arg_2_0._fireFXFlag = arg_2_0._tmpData.fire_fx_loop_type
-	arg_2_0._preCastInfo = {}
-	arg_2_0._convertedBulletVelocity = var_0_2.ConvertBulletSpeed(var_0_5.GetBulletTmpDataFromID(arg_2_0._tmpData.bullet_ID[1]).velocity)
-	arg_2_0._bulletList = arg_2_0._tmpData.bullet_ID
+	self._tmpData.aim_type = BattleConst.WeaponAimType.AIM
+	self._tmpData.axis_angle = 0
+	self._tmpData.search_type = WeaponSearchType.SECTOR
+	self._tmpData.suppress = WeaponSuppressType.NONE
+	self._tmpData.queue = 0
+	self._tmpData.action_index = ""
+	self._tmpData.fire_sfx = "battle/cannon-air"
+	self._tmpData.spawn_bound = BattleConfig.AntiAirConfig.RangeAntiAirBone
+	self._tmpData.shakescreen = 0
+	self._tmpData.fire_fx_loop_type = 0
+	self._tmpData.attack_attribute = BattleConst.WeaponDamageAttr.AIR
+	self._tmpData.attack_attribute_ratio = 100
+	self._tmpData.expose = 0
+	self._fireFXFlag = self._tmpData.fire_fx_loop_type
+	self._preCastInfo = {}
+	self._convertedBulletVelocity = BattleFormulas.ConvertBulletSpeed(BattleDataFunction.GetBulletTmpDataFromID(self._tmpData.bullet_ID[1]).velocity)
+	self._bulletList = self._tmpData.bullet_ID
 
-	arg_2_0:ShiftBarrage(arg_2_0._tmpData.barrage_ID)
+	self:ShiftBarrage(self._tmpData.barrage_ID)
 end
 
-function var_0_10.AppendCrewUnit(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_1:GetFleetRangeAntiAirList()
+--- @param crewUnit CrewUnit 加入的船员单元
+--- 添加船员单元，读取其远程防空武器列表并刷新属性
+function BattleFleetRangeAntiAirUnit.AppendCrewUnit(self, crewUnit)
+	local fleetRangeAAList = crewUnit:GetFleetRangeAntiAirList()
 
-	if #var_3_0 > 0 then
-		arg_3_0._currentState = var_0_10.STATE_READY
-		arg_3_0._crewUnitList[arg_3_1] = var_3_0
+	if #fleetRangeAAList > 0 then
+		self._currentState = BattleFleetRangeAntiAirUnit.STATE_READY
+		self._crewUnitList[crewUnit] = fleetRangeAAList
 
-		arg_3_0:flush()
+		self:flush()
 	end
 end
 
-function var_0_10.RemoveCrewUnit(arg_4_0, arg_4_1)
-	if arg_4_0._crewUnitList[arg_4_1] then
-		if arg_4_1 == arg_4_0._host then
-			arg_4_0._host:DetachFleetRangeAAWeapon()
+--- @param crewUnit CrewUnit 移除的船员单元
+--- 如果移除的是当前宿主，先解除绑定
+function BattleFleetRangeAntiAirUnit.RemoveCrewUnit(self, crewUnit)
+	if self._crewUnitList[crewUnit] then
+		if crewUnit == self._host then
+			self._host:DetachFleetRangeAAWeapon()
 		end
 
-		arg_4_0._crewUnitList[arg_4_1] = nil
+		self._crewUnitList[crewUnit] = nil
 
-		arg_4_0:flush()
+		self:flush()
 	end
 end
 
-function var_0_10.FlushCrewUnit(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_1:GetFleetRangeAntiAirList()
+--- @param crewUnit CrewUnit 需要刷新的船员单元
+--- 根据其远程防空武器列表，为空则移除，否则更新
+function BattleFleetRangeAntiAirUnit.FlushCrewUnit(self, crewUnit)
+	local fleetRangeAAList = crewUnit:GetFleetRangeAntiAirList()
 
-	if #var_5_0 <= 0 then
-		arg_5_0:RemoveCrewUnit(arg_5_1)
-	elseif arg_5_0._crewUnitList[arg_5_1] == nil then
-		arg_5_0:AppendCrewUnit(arg_5_1)
+	if #fleetRangeAAList <= 0 then
+		self:RemoveCrewUnit(crewUnit)
+	elseif self._crewUnitList[crewUnit] == nil then
+		self:AppendCrewUnit(crewUnit)
 	else
-		arg_5_0._crewUnitList[arg_5_1] = var_5_0
+		self._crewUnitList[crewUnit] = fleetRangeAAList
 
-		arg_5_0:flush()
+		self:flush()
 	end
 end
 
-function var_0_10.Spawn(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0
-	local var_6_1 = arg_6_0:getAimPoint(arg_6_2)
-	local var_6_2 = arg_6_0._dataProxy:CreateBulletUnit(arg_6_1, arg_6_0._host, arg_6_0, var_6_1)
+--- @param bulletID number 子弹ID
+--- @param target BattleUnit 目标
+--- @return BattleBulletUnit 生成的子弹
+function BattleFleetRangeAntiAirUnit.Spawn(self, bulletID, target)
+	local spawnBullet
+	local aimPoint = self:getAimPoint(target)
+	local bullet = self._dataProxy:CreateBulletUnit(bulletID, self._host, self, aimPoint)
 
-	arg_6_0:setBulletSkin(var_6_2, arg_6_1)
-	arg_6_0:TriggerBuffWhenSpawn(var_6_2)
+	self:setBulletSkin(bullet, bulletID)
+	self:TriggerBuffWhenSpawn(bullet)
 
-	return var_6_2
+	return bullet
 end
 
-function var_0_10.getAimPoint(arg_7_0, arg_7_1)
-	local var_7_0
+--- @param target BattleUnit|nil 目标
+--- @return Vector3 瞄准点坐标
+--- 有目标则瞄准目标位置，否则朝前方最远射程处发射
+function BattleFleetRangeAntiAirUnit.getAimPoint(self, target)
+	local aimPoint
 
 	if target then
-		local var_7_1 = arg_7_1:GetPosition()
+		local targetPos = target:GetPosition()
 
-		var_7_0 = Vector3(var_7_1.x + arg_7_0._aimOffset, 0, var_7_1.z)
+		aimPoint = Vector3(targetPos.x + self._aimOffset, 0, targetPos.z)
 	else
-		local var_7_2 = arg_7_0:GetHost():GetPosition()
-		local var_7_3 = var_7_2.z
-		local var_7_4 = var_7_2.x + arg_7_0._maxRangeSqr * arg_7_0._hostIFF + arg_7_0._aimOffset
+		local hostPos = self:GetHost():GetPosition()
+		local aimZ = hostPos.z
+		local aimX = hostPos.x + self._maxRangeSqr * self._hostIFF + self._aimOffset
 
-		var_7_0 = Vector3(var_7_4, 0, var_7_3)
+		aimPoint = Vector3(aimX, 0, aimZ)
 	end
 
-	return var_7_0
+	return aimPoint
 end
 
-function var_0_10.GetCrewUnitList(arg_8_0)
-	return arg_8_0._crewUnitList
+--- @return table<CrewUnit, table> 船员单元列表
+function BattleFleetRangeAntiAirUnit.GetCrewUnitList(self)
+	return self._crewUnitList
 end
 
-function var_0_10.GetRange(arg_9_0)
-	return arg_9_0._range
+--- @return number 防空射程
+function BattleFleetRangeAntiAirUnit.GetRange(self)
+	return self._range
 end
 
-function var_0_10.GetAttackAngle(arg_10_0)
-	return arg_10_0._aimAngle
+--- @return number 攻击角度
+function BattleFleetRangeAntiAirUnit.GetAttackAngle(self)
+	return self._aimAngle
 end
 
-function var_0_10.GetReloadTime(arg_11_0)
-	return arg_11_0._interval
+--- @return number 装填时间
+function BattleFleetRangeAntiAirUnit.GetReloadTime(self)
+	return self._interval
 end
 
-function var_0_10.flush(arg_12_0)
-	arg_12_0._range = 0
-	arg_12_0._interval = 0
-	arg_12_0._aimAngle = 0
-	arg_12_0._aimOffset = 0
-	arg_12_0._maxRangeSqr = 0
-	arg_12_0._minRangeSqr = 0
-	arg_12_0._hitFXResIDList = {}
-	arg_12_0._SFXID = nil
-	arg_12_0._exploRange = 0
+--- 刷新防空属性：遍历所有船员单元的远程防空武器，按防空火力权重分配伤害
+function BattleFleetRangeAntiAirUnit.flush(self)
+	self._range = 0
+	self._interval = 0
+	self._aimAngle = 0
+	self._aimOffset = 0
+	self._maxRangeSqr = 0
+	self._minRangeSqr = 0
+	self._hitFXResIDList = {}
+	self._SFXID = nil
+	self._exploRange = 0
 
-	local var_12_0 = {}
-	local var_12_1 = 0
+	local weightInput = {}
+	local weaponCount = 0
 
-	for iter_12_0, iter_12_1 in pairs(arg_12_0._crewUnitList) do
-		for iter_12_2, iter_12_3 in ipairs(iter_12_1) do
-			var_12_1 = var_12_1 + 1
-			arg_12_0._interval = arg_12_0._interval + iter_12_3:GetReloadTime()
+	for crewUnit, weaponList in pairs(self._crewUnitList) do
+		for _, weapon in ipairs(weaponList) do
+			weaponCount = weaponCount + 1
+			self._interval = self._interval + weapon:GetReloadTime()
 
-			local var_12_2 = iter_12_3:GetTemplateData()
+			local weaponTempData = weapon:GetTemplateData()
 
-			arg_12_0._range = arg_12_0._range + var_12_2.range
-			arg_12_0._SFXID = var_12_2.fire_sfx
-			arg_12_0._aimAngle = arg_12_0._aimAngle + iter_12_3:GetAttackAngle()
-			arg_12_0._maxRangeSqr = arg_12_0._maxRangeSqr + iter_12_3:GetWeaponMaxRange()
-			arg_12_0._minRangeSqr = arg_12_0._minRangeSqr + iter_12_3:GetWeaponMinRange()
+			self._range = self._range + weaponTempData.range
+			self._SFXID = weaponTempData.fire_sfx
+			self._aimAngle = self._aimAngle + weapon:GetAttackAngle()
+			self._maxRangeSqr = self._maxRangeSqr + weapon:GetWeaponMaxRange()
+			self._minRangeSqr = self._minRangeSqr + weapon:GetWeaponMinRange()
 
-			local var_12_3 = var_0_5.GetBulletTmpDataFromID(iter_12_3:GetTemplateData().bullet_ID[1])
+			local bulletTemp = BattleDataFunction.GetBulletTmpDataFromID(weapon:GetTemplateData().bullet_ID[1])
 
-			arg_12_0._hitFXResIDList[iter_12_3] = var_12_3.hit_fx
-			arg_12_0._exploRange = arg_12_0._exploRange + var_12_3.hit_type.range
-			arg_12_0._aimOffset = arg_12_0._aimOffset + (var_12_3.extra_param.aim_offset or 0)
+			self._hitFXResIDList[weapon] = bulletTemp.hit_fx
+			self._exploRange = self._exploRange + bulletTemp.hit_type.range
+			self._aimOffset = self._aimOffset + (bulletTemp.extra_param.aim_offset or 0)
 		end
 
-		local var_12_4 = iter_12_0:GetAttrByName("antiAirPower")
-		local var_12_5 = var_0_2.AntiAirPowerWeight(var_12_4)
-		local var_12_6 = {
-			weight = var_12_5,
-			rst = iter_12_0
+		local antiAirPower = crewUnit:GetAttrByName("antiAirPower")
+		local weight = BattleFormulas.AntiAirPowerWeight(antiAirPower)
+		local weightEntry = {
+			weight = weight,
+			rst = crewUnit
 		}
 
-		var_12_0[#var_12_0 + 1] = var_12_6
+		weightInput[#weightInput + 1] = weightEntry
 	end
 
-	if var_12_1 == 0 then
-		arg_12_0._currentState = var_0_10.STATE_DISABLE
+	if weaponCount == 0 then
+		self._currentState = BattleFleetRangeAntiAirUnit.STATE_DISABLE
 	else
-		arg_12_0:SwitchHost()
+		self:SwitchHost()
 
-		arg_12_0._maxRangeSqr = arg_12_0._maxRangeSqr / var_12_1
-		arg_12_0._minRangeSqr = arg_12_0._minRangeSqr / var_12_1
-		arg_12_0._exploRange = arg_12_0._exploRange / var_12_1
-		arg_12_0._aimAngle = arg_12_0._aimAngle / var_12_1
-		arg_12_0._aimOffset = arg_12_0._aimOffset / var_12_1 * arg_12_0._host:GetIFF()
-		arg_12_0._interval = arg_12_0._interval / var_12_1 + 0.5
-		arg_12_0._weightList, arg_12_0._totalWeight = var_0_2.GenerateWeightList(var_12_0)
+		self._maxRangeSqr = self._maxRangeSqr / weaponCount
+		self._minRangeSqr = self._minRangeSqr / weaponCount
+		self._exploRange = self._exploRange / weaponCount
+		self._aimAngle = self._aimAngle / weaponCount
+		self._aimOffset = self._aimOffset / weaponCount * self._host:GetIFF()
+		self._interval = self._interval / weaponCount + 0.5
+		self._weightList, self._totalWeight = BattleFormulas.GenerateWeightList(weightInput)
 	end
 end
 
-function var_0_10.DoAreaSplit(arg_13_0, arg_13_1)
-	local function var_13_0(arg_14_0)
-		local var_14_0 = {}
-		local var_14_1 = arg_13_0._dataProxy:GetAircraftList()
+--- @param bullet BattleBulletUnit 子弹
+--- 区域AOE伤害：在爆炸范围内对敌方飞机造成防空伤害
+function BattleFleetRangeAntiAirUnit.DoAreaSplit(self, bullet)
+	local function areaDamage(areaTargets)
+		local aliveTargets = {}
+		local aircraftList = self._dataProxy:GetAircraftList()
 
-		for iter_14_0, iter_14_1 in ipairs(arg_14_0) do
-			if iter_14_1.Active then
-				local var_14_2 = var_14_1[iter_14_1.UID]
+		for _, areaEntry in ipairs(areaTargets) do
+			if areaEntry.Active then
+				local aircraft = aircraftList[areaEntry.UID]
 
-				if var_14_2 and var_14_2:IsVisitable() then
-					var_14_0[#var_14_0 + 1] = var_14_2
+				if aircraft and aircraft:IsVisitable() then
+					aliveTargets[#aliveTargets + 1] = aircraft
 				end
 			end
 		end
 
-		local var_14_3 = var_0_2.CalculateFleetAntiAirTotalDamage(arg_13_0)
-		local var_14_4 = var_0_2.GetMeteoDamageRatio(#var_14_0)
+		local totalDamage = BattleFormulas.CalculateFleetAntiAirTotalDamage(self)
+		local meteoRatio = BattleFormulas.GetMeteoDamageRatio(#aliveTargets)
 
-		for iter_14_2, iter_14_3 in ipairs(var_14_0) do
-			local var_14_5 = math.max(1, math.floor(var_14_3 * var_14_4[iter_14_2]))
-			local var_14_6 = var_0_2.WeightListRandom(arg_13_0._weightList, arg_13_0._totalWeight)
+		for index, target in ipairs(aliveTargets) do
+			local dmg = math.max(1, math.floor(totalDamage * meteoRatio[index]))
+			local rst = BattleFormulas.WeightListRandom(self._weightList, self._totalWeight)
 
-			arg_13_0._dataProxy:HandleDirectDamage(iter_14_3, var_14_5, var_14_6)
+			self._dataProxy:HandleDirectDamage(target, dmg, rst)
 		end
 	end
 
-	for iter_13_0, iter_13_1 in pairs(arg_13_0._crewUnitList) do
-		iter_13_0:TriggerBuff(var_0_3.BuffEffectType.ON_ANTIAIR_FIRE_FAR, {})
-		iter_13_0:PlayFX(iter_13_1[1]:GetTemplateData().fire_fx, true)
+	for crewUnit, _ in pairs(self._crewUnitList) do
+		crewUnit:TriggerBuff(BattleConst.BuffEffectType.ON_ANTIAIR_FIRE_FAR, {})
+		crewUnit:PlayFX(self._crewUnitList[crewUnit][1]:GetTemplateData().fire_fx, true)
 	end
 
-	for iter_13_2, iter_13_3 in pairs(arg_13_0._hitFXResIDList) do
-		local var_13_1 = (math.random() * 2 - 1) * arg_13_0._exploRange
-		local var_13_2 = (math.random() * 2 - 1) * arg_13_0._exploRange
-		local var_13_3 = arg_13_1:GetPosition() + Vector3(var_13_1, 10, var_13_2)
-		local var_13_4 = var_0_0.Battle.BattleFXPool.GetInstance():GetFX(iter_13_3)
+	for weapon, hitFXResID in pairs(self._hitFXResIDList) do
+		local randomOffsetX = (math.random() * 2 - 1) * self._exploRange
+		local randomOffsetZ = (math.random() * 2 - 1) * self._exploRange
+		local fxPos = bullet:GetPosition() + Vector3(randomOffsetX, 10, randomOffsetZ)
+		local fx = ys.Battle.BattleFXPool.GetInstance():GetFX(hitFXResID)
 
-		pg.EffectMgr.GetInstance():PlayBattleEffect(var_13_4, var_13_3, true)
+		pg.EffectMgr.GetInstance():PlayBattleEffect(fx, fxPos, true)
 	end
 
-	arg_13_0._dataProxy:SpawnColumnArea(var_0_3.BulletField.AIR, arg_13_1:GetIFF(), arg_13_1:GetPosition(), arg_13_0._exploRange, -1, var_13_0)
+	self._dataProxy:SpawnColumnArea(BattleConst.BulletField.AIR, bullet:GetIFF(), bullet:GetPosition(), self._exploRange, -1, areaDamage)
 
 	if RANGE_ANTI_AREA then
-		local var_13_5 = var_0_0.Battle.BattleFXPool.GetInstance():GetFX("AlertArea")
+		local alertArea = ys.Battle.BattleFXPool.GetInstance():GetFX("AlertArea")
 
-		var_13_5.transform.localScale = Vector3(arg_13_0._exploRange, 1, arg_13_0._exploRange)
+		alertArea.transform.localScale = Vector3(self._exploRange, 1, self._exploRange)
 
-		pg.EffectMgr.GetInstance():PlayBattleEffect(var_13_5, arg_13_1:GetPosition())
+		pg.EffectMgr.GetInstance():PlayBattleEffect(alertArea, bullet:GetPosition())
 	end
 
-	arg_13_0._dataProxy:RemoveBulletUnit(arg_13_1:GetUniqueID())
+	self._dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 end
 
-function var_0_10.SwitchHost(arg_15_0)
-	local var_15_0 = {}
+--- 切换宿主：选择主单位索引最小的船员作为新宿主
+function BattleFleetRangeAntiAirUnit.SwitchHost(self)
+	local crewList = {}
 
-	for iter_15_0, iter_15_1 in pairs(arg_15_0._crewUnitList) do
-		table.insert(var_15_0, iter_15_0)
+	for crewUnit, _ in pairs(self._crewUnitList) do
+		table.insert(crewList, crewUnit)
 	end
 
-	table.sort(var_15_0, function(arg_16_0, arg_16_1)
-		return arg_16_0:GetMainUnitIndex() < arg_16_1:GetMainUnitIndex()
+	table.sort(crewList, function(a, b)
+		return a:GetMainUnitIndex() < b:GetMainUnitIndex()
 	end)
 
-	local var_15_1 = var_15_0[1]
+	local newHost = crewList[1]
 
-	if arg_15_0._host == var_15_1 then
+	if self._host == newHost then
 		return
 	end
 
-	arg_15_0:SetHostData(var_15_1)
-	arg_15_0._host:AttachFleetRangeAAWeapon(arg_15_0)
+	self:SetHostData(newHost)
+	self._host:AttachFleetRangeAAWeapon(self)
 end
 
-function var_0_10.GetFilteredList(arg_17_0)
-	local var_17_0 = arg_17_0:FilterTarget()
-	local var_17_1 = arg_17_0:FilterRange(var_17_0)
+--- @return table<number, BattleUnit> 筛选后的敌机列表
+function BattleFleetRangeAntiAirUnit.GetFilteredList(self)
+	local filteredTargets = self:FilterTarget()
+	local filteredByRange = self:FilterRange(filteredTargets)
 
-	return (arg_17_0:FilterAngle(var_17_1))
+	return (self:FilterAngle(filteredByRange))
 end
 
-function var_0_10.FilterTarget(arg_18_0)
-	local var_18_0 = arg_18_0._dataProxy:GetAircraftList()
-	local var_18_1 = {}
-	local var_18_2 = arg_18_0._host:GetIFF()
-	local var_18_3 = 1
+--- @return table<number, BattleUnit> IFF不同的可见飞机
+function BattleFleetRangeAntiAirUnit.FilterTarget(self)
+	local aircraftList = self._dataProxy:GetAircraftList()
+	local result = {}
+	local hostIFF = self._host:GetIFF()
+	local index = 1
 
-	for iter_18_0, iter_18_1 in pairs(var_18_0) do
-		if iter_18_1:GetIFF() ~= var_18_2 and iter_18_1:IsVisitable() then
-			var_18_1[var_18_3] = iter_18_1
-			var_18_3 = var_18_3 + 1
+	for _, aircraft in pairs(aircraftList) do
+		if aircraft:GetIFF() ~= hostIFF and aircraft:IsVisitable() then
+			result[index] = aircraft
+			index = index + 1
 		end
 	end
 
-	return var_18_1
+	return result
 end
 
-function var_0_10.Update(arg_19_0)
-	if arg_19_0._currentState ~= var_0_10.STATE_DISABLE then
-		var_0_10.super.Update(arg_19_0)
+--- 非DISABLE状态才调用父类Update
+function BattleFleetRangeAntiAirUnit.Update(self)
+	if self._currentState ~= BattleFleetRangeAntiAirUnit.STATE_DISABLE then
+		BattleFleetRangeAntiAirUnit.super.Update(self)
 	end
 end
 
-function var_0_10.RemovePrecastTimer(arg_20_0)
+function BattleFleetRangeAntiAirUnit.RemovePrecastTimer(self)
 	return
 end
 
-function var_0_10.Dispose(arg_21_0)
-	var_0_10.super.Dispose(arg_21_0)
+function BattleFleetRangeAntiAirUnit.Dispose(self)
+	BattleFleetRangeAntiAirUnit.super.Dispose(self)
 
-	arg_21_0._crewUnitList = nil
-	arg_21_0._weightList = nil
-	arg_21_0._hitFXResIDList = nil
-	arg_21_0._SFXID = nil
+	self._crewUnitList = nil
+	self._weightList = nil
+	self._hitFXResIDList = nil
+	self._SFXID = nil
 end

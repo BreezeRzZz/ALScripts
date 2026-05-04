@@ -1,101 +1,132 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.SkillStartState = class("SkillStartState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.SkillStartState.__name = "SkillStartState"
+ys.Battle.SkillStartState = class("SkillStartState", ys.Battle.IUnitState)
+ys.Battle.SkillStartState.__name = "SkillStartState"
 
-local var_0_2 = var_0_0.Battle.SkillStartState
+local SkillStartState = ys.Battle.SkillStartState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class SkillStartState : IUnitState
+--- 技能开始状态：技能动画的起手/前摇阶段
+--- 机制说明：
+--- - 技能释放的第一个阶段，对应技能动画的起手动作
+--- - 极度受限：禁止攻击、移动、法术等几乎所有状态切换
+--- - 仅允许：死亡(OnDeadState)、胜利(Victory/VictorySwim)、中断(OnInterruptState)
+--- - 关键状态转换：AddSkillEndState → OnSkillEndState（前摇结束→进入技能主状态SkillState）
+---   - 这是SkillStartState唯一的核心转换：前摇完成→技能主体
+--- - 不缓存武器(CacheWeapon=false)，前摇阶段还没到子弹生成的时机
+--- - 对应动画名：SKILL_START
+function SkillStartState.Ctor(self)
+	SkillStartState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 技能前摇期间禁止Idle
+function SkillStartState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 技能前摇期间禁止Move
+function SkillStartState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 技能前摇期间禁止MoveLeft
+function SkillStartState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- 技能前摇期间禁止Attack
+function SkillStartState.AddAttackState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 死亡可以打断技能前摇
+function SkillStartState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSpellState(arg_7_0, arg_7_1, arg_7_2)
+--- 技能前摇期间禁止Spell
+function SkillStartState.AddSpellState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillState(arg_8_0, arg_8_1, arg_8_2)
+--- 已经在技能开始状态，不重复切换
+function SkillStartState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 胜利可以打断技能前摇
+function SkillStartState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 胜利浮游可以打断技能前摇
+function SkillStartState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 技能前摇期间禁止Stand
+function SkillStartState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 技能前摇期间禁止Dive
+function SkillStartState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 技能前摇期间禁止DiveLeft
+function SkillStartState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- 中断可以打断技能前摇
+function SkillStartState.AddInterruptState(self, unitState, inputInfo)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 技能前摇期间禁止Diving
+function SkillStartState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
+--- 已经在技能开始状态，不重复
+function SkillStartState.AddSkillStartState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
-	arg_17_1:OnSkillEndState()
+--- 技能前摇结束 → 进入SkillEndState（过渡到技能主体）
+--- 这是SkillStartState的唯一核心状态转换
+function SkillStartState.AddSkillEndState(self, unitState, inputInfo)
+	unitState:OnSkillEndState()
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+function SkillStartState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function SkillStartState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
+--- 技能前摇OnEnd：无操作（前摇→主体的转换由AddSkillEndState处理）
+function SkillStartState.OnEnd(self, unitState)
 	return
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 技能前摇期间不缓存武器
+function SkillStartState.CacheWeapon(self)
 	return false
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 技能前摇期间不刷新ActionKeyOffset
+function SkillStartState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.SKILL_START
+--- 获取动画名称：返回SKILL_START，播放技能起手动画
+function SkillStartState.GetActionName(self, unit)
+	return ActionName.SKILL_START
 end

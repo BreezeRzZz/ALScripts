@@ -1,866 +1,975 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = require("Mgr/Pool/PoolUtil")
+
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local PoolUtil = require("Mgr/Pool/PoolUtil")
+
+--- @class BattleResourceManager
+--- @classdesc 战斗资源管理器（单例）。
+--- 负责战斗内所有资源的加载、缓存、池化与生命周期管理。
+--- 覆盖的资源类型包括：角色Spine动画、飞机模型、子弹prefab、特效FX、轨道orbit、UI组件、立绘painting、地图、图标等。
+---
+--- 核心架构：
+---   1. _preloadList: 预加载清单，StartPreload 时逐项异步加载
+---   2. _resCacheList: 已加载的原始资源缓存（在 InitPool 之前暂存）
+---   3. _allPool: 各类资源对应的 pg.Pool 对象池
+---   4. _ob2Pool: 已借出的 GameObject → Pool 的反向映射（用于 DestroyOb 回收）
+---
+--- 资源路径约定：
+---   Item/     → 子弹
+---   Char/     → 角色Spine
+---   chargo/   → 飞机模型
+---   Effect/   → 特效
+---   orbit/    → 装备环绕轨道
+---   painting/ → 角色立绘
+---   Map/      → 战斗背景地图
+---   UI/       → UI组件
+---   herohrzicon/, squareicon/, qicon/ → 角色头像图标
+---   commanderhrz/, commandericon/ → 指挥喵图标
+---   shiptype/ → 舰种图标
+---   AircraftIcon/ → 飞机图标
 local BattleResourceManager = singletonClass("BattleResourceManager")
 
-var_0_0.Battle.BattleResourceManager = BattleResourceManager
+ys.Battle.BattleResourceManager = BattleResourceManager
 BattleResourceManager.__name = "BattleResourceManager"
 
-function BattleResourceManager.Ctor(arg_1_0)
-	arg_1_0.rotateScriptMap = setmetatable({}, {
+function BattleResourceManager.Ctor(self)
+	-- 子弹旋转脚本缓存，使用弱引用kv表避免阻止GC
+	self.rotateScriptMap = setmetatable({}, {
 		__mode = "kv"
 	})
 end
 
-function BattleResourceManager.Init(arg_2_0)
-	arg_2_0._preloadList = {}
-	arg_2_0._resCacheList = {}
-	arg_2_0._allPool = {}
-	arg_2_0._ob2Pool = {}
+--- 初始化资源管理器
+function BattleResourceManager.Init(self)
+	self._preloadList = {}
+	self._resCacheList = {}
+	self._allPool = {}
+	self._ob2Pool = {}
 
-	local var_2_0 = GameObject()
+	-- 资源池根节点（放在屏幕外）
+	local poolRootObj = GameObject()
+	poolRootObj:SetActive(false)
+	poolRootObj.name = "PoolRoot"
+	poolRootObj.transform.position = Vector3(-10000, -10000, 0)
+	self._poolRoot = poolRootObj
 
-	var_2_0:SetActive(false)
-
-	var_2_0.name = "PoolRoot"
-	var_2_0.transform.position = Vector3(-10000, -10000, 0)
-	arg_2_0._poolRoot = var_2_0
-	arg_2_0._bulletContainer = GameObject("BulletContainer")
-	arg_2_0._battleCVList = {}
+	self._bulletContainer = GameObject("BulletContainer")
+	self._battleCVList = {}
 end
 
-function BattleResourceManager.Clear(arg_3_0)
-	for iter_3_0, iter_3_1 in pairs(arg_3_0._allPool) do
-		iter_3_1:Dispose()
+--- 清理所有资源（战斗结束时调用）
+function BattleResourceManager.Clear(self)
+	-- 清空所有对象池
+	for _, pool in pairs(self._allPool) do
+		pool:Dispose()
 	end
 
-	for iter_3_2, iter_3_3 in pairs(arg_3_0._resCacheList) do
-		if string.find(iter_3_2, "Char/") then
-			BattleResourceManager.ClearCharRes(iter_3_2, iter_3_3)
-		elseif string.find(iter_3_2, "painting/") then
-			BattleResourceManager.ClearPaintingRes(iter_3_2, iter_3_3)
+	-- 清空资源缓存，根据资源类型使用不同的清理方法
+	for path, obj in pairs(self._resCacheList) do
+		if string.find(path, "Char/") then
+			BattleResourceManager.ClearCharRes(path, obj)
+		elseif string.find(path, "painting/") then
+			BattleResourceManager.ClearPaintingRes(path, obj)
 		else
-			var_0_4.Destroy(iter_3_3)
+			PoolUtil.Destroy(obj)
 		end
 	end
 
-	arg_3_0._resCacheList = {}
-	arg_3_0._ob2Pool = {}
-	arg_3_0._allPool = {}
+	self._resCacheList = {}
+	self._ob2Pool = {}
+	self._allPool = {}
 
-	Object.Destroy(arg_3_0._poolRoot)
+	Object.Destroy(self._poolRoot)
+	self._poolRoot = nil
 
-	arg_3_0._poolRoot = nil
+	Object.Destroy(self._bulletContainer)
+	self._bulletContainer = nil
 
-	Object.Destroy(arg_3_0._bulletContainer)
-
-	arg_3_0._bulletContainer = nil
-	arg_3_0.rotateScriptMap = setmetatable({}, {
+	self.rotateScriptMap = setmetatable({}, {
 		__mode = "kv"
 	})
 
-	for iter_3_4, iter_3_5 in pairs(arg_3_0._battleCVList) do
-		pg.CriMgr.UnloadCVBank(iter_3_5)
+	-- 卸载所有战斗语音
+	for _, cvBank in pairs(self._battleCVList) do
+		pg.CriMgr.UnloadCVBank(cvBank)
+	end
+	self._battleCVList = {}
+
+	ys.Battle.BattleDataFunction.ClearConvertedBarrage()
+end
+
+-- ============================================================
+-- 资源路径工具函数
+-- ============================================================
+
+--- 获取子弹资源路径: "Item/xxx"
+function BattleResourceManager.GetBulletPath(resName)
+	return "Item/" .. resName
+end
+
+--- 获取轨道资源路径: "orbit/xxx"
+function BattleResourceManager.GetOrbitPath(resName)
+	return "orbit/" .. resName
+end
+
+--- 获取角色Spine资源路径: "Char/xxx"
+function BattleResourceManager.GetCharacterPath(resName)
+	return "Char/" .. resName
+end
+
+--- 获取飞机模型资源路径: "chargo/xxx"
+function BattleResourceManager.GetCharacterGoPath(resName)
+	return "chargo/" .. resName
+end
+
+--- 获取飞机图标路径: "AircraftIcon/xxx"
+function BattleResourceManager.GetAircraftIconPath(resName)
+	return "AircraftIcon/" .. resName
+end
+
+--- 获取特效资源路径: "Effect/xxx"
+function BattleResourceManager.GetFXPath(resName)
+	return "Effect/" .. resName
+end
+
+--- 获取立绘资源路径: "painting/xxx"
+function BattleResourceManager.GetPaintingPath(resName)
+	return "painting/" .. resName
+end
+
+--- 获取横版头像路径: "herohrzicon/xxx"
+function BattleResourceManager.GetHrzIcon(resName)
+	return "herohrzicon/" .. resName
+end
+
+--- 获取方形头像路径: "squareicon/xxx"
+function BattleResourceManager.GetSquareIcon(resName)
+	return "squareicon/" .. resName
+end
+
+--- 获取Q版头像路径: "qicon/xxx"
+function BattleResourceManager.GetQIcon(resName)
+	return "qicon/" .. resName
+end
+
+--- 获取指挥喵横版头像路径: "commanderhrz/xxx"
+function BattleResourceManager.GetCommanderHrzIconPath(resName)
+	return "commanderhrz/" .. resName
+end
+
+--- 获取指挥喵图标路径: "commandericon/xxx"
+function BattleResourceManager.GetCommanderIconPath(resName)
+	return "commandericon/" .. resName
+end
+
+--- 获取舰种图标路径: "shiptype/xxx"
+function BattleResourceManager.GetShipTypeIconPath(resName)
+	return "shiptype/" .. resName
+end
+
+--- 获取地图资源路径: "Map/xxx"
+function BattleResourceManager.GetMapPath(resName)
+	return "Map/" .. resName
+end
+
+--- 获取UI资源路径: "UI/xxx"
+function BattleResourceManager.GetUIPath(resName)
+	return "UI/" .. resName
+end
+
+--- 从完整路径中提取纯资源名（去掉所有 "/" 前缀路径）
+--- 例如 "Char/jh01" → "jh01"
+function BattleResourceManager.GetResName(fullPath)
+	local name = fullPath
+	local slashIdx = string.find(name, "%/")
+
+	while slashIdx do
+		name = string.sub(name, slashIdx + 1)
+		slashIdx = string.find(name, "%/")
 	end
 
-	arg_3_0._battleCVList = {}
-
-	var_0_0.Battle.BattleDataFunction.ClearConvertedBarrage()
+	return name
 end
 
-function BattleResourceManager.GetBulletPath(arg_4_0)
-	return "Item/" .. arg_4_0
-end
+--- 清理角色Spine资源（如果未被池管理器缓存则清理共享材质后再销毁）
+--- @param path string 资源完整路径
+--- @param obj GameObject 资源实例
+function BattleResourceManager.ClearCharRes(path, obj)
+	local resName = BattleResourceManager.GetResName(path)
+	local skelDataAsset = obj:GetComponent("SkeletonRenderer").skeletonDataAsset
 
-function BattleResourceManager.GetOrbitPath(arg_5_0)
-	return "orbit/" .. arg_5_0
-end
-
-function BattleResourceManager.GetCharacterPath(arg_6_0)
-	return "Char/" .. arg_6_0
-end
-
-function BattleResourceManager.GetCharacterGoPath(arg_7_0)
-	return "chargo/" .. arg_7_0
-end
-
-function BattleResourceManager.GetAircraftIconPath(arg_8_0)
-	return "AircraftIcon/" .. arg_8_0
-end
-
-function BattleResourceManager.GetFXPath(arg_9_0)
-	return "Effect/" .. arg_9_0
-end
-
-function BattleResourceManager.GetPaintingPath(arg_10_0)
-	return "painting/" .. arg_10_0
-end
-
-function BattleResourceManager.GetHrzIcon(arg_11_0)
-	return "herohrzicon/" .. arg_11_0
-end
-
-function BattleResourceManager.GetSquareIcon(arg_12_0)
-	return "squareicon/" .. arg_12_0
-end
-
-function BattleResourceManager.GetQIcon(arg_13_0)
-	return "qicon/" .. arg_13_0
-end
-
-function BattleResourceManager.GetCommanderHrzIconPath(arg_14_0)
-	return "commanderhrz/" .. arg_14_0
-end
-
-function BattleResourceManager.GetCommanderIconPath(arg_15_0)
-	return "commandericon/" .. arg_15_0
-end
-
-function BattleResourceManager.GetShipTypeIconPath(arg_16_0)
-	return "shiptype/" .. arg_16_0
-end
-
-function BattleResourceManager.GetMapPath(arg_17_0)
-	return "Map/" .. arg_17_0
-end
-
-function BattleResourceManager.GetUIPath(arg_18_0)
-	return "UI/" .. arg_18_0
-end
-
-function BattleResourceManager.GetResName(arg_19_0)
-	local var_19_0 = arg_19_0
-	local var_19_1 = string.find(var_19_0, "%/")
-
-	while var_19_1 do
-		var_19_0 = string.sub(var_19_0, var_19_1 + 1)
-		var_19_1 = string.find(var_19_0, "%/")
+	if not PoolMgr.GetInstance():IsSpineSkelCached(resName) then
+		UIUtil.ClearSharedMaterial(obj)
 	end
 
-	return var_19_0
+	PoolUtil.Destroy(obj)
 end
 
-function BattleResourceManager.ClearCharRes(arg_20_0, arg_20_1)
-	local var_20_0 = BattleResourceManager.GetResName(arg_20_0)
-	local var_20_1 = arg_20_1:GetComponent("SkeletonRenderer").skeletonDataAsset
-
-	if not PoolMgr.GetInstance():IsSpineSkelCached(var_20_0) then
-		UIUtil.ClearSharedMaterial(arg_20_1)
-	end
-
-	var_0_4.Destroy(arg_20_1)
+--- 清理立绘资源（归还到PoolMgr）
+--- @param path string 资源完整路径
+--- @param obj GameObject 资源实例
+function BattleResourceManager.ClearPaintingRes(path, obj)
+	local resName = BattleResourceManager.GetResName(path)
+	PoolMgr.GetInstance():ReturnPainting(BattleResourceManager.GetPaintingName(resName), obj)
 end
 
-function BattleResourceManager.ClearPaintingRes(arg_21_0, arg_21_1)
-	local var_21_0 = BattleResourceManager.GetResName(arg_21_0)
+--- 销毁/回收对象——优先通过 _ob2Pool 反向查找其所属的 Pool 进行回收
+--- @param obj GameObject 要销毁的对象
+function BattleResourceManager.DestroyOb(self, obj)
+	local pool = self._ob2Pool[obj]
 
-	PoolMgr.GetInstance():ReturnPainting(BattleResourceManager.GetPaintingName(var_21_0), arg_21_1)
-end
-
-function BattleResourceManager.DestroyOb(arg_22_0, arg_22_1)
-	local var_22_0 = arg_22_0._ob2Pool[arg_22_1]
-
-	if var_22_0 then
-		var_22_0:Recycle(arg_22_1)
+	if pool then
+		pool:Recycle(obj)
 	else
-		var_0_4.Destroy(arg_22_1)
+		PoolUtil.Destroy(obj)
 	end
 end
 
-function BattleResourceManager.popPool(arg_23_0, arg_23_1, arg_23_2)
-	local var_23_0 = arg_23_1:GetObject()
+--- 从池中弹出一个对象，记录 ob→pool 的映射
+--- @param pool pg.Pool 对象池
+--- @param keepParent boolean 是否保持父节点（false则清除parent）
+--- @return GameObject
+function BattleResourceManager.popPool(self, pool, keepParent)
+	local obj = pool:GetObject()
 
-	if not arg_23_2 then
-		var_23_0.transform.parent = nil
+	if not keepParent then
+		obj.transform.parent = nil
 	end
 
-	arg_23_0._ob2Pool[var_23_0] = arg_23_1
+	self._ob2Pool[obj] = pool
 
-	return var_23_0
+	return obj
 end
 
-function BattleResourceManager.InstCharacter(arg_24_0, arg_24_1, arg_24_2)
-	local var_24_0 = arg_24_0.GetCharacterPath(arg_24_1)
-	local var_24_1 = arg_24_0._allPool[var_24_0]
+-- ============================================================
+-- 资源实例化（Instantiate）函数——三级缓存策略
+--   1. 池命中 → 从 _allPool 弹出
+--   2. 缓存命中 → 先用缓存资源初始化池，再弹出
+--   3. 缓存未命中 → 异步加载，完成后初始化池再弹出
+-- ============================================================
 
-	if var_24_1 then
-		local var_24_2 = arg_24_0:popPool(var_24_1)
+--- 实例化角色Spine角色（异步加载策略）
+--- @param resName string 资源名（不含Char/前缀）
+--- @param callback function 完成回调，参数为实例化后的GameObject
+function BattleResourceManager.InstCharacter(self, resName, callback)
+	local fullPath = self.GetCharacterPath(resName)
+	local pool = self._allPool[fullPath]
 
-		arg_24_2(var_24_2)
-	elseif arg_24_0._resCacheList[var_24_0] ~= nil then
-		arg_24_0:InitPool(var_24_0, arg_24_0._resCacheList[var_24_0])
-
-		var_24_1 = arg_24_0._allPool[var_24_0]
-
-		local var_24_3 = arg_24_0:popPool(var_24_1)
-
-		arg_24_2(var_24_3)
+	if pool then
+		-- 池命中：直接弹出
+		local obj = self:popPool(pool)
+		callback(obj)
+	elseif self._resCacheList[fullPath] ~= nil then
+		-- 缓存命中：先用缓存的资源初始化池
+		self:InitPool(fullPath, self._resCacheList[fullPath])
+		pool = self._allPool[fullPath]
+		local obj = self:popPool(pool)
+		callback(obj)
 	else
-		arg_24_0:LoadSpineAsset(arg_24_1, function(arg_25_0)
-			if not arg_24_0._poolRoot then
-				BattleResourceManager.ClearCharRes(var_24_0, arg_25_0)
-
+		-- 异步加载Spine资源
+		self:LoadSpineAsset(resName, function(asset)
+			if not self._poolRoot then
+				BattleResourceManager.ClearCharRes(fullPath, asset)
 				return
 			end
 
-			assert(arg_25_0, "角色资源加载失败：" .. arg_24_1)
+			assert(asset, "角色资源加载失败：" .. resName)
 
-			local var_25_0 = SpineAnim.AnimChar(arg_24_1, arg_25_0)
+			local charGo = SpineAnim.AnimChar(resName, asset)
+			charGo:SetActive(false)
+			self:InitPool(fullPath, charGo)
 
-			var_25_0:SetActive(false)
-			arg_24_0:InitPool(var_24_0, var_25_0)
-
-			var_24_1 = arg_24_0._allPool[var_24_0]
-
-			local var_25_1 = arg_24_0:popPool(var_24_1)
-
-			arg_24_2(var_25_1)
+			pool = self._allPool[fullPath]
+			local obj = self:popPool(pool)
+			callback(obj)
 		end)
 	end
 end
 
-function BattleResourceManager.LoadSpineAsset(arg_26_0, arg_26_1, arg_26_2)
-	local var_26_0 = arg_26_0.GetCharacterPath(arg_26_1)
+--- 加载Spine骨骼资源（检查PoolMgr缓存状态后决定是同步还是异步加载）
+--- @param resName string 资源名（不含路径前缀）
+--- @param callback function 完成回调，参数为加载的SkeletonDataAsset
+function BattleResourceManager.LoadSpineAsset(self, resName, callback)
+	local fullPath = self.GetCharacterPath(resName)
 
-	if not PoolMgr.GetInstance():IsSpineSkelCached(arg_26_1) then
-		ResourceMgr.Inst:getAssetAsync(var_26_0, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_27_0)
-			arg_26_2(arg_27_0)
+	if not PoolMgr.GetInstance():IsSpineSkelCached(resName) then
+		ResourceMgr.Inst:getAssetAsync(fullPath, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+			callback(asset)
 		end), true, true)
 	else
-		PoolMgr.GetInstance():GetSpineSkel(arg_26_1, true, arg_26_2)
+		PoolMgr.GetInstance():GetSpineSkel(resName, true, callback)
 	end
 end
 
-function BattleResourceManager.InstAirCharacter(arg_28_0, arg_28_1, arg_28_2)
-	local var_28_0 = arg_28_0.GetCharacterGoPath(arg_28_1)
-	local var_28_1 = arg_28_0._allPool[var_28_0]
+--- 实例化飞机模型角色（chargo/ 路径）
+--- @param resName string 资源名（不含chargo/前缀）
+--- @param callback function 完成回调
+function BattleResourceManager.InstAirCharacter(self, resName, callback)
+	local fullPath = self.GetCharacterGoPath(resName)
+	local pool = self._allPool[fullPath]
 
-	if var_28_1 then
-		local var_28_2 = arg_28_0:popPool(var_28_1)
-
-		arg_28_2(var_28_2)
-	elseif arg_28_0._resCacheList[var_28_0] ~= nil then
-		arg_28_0:InitPool(var_28_0, arg_28_0._resCacheList[var_28_0])
-
-		var_28_1 = arg_28_0._allPool[var_28_0]
-
-		local var_28_3 = arg_28_0:popPool(var_28_1)
-
-		arg_28_2(var_28_3)
+	if pool then
+		local obj = self:popPool(pool)
+		callback(obj)
+	elseif self._resCacheList[fullPath] ~= nil then
+		self:InitPool(fullPath, self._resCacheList[fullPath])
+		pool = self._allPool[fullPath]
+		local obj = self:popPool(pool)
+		callback(obj)
 	else
-		ResourceMgr.Inst:getAssetAsync(var_28_0, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_29_0)
-			if not arg_28_0._poolRoot then
-				var_0_4.Destroy(arg_29_0)
-
+		ResourceMgr.Inst:getAssetAsync(fullPath, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+			if not self._poolRoot then
+				PoolUtil.Destroy(asset)
 				return
 			else
-				assert(arg_29_0, "飞机资源加载失败：" .. arg_28_1)
-				arg_28_0:InitPool(var_28_0, arg_29_0)
-
-				var_28_1 = arg_28_0._allPool[var_28_0]
-
-				local var_29_0 = arg_28_0:popPool(var_28_1)
-
-				arg_28_2(var_29_0)
+				assert(asset, "飞机资源加载失败：" .. resName)
+				self:InitPool(fullPath, asset)
+				pool = self._allPool[fullPath]
+				local obj = self:popPool(pool)
+				callback(obj)
 			end
 		end), true, true)
 	end
 end
 
-function BattleResourceManager.InstBullet(arg_30_0, arg_30_1, arg_30_2)
-	local var_30_0 = arg_30_0.GetBulletPath(arg_30_1)
-	local var_30_1 = arg_30_0._allPool[var_30_0]
+--- 实例化子弹资源
+--- @param resName string 资源名（不含Item/前缀）
+--- @param callback function 完成回调，参数为实例化后的GameObject
+--- @return boolean 是否同步完成（true=已缓存，false=异步加载中）
+function BattleResourceManager.InstBullet(self, resName, callback)
+	local fullPath = self.GetBulletPath(resName)
+	local pool = self._allPool[fullPath]
 
-	if var_30_1 then
-		local var_30_2 = arg_30_0:popPool(var_30_1, true)
+	if pool then
+		local obj = self:popPool(pool, true)
 
-		if string.find(arg_30_1, "_trail") then
-			local var_30_3 = var_30_2:GetComponentInChildren(typeof(UnityEngine.TrailRenderer))
-
-			if var_30_3 then
-				var_30_3:Clear()
+		-- 如果子弹有拖尾效果，清除旧的拖尾数据
+		if string.find(resName, "_trail") then
+			local trail = obj:GetComponentInChildren(typeof(UnityEngine.TrailRenderer))
+			if trail then
+				trail:Clear()
 			end
 		end
 
-		arg_30_2(var_30_2)
+		callback(obj)
+		return true -- 同步完成
+	elseif self._resCacheList[fullPath] ~= nil then
+		self:InitPool(fullPath, self._resCacheList[fullPath])
+		pool = self._allPool[fullPath]
+		local obj = self:popPool(pool, true)
 
-		return true
-	elseif arg_30_0._resCacheList[var_30_0] ~= nil then
-		arg_30_0:InitPool(var_30_0, arg_30_0._resCacheList[var_30_0])
-
-		var_30_1 = arg_30_0._allPool[var_30_0]
-
-		local var_30_4 = arg_30_0:popPool(var_30_1, true)
-
-		if string.find(arg_30_1, "_trail") then
-			local var_30_5 = var_30_4:GetComponentInChildren(typeof(UnityEngine.TrailRenderer))
-
-			if var_30_5 then
-				var_30_5:Clear()
+		if string.find(resName, "_trail") then
+			local trail = obj:GetComponentInChildren(typeof(UnityEngine.TrailRenderer))
+			if trail then
+				trail:Clear()
 			end
 		end
 
-		arg_30_2(var_30_4)
-
-		return true
+		callback(obj)
+		return true -- 同步完成
 	else
-		ResourceMgr.Inst:getAssetAsync(var_30_0, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_31_0)
-			if not arg_30_0._poolRoot then
-				var_0_4.Destroy(arg_31_0)
-
+		ResourceMgr.Inst:getAssetAsync(fullPath, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+			if not self._poolRoot then
+				PoolUtil.Destroy(asset)
 				return
 			else
-				assert(arg_31_0, "子弹资源加载失败：" .. arg_30_1)
-				arg_30_0:InitPool(var_30_0, arg_31_0)
-
-				var_30_1 = arg_30_0._allPool[var_30_0]
-
-				local var_31_0 = arg_30_0:popPool(var_30_1, true)
-
-				arg_30_2(var_31_0)
+				assert(asset, "子弹资源加载失败：" .. resName)
+				self:InitPool(fullPath, asset)
+				pool = self._allPool[fullPath]
+				local obj = self:popPool(pool, true)
+				callback(obj)
 			end
 		end), true, true)
 
-		return false
+		return false -- 异步加载中
 	end
 end
 
-function BattleResourceManager.InstFX(arg_32_0, arg_32_1, arg_32_2)
-	local var_32_0 = arg_32_0.GetFXPath(arg_32_1)
-	local var_32_1
-	local var_32_2 = arg_32_0._allPool[var_32_0]
+--- 实例化特效资源
+--- @param fxID string 特效ID
+--- @param keepParent boolean 是否保持父节点
+--- @return GameObject
+function BattleResourceManager.InstFX(self, fxID, keepParent)
+	local fullPath = self.GetFXPath(fxID)
+	local go
+	local pool = self._allPool[fullPath]
 
-	if var_32_2 then
-		var_32_1 = arg_32_0:popPool(var_32_2, arg_32_2)
-	elseif arg_32_0._resCacheList[var_32_0] ~= nil then
-		arg_32_0:InitPool(var_32_0, arg_32_0._resCacheList[var_32_0])
-
-		local var_32_3 = arg_32_0._allPool[var_32_0]
-
-		var_32_1 = arg_32_0:popPool(var_32_3, arg_32_2)
+	if pool then
+		go = self:popPool(pool, keepParent)
+	elseif self._resCacheList[fullPath] ~= nil then
+		self:InitPool(fullPath, self._resCacheList[fullPath])
+		local popPool = self._allPool[fullPath]
+		go = self:popPool(popPool, keepParent)
 	else
-		ResourceMgr.Inst:getAssetAsync(var_32_0, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_33_0)
-			if not arg_32_0._poolRoot then
-				var_0_4.Destroy(arg_33_0)
-
+		-- 异步加载资源，同时创建一个占位假对象避免后续重复触发加载
+		ResourceMgr.Inst:getAssetAsync(fullPath, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+			if not self._poolRoot then
+				PoolUtil.Destroy(asset)
 				return
 			else
-				assert(arg_33_0, "特效资源加载失败：" .. arg_32_1)
-				arg_32_0:InitPool(var_32_0, arg_33_0)
+				assert(asset, "特效资源加载失败：" .. fxID)
+				self:InitPool(fullPath, asset)
 			end
 		end), true, true)
 
-		var_32_1 = GameObject(arg_32_1 .. "临时假obj")
-
-		var_32_1:SetActive(false)
-
-		arg_32_0._resCacheList[var_32_0] = var_32_1
+		go = GameObject(fxID .. "临时假obj")
+		go:SetActive(false)
+		self._resCacheList[fullPath] = go
 	end
 
-	local var_32_4 = tf(var_32_1):Find("bullet")
+	-- 如果特效子节点包含SpineAnim组件，初始化其为normal动作
+	local bulletChild = tf(go):Find("bullet")
+	if bulletChild and bulletChild:GetComponent(typeof(SpineAnim)) then
+		local spineAnim = bulletChild:GetComponent(typeof(SpineAnim))
+		local skeletonAnim = bulletChild:GetComponent("SkeletonAnimation")
+		local animName = "normal"
 
-	if var_32_4 and var_32_4:GetComponent(typeof(SpineAnim)) then
-		local var_32_5 = var_32_4:GetComponent(typeof(SpineAnim))
-		local var_32_6 = var_32_4:GetComponent("SkeletonAnimation")
-		local var_32_7 = "normal"
-
-		if var_32_6 then
-			var_32_7 = SpineAnimUtil.GetCharAnimDirect(var_32_6, math.sign(var_32_4.localScale.x), "normal")
+		if skeletonAnim then
+			animName = SpineAnimUtil.GetCharAnimDirect(skeletonAnim, math.sign(bulletChild.localScale.x), "normal")
 		end
 
-		var_32_5:SetAction(var_32_7, 0, false)
+		spineAnim:SetAction(animName, 0, false)
 	end
 
-	return var_32_1
+	return go
 end
 
-function BattleResourceManager.InstOrbit(arg_34_0, arg_34_1)
-	local var_34_0 = arg_34_0.GetOrbitPath(arg_34_1)
-	local var_34_1
-	local var_34_2 = arg_34_0._allPool[var_34_0]
+--- 实例化轨道资源（orbit/）
+--- @param orbitName string 轨道资源名
+--- @return GameObject
+function BattleResourceManager.InstOrbit(self, orbitName)
+	local fullPath = self.GetOrbitPath(orbitName)
+	local go
+	local pool = self._allPool[fullPath]
 
-	if var_34_2 then
-		var_34_1 = arg_34_0:popPool(var_34_2)
-	elseif arg_34_0._resCacheList[var_34_0] ~= nil then
-		arg_34_0:InitPool(var_34_0, arg_34_0._resCacheList[var_34_0])
-
-		local var_34_3 = arg_34_0._allPool[var_34_0]
-
-		var_34_1 = arg_34_0:popPool(var_34_3)
+	if pool then
+		go = self:popPool(pool)
+	elseif self._resCacheList[fullPath] ~= nil then
+		self:InitPool(fullPath, self._resCacheList[fullPath])
+		local popPool = self._allPool[fullPath]
+		go = self:popPool(popPool)
 	else
-		ResourceMgr.Inst:getAssetAsync(var_34_0, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_35_0)
-			if not arg_34_0._poolRoot then
-				var_0_4.Destroy(arg_35_0)
-
+		ResourceMgr.Inst:getAssetAsync(fullPath, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+			if not self._poolRoot then
+				PoolUtil.Destroy(asset)
 				return
 			else
-				assert(arg_35_0, "特效资源加载失败：" .. arg_34_1)
-				arg_34_0:InitPool(var_34_0, arg_35_0)
+				assert(asset, "特效资源加载失败：" .. orbitName)
+				self:InitPool(fullPath, asset)
 			end
 		end), true, true)
 
-		var_34_1 = GameObject(arg_34_1 .. "临时假obj")
-
-		var_34_1:SetActive(false)
-
-		arg_34_0._resCacheList[var_34_0] = var_34_1
+		go = GameObject(orbitName .. "临时假obj")
+		go:SetActive(false)
+		self._resCacheList[fullPath] = go
 	end
 
-	return var_34_1
+	return go
 end
 
-function BattleResourceManager.InstSkillPaintingUI(arg_36_0)
-	local var_36_0 = arg_36_0._allPool["UI/SkillPainting"]
-	local var_36_1 = var_36_0:GetObject()
+-- ============================================================
+-- UI组件实例化（这些有固定路径不需要异步，在StartPreload阶段已保证资源就绪）
+-- ============================================================
 
-	arg_36_0._ob2Pool[var_36_1] = var_36_0
-
-	return var_36_1
+--- 实例化技能立绘UI (UI/SkillPainting)
+function BattleResourceManager.InstSkillPaintingUI(self)
+	local pool = self._allPool["UI/SkillPainting"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstSkillPaintingDALUI(arg_37_0)
-	local var_37_0 = arg_37_0._allPool["UI/SkillPaintingDAL"]
-	local var_37_1 = var_37_0:GetObject()
-
-	arg_37_0._ob2Pool[var_37_1] = var_37_0
-
-	return var_37_1
+--- 实例化大凤技能立绘UI (UI/SkillPaintingDAL)
+function BattleResourceManager.InstSkillPaintingDALUI(self)
+	local pool = self._allPool["UI/SkillPaintingDAL"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstBossWarningUI(arg_38_0)
-	local var_38_0 = arg_38_0._allPool["UI/MonsterAppearUI"]
-	local var_38_1 = var_38_0:GetObject()
-
-	arg_38_0._ob2Pool[var_38_1] = var_38_0
-
-	return var_38_1
+--- 实例化Boss登场警告UI (UI/MonsterAppearUI)
+function BattleResourceManager.InstBossWarningUI(self)
+	local pool = self._allPool["UI/MonsterAppearUI"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstGridmanSkillUI(arg_39_0)
-	local var_39_0 = arg_39_0._allPool["UI/combatgridmanskillfloat"]
-	local var_39_1 = var_39_0:GetObject()
-
-	arg_39_0._ob2Pool[var_39_1] = var_39_0
-
-	return var_39_1
+--- 实例化古利特技能浮窗UI (UI/combatgridmanskillfloat)
+function BattleResourceManager.InstGridmanSkillUI(self)
+	local pool = self._allPool["UI/combatgridmanskillfloat"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstReisalinAPUI(arg_40_0)
-	local var_40_0 = arg_40_0._allPool["UI/combatreisalinapui"]
-	local var_40_1 = var_40_0:GetObject()
-
-	arg_40_0._ob2Pool[var_40_1] = var_40_0
-
-	return var_40_1
+--- 实例化莱莎AP UI (UI/combatreisalinapui)
+function BattleResourceManager.InstReisalinAPUI(self)
+	local pool = self._allPool["UI/combatreisalinapui"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstYumiaManaUI(arg_41_0)
-	local var_41_0 = arg_41_0._allPool["UI/combatyumiamanaui"]
-	local var_41_1 = var_41_0:GetObject()
-
-	arg_41_0._ob2Pool[var_41_1] = var_41_0
-
-	return var_41_1
+--- 实例化尤米亚法力UI (UI/combatyumiamanaui)
+function BattleResourceManager.InstYumiaManaUI(self)
+	local pool = self._allPool["UI/combatyumiamanaui"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.InstPainting(arg_42_0, arg_42_1)
-	local var_42_0 = arg_42_0.GetPaintingPath(arg_42_1)
-	local var_42_1
-	local var_42_2 = arg_42_0._allPool[var_42_0]
+--- 实例化立绘
+--- @param paintingName string 立绘资源名
+--- @return GameObject
+function BattleResourceManager.InstPainting(self, paintingName)
+	local fullPath = self.GetPaintingPath(paintingName)
+	local obj
+	local pool = self._allPool[fullPath]
 
-	if var_42_2 then
-		var_42_1 = var_42_2:GetObject()
-		arg_42_0._ob2Pool[var_42_1] = var_42_2
-	elseif arg_42_0._resCacheList[var_42_0] ~= nil then
-		var_42_1 = Object.Instantiate(arg_42_0._resCacheList[var_42_0])
-
-		var_42_1:SetActive(true)
+	if pool then
+		obj = pool:GetObject()
+		self._ob2Pool[obj] = pool
+	elseif self._resCacheList[fullPath] ~= nil then
+		obj = Object.Instantiate(self._resCacheList[fullPath])
+		obj:SetActive(true)
 	end
 
-	return var_42_1
+	return obj
 end
 
-function BattleResourceManager.InstMap(arg_43_0, arg_43_1)
-	local var_43_0 = arg_43_0.GetMapPath(arg_43_1)
-	local var_43_1
-	local var_43_2 = arg_43_0._allPool[var_43_0]
+--- 实例化地图（必须已预加载）
+--- @param mapName string 地图资源名
+--- @return GameObject
+function BattleResourceManager.InstMap(self, mapName)
+	local fullPath = self.GetMapPath(mapName)
+	local obj
+	local pool = self._allPool[fullPath]
 
-	if var_43_2 then
-		var_43_1 = var_43_2:GetObject()
-		arg_43_0._ob2Pool[var_43_1] = var_43_2
-	elseif arg_43_0._resCacheList[var_43_0] ~= nil then
-		var_43_1 = Object.Instantiate(arg_43_0._resCacheList[var_43_0])
+	if pool then
+		obj = pool:GetObject()
+		self._ob2Pool[obj] = pool
+	elseif self._resCacheList[fullPath] ~= nil then
+		obj = Object.Instantiate(self._resCacheList[fullPath])
 	else
-		assert(false, "地图资源没有预加载：" .. arg_43_1)
+		assert(false, "地图资源没有预加载：" .. mapName)
 	end
 
-	var_43_1:SetActive(true)
+	obj:SetActive(true)
 
-	return var_43_1
+	return obj
 end
 
-function BattleResourceManager.InstCardPuzzleCard(arg_44_0)
-	local var_44_0 = arg_44_0._allPool["UI/CardTowerCardCombat"]
-	local var_44_1 = var_44_0:GetObject()
-
-	arg_44_0._ob2Pool[var_44_1] = var_44_0
-
-	return var_44_1
+--- 实例化卡牌塔罗牌UI (UI/CardTowerCardCombat)
+function BattleResourceManager.InstCardPuzzleCard(self)
+	local pool = self._allPool["UI/CardTowerCardCombat"]
+	local obj = pool:GetObject()
+	self._ob2Pool[obj] = pool
+	return obj
 end
 
-function BattleResourceManager.GetCharacterIcon(arg_45_0, arg_45_1)
-	return arg_45_0._resCacheList[BattleResourceManager.GetHrzIcon(arg_45_1)]
+-- ============================================================
+-- 图标获取（从 _resCacheList 中取预加载的 Sprite）
+-- ============================================================
+
+function BattleResourceManager.GetCharacterIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetHrzIcon(id)]
 end
 
-function BattleResourceManager.GetCharacterSquareIcon(arg_46_0, arg_46_1)
-	return arg_46_0._resCacheList[BattleResourceManager.GetSquareIcon(arg_46_1)]
+function BattleResourceManager.GetCharacterSquareIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetSquareIcon(id)]
 end
 
-function BattleResourceManager.GetCharacterQIcon(arg_47_0, arg_47_1)
-	return arg_47_0._resCacheList[BattleResourceManager.GetQIcon(arg_47_1)]
+function BattleResourceManager.GetCharacterQIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetQIcon(id)]
 end
 
-function BattleResourceManager.GetAircraftIcon(arg_48_0, arg_48_1)
-	return arg_48_0._resCacheList[BattleResourceManager.GetAircraftIconPath(arg_48_1)]
+function BattleResourceManager.GetAircraftIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetAircraftIconPath(id)]
 end
 
-function BattleResourceManager.GetShipTypeIcon(arg_49_0, arg_49_1)
-	return arg_49_0._resCacheList[BattleResourceManager.GetShipTypeIconPath(arg_49_1)]
+function BattleResourceManager.GetShipTypeIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetShipTypeIconPath(id)]
 end
 
-function BattleResourceManager.GetCommanderHrzIcon(arg_50_0, arg_50_1)
-	return arg_50_0._resCacheList[BattleResourceManager.GetCommanderHrzIconPath(arg_50_1)]
+function BattleResourceManager.GetCommanderHrzIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetCommanderHrzIconPath(id)]
 end
 
-function BattleResourceManager.GetCommanderIcon(arg_51_0, arg_51_1)
-	return arg_51_0._resCacheList[BattleResourceManager.GetCommanderIconPath(arg_51_1)]
+function BattleResourceManager.GetCommanderIcon(self, id)
+	return self._resCacheList[BattleResourceManager.GetCommanderIconPath(id)]
 end
 
-function BattleResourceManager.GetShader(arg_52_0, arg_52_1)
-	return (pg.ShaderMgr.GetInstance():GetShader(var_0_3.BATTLE_SHADER[arg_52_1]))
+--- 获取战斗着色器（通过ShaderMgr，使用BATTLE_SHADER配置）
+function BattleResourceManager.GetShader(self, shaderName)
+	return (pg.ShaderMgr.GetInstance():GetShader(BattleConfig.BATTLE_SHADER[shaderName]))
 end
 
-function BattleResourceManager.AddPreloadResource(arg_53_0, arg_53_1)
-	if type(arg_53_1) == "string" then
-		arg_53_0._preloadList[arg_53_1] = false
-	elseif type(arg_53_1) == "table" then
-		for iter_53_0, iter_53_1 in ipairs(arg_53_1) do
-			arg_53_0._preloadList[iter_53_1] = false
+-- ============================================================
+-- 预加载系统
+-- ============================================================
+
+--- 添加预加载资源路径
+--- @param path string|table 单个路径字符串或路径表
+function BattleResourceManager.AddPreloadResource(self, path)
+	if type(path) == "string" then
+		self._preloadList[path] = false
+	elseif type(path) == "table" then
+		for _, p in ipairs(path) do
+			self._preloadList[p] = false
 		end
 	end
 end
 
-function BattleResourceManager.AddPreloadCV(arg_54_0, arg_54_1)
-	local var_54_0 = ShipWordHelper.RawGetCVKey(arg_54_1)
+--- 添加预加载语音
+--- @param skinID number 皮肤ID（用于获取对应CV）
+function BattleResourceManager.AddPreloadCV(self, skinID)
+	local cvKey = ShipWordHelper.RawGetCVKey(skinID)
 
-	if var_54_0 > 0 then
-		arg_54_0._battleCVList[var_54_0] = pg.CriMgr.GetBattleCVBankName(var_54_0)
+	if cvKey > 0 then
+		self._battleCVList[cvKey] = pg.CriMgr.GetBattleCVBankName(cvKey)
 	end
 end
 
-function BattleResourceManager.StartPreload(arg_55_0, arg_55_1, arg_55_2)
-	local var_55_0 = 0
-	local var_55_1 = 0
+--- 开始预加载所有资源
+--- @param onProgress function|nil 进度回调，参数为已加载数量
+--- @param onComplete function 完成回调
+--- @return number totalCount 总预加载数量
+function BattleResourceManager.StartPreload(self, onProgress, onComplete)
+	local loadedCount = 0
+	local totalCount = 0
 
-	for iter_55_0, iter_55_1 in pairs(arg_55_0._preloadList) do
-		var_55_1 = var_55_1 + 1
+	for _ in pairs(self._preloadList) do
+		totalCount = totalCount + 1
 	end
 
-	for iter_55_2, iter_55_3 in pairs(arg_55_0._battleCVList) do
-		var_55_1 = var_55_1 + 1
+	for _ in pairs(self._battleCVList) do
+		totalCount = totalCount + 1
 	end
 
-	local function var_55_2()
-		if not arg_55_0._poolRoot then
+	--- 单个资源加载完成或跳过的统一回调
+	--- 用于推进进度并在全部完成时调用 onComplete
+	local function onOneLoaded()
+		if not self._poolRoot then
 			return
 		end
 
-		var_55_0 = var_55_0 + 1
+		loadedCount = loadedCount + 1
 
-		if var_55_0 > var_55_1 then
+		if loadedCount > totalCount then
 			return
 		end
 
-		if arg_55_2 then
-			arg_55_2(var_55_0)
+		if onProgress then
+			onProgress(loadedCount)
 		end
 
-		if var_55_0 == var_55_1 then
-			arg_55_0._preloadList = nil
-
-			arg_55_1()
+		-- 全部加载完成
+		if loadedCount == totalCount then
+			self._preloadList = nil
+			onComplete()
 		end
 	end
 
-	for iter_55_4, iter_55_5 in pairs(arg_55_0._battleCVList) do
-		pg.CriMgr.GetInstance():LoadBattleCV(iter_55_4, var_55_2)
+	-- 先加载所有语音
+	for cvKey, _ in pairs(self._battleCVList) do
+		pg.CriMgr.GetInstance():LoadBattleCV(cvKey, onOneLoaded)
 	end
 
-	for iter_55_6, iter_55_7 in pairs(arg_55_0._preloadList) do
-		local var_55_3 = arg_55_0.GetResName(iter_55_6)
+	-- 加载所有预加载资源
+	for path, _ in pairs(self._preloadList) do
+		local resName = self.GetResName(path)
 
-		if var_55_3 == "" or arg_55_0._resCacheList[iter_55_6] ~= nil then
-			var_55_2()
-		elseif string.find(iter_55_6, "herohrzicon/") or string.find(iter_55_6, "qicon/") or string.find(iter_55_6, "squareicon/") or string.find(iter_55_6, "commanderhrz/") or string.find(iter_55_6, "commandericon/") or string.find(iter_55_6, "AircraftIcon/") then
-			local var_55_4, var_55_5 = HXSet.autoHxShiftPath(iter_55_6, var_55_3)
+		if resName == "" or self._resCacheList[path] ~= nil then
+			-- 路径为空或已缓存，跳过
+			onOneLoaded()
+		elseif string.find(path, "herohrzicon/") or string.find(path, "qicon/") or string.find(path, "squareicon/") or string.find(path, "commanderhrz/") or string.find(path, "commandericon/") or string.find(path, "AircraftIcon/") then
+			-- 图标类资源：需要处理大/R/小版本路径适配（HXSet）
+			local actualPath, pureName = HXSet.autoHxShiftPath(path, resName)
 
-			ResourceMgr.Inst:getAssetAsync(var_55_4, "", typeof(Sprite), UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_57_0)
-				if arg_57_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+			ResourceMgr.Inst:getAssetAsync(actualPath, "", typeof(Sprite), UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					if not arg_55_0._poolRoot then
-						var_0_4.Destroy(arg_57_0)
-
+					if not self._poolRoot then
+						PoolUtil.Destroy(asset)
 						return
 					end
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_57_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				var_55_2()
+				onOneLoaded()
 			end), true, true)
-		elseif string.find(iter_55_6, "shiptype/") then
-			local var_55_6 = string.split(iter_55_6, "/")[2]
+		elseif string.find(path, "shiptype/") then
+			-- 舰种图标：从shiptype图集中异步加载
+			local spriteName = string.split(path, "/")[2]
 
-			GetSpriteFromAtlasAsync("shiptype", var_55_6, function(arg_58_0)
-				if arg_58_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+			GetSpriteFromAtlasAsync("shiptype", spriteName, function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					if not arg_55_0._poolRoot then
-						var_0_4.Destroy(arg_58_0)
-
+					if not self._poolRoot then
+						PoolUtil.Destroy(asset)
 						return
 					end
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_58_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				var_55_2()
+				onOneLoaded()
 			end)
-		elseif string.find(iter_55_6, "painting/") then
-			PoolMgr.GetInstance():GetPainting(BattleResourceManager.GetPaintingName(var_55_3), true, function(arg_59_0)
-				if arg_59_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+		elseif string.find(path, "painting/") then
+			-- 立绘资源：通过 PoolMgr 获取立绘
+			PoolMgr.GetInstance():GetPainting(BattleResourceManager.GetPaintingName(resName), true, function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					if not arg_55_0._poolRoot then
-						BattleResourceManager.ClearPaintingRes(iter_55_6, arg_59_0)
-
+					if not self._poolRoot then
+						BattleResourceManager.ClearPaintingRes(path, asset)
 						return
 					end
 
-					ShipExpressionHelper.SetExpression(arg_59_0, var_55_3)
-					arg_59_0:SetActive(false)
+					ShipExpressionHelper.SetExpression(asset, resName)
+					asset:SetActive(false)
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_59_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				var_55_2()
+				onOneLoaded()
 			end)
-		elseif string.find(iter_55_6, "Char/") then
-			arg_55_0:LoadSpineAsset(var_55_3, function(arg_60_0)
-				if arg_60_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+		elseif string.find(path, "Char/") then
+			-- 角色Spine资源
+			self:LoadSpineAsset(resName, function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					arg_60_0 = SpineAnim.AnimChar(var_55_3, arg_60_0)
+					asset = SpineAnim.AnimChar(resName, asset)
 
-					if not arg_55_0._poolRoot then
-						BattleResourceManager.ClearCharRes(iter_55_6, arg_60_0)
-
+					if not self._poolRoot then
+						BattleResourceManager.ClearCharRes(path, asset)
 						return
 					end
 
-					arg_60_0:SetActive(false)
+					asset:SetActive(false)
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_60_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				arg_55_0:InitPool(iter_55_6, arg_60_0)
-				var_55_2()
+				self:InitPool(path, asset)
+				onOneLoaded()
 			end)
-		elseif string.find(iter_55_6, "UI/") then
-			LoadAndInstantiateAsync("UI", var_55_3, function(arg_61_0)
-				if arg_61_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+		elseif string.find(path, "UI/") then
+			-- UI资源
+			LoadAndInstantiateAsync("UI", resName, function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					if not arg_55_0._poolRoot then
-						var_0_4.Destroy(arg_61_0)
-
+					if not self._poolRoot then
+						PoolUtil.Destroy(asset)
 						return
 					end
 
-					arg_61_0:SetActive(false)
+					asset:SetActive(false)
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_61_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				arg_55_0:InitPool(iter_55_6, arg_61_0)
-				var_55_2()
+				self:InitPool(path, asset)
+				onOneLoaded()
 			end, true, true)
 		else
-			ResourceMgr.Inst:getAssetAsync(iter_55_6, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(arg_62_0)
-				if arg_62_0 == nil then
-					originalPrint("资源预加载失败，检查以下目录：>>" .. iter_55_6 .. "<<")
+			-- 其他通用资源（Item/Effect/Map/chargo/orbit 等）
+			ResourceMgr.Inst:getAssetAsync(path, "", UnityEngine.Events.UnityAction_UnityEngine_Object(function(asset)
+				if asset == nil then
+					originalPrint("资源预加载失败，检查以下目录：>>" .. path .. "<<")
 				else
-					if not arg_55_0._poolRoot then
-						var_0_4.Destroy(arg_62_0)
-
+					if not self._poolRoot then
+						PoolUtil.Destroy(asset)
 						return
 					end
 
-					if arg_55_0._resCacheList then
-						arg_55_0._resCacheList[iter_55_6] = arg_62_0
+					if self._resCacheList then
+						self._resCacheList[path] = asset
 					end
 				end
 
-				arg_55_0:InitPool(iter_55_6, arg_62_0)
-				var_55_2()
+				self:InitPool(path, asset)
+				onOneLoaded()
 			end), true, true)
 		end
 	end
 
-	return var_55_1
+	return totalCount
 end
 
-function BattleResourceManager.GetPaintingName(arg_63_0)
-	local var_63_0 = false
+--- 获取立绘资源名（考虑"隐藏其他对象"和"战斗隐藏背景"设置，可能追加 "_n" 后缀）
+--- @param paintingName string 原始立绘名
+--- @return string 实际立绘名
+function BattleResourceManager.GetPaintingName(paintingName)
+	local useNaked = false
 
 	if PlayerPrefs.GetInt(BATTLE_HIDE_BG, 1) > 0 then
-		var_63_0 = checkABExist("painting/" .. arg_63_0 .. "_n")
+		useNaked = checkABExist("painting/" .. paintingName .. "_n")
 	else
-		var_63_0 = PlayerPrefs.GetInt("paint_hide_other_obj_" .. arg_63_0, 0) ~= 0 and checkABExist("painting/" .. arg_63_0 .. "_n")
+		useNaked = PlayerPrefs.GetInt("paint_hide_other_obj_" .. paintingName, 0) ~= 0 and checkABExist("painting/" .. paintingName .. "_n")
 	end
 
-	return arg_63_0 .. (var_63_0 and "_n" or "")
+	return paintingName .. (useNaked and "_n" or "")
 end
 
-local var_0_6 = Vector3(0, 10000, 0)
+-- ============================================================
+-- 池管理与辅助函数
+-- ============================================================
 
-function BattleResourceManager.HideBullet(arg_64_0)
-	arg_64_0.transform.position = var_0_6
+--- 隐藏子弹的固定位置（屏幕外 Y=10000）
+local hidePos = Vector3(0, 10000, 0)
+
+--- 子弹回池时移动到屏幕外
+--- @param bulletObj GameObject
+function BattleResourceManager.HideBullet(bulletObj)
+	bulletObj.transform.position = hidePos
 end
 
-function BattleResourceManager.InitParticleSystemCB(arg_65_0)
-	pg.EffectMgr.GetInstance():CommonEffectEvent(arg_65_0)
+--- 特效入池后的初始化回调：注册粒子系统事件
+--- @param effectObj GameObject
+function BattleResourceManager.InitParticleSystemCB(effectObj)
+	pg.EffectMgr.GetInstance():CommonEffectEvent(effectObj)
 end
 
-function BattleResourceManager.InitPool(arg_66_0, arg_66_1, arg_66_2)
-	local var_66_0 = arg_66_0._poolRoot.transform
+--- 为指定资源路径和模板对象初始化对象池
+--- 根据资源类型（Item/Effect/Char/chargo/orbit/UI）使用不同的池配置策略
+--- @param path string 资源完整路径
+--- @param templateObj GameObject 模板对象
+function BattleResourceManager.InitPool(self, path, templateObj)
+	local poolRootTf = self._poolRoot.transform
 
-	if string.find(arg_66_1, "Item/") then
-		if arg_66_2:GetComponentInChildren(typeof(UnityEngine.TrailRenderer)) ~= nil or arg_66_2:GetComponentInChildren(typeof(ParticleSystem)) ~= nil then
-			arg_66_0._allPool[arg_66_1] = pg.Pool.New(arg_66_0._bulletContainer.transform, arg_66_2, 15, 20, true, false):InitSize()
+	if string.find(path, "Item/") then
+		-- 子弹资源
+		if templateObj:GetComponentInChildren(typeof(UnityEngine.TrailRenderer)) ~= nil or templateObj:GetComponentInChildren(typeof(ParticleSystem)) ~= nil then
+			-- 有拖尾或粒子的子弹：15初始/20上限，自动释放
+			self._allPool[path] = pg.Pool.New(self._bulletContainer.transform, templateObj, 15, 20, true, false):InitSize()
 		else
-			local var_66_1 = pg.Pool.New(arg_66_0._bulletContainer.transform, arg_66_2, 20, 20, true, true)
-
-			var_66_1:SetRecycleFuncs(BattleResourceManager.HideBullet)
-			var_66_1:InitSize()
-
-			arg_66_0._allPool[arg_66_1] = var_66_1
+			-- 普通子弹：20初始/20上限，回收时调用 HideBullet 移到屏幕外
+			local bulletPool = pg.Pool.New(self._bulletContainer.transform, templateObj, 20, 20, true, true)
+			bulletPool:SetRecycleFuncs(BattleResourceManager.HideBullet)
+			bulletPool:InitSize()
+			self._allPool[path] = bulletPool
 		end
-	elseif string.find(arg_66_1, "Effect/") then
-		if arg_66_2:GetComponent(typeof(UnityEngine.ParticleSystem)) then
-			local var_66_2 = 5
+	elseif string.find(path, "Effect/") then
+		-- 特效资源
+		if templateObj:GetComponent(typeof(UnityEngine.ParticleSystem)) then
+			-- 有粒子系统组件的：基准5个，smoke特殊处理30个，feijiyingzi 1个
+			local initSize = 5
 
-			if string.find(arg_66_1, "smoke") and not string.find(arg_66_1, "smokeboom") then
-				var_66_2 = 30
-			elseif string.find(arg_66_1, "feijiyingzi") then
-				var_66_2 = 1
+			if string.find(path, "smoke") and not string.find(path, "smokeboom") then
+				initSize = 30
+			elseif string.find(path, "feijiyingzi") then
+				initSize = 1
 			end
 
-			local var_66_3 = pg.Pool.New(var_66_0, arg_66_2, var_66_2, 20, false, false)
-
-			var_66_3:SetInitFuncs(BattleResourceManager.InitParticleSystemCB)
-			var_66_3:InitSize()
-
-			arg_66_0._allPool[arg_66_1] = var_66_3
+			local fxPool = pg.Pool.New(poolRootTf, templateObj, initSize, 20, false, false)
+			fxPool:SetInitFuncs(BattleResourceManager.InitParticleSystemCB)
+			fxPool:InitSize()
+			self._allPool[path] = fxPool
 		else
-			local var_66_4 = 8
+			-- 无粒子系统组件的特效（如AntiAirArea等）
+			local initSize = 8
 
-			if string.find(arg_66_1, "AntiAirArea") or string.find(arg_66_1, "AntiSubArea") then
-				var_66_4 = 1
+			if string.find(path, "AntiAirArea") or string.find(path, "AntiSubArea") then
+				initSize = 1
 			end
 
-			GetOrAddComponent(arg_66_2, typeof(ParticleSystemEvent))
+			GetOrAddComponent(templateObj, typeof(ParticleSystemEvent))
 
-			local var_66_5 = pg.Pool.New(var_66_0, arg_66_2, var_66_4, 20, false, false)
-
-			var_66_5:InitSize()
-
-			arg_66_0._allPool[arg_66_1] = var_66_5
+			local fxPool = pg.Pool.New(poolRootTf, templateObj, initSize, 20, false, false)
+			fxPool:InitSize()
+			self._allPool[path] = fxPool
 		end
-	elseif string.find(arg_66_1, "Char/") then
-		local var_66_6 = 1
+	elseif string.find(path, "Char/") then
+		-- 角色Spine资源：通常1个，danchuan（单船/自爆船）3个
+		local initSize = 1
 
-		if string.find(arg_66_1, "danchuan") then
-			var_66_6 = 3
+		if string.find(path, "danchuan") then
+			initSize = 3
 		end
 
-		local var_66_7 = pg.Pool.New(var_66_0, arg_66_2, var_66_6, 20, false, false):InitSize()
-
-		var_66_7:SetRecycleFuncs(BattleResourceManager.ResetSpineAction)
-
-		arg_66_0._allPool[arg_66_1] = var_66_7
-	elseif string.find(arg_66_1, "chargo/") then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 3, 20, false, false):InitSize()
-	elseif string.find(arg_66_1, "orbit/") then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 2, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/SkillPainting" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/SkillPaintingDAL" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/MonsterAppearUI" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/CardTowerCardCombat" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 7, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/combatgridmanskillfloat" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/combatreisalinapui" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/combatyumiamanaui" then
-		arg_66_0._allPool[arg_66_1] = pg.Pool.New(var_66_0, arg_66_2, 1, 20, false, false):InitSize()
-	elseif arg_66_1 == "UI/CombatHPBar" .. var_0_0.Battle.BattleState.GetCombatSkinKey() then
-		var_0_0.Battle.BattleHPBarManager.GetInstance():Init(arg_66_2, var_66_0)
-	elseif string.find(arg_66_1, "UI/CombatHPPop") then
-		var_0_0.Battle.BattlePopNumManager.GetInstance():Init(arg_66_2, var_66_0)
+		local charPool = pg.Pool.New(poolRootTf, templateObj, initSize, 20, false, false):InitSize()
+		charPool:SetRecycleFuncs(BattleResourceManager.ResetSpineAction)
+		self._allPool[path] = charPool
+	elseif string.find(path, "chargo/") then
+		-- 飞机模型：3个
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 3, 20, false, false):InitSize()
+	elseif string.find(path, "orbit/") then
+		-- 轨道：2个
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 2, 20, false, false):InitSize()
+	elseif path == "UI/SkillPainting" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/SkillPaintingDAL" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/MonsterAppearUI" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/CardTowerCardCombat" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 7, 20, false, false):InitSize()
+	elseif path == "UI/combatgridmanskillfloat" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/combatreisalinapui" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/combatyumiamanaui" then
+		self._allPool[path] = pg.Pool.New(poolRootTf, templateObj, 1, 20, false, false):InitSize()
+	elseif path == "UI/CombatHPBar" .. ys.Battle.BattleState.GetCombatSkinKey() then
+		-- HP条：交给 BattleHPBarManager 管理
+		ys.Battle.BattleHPBarManager.GetInstance():Init(templateObj, poolRootTf)
+	elseif string.find(path, "UI/CombatHPPop") then
+		-- HP弹出数字：交给 BattlePopNumManager 管理
+		ys.Battle.BattlePopNumManager.GetInstance():Init(templateObj, poolRootTf)
 	end
 end
 
-function BattleResourceManager.GetRotateScript(arg_67_0, arg_67_1, arg_67_2)
-	local var_67_0 = arg_67_0.rotateScriptMap
+--- 获取或添加子弹旋转脚本组件（有缓存避免重复 GetOrAddComponent）
+--- @param go GameObject
+--- @param bulletName string 子弹名（用于缓存key）
+--- @return Component
+function BattleResourceManager.GetRotateScript(self, go, bulletName)
+	local cache = self.rotateScriptMap
 
-	if var_67_0[arg_67_1] then
-		return var_67_0[arg_67_1]
+	if cache[go] then
+		return cache[go]
 	end
 
-	local var_67_1 = GetOrAddComponent(arg_67_1, "BulletRotation")
+	local script = GetOrAddComponent(go, "BulletRotation")
+	cache[go] = script
 
-	var_67_0[arg_67_1] = var_67_1
-
-	return var_67_1
+	return script
 end
 
+-- ============================================================
+-- 资源清单收集函数（用于在战斗前构建预加载列表）
+-- ============================================================
+
+--- 获取通用战斗资源清单
+--- 包括地图（visionLine, exposeLine）、通用特效（水波纹、炸弹、警报区域等）、UI组件（HP条等）
 function BattleResourceManager.GetCommonResource()
 	return {
 		BattleResourceManager.GetMapPath("visionLine"),
 		BattleResourceManager.GetMapPath("exposeLine"),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleBossCharacterFactory.BOMB_FX_NAME),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleAircraftCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleBossCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleAircraftCharacterFactory.BOMB_FX_NAME),
 		BattleResourceManager.GetFXPath("AlertArea"),
 		BattleResourceManager.GetFXPath("TorAlert"),
 		BattleResourceManager.GetFXPath("SquareAlert"),
@@ -869,890 +978,969 @@ function BattleResourceManager.GetCommonResource()
 		BattleResourceManager.GetFXPath("AimBiasArea"),
 		BattleResourceManager.GetFXPath("shock"),
 		BattleResourceManager.GetFXPath("qianting_chushui"),
-		BattleResourceManager.GetFXPath(var_0_3.PLAYER_SUB_BUBBLE_FX),
+		BattleResourceManager.GetFXPath(BattleConfig.PLAYER_SUB_BUBBLE_FX),
 		BattleResourceManager.GetFXPath("weaponrange"),
 		BattleResourceManager.GetUIPath("SkillPainting"),
 		BattleResourceManager.GetUIPath("MonsterAppearUI"),
 		BattleResourceManager.GetUIPath("combatreisalinapui"),
 		BattleResourceManager.GetUIPath("combatyumiamanaui"),
-		BattleResourceManager.GetUIPath("CombatHPBar" .. var_0_0.Battle.BattleState.GetCombatSkinKey()),
-		BattleResourceManager.GetUIPath("CombatHPPop" .. var_0_0.Battle.BattleState.GetCombatSkinKey())
+		BattleResourceManager.GetUIPath("CombatHPBar" .. ys.Battle.BattleState.GetCombatSkinKey()),
+		BattleResourceManager.GetUIPath("CombatHPPop" .. ys.Battle.BattleState.GetCombatSkinKey()),
 	}
 end
 
+--- 获取展示用通用资源（比 GetCommonResource 少一些，用于预览/展示场景）
 function BattleResourceManager.GetDisplayCommonResource()
 	return {
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.BOMB_FX_NAME),
-		BattleResourceManager.GetFXPath(var_0_0.Battle.BattleCharacterFactory.DANCHUAN_MOVE_WAVE_FX_NAME)
+		BattleResourceManager.GetFXPath(ys.Battle.BattleCharacterFactory.MOVE_WAVE_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleCharacterFactory.BOMB_FX_NAME),
+		BattleResourceManager.GetFXPath(ys.Battle.BattleCharacterFactory.DANCHUAN_MOVE_WAVE_FX_NAME),
 	}
 end
 
-function BattleResourceManager.GetMapResource(arg_70_0)
-	local var_70_0 = {}
-	local var_70_1 = var_0_0.Battle.BattleMap
+--- 获取地图资源清单（根据地图ID逐层收集）
+--- @param mapID number 地图ID
+--- @return table 地图资源路径列表
+function BattleResourceManager.GetMapResource(mapID)
+	local resList = {}
+	local BattleMap = ys.Battle.BattleMap
 
-	for iter_70_0, iter_70_1 in ipairs(var_70_1.LAYERS) do
-		local var_70_2 = var_70_1.GetMapResNames(arg_70_0, iter_70_1)
-
-		for iter_70_2, iter_70_3 in ipairs(var_70_2) do
-			var_70_0[#var_70_0 + 1] = BattleResourceManager.GetMapPath(iter_70_3)
+	for _, layer in ipairs(BattleMap.LAYERS) do
+		local layerResNames = BattleMap.GetMapResNames(mapID, layer)
+		for _, resName in ipairs(layerResNames) do
+			resList[#resList + 1] = BattleResourceManager.GetMapPath(resName)
 		end
 	end
 
-	return var_70_0
+	return resList
 end
 
+--- 获取Buff特效资源清单（从 buffFXPreloadList 配置）
 function BattleResourceManager.GetBuffResource()
-	local var_71_0 = {}
-	local var_71_1 = require("buffFXPreloadList")
+	local resList = {}
+	local buffFXList = require("buffFXPreloadList")
 
-	for iter_71_0, iter_71_1 in ipairs(var_71_1) do
-		var_71_0[#var_71_0 + 1] = BattleResourceManager.GetFXPath(iter_71_1)
+	for _, fxName in ipairs(buffFXList) do
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(fxName)
 	end
 
-	return var_71_0
+	return resList
 end
 
-function BattleResourceManager.GetShipResource(arg_72_0, arg_72_1, arg_72_2)
-	local var_72_0 = {}
-	local var_72_1 = var_0_1.GetPlayerShipTmpDataFromID(arg_72_0)
+--- 获取单艘舰船的资源清单
+--- @param shipTmpID number 舰船模板ID
+--- @param skinID number|nil 皮肤ID
+--- @param isMainUnit boolean 是否主力单位（主力额外需要立绘）
+--- @return table 资源路径列表
+function BattleResourceManager.GetShipResource(shipTmpID, skinID, isMainUnit)
+	local resList = {}
+	local shipTmpData = BattleDataFunction.GetPlayerShipTmpDataFromID(shipTmpID)
 
-	if arg_72_1 == nil or arg_72_1 == 0 then
-		arg_72_1 = var_72_1.skin_id
+	if skinID == nil or skinID == 0 then
+		skinID = shipTmpData.skin_id
 	end
 
-	local var_72_2 = var_0_1.GetPlayerShipSkinDataFromID(arg_72_1)
+	local skinData = BattleDataFunction.GetPlayerShipSkinDataFromID(skinID)
 
-	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetCharacterPath(var_72_2.prefab)
-	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetHrzIcon(var_72_2.painting)
-	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetQIcon(var_72_2.painting)
+	-- 角色Spine + 头像图标
+	resList[#resList + 1] = BattleResourceManager.GetCharacterPath(skinData.prefab)
+	resList[#resList + 1] = BattleResourceManager.GetHrzIcon(skinData.painting)
+	resList[#resList + 1] = BattleResourceManager.GetQIcon(skinData.painting)
 
-	if table.contains(var_0_3.MIRROR_QICON_SHIP_GROUP, var_72_2.ship_group) then
-		var_72_0[#var_72_0 + 1] = BattleResourceManager.GetQIcon(var_72_2.painting .. var_0_3.MIRROR_QICON_KEY)
+	-- 镜像Q版头像（如某些联动角色需要）
+	if table.contains(BattleConfig.MIRROR_QICON_SHIP_GROUP, skinData.ship_group) then
+		resList[#resList + 1] = BattleResourceManager.GetQIcon(skinData.painting .. BattleConfig.MIRROR_QICON_KEY)
 	end
 
-	var_72_0[#var_72_0 + 1] = BattleResourceManager.GetSquareIcon(var_72_2.painting)
+	resList[#resList + 1] = BattleResourceManager.GetSquareIcon(skinData.painting)
 
-	if arg_72_2 and var_0_1.GetShipTypeTmp(var_72_1.type).team_type == TeamType.Main then
-		var_72_0[#var_72_0 + 1] = BattleResourceManager.GetPaintingPath(var_72_2.painting)
+	-- 主力单位额外需要立绘
+	if isMainUnit and BattleDataFunction.GetShipTypeTmp(shipTmpData.type).team_type == TeamType.Main then
+		resList[#resList + 1] = BattleResourceManager.GetPaintingPath(skinData.painting)
 	end
 
-	return var_72_0
+	return resList
 end
 
-function BattleResourceManager.GetPlayerShipResource(arg_73_0, arg_73_1)
-	local var_73_0 = {}
-	local var_73_1 = {}
-	local var_73_2
+--- 获取玩家舰船（含装备、技能、指挥喵）的完整资源清单
+--- @param shipVOList table 舰船VO列表（Ship类型）
+--- @param battleType number 战斗类型
+--- @return table resList 资源路径列表
+--- @return table skinIDList 皮肤ID列表
+function BattleResourceManager.GetPlayerShipResource(shipVOList, battleType)
+	local resList = {}
+	local skinIDList = {}
 
-	for iter_73_0, iter_73_1 in ipairs(arg_73_0) do
-		local var_73_3 = iter_73_1.configId
+	for _, shipVO in ipairs(shipVOList) do
+		local configId = shipVO.configId
 
-		table.insert(var_73_1, iter_73_1.skinId)
+		table.insert(skinIDList, shipVO.skinId)
 
-		local var_73_4 = BattleResourceManager.GetShipResource(var_73_3, iter_73_1.skinId, true)
-
-		for iter_73_2, iter_73_3 in pairs(var_73_4) do
-			table.insert(var_73_0, iter_73_3)
+		-- 舰船本体资源
+		local shipRes = BattleResourceManager.GetShipResource(configId, shipVO.skinId, true)
+		for _, res in pairs(shipRes) do
+			table.insert(resList, res)
 		end
 
-		local var_73_5 = var_0_1.GetPlayerShipTmpDataFromID(var_73_3)
+		local shipTmpData = BattleDataFunction.GetPlayerShipTmpDataFromID(configId)
 
-		for iter_73_4, iter_73_5 in ipairs(iter_73_1:getActiveEquipments()) do
-			local var_73_6
-			local var_73_7
-			local var_73_8 = 0
+		-- 装备资源（5个装备槽位）
+		for equipIndex, equipItem in ipairs(shipVO:getActiveEquipments()) do
+			local equipId
+			local equipSkinId = 0
 
-			if not iter_73_5 then
-				var_73_6 = var_73_5.default_equip_list[iter_73_4]
+			if not equipItem then
+				equipId = shipTmpData.default_equip_list[equipIndex]
 			else
-				var_73_6 = iter_73_5.configId
-				var_73_8 = iter_73_5.skinId
+				equipId = equipItem.configId
+				equipSkinId = equipItem.skinId
 			end
 
-			if var_73_6 then
-				local var_73_9 = var_0_1.GetWeaponDataFromID(var_73_6).weapon_id
+			if equipId then
+				local weaponIds = BattleDataFunction.GetWeaponDataFromID(equipId).weapon_id
 
-				if #var_73_9 > 0 then
-					for iter_73_6, iter_73_7 in ipairs(var_73_9) do
-						local var_73_10 = BattleResourceManager.GetWeaponResource(iter_73_7, var_73_8)
-
-						for iter_73_8, iter_73_9 in pairs(var_73_10) do
-							table.insert(var_73_0, iter_73_9)
+				if #weaponIds > 0 then
+					-- 直接有武器ID列表的（如普通装备）
+					for _, weaponId in ipairs(weaponIds) do
+						local weaponRes = BattleResourceManager.GetWeaponResource(weaponId, equipSkinId)
+						for _, res in pairs(weaponRes) do
+							table.insert(resList, res)
 						end
 					end
 				else
-					local var_73_11 = BattleResourceManager.GetEquipResource(var_73_6, var_73_8, arg_73_1)
-
-					for iter_73_10, iter_73_11 in pairs(var_73_11) do
-						table.insert(var_73_0, iter_73_11)
+					-- 没有武器ID的（如特殊装备，需要通过GetEquipResource处理）
+					local equipRes = BattleResourceManager.GetEquipResource(equipId, equipSkinId, battleType)
+					for _, res in pairs(equipRes) do
+						table.insert(resList, res)
 					end
 				end
 			end
 		end
 
-		local var_73_12 = {}
+		-- 固定装备（depth_charge_list + fix_equip_list）的武器资源
+		local fixedWeaponIds = {}
 
-		for iter_73_12, iter_73_13 in ipairs(var_73_5.depth_charge_list) do
-			local var_73_13 = var_0_1.GetWeaponDataFromID(iter_73_13).weapon_id
-
-			for iter_73_14, iter_73_15 in ipairs(var_73_13) do
-				table.insert(var_73_12, iter_73_15)
+		for _, equipId in ipairs(shipTmpData.depth_charge_list) do
+			local weaponIds = BattleDataFunction.GetWeaponDataFromID(equipId).weapon_id
+			for _, weaponId in ipairs(weaponIds) do
+				table.insert(fixedWeaponIds, weaponId)
 			end
 		end
 
-		for iter_73_16, iter_73_17 in ipairs(var_73_5.fix_equip_list) do
-			local var_73_14 = var_0_1.GetWeaponDataFromID(iter_73_17).weapon_id
-
-			for iter_73_18, iter_73_19 in ipairs(var_73_14) do
-				table.insert(var_73_12, iter_73_19)
+		for _, equipId in ipairs(shipTmpData.fix_equip_list) do
+			local weaponIds = BattleDataFunction.GetWeaponDataFromID(equipId).weapon_id
+			for _, weaponId in ipairs(weaponIds) do
+				table.insert(fixedWeaponIds, weaponId)
 			end
 		end
 
-		for iter_73_20, iter_73_21 in ipairs(var_73_12) do
-			local var_73_15 = BattleResourceManager.GetWeaponResource(iter_73_21)
-
-			for iter_73_22, iter_73_23 in pairs(var_73_15) do
-				table.insert(var_73_0, iter_73_23)
+		for _, weaponId in ipairs(fixedWeaponIds) do
+			local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
+			for _, res in pairs(weaponRes) do
+				table.insert(resList, res)
 			end
 		end
 
-		local var_73_16 = iter_73_1.GetSpWeapon and iter_73_1:GetSpWeapon()
-
-		if var_73_16 then
-			local var_73_17 = BattleResourceManager.GetSpWeaponResource(var_73_16:GetConfigID(), arg_73_1)
-
-			for iter_73_24, iter_73_25 in pairs(var_73_17) do
-				table.insert(var_73_0, iter_73_25)
+		-- 专武（SpWeapon）资源
+		local spWeapon = shipVO.GetSpWeapon and shipVO:GetSpWeapon()
+		if spWeapon then
+			local spWeaponRes = BattleResourceManager.GetSpWeaponResource(spWeapon:GetConfigID(), battleType)
+			for _, res in pairs(spWeaponRes) do
+				table.insert(resList, res)
 			end
 		end
 
-		local var_73_18 = var_0_1.GetBuffBulletRes(var_73_3, iter_73_1.skills, arg_73_1, iter_73_1.skinId, var_73_16)
-
-		for iter_73_26, iter_73_27 in pairs(var_73_18) do
-			table.insert(var_73_0, iter_73_27)
+		-- 技能Buff对应的子弹/特效资源
+		local skillResList = BattleDataFunction.GetBuffBulletRes(configId, shipVO.skills, battleType, shipVO.skinId, spWeapon)
+		for _, res in pairs(skillResList) do
+			table.insert(resList, res)
 		end
 
-		if iter_73_1.buffs then
-			local var_73_19 = var_0_1.GetBuffListRes(iter_73_1.buffs, arg_73_1, iter_73_1.skinId)
-
-			for iter_73_28, iter_73_29 in pairs(var_73_19) do
-				table.insert(var_73_0, iter_73_29)
+		-- Buff本身对应的资源
+		if shipVO.buffs then
+			local buffRes = BattleDataFunction.GetBuffListRes(shipVO.buffs, battleType, shipVO.skinId)
+			for _, res in pairs(buffRes) do
+				table.insert(resList, res)
 			end
 		end
 	end
 
-	return var_73_0, var_73_1
+	return resList, skinIDList
 end
 
-function BattleResourceManager.GetEnemyResource(arg_74_0)
-	local var_74_0 = {}
-	local var_74_1 = arg_74_0.monsterTemplateID
-	local var_74_2 = arg_74_0.bossData ~= nil
-	local var_74_3 = arg_74_0.buffList or {}
-	local var_74_4 = arg_74_0.phase or {}
-	local var_74_5 = var_0_1.GetMonsterTmpDataFromID(var_74_1)
+--- 获取敌方单位资源清单
+--- @param spawnData table 生成数据（含 monsterTemplateID, bossData, buffList, phase 等）
+--- @return table 资源路径列表
+function BattleResourceManager.GetEnemyResource(spawnData)
+	local resList = {}
+	local monsterID = spawnData.monsterTemplateID
+	local isBoss = spawnData.bossData ~= nil
+	local buffList = spawnData.buffList or {}
+	local phaseList = spawnData.phase or {}
+	local monsterTmp = BattleDataFunction.GetMonsterTmpDataFromID(monsterID)
 
-	var_74_0[#var_74_0 + 1] = BattleResourceManager.GetCharacterPath(var_74_5.prefab)
-	var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(var_74_5.wave_fx)
+	-- 基本角色资源
+	resList[#resList + 1] = BattleResourceManager.GetCharacterPath(monsterTmp.prefab)
+	resList[#resList + 1] = BattleResourceManager.GetFXPath(monsterTmp.wave_fx)
 
-	if var_74_5.fog_fx then
-		var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(var_74_5.fog_fx)
+	if monsterTmp.fog_fx then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(monsterTmp.fog_fx)
 	end
 
-	for iter_74_0, iter_74_1 in ipairs(var_74_5.appear_fx) do
-		var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(iter_74_1)
+	-- 登场特效
+	for _, appearFX in ipairs(monsterTmp.appear_fx) do
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(appearFX)
 	end
 
-	for iter_74_2, iter_74_3 in ipairs(var_74_5.smoke) do
-		local var_74_6 = iter_74_3[2]
-
-		for iter_74_4, iter_74_5 in ipairs(var_74_6) do
-			var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(iter_74_5[1])
+	-- 烟雾特效
+	for _, smokeData in ipairs(monsterTmp.smoke) do
+		local smokeFXs = smokeData[2]
+		for _, fx in ipairs(smokeFXs) do
+			resList[#resList + 1] = BattleResourceManager.GetFXPath(fx[1])
 		end
 	end
 
-	if arg_74_0.deadFX then
-		var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(arg_74_0.deadFX)
+	-- 自定义死亡特效
+	if spawnData.deadFX then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(spawnData.deadFX)
 	end
 
-	if type(var_74_5.bubble_fx) == "table" then
-		var_74_0[#var_74_0 + 1] = BattleResourceManager.GetFXPath(var_74_5.bubble_fx[1])
+	-- 潜艇气泡特效
+	if type(monsterTmp.bubble_fx) == "table" then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(monsterTmp.bubble_fx[1])
 	end
 
-	local function var_74_7(arg_75_0)
-		local var_75_0 = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(arg_75_0, 1)
+	--- 递归查询Buff是否需要技能立绘（painting）并加入资源清单
+	--- @param buffID number Buff ID
+	local function collectBuffSkillPainting(buffID)
+		local buffTemplate = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, 1)
 
-		for iter_75_0, iter_75_1 in pairs(var_75_0.effect_list) do
-			local var_75_1 = iter_75_1.arg_list.skill_id
+		for _, effectItem in pairs(buffTemplate.effect_list) do
+			local skillId = effectItem.arg_list.skill_id
 
-			if var_75_1 then
-				local var_75_2 = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(var_75_1).painting
+			if skillId then
+				local painting = ys.Battle.BattleDataFunction.GetSkillTemplate(skillId).painting
 
-				if var_75_2 == 1 then
-					var_74_0[#var_74_0 + 1] = BattleResourceManager.GetHrzIcon(var_74_5.icon)
-					var_74_0[#var_74_0 + 1] = BattleResourceManager.GetSquareIcon(var_74_5.icon)
-				elseif type(var_75_2) == "string" then
-					var_74_0[#var_74_0 + 1] = BattleResourceManager.GetHrzIcon(var_75_2)
-					var_74_0[#var_74_0 + 1] = BattleResourceManager.GetSquareIcon(var_75_2)
+				if painting == 1 then
+					resList[#resList + 1] = BattleResourceManager.GetHrzIcon(monsterTmp.icon)
+					resList[#resList + 1] = BattleResourceManager.GetSquareIcon(monsterTmp.icon)
+				elseif type(painting) == "string" then
+					resList[#resList + 1] = BattleResourceManager.GetHrzIcon(painting)
+					resList[#resList + 1] = BattleResourceManager.GetSquareIcon(painting)
 				end
 			end
 
-			local var_75_3 = iter_75_1.arg_list.buff_id
-
-			if var_75_3 then
-				var_74_7(var_75_3)
+			-- 递归处理子Buff
+			local subBuffId = effectItem.arg_list.buff_id
+			if subBuffId then
+				collectBuffSkillPainting(subBuffId)
 			end
 		end
 	end
 
-	for iter_74_6, iter_74_7 in ipairs(var_74_3) do
-		var_74_7(iter_74_7)
+	-- 收集 buffList 中的技能立绘资源
+	for _, buffId in ipairs(buffList) do
+		collectBuffSkillPainting(buffId)
 	end
 
-	for iter_74_8, iter_74_9 in ipairs(var_74_4) do
-		if iter_74_9.addBuff then
-			for iter_74_10, iter_74_11 in ipairs(iter_74_9.addBuff) do
-				var_74_7(iter_74_11)
+	-- 收集 phase 中 addBuff 的技能立绘资源
+	for _, phaseData in ipairs(phaseList) do
+		if phaseData.addBuff then
+			for _, buffId in ipairs(phaseData.addBuff) do
+				collectBuffSkillPainting(buffId)
 			end
 		end
 	end
 
-	if var_74_2 then
-		var_74_0[#var_74_0 + 1] = BattleResourceManager.GetSquareIcon(var_74_5.icon)
+	-- Boss额外需要方形头像
+	if isBoss then
+		resList[#resList + 1] = BattleResourceManager.GetSquareIcon(monsterTmp.icon)
 	end
 
-	return var_74_0
+	return resList
 end
 
-function BattleResourceManager.GetWeaponResource(arg_76_0, arg_76_1)
-	local var_76_0 = {}
+--- 获取武器资源清单
+--- 根据武器类型分别收集：子弹类武器（炮弹/鱼雷/防空炮/导弹等）的子弹资源、
+--- 舰载机类武器的飞机资源、以及武器皮肤特效/轨道资源
+--- @param weaponID number 武器ID
+--- @param equipSkinID number|nil 装备皮肤ID
+--- @return table 资源路径列表
+function BattleResourceManager.GetWeaponResource(weaponID, equipSkinID)
+	local resList = {}
 
-	if arg_76_0 == -1 then
-		return var_76_0
+	if weaponID == -1 then
+		return resList
 	end
 
-	local var_76_1 = var_0_1.GetWeaponPropertyDataFromID(arg_76_0)
+	local weaponProperty = BattleDataFunction.GetWeaponPropertyDataFromID(weaponID)
 
-	if var_76_1.type == var_0_2.EquipmentType.MAIN_CANNON or var_76_1.type == var_0_2.EquipmentType.SUB_CANNON or var_76_1.type == var_0_2.EquipmentType.TORPEDO or var_76_1.type == var_0_2.EquipmentType.ANTI_AIR or var_76_1.type == var_0_2.EquipmentType.ANTI_SEA or var_76_1.type == var_0_2.EquipmentType.POINT_HIT_AND_LOCK or var_76_1.type == var_0_2.EquipmentType.MANUAL_METEOR or var_76_1.type == var_0_2.EquipmentType.BOMBER_PRE_CAST_ALERT or var_76_1.type == var_0_2.EquipmentType.DEPTH_CHARGE or var_76_1.type == var_0_2.EquipmentType.MANUAL_TORPEDO or var_76_1.type == var_0_2.EquipmentType.DISPOSABLE_TORPEDO or var_76_1.type == var_0_2.EquipmentType.MANUAL_AAMISSILE or var_76_1.type == var_0_2.EquipmentType.BEAM or var_76_1.type == var_0_2.EquipmentType.SPACE_LASER or var_76_1.type == var_0_2.EquipmentType.FLEET_RANGE_ANTI_AIR or var_76_1.type == var_0_2.EquipmentType.MANUAL_MISSILE or var_76_1.type == var_0_2.EquipmentType.AUTO_MISSILE or var_76_1.type == var_0_2.EquipmentType.MISSILE then
-		for iter_76_0, iter_76_1 in ipairs(var_76_1.bullet_ID) do
-			local var_76_2 = BattleResourceManager.GetBulletResource(iter_76_1, arg_76_1)
-
-			for iter_76_2, iter_76_3 in ipairs(var_76_2) do
-				var_76_0[#var_76_0 + 1] = iter_76_3
+	-- 根据武器类型收集子弹/飞机资源
+	if weaponProperty.type == BattleConst.EquipmentType.MAIN_CANNON
+		or weaponProperty.type == BattleConst.EquipmentType.SUB_CANNON
+		or weaponProperty.type == BattleConst.EquipmentType.TORPEDO
+		or weaponProperty.type == BattleConst.EquipmentType.ANTI_AIR
+		or weaponProperty.type == BattleConst.EquipmentType.ANTI_SEA
+		or weaponProperty.type == BattleConst.EquipmentType.POINT_HIT_AND_LOCK
+		or weaponProperty.type == BattleConst.EquipmentType.MANUAL_METEOR
+		or weaponProperty.type == BattleConst.EquipmentType.BOMBER_PRE_CAST_ALERT
+		or weaponProperty.type == BattleConst.EquipmentType.DEPTH_CHARGE
+		or weaponProperty.type == BattleConst.EquipmentType.MANUAL_TORPEDO
+		or weaponProperty.type == BattleConst.EquipmentType.DISPOSABLE_TORPEDO
+		or weaponProperty.type == BattleConst.EquipmentType.MANUAL_AAMISSILE
+		or weaponProperty.type == BattleConst.EquipmentType.BEAM
+		or weaponProperty.type == BattleConst.EquipmentType.SPACE_LASER
+		or weaponProperty.type == BattleConst.EquipmentType.FLEET_RANGE_ANTI_AIR
+		or weaponProperty.type == BattleConst.EquipmentType.MANUAL_MISSILE
+		or weaponProperty.type == BattleConst.EquipmentType.AUTO_MISSILE
+		or weaponProperty.type == BattleConst.EquipmentType.MISSILE then
+		-- 子弹类武器
+		for _, bulletID in ipairs(weaponProperty.bullet_ID) do
+			local bulletRes = BattleResourceManager.GetBulletResource(bulletID, equipSkinID)
+			for _, res in ipairs(bulletRes) do
+				resList[#resList + 1] = res
 			end
 		end
-	elseif var_76_1.type == var_0_2.EquipmentType.INTERCEPT_AIRCRAFT or var_76_1.type == var_0_2.EquipmentType.STRIKE_AIRCRAFT then
-		var_76_0 = BattleResourceManager.GetAircraftResource(arg_76_0, nil, arg_76_1)
-	elseif var_76_1.type == var_0_2.EquipmentType.PREVIEW_ARICRAFT then
-		for iter_76_4, iter_76_5 in ipairs(var_76_1.bullet_ID) do
-			var_76_0 = BattleResourceManager.GetAircraftResource(iter_76_5, nil, arg_76_1)
+	elseif weaponProperty.type == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT
+		or weaponProperty.type == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+		-- 舰载机类武器
+		resList = BattleResourceManager.GetAircraftResource(weaponID, nil, equipSkinID)
+	elseif weaponProperty.type == BattleConst.EquipmentType.PREVIEW_ARICRAFT then
+		-- 预览用飞机
+		for _, aircraftID in ipairs(weaponProperty.bullet_ID) do
+			resList = BattleResourceManager.GetAircraftResource(aircraftID, nil, equipSkinID)
 		end
 	end
 
-	if var_76_1.type == var_0_2.EquipmentType.FLEET_RANGE_ANTI_AIR then
-		local var_76_3 = BattleResourceManager.GetBulletResource(var_0_3.AntiAirConfig.RangeBulletID)
-
-		for iter_76_6, iter_76_7 in ipairs(var_76_3) do
-			var_76_0[#var_76_0 + 1] = iter_76_7
+	-- 舰队防空武器额外需要射程子弹资源
+	if weaponProperty.type == BattleConst.EquipmentType.FLEET_RANGE_ANTI_AIR then
+		local rangeBulletRes = BattleResourceManager.GetBulletResource(BattleConfig.AntiAirConfig.RangeBulletID)
+		for _, res in ipairs(rangeBulletRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	local var_76_4
-
-	if arg_76_1 and arg_76_1 ~= 0 then
-		var_76_4 = var_0_0.Battle.BattleDataFunction.GetEquipSkinDataFromID(arg_76_1)
+	-- 装备皮肤（如果有）
+	local equipSkinData
+	if equipSkinID and equipSkinID ~= 0 then
+		equipSkinData = ys.Battle.BattleDataFunction.GetEquipSkinDataFromID(equipSkinID)
 	end
 
-	if var_76_4 and var_76_4.fire_fx_name ~= "" then
-		var_76_0[#var_76_0 + 1] = BattleResourceManager.GetFXPath(var_76_4.fire_fx_name)
+	-- 开火特效
+	if equipSkinData and equipSkinData.fire_fx_name ~= "" then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(equipSkinData.fire_fx_name)
 	else
-		var_76_0[#var_76_0 + 1] = BattleResourceManager.GetFXPath(var_76_1.fire_fx)
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(weaponProperty.fire_fx)
 	end
 
-	if var_76_1.precast_param.fx then
-		var_76_0[#var_76_0 + 1] = BattleResourceManager.GetFXPath(var_76_1.precast_param.fx)
+	-- 预施法特效
+	if weaponProperty.precast_param.fx then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(weaponProperty.precast_param.fx)
 	end
 
-	if var_76_4 then
-		local var_76_5 = var_76_4.orbit_combat
-
-		if var_76_5 ~= "" then
-			var_76_0[#var_76_0 + 1] = BattleResourceManager.GetOrbitPath(var_76_5)
+	-- 装备皮肤轨道
+	if equipSkinData then
+		local orbitCombat = equipSkinData.orbit_combat
+		if orbitCombat ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetOrbitPath(orbitCombat)
 		end
 	end
 
-	return var_76_0
+	return resList
 end
 
-function BattleResourceManager.GetEquipResource(arg_77_0, arg_77_1, arg_77_2)
-	local var_77_0 = {}
+--- 获取装备资源清单（通过武器列表 + 皮肤船体+轨道 + 技能Buff）
+--- @param equipID number 装备ID
+--- @param equipSkinID number 装备皮肤ID
+--- @param battleType number 战斗类型
+--- @return table 资源路径列表
+function BattleResourceManager.GetEquipResource(equipID, equipSkinID, battleType)
+	local resList = {}
 
-	if arg_77_1 ~= 0 then
-		local var_77_1 = var_0_0.Battle.BattleDataFunction.GetEquipSkinDataFromID(arg_77_1)
-		local var_77_2 = var_77_1.ship_skin_id
+	if equipSkinID ~= 0 then
+		local equipSkinData = ys.Battle.BattleDataFunction.GetEquipSkinDataFromID(equipSkinID)
+		local shipSkinId = equipSkinData.ship_skin_id
 
-		if var_77_2 ~= 0 then
-			local var_77_3 = var_0_0.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(var_77_2)
-
-			var_77_0[#var_77_0 + 1] = BattleResourceManager.GetCharacterPath(var_77_3.prefab)
+		-- 装备皮肤可能包含替换的船体模型
+		if shipSkinId ~= 0 then
+			local shipSkinData = ys.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(shipSkinId)
+			resList[#resList + 1] = BattleResourceManager.GetCharacterPath(shipSkinData.prefab)
 		end
 
-		local var_77_4 = var_77_1.orbit_combat
-
-		if var_77_4 ~= "" then
-			var_77_0[#var_77_0 + 1] = BattleResourceManager.GetOrbitPath(var_77_4)
-		end
-	end
-
-	local var_77_5 = var_0_0.Battle.BattleDataFunction.GetWeaponDataFromID(arg_77_0)
-	local var_77_6 = var_77_5.weapon_id
-
-	for iter_77_0, iter_77_1 in ipairs(var_77_6) do
-		local var_77_7 = BattleResourceManager.GetWeaponResource(iter_77_1)
-
-		for iter_77_2, iter_77_3 in ipairs(var_77_7) do
-			var_77_0[#var_77_0 + 1] = iter_77_3
+		local orbitCombat = equipSkinData.orbit_combat
+		if orbitCombat ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetOrbitPath(orbitCombat)
 		end
 	end
 
-	local var_77_8 = var_77_5.skill_id
+	local weaponData = ys.Battle.BattleDataFunction.GetWeaponDataFromID(equipID)
+	local weaponIds = weaponData.weapon_id
 
-	for iter_77_4, iter_77_5 in ipairs(var_77_8) do
-		local var_77_9 = arg_77_2 and var_0_0.Battle.BattleDataFunction.SkillTranform(arg_77_2, iter_77_5[1]) or iter_77_5[1]
-		local var_77_10 = iter_77_5[2] or 1
-		local var_77_11 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(var_77_9, var_77_10, {})
-
-		for iter_77_6, iter_77_7 in ipairs(var_77_11) do
-			var_77_0[#var_77_0 + 1] = iter_77_7
+	for _, weaponId in ipairs(weaponIds) do
+		local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
+		for _, res in ipairs(weaponRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	return var_77_0
+	-- 装备自带技能的Buff资源
+	local skillIds = weaponData.skill_id
+	for _, skillInfo in ipairs(skillIds) do
+		local skillId = battleType and ys.Battle.BattleDataFunction.SkillTranform(battleType, skillInfo[1]) or skillInfo[1]
+		local skillLevel = skillInfo[2] or 1
+		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(skillId, skillLevel, {})
+		for _, res in ipairs(buffRes) do
+			resList[#resList + 1] = res
+		end
+	end
+
+	return resList
 end
 
-function BattleResourceManager.GetBulletResource(arg_78_0, arg_78_1)
-	local var_78_0 = {}
-	local var_78_1
+--- 获取子弹资源清单
+--- @param bulletID number 子弹模板ID
+--- @param equipSkinID number|nil 装备皮肤ID
+--- @return table 资源路径列表
+function BattleResourceManager.GetBulletResource(bulletID, equipSkinID)
+	local resList = {}
+	local equipSkinData
 
-	if arg_78_1 ~= nil and arg_78_1 ~= 0 then
-		var_78_1 = var_0_1.GetEquipSkinDataFromID(arg_78_1)
+	if equipSkinID ~= nil and equipSkinID ~= 0 then
+		equipSkinData = BattleDataFunction.GetEquipSkinDataFromID(equipSkinID)
 	end
 
-	local var_78_2 = var_0_1.GetBulletTmpDataFromID(arg_78_0)
-	local var_78_3
+	local bulletTemplate = BattleDataFunction.GetBulletTmpDataFromID(bulletID)
+	local modelName
 
-	if var_78_1 then
-		var_78_3 = var_78_1.bullet_name
+	-- 皮肤可能覆盖子弹模型
+	if equipSkinData then
+		modelName = equipSkinData.bullet_name
 
-		if var_78_1.mirror == 1 then
-			var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+		if equipSkinData.mirror == 1 then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelName .. ys.Battle.BattleBulletUnit.MIRROR_RES)
 		end
 	else
-		var_78_3 = var_78_2.modle_ID
+		modelName = bulletTemplate.modle_ID
 	end
 
-	if var_78_2.type == var_0_2.BulletType.BEAM or var_78_2.type == var_0_2.BulletType.SPACE_LASER or var_78_2.type == var_0_2.BulletType.MISSILE or var_78_2.type == var_0_2.BulletType.ELECTRIC_ARC then
-		var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(var_78_2.modle_ID)
+	-- 光束/激光/导弹/电弧类型使用FX路径而非Item路径
+	if bulletTemplate.type == BattleConst.BulletType.BEAM
+		or bulletTemplate.type == BattleConst.BulletType.SPACE_LASER
+		or bulletTemplate.type == BattleConst.BulletType.MISSILE
+		or bulletTemplate.type == BattleConst.BulletType.ELECTRIC_ARC then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(bulletTemplate.modle_ID)
 	else
-		var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_3)
+		resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelName)
 	end
 
-	if var_78_2.extra_param.mirror then
-		var_78_0[#var_78_0 + 1] = BattleResourceManager.GetBulletPath(var_78_3 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+	if bulletTemplate.extra_param.mirror then
+		resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelName .. ys.Battle.BattleBulletUnit.MIRROR_RES)
 	end
 
-	local var_78_4
-
-	if var_78_1 and var_78_1.hit_fx_name ~= "" then
-		var_78_4 = var_78_1.hit_fx_name
+	-- 命中/未命中/警报特效
+	local hitFXName
+	if equipSkinData and equipSkinData.hit_fx_name ~= "" then
+		hitFXName = equipSkinData.hit_fx_name
 	else
-		var_78_4 = var_78_2.hit_fx
+		hitFXName = bulletTemplate.hit_fx
 	end
 
-	var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(var_78_4)
-	var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(var_78_2.miss_fx)
-	var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(var_78_2.alert_fx)
+	resList[#resList + 1] = BattleResourceManager.GetFXPath(hitFXName)
+	resList[#resList + 1] = BattleResourceManager.GetFXPath(bulletTemplate.miss_fx)
+	resList[#resList + 1] = BattleResourceManager.GetFXPath(bulletTemplate.alert_fx)
 
-	if var_78_2.extra_param.area_FX then
-		var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(var_78_2.extra_param.area_FX)
+	-- 区域特效
+	if bulletTemplate.extra_param.area_FX then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(bulletTemplate.extra_param.area_FX)
 	end
 
-	if var_78_2.extra_param.shrapnel then
-		for iter_78_0, iter_78_1 in ipairs(var_78_2.extra_param.shrapnel) do
-			local var_78_5 = BattleResourceManager.GetBulletResource(iter_78_1.bullet_ID)
-
-			for iter_78_2, iter_78_3 in ipairs(var_78_5) do
-				var_78_0[#var_78_0 + 1] = iter_78_3
+	-- 子母弹（shrapnel）的子弹资源
+	if bulletTemplate.extra_param.shrapnel then
+		for _, shrapnelData in ipairs(bulletTemplate.extra_param.shrapnel) do
+			local shrapnelRes = BattleResourceManager.GetBulletResource(shrapnelData.bullet_ID)
+			for _, res in ipairs(shrapnelRes) do
+				resList[#resList + 1] = res
 			end
 		end
 	end
 
-	for iter_78_4, iter_78_5 in ipairs(var_78_2.attach_buff) do
-		if iter_78_5.effect_id then
-			var_78_0[#var_78_0 + 1] = BattleResourceManager.GetFXPath(iter_78_5.effect_id)
+	-- 附着Buff的资源和特效
+	for _, attachBuff in ipairs(bulletTemplate.attach_buff) do
+		if attachBuff.effect_id then
+			resList[#resList + 1] = BattleResourceManager.GetFXPath(attachBuff.effect_id)
 		end
 
-		if iter_78_5.buff_id then
-			local var_78_6 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_78_5.buff_id, 1, {})
-
-			for iter_78_6, iter_78_7 in ipairs(var_78_6) do
-				var_78_0[#var_78_0 + 1] = iter_78_7
+		if attachBuff.buff_id then
+			local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(attachBuff.buff_id, 1, {})
+			for _, res in ipairs(buffRes) do
+				resList[#resList + 1] = res
 			end
 		end
 	end
 
-	return var_78_0
+	return resList
 end
 
-function BattleResourceManager.GetAircraftResource(arg_79_0, arg_79_1, arg_79_2, arg_79_3)
-	local var_79_0 = {}
+--- 获取飞机（舰载机）资源清单
+--- @param aircraftID number 飞机模板ID
+--- @param weaponID number|nil 飞机武器ID（覆盖模板默认武器）
+--- @param equipSkinID number 装备皮肤ID
+--- @param needIcon boolean 是否需要飞机图标
+--- @return table 资源路径列表
+function BattleResourceManager.GetAircraftResource(aircraftID, weaponID, equipSkinID, needIcon)
+	local resList = {}
 
-	arg_79_2 = arg_79_2 or 0
+	equipSkinID = equipSkinID or 0
 
-	local var_79_1 = var_0_1.GetAircraftTmpDataFromID(arg_79_0)
-	local var_79_2
-	local var_79_3
-	local var_79_4
-	local var_79_5
+	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(aircraftID)
+	local modelID
+	local skinBullet1, skinBullet2, skinBullet3
 
-	if arg_79_2 ~= 0 then
-		local var_79_6, var_79_7, var_79_8
+	if equipSkinID ~= 0 then
+		modelID, skinBullet1, skinBullet2, skinBullet3 = BattleDataFunction.GetEquipSkin(equipSkinID)
 
-		var_79_2, var_79_6, var_79_7, var_79_8 = var_0_1.GetEquipSkin(arg_79_2)
-
-		if var_79_6 ~= "" then
-			var_79_0[#var_79_0 + 1] = BattleResourceManager.GetBulletPath(var_79_6)
+		-- 皮肤覆盖的子弹资源
+		if skinBullet1 ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(skinBullet1)
 		end
-
-		if var_79_7 ~= "" then
-			var_79_0[#var_79_0 + 1] = BattleResourceManager.GetBulletPath(var_79_7)
+		if skinBullet2 ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(skinBullet2)
 		end
-
-		if var_79_8 ~= "" then
-			var_79_0[#var_79_0 + 1] = BattleResourceManager.GetBulletPath(var_79_8)
+		if skinBullet3 ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(skinBullet3)
 		end
 	else
-		var_79_2 = var_79_1.model_ID
+		modelID = aircraftTemplate.model_ID
 	end
 
-	var_79_0[#var_79_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_79_2)
+	-- 飞机模型
+	resList[#resList + 1] = BattleResourceManager.GetCharacterGoPath(modelID)
 
-	if arg_79_3 then
-		var_79_0[#var_79_0 + 1] = BattleResourceManager.GetAircraftIconPath(var_79_1.model_ID)
+	if needIcon then
+		resList[#resList + 1] = BattleResourceManager.GetAircraftIconPath(aircraftTemplate.model_ID)
 	end
 
-	local var_79_9 = arg_79_1 or var_79_1.weapon_ID
+	-- 飞机挂载武器资源
+	local actualWeaponID = weaponID or aircraftTemplate.weapon_ID
 
-	if type(var_79_9) == "table" then
-		for iter_79_0, iter_79_1 in ipairs(var_79_9) do
-			local var_79_10 = BattleResourceManager.GetWeaponResource(iter_79_1)
-
-			for iter_79_2, iter_79_3 in ipairs(var_79_10) do
-				var_79_0[#var_79_0 + 1] = iter_79_3
+	if type(actualWeaponID) == "table" then
+		for _, wid in ipairs(actualWeaponID) do
+			local weaponRes = BattleResourceManager.GetWeaponResource(wid)
+			for _, res in ipairs(weaponRes) do
+				resList[#resList + 1] = res
 			end
 		end
 	else
-		local var_79_11 = BattleResourceManager.GetWeaponResource(var_79_9)
-
-		for iter_79_4, iter_79_5 in ipairs(var_79_11) do
-			var_79_0[#var_79_0 + 1] = iter_79_5
+		local weaponRes = BattleResourceManager.GetWeaponResource(actualWeaponID)
+		for _, res in ipairs(weaponRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	return var_79_0
+	return resList
 end
 
-function BattleResourceManager.GetCommanderBuffRes(arg_80_0)
-	local var_80_0 = {}
+--- 获取指挥喵Buff资源清单
+function BattleResourceManager.GetCommanderBuffRes(commanderBuffList)
+	local resList = {}
 
-	for iter_80_0, iter_80_1 in ipairs(arg_80_0) do
-		local var_80_1 = BattleResourceManager.GetCommanderResource(iter_80_1)
-
-		for iter_80_2, iter_80_3 in ipairs(var_80_1) do
-			table.insert(var_80_0, iter_80_3)
+	for _, commanderInfo in ipairs(commanderBuffList) do
+		local cmdRes = BattleResourceManager.GetCommanderResource(commanderInfo)
+		for _, res in ipairs(cmdRes) do
+			table.insert(resList, res)
 		end
 	end
 
-	return var_80_0
+	return resList
 end
 
-function BattleResourceManager.GetCommanderResource(arg_81_0)
-	local var_81_0 = {}
-	local var_81_1 = arg_81_0[1]
+--- 获取单个指挥喵的资源清单
+--- @param commanderInfo table { commanderVO, buffIDList }
+function BattleResourceManager.GetCommanderResource(commanderInfo)
+	local resList = {}
+	local commanderVO = commanderInfo[1]
 
-	var_81_0[#var_81_0 + 1] = BattleResourceManager.GetCommanderHrzIconPath(var_81_1:getPainting())
-	var_81_0[#var_81_0 + 1] = BattleResourceManager.GetCommanderIconPath(var_81_1:getPainting())
+	resList[#resList + 1] = BattleResourceManager.GetCommanderHrzIconPath(commanderVO:getPainting())
+	resList[#resList + 1] = BattleResourceManager.GetCommanderIconPath(commanderVO:getPainting())
 
-	local var_81_2 = var_81_1:getSkills()[1]:getLevel()
+	local skillLevel = commanderVO:getSkills()[1]:getLevel()
 
-	for iter_81_0, iter_81_1 in ipairs(arg_81_0[2]) do
-		local var_81_3 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_81_1, var_81_2, {})
-
-		for iter_81_2, iter_81_3 in ipairs(var_81_3) do
-			var_81_0[#var_81_0 + 1] = iter_81_3
+	for _, buffID in ipairs(commanderInfo[2]) do
+		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(buffID, skillLevel, {})
+		for _, res in ipairs(buffRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	return var_81_0
+	return resList
 end
 
-function BattleResourceManager.GetResFromBuffIDList(arg_82_0)
-	local var_82_0 = {}
+--- 从Buff ID列表批量获取资源
+function BattleResourceManager.GetResFromBuffIDList(buffIDList)
+	local resList = {}
 
-	for iter_82_0, iter_82_1 in ipairs(arg_82_0) do
-		local var_82_1 = var_0_1.GetResFromBuff(iter_82_1, 1, {})
-
-		for iter_82_2, iter_82_3 in ipairs(var_82_1) do
-			table.insert(var_82_0, iter_82_3)
+	for _, buffID in ipairs(buffIDList) do
+		local buffRes = BattleDataFunction.GetResFromBuff(buffID, 1, {})
+		for _, res in ipairs(buffRes) do
+			table.insert(resList, res)
 		end
 	end
 
-	return var_82_0
+	return resList
 end
 
-function BattleResourceManager.GetResFromBuffList(arg_83_0)
-	local var_83_0 = {}
+--- 从Buff列表（含id和level）批量获取资源
+function BattleResourceManager.GetResFromBuffList(buffList)
+	local resList = {}
 
-	for iter_83_0, iter_83_1 in ipairs(arg_83_0) do
-		local var_83_1 = var_0_1.GetResFromBuff(iter_83_1.id, iter_83_1.level, {})
-
-		for iter_83_2, iter_83_3 in ipairs(var_83_1) do
-			table.insert(var_83_0, iter_83_3)
+	for _, buffInfo in ipairs(buffList) do
+		local buffRes = BattleDataFunction.GetResFromBuff(buffInfo.id, buffInfo.level, {})
+		for _, res in ipairs(buffRes) do
+			table.insert(resList, res)
 		end
 	end
 
-	return var_83_0
+	return resList
 end
 
-function BattleResourceManager.GetStageResource(arg_84_0)
-	local var_84_0 = var_0_0.Battle.BattleDataFunction.GetDungeonTmpDataByID(arg_84_0)
-	local var_84_1 = {}
-	local var_84_2 = {}
+--- 获取关卡资源清单（所有波次的敌人、支援舰队、环境效果、卡牌等）
+--- @param dungeonID number 关卡ID
+--- @return table resList 资源路径列表
+--- @return table skinIDList 支援舰队皮肤ID列表
+function BattleResourceManager.GetStageResource(dungeonID)
+	local dungeonData = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonID)
+	local resList = {}
+	local skinIDList = {}
 
-	for iter_84_0, iter_84_1 in ipairs(var_84_0.stages) do
-		if iter_84_1.stageBuff then
-			for iter_84_2, iter_84_3 in ipairs(iter_84_1.stageBuff) do
-				local var_84_3 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_84_3.id, iter_84_3.level, {})
-
-				for iter_84_4, iter_84_5 in ipairs(var_84_3) do
-					var_84_1[#var_84_1 + 1] = iter_84_5
+	for _, stage in ipairs(dungeonData.stages) do
+		-- 关卡Buff资源
+		if stage.stageBuff then
+			for _, stageBuffItem in ipairs(stage.stageBuff) do
+				local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(stageBuffItem.id, stageBuffItem.level, {})
+				for _, res in ipairs(buffRes) do
+					resList[#resList + 1] = res
 				end
 			end
 		end
 
-		for iter_84_6, iter_84_7 in ipairs(iter_84_1.waves) do
-			if iter_84_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.NORMAL then
-				for iter_84_8, iter_84_9 in ipairs(iter_84_7.spawn) do
-					local var_84_4 = BattleResourceManager.GetMonsterRes(iter_84_9)
-
-					for iter_84_10, iter_84_11 in ipairs(var_84_4) do
-						table.insert(var_84_1, iter_84_11)
+		for _, wave in ipairs(stage.waves) do
+			if wave.triggerType == ys.Battle.BattleConst.WaveTriggerType.NORMAL then
+				-- 普通波次：收集怪物资源
+				for _, spawnData in ipairs(wave.spawn) do
+					local monsterRes = BattleResourceManager.GetMonsterRes(spawnData)
+					for _, res in ipairs(monsterRes) do
+						table.insert(resList, res)
 					end
 				end
 
-				if iter_84_7.reinforcement then
-					for iter_84_12, iter_84_13 in ipairs(iter_84_7.reinforcement) do
-						local var_84_5 = BattleResourceManager.GetMonsterRes(iter_84_13)
-
-						for iter_84_14, iter_84_15 in ipairs(var_84_5) do
-							table.insert(var_84_1, iter_84_15)
+				-- 增援波次
+				if wave.reinforcement then
+					for _, reinforceData in ipairs(wave.reinforcement) do
+						local monsterRes = BattleResourceManager.GetMonsterRes(reinforceData)
+						for _, res in ipairs(monsterRes) do
+							table.insert(resList, res)
 						end
 					end
 				end
-			elseif iter_84_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.AID then
-				local var_84_6 = iter_84_7.triggerParams.vanguard_unitList
-				local var_84_7 = iter_84_7.triggerParams.main_unitList
-				local var_84_8 = iter_84_7.triggerParams.sub_unitList
+			elseif wave.triggerType == ys.Battle.BattleConst.WaveTriggerType.AID then
+				-- 支援舰队波次：收集支援舰船资源
+				local vanguardList = wave.triggerParams.vanguard_unitList
+				local mainList = wave.triggerParams.main_unitList
+				local subList = wave.triggerParams.sub_unitList
 
-				local function var_84_9(arg_85_0)
-					local var_85_0 = BattleResourceManager.GetAidUnitsRes(arg_85_0)
-
-					for iter_85_0, iter_85_1 in ipairs(var_85_0) do
-						table.insert(var_84_1, iter_85_1)
+				local function collectAidUnitsRes(unitList)
+					local aidRes = BattleResourceManager.GetAidUnitsRes(unitList)
+					for _, res in ipairs(aidRes) do
+						table.insert(resList, res)
 					end
 
-					for iter_85_2, iter_85_3 in ipairs(arg_85_0) do
-						var_84_2[#var_84_2 + 1] = iter_85_3.skinId
+					for _, unitData in ipairs(unitList) do
+						skinIDList[#skinIDList + 1] = unitData.skinId
 					end
 				end
 
-				if var_84_6 then
-					var_84_9(var_84_6)
+				if vanguardList then
+					collectAidUnitsRes(vanguardList)
 				end
-
-				if var_84_7 then
-					var_84_9(var_84_7)
+				if mainList then
+					collectAidUnitsRes(mainList)
 				end
-
-				if var_84_8 then
-					var_84_9(var_84_8)
+				if subList then
+					collectAidUnitsRes(subList)
 				end
-			elseif iter_84_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.ENVIRONMENT then
-				for iter_84_16, iter_84_17 in ipairs(iter_84_7.spawn) do
-					BattleResourceManager.GetEnvironmentRes(var_84_1, iter_84_17)
+			elseif wave.triggerType == ys.Battle.BattleConst.WaveTriggerType.ENVIRONMENT then
+				-- 环境效果波次
+				for _, envData in ipairs(wave.spawn) do
+					BattleResourceManager.GetEnvironmentRes(resList, envData)
 				end
-			elseif iter_84_7.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.CARD_PUZZLE then
-				local var_84_10 = var_0_0.Battle.BattleDataFunction.GetCardRes(iter_84_7.triggerParams.card_id)
-
-				for iter_84_18, iter_84_19 in ipairs(var_84_10) do
-					table.insert(var_84_1, iter_84_19)
+			elseif wave.triggerType == ys.Battle.BattleConst.WaveTriggerType.CARD_PUZZLE then
+				-- 卡牌塔罗波次
+				local cardRes = ys.Battle.BattleDataFunction.GetCardRes(wave.triggerParams.card_id)
+				for _, res in ipairs(cardRes) do
+					table.insert(resList, res)
 				end
 			end
 
-			if iter_84_7.airFighter ~= nil then
-				for iter_84_20, iter_84_21 in pairs(iter_84_7.airFighter) do
-					local var_84_11 = BattleResourceManager.GetAircraftResource(iter_84_21.templateID, iter_84_21.weaponID, nil, true)
-
-					for iter_84_22, iter_84_23 in ipairs(var_84_11) do
-						var_84_1[#var_84_1 + 1] = iter_84_23
+			-- 敌方飞机支援
+			if wave.airFighter ~= nil then
+				for _, airFighterData in pairs(wave.airFighter) do
+					local aircraftRes = BattleResourceManager.GetAircraftResource(airFighterData.templateID, airFighterData.weaponID, nil, true)
+					for _, res in ipairs(aircraftRes) do
+						resList[#resList + 1] = res
 					end
 				end
 			end
 		end
 	end
 
-	return var_84_1, var_84_2
+	return resList, skinIDList
 end
 
-function BattleResourceManager.GetEnvironmentRes(arg_86_0, arg_86_1)
-	table.insert(arg_86_0, arg_86_1.prefab and BattleResourceManager.GetFXPath(arg_86_1.prefab))
+--- 获取环境效果资源（递归处理 BUFF/SPAWN/PLAY_FX 行为）
+--- @param resList table 结果列表（被修改）
+--- @param envData table 环境效果配置
+function BattleResourceManager.GetEnvironmentRes(resList, envData)
+	table.insert(resList, envData.prefab and BattleResourceManager.GetFXPath(envData.prefab))
 
-	local var_86_0 = arg_86_1.behaviours
-	local var_86_1 = var_0_0.Battle.BattleDataFunction.GetEnvironmentBehaviour(var_86_0).behaviour_list
+	local behaviourID = envData.behaviours
+	local behaviourList = ys.Battle.BattleDataFunction.GetEnvironmentBehaviour(behaviourID).behaviour_list
 
-	for iter_86_0, iter_86_1 in ipairs(var_86_1) do
-		local var_86_2 = iter_86_1.type
+	for _, behaviour in ipairs(behaviourList) do
+		local behaviourType = behaviour.type
 
-		if var_86_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.BUFF then
-			local var_86_3 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_86_1.buff_id, 1, {})
-
-			for iter_86_2, iter_86_3 in ipairs(var_86_3) do
-				arg_86_0[#arg_86_0 + 1] = iter_86_3
+		if behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.BUFF then
+			local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(behaviour.buff_id, 1, {})
+			for _, res in ipairs(buffRes) do
+				resList[#resList + 1] = res
 			end
-		elseif var_86_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.SPAWN then
-			local var_86_4 = iter_86_1.content and iter_86_1.content.alert and iter_86_1.content.alert.alert_fx
+		elseif behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.SPAWN then
+			local alertFX = behaviour.content and behaviour.content.alert and behaviour.content.alert.alert_fx
+			table.insert(resList, alertFX and BattleResourceManager.GetFXPath(alertFX))
 
-			table.insert(arg_86_0, var_86_4 and BattleResourceManager.GetFXPath(var_86_4))
-
-			local var_86_5 = iter_86_1.content and iter_86_1.content.child_prefab
-
-			if var_86_5 then
-				BattleResourceManager.GetEnvironmentRes(arg_86_0, var_86_5)
+			local childPrefab = behaviour.content and behaviour.content.child_prefab
+			if childPrefab then
+				BattleResourceManager.GetEnvironmentRes(resList, childPrefab)
 			end
-		elseif var_86_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.PLAY_FX then
-			arg_86_0[#arg_86_0 + 1] = BattleResourceManager.GetFXPath(iter_86_1.FX_ID)
+		elseif behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.PLAY_FX then
+			resList[#resList + 1] = BattleResourceManager.GetFXPath(behaviour.FX_ID)
 		end
 	end
 end
 
-function BattleResourceManager.GetMonsterRes(arg_87_0)
-	local var_87_0 = {}
-	local var_87_1 = BattleResourceManager.GetEnemyResource(arg_87_0)
+--- 获取单个怪物（含武器、Buff、阶段武器/阶段Buff）的完整资源清单
+--- @param spawnData table 生成数据
+--- @return table 资源路径列表
+function BattleResourceManager.GetMonsterRes(spawnData)
+	local resList = {}
+	local enemyRes = BattleResourceManager.GetEnemyResource(spawnData)
 
-	for iter_87_0, iter_87_1 in ipairs(var_87_1) do
-		var_87_0[#var_87_0 + 1] = iter_87_1
+	for _, res in ipairs(enemyRes) do
+		resList[#resList + 1] = res
 	end
 
-	local var_87_2 = var_0_0.Battle.BattleDataFunction.GetMonsterTmpDataFromID(arg_87_0.monsterTemplateID)
-	local var_87_3 = Clone(var_87_2.equipment_list)
-	local var_87_4 = var_87_2.buff_list
-	local var_87_5 = Clone(arg_87_0.buffList) or {}
+	local monsterTmp = ys.Battle.BattleDataFunction.GetMonsterTmpDataFromID(spawnData.monsterTemplateID)
+	local equipmentList = Clone(monsterTmp.equipment_list)
+	local buffList = monsterTmp.buff_list
+	local spawnBuffList = Clone(spawnData.buffList) or {}
 
-	if arg_87_0.phase then
-		for iter_87_2, iter_87_3 in ipairs(arg_87_0.phase) do
-			if iter_87_3.addWeapon then
-				for iter_87_4, iter_87_5 in ipairs(iter_87_3.addWeapon) do
-					var_87_3[#var_87_3 + 1] = iter_87_5
+	-- 阶段（phase）可能添加额外武器和Buff
+	if spawnData.phase then
+		for _, phaseData in ipairs(spawnData.phase) do
+			if phaseData.addWeapon then
+				for _, weaponId in ipairs(phaseData.addWeapon) do
+					equipmentList[#equipmentList + 1] = weaponId
 				end
 			end
 
-			if iter_87_3.addRandomWeapon then
-				for iter_87_6, iter_87_7 in ipairs(iter_87_3.addRandomWeapon) do
-					for iter_87_8, iter_87_9 in ipairs(iter_87_7) do
-						var_87_3[#var_87_3 + 1] = iter_87_9
+			if phaseData.addRandomWeapon then
+				for _, randomWeaponList in ipairs(phaseData.addRandomWeapon) do
+					for _, weaponId in ipairs(randomWeaponList) do
+						equipmentList[#equipmentList + 1] = weaponId
 					end
 				end
 			end
 
-			if iter_87_3.addBuff then
-				for iter_87_10, iter_87_11 in ipairs(iter_87_3.addBuff) do
-					var_87_5[#var_87_5 + 1] = iter_87_11
+			if phaseData.addBuff then
+				for _, buffId in ipairs(phaseData.addBuff) do
+					spawnBuffList[#spawnBuffList + 1] = buffId
 				end
 			end
 		end
 	end
 
-	for iter_87_12, iter_87_13 in ipairs(var_87_4) do
-		local var_87_6 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_87_13.ID, iter_87_13.LV, {})
-
-		for iter_87_14, iter_87_15 in ipairs(var_87_6) do
-			var_87_0[#var_87_0 + 1] = iter_87_15
+	-- 模板Buff资源
+	for _, buffInfo in ipairs(buffList) do
+		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(buffInfo.ID, buffInfo.LV, {})
+		for _, res in ipairs(buffRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	for iter_87_16, iter_87_17 in ipairs(var_87_5) do
-		local var_87_7 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_87_17, 1, {})
-
-		for iter_87_18, iter_87_19 in ipairs(var_87_7) do
-			var_87_0[#var_87_0 + 1] = iter_87_19
+	-- 生成时附加的Buff资源
+	for _, buffID in ipairs(spawnBuffList) do
+		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(buffID, 1, {})
+		for _, res in ipairs(buffRes) do
+			resList[#resList + 1] = res
 		end
 
-		local var_87_8 = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(iter_87_17, 1)
-
-		for iter_87_20, iter_87_21 in pairs(var_87_8.effect_list) do
-			local var_87_9 = iter_87_21.arg_list.skill_id
-
-			if var_87_9 and var_0_0.Battle.BattleDataFunction.NeedSkillPainting(var_87_9) then
-				var_87_0[#var_87_0 + 1] = BattleResourceManager.GetPaintingPath(var_0_1.GetMonsterTmpDataFromID(arg_87_0.monsterTemplateID).icon)
-
+		-- 检查是否需要技能立绘
+		local buffTemplate = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, 1)
+		for _, effectItem in pairs(buffTemplate.effect_list) do
+			local skillId = effectItem.arg_list.skill_id
+			if skillId and ys.Battle.BattleDataFunction.NeedSkillPainting(skillId) then
+				resList[#resList + 1] = BattleResourceManager.GetPaintingPath(BattleDataFunction.GetMonsterTmpDataFromID(spawnData.monsterTemplateID).icon)
 				break
 			end
 		end
 	end
 
-	for iter_87_22, iter_87_23 in ipairs(var_87_3) do
-		local var_87_10 = BattleResourceManager.GetWeaponResource(iter_87_23)
-
-		for iter_87_24, iter_87_25 in ipairs(var_87_10) do
-			var_87_0[#var_87_0 + 1] = iter_87_25
+	-- 武器资源
+	for _, weaponId in ipairs(equipmentList) do
+		local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
+		for _, res in ipairs(weaponRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	return var_87_0
+	return resList
 end
 
-function BattleResourceManager.GetEquipSkinPreviewRes(arg_88_0)
-	local var_88_0 = {}
-	local var_88_1 = var_0_1.GetEquipSkinDataFromID(arg_88_0)
+--- 获取装备皮肤预览资源（用于装备皮肤展示界面）
+function BattleResourceManager.GetEquipSkinPreviewRes(skinID)
+	local resList = {}
+	local equipSkinData = BattleDataFunction.GetEquipSkinDataFromID(skinID)
 
-	for iter_88_0, iter_88_1 in ipairs(var_88_1.weapon_ids) do
-		local var_88_2 = BattleResourceManager.GetWeaponResource(iter_88_1)
-
-		for iter_88_2, iter_88_3 in ipairs(var_88_2) do
-			var_88_0[#var_88_0 + 1] = iter_88_3
+	-- 皮肤关联的武器资源
+	for _, weaponId in ipairs(equipSkinData.weapon_ids) do
+		local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
+		for _, res in ipairs(weaponRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	local function var_88_3(arg_89_0)
-		if arg_89_0 ~= "" then
-			var_88_0[#var_88_0 + 1] = BattleResourceManager.GetBulletPath(arg_89_0)
+	-- 辅助函数：不为空则加入子弹路径
+	local function addBulletIfNotEmpty(path)
+		if path ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(path)
 		end
 	end
 
-	local var_88_4, var_88_5, var_88_6, var_88_7, var_88_8, var_88_9 = var_0_1.GetEquipSkin(arg_88_0)
+	-- GetEquipSkin 返回: modelID, bullet1, bullet2, bullet3, fireFX, hitFX
+	local modelID, bullet1, bullet2, bullet3, fireFX, hitFX = BattleDataFunction.GetEquipSkin(skinID)
 
-	if _.any(EquipType.AirProtoEquipTypes, function(arg_90_0)
-		return table.contains(var_88_1.equip_type, arg_90_0)
+	-- 飞机类装备使用chargo路径，子弹类使用Item路径
+	if _.any(EquipType.AirProtoEquipTypes, function(equipType)
+		return table.contains(equipSkinData.equip_type, equipType)
 	end) then
-		var_88_0[#var_88_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_88_4)
+		resList[#resList + 1] = BattleResourceManager.GetCharacterGoPath(modelID)
 	else
-		var_88_0[#var_88_0 + 1] = BattleResourceManager.GetBulletPath(var_88_4)
+		resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelID)
 	end
 
-	var_88_3(var_88_5)
-	var_88_3(var_88_6)
-	var_88_3(var_88_7)
+	addBulletIfNotEmpty(bullet1)
+	addBulletIfNotEmpty(bullet2)
+	addBulletIfNotEmpty(bullet3)
 
-	if var_88_8 and var_88_8 ~= "" then
-		var_88_0[#var_88_0 + 1] = BattleResourceManager.GetFXPath(var_88_8)
+	if fireFX and fireFX ~= "" then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(fireFX)
 	end
 
-	if var_88_9 and var_88_9 ~= "" then
-		var_88_0[#var_88_0 + 1] = BattleResourceManager.GetFXPath(var_88_9)
+	if hitFX and hitFX ~= "" then
+		resList[#resList + 1] = BattleResourceManager.GetFXPath(hitFX)
 	end
 
-	return var_88_0
+	return resList
 end
 
-function BattleResourceManager.GetEquipSkinBulletRes(arg_91_0)
-	local var_91_0 = {}
-	local var_91_1, var_91_2, var_91_3, var_91_4 = var_0_1.GetEquipSkin(arg_91_0)
+--- 获取装备皮肤子弹资源清单
+function BattleResourceManager.GetEquipSkinBulletRes(skinID)
+	local resList = {}
+	local modelID, bullet1, bullet2, bullet3 = BattleDataFunction.GetEquipSkin(skinID)
 
-	local function var_91_5(arg_92_0)
-		if arg_92_0 ~= "" then
-			var_91_0[#var_91_0 + 1] = BattleResourceManager.GetBulletPath(arg_92_0)
+	local function addBulletIfNotEmpty(path)
+		if path ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(path)
 		end
 	end
 
-	local var_91_6 = var_0_1.GetEquipSkinDataFromID(arg_91_0)
-	local var_91_7 = false
+	local equipSkinData = BattleDataFunction.GetEquipSkinDataFromID(skinID)
+	local isAircraftSkin = false
 
-	for iter_91_0, iter_91_1 in ipairs(var_91_6.equip_type) do
-		if table.contains(EquipType.AircraftSkinType, iter_91_1) then
-			var_91_7 = true
+	for _, equipType in ipairs(equipSkinData.equip_type) do
+		if table.contains(EquipType.AircraftSkinType, equipType) then
+			isAircraftSkin = true
 		end
 	end
 
-	if var_91_7 then
-		if var_91_1 ~= "" then
-			var_91_0[#var_91_0 + 1] = BattleResourceManager.GetCharacterGoPath(var_91_1)
+	if isAircraftSkin then
+		if modelID ~= "" then
+			resList[#resList + 1] = BattleResourceManager.GetCharacterGoPath(modelID)
 		end
 	else
-		var_91_5(var_91_1)
+		addBulletIfNotEmpty(modelID)
 
-		if var_0_1.GetEquipSkinDataFromID(arg_91_0).mirror == 1 then
-			var_91_0[#var_91_0 + 1] = BattleResourceManager.GetBulletPath(var_91_1 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
+		if BattleDataFunction.GetEquipSkinDataFromID(skinID).mirror == 1 then
+			resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelID .. ys.Battle.BattleBulletUnit.MIRROR_RES)
 		end
 	end
 
-	var_91_5(var_91_2)
-	var_91_5(var_91_3)
-	var_91_5(var_91_4)
+	addBulletIfNotEmpty(bullet1)
+	addBulletIfNotEmpty(bullet2)
+	addBulletIfNotEmpty(bullet3)
 
-	return var_91_0
+	return resList
 end
 
-function BattleResourceManager.GetAidUnitsRes(arg_93_0)
-	local var_93_0 = {}
+--- 获取支援舰队单位的资源清单
+function BattleResourceManager.GetAidUnitsRes(unitList)
+	local resList = {}
 
-	for iter_93_0, iter_93_1 in ipairs(arg_93_0) do
-		local var_93_1 = BattleResourceManager.GetShipResource(iter_93_1.tmpID, nil, true)
+	for _, unitData in ipairs(unitList) do
+		local aidRes = BattleResourceManager.GetShipResource(unitData.tmpID, nil, true)
 
-		for iter_93_2, iter_93_3 in ipairs(iter_93_1.equipment) do
-			if iter_93_3 ~= 0 then
-				if iter_93_2 <= Ship.WEAPON_COUNT then
-					local var_93_2 = var_0_1.GetWeaponDataFromID(iter_93_3).weapon_id
-
-					for iter_93_4, iter_93_5 in ipairs(var_93_2) do
-						local var_93_3 = BattleResourceManager.GetWeaponResource(iter_93_5)
-
-						for iter_93_6, iter_93_7 in ipairs(var_93_3) do
-							table.insert(var_93_1, iter_93_7)
+		for _, equipId in ipairs(unitData.equipment) do
+			if equipId ~= 0 then
+				if equipIdx <= Ship.WEAPON_COUNT then
+					local weaponIds = BattleDataFunction.GetWeaponDataFromID(equipId).weapon_id
+					for _, weaponId in ipairs(weaponIds) do
+						local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
+						for _, res in ipairs(weaponRes) do
+							table.insert(aidRes, res)
 						end
 					end
 				else
-					local var_93_4 = BattleResourceManager.GetEquipResource(iter_93_3)
-
-					for iter_93_8, iter_93_9 in ipairs(var_93_4) do
-						table.insert(var_93_1, iter_93_9)
+					local equipRes = BattleResourceManager.GetEquipResource(equipId)
+					for _, res in ipairs(equipRes) do
+						table.insert(aidRes, res)
 					end
 				end
 			end
 		end
 
-		for iter_93_10, iter_93_11 in ipairs(var_93_1) do
-			table.insert(var_93_0, iter_93_11)
+		for _, res in ipairs(aidRes) do
+			table.insert(resList, res)
 		end
 	end
 
-	return var_93_0
+	return resList
 end
 
-function BattleResourceManager.GetSpWeaponResource(arg_94_0, arg_94_1)
-	local var_94_0 = {}
-	local var_94_1 = var_0_0.Battle.BattleDataFunction.GetSpWeaponDataFromID(arg_94_0).effect_id
+--- 获取专武（SpWeapon）资源清单
+--- @param spWeaponID number 专武配置ID
+--- @param battleType number 战斗类型
+--- @return table 资源路径列表
+function BattleResourceManager.GetSpWeaponResource(spWeaponID, battleType)
+	local resList = {}
+	local effectId = ys.Battle.BattleDataFunction.GetSpWeaponDataFromID(spWeaponID).effect_id
 
-	if var_94_1 ~= 0 then
-		var_94_1 = arg_94_1 and var_0_0.Battle.BattleDataFunction.SkillTranform(arg_94_1, var_94_1) or var_94_1
+	if effectId ~= 0 then
+		effectId = battleType and ys.Battle.BattleDataFunction.SkillTranform(battleType, effectId) or effectId
 
-		local var_94_2 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(var_94_1, 1, {})
-
-		for iter_94_0, iter_94_1 in ipairs(var_94_2) do
-			var_94_0[#var_94_0 + 1] = iter_94_1
+		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(effectId, 1, {})
+		for _, res in ipairs(buffRes) do
+			resList[#resList + 1] = res
 		end
 	end
 
-	return var_94_0
+	return resList
 end

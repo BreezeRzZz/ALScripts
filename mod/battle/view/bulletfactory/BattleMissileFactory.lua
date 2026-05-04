@@ -1,49 +1,61 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleMissileFactory", var_0_0.Battle.BattleBombBulletFactory)
+local ys = ys
+local BattleMissileFactory = singletonClass("BattleMissileFactory", ys.Battle.BattleBombBulletFactory)
 
-var_0_1.__name = "BattleMissileFactory"
-var_0_0.Battle.BattleMissileFactory = var_0_1
+BattleMissileFactory.__name = "BattleMissileFactory"
+ys.Battle.BattleMissileFactory = BattleMissileFactory
 
-function var_0_1.MakeModel(arg_1_0, arg_1_1, arg_1_2)
-	local var_1_0 = arg_1_1:GetBulletData()
-	local var_1_1 = arg_1_0:GetBulletPool():InstFX(arg_1_1:GetModleID())
+--- 创建导弹的视觉模型
+--- 导弹继承自BombBulletFactory（复用炸弹的爆炸逻辑），但在模型实例化上有区别：
+--- 1. 使用 InstFX 而非 InstBullet 来实例化模型 —— 导弹使用特效类型的资源
+--- 2. 命中/未命中回调都设为 onBulletHitFunc（导弹碰撞即爆炸）
+--- @param bulletView BattleBulletUnit View层导弹
+--- @param spawnPos Vector3 生成位置
+function BattleMissileFactory.MakeModel(self, bulletView, spawnPos)
+	local bulletData = bulletView:GetBulletData()
+	local instFX = self:GetBulletPool():InstFX(bulletView:GetModleID())
 
-	if var_1_1 then
-		arg_1_1:AddModel(var_1_1)
+	if instFX then
+		bulletView:AddModel(instFX)
 	else
-		arg_1_1:AddTempModel(arg_1_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_1_1:SetSpawn(arg_1_2)
-	arg_1_1:SetFXFunc(arg_1_0.onBulletHitFunc, arg_1_0.onBulletHitFunc)
-	arg_1_0:GetSceneMediator():AddBullet(arg_1_1)
+	bulletView:SetSpawn(spawnPos)
+	-- 导弹的碰撞和脱靶都触发命中爆炸（碰撞即爆）
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletHitFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 end
 
-function var_0_1.CreateBulletAlert(arg_2_0)
-	local var_2_0 = arg_2_0:GetTemplate()
+--- 创建导弹预警圈特效
+--- 仅在敌方导弹且alert_fx非空时创建
+--- 与Bomb的预警圈逻辑相同，但额外检查 IFF（友方导弹不显示预警）
+--- @param bulletData BattleBulletUnit 导弹子弹数据
+function BattleMissileFactory.CreateBulletAlert(bulletData)
+	local bulletTemplate = bulletData:GetTemplate()
 
-	if arg_2_0:GetIFF() == var_0_1.GetDataProxy():GetFriendlyCode() then
+	-- 友方导弹不显示预警
+	if bulletData:GetIFF() == BattleMissileFactory.GetDataProxy():GetFriendlyCode() then
 		return
 	end
 
-	if #var_2_0.alert_fx <= 0 then
+	if #bulletTemplate.alert_fx <= 0 then
 		return
 	end
 
-	local var_2_1 = var_2_0.hit_type.range
-	local var_2_2 = var_2_0.alert_fx
-	local var_2_3 = var_0_0.Battle.BattleFXPool.GetInstance():GetFX(var_2_2)
-	local var_2_4 = var_2_3.transform
-	local var_2_5 = 0
-	local var_2_6 = pg.effect_offset
+	local alertRange = bulletTemplate.hit_type.range
+	local alertFXID = bulletTemplate.alert_fx
+	local alertFX = ys.Battle.BattleFXPool.GetInstance():GetFX(alertFXID)
+	local alertTF = alertFX.transform
+	local yScale = 0
+	local effectOffsetConfig = pg.effect_offset
 
-	if var_2_6[var_2_2] and var_2_6[var_2_2].y_scale == true then
-		var_2_5 = var_2_1
+	if effectOffsetConfig[alertFXID] and effectOffsetConfig[alertFXID].y_scale == true then
+		yScale = alertRange
 	end
 
-	var_2_4.localScale = Vector3(var_2_1, var_2_5, var_2_1)
+	alertTF.localScale = Vector3(alertRange, yScale, alertRange)
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_2_3, arg_2_0:GetExplodePostion())
+	pg.EffectMgr.GetInstance():PlayBattleEffect(alertFX, bulletData:GetExplodePostion())
 end

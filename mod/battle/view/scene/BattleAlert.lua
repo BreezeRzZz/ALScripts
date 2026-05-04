@@ -1,31 +1,43 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleAlert = class("BattleAlert")
-var_0_0.Battle.BattleAlert.__name = "BattleAlert"
+ys.Battle.BattleAlert = class("BattleAlert")
+ys.Battle.BattleAlert.__name = "BattleAlert"
 
-function var_0_0.Battle.BattleAlert.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._alertGO = arg_1_1
-	arg_1_0._alertTf = arg_1_1.transform
-	arg_1_0._diskTf = arg_1_0._alertGO.transform:Find("Disk")
+--- @class BattleAlert
+--- 通用战斗警报区域指示器
+--- 用于显示范围预警（如炸弹、弹幕预警），通过缩放圆盘表示危险进度
+--- @param alertGO GameObject 警报GameObject（带Disk子节点的预制体）
+function ys.Battle.BattleAlert.Ctor(self, alertGO)
+	self._alertGO = alertGO
+	self._alertTf = alertGO.transform
+	self._diskTf = self._alertGO.transform:Find("Disk")
 
-	arg_1_0:UpdateRate(0)
-	arg_1_0._alertGO:SetActive(true)
+	-- 初始化为0进度
+	self:UpdateRate(0)
+	self._alertGO:SetActive(true)
 end
 
-function var_0_0.Battle.BattleAlert.SetPosition(arg_2_0, arg_2_1)
-	arg_2_0._alertTf.localPosition = Vector3(arg_2_1.x, 0, arg_2_1.z)
+--- 设置警报位置
+--- @param pos Vector3 世界坐标（只用x,z分量）
+function ys.Battle.BattleAlert.SetPosition(self, pos)
+	self._alertTf.localPosition = Vector3(pos.x, 0, pos.z)
 end
 
-function var_0_0.Battle.BattleAlert.Zoom(arg_3_0, arg_3_1)
-	arg_3_0._alertTf.localScale = Vector3(arg_3_1 * 2, arg_3_1 * 2, 1)
+--- 缩放整个警报区域
+--- @param scale number 缩放倍率
+function ys.Battle.BattleAlert.Zoom(self, scale)
+	self._alertTf.localScale = Vector3(scale * 2, scale * 2, 1)
 end
 
-function var_0_0.Battle.BattleAlert.UpdateRate(arg_4_0, arg_4_1)
-	arg_4_0._diskTf.localScale = Vector3(arg_4_1, arg_4_1, 1)
+--- 更新警报进度（通过缩放内圈盘片表示剩余时间比例）
+--- @param rate number 0~1，0=初始/无进度，1=完全填充（即将触发）
+function ys.Battle.BattleAlert.UpdateRate(self, rate)
+	self._diskTf.localScale = Vector3(rate, rate, 1)
 end
 
-function var_0_0.Battle.BattleAlert.Dispose(arg_5_0)
-	Object.Destroy(arg_5_0._alertGO)
+--- 销毁警报GameObject
+function ys.Battle.BattleAlert.Dispose(self)
+	Object.Destroy(self._alertGO)
 end

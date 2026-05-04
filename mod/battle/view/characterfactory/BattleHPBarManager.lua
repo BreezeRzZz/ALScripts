@@ -1,109 +1,169 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleHPBarManager")
+local ys = ys
+local HPBarManager = singletonClass("BattleHPBarManager")
 
-var_0_0.Battle.BattleHPBarManager = var_0_1
-var_0_1.__name = "BattleHPBarManager"
-var_0_1.ROOT_NAME = "HPBarContainer"
-var_0_1.HP_BAR_FRIENDLY = "heroBlood"
-var_0_1.HP_BAR_FOE = "enemyBlood"
-var_0_1.ORIGIN_BAR_WIDTH = {
+ys.Battle.BattleHPBarManager = HPBarManager
+--- HP条管理器。负责友方和敌方两类HP条的创建、对象池管理、回收。
+--- 使用pg.Pool实现对象池，预创建一定数量的HP条以减少运行时GC。
+HPBarManager.__name = "BattleHPBarManager"
+--- HP条容器根节点名称（场景Hierarchy中的父节点）
+HPBarManager.ROOT_NAME = "HPBarContainer"
+--- 友方HP条资源名（蓝色/绿色血条）
+HPBarManager.HP_BAR_FRIENDLY = "heroBlood"
+--- 敌方HP条资源名（红色血条）
+HPBarManager.HP_BAR_FOE = "enemyBlood"
+--- 各类型HP条的原始背景宽度
+HPBarManager.ORIGIN_BAR_WIDTH = {
 	heroBlood = 70,
 	enemyBlood = 154
 }
-var_0_1.ORIGIN_PROGRESS_WIDTH = {
+--- 各类型HP条的原始血条进度宽度（fill区域）
+HPBarManager.ORIGIN_PROGRESS_WIDTH = {
 	heroBlood = 66,
 	enemyBlood = 153
 }
 
-function var_0_1.Ctor(arg_1_0)
+--- @class BattleHPBarManager
+--- @return nil
+--- 构造函数（空，实际初始化在Init中完成）。
+function HPBarManager.Ctor(self)
 	return
 end
 
-function var_0_1.Init(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._allPool = {}
-	arg_2_0._ob2Pool = {}
-	arg_2_0._allPool[var_0_1.HP_BAR_FRIENDLY] = var_0_1.generateTempPool(var_0_1.HP_BAR_FRIENDLY, arg_2_2, arg_2_1, 3, 10)
-	arg_2_0._allPool[var_0_1.HP_BAR_FOE] = var_0_1.generateTempPool(var_0_1.HP_BAR_FOE, arg_2_2, arg_2_1, 8, 10)
+--- @class BattleHPBarManager
+--- @param sceneRoot Transform: 场景根Transform（HP条模板的父节点）
+--- @param poolRoot Transform: 对象池父节点（运行时池中对象挂载点）
+--- @return nil
+--- 初始化HP条管理器：创建两类HP条的对象池。
+---   - 友方(heroBlood): 预分配3个，容量10
+---   - 敌方(enemyBlood): 预分配8个，容量10
+--- _ob2Pool: GameObject->Pool 反向映射表，用于回收时找到对应池。
+function HPBarManager.Init(self, sceneRoot, poolRoot)
+	self._allPool = {}
+	self._ob2Pool = {}
+	self._allPool[HPBarManager.HP_BAR_FRIENDLY] = HPBarManager.generateTempPool(HPBarManager.HP_BAR_FRIENDLY, poolRoot, sceneRoot, 3, 10)
+	self._allPool[HPBarManager.HP_BAR_FOE] = HPBarManager.generateTempPool(HPBarManager.HP_BAR_FOE, poolRoot, sceneRoot, 8, 10)
 end
 
-function var_0_1.InitialPoolRoot(arg_3_0, arg_3_1)
-	arg_3_0._allPool[var_0_1.HP_BAR_FRIENDLY]:ResetParent(arg_3_1)
-	arg_3_0._allPool[var_0_1.HP_BAR_FOE]:ResetParent(arg_3_1)
+--- @class BattleHPBarManager
+--- @param canvasRoot Transform: Canvas根节点（UGUI Canvas的Transform）
+--- @return nil
+--- 在Canvas创建后重新绑定对象池的父节点（动态Canvas场景时使用）。
+function HPBarManager.InitialPoolRoot(self, canvasRoot)
+	self._allPool[HPBarManager.HP_BAR_FRIENDLY]:ResetParent(canvasRoot)
+	self._allPool[HPBarManager.HP_BAR_FOE]:ResetParent(canvasRoot)
 end
 
-function var_0_1.Clear(arg_4_0)
-	for iter_4_0, iter_4_1 in pairs(arg_4_0._allPool) do
-		iter_4_1:Dispose()
+--- @class BattleHPBarManager
+--- @return nil
+--- 清理所有HP条：释放所有对象池，清空反向映射。
+function HPBarManager.Clear(self)
+	for _, pool in pairs(self._allPool) do
+		pool:Dispose()
 	end
 
-	arg_4_0._ob2Pool = {}
-	arg_4_0._allPool = {}
+	self._ob2Pool = {}
+	self._allPool = {}
 end
 
-function var_0_1.GetHPBar(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_0._allPool[arg_5_1]
-	local var_5_1 = var_5_0:GetObject()
+--- @class BattleHPBarManager
+--- @param barType string: HP条类型（HP_BAR_FRIENDLY / HP_BAR_FOE）
+--- @return GameObject: 初始化好的HP条GameObject
+--- 从对象池获取一个HP条。获得后做以下初始化：
+---   1) 记录ob2Pool反向映射（回收时需要）
+---   2) 重置血条fillAmount为1（满血）
+---   3) 隐藏type（船型图标）节点
+---   4) 隐藏torpedoIcons（鱼雷图标）节点
+---   5) 隐藏biasBar（瞄准偏差条）节点
+--- 子节点由各Factory在MakeBloodBar中按需激活。
+function HPBarManager.GetHPBar(self, barType)
+	local pool = self._allPool[barType]
+	local hpBar = pool:GetObject()
 
-	arg_5_0._ob2Pool[var_5_1] = var_5_0
+	-- 记录反向映射，回收时用
+	self._ob2Pool[hpBar] = pool
 
-	local var_5_2 = var_5_1.transform
+	local hpBarTf = hpBar.transform
 
-	var_5_2:Find("blood"):GetComponent(typeof(Image)).fillAmount = 1
+	-- 重置血条为满血
+	hpBarTf:Find("blood"):GetComponent(typeof(Image)).fillAmount = 1
 
-	local var_5_3 = var_5_2:Find("type")
+	-- 默认隐藏船型图标（敌方Factory中按icon_type决定是否显示）
+	local typeTf = hpBarTf:Find("type")
 
-	if var_5_3 then
-		SetActive(var_5_3, false)
+	if typeTf then
+		SetActive(typeTf, false)
 	end
 
-	local var_5_4 = var_5_2:Find("torpedoIcons")
+	-- 默认隐藏鱼雷图标（玩家Factory中激活）
+	local torpedoIcons = hpBarTf:Find("torpedoIcons")
 
-	if var_5_4 then
-		SetActive(var_5_4, false)
+	if torpedoIcons then
+		SetActive(torpedoIcons, false)
 	end
 
-	local var_5_5 = var_5_2:Find("biasBar")
+	-- 默认隐藏瞄准偏差条（有AimBias的Factory中激活）
+	local biasBar = hpBarTf:Find("biasBar")
 
-	if var_5_5 then
-		SetActive(var_5_5, false)
+	if biasBar then
+		SetActive(biasBar, false)
 	end
 
-	return var_5_1
+	return hpBar
 end
 
-function var_0_1.DestroyObj(arg_6_0, arg_6_1)
-	if arg_6_1 == nil then
+--- @class BattleHPBarManager
+--- @param obj GameObject|nil: 要回收的HP条GameObject
+--- @return nil
+--- 回收/销毁一个HP条。如果ob2Pool中有映射则回收到对应池中，
+--- 否则直接Object.Destroy（如被错误传递的外部对象）。
+function HPBarManager.DestroyObj(self, obj)
+	if obj == nil then
 		return
 	end
 
-	local var_6_0 = arg_6_0._ob2Pool[arg_6_1]
+	local pool = self._ob2Pool[obj]
 
-	if var_6_0 then
-		var_6_0:Recycle(arg_6_1)
+	if pool then
+		pool:Recycle(obj)
 	else
-		Object.Destroy(arg_6_1)
+		Object.Destroy(obj)
 	end
 end
 
-local var_0_2 = Vector3(0, 10000, 0)
+--- 对象池隐藏位置：将未使用的HP条移动到屏幕外的Y=10000位置
+local HIDE_POSITION = Vector3(0, 10000, 0)
 
-function var_0_1.HideBullet(arg_7_0)
-	arg_7_0.transform.position = var_0_2
+--- @class BattleHPBarManager
+--- @param obj GameObject: HP条GameObject
+--- @return nil
+--- 对象池回收函数：将HP条移动到屏幕外隐藏位置。
+function HPBarManager.HideBullet(self, obj)
+	obj.transform.position = HIDE_POSITION
 end
 
-function var_0_1.generateTempPool(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-	local var_8_0 = arg_8_2.transform:Find(arg_8_0).gameObject
+--- @class BattleHPBarManager
+--- @param barName string: HP条资源名称（如"heroBlood"、"enemyBlood"）
+--- @param poolRoot Transform: 对象池父节点
+--- @param sceneRoot Transform: 场景模板根节点
+--- @param initSize number: 预分配数量
+--- @param capacity number: 池容量上限
+--- @return pg.Pool: 创建好的对象池
+--- 内部方法：从场景中查找HP条模板，创建pg.Pool对象池。
+--- 先取出模板GameObject，隐藏到HIDE_POSITION后创建池。
+--- 池的回收函数设置为HideBullet（移动到屏幕外）。
+function HPBarManager.generateTempPool(barName, poolRoot, sceneRoot, initSize, capacity)
+	local template = sceneRoot.transform:Find(barName).gameObject
 
-	var_8_0.transform.position = var_0_2
+	template.transform.position = HIDE_POSITION
 
-	var_8_0:SetActive(true)
+	template:SetActive(true)
 
-	local var_8_1 = pg.Pool.New(arg_8_1, var_8_0, arg_8_3, arg_8_4, true, true)
+	local pool = pg.Pool.New(poolRoot, template, initSize, capacity, true, true)
 
-	var_8_1:SetRecycleFuncs(var_0_1.HideBullet)
-	var_8_1:InitSize()
+	pool:SetRecycleFuncs(HPBarManager.HideBullet)
+	pool:InitSize()
 
-	return var_8_1
+	return pool
 end

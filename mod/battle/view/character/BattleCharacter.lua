@@ -1,5 +1,5 @@
 ys = ys or {}
--- TODO
+
 local ys = ys
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleConst = ys.Battle.BattleConst
@@ -11,63 +11,74 @@ local BattleCharacter = class("BattleCharacter", ys.Battle.BattleSceneObject)
 ys.Battle.BattleCharacter = BattleCharacter
 BattleCharacter.__name = "BattleCharacter"
 
-local anchoredPosition = Vector2(-1200, -1200)
-local var_0_8 = Vector3.New(0.3, -1.8, 0)
+--- 屏幕外箭头隐藏时的锚点位置（远离屏幕）
+local OFF_SCREEN_POS = Vector2(-1200, -1200)
+--- 聊天气泡在屏幕外时的偏移量
+local CHAT_OFFSCREEN_OFFSET = Vector3.New(0.3, -1.8, 0)
 
 BattleCharacter.AIM_OFFSET = Vector3.New(0, -3.5, 0)
 
-function BattleCharacter.Ctor(arg_1_0)
-	BattleCharacter.super.Ctor(arg_1_0)
-	arg_1_0:Init()
+--- 箭头朝向左侧时的缩放
+local ARROW_SCALE_LEFT = Vector3(-1, 1, 1)
+--- 箭头朝向右侧时的缩放
+local ARROW_SCALE_RIGHT = Vector3(1, 1, 1)
+
+--- 构造函数，初始化所有内部状态
+function BattleCharacter.Ctor(self)
+	BattleCharacter.super.Ctor(self)
+	self:Init()
 end
 
-function BattleCharacter.Init(arg_2_0)
-	ys.EventListener.AttachEventListener(arg_2_0)
-	arg_2_0:InitBulletFactory()
-	arg_2_0:InitEffectView()
+--- 初始化内部状态：事件监听、子弹工厂、特效视图、各种缓存列表
+function BattleCharacter.Init(self)
+	ys.EventListener.AttachEventListener(self)
+	self:InitBulletFactory()
+	self:InitEffectView()
 
-	arg_2_0._tagFXList = {}
-	arg_2_0._cacheFXList = {}
-	arg_2_0._allFX = {}
-	arg_2_0._bulletCache = {}
-	arg_2_0._weaponRegisterList = {}
-	arg_2_0._characterPos = Vector3.zero
-	arg_2_0._orbitCount = 0
-	arg_2_0._orbitList = {}
-	arg_2_0._orbitSpineOrderOffset = 0
-	arg_2_0._orbitActionCacheList = {}
-	arg_2_0._orbitSpeedUpdateList = {}
-	arg_2_0._orbitActionUpdateList = {}
-	arg_2_0._inViewArea = false
-	arg_2_0._alwaysHideArrow = false
-	arg_2_0._hideHP = false
-	arg_2_0._referenceVector = Vector3.zero
-	arg_2_0._referenceVectorCache = Vector3.zero
-	arg_2_0._referenceVectorTemp = Vector3.zero
-	arg_2_0._referenceUpdateFlag = false
-	arg_2_0._referenceVectorBorn = nil
-	arg_2_0._hpBarPos = Vector3.zero
-	arg_2_0._arrowVector = Vector3.zero
-	arg_2_0._arrowAngleVector = Vector3.zero
-	arg_2_0._blinkDict = {}
-	arg_2_0._coverSpineHPBarOffset = 0
-	arg_2_0._shaderType = nil
-	arg_2_0._color = nil
-	arg_2_0._actionIndex = nil
+	self._tagFXList = {}
+	self._cacheFXList = {}
+	self._allFX = {}
+	self._bulletCache = {}
+	self._weaponRegisterList = {}
+	self._characterPos = Vector3.zero
+	self._orbitCount = 0
+	self._orbitList = {}
+	self._orbitSpineOrderOffset = 0
+	self._orbitActionCacheList = {}
+	self._orbitSpeedUpdateList = {}
+	self._orbitActionUpdateList = {}
+	self._inViewArea = false
+	self._alwaysHideArrow = false
+	self._hideHP = false
+	self._referenceVector = Vector3.zero
+	self._referenceVectorCache = Vector3.zero
+	self._referenceVectorTemp = Vector3.zero
+	self._referenceUpdateFlag = false
+	self._referenceVectorBorn = nil
+	self._hpBarPos = Vector3.zero
+	self._arrowVector = Vector3.zero
+	self._arrowAngleVector = Vector3.zero
+	self._blinkDict = {}
+	self._coverSpineHPBarOffset = 0
+	self._shaderType = nil
+	self._color = nil
+	self._actionIndex = nil
 end
 
-function BattleCharacter.InitBulletFactory(arg_3_0)
-	arg_3_0._bulletFactoryList = ys.Battle.BattleBulletFactory.GetFactoryList()
+--- 获取子弹工厂列表
+function BattleCharacter.InitBulletFactory(self)
+	self._bulletFactoryList = ys.Battle.BattleBulletFactory.GetFactoryList()
 end
 
-function BattleCharacter.SetUnitData(arg_4_0, arg_4_1)
-	arg_4_0._unitData = arg_4_1
+--- 设置关联的UnitData，并注册单位事件监听
+--- @param unitData BattleUnitData 战斗单位数据
+function BattleCharacter.SetUnitData(self, unitData)
+	self._unitData = unitData
 
-	arg_4_0:AddUnitEvent()
+	self:AddUnitEvent()
 end
 
--- 设置绑点信息
--- 从ship_data_statistics/enemy_data_statistics中读取bound_bone字段，存储到boneList中
+--- 初始化骨骼绑定列表，从模板的 bound_bone 和通用骨骼配置读取
 function BattleCharacter.SetBoneList(self)
 	self._boneList = {}
 	self._remoteBoneTable = {}
@@ -75,544 +86,618 @@ function BattleCharacter.SetBoneList(self)
 	self._posMatrix = nil
 
 	local initScale = self:GetInitScale()
-	-- bound_bone中，remote的使用要另外处理
-	-- remote在BattleAircraftUnit.SetMotherUnit中使用
-	for weaponBone, boneOffset in pairs(self._unitData:GetTemplate().bound_bone) do
-		if weaponBone ~= "remote" then
-			self:insertBondList(weaponBone, boneOffset)
+
+	for boneName, boneData in pairs(self._unitData:GetTemplate().bound_bone) do
+		if boneName ~= "remote" then
+			self:insertBondList(boneName, boneData)
 		end
 	end
-	-- CommonBone = {rangeantiaircraft = { {1.5, 1.1, 0} } }
-	for commonBone, boneOffset in pairs(BattleConfig.CommonBone) do
-		self:insertBondList(commonBone, boneOffset)
+
+	for boneName, boneData in pairs(BattleConfig.CommonBone) do
+		self:insertBondList(boneName, boneData)
 	end
 end
 
---- @class BattleCharacter
---- @param boneType string
---- @param boneOffset table<number, table<number, number>>
-function BattleCharacter.insertBondList(self, boneType, boneOffset)
-	-- boneOffsetItem: table<number, number>
-	for _, boneOffsetItem in ipairs(boneOffset) do
-		if type(boneOffsetItem) == "table" then
-			local boneOffsetPos = {}
-			-- boneOffsetPos: table<number, Vector3>
-			boneOffsetPos[#boneOffsetPos + 1] = Vector3(boneOffsetItem[1], boneOffsetItem[2], boneOffsetItem[3])
-			-- boneList: table<string, table<number, Vector3>>
-			self._boneList[boneType] = boneOffsetPos
+--- 插入单个骨骼绑定到 _boneList
+--- @param boneName string 骨骼名称
+--- @param bonePositions table 骨骼位置数据列表
+function BattleCharacter.insertBondList(self, boneName, bonePositions)
+	for _, posEntry in ipairs(bonePositions) do
+		if type(posEntry) == "table" then
+			local bonePosArray = {}
+
+			bonePosArray[#bonePosArray + 1] = Vector3(posEntry[1], posEntry[2], posEntry[3])
+			self._boneList[boneName] = bonePosArray
 		end
 	end
 end
 
--- 被BattleCharacter.onCreateBullet调用
-function BattleCharacter.SpawnBullet(self, bullet, spawnBound, fireFXID, position)
-	local bulletfactory = self._bulletFactoryList[bullet:GetTemplate().type]
-	local remoteBoundBone = self._unitData:GetRemoteBoundBone(spawnBound)
-	local spawnPosition = position or remoteBoundBone or self:GetBonePos(spawnBound)
+--- 根据子弹模板在指定骨骼位置生成子弹
+--- @param bulletTmp BattleBulletTemplate 子弹模板
+--- @param spawnBone string 生成骨骼名
+--- @param fireFxID string|nil 开火特效ID
+--- @param spawnPos Vector3|nil 指定生成位置（可选）
+function BattleCharacter.SpawnBullet(self, bulletTmp, spawnBone, fireFxID, spawnPos)
+	local bulletFactory = self._bulletFactoryList[bulletTmp:GetTemplate().type]
+	local remoteBonePos = self._unitData:GetRemoteBoundBone(spawnBone)
+	local finalPos = spawnPos or remoteBonePos or self:GetBonePos(spawnBone)
 
-	bulletfactory:CreateBullet(self._tf, bullet, spawnPosition, fireFXID, self._unitData:GetDirection())
+	bulletFactory:CreateBullet(self._tf, bulletTmp, finalPos, fireFxID, self._unitData:GetDirection())
 end
 
-function BattleCharacter.GetBonePos(self, spawnBound)
-	--- @type table<number, Vector3>
-	local boneOffsetPos = self._boneList[spawnBound]
-	-- 如果没有, 则随机选一个绑点返回
-	if boneOffsetPos == nil or #boneOffsetPos == 0 then
-		for _, _boneOffsetPos in pairs(self._boneList) do
-			boneOffsetPos = _boneOffsetPos
+--- 获取指定骨骼的世界坐标位置
+--- 使用 localToWorldMatrix 缓存加速，每帧重置一次
+--- @param boneName string 骨骼名
+--- @return Vector3 骨骼的世界坐标
+function BattleCharacter.GetBonePos(self, boneName)
+	local bonePosArray = self._boneList[boneName]
+
+	-- 如果指定骨骼不存在，则使用任意第一个骨骼
+	if bonePosArray == nil or #bonePosArray == 0 then
+		for _, positions in pairs(self._boneList) do
+			bonePosArray = positions
 
 			break
 		end
 	end
 
-	local localToWorldMatrix
-	-- 这里可能是关键?
-	-- ship_skin_template中给出的好像是局部坐标，这里还要经过矩阵转换成世界坐标
-	-- 游戏战斗内使用的坐标系是世界坐标系
+	local matrix
+
 	if not self._posMatrix then
-		localToWorldMatrix = self._tf.localToWorldMatrix
-		self._posMatrix = localToWorldMatrix
+		matrix = self._tf.localToWorldMatrix
+		self._posMatrix = matrix
 		self._bonePosTable = {}
 	else
-		localToWorldMatrix = self._posMatrix
+		matrix = self._posMatrix
 	end
 
-	local boneWorldPos = self._bonePosTable[spawnBound]
+	local cachedPositions = self._bonePosTable[boneName]
 
-	if boneWorldPos == nil then
-		boneWorldPos = {}
-		-- boneOffsetPosItem: Vector3
-		for _, boneOffsetPosItem in ipairs(boneOffsetPos) do
-			-- 这里是把局部坐标转换成世界坐标
-			-- MultiplyPoint3x4是一个变换矩阵
-			-- 请参考：Unity的Matrix4x4.MultiplyPoint3x4
-			-- 但由于舰船不会旋转，永远是面向X轴正方向，所以这里其实相当于做了一个平移
-			-- 可以理解为舰船的坐标 + 绑点的局部坐标 = 绑点的世界坐标
-			boneWorldPos[#boneWorldPos + 1] = localToWorldMatrix:MultiplyPoint3x4(boneOffsetPosItem)
+	if cachedPositions == nil then
+		cachedPositions = {}
+
+		for _, localPos in ipairs(bonePosArray) do
+			cachedPositions[#cachedPositions + 1] = matrix:MultiplyPoint3x4(localPos)
 		end
 
-		self._bonePosTable[spawnBound] = boneWorldPos
+		self._bonePosTable[boneName] = cachedPositions
 	end
 
-	if #boneWorldPos == 1 then
-		return boneWorldPos[1]
+	-- 如果只有一个位置直接返回，否则随机选择（用于多骨骼位置随机发射）
+	if #cachedPositions == 1 then
+		return cachedPositions[1]
 	else
-		-- 有多个绑骨，则随机选一个返回
-		return boneWorldPos[math.floor(math.Random(0, #boneWorldPos)) + 1]
+		return cachedPositions[math.floor(math.Random(0, #cachedPositions)) + 1]
 	end
 end
 
+--- @return table 骨骼列表
 function BattleCharacter.GetBoneList(self)
 	return self._boneList
 end
 
-function BattleCharacter.AddFXOffsets(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_0._FXAttachPoint = arg_10_1
-	arg_10_0._FXOffset = arg_10_2
+--- 存储特效挂载点和偏移表
+function BattleCharacter.AddFXOffsets(self, attachPoint, fxOffsets)
+	self._FXAttachPoint = attachPoint
+	self._FXOffset = fxOffsets
 end
 
-function BattleCharacter.GetFXOffsets(arg_11_0, arg_11_1)
-	arg_11_1 = arg_11_1 or 1
+--- 获取指定特效容器的偏移位置
+--- @param fxIndex number|nil 特效容器索引，默认为1
+function BattleCharacter.GetFXOffsets(self, fxIndex)
+	fxIndex = fxIndex or 1
 
-	return arg_11_0._FXOffset[arg_11_1]
+	return self._FXOffset[fxIndex]
 end
 
-function BattleCharacter.GetAttachPoint(arg_12_0)
-	return arg_12_0._FXAttachPoint
+--- @return Transform 特效挂载点
+function BattleCharacter.GetAttachPoint(self)
+	return self._FXAttachPoint
 end
 
-function BattleCharacter.GetSpecificFXScale(arg_13_0)
+--- 获取特定FX缩放（子类可重写）
+--- @return table 缩放表
+function BattleCharacter.GetSpecificFXScale(self)
 	return {}
 end
 
-function BattleCharacter.PlayFX(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_0:GetFactory():GetFXPool():GetFX(arg_14_1)
+--- 在角色位置直接播放特效（不跟随角色）
+--- @param fxName string 特效名称
+function BattleCharacter.PlayFX(self, fxName)
+	local fx = self:GetFactory():GetFXPool():GetFX(fxName)
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_14_0, arg_14_0:GetPosition(), true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(fx, self:GetPosition(), true)
 end
 
--- TODO
-function BattleCharacter.AddFX(arg_15_0, arg_15_1, arg_15_2, arg_15_3, arg_15_4)
-	local var_15_0 = arg_15_0:GetFactory():GetFXPool():GetCharacterFX(arg_15_1, arg_15_0, not arg_15_2, function(arg_16_0)
-		if arg_15_4 then
-			arg_15_4()
+--- 给角色添加跟随特效
+--- @param fxName string 特效名称
+--- @param useCache boolean|nil 是否缓存以便批量移除
+--- @param timeScale number|nil 时间缩放
+--- @param callback function|nil 播放完成回调
+--- @return GameObject 特效对象
+function BattleCharacter.AddFX(self, fxName, useCache, timeScale, callback)
+	local fxObj = self:GetFactory():GetFXPool():GetCharacterFX(fxName, self, not useCache, function(fx)
+		if callback then
+			callback()
 		end
 
-		arg_15_0._allFX[arg_16_0] = nil
-	end, arg_15_3)
+		self._allFX[fx] = nil
+	end, timeScale)
 
-	if arg_15_2 then
-		local var_15_1 = arg_15_0._cacheFXList[arg_15_1] or {}
+	if useCache then
+		local cacheList = self._cacheFXList[fxName] or {}
 
-		table.insert(var_15_1, var_15_0)
+		table.insert(cacheList, fxObj)
 
-		arg_15_0._cacheFXList[arg_15_1] = var_15_1
+		self._cacheFXList[fxName] = cacheList
 	end
 
-	arg_15_0._allFX[var_15_0] = true
+	self._allFX[fxObj] = true
 
-	return var_15_0
+	return fxObj
 end
 
-function BattleCharacter.RemoveFX(arg_17_0, arg_17_1)
-	if arg_17_0._allFX and arg_17_0._allFX[arg_17_1] then
-		arg_17_0._allFX[arg_17_1] = nil
+--- 移除指定特效
+--- @param fxObj GameObject 特效对象
+function BattleCharacter.RemoveFX(self, fxObj)
+	if self._allFX and self._allFX[fxObj] then
+		self._allFX[fxObj] = nil
 
-		BattleResourceManager.GetInstance():DestroyOb(arg_17_1)
-	end
-end
-
-function BattleCharacter.RemoveCacheFX(arg_18_0, arg_18_1)
-	local var_18_0 = arg_18_0._cacheFXList[arg_18_1]
-
-	if var_18_0 ~= nil and #var_18_0 > 0 then
-		local var_18_1 = table.remove(var_18_0)
-
-		arg_18_0._allFX[var_18_1] = nil
-
-		BattleResourceManager.GetInstance():DestroyOb(var_18_1)
+		BattleResourceManager.GetInstance():DestroyOb(fxObj)
 	end
 end
 
-function BattleCharacter.AddWaveFX(arg_19_0, arg_19_1)
-	arg_19_0._waveFX = arg_19_0:AddFX(arg_19_1)
+--- 通过名称从缓存中移除最后一个该类型特效
+--- @param fxName string 特效名称
+function BattleCharacter.RemoveCacheFX(self, fxName)
+	local cacheList = self._cacheFXList[fxName]
+
+	if cacheList ~= nil and #cacheList > 0 then
+		local removedFx = table.remove(cacheList)
+
+		self._allFX[removedFx] = nil
+
+		BattleResourceManager.GetInstance():DestroyOb(removedFx)
+	end
 end
 
-function BattleCharacter.RemoveWaveFX(arg_20_0)
-	if not arg_20_0._waveFX then
+--- 添加移动浪花特效
+function BattleCharacter.AddWaveFX(self, fxName)
+	self._waveFX = self:AddFX(fxName)
+end
+
+--- 移除移动浪花特效
+function BattleCharacter.RemoveWaveFX(self)
+	if not self._waveFX then
 		return
 	end
 
-	arg_20_0:RemoveFX(arg_20_0._waveFX)
+	self:RemoveFX(self._waveFX)
 end
 
-function BattleCharacter.onAddBuffClock(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_1.Data
+--- Buff计时器更新回调
+--- @param event table 事件数据 {Data = {isActive, ...}}
+function BattleCharacter.onAddBuffClock(self, event)
+	local eventData = event.Data
 
-	if var_21_0.isActive then
-		if not arg_21_0._buffClock then
-			arg_21_0._factory:MakeBuffClock(arg_21_0)
+	if eventData.isActive then
+		if not self._buffClock then
+			self._factory:MakeBuffClock(self)
 		end
 
-		arg_21_0._buffClock:Casting(var_21_0)
+		self._buffClock:Casting(eventData)
 	else
-		arg_21_0._buffClock:Interrupt(var_21_0)
+		self._buffClock:Interrupt(eventData)
 	end
 end
 
-function BattleCharacter.AddBlink(arg_22_0, arg_22_1, arg_22_2, arg_22_3, arg_22_4, arg_22_5, arg_22_6, arg_22_7)
-	if arg_22_0._unitData:GetDiveInvisible() then
+--- 给Spine角色添加闪烁效果
+--- @param r number 红色分量
+--- @param g number 绿色分量
+--- @param b number 蓝色分量
+--- @param period number|nil 闪烁周期，默认0.1
+--- @param duration number|nil 闪烁持续时间，默认0.1
+--- @param keepForever boolean|nil 是否永久，默认false
+--- @param alpha number|nil 透明度，默认0.18
+--- @return number|nil 闪烁ID（用于移除）
+function BattleCharacter.AddBlink(self, r, g, b, period, duration, keepForever, alpha)
+	-- 下潜隐身时不允许闪烁
+	if self._unitData:GetDiveInvisible() then
 		return nil
 	end
 
-	if not arg_22_0._unitData:GetExposed() then
+	-- 盲烟暴露检查
+	if not self._unitData:GetExposed() then
 		return nil
 	end
 
-	arg_22_4 = arg_22_4 or 0.1
-	arg_22_5 = arg_22_5 or 0.1
-	arg_22_6 = arg_22_6 or false
-	arg_22_7 = arg_22_7 or 0.18
+	period = period or 0.1
+	duration = duration or 0.1
+	keepForever = keepForever or false
+	alpha = alpha or 0.18
 
-	local var_22_0 = SpineAnim.CharBlink(arg_22_0._go, arg_22_1, arg_22_2, arg_22_3, arg_22_7, arg_22_4, arg_22_5, arg_22_6)
+	local blinkID = SpineAnim.CharBlink(self._go, r, g, b, alpha, period, duration, keepForever)
 
-	if not arg_22_6 then
-		arg_22_0._blinkDict[var_22_0] = {
-			r = arg_22_1,
-			g = arg_22_2,
-			b = arg_22_3,
-			a = arg_22_7,
-			peroid = arg_22_4,
-			duration = arg_22_5
+	if not keepForever then
+		self._blinkDict[blinkID] = {
+			r = r,
+			g = g,
+			b = b,
+			a = alpha,
+			peroid = period,
+			duration = duration
 		}
 	end
 
-	return var_22_0
+	return blinkID
 end
 
-function BattleCharacter.RemoveBlink(arg_23_0, arg_23_1)
-	arg_23_0._blinkDict[arg_23_1] = nil
+--- 移除闪烁效果
+--- @param blinkID number 闪烁ID
+function BattleCharacter.RemoveBlink(self, blinkID)
+	self._blinkDict[blinkID] = nil
 
-	SpineAnim.RemoveBlink(arg_23_0._go, arg_23_1)
+	SpineAnim.RemoveBlink(self._go, blinkID)
 end
 
-function BattleCharacter.AddShaderColor(arg_24_0, arg_24_1)
-	if not arg_24_0._unitData:GetExposed() then
+--- 给角色添加Shader着色
+--- @param color Color|nil 着色颜色，默认透明黑
+function BattleCharacter.AddShaderColor(self, color)
+	if not self._unitData:GetExposed() then
 		return
 	end
 
-	arg_24_1 = arg_24_1 or Color.New(0, 0, 0, 0)
+	color = color or Color.New(0, 0, 0, 0)
 
-	SpineAnim.AddShaderColor(arg_24_0._go, arg_24_1)
+	SpineAnim.AddShaderColor(self._go, color)
 end
 
-function BattleCharacter.GetPosition(arg_25_0)
-	return arg_25_0._characterPos
+--- @return Vector3 角色当前世界坐标
+function BattleCharacter.GetPosition(self)
+	return self._characterPos
 end
 
-function BattleCharacter.GetUnitData(arg_26_0)
-	return arg_26_0._unitData
+--- @return BattleUnitData 关联的单位数据
+function BattleCharacter.GetUnitData(self)
+	return self._unitData
 end
 
-function BattleCharacter.GetDestroyFXID(arg_27_0)
-	return arg_27_0:GetUnitData():GetTemplate().bomb_fx
+--- 获取死亡爆炸特效ID
+--- @return string|nil 爆炸特效ID
+function BattleCharacter.GetDestroyFXID(self)
+	return self:GetUnitData():GetTemplate().bomb_fx
 end
 
-function BattleCharacter.GetOffsetPos(arg_28_0)
-	return (BuildVector3(arg_28_0._unitData:GetTemplate().position_offset))
+--- 获取prefab位置偏移（用于编辑器中的站位调整）
+--- @return Vector3 偏移量
+function BattleCharacter.GetOffsetPos(self)
+	return (BuildVector3(self._unitData:GetTemplate().position_offset))
 end
 
-function BattleCharacter.GetReferenceVector(arg_29_0, arg_29_1)
-	if arg_29_1 == nil then
-		return arg_29_0._referenceVector
+--- 获取参考坐标（用于UI定位）。如果传入对比坐标则计算相对差值
+--- @param comparePos Vector3|nil 用于比较的坐标
+--- @return Vector3 参考坐标
+function BattleCharacter.GetReferenceVector(self, comparePos)
+	if comparePos == nil then
+		return self._referenceVector
 	else
-		arg_29_0._referenceVectorTemp:Set(arg_29_0._characterPos.x, arg_29_0._characterPos.y, arg_29_0._characterPos.z)
-		arg_29_0._referenceVectorTemp:Sub(arg_29_1)
-		ys.Battle.BattleVariable.CameraPosToUICameraByRef(arg_29_0._referenceVectorTemp)
+		self._referenceVectorTemp:Set(self._characterPos.x, self._characterPos.y, self._characterPos.z)
+		self._referenceVectorTemp:Sub(comparePos)
+		ys.Battle.BattleVariable.CameraPosToUICameraByRef(self._referenceVectorTemp)
 
-		arg_29_0._referenceVectorTemp.z = 2
+		self._referenceVectorTemp.z = 2
 
-		return arg_29_0._referenceVectorTemp
+		return self._referenceVectorTemp
 	end
 end
 
-function BattleCharacter.GetInitScale(arg_30_0)
-	return arg_30_0._unitData:GetAttrByName("modelScale")
+--- 获取初始模型缩放
+--- @return number 缩放值
+function BattleCharacter.GetInitScale(self)
+	return self._unitData:GetAttrByName("modelScale")
 end
 
-function BattleCharacter.AddUnitEvent(arg_31_0)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SPAWN_CACHE_BULLET, arg_31_0.onSpawnCacheBullet)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.CREATE_TEMPORARY_WEAPON, arg_31_0.onNewWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.POP_UP, arg_31_0.onPopup)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.VOICE, arg_31_0.onVoice)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.PLAY_FX, arg_31_0.onPlayFX)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.REMOVE_WEAPON, arg_31_0.onRemoveWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.ADD_BLINK, arg_31_0.onBlink)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_VISIBLE, arg_31_0.onUpdateDiveInvisible)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_DETECTED, arg_31_0.onDetected)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SUBMARINE_FORCE_DETECTED, arg_31_0.onForceDetected)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.BLIND_VISIBLE, arg_31_0.onUpdateBlindInvisible)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.BLIND_EXPOSE, arg_31_0.onBlindExposed)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE, arg_31_0.onInitVigilantState)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_CLOAK, arg_31_0.onInitCloak)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_CLOAK_CONFIG, arg_31_0.onUpdateCloakConfig)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_CLOAK_LOCK, arg_31_0.onUpdateCloakLock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.INIT_AIMBIAS, arg_31_0.onInitAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_AIMBIAS_LOCK, arg_31_0.onUpdateAimBiasLock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.HOST_AIMBIAS, arg_31_0.onHostAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.REMOVE_AIMBIAS, arg_31_0.onRemoveAimBias)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE, arg_31_0.onChangeSize)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, arg_31_0.onNewWeapon)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.HIDE_WAVE_FX, arg_31_0.RemoveWaveFX)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.ADD_BUFF_CLOCK, arg_31_0.onAddBuffClock)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SWITCH_SPINE, arg_31_0.onSwitchSpine)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.SWITCH_SHADER, arg_31_0.onSwitchShader)
-	arg_31_0._unitData:RegisterEventListener(arg_31_0, BattleUnitEvent.UPDATE_SCORE, arg_31_0.onUpdateScore)
+--- 注册所有单位事件监听（子弹、武器、特效、buff等）
+function BattleCharacter.AddUnitEvent(self)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SPAWN_CACHE_BULLET, self.onSpawnCacheBullet)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.CREATE_TEMPORARY_WEAPON, self.onNewWeapon)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.POP_UP, self.onPopup)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.VOICE, self.onVoice)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.PLAY_FX, self.onPlayFX)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.REMOVE_WEAPON, self.onRemoveWeapon)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.ADD_BLINK, self.onBlink)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SUBMARINE_VISIBLE, self.onUpdateDiveInvisible)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SUBMARINE_DETECTED, self.onDetected)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SUBMARINE_FORCE_DETECTED, self.onForceDetected)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.BLIND_VISIBLE, self.onUpdateBlindInvisible)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.BLIND_EXPOSE, self.onBlindExposed)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE, self.onInitVigilantState)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.INIT_CLOAK, self.onInitCloak)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_CONFIG, self.onUpdateCloakConfig)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_LOCK, self.onUpdateCloakLock)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.INIT_AIMBIAS, self.onInitAimBias)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_AIMBIAS_LOCK, self.onUpdateAimBiasLock)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.HOST_AIMBIAS, self.onHostAimBias)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.REMOVE_AIMBIAS, self.onRemoveAimBias)
+	self._unitData:RegisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE, self.onChangeSize)
+	self._unitData:RegisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, self.onNewWeapon)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.HIDE_WAVE_FX, self.RemoveWaveFX)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.ADD_BUFF_CLOCK, self.onAddBuffClock)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SWITCH_SPINE, self.onSwitchSpine)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.SWITCH_SHADER, self.onSwitchShader)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_SCORE, self.onUpdateScore)
 
-	local var_31_0 = arg_31_0._unitData:GetAutoWeapons()
+	local autoWeapons = self._unitData:GetAutoWeapons()
 
-	for iter_31_0, iter_31_1 in ipairs(var_31_0) do
-		arg_31_0:RegisterWeaponListener(iter_31_1)
+	for _, weapon in ipairs(autoWeapons) do
+		self:RegisterWeaponListener(weapon)
 	end
 
-	arg_31_0._effectOb:SetUnitDataEvent(arg_31_0._unitData)
+	self._effectOb:SetUnitDataEvent(self._unitData)
 end
 
-function BattleCharacter.RemoveUnitEvent(arg_32_0)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_HP)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CREATE_TEMPORARY_WEAPON)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CHANGE_ACTION)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SPAWN_CACHE_BULLET)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.POP_UP)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.VOICE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.PLAY_FX)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.REMOVE_WEAPON)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ADD_BLINK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_VISIBLE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_DETECTED)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SUBMARINE_FORCE_DETECTED)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.BLIND_VISIBLE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.BLIND_EXPOSE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_SCORE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_CLOAK_CONFIG)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_CLOAK_LOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_CLOAK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.HOST_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.UPDATE_AIMBIAS_LOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.INIT_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.REMOVE_AIMBIAS)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.ADD_BUFF_CLOCK)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SWITCH_SPINE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, BattleUnitEvent.SWITCH_SHADER)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE)
-	arg_32_0._unitData:UnregisterEventListener(arg_32_0, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON)
+--- 移除所有单位事件监听
+function BattleCharacter.RemoveUnitEvent(self)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.CREATE_TEMPORARY_WEAPON)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.CHANGE_ACTION)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SPAWN_CACHE_BULLET)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.POP_UP)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.VOICE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.PLAY_FX)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.REMOVE_WEAPON)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.ADD_BLINK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SUBMARINE_VISIBLE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SUBMARINE_DETECTED)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SUBMARINE_FORCE_DETECTED)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.BLIND_VISIBLE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.BLIND_EXPOSE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_SCORE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.INIT_ANIT_SUB_VIGILANCE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_CONFIG)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_LOCK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.INIT_CLOAK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.HOST_AIMBIAS)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.UPDATE_AIMBIAS_LOCK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.INIT_AIMBIAS)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.REMOVE_AIMBIAS)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.ADD_BUFF_CLOCK)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SWITCH_SPINE)
+	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SWITCH_SHADER)
+	self._unitData:UnregisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE)
+	self._unitData:UnregisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON)
 
-	for iter_32_0, iter_32_1 in pairs(arg_32_0._weaponRegisterList) do
-		arg_32_0:UnregisterWeaponListener(iter_32_0)
+	for weaponUnit, _ in pairs(self._weaponRegisterList) do
+		self:UnregisterWeaponListener(weaponUnit)
 	end
 end
 
-function BattleCharacter.Update(arg_33_0)
-	local var_33_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 每帧Update：更新UI组件、HP弹出、动画特效、标签特效
+--- 如果参考坐标有变化，则更新HP条和弹出容器位置
+function BattleCharacter.Update(self)
+	local combatTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	arg_33_0._bonePosSet = nil
+	self._bonePosSet = nil
 
-	arg_33_0:UpdateUIComponentPosition()
-	arg_33_0:UpdateHPPop()
-	arg_33_0:UpdateAniEffect(var_33_0)
-	arg_33_0:UpdateTagEffect(var_33_0)
+	self:UpdateUIComponentPosition()
+	self:UpdateHPPop()
+	self:UpdateAniEffect(combatTime)
+	self:UpdateTagEffect(combatTime)
 
-	if arg_33_0._referenceUpdateFlag then
-		arg_33_0:UpdateHPBarPosition()
-		arg_33_0:UpdateHPPopContainerPosition()
+	if self._referenceUpdateFlag then
+		self:UpdateHPBarPosition()
+		self:UpdateHPPopContainerPosition()
 	end
 
-	arg_33_0:UpdateChatPosition()
-	arg_33_0:UpdateHpBar()
-	arg_33_0:updateSomkeFX()
-	arg_33_0:UpdateAimBiasBar()
-	arg_33_0:UpdateBuffClock()
-	arg_33_0:UpdateOrbit()
+	self:UpdateChatPosition()
+	self:UpdateHpBar()
+	self:updateSomkeFX()
+	self:UpdateAimBiasBar()
+	self:UpdateBuffClock()
+	self:UpdateOrbit()
 end
--- 注册对CREATE_BULLET和FIRE事件的监听,设置对应的回调函数
-function BattleCharacter.RegisterWeaponListener(arg_34_0, arg_34_1)
-	if arg_34_0._weaponRegisterList[arg_34_1] then
+
+--- 给武器注册子弹创建和开火事件监听
+--- @param weapon BattleWeaponUnit 武器实例
+function BattleCharacter.RegisterWeaponListener(self, weapon)
+	if self._weaponRegisterList[weapon] then
 		return
 	end
 
-	arg_34_1:RegisterEventListener(arg_34_0, BattleUnitEvent.CREATE_BULLET, arg_34_0.onCreateBullet)
-	arg_34_1:RegisterEventListener(arg_34_0, BattleUnitEvent.FIRE, arg_34_0.onCannonFire)
+	weapon:RegisterEventListener(self, BattleUnitEvent.CREATE_BULLET, self.onCreateBullet)
+	weapon:RegisterEventListener(self, BattleUnitEvent.FIRE, self.onCannonFire)
 
-	arg_34_0._weaponRegisterList[arg_34_1] = true
+	self._weaponRegisterList[weapon] = true
 end
 
-function BattleCharacter.UnregisterWeaponListener(arg_35_0, arg_35_1)
-	arg_35_0._weaponRegisterList[arg_35_1] = nil
+--- 取消武器的事件监听
+--- @param weapon BattleWeaponUnit 武器实例
+function BattleCharacter.UnregisterWeaponListener(self, weapon)
+	self._weaponRegisterList[weapon] = nil
 
-	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.CREATE_BULLET)
-	arg_35_1:UnregisterEventListener(arg_35_0, BattleUnitEvent.FIRE)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.CREATE_BULLET)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.FIRE)
 end
 
--- 对应所有CREATE_BULLET事件的回调函数
--- 来自BattleWeaponUnit.DispatchBulletEvent
-function BattleCharacter.onCreateBullet(self, payload)
-	local bullet = payload.Data.bullet
-	local spawnBound = payload.Data.spawnBound
-	local fireFxID = payload.Data.fireFxID
-	local position = payload.Data.position
+--- 子弹创建事件处理：从武器事件数据中提取子弹模板和生成参数
+--- @param event table 武器发射事件
+function BattleCharacter.onCreateBullet(self, event)
+	local bulletTmp = event.Data.bullet
+	local spawnBone = event.Data.spawnBound
+	local fireFxID = event.Data.fireFxID
+	local spawnPos = event.Data.position
 
-	self:SpawnBullet(bullet, spawnBound, fireFxID, position)
+	self:SpawnBullet(bulletTmp, spawnBone, fireFxID, spawnPos)
 end
 
-function BattleCharacter.onCannonFire(arg_37_0, arg_37_1)
-	local var_37_0 = arg_37_1.Dispatcher
-	local var_37_1 = arg_37_1.Data.target
-	local var_37_2 = arg_37_1.Data.actionIndex or "attack"
-	local var_37_3 = arg_37_0._unitData:NeedWeaponCache()
-	local var_37_4
+--- 武器开火事件处理：支持武器缓存机制
+--- @param event table 武器开火事件 {Dispatcher, Data = {target, actionIndex}}
+function BattleCharacter.onCannonFire(self, event)
+	local weapon = event.Dispatcher
+	local target = event.Data.target
+	local actionIndex = event.Data.actionIndex or "attack"
+	local needWeaponCache = self._unitData:NeedWeaponCache()
+	local shouldCache
 
-	if not var_37_3 then
-		if arg_37_0._cacheWeapon == nil then
-			var_37_4 = false
+	if not needWeaponCache then
+		if self._cacheWeapon == nil then
+			shouldCache = false
 		else
-			var_37_4 = true
+			shouldCache = true
 		end
 	else
-		arg_37_0._cacheWeapon = {}
-		var_37_4 = true
+		self._cacheWeapon = {}
+		shouldCache = true
 
-		arg_37_0._unitData:StateChange(ys.Battle.UnitState.STATE_ATTACK, var_37_2)
+		self._unitData:StateChange(ys.Battle.UnitState.STATE_ATTACK, actionIndex)
 	end
 
-	if var_37_4 == true then
-		local var_37_5 = {
-			weapon = var_37_0,
-			target = var_37_1,
-			weapon = var_37_0,
-			target = var_37_1
+	if shouldCache == true then
+		local cacheEntry = {
+			weapon = weapon,
+			target = target,
 		}
 
-		arg_37_0._cacheWeapon[#arg_37_0._cacheWeapon + 1] = var_37_5
+		self._cacheWeapon[#self._cacheWeapon + 1] = cacheEntry
 	else
-		var_37_0:DoAttack(var_37_1)
+		weapon:DoAttack(target)
 	end
 end
--- TODO
-function BattleCharacter.onSpawnCacheBullet(arg_38_0)
-	if arg_38_0._cacheWeapon then
-		for iter_38_0, iter_38_1 in ipairs(arg_38_0._cacheWeapon) do
-			iter_38_1.weapon:DoAttack(iter_38_1.target)
 
-			if not arg_38_0._unitData:IsAlive() then
+--- 缓存子弹全部生成：在动画帧中批量释放所有缓存的武器攻击
+function BattleCharacter.onSpawnCacheBullet(self)
+	if self._cacheWeapon then
+		for _, cacheEntry in ipairs(self._cacheWeapon) do
+			cacheEntry.weapon:DoAttack(cacheEntry.target)
+
+			if not self._unitData:IsAlive() then
 				break
 			end
 		end
 
-		arg_38_0._cacheWeapon = nil
+		self._cacheWeapon = nil
 	end
 end
 
-function BattleCharacter.onNewWeapon(arg_39_0, arg_39_1)
-	local var_39_0 = arg_39_1.Data.weapon
+--- 动态添加新武器的事件注册
+--- @param event table 新武器事件 {Data = {weapon}}
+function BattleCharacter.onNewWeapon(self, event)
+	local weapon = event.Data.weapon
 
-	arg_39_0:RegisterWeaponListener(var_39_0)
+	self:RegisterWeaponListener(weapon)
 end
 
-function BattleCharacter.onPopup(arg_40_0, arg_40_1)
-	local var_40_0 = arg_40_1.Data
-	local var_40_1 = var_40_0.content
-	local var_40_2 = var_40_0.duration
-	local var_40_3 = var_40_0.key
+--- 弹出气泡文字事件处理
+--- @param event table {Data = {content, duration, key}}
+function BattleCharacter.onPopup(self, event)
+	local eventData = event.Data
+	local content = eventData.content
+	local duration = eventData.duration
+	local key = eventData.key
 
-	arg_40_0:SetPopup(var_40_1, var_40_2, var_40_3)
+	self:SetPopup(content, duration, key)
 end
 
-function BattleCharacter.onVoice(arg_41_0, arg_41_1)
-	local var_41_0 = arg_41_1.Data
-	local var_41_1 = var_41_0.content
-	local var_41_2 = var_41_0.key
+--- 语音播放事件处理
+--- @param event table {Data = {content, key}}
+function BattleCharacter.onVoice(self, event)
+	local eventData = event.Data
+	local voiceContent = eventData.content
+	local voiceKey = eventData.key
 
-	arg_41_0:Voice(var_41_1, var_41_2)
+	self:Voice(voiceContent, voiceKey)
 end
 
-function BattleCharacter.onPlayFX(arg_42_0, arg_42_1)
-	local var_42_0 = arg_42_1.Data.fxName
+--- 播放特效事件处理
+--- @param event table {Data = {fxName, notAttach}}
+function BattleCharacter.onPlayFX(self, event)
+	local fxName = event.Data.fxName
 
-	if arg_42_1.Data.notAttach then
-		arg_42_0:PlayFX(var_42_0)
+	if event.Data.notAttach then
+		self:PlayFX(fxName)
 	else
-		arg_42_0:AddFX(var_42_0)
+		self:AddFX(fxName)
 	end
 end
 
-function BattleCharacter.onRemoveWeapon(arg_43_0, arg_43_1)
-	local var_43_0 = arg_43_1.Data.weapon
+--- 移除武器事件处理：清理缓存中的武器引用并取消注册
+--- @param event table {Data = {weapon}}
+function BattleCharacter.onRemoveWeapon(self, event)
+	local weapon = event.Data.weapon
 
-	if arg_43_0._cacheWeapon then
-		for iter_43_0, iter_43_1 in ipairs(arg_43_0._cacheWeapon) do
-			if iter_43_1.weapon == var_43_0 then
-				table.remove(arg_43_0._cacheWeapon, iter_43_0)
+	if self._cacheWeapon then
+		for idx, cacheEntry in ipairs(self._cacheWeapon) do
+			if cacheEntry.weapon == weapon then
+				table.remove(self._cacheWeapon, idx)
 
 				break
 			end
 		end
 	end
 
-	arg_43_0:UnregisterWeaponListener(var_43_0)
+	self:UnregisterWeaponListener(weapon)
 end
 
-function BattleCharacter.onBlink(arg_44_0, arg_44_1)
-	local var_44_0 = arg_44_1.Data.blink
-	local var_44_1 = var_44_0.red
-	local var_44_2 = var_44_0.green
-	local var_44_3 = var_44_0.blue
-	local var_44_4 = var_44_0.alpha
-	local var_44_5 = var_44_0.peroid
-	local var_44_6 = var_44_0.duration
+--- 闪烁事件处理
+--- @param event table {Data = {blink = {red, green, blue, alpha, peroid, duration}}}
+function BattleCharacter.onBlink(self, event)
+	local blinkData = event.Data.blink
+	local r = blinkData.red
+	local g = blinkData.green
+	local b = blinkData.blue
+	local a = blinkData.alpha
+	local period = blinkData.peroid
+	local duration = blinkData.duration
 
-	arg_44_0:AddBlink(var_44_1, var_44_2, var_44_3, var_44_5, var_44_6, true, var_44_4)
+	self:AddBlink(r, g, b, period, duration, true, a)
 end
 
-function BattleCharacter.onUpdateDiveInvisible(arg_45_0, arg_45_1)
-	arg_45_0:UpdateDiveInvisible()
+--- 下潜隐身状态变化事件
+function BattleCharacter.onUpdateDiveInvisible(self, event)
+	self:UpdateDiveInvisible()
 end
 
-function BattleCharacter.UpdateDiveInvisible(arg_46_0, arg_46_1)
-	if not arg_46_0._go then
+--- 更新下潜隐身视觉效果
+--- - 我方潜艇：半透明shader
+--- - 敌方潜艇：水下滤镜颜色 + 渐变透明
+--- @param isDiveStart boolean|nil 是否是下潜开始时
+function BattleCharacter.UpdateDiveInvisible(self, isDiveStart)
+	if not self._go then
 		return
 	end
 
-	local var_46_0 = not arg_46_0._unitData:GetForceExpose() and arg_46_0._unitData:GetDiveInvisible()
-	local var_46_1 = arg_46_0._unitData:GetIFF() == BattleConfig.FOE_CODE
+	local isDiveInvisible = not self._unitData:GetForceExpose() and self._unitData:GetDiveInvisible()
+	local isFoe = self._unitData:GetIFF() == BattleConfig.FOE_CODE
 
-	if var_46_0 then
-		local var_46_2 = arg_46_0:GetFactory():GetDivingFilterColor()
+	if isDiveInvisible then
+		local filterColor = self:GetFactory():GetDivingFilterColor()
 
-		arg_46_0:updateInvisible(var_46_0, var_46_1 and "GRID_TRANSPARENT" or "SEMI_TRANSPARENT", var_46_2)
+		self:updateInvisible(isDiveInvisible, isFoe and "GRID_TRANSPARENT" or "SEMI_TRANSPARENT", filterColor)
 
-		if not arg_46_1 and var_46_1 then
-			arg_46_0:spineSemiTransparentFade(0, 0.7, 0)
+		if not isDiveStart and isFoe then
+			self:spineSemiTransparentFade(0, 0.7, 0)
 		end
 	else
-		arg_46_0:updateInvisible(var_46_0)
+		self:updateInvisible(isDiveInvisible)
 
-		if not var_46_1 then
-			arg_46_0:AddShaderColor()
+		if not isFoe then
+			self:AddShaderColor()
 		end
 	end
 
-	if var_46_1 then
-		arg_46_0:updateComponentVisible()
+	if isFoe then
+		self:updateComponentVisible()
 	end
 end
 
-function BattleCharacter.onUpdateBlindInvisible(self, args)
+--- 盲烟隐身状态变化事件
+function BattleCharacter.onUpdateBlindInvisible(self, event)
 	self:UpdateBlindInvisible()
 end
 
+--- 更新盲烟隐身：根据暴露状态控制Renderer和UI组件可见性
 function BattleCharacter.UpdateBlindInvisible(self)
 	local exposed = self._unitData:GetExposed()
 
@@ -621,206 +706,241 @@ function BattleCharacter.UpdateBlindInvisible(self)
 	self:updateComponentVisible()
 end
 
-function BattleCharacter.updateInvisible(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
-	if arg_49_1 then
-		arg_49_0:SwitchShader(arg_49_2, arg_49_3)
-		arg_49_0._animator:ChangeRenderQueue(2999)
+--- 更新角色透明/显形状态
+--- @param isInvisible boolean 是否隐身
+--- @param shaderType string|nil 着色器类型（隐身时使用）
+--- @param color Color|nil 着色颜色
+function BattleCharacter.updateInvisible(self, isInvisible, shaderType, color)
+	if isInvisible then
+		self:SwitchShader(shaderType, color)
+		self._animator:ChangeRenderQueue(2999)
 	else
-		arg_49_0:SwitchShader("COLORED_ALPHA")
-		arg_49_0._animator:ChangeRenderQueue(3000)
+		self:SwitchShader("COLORED_ALPHA")
+		self._animator:ChangeRenderQueue(3000)
 	end
 
-	if arg_49_0._waveFX then
-		SetActive(arg_49_0._waveFX.transform, not arg_49_1)
+	-- 隐身时隐藏浪花特效
+	if self._waveFX then
+		SetActive(self._waveFX.transform, not isInvisible)
 	end
 end
 
-function BattleCharacter.onDetected(arg_50_0, arg_50_1)
-	if not arg_50_0._go then
+--- 反潜探测事件处理：被发现时显示"shock"特效
+function BattleCharacter.onDetected(self, event)
+	if not self._go then
 		return
 	end
 
-	if arg_50_0._unitData:GetDiveDetected() and arg_50_0._unitData:GetIFF() == BattleConfig.FOE_CODE then
-		arg_50_0._shockFX = arg_50_0:AddFX("shock", true, true)
+	if self._unitData:GetDiveDetected() and self._unitData:GetIFF() == BattleConfig.FOE_CODE then
+		self._shockFX = self:AddFX("shock", true, true)
 	else
-		arg_50_0:RemoveCacheFX("shock")
+		self:RemoveCacheFX("shock")
 	end
 
-	if arg_50_0._unitData:GetIFF() == BattleConfig.FOE_CODE then
-		arg_50_0:UpdateCharacterDetected()
+	if self._unitData:GetIFF() == BattleConfig.FOE_CODE then
+		self:UpdateCharacterDetected()
 	end
 
-	arg_50_0:updateComponentVisible()
+	self:updateComponentVisible()
 end
 
-function BattleCharacter.UpdateCharacterDetected(arg_51_0)
-	if arg_51_0._unitData:GetIFF() == BattleConfig.FRIENDLY_CODE or arg_51_0._unitData:GetDiveDetected() then
-		arg_51_0:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
+--- 更新角色被探测时的透明度渐变
+--- - 友方或被探测到：渐显（fade in）
+--- - 未被探测到的敌方：渐隐（fade out）
+function BattleCharacter.UpdateCharacterDetected(self)
+	if self._unitData:GetIFF() == BattleConfig.FRIENDLY_CODE or self._unitData:GetDiveDetected() then
+		self:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
 	else
-		arg_51_0:spineSemiTransparentFade(0.7, 0, BattleConfig.SUB_FADE_OUT_DURATION)
+		self:spineSemiTransparentFade(0.7, 0, BattleConfig.SUB_FADE_OUT_DURATION)
 	end
 end
 
-function BattleCharacter.onForceDetected(arg_52_0, arg_52_1)
-	arg_52_0:UpdateCharacterForceDetected()
+--- 强制暴露事件处理
+function BattleCharacter.onForceDetected(self, event)
+	self:UpdateCharacterForceDetected()
 end
 
-function BattleCharacter.UpdateCharacterForceDetected(arg_53_0)
-	if arg_53_0._unitData:GetIFF() == BattleConfig.FOE_CODE and arg_53_0._unitData:GetForceExpose() then
-		arg_53_0:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
-		arg_53_0:updateComponentVisible()
+--- 敌人强制暴露时的视觉效果：直接渐显
+function BattleCharacter.UpdateCharacterForceDetected(self)
+	if self._unitData:GetIFF() == BattleConfig.FOE_CODE and self._unitData:GetForceExpose() then
+		self:spineSemiTransparentFade(0, 0.7, BattleConfig.SUB_FADE_IN_DURATION)
+		self:updateComponentVisible()
 	end
 end
 
-function BattleCharacter.onBlindExposed(arg_54_0, arg_54_1)
-	local var_54_0 = arg_54_0._unitData:GetExposed()
+--- 盲烟暴露事件处理
+function BattleCharacter.onBlindExposed(self, event)
+	local exposed = self._unitData:GetExposed()
 
-	arg_54_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_54_0
+	self:GetTf():GetComponent(typeof(Renderer)).enabled = exposed
 
-	arg_54_0:updateComponentVisible()
+	self:updateComponentVisible()
 end
 
-function BattleCharacter.updateComponentVisible(arg_55_0)
-	local var_55_0
+--- 更新所有UI组件的可见性
+--- - 友方单位：检查是否不是隐身
+--- - 敌方单位：检查暴露状态、下潜检测状态、强制暴露等
+function BattleCharacter.updateComponentVisible(self)
+	local isVisible
 
-	if arg_55_0._unitData:GetIFF() ~= BattleConfig.FOE_CODE then
-		var_55_0 = arg_55_0._unitData:GetAttrByName(ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY) > BattleConfig.FUSION_ELEMENT_UNIT_TYPE
+	if self._unitData:GetIFF() ~= BattleConfig.FOE_CODE then
+		isVisible = self._unitData:GetAttrByName(ys.Battle.BattleBuffSetBattleUnitType.ATTR_KEY) > BattleConfig.FUSION_ELEMENT_UNIT_TYPE
 	else
-		local var_55_1 = arg_55_0._unitData:GetExposed()
-		local var_55_2 = arg_55_0._unitData:GetDiveDetected()
-		local var_55_3 = arg_55_0._unitData:GetDiveInvisible()
+		local exposed = self._unitData:GetExposed()
+		local diveDetected = self._unitData:GetDiveDetected()
+		local diveInvisible = self._unitData:GetDiveInvisible()
 
-		var_55_0 = arg_55_0._unitData:GetForceExpose() or var_55_1 and (not var_55_3 or not not var_55_2)
+		isVisible = self._unitData:GetForceExpose() or exposed and (not diveInvisible or not not diveDetected)
 	end
 
-	SetActive(arg_55_0._arrowBarTf, var_55_0)
-	SetActive(arg_55_0._HPBarTf, var_55_0)
-	SetActive(arg_55_0._FXAttachPoint, var_55_0)
-	SetActive(arg_55_0._hpPopContainerTF, var_55_0)
+	SetActive(self._arrowBarTf, isVisible)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
+	SetActive(self._hpPopContainerTF, isVisible)
 
-	if arg_55_0._hpCloakBar then
-		arg_55_0._hpCloakBar:SetActive(var_55_0)
+	if self._hpCloakBar then
+		self._hpCloakBar:SetActive(isVisible)
 	end
 
-	if arg_55_0._cloakBar then
-		arg_55_0._cloakBar:SetActive(var_55_0)
+	if self._cloakBar then
+		self._cloakBar:SetActive(isVisible)
 	end
 
-	if arg_55_0._aimBiarBar then
-		arg_55_0._aimBiarBar:SetActive(var_55_0)
+	if self._aimBiarBar then
+		self._aimBiarBar:SetActive(isVisible)
 	end
 end
 
-function BattleCharacter.updateComponentDiveInvisible(arg_56_0)
-	local var_56_0 = arg_56_0._unitData:GetDiveDetected() and arg_56_0._unitData:GetIFF() == BattleConfig.FOE_CODE
-	local var_56_1 = arg_56_0._unitData:GetDiveInvisible()
-	local var_56_2
-	local var_56_3 = (var_56_0 or not var_56_1) and true or false
+--- 更新潜入隐身时的UI组件可见性（仅控制HP条和特效挂载点）
+function BattleCharacter.updateComponentDiveInvisible(self)
+	local isDetected = self._unitData:GetDiveDetected() and self._unitData:GetIFF() == BattleConfig.FOE_CODE
+	local isDiveInvisible = self._unitData:GetDiveInvisible()
+	local isVisible = (isDetected or not isDiveInvisible) and true or false
 
-	SetActive(arg_56_0._arrowBarTf, var_56_3)
-	SetActive(arg_56_0._HPBarTf, var_56_3)
-	SetActive(arg_56_0._FXAttachPoint, var_56_3)
+	SetActive(self._arrowBarTf, isVisible)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
 end
 
-function BattleCharacter.updateComponentBlindInvisible(arg_57_0)
-	local var_57_0 = arg_57_0._unitData:GetExposed()
+--- 更新盲烟隐身时组件可见性
+function BattleCharacter.updateComponentBlindInvisible(self)
+	local exposed = self._unitData:GetExposed()
 
-	arg_57_0:GetTf():GetComponent(typeof(Renderer)).enabled = var_57_0
+	self:GetTf():GetComponent(typeof(Renderer)).enabled = exposed
 
-	SetActive(arg_57_0._arrowBarTf, var_57_0)
-	SetActive(arg_57_0._HPBarTf, var_57_0)
-	SetActive(arg_57_0._FXAttachPoint, var_57_0)
+	SetActive(self._arrowBarTf, exposed)
+	SetActive(self._HPBarTf, exposed)
+	SetActive(self._FXAttachPoint, exposed)
 end
 
-function BattleCharacter.spineSemiTransparentFade(arg_58_0, arg_58_1, arg_58_2, arg_58_3)
-	LeanTween.cancel(arg_58_0._go)
+--- Spine角色半透明渐变
+--- @param fromAlpha number 起始透明度
+--- @param toAlpha number 目标透明度
+--- @param duration number 渐变时间
+function BattleCharacter.spineSemiTransparentFade(self, fromAlpha, toAlpha, duration)
+	LeanTween.cancel(self._go)
 	onDelayTick(function()
-		if not arg_58_0._go then
+		if not self._go then
 			return
 		end
 
-		arg_58_3 = arg_58_3 or 0
+		duration = duration or 0
 
-		SpineAnim.ShaderTransparentFade(arg_58_0._go, arg_58_2, arg_58_1, arg_58_3, "_Invisible")
+		SpineAnim.ShaderTransparentFade(self._go, toAlpha, fromAlpha, duration, "_Invisible")
 	end, 0.06)
 end
 
-function BattleCharacter.onInitVigilantState(arg_60_0, arg_60_1)
-	arg_60_0._factory:MakeVigilantBar(arg_60_0)
+--- 初始化反潜警戒状态：创建警戒条和声纳范围特效
+--- @param event table {Data = {sonarRange}}
+function BattleCharacter.onInitVigilantState(self, event)
+	self._factory:MakeVigilantBar(self)
 
-	range = arg_60_1.Data.sonarRange * 0.5
+	range = event.Data.sonarRange * 0.5
 
-	local var_60_0 = arg_60_0:AddFX("AntiSubArea", true).transform
+	local antiSubAreaFX = self:AddFX("AntiSubArea", true).transform
 
-	var_60_0.localScale = Vector3(range, 0, range)
+	antiSubAreaFX.localScale = Vector3(range, 0, range)
 
-	local function var_60_1()
-		local var_61_0 = var_60_0:Find("Quad"):GetComponent(typeof(Animator))
+	-- 声纳检测动画回调
+	local function playSonarAnim()
+		local animator = antiSubAreaFX:Find("Quad"):GetComponent(typeof(Animator))
 
-		var_61_0.enabled = true
+		animator.enabled = true
 
-		var_61_0:Play("antiSubZoom", -1, 0)
+		animator:Play("antiSubZoom", -1, 0)
 	end
 
-	arg_60_0._unitData:RegisterEventListener(arg_60_0, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE, arg_60_0.onVigilantStateChange)
-	arg_60_0._unitData:RegisterEventListener(arg_60_0, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK, var_60_1)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.CHANGE_ANTI_SUB_VIGILANCE, self.onVigilantStateChange)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.ANTI_SUB_VIGILANCE_SONAR_CHECK, playSonarAnim)
 end
 
-function BattleCharacter.onVigilantStateChange(arg_62_0, arg_62_1)
-	arg_62_0:updateVigilantMark()
+--- 反潜警戒状态变化
+function BattleCharacter.onVigilantStateChange(self, event)
+	self:updateVigilantMark()
 end
 
-function BattleCharacter.updateVigilantMark(arg_63_0)
-	if arg_63_0._vigilantBar then
-		arg_63_0._vigilantBar:UpdateVigilantMark()
+--- 更新反潜警戒标记
+function BattleCharacter.updateVigilantMark(self)
+	if self._vigilantBar then
+		self._vigilantBar:UpdateVigilantMark()
 	end
 end
 
-function BattleCharacter.OnActionChange(arg_64_0, arg_64_1)
-	local var_64_0 = arg_64_1.Data.actionType
+--- 动作切换事件回调
+--- @param event table {Data = {actionType}}
+function BattleCharacter.OnActionChange(self, event)
+	local actionType = event.Data.actionType
 
-	arg_64_0:PlayAction(var_64_0)
+	self:PlayAction(actionType)
 end
--- TODO
-function BattleCharacter.PlayAction(arg_65_0, arg_65_1)
-	local var_65_0 = arg_65_1
-	local var_65_1 = false
 
-	if arg_65_0._skeleton then
-		var_65_0, var_65_1 = SpineAnimUtil.GetCharAnimDirect(arg_65_0._skeleton, math.sign(arg_65_0._modelScale.x), var_65_0)
+--- 播放角色动作动画
+--- - 处理Spine动画左右翻转（根据模型Scale符号）
+--- - 处理轨道(Orbit)附属品的动作切换条件
+--- - 胜利动作时清除Effect组件的效果
+--- @param actionType string 动作类型名
+function BattleCharacter.PlayAction(self, actionType)
+	local finalAction = actionType
+	local needFlip = false
+
+	-- 根据模型朝向决定是否需要翻转动画
+	if self._skeleton then
+		finalAction, needFlip = SpineAnimUtil.GetCharAnimDirect(self._skeleton, math.sign(self._modelScale.x), finalAction)
 	end
 
-	if var_65_1 then
-		local var_65_2 = Vector3(math.abs(arg_65_0._modelScale.x), arg_65_0._modelScale.y, arg_65_0._modelScale.z)
+	if needFlip then
+		local flippedScale = Vector3(math.abs(self._modelScale.x), self._modelScale.y, self._modelScale.z)
 
-		arg_65_0:setLocalScale(var_65_2, true)
+		self:setLocalScale(flippedScale, true)
 	end
 
-	arg_65_0._animator:SetAction(var_65_0, 0, BattleConst.ActionLoop[arg_65_1])
+	self._animator:SetAction(finalAction, 0, BattleConst.ActionLoop[actionType])
 
-	arg_65_0._actionIndex = arg_65_1
+	self._actionIndex = actionType
 
-	if arg_65_1 == BattleConst.ActionName.VICTORY or arg_65_1 == BattleConst.ActionName.VICTORY_SWIM then
-		arg_65_0._effectOb:ClearEffect()
+	-- 胜利动作时清除所有buff特效
+	if actionType == BattleConst.ActionName.VICTORY or actionType == BattleConst.ActionName.VICTORY_SWIM then
+		self._effectOb:ClearEffect()
 	end
 
-	if #arg_65_0._orbitActionUpdateList > 0 then
-		for iter_65_0, iter_65_1 in ipairs(arg_65_0._orbitActionUpdateList) do
-			local var_65_3 = iter_65_1.orbit
-			local var_65_4 = iter_65_1.change
-			local var_65_5 = var_65_4.condition.param
-			local var_65_6 = false
+	-- 检查轨道附属品的动作变化条件（condition.type == 2）
+	if #self._orbitActionUpdateList > 0 then
+		for _, orbitEntry in ipairs(self._orbitActionUpdateList) do
+			local orbitObj = orbitEntry.orbit
+			local changeConfig = orbitEntry.change
+			local actionParams = changeConfig.condition.param
+			local matched = false
 
-			for iter_65_2, iter_65_3 in ipairs(var_65_5) do
-				if string.find(arg_65_1, iter_65_3) then
-					var_65_6 = true
+			for _, actionPattern in ipairs(actionParams) do
+				if string.find(actionType, actionPattern) then
+					matched = true
 
 					break
 				end
 			end
 
-			if var_65_6 then
-				arg_65_0:changeOrbitAction(var_65_3, var_65_4)
+			if matched then
+				self:changeOrbitAction(orbitObj, changeConfig)
 
 				break
 			end
@@ -828,619 +948,696 @@ function BattleCharacter.PlayAction(arg_65_0, arg_65_1)
 	end
 end
 
-function BattleCharacter.SetAnimaSpeed(arg_66_0, arg_66_1)
-	arg_66_0._skeleton = arg_66_0._skeleton or arg_66_0:GetTf():GetComponent("SkeletonAnimation")
-	arg_66_1 = arg_66_1 or 1
-	arg_66_0._skeleton.timeScale = arg_66_1
+--- 设置动画播放速度
+--- @param timeScale number|nil 时间缩放，默认1
+function BattleCharacter.SetAnimaSpeed(self, timeScale)
+	self._skeleton = self._skeleton or self:GetTf():GetComponent("SkeletonAnimation")
+	timeScale = timeScale or 1
+	self._skeleton.timeScale = timeScale
 end
 
-function BattleCharacter.UpdatePosition(arg_67_0)
-	if not arg_67_0._go then
+--- 更新角色Transform位置到UnitData的坐标
+function BattleCharacter.UpdatePosition(self)
+	if not self._go then
 		return
 	end
 
-	local var_67_0 = arg_67_0._unitData:GetPosition()
+	local unitPos = self._unitData:GetPosition()
 
-	if arg_67_0._unitData:GetSpeed() == Vector3.zero and arg_67_0._characterPos == var_67_0 then
+	-- 位置没变则跳过
+	if self._unitData:GetSpeed() == Vector3.zero and self._characterPos == unitPos then
 		return
 	end
 
-	arg_67_0._characterPos = var_67_0
-	arg_67_0._tf.localPosition = arg_67_0:getCharacterPos()
+	self._characterPos = unitPos
+	self._tf.localPosition = self:getCharacterPos()
 end
 
-function BattleCharacter.getCharacterPos(arg_68_0)
-	return arg_68_0._characterPos
+--- @return Vector3 角色当前位置
+function BattleCharacter.getCharacterPos(self)
+	return self._characterPos
 end
 
-function BattleCharacter.UpdateMatrix(arg_69_0)
-	arg_69_0._bonePosTable = nil
-	arg_69_0._posMatrix = nil
+--- 清理骨骼位置缓存矩阵（每帧重置）
+function BattleCharacter.UpdateMatrix(self)
+	self._bonePosTable = nil
+	self._posMatrix = nil
 end
 
-function BattleCharacter.UpdateUIComponentPosition(arg_70_0)
-	local var_70_0 = arg_70_0._unitData:GetPosition()
+--- 更新UI组件参考坐标：将世界坐标转换到UI相机空间
+function BattleCharacter.UpdateUIComponentPosition(self)
+	local unitPos = self._unitData:GetPosition()
 
-	arg_70_0._referenceVector:Set(var_70_0.x, var_70_0.y, var_70_0.z)
-	ys.Battle.BattleVariable.CameraPosToUICameraByRef(arg_70_0._referenceVector)
+	self._referenceVector:Set(unitPos.x, unitPos.y, unitPos.z)
+	ys.Battle.BattleVariable.CameraPosToUICameraByRef(self._referenceVector)
 
-	arg_70_0._referenceVector.z = 10
-	arg_70_0._referenceUpdateFlag = not arg_70_0._referenceVector:Equals(arg_70_0._referenceVectorCache)
+	self._referenceVector.z = 10
+	self._referenceUpdateFlag = not self._referenceVector:Equals(self._referenceVectorCache)
 
-	if arg_70_0._referenceUpdateFlag then
-		arg_70_0._referenceVectorCache:Copy(arg_70_0._referenceVector)
+	if self._referenceUpdateFlag then
+		self._referenceVectorCache:Copy(self._referenceVector)
 	end
 end
 
-function BattleCharacter.UpdateHPPopContainerPosition(arg_71_0)
-	arg_71_0._hpPopContainerTF.position = arg_71_0._referenceVector
+--- 更新HP弹出文字容器的位置
+function BattleCharacter.UpdateHPPopContainerPosition(self)
+	self._hpPopContainerTF.position = self._referenceVector
 end
 
-function BattleCharacter.UpdateHPBarPosition(arg_72_0)
-	if not arg_72_0._hideHP then
-		arg_72_0._hpBarPos:Copy(arg_72_0._referenceVector):Add(arg_72_0._hpBarOffset)
+--- 更新HP条位置（基于参考坐标+偏移）
+function BattleCharacter.UpdateHPBarPosition(self)
+	if not self._hideHP then
+		self._hpBarPos:Copy(self._referenceVector):Add(self._hpBarOffset)
 
-		arg_72_0._HPBarTf.position = arg_72_0._hpBarPos
+		self._HPBarTf.position = self._hpBarPos
 	end
 end
 
-function BattleCharacter.SetBarHidden(arg_73_0, arg_73_1, arg_73_2)
-	arg_73_0._alwaysHideArrow = arg_73_1
-	arg_73_0._hideHP = arg_73_2
+--- 设置HP条和箭头的隐藏状态
+--- @param hideArrow boolean 是否永久隐藏箭头
+--- @param hideHP boolean 是否隐藏HP条
+function BattleCharacter.SetBarHidden(self, hideArrow, hideHP)
+	self._alwaysHideArrow = hideArrow
+	self._hideHP = hideHP
 
-	if arg_73_0._arrowBar then
-		if arg_73_0._alwaysHideArrow then
-			arg_73_0._arrowBarTf.anchoredPosition = anchoredPosition
+	if self._arrowBar then
+		if self._alwaysHideArrow then
+			self._arrowBarTf.anchoredPosition = OFF_SCREEN_POS
 		else
-			arg_73_0._arrowBarTf.position = arg_73_0._arrowVector
+			self._arrowBarTf.position = self._arrowVector
 		end
 	end
 end
 
-function BattleCharacter.UpdateCastClockPosition(arg_74_0)
-	arg_74_0._castClock:UpdateCastClockPosition(arg_74_0._referenceVector)
+--- 更新施法时钟位置
+function BattleCharacter.UpdateCastClockPosition(self)
+	self._castClock:UpdateCastClockPosition(self._referenceVector)
 end
 
-function BattleCharacter.UpdateBarrierClockPosition(arg_75_0)
-	arg_75_0._barrierClock:UpdateBarrierClockPosition(arg_75_0._referenceVector)
+--- 更新屏障时钟位置
+function BattleCharacter.UpdateBarrierClockPosition(self)
+	self._barrierClock:UpdateBarrierClockPosition(self._referenceVector)
 end
 
-function BattleCharacter.SetArrowPoint(arg_76_0)
-	arg_76_0._arrowVector:Set()
+--- 初始化箭头指向系统的参考点
+function BattleCharacter.SetArrowPoint(self)
+	self._arrowVector:Set()
 
-	arg_76_0._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
-	arg_76_0._arrowCenterPos = arg_76_0._cameraUtil:GetArrowCenterPos()
+	self._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
+	self._arrowCenterPos = self._cameraUtil:GetArrowCenterPos()
 end
 
-local var_0_9 = Vector3(-1, 1, 1)
-local var_0_10 = Vector3(1, 1, 1)
+--- 更新屏幕外指示箭头的位置和朝向
+--- - 如果在视野内：箭头移出屏幕
+--- - 如果离开出生点太远：使用出生点作为箭头参考
+function BattleCharacter.UpdateArrowBarPosition(self)
+	local arrowPos = self._cameraUtil:GetCharacterArrowBarPosition(self._referenceVector, self._arrowVector)
 
-function BattleCharacter.UpdateArrowBarPosition(arg_77_0)
-	local var_77_0 = arg_77_0._cameraUtil:GetCharacterArrowBarPosition(arg_77_0._referenceVector, arg_77_0._arrowVector)
-
-	if not var_77_0 then
-		if not arg_77_0._inViewArea then
-			arg_77_0._inViewArea = true
-			arg_77_0._arrowBarTf.anchoredPosition = anchoredPosition
+	if not arrowPos then
+		if not self._inViewArea then
+			self._inViewArea = true
+			self._arrowBarTf.anchoredPosition = OFF_SCREEN_POS
 		end
 	else
-		local var_77_1 = arg_77_0._unitData:GetBornPosition()
+		local bornPos = self._unitData:GetBornPosition()
 
-		if var_77_1 and var_77_1 ~= arg_77_0._unitData:GetPosition() then
-			var_77_0 = arg_77_0._cameraUtil:GetCharacterArrowBarPosition(arg_77_0._referenceVectorBorn, arg_77_0._arrowVector)
+		if bornPos and bornPos ~= self._unitData:GetPosition() then
+			arrowPos = self._cameraUtil:GetCharacterArrowBarPosition(self._referenceVectorBorn, self._arrowVector)
 		end
 
-		arg_77_0._arrowVector = var_77_0
-		arg_77_0._inViewArea = false
+		self._arrowVector = arrowPos
+		self._inViewArea = false
 
-		if not arg_77_0._alwaysHideArrow then
-			arg_77_0._arrowBarTf.position = arg_77_0._arrowVector
+		if not self._alwaysHideArrow then
+			self._arrowBarTf.position = self._arrowVector
 
-			if arg_77_0._arrowVector.x > 0 then
-				arg_77_0._arrowBarTf.localScale = var_0_9
+			-- 根据箭头在屏幕左右的朝向翻转
+			if self._arrowVector.x > 0 then
+				self._arrowBarTf.localScale = ARROW_SCALE_LEFT
 			else
-				arg_77_0._arrowBarTf.localScale = var_0_10
+				self._arrowBarTf.localScale = ARROW_SCALE_RIGHT
 			end
 		end
 	end
 end
 
-function BattleCharacter.UpdateArrowBarRotation(arg_78_0)
-	if arg_78_0._inViewArea then
+--- 更新屏幕外箭头的旋转角度（指向目标方向）
+function BattleCharacter.UpdateArrowBarRotation(self)
+	if self._inViewArea then
 		return
 	end
 
-	local var_78_0 = arg_78_0._arrowVector.x
-	local var_78_1 = arg_78_0._arrowVector.y
-	local var_78_2 = math.rad2Deg * math.atan2(var_78_1 - arg_78_0._arrowCenterPos.y, var_78_0 - arg_78_0._arrowCenterPos.x)
+	local arrowX = self._arrowVector.x
+	local arrowY = self._arrowVector.y
+	local angle = math.rad2Deg * math.atan2(arrowY - self._arrowCenterPos.y, arrowX - self._arrowCenterPos.x)
 
-	arg_78_0._arrowAngleVector.z = var_78_2
-	arg_78_0._arrowBarTf.eulerAngles = arg_78_0._arrowAngleVector
+	self._arrowAngleVector.z = angle
+	self._arrowBarTf.eulerAngles = self._arrowAngleVector
 end
 
-function BattleCharacter.UpdateChatPosition(arg_79_0)
-	if not arg_79_0._popGO then
+--- 更新聊天气泡位置：视野内跟随角色，视野外跟随箭头
+function BattleCharacter.UpdateChatPosition(self)
+	if not self._popGO then
 		return
 	end
 
-	if arg_79_0._inViewArea then
-		arg_79_0._popTF.position = arg_79_0:GetReferenceVector()
+	if self._inViewArea then
+		self._popTF.position = self:GetReferenceVector()
 	else
-		arg_79_0._popTF.position = arg_79_0._arrowVector + var_0_8
+		self._popTF.position = self._arrowVector + CHAT_OFFSCREEN_OFFSET
 	end
 end
 
-function BattleCharacter.Dispose(arg_80_0)
-	if arg_80_0._popGO then
-		LeanTween.cancel(arg_80_0._popGO)
+--- 销毁角色：清理特效、轨道、HP条、箭头、动画等所有资源
+function BattleCharacter.Dispose(self)
+	if self._popGO then
+		LeanTween.cancel(self._popGO)
 	end
 
-	if arg_80_0._popNumBundle then
-		arg_80_0._hpPopContainerTF = nil
+	if self._popNumBundle then
+		self._hpPopContainerTF = nil
 
-		arg_80_0._popNumBundle:Clear()
+		self._popNumBundle:Clear()
 
-		arg_80_0._popNumBundle = nil
+		self._popNumBundle = nil
 	end
 
-	arg_80_0._popNumPool = nil
+	self._popNumPool = nil
 
-	Object.Destroy(arg_80_0._popGO)
+	Object.Destroy(self._popGO)
 
-	if arg_80_0._voicePlaybackInfo then
-		arg_80_0._voicePlaybackInfo:PlaybackStop()
+	if self._voicePlaybackInfo then
+		self._voicePlaybackInfo:PlaybackStop()
 	end
 
-	if arg_80_0._cloakBar then
-		arg_80_0._cloakBar:Dispose()
+	if self._cloakBar then
+		self._cloakBar:Dispose()
 
-		arg_80_0._cloakBar = nil
-		arg_80_0._cloakBarTf = nil
+		self._cloakBar = nil
+		self._cloakBarTf = nil
 	end
 
-	if arg_80_0._aimBiarBar then
-		arg_80_0._aimBiarBar:Dispose()
+	if self._aimBiarBar then
+		self._aimBiarBar:Dispose()
 
-		arg_80_0._aimBiarBar = nil
+		self._aimBiarBar = nil
 	end
 
-	if arg_80_0._buffClock then
-		arg_80_0._buffClock:Dispose()
+	if self._buffClock then
+		self._buffClock:Dispose()
 
-		arg_80_0._buffClock = nil
+		self._buffClock = nil
 	end
 
-	arg_80_0._voicePlaybackInfo = nil
-	arg_80_0._popGO = nil
-	arg_80_0._popTF = nil
-	arg_80_0._cacheWeapon = nil
+	self._voicePlaybackInfo = nil
+	self._popGO = nil
+	self._popTF = nil
+	self._cacheWeapon = nil
 
-	for iter_80_0, iter_80_1 in pairs(arg_80_0._allFX) do
-		BattleResourceManager.GetInstance():DestroyOb(iter_80_0)
+	for fxObj, _ in pairs(self._allFX) do
+		BattleResourceManager.GetInstance():DestroyOb(fxObj)
 	end
 
-	for iter_80_2, iter_80_3 in pairs(arg_80_0._orbitList) do
-		BattleResourceManager.GetInstance():DestroyOb(iter_80_2)
+	for orbitObj, _ in pairs(self._orbitList) do
+		BattleResourceManager.GetInstance():DestroyOb(orbitObj)
 	end
 
-	arg_80_0._orbitList = nil
-	arg_80_0._orbitActionCacheList = nil
-	arg_80_0._orbitSpeedUpdateList = nil
-	arg_80_0._orbitActionUpdateList = nil
+	self._orbitList = nil
+	self._orbitActionCacheList = nil
+	self._orbitSpeedUpdateList = nil
+	self._orbitActionUpdateList = nil
 
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_80_0._voiceTimer)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._voiceTimer)
 
-	arg_80_0._voiceTimer = nil
+	self._voiceTimer = nil
 
-	arg_80_0._effectOb:RemoveUnitEvent(arg_80_0._unitData)
-	arg_80_0._effectOb:Dispose()
+	self._effectOb:RemoveUnitEvent(self._unitData)
+	self._effectOb:Dispose()
 
-	arg_80_0._HPProgressBar = nil
-	arg_80_0._HPProgress = nil
+	self._HPProgressBar = nil
+	self._HPProgress = nil
 
-	arg_80_0._factory:GetHPBarPool():DestroyObj(arg_80_0._HPBar)
+	self._factory:GetHPBarPool():DestroyObj(self._HPBar)
 
-	arg_80_0._HPBar = nil
-	arg_80_0._HPBarTf = nil
-	arg_80_0._arrowBar = nil
-	arg_80_0._arrowBarTf = nil
+	self._HPBar = nil
+	self._HPBarTf = nil
+	self._arrowBar = nil
+	self._arrowBarTf = nil
 
-	if arg_80_0._animator then
-		arg_80_0._animator:ClearOverrideMaterial()
+	if self._animator then
+		self._animator:ClearOverrideMaterial()
 
-		arg_80_0._animator = nil
+		self._animator = nil
 	end
 
-	arg_80_0._skeleton = nil
-	arg_80_0._posMatrix = nil
-	arg_80_0._shockFX = nil
-	arg_80_0._waveFX = nil
+	self._skeleton = nil
+	self._posMatrix = nil
+	self._shockFX = nil
+	self._waveFX = nil
 
-	arg_80_0:RemoveUnitEvent()
-	ys.EventListener.DetachEventListener(arg_80_0)
+	self:RemoveUnitEvent()
+	ys.EventListener.DetachEventListener(self)
 
-	arg_80_0._bulletFactoryList = nil
+	self._bulletFactoryList = nil
 
-	for iter_80_4, iter_80_5 in pairs(arg_80_0._tagFXList) do
-		iter_80_5:Dispose()
+	for _, tagFX in pairs(self._tagFXList) do
+		tagFX:Dispose()
 	end
 
-	arg_80_0._tagFXList = nil
-	arg_80_0._weaponRegisterList = nil
+	self._tagFXList = nil
+	self._weaponRegisterList = nil
 
-	BattleCharacter.super.Dispose(arg_80_0)
+	BattleCharacter.super.Dispose(self)
 end
--- TODO
-function BattleCharacter.AddModel(arg_81_0, arg_81_1)
-	arg_81_0:SetGO(arg_81_1)
 
-	arg_81_0._hpBarOffset = Vector3(0, arg_81_0._unitData:GetBoxSize().y, 0)
-	arg_81_0._animator = arg_81_0:GetTf():GetComponent(typeof(SpineAnim))
-	arg_81_0._skeleton = arg_81_0:GetTf():GetComponent("SkeletonAnimation")
+--- 将模型GameObject绑定到角色：设置Spine动画、骨骼、初始动作
+--- @param modelGO GameObject 角色模型GameObject
+function BattleCharacter.AddModel(self, modelGO)
+	self:SetGO(modelGO)
 
-	if arg_81_0._animator then
-		arg_81_0._animator:Start()
+	self._hpBarOffset = Vector3(0, self._unitData:GetBoxSize().y, 0)
+	self._animator = self:GetTf():GetComponent(typeof(SpineAnim))
+	self._skeleton = self:GetTf():GetComponent("SkeletonAnimation")
+
+	if self._animator then
+		self._animator:Start()
 	end
 
-	arg_81_0:SetBoneList()
-	arg_81_0:UpdateMatrix()
-	arg_81_0._unitData:ActiveCldBox()
+	self:SetBoneList()
+	self:UpdateMatrix()
+	self._unitData:ActiveCldBox()
 
-	local var_81_0 = arg_81_0:GetInitScale()
+	local initScale = self:GetInitScale()
 
-	arg_81_0:setLocalScale(Vector3(var_81_0 * arg_81_0._unitData:GetDirection(), var_81_0, var_81_0))
+	self:setLocalScale(Vector3(initScale * self._unitData:GetDirection(), initScale, initScale))
 
-	local var_81_1 = arg_81_0._unitData:GetOxyState()
+	-- 根据氧气状态播放对应初始动作（下潜/正常移动）
+	local oxyState = self._unitData:GetOxyState()
 
-	if var_81_1 and var_81_1:GetCurrentDiveState() == ys.Battle.BattleConst.OXY_STATE.DIVE then
-		arg_81_0:PlayAction(ys.Battle.BattleConst.ActionName.DIVE)
+	if oxyState and oxyState:GetCurrentDiveState() == ys.Battle.BattleConst.OXY_STATE.DIVE then
+		self:PlayAction(ys.Battle.BattleConst.ActionName.DIVE)
 	else
-		arg_81_0:PlayAction(ys.Battle.BattleConst.ActionName.MOVE)
+		self:PlayAction(ys.Battle.BattleConst.ActionName.MOVE)
 	end
 
-	arg_81_0._animator:SetActionCallBack(function(arg_82_0)
-		if arg_82_0 == "finish" then
-			arg_81_0:OnAnimatorEnd()
-		elseif arg_82_0 == "action" then
-			arg_81_0:OnAnimatorTrigger()
+	-- 设置动画回调：finish/action/skin_on/skin_off 四种事件
+	self._animator:SetActionCallBack(function(eventType)
+		if eventType == "finish" then
+			self:OnAnimatorEnd()
+		elseif eventType == "action" then
+			self:OnAnimatorTrigger()
 		else
-			arg_81_0:changeOrbitListVisible(arg_82_0)
+			self:changeOrbitListVisible(eventType)
 		end
 	end)
-	arg_81_0._unitData:RegisterEventListener(arg_81_0, BattleUnitEvent.CHANGE_ACTION, arg_81_0.OnActionChange)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.CHANGE_ACTION, self.OnActionChange)
 end
 
-function BattleCharacter.changeOrbitListVisible(arg_83_0, arg_83_1)
-	local var_83_0
+--- 根据skin_on/skin_off事件控制轨道附属品的显隐
+--- @param visibilityEvent string "skin_on" 或 "skin_off"
+function BattleCharacter.changeOrbitListVisible(self, visibilityEvent)
+	local isVisible
 
-	if arg_83_1 == "skin_on" then
-		var_83_0 = true
-	elseif arg_83_1 == "skin_off" then
-		var_83_0 = false
+	if visibilityEvent == "skin_on" then
+		isVisible = true
+	elseif visibilityEvent == "skin_off" then
+		isVisible = false
 	else
 		return
 	end
 
-	if arg_83_0._orbitList then
-		for iter_83_0, iter_83_1 in pairs(arg_83_0._orbitList) do
-			SetActive(iter_83_0, var_83_0)
+	if self._orbitList then
+		for orbitObj, _ in pairs(self._orbitList) do
+			SetActive(orbitObj, isVisible)
 		end
 	end
 end
 
-function BattleCharacter.SwitchModel(arg_84_0, arg_84_1, arg_84_2)
-	local var_84_0 = arg_84_0._go
+--- 切换角色模型（换装/皮肤切换时调用）
+--- - 保留现有的Blink字典
+--- - 重新绑定轨道附属品
+--- - 重新挂载特效挂载点
+--- @param newModelGO GameObject 新模型
+--- @param skinID number|nil 皮肤ID
+function BattleCharacter.SwitchModel(self, newModelGO, skinID)
+	local oldGO = self._go
 
-	arg_84_0:SetGO(arg_84_1)
+	self:SetGO(newModelGO)
 
-	arg_84_0._animator = arg_84_0:GetTf():GetComponent(typeof(SpineAnim))
-	arg_84_0._skeleton = arg_84_0:GetTf():GetComponent("SkeletonAnimation")
+	self._animator = self:GetTf():GetComponent(typeof(SpineAnim))
+	self._skeleton = self:GetTf():GetComponent("SkeletonAnimation")
 
-	if arg_84_0._animator then
-		arg_84_0._animator:Start()
+	if self._animator then
+		self._animator:Start()
 	end
 
-	arg_84_0:SetBoneList()
+	self:SetBoneList()
 
-	arg_84_0._tf.position = arg_84_0._unitData:GetPosition()
+	self._tf.position = self._unitData:GetPosition()
 
-	arg_84_0:UpdateMatrix()
+	self:UpdateMatrix()
 
-	arg_84_0._hpBarOffset.y = arg_84_0._hpBarOffset.y + arg_84_0._coverSpineHPBarOffset
+	self._hpBarOffset.y = self._hpBarOffset.y + self._coverSpineHPBarOffset
 
-	arg_84_0:UpdateHPBarPosition()
+	self:UpdateHPBarPosition()
 
-	local var_84_1 = arg_84_0:GetInitScale()
+	local initScale = self:GetInitScale()
 
-	arg_84_0:setLocalScale(Vector3(var_84_1 * arg_84_0._unitData:GetDirection(), var_84_1, var_84_1))
-	arg_84_0._animator:SetActionCallBack(function(arg_85_0)
-		if arg_85_0 == "finish" then
-			arg_84_0:OnAnimatorEnd()
-		elseif arg_85_0 == "action" then
-			arg_84_0:OnAnimatorTrigger()
+	self:setLocalScale(Vector3(initScale * self._unitData:GetDirection(), initScale, initScale))
+	self._animator:SetActionCallBack(function(eventType)
+		if eventType == "finish" then
+			self:OnAnimatorEnd()
+		elseif eventType == "action" then
+			self:OnAnimatorTrigger()
 		else
-			arg_84_0:changeAttachLListVisible(arg_85_0)
+			self:changeOrbitListVisible(eventType)
 		end
 	end)
-	arg_84_0:SwitchShader(arg_84_0._shaderType, arg_84_0._color)
+	self:SwitchShader(self._shaderType, self._color)
 
-	local var_84_2 = {}
-	local var_84_3 = {}
+	-- 重新创建所有闪烁效果
+	local newBlinkDict = {}
+	local blinkIdMapping = {}
 
-	for iter_84_0, iter_84_1 in pairs(arg_84_0._blinkDict) do
-		local var_84_4 = SpineAnim.CharBlink(arg_84_0._go, iter_84_1.r, iter_84_1.g, iter_84_1.b, iter_84_1.a, iter_84_1.peroid, iter_84_1.duration, false)
+	for oldBlinkId, blinkData in pairs(self._blinkDict) do
+		local newBlinkId = SpineAnim.CharBlink(self._go, blinkData.r, blinkData.g, blinkData.b, blinkData.a, blinkData.peroid, blinkData.duration, false)
 
-		var_84_2[var_84_4] = iter_84_1
-		var_84_3[iter_84_0] = var_84_4
+		newBlinkDict[newBlinkId] = blinkData
+		blinkIdMapping[oldBlinkId] = newBlinkId
 	end
 
-	arg_84_0._blinkDict = var_84_2
+	self._blinkDict = newBlinkDict
 
-	arg_84_0:PlayAction(arg_84_0._actionIndex)
+	self:PlayAction(self._actionIndex)
 
-	if not arg_84_2 then
-		for iter_84_2, iter_84_3 in pairs(arg_84_0._orbitList) do
-			SpineAnim.AddFollower(iter_84_3.boundBone, arg_84_0._tf, iter_84_2.transform):GetComponent("Spine.Unity.BoneFollower").followBoneRotation = false
+	-- 如果不是换肤（无skinID），需要重新绑定轨道BoneFollower
+	if not skinID then
+		for orbitObj, orbitData in pairs(self._orbitList) do
+			SpineAnim.AddFollower(orbitData.boundBone, self._tf, orbitObj.transform):GetComponent("Spine.Unity.BoneFollower").followBoneRotation = false
 		end
 	end
 
-	arg_84_0._effectOb:SwitchOwner(arg_84_0, var_84_3)
-	arg_84_0._FXAttachPoint.transform:SetParent(arg_84_0:GetTf(), false)
-	BattleResourceManager.GetInstance():DestroyOb(var_84_0)
+	self._effectOb:SwitchOwner(self, blinkIdMapping)
+	self._FXAttachPoint.transform:SetParent(self:GetTf(), false)
+	BattleResourceManager.GetInstance():DestroyOb(oldGO)
 end
 
--- TODO: 与equip_skin_template有关
--- orbit_combat_bound是否会影响到实际位置
-function BattleCharacter.AddOrbit(arg_86_0, arg_86_1, arg_86_2, arg_86_3)
-	local var_86_0 = arg_86_2.orbit_combat_bound[1]
+--- 添加轨道附属品（皮肤装饰物，如光环、浮游炮等）
+--- @param orbitGO GameObject 轨道对象
+--- @param equipSkinData table 装备皮肤数据
+--- @param charBonePrefix string|nil 双角色时的骨骼前缀（如"char1"/"char2"）
+function BattleCharacter.AddOrbit(self, orbitGO, equipSkinData, charBonePrefix)
+	local boundBoneName = equipSkinData.orbit_combat_bound[1]
 
-	if arg_86_3 then
-		var_86_0 = arg_86_3 .. "_" .. var_86_0
+	if charBonePrefix then
+		boundBoneName = charBonePrefix .. "_" .. boundBoneName
 	end
 
-	local var_86_1 = arg_86_2.orbit_combat_bound[2]
-	local var_86_2 = arg_86_2.orbit_hidden_action
+	local boundOffset = equipSkinData.orbit_combat_bound[2]
+	local hiddenAction = equipSkinData.orbit_hidden_action
 
-	arg_86_1.transform.localPosition = Vector3(var_86_1[1], var_86_1[2], var_86_1[3])
+	orbitGO.transform.localPosition = Vector3(boundOffset[1], boundOffset[2], boundOffset[3])
 
-	local var_86_3 = SpineAnim.AddFollower(var_86_0, arg_86_0._tf, arg_86_1.transform):GetComponent("Spine.Unity.BoneFollower")
+	local boneFollower = SpineAnim.AddFollower(boundBoneName, self._tf, orbitGO.transform):GetComponent("Spine.Unity.BoneFollower")
 
-	if arg_86_2.orbit_rotate then
-		var_86_3.followBoneRotation = true
+	if equipSkinData.orbit_rotate then
+		boneFollower.followBoneRotation = true
 
-		local var_86_4 = arg_86_1.transform.localEulerAngles
+		local euler = orbitGO.transform.localEulerAngles
 
-		arg_86_1.transform.localEulerAngles = Vector3(var_86_4.x, var_86_4.y, var_86_4.z - 90)
+		orbitGO.transform.localEulerAngles = Vector3(euler.x, euler.y, euler.z - 90)
 	else
-		var_86_3.followBoneRotation = false
+		boneFollower.followBoneRotation = false
 	end
 
-	arg_86_0._orbitList[arg_86_1] = {
-		hiddenAction = var_86_2,
-		boundBone = var_86_0,
-		offset = arg_86_0._orbitSpineOrderOffset
+	self._orbitList[orbitGO] = {
+		hiddenAction = hiddenAction,
+		boundBone = boundBoneName,
+		offset = self._orbitSpineOrderOffset
 	}
 
-	local var_86_5 = arg_86_2.orbit_combat_anima_change.default
+	-- 处理轨道的动画切换条件
+	local defaultChange = equipSkinData.orbit_combat_anima_change.default
 
-	if var_86_5 then
-		arg_86_0:changeOrbitAction(arg_86_1, var_86_5)
+	if defaultChange then
+		self:changeOrbitAction(orbitGO, defaultChange)
 
-		for iter_86_0, iter_86_1 in ipairs(arg_86_2.orbit_combat_anima_change.change) do
-			if iter_86_1.condition.type == 1 then
-				table.insert(arg_86_0._orbitSpeedUpdateList, {
-					orbit = arg_86_1,
-					change = Clone(iter_86_1)
+		for _, changeConfig in ipairs(equipSkinData.orbit_combat_anima_change.change) do
+			if changeConfig.condition.type == 1 then
+				-- 速度条件：添加到速度更新列表
+				table.insert(self._orbitSpeedUpdateList, {
+					orbit = orbitGO,
+					change = Clone(changeConfig)
 				})
-			elseif iter_86_1.condition.type == 2 then
-				table.insert(arg_86_0._orbitActionUpdateList, {
-					orbit = arg_86_1,
-					change = Clone(iter_86_1)
+			elseif changeConfig.condition.type == 2 then
+				-- 动作条件：添加到动作更新列表
+				table.insert(self._orbitActionUpdateList, {
+					orbit = orbitGO,
+					change = Clone(changeConfig)
 				})
 			end
 		end
 	end
 
-	arg_86_0._orbitSpineOrderOffset = arg_86_0._orbitSpineOrderOffset + BattleCharacter.getMaxZSort(arg_86_1)
+	self._orbitSpineOrderOffset = self._orbitSpineOrderOffset + BattleCharacter.getMaxZSort(orbitGO)
 
-	arg_86_0:sortOrbitZOrder()
+	self:sortOrbitZOrder()
 end
 
-function BattleCharacter.sortOrbitZOrder(arg_87_0)
-	for iter_87_0, iter_87_1 in pairs(arg_87_0._orbitList) do
-		local var_87_0 = BattleCharacter.getMaxZSort(iter_87_0)
+--- 对所有轨道附属品的MeshRenderer排序层级进行重新排序
+function BattleCharacter.sortOrbitZOrder(self)
+	for orbitObj, orbitData in pairs(self._orbitList) do
+		local maxZ = BattleCharacter.getMaxZSort(orbitObj)
 
-		eachChild(iter_87_0, function(arg_88_0)
-			if arg_88_0 and arg_88_0:GetComponent("MeshRenderer") then
-				local var_88_0 = arg_88_0:GetComponent("MeshRenderer").sortingOrder
+		eachChild(orbitObj, function(child)
+			if child and child:GetComponent("MeshRenderer") then
+				local childOrder = child:GetComponent("MeshRenderer").sortingOrder
 
-				if var_88_0 > 0 then
-					arg_88_0:GetComponent("MeshRenderer").sortingOrder = arg_87_0._orbitSpineOrderOffset - iter_87_1.offset - var_87_0 + var_88_0
+				if childOrder > 0 then
+					child:GetComponent("MeshRenderer").sortingOrder = self._orbitSpineOrderOffset - orbitData.offset - maxZ + childOrder
 				end
 			end
 		end)
 	end
 end
 
-function BattleCharacter.getMaxZSort(arg_89_0)
-	local var_89_0 = 0
+--- 获取GameObject及其子对象的最大sortingOrder（用于Z轴排序）
+--- @param go GameObject 目标对象
+--- @return number 最大sortingOrder
+function BattleCharacter.getMaxZSort(go)
+	local maxOrder = 0
 
-	eachChild(arg_89_0, function(arg_90_0)
-		if arg_90_0 and arg_90_0:GetComponent("MeshRenderer") then
-			local var_90_0 = arg_90_0:GetComponent("MeshRenderer").sortingOrder
+	eachChild(go, function(child)
+		if child and child:GetComponent("MeshRenderer") then
+			local order = child:GetComponent("MeshRenderer").sortingOrder
 
-			var_89_0 = math.max(var_89_0, var_90_0)
+			maxOrder = math.max(maxOrder, order)
 		end
 	end)
 
-	return var_89_0
+	return maxOrder
 end
 
-function BattleCharacter.changeOrbitAction(arg_91_0, arg_91_1, arg_91_2)
-	for iter_91_0, iter_91_1 in ipairs(arg_91_2) do
-		local var_91_0 = arg_91_1.transform:Find(iter_91_1.node)
+--- 切换轨道附属品的动画状态（激活/停用节点）
+--- @param orbitGO GameObject 轨道对象
+--- @param changeConfigs table 变化配置列表 [{node, active, activate}]
+function BattleCharacter.changeOrbitAction(self, orbitGO, changeConfigs)
+	for _, config in ipairs(changeConfigs) do
+		local node = orbitGO.transform:Find(config.node)
 
-		if var_91_0 then
-			SetActive(var_91_0, iter_91_1.active)
+		if node then
+			SetActive(node, config.active)
 
-			if iter_91_1.active and arg_91_0._orbitActionCacheList[var_91_0] ~= iter_91_1.activate then
-				local var_91_1 = iter_91_1.activate
+			if config.active and self._orbitActionCacheList[node] ~= config.activate then
+				local activateValue = config.activate
 
-				var_91_0:GetComponent(typeof(Animator)):SetBool("activate", var_91_1)
+				node:GetComponent(typeof(Animator)):SetBool("activate", activateValue)
 
-				arg_91_0._orbitActionCacheList[var_91_0] = iter_91_1.activate
+				self._orbitActionCacheList[node] = config.activate
 			end
 		end
 	end
 end
 
-function BattleCharacter.UpdateOrbit(arg_92_0)
-	if #arg_92_0._orbitSpeedUpdateList <= 0 then
+--- 每帧更新轨道附属品（基于速度条件的动画切换）
+function BattleCharacter.UpdateOrbit(self)
+	if #self._orbitSpeedUpdateList <= 0 then
 		return
 	end
 
-	local var_92_0 = arg_92_0._unitData:GetSpeed():Magnitude()
+	local currentSpeed = self._unitData:GetSpeed():Magnitude()
 
-	for iter_92_0, iter_92_1 in pairs(arg_92_0._orbitSpeedUpdateList) do
-		local var_92_1 = iter_92_1.orbit
-		local var_92_2 = iter_92_1.change
-		local var_92_3 = var_92_2.condition.param
-		local var_92_4 = true
+	for _, orbitEntry in pairs(self._orbitSpeedUpdateList) do
+		local orbitObj = orbitEntry.orbit
+		local changeConfig = orbitEntry.change
+		local speedConditions = changeConfig.condition.param
+		local allConditionsMet = true
 
-		for iter_92_2, iter_92_3 in ipairs(var_92_3) do
-			var_92_4 = BattleFormulas.simpleCompare(iter_92_3, var_92_0) and var_92_4
+		for _, condition in ipairs(speedConditions) do
+			allConditionsMet = BattleFormulas.simpleCompare(condition, currentSpeed) and allConditionsMet
 		end
 
-		if var_92_4 then
-			arg_92_0:changeOrbitAction(var_92_1, var_92_2)
+		if allConditionsMet then
+			self:changeOrbitAction(orbitObj, changeConfig)
 		end
 	end
 end
 
-function BattleCharacter.AddSmokeFXs(arg_93_0, arg_93_1)
-	arg_93_0._smokeList = arg_93_1
+--- 添加烟雾特效配置表
+--- @param smokeConfigs table 烟雾配置 [{rate, smokes}]
+function BattleCharacter.AddSmokeFXs(self, smokeConfigs)
+	self._smokeList = smokeConfigs
 
-	arg_93_0:updateSomkeFX()
+	self:updateSomkeFX()
 end
 
-function BattleCharacter.AddShadow(arg_94_0, arg_94_1)
-	arg_94_0._shadow = arg_94_1
+--- 添加阴影引用
+--- @param shadowObj GameObject 阴影对象
+function BattleCharacter.AddShadow(self, shadowObj)
+	self._shadow = shadowObj
 end
 
-function BattleCharacter.AddHPBar(arg_95_0, arg_95_1)
-	arg_95_0._HPBar = arg_95_1
-	arg_95_0._HPBarTf = arg_95_1.transform
-	arg_95_0._HPProgressBar = arg_95_0._HPBarTf:Find("blood")
-	arg_95_0._HPProgress = arg_95_0._HPProgressBar:GetComponent(typeof(Image))
+--- 添加HP条并注册HP更新事件
+--- @param hpBarObj GameObject HP条对象
+function BattleCharacter.AddHPBar(self, hpBarObj)
+	self._HPBar = hpBarObj
+	self._HPBarTf = hpBarObj.transform
+	self._HPProgressBar = self._HPBarTf:Find("blood")
+	self._HPProgress = self._HPProgressBar:GetComponent(typeof(Image))
 
-	arg_95_0._unitData:RegisterEventListener(arg_95_0, BattleUnitEvent.UPDATE_HP, arg_95_0.OnUpdateHP)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.OnUpdateHP)
 
-	arg_95_0._HPBarTf.position = arg_95_0._referenceVector + arg_95_0._hpBarOffset
+	self._HPBarTf.position = self._referenceVector + self._hpBarOffset
 end
 
-function BattleCharacter.AddUIComponentContainer(arg_96_0, arg_96_1)
-	arg_96_0:UpdateUIComponentPosition()
+--- UI组件容器的占位方法（子类重写）
+--- @param container Transform
+function BattleCharacter.AddUIComponentContainer(self, container)
+	self:UpdateUIComponentPosition()
 end
 
-function BattleCharacter.AddPopNumPool(arg_97_0, arg_97_1)
-	arg_97_0._popNumPool = arg_97_1
-	arg_97_0._hpPopIndex_put = 1
-	arg_97_0._hpPopIndex_get = 1
-	arg_97_0._hpPopCount = 0
-	arg_97_0._hpPopCatch = {}
-	arg_97_0._popNumBundle = arg_97_0._popNumPool:GetBundle(arg_97_0._unitData:GetUnitType())
-	arg_97_0._hpPopContainerTF = arg_97_0._popNumBundle:GetContainer().transform
+--- 添加弹出数字池（伤害/治疗数字）
+--- @param popNumPool BattlePopNumPool 弹出数字池
+function BattleCharacter.AddPopNumPool(self, popNumPool)
+	self._popNumPool = popNumPool
+	self._hpPopIndex_put = 1
+	self._hpPopIndex_get = 1
+	self._hpPopCount = 0
+	self._hpPopCatch = {}
+	self._popNumBundle = self._popNumPool:GetBundle(self._unitData:GetUnitType())
+	self._hpPopContainerTF = self._popNumBundle:GetContainer().transform
 end
 
-function BattleCharacter.AddArrowBar(arg_98_0, arg_98_1)
-	arg_98_0._arrowBar = arg_98_1
-	arg_98_0._arrowBarTf = arg_98_1.transform
+--- 添加屏幕外指示箭头
+--- @param arrowBarObj GameObject 箭头对象
+function BattleCharacter.AddArrowBar(self, arrowBarObj)
+	self._arrowBar = arrowBarObj
+	self._arrowBarTf = arrowBarObj.transform
 
-	arg_98_0:SetArrowPoint()
+	self:SetArrowPoint()
 end
 
-function BattleCharacter.AddCastClock(arg_99_0, arg_99_1)
-	local var_99_0 = arg_99_1.transform
+--- 添加施法时钟（Boss蓄力倒计时）
+--- @param castClockObj GameObject 施法时钟GameObject
+function BattleCharacter.AddCastClock(self, castClockObj)
+	local clockTf = castClockObj.transform
 
-	SetActive(var_99_0, false)
+	SetActive(clockTf, false)
 
-	arg_99_0._castClock = ys.Battle.BattleCastBar.New(var_99_0)
+	self._castClock = ys.Battle.BattleCastBar.New(clockTf)
 
-	arg_99_0:UpdateCastClockPosition()
+	self:UpdateCastClockPosition()
 end
 
-function BattleCharacter.AddBuffClock(arg_100_0, arg_100_1)
-	local var_100_0 = arg_100_1.transform
+--- 添加Buff时钟
+--- @param buffClockObj GameObject Buff时钟GameObject
+function BattleCharacter.AddBuffClock(self, buffClockObj)
+	local buffClockTf = buffClockObj.transform
 
-	SetActive(var_100_0, false)
+	SetActive(buffClockTf, false)
 
-	arg_100_0._buffClock = ys.Battle.BattleBuffClock.New(var_100_0)
+	self._buffClock = ys.Battle.BattleBuffClock.New(buffClockTf)
 end
 
-function BattleCharacter.AddBarrierClock(arg_101_0, arg_101_1)
-	local var_101_0 = arg_101_1.transform
+--- 添加屏障时钟
+--- @param barrierClockObj GameObject 屏障时钟GameObject
+function BattleCharacter.AddBarrierClock(self, barrierClockObj)
+	local barrierTf = barrierClockObj.transform
 
-	SetActive(var_101_0, false)
+	SetActive(barrierTf, false)
 
-	arg_101_0._barrierClock = ys.Battle.BattleBarrierBar.New(var_101_0)
+	self._barrierClock = ys.Battle.BattleBarrierBar.New(barrierTf)
 
-	arg_101_0:UpdateBarrierClockPosition()
+	self:UpdateBarrierClockPosition()
 end
 
-function BattleCharacter.AddVigilantBar(arg_102_0, arg_102_1)
-	arg_102_0._vigilantBar = ys.Battle.BattleVigilantBar.New(arg_102_1.transform)
+--- 添加反潜警戒条
+--- @param vigilantBarObj GameObject 警戒条GameObject
+function BattleCharacter.AddVigilantBar(self, vigilantBarObj)
+	self._vigilantBar = ys.Battle.BattleVigilantBar.New(vigilantBarObj.transform)
 
-	arg_102_0._vigilantBar:ConfigVigilant(arg_102_0._unitData:GetAntiSubState())
-	arg_102_0._vigilantBar:UpdateVigilantProgress()
-	arg_102_0:updateVigilantMark()
+	self._vigilantBar:ConfigVigilant(self._unitData:GetAntiSubState())
+	self._vigilantBar:UpdateVigilantProgress()
+	self:updateVigilantMark()
 end
 
-function BattleCharacter.UpdateVigilantBarPosition(arg_103_0)
-	arg_103_0._vigilantBar:UpdateVigilantBarPosition(arg_103_0._hpBarPos)
+--- 更新反潜警戒条位置
+function BattleCharacter.UpdateVigilantBarPosition(self)
+	self._vigilantBar:UpdateVigilantBarPosition(self._hpBarPos)
 end
 
-function BattleCharacter.AddCloakBar(arg_104_0, arg_104_1)
-	arg_104_0._cloakBarTf = arg_104_1.transform
-	arg_104_0._cloakBar = ys.Battle.BattleCloakBar.New(arg_104_0._cloakBarTf)
+--- 添加隐藏槽（cloak bar）
+--- @param cloakBarObj GameObject 隐藏槽GameObject
+function BattleCharacter.AddCloakBar(self, cloakBarObj)
+	self._cloakBarTf = cloakBarObj.transform
+	self._cloakBar = ys.Battle.BattleCloakBar.New(self._cloakBarTf)
 
-	arg_104_0._cloakBar:ConfigCloak(arg_104_0._unitData:GetCloak())
-	arg_104_0._cloakBar:UpdateCloakProgress()
+	self._cloakBar:ConfigCloak(self._unitData:GetCloak())
+	self._cloakBar:UpdateCloakProgress()
 end
 
-function BattleCharacter.UpdateCloakBarPosition(arg_105_0, arg_105_1)
-	if arg_105_0._inViewArea then
-		arg_105_0._cloakBarTf.anchoredPosition = anchoredPosition
+--- 更新隐藏槽位置：视野外跟随箭头，视野内隐藏
+function BattleCharacter.UpdateCloakBarPosition(self)
+	if self._inViewArea then
+		self._cloakBarTf.anchoredPosition = OFF_SCREEN_POS
 	else
-		arg_105_0._cloakBar:UpdateCloarBarPosition(arg_105_0._arrowVector)
+		self._cloakBar:UpdateCloarBarPosition(self._arrowVector)
 	end
 end
 
-function BattleCharacter.onInitCloak(arg_106_0, arg_106_1)
-	arg_106_0._factory:MakeCloakBar(arg_106_0)
+--- 初始化隐藏状态
+function BattleCharacter.onInitCloak(self, event)
+	self._factory:MakeCloakBar(self)
 end
 
-function BattleCharacter.onUpdateCloakConfig(arg_107_0, arg_107_1)
-	arg_107_0._cloakBar:UpdateCloakConfig()
+--- 隐藏配置更新
+function BattleCharacter.onUpdateCloakConfig(self, event)
+	self._cloakBar:UpdateCloakConfig()
 end
 
-function BattleCharacter.onUpdateCloakLock(arg_108_0, arg_108_1)
-	arg_108_0._cloakBar:UpdateCloakLock()
+--- 隐藏锁定状态更新
+function BattleCharacter.onUpdateCloakLock(self, event)
+	self._cloakBar:UpdateCloakLock()
 end
 
-function BattleCharacter.AddAimBiasBar(arg_109_0, arg_109_1)
-	arg_109_0._aimBiarBarTF = arg_109_1
-	arg_109_0._aimBiarBar = ys.Battle.BattleAimbiasBar.New(arg_109_1)
+--- 添加瞄准偏斜条（Aim Bias Bar）
+--- @param aimBiasBarObj Transform 瞄准偏斜条Transform
+function BattleCharacter.AddAimBiasBar(self, aimBiasBarObj)
+	self._aimBiarBarTF = aimBiasBarObj
+	self._aimBiarBar = ys.Battle.BattleAimbiasBar.New(aimBiasBarObj)
 
-	arg_109_0._aimBiarBar:ConfigAimBias(arg_109_0._unitData:GetAimBias())
-	arg_109_0._aimBiarBar:UpdateAimBiasProgress()
+	self._aimBiarBar:ConfigAimBias(self._unitData:GetAimBias())
+	self._aimBiarBar:UpdateAimBiasProgress()
 end
 
-function BattleCharacter.IsDoubleChar(arg_110_0)
-	if arg_110_0._skeleton then
-		local var_110_0 = arg_110_0._skeleton.skeleton:FindBoneIndex("char1_face")
-		local var_110_1 = arg_110_0._skeleton.skeleton:FindBoneIndex("char2_face")
+--- 检测是否为双角色Spine（通过骨骼名称判断）
+--- @return boolean 是否为双角色
+function BattleCharacter.IsDoubleChar(self)
+	if self._skeleton then
+		local char1FaceIdx = self._skeleton.skeleton:FindBoneIndex("char1_face")
+		local char2FaceIdx = self._skeleton.skeleton:FindBoneIndex("char2_face")
 
-		if var_110_0 >= 0 and var_110_1 >= 0 then
+		if char1FaceIdx >= 0 and char2FaceIdx >= 0 then
 			return true
 		end
 	end
@@ -1448,70 +1645,80 @@ function BattleCharacter.IsDoubleChar(arg_110_0)
 	return false
 end
 
-function BattleCharacter.UpdateAimBiasBar(arg_111_0)
-	if arg_111_0._aimBiarBar then
-		arg_111_0._aimBiarBar:UpdateAimBiasProgress()
+--- 更新瞄准偏斜条进度
+function BattleCharacter.UpdateAimBiasBar(self)
+	if self._aimBiarBar then
+		self._aimBiarBar:UpdateAimBiasProgress()
 	end
 end
 
-function BattleCharacter.UpdateBuffClock(arg_112_0)
-	if arg_112_0._buffClock and arg_112_0._buffClock:IsActive() then
-		arg_112_0._buffClock:UpdateCastClockPosition(arg_112_0._referenceVector)
-		arg_112_0._buffClock:UpdateCastClock()
+--- 更新Buff时钟
+function BattleCharacter.UpdateBuffClock(self)
+	if self._buffClock and self._buffClock:IsActive() then
+		self._buffClock:UpdateCastClockPosition(self._referenceVector)
+		self._buffClock:UpdateCastClock()
 	end
 end
 
-function BattleCharacter.onUpdateAimBiasLock(arg_113_0, arg_113_1)
-	arg_113_0._aimBiarBar:UpdateLockStateView()
+--- 瞄准偏斜锁定状态更新
+function BattleCharacter.onUpdateAimBiasLock(self, event)
+	self._aimBiarBar:UpdateLockStateView()
 end
 
-function BattleCharacter.onInitAimBias(arg_114_0, arg_114_1)
-	if arg_114_0._unitData:GetAimBias():GetHost() == arg_114_0._unitData then
-		arg_114_0._factory:MakeAimBiasBar(arg_114_0)
+--- 初始化瞄准偏斜：如果是宿主则创建条
+function BattleCharacter.onInitAimBias(self, event)
+	if self._unitData:GetAimBias():GetHost() == self._unitData then
+		self._factory:MakeAimBiasBar(self)
 	end
 end
 
-function BattleCharacter.onHostAimBias(arg_115_0, arg_115_1)
-	arg_115_0._factory:MakeAimBiasBar(arg_115_0)
+--- 成为瞄准偏斜宿主
+function BattleCharacter.onHostAimBias(self, event)
+	self._factory:MakeAimBiasBar(self)
 end
 
-function BattleCharacter.onRemoveAimBias(arg_116_0, arg_116_1)
-	arg_116_0._aimBiarBar:SetActive(false)
-	arg_116_0._aimBiarBar:Dispose()
+--- 移除瞄准偏斜条
+function BattleCharacter.onRemoveAimBias(self, event)
+	self._aimBiarBar:SetActive(false)
+	self._aimBiarBar:Dispose()
 
-	arg_116_0._aimBiarBar = nil
-	arg_116_0._aimBiarBarTF = nil
+	self._aimBiarBar = nil
+	self._aimBiarBarTF = nil
 end
 
-function BattleCharacter.AddAimBiasFogFX(arg_117_0)
-	local var_117_0 = arg_117_0._unitData:GetTemplate().fog_fx
+--- 添加瞄准偏斜迷雾特效（fog effect on aim bias）
+function BattleCharacter.AddAimBiasFogFX(self)
+	local fogFxID = self._unitData:GetTemplate().fog_fx
 
-	if var_117_0 and var_117_0 ~= "" then
-		arg_117_0._fogFx = arg_117_0:AddFX(var_117_0)
+	if fogFxID and fogFxID ~= "" then
+		self._fogFx = self:AddFX(fogFxID)
 	end
 end
 
--- UPDATE_HP
--- BattleUnit.UpdateHP->BattleUnit.UpdateHPAction
-function BattleCharacter.OnUpdateHP(self, args)
-	self:_DealHPPop(args.Data)
+--- HP更新事件入口
+--- @param event table {Data = {dHP, isCri, isMiss, isHeal, posOffset, font}}
+function BattleCharacter.OnUpdateHP(self, event)
+	self:_DealHPPop(event.Data)
 end
 
--- TODO
-function BattleCharacter._DealHPPop(self, data)
+--- 处理HP弹出数字的队列管理
+--- - 如果队列为空则立即播放
+--- - 如果单位存活则加入队列
+--- - 如果单位已死亡则立即播放
+function BattleCharacter._DealHPPop(self, hpPopData)
 	if self._hpPopIndex_put == self._hpPopIndex_get and self._hpPopCount == 0 then
-		self:_PlayHPPop(data)
+		self:_PlayHPPop(hpPopData)
 
 		self._hpPopCount = 1
 	elseif self._unitData:IsAlive() then
-		self._hpPopCatch[self._hpPopIndex_put] = data
+		self._hpPopCatch[self._hpPopIndex_put] = hpPopData
 		self._hpPopIndex_put = self._hpPopIndex_put + 1
 	else
-		self:_PlayHPPop(data)
+		self:_PlayHPPop(hpPopData)
 	end
 end
 
--- BattleCharacter.Update调用
+--- 每帧更新HP弹出队列：按计数器节流弹出
 function BattleCharacter.UpdateHPPop(self)
 	if self._hpPopIndex_put == self._hpPopIndex_get then
 		return
@@ -1528,283 +1735,331 @@ function BattleCharacter.UpdateHPPop(self)
 	end
 end
 
--- TODO
--- 被BattleCharacter._DealHPPop和BattleCharacter.UpdateHPPop调用
-function BattleCharacter._PlayHPPop(self, data)
+--- 播放HP弹出数字
+--- @param hpPopData table {dHP, isCri, isMiss, isHeal, posOffset, font}
+function BattleCharacter._PlayHPPop(self, hpPopData)
 	if self._popNumBundle:IsScorePop() then
 		return
 	end
 
-	local dHP = data.dHP
-	local isCri = data.isCri
-	local isMiss = data.isMiss
-	local isHeal = data.isHeal
-	local pos = data.posOffset or Vector3.zero
-	local font = data.font
-	local var_121_6 = self._popNumBundle:GetPop(isHeal, isCri, isMiss, dHP, font)
+	local dHP = hpPopData.dHP
+	local isCrit = hpPopData.isCri
+	local isMiss = hpPopData.isMiss
+	local isHeal = hpPopData.isHeal
+	local posOffset = hpPopData.posOffset or Vector3.zero
+	local font = hpPopData.font
+	local pop = self._popNumBundle:GetPop(isHeal, isCrit, isMiss, dHP, font)
 
-	var_121_6:SetReferenceCharacter(self, pos)
-	var_121_6:Play()
+	pop:SetReferenceCharacter(self, posOffset)
+	pop:Play()
 end
--- 最多只显示5个伤害数字，超过5个则每次只显示1个
-function BattleCharacter._CalcHPPopCount(arg_122_0)
-	if arg_122_0._hpPopIndex_put - arg_122_0._hpPopIndex_get > 5 then
+
+--- 计算HP弹出节流计数器（积压太多时加速弹出）
+--- @return number 弹出节流值
+function BattleCharacter._CalcHPPopCount(self)
+	if self._hpPopIndex_put - self._hpPopIndex_get > 5 then
 		return 1
 	else
 		return 5
 	end
 end
 
-function BattleCharacter.onUpdateScore(arg_123_0, arg_123_1)
-	local var_123_0 = arg_123_1.Data.score
-	local var_123_1 = arg_123_0._popNumBundle:GetScorePop(var_123_0)
+--- 分数更新事件：弹出分数数字
+function BattleCharacter.onUpdateScore(self, event)
+	local score = event.Data.score
+	local scorePop = self._popNumBundle:GetScorePop(score)
 
-	var_123_1:SetReferenceCharacter(arg_123_0, Vector3.zero)
-	var_123_1:Play()
+	scorePop:SetReferenceCharacter(self, Vector3.zero)
+	scorePop:Play()
 end
 
-function BattleCharacter.UpdateHpBar(arg_124_0)
-	local var_124_0 = arg_124_0._unitData:GetCurrentHP()
+--- 更新HP条的填充量显示
+function BattleCharacter.UpdateHpBar(self)
+	local currentHP = self._unitData:GetCurrentHP()
 
-	if arg_124_0._HPProgress and arg_124_0._cacheHP ~= var_124_0 then
-		local var_124_1 = arg_124_0._unitData:GetHPRate()
+	if self._HPProgress and self._cacheHP ~= currentHP then
+		local hpRate = self._unitData:GetHPRate()
 
-		arg_124_0._HPProgress.fillAmount = var_124_1
-		arg_124_0._cacheHP = var_124_0
+		self._HPProgress.fillAmount = hpRate
+		self._cacheHP = currentHP
 	end
 end
 
-function BattleCharacter.onChangeSize(self, payload)
-	self:doChangeSize(payload)
+--- Buff尺寸变化事件处理
+function BattleCharacter.onChangeSize(self, event)
+	self:doChangeSize(event)
 end
 
-function BattleCharacter.updateSomkeFX(arg_126_0)
-	local var_126_0 = arg_126_0._unitData:GetHPRate()
+--- 根据HP比例更新烟雾特效的激活/停用
+--- smokeConfig: {rate = HP阈值, active = 是否激活, smokes = {[fxData] = fxObj}}
+function BattleCharacter.updateSomkeFX(self)
+	local hpRate = self._unitData:GetHPRate()
 
-	for iter_126_0, iter_126_1 in ipairs(arg_126_0._smokeList) do
-		if var_126_0 < iter_126_1.rate then
-			if iter_126_1.active == false then
-				iter_126_1.active = true
+	for _, smokeConfig in ipairs(self._smokeList) do
+		if hpRate < smokeConfig.rate then
+			if smokeConfig.active == false then
+				smokeConfig.active = true
 
-				local var_126_1 = iter_126_1.smokes
+				local smokes = smokeConfig.smokes
 
-				for iter_126_2, iter_126_3 in pairs(var_126_1) do
-					if iter_126_2.unInitialize then
-						local var_126_2 = arg_126_0:AddFX(iter_126_2.resID)
+				for fxData, fxObj in pairs(smokes) do
+					if fxData.unInitialize then
+						local newFx = self:AddFX(fxData.resID)
 
-						var_126_2.transform.localPosition = iter_126_2.pos
-						var_126_1[iter_126_2] = var_126_2
+						newFx.transform.localPosition = fxData.pos
+						smokes[fxData] = newFx
 
-						SetActive(var_126_2, true)
+						SetActive(newFx, true)
 
-						iter_126_2.unInitialize = false
+						fxData.unInitialize = false
 					else
-						SetActive(iter_126_3, true)
+						SetActive(fxObj, true)
 					end
 				end
 			end
-		elseif iter_126_1.active == true then
-			iter_126_1.active = false
+		elseif smokeConfig.active == true then
+			smokeConfig.active = false
 
-			local var_126_3 = iter_126_1.smokes
+			local smokes = smokeConfig.smokes
 
-			for iter_126_4, iter_126_5 in pairs(var_126_3) do
-				if iter_126_4.unInitialize then
-					-- block empty
+			for fxData, fxObj in pairs(smokes) do
+				if fxData.unInitialize then
+					-- 尚未初始化的跳过
 				else
-					SetActive(iter_126_5, false)
+					SetActive(fxObj, false)
 				end
 			end
 		end
 	end
 end
 
-function BattleCharacter.doChangeSize(self, payload)
+--- 根据modelScale属性改变角色尺寸
+function BattleCharacter.doChangeSize(self, event)
 	local modelScale = self._unitData:GetAttrByName("modelScale")
 
 	self:setLocalScale(Vector3(modelScale * self._unitData:GetDirection(), modelScale, modelScale))
 end
 
-function BattleCharacter.InitEffectView(arg_128_0)
-	arg_128_0._effectOb = ys.Battle.BattleEffectComponent.New(arg_128_0)
+--- 初始化特效视图组件
+function BattleCharacter.InitEffectView(self)
+	self._effectOb = ys.Battle.BattleEffectComponent.New(self)
 end
 
-function BattleCharacter.UpdateAniEffect(arg_129_0, arg_129_1)
-	arg_129_0._effectOb:Update(arg_129_1)
+--- 更新动画特效
+--- @param combatTime number 战斗时间戳
+function BattleCharacter.UpdateAniEffect(self, combatTime)
+	self._effectOb:Update(combatTime)
 end
 
-function BattleCharacter.UpdateTagEffect(arg_130_0, arg_130_1)
-	local var_130_0 = arg_130_0._unitData:GetBoxSize().y * 0.5
+--- 更新标签特效位置（锁定标记等）
+--- @param combatTime number 战斗时间戳
+function BattleCharacter.UpdateTagEffect(self, combatTime)
+	local halfBoxY = self._unitData:GetBoxSize().y * 0.5
 
-	for iter_130_0, iter_130_1 in pairs(arg_130_0._tagFXList) do
-		iter_130_1:Update(arg_130_1)
-		iter_130_1:SetPosition(arg_130_0._referenceVector + Vector3(0, var_130_0, 0))
+	for _, tagFX in pairs(self._tagFXList) do
+		tagFX:Update(combatTime)
+		tagFX:SetPosition(self._referenceVector + Vector3(0, halfBoxY, 0))
 	end
 end
 
-function BattleCharacter.SetPopup(arg_131_0, arg_131_1, arg_131_2, arg_131_3)
-	if arg_131_0._voiceTimer then
-		if arg_131_0._voiceKey == arg_131_3 then
-			arg_131_0._voiceKey = nil
+--- 设置聊天气泡弹窗
+--- @param content string 气泡文字内容
+--- @param duration number 持续时间
+--- @param key string 气泡key（用于去重）
+function BattleCharacter.SetPopup(self, content, duration, key)
+	if self._voiceTimer then
+		if self._voiceKey == key then
+			self._voiceKey = nil
 		else
 			return
 		end
 	end
 
-	if arg_131_0._popGO then
-		LeanTween.cancel(arg_131_0._popGO)
+	if self._popGO then
+		LeanTween.cancel(self._popGO)
 
-		local var_131_0 = arg_131_0._popGO.transform:GetComponent(typeof(Animation))
+		local anim = self._popGO.transform:GetComponent(typeof(Animation))
 
-		if var_131_0 then
-			var_131_0:Play("popup_out")
-			arg_131_0._popGO:GetComponent("DftAniEvent"):SetEndEvent(function(arg_132_0)
-				arg_131_0.ChatPopAnimation(arg_131_0._popGO, arg_131_2)
+		if anim then
+			anim:Play("popup_out")
+			self._popGO:GetComponent("DftAniEvent"):SetEndEvent(function()
+				self.ChatPopAnimation(self._popGO, duration)
 			end)
 		else
-			LeanTween.cancel(arg_131_0._popGO)
-			LeanTween.scale(rtf(arg_131_0._popGO.gameObject), Vector3.New(0, 0, 1), 0.1):setEase(LeanTweenType.easeInBack):setOnComplete(System.Action(function()
-				arg_131_0.ChatPop(arg_131_0._popGO, arg_131_2)
+			LeanTween.cancel(self._popGO)
+			LeanTween.scale(rtf(self._popGO.gameObject), Vector3.New(0, 0, 1), 0.1):setEase(LeanTweenType.easeInBack):setOnComplete(System.Action(function()
+				self.ChatPop(self._popGO, duration)
 			end))
 		end
 	else
-		arg_131_0._popGO = arg_131_0._factory:MakePopup()
-		arg_131_0._popTF = arg_131_0._popGO.transform
+		self._popGO = self._factory:MakePopup()
+		self._popTF = self._popGO.transform
 
-		if arg_131_0._popGO.transform:GetComponent(typeof(Animation)) then
-			arg_131_0.ChatPopAnimation(arg_131_0._popGO, arg_131_2)
+		if self._popGO.transform:GetComponent(typeof(Animation)) then
+			self.ChatPopAnimation(self._popGO, duration)
 		else
-			arg_131_0._popTF.localScale = Vector3(0, 0, 0)
+			self._popTF.localScale = Vector3(0, 0, 0)
 
-			arg_131_0.ChatPop(arg_131_0._popGO, arg_131_2)
+			self.ChatPop(self._popGO, duration)
 		end
 	end
 
-	BattleCharacter.setChatText(arg_131_0._popGO, arg_131_1)
-	SetActive(arg_131_0._popGO, true)
+	BattleCharacter.setChatText(self._popGO, content)
+	SetActive(self._popGO, true)
 end
 
-function BattleCharacter.ChatPopAnimation(arg_134_0, arg_134_1)
-	local var_134_0 = arg_134_0.transform:GetComponent(typeof(Animation))
+--- 通过Animation组件播放聊天气泡动画
+--- @param popGO GameObject 气泡GameObject
+--- @param duration number 持续时间
+function BattleCharacter.ChatPopAnimation(self, popGO, duration)
+	local anim = popGO.transform:GetComponent(typeof(Animation))
 
-	var_134_0:Play("popup_in")
-	LeanTween.delayedCall(arg_134_0.gameObject, arg_134_1, System.Action(function()
-		var_134_0:Play("popup_out")
-		arg_134_0:GetComponent("DftAniEvent"):SetEndEvent(function(arg_136_0)
-			SetActive(arg_134_0, false)
+	anim:Play("popup_in")
+	LeanTween.delayedCall(popGO.gameObject, duration, System.Action(function()
+		anim:Play("popup_out")
+		popGO:GetComponent("DftAniEvent"):SetEndEvent(function()
+			SetActive(popGO, false)
 		end)
 	end))
 end
 
-function BattleCharacter.ChatPop(arg_137_0, arg_137_1)
-	arg_137_1 = arg_137_1 or 2.5
+--- 通过LeanTween播放聊天气泡弹出/缩回动画
+--- @param popGO GameObject 气泡GameObject
+--- @param duration number|nil 显示持续时间，默认2.5秒
+function BattleCharacter.ChatPop(self, popGO, duration)
+	duration = duration or 2.5
 
-	LeanTween.scale(rtf(arg_137_0.gameObject), Vector3.New(1, 1, 1), 0.3):setEase(LeanTweenType.easeOutBack):setOnComplete(System.Action(function()
-		LeanTween.scale(rtf(arg_137_0.gameObject), Vector3.New(0, 0, 1), 0.3):setEase(LeanTweenType.easeInBack):setDelay(arg_137_1):setOnComplete(System.Action(function()
-			SetActive(arg_137_0, false)
+	LeanTween.scale(rtf(popGO.gameObject), Vector3.New(1, 1, 1), 0.3):setEase(LeanTweenType.easeOutBack):setOnComplete(System.Action(function()
+		LeanTween.scale(rtf(popGO.gameObject), Vector3.New(0, 0, 1), 0.3):setEase(LeanTweenType.easeInBack):setDelay(duration):setOnComplete(System.Action(function()
+			SetActive(popGO, false)
 		end))
 	end))
 end
 
-function BattleCharacter.setChatText(arg_140_0, arg_140_1)
-	local var_140_0 = findTF(arg_140_0, "Text"):GetComponent(typeof(Text))
+--- 设置聊天气泡文字内容和对齐方式
+--- @param popGO GameObject 气泡GameObject
+--- @param text string 文字内容
+function BattleCharacter.setChatText(self, popGO, text)
+	local textComp = findTF(popGO, "Text"):GetComponent(typeof(Text))
 
-	var_140_0.text = arg_140_1
+	textComp.text = text
 
-	if #var_140_0.text > CHAT_POP_STR_LEN then
-		var_140_0.alignment = TextAnchor.MiddleLeft
+	if #textComp.text > CHAT_POP_STR_LEN then
+		textComp.alignment = TextAnchor.MiddleLeft
 	else
-		var_140_0.alignment = TextAnchor.MiddleCenter
+		textComp.alignment = TextAnchor.MiddleCenter
 	end
 end
 
-function BattleCharacter.Voice(arg_141_0, arg_141_1, arg_141_2)
-	if arg_141_0._voiceTimer then
+--- 播放角色语音
+--- @param voiceCue string CRI音频cue名
+--- @param voiceKey string 语音去重key
+function BattleCharacter.Voice(self, voiceCue, voiceKey)
+	if self._voiceTimer then
 		return
 	end
 
-	pg.CriMgr.GetInstance():PlayMultipleSound_V3(arg_141_1, function(arg_142_0)
-		if arg_142_0 then
-			arg_141_0._voiceKey = arg_141_2
-			arg_141_0._voicePlaybackInfo = arg_142_0
-			arg_141_0._voiceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 0, arg_141_0._voicePlaybackInfo:GetLength() * 0.001, function()
-				pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_141_0._voiceTimer)
+	pg.CriMgr.GetInstance():PlayMultipleSound_V3(voiceCue, function(playbackInfo)
+		if playbackInfo then
+			self._voiceKey = voiceKey
+			self._voicePlaybackInfo = playbackInfo
+			self._voiceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 0, self._voicePlaybackInfo:GetLength() * 0.001, function()
+				pg.TimeMgr.GetInstance():RemoveBattleTimer(self._voiceTimer)
 
-				arg_141_0._voiceTimer = nil
-				arg_141_0._voiceKey = nil
-				arg_141_0._voicePlaybackInfo = nil
+				self._voiceTimer = nil
+				self._voiceKey = nil
+				self._voicePlaybackInfo = nil
 			end)
 		end
 	end)
 end
 
-function BattleCharacter.setLocalScale(arg_144_0, arg_144_1, arg_144_2)
-	arg_144_0._tf.localScale = arg_144_1
+--- 设置本地缩放（保留原始modelScale用于后续计算）
+--- @param scale Vector3 缩放值
+--- @param isTemp boolean|nil 是否是临时翻转（不更新_modelScale）
+function BattleCharacter.setLocalScale(self, scale, isTemp)
+	self._tf.localScale = scale
 
-	if not arg_144_2 then
-		arg_144_0._modelScale = arg_144_1
+	if not isTemp then
+		self._modelScale = scale
 	end
 end
 
-function BattleCharacter.SonarAcitve(arg_145_0, arg_145_1)
+--- 声纳激活（子类重写）
+function BattleCharacter.SonarAcitve(self, isActive)
 	return
 end
 
-function BattleCharacter.SwitchShader(arg_146_0, arg_146_1, arg_146_2, arg_146_3)
-	LeanTween.cancel(arg_146_0._go)
+--- 切换角色Shader
+--- @param shaderType string|nil Shader类型名
+--- @param color Color|nil 着色颜色
+--- @param shaderArgs table|nil Shader额外参数 {invisible}
+function BattleCharacter.SwitchShader(self, shaderType, color, shaderArgs)
+	LeanTween.cancel(self._go)
 
-	arg_146_2 = arg_146_2 or Color.New(0, 0, 0, 0)
+	color = color or Color.New(0, 0, 0, 0)
 
-	if arg_146_1 then
-		local var_146_0 = BattleResourceManager.GetInstance():GetShader(arg_146_1)
+	if shaderType then
+		local shader = BattleResourceManager.GetInstance():GetShader(shaderType)
 
-		arg_146_0._animator:ShiftShader(var_146_0, arg_146_2)
+		self._animator:ShiftShader(shader, color)
 
-		if arg_146_3 then
-			arg_146_0:spineSemiTransparentFade(0, arg_146_3.invisible, 0)
+		if shaderArgs then
+			self:spineSemiTransparentFade(0, shaderArgs.invisible, 0)
 		end
 	end
 
-	arg_146_0._shaderType = arg_146_1
-	arg_146_0._color = arg_146_2
+	self._shaderType = shaderType
+	self._color = color
 end
 
-function BattleCharacter.PauseActionAnimation(arg_147_0, arg_147_1)
-	local var_147_0 = arg_147_1 and 0 or 1
+--- 暂停/恢复动作动画
+--- @param pause boolean true暂停, false恢复
+function BattleCharacter.PauseActionAnimation(self, pause)
+	local timeScale = pause and 0 or 1
 
-	arg_147_0._animator:GetAnimationState().TimeScale = var_147_0
+	self._animator:GetAnimationState().TimeScale = timeScale
 end
 
-function BattleCharacter.GetFactory(arg_148_0)
-	return arg_148_0._factory
+--- @return BattleCharacterFactory 关联的工厂
+function BattleCharacter.GetFactory(self)
+	return self._factory
 end
 
-function BattleCharacter.SetFactory(arg_149_0, arg_149_1)
-	arg_149_0._factory = arg_149_1
+--- 设置关联的工厂
+--- @param factory BattleCharacterFactory 工厂实例
+function BattleCharacter.SetFactory(self, factory)
+	self._factory = factory
 end
 
-function BattleCharacter.onSwitchSpine(arg_150_0, arg_150_1)
-	local var_150_0 = arg_150_1.Data
-	local var_150_1 = var_150_0.skin
+--- 切换Spine事件处理（换装）
+--- @param event table {Data = {skin, HPBarOffset}}
+function BattleCharacter.onSwitchSpine(self, event)
+	local switchData = event.Data
+	local skinID = switchData.skin
 
-	arg_150_0._coverSpineHPBarOffset = var_150_0.HPBarOffset or 0
+	self._coverSpineHPBarOffset = switchData.HPBarOffset or 0
 
-	arg_150_0:SwitchSpine(var_150_1)
+	self:SwitchSpine(skinID)
 end
 
-function BattleCharacter.SwitchSpine(arg_151_0, arg_151_1)
-	for iter_151_0, iter_151_1 in pairs(arg_151_0._blinkDict) do
-		SpineAnim.RemoveBlink(arg_151_0._go, iter_151_0)
+--- 切换Spine模型：清除旧闪烁效果然后委托工厂创建新模型
+--- @param skinID number 皮肤ID
+function BattleCharacter.SwitchSpine(self, skinID)
+	for blinkId, _ in pairs(self._blinkDict) do
+		SpineAnim.RemoveBlink(self._go, blinkId)
 	end
 
-	arg_151_0._factory:SwitchCharacterSpine(arg_151_0, arg_151_1)
+	self._factory:SwitchCharacterSpine(self, skinID)
 end
 
-function BattleCharacter.onSwitchShader(arg_152_0, arg_152_1)
-	local var_152_0 = arg_152_1.Data
-	local var_152_1 = var_152_0.shader
-	local var_152_2 = var_152_0.color
-	local var_152_3 = var_152_0.payload
+--- Shader切换事件处理
+--- @param event table {Data = {shader, color, args}}
+function BattleCharacter.onSwitchShader(self, event)
+	local data = event.Data
+	local shaderType = data.shader
+	local color = data.color
+	local shaderArgs = data.args
 
-	arg_152_0:SwitchShader(var_152_1, var_152_2, var_152_3)
+	self:SwitchShader(shaderType, color, shaderArgs)
 end

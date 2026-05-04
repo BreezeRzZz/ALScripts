@@ -1,226 +1,294 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleAttr
-local var_0_4 = var_0_0.Battle.BattleConst
-local var_0_5 = var_0_4.EquipmentType
-local var_0_6 = var_0_0.Battle.BattleConfig
-local var_0_7 = var_0_0.Battle.BattleCardPuzzleEvent
-local var_0_8 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleAttr = ys.Battle.BattleAttr
+local BattleConst = ys.Battle.BattleConst
+local EquipmentType = BattleConst.EquipmentType
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
+local BattleAttr2 = ys.Battle.BattleAttr
 
-var_0_0.Battle.BattleCardPuzzlePlayerUnit = class("BattleCardPuzzlePlayerUnit", var_0_0.Battle.BattlePlayerUnit)
-var_0_0.Battle.BattleCardPuzzlePlayerUnit.__name = "BattleCardPuzzlePlayerUnit"
+ys.Battle.BattleCardPuzzlePlayerUnit = class("BattleCardPuzzlePlayerUnit", ys.Battle.BattlePlayerUnit)
+ys.Battle.BattleCardPuzzlePlayerUnit.__name = "BattleCardPuzzlePlayerUnit"
 
-local var_0_9 = var_0_0.Battle.BattleCardPuzzlePlayerUnit
+local BattleCardPuzzlePlayerUnit = ys.Battle.BattleCardPuzzlePlayerUnit
 
-function var_0_9.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_9.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleCardPuzzlePlayerUnit
+--- @param uid number: 单位唯一ID
+--- @param iff number: 阵营
+--- @return nil
+--- 构造函数
+function BattleCardPuzzlePlayerUnit.Ctor(self, uid, iff)
+	BattleCardPuzzlePlayerUnit.super.Ctor(self, uid, iff)
 end
 
-function var_0_9.UpdateHP(arg_2_0, arg_2_1, arg_2_2)
-	if not arg_2_0:IsAlive() then
+--- @class BattleCardPuzzlePlayerUnit
+--- @param dHP number: 血量变化值
+--- @param extraInfo table: 额外信息(isMiss/isCri/isHeal等)
+--- @return number: 血量变化值
+--- 卡牌解谜模式的UpdateHP：简化版的血量更新逻辑
+function BattleCardPuzzlePlayerUnit.UpdateHP(self, dHP, extraInfo)
+	if not self:IsAlive() then
 		return
 	end
 
-	local var_2_0 = arg_2_0:IsAlive()
+	local isAliveBeforeUpdate = self:IsAlive()
 
-	if not var_2_0 then
+	if not isAliveBeforeUpdate then
 		return
 	end
 
-	local var_2_1 = arg_2_2.isMiss
-	local var_2_2 = arg_2_2.isCri
-	local var_2_3 = arg_2_2.isHeal
-	local var_2_4 = arg_2_2.isShare
-	local var_2_5 = arg_2_2.attr
-	local var_2_6 = arg_2_2.font
-	local var_2_7 = arg_2_2.cldPos
-	local var_2_8 = arg_2_1
-	local var_2_9 = arg_2_0:GetCurrentHP()
+	local isMiss = extraInfo.isMiss
+	local isCri = extraInfo.isCri
+	local isHeal = extraInfo.isHeal
+	local isShare = extraInfo.isShare
+	local attr = extraInfo.attr
+	local font = extraInfo.font
+	local cldPos = extraInfo.cldPos
+	local preShieldHP = dHP
+	local currentHP = self:GetCurrentHP()
 
-	if not var_2_3 then
-		local var_2_10 = {
-			damage = -arg_2_1,
-			isShare = var_2_4,
-			miss = var_2_1,
-			cri = var_2_2,
-			damageSrc = arg_2_2.srcID,
-			damageAttr = var_2_5
+	if not isHeal then
+		-- 受到伤害的处理
+		local damageInfo = {
+			damage = -dHP,
+			isShare = isShare,
+			miss = isMiss,
+			cri = isCri,
+			damageSrc = extraInfo.srcID,
+			damageAttr = attr
 		}
 
-		arg_2_0:TriggerBuff(var_0_4.BuffEffectType.ON_TAKE_DAMAGE, var_2_10)
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_DAMAGE, damageInfo)
 
-		if var_2_9 <= var_2_10.damage then
-			arg_2_0:TriggerBuff(var_0_4.BuffEffectType.ON_BEFORE_FATAL_DAMAGE, {})
+		if currentHP <= damageInfo.damage then
+			self:TriggerBuff(BattleConst.BuffEffectType.ON_BEFORE_FATAL_DAMAGE, {})
 		end
 
-		arg_2_1 = -var_2_10.damage
+		dHP = -damageInfo.damage
 
-		if var_0_8.IsInvincible(arg_2_0) then
+		if BattleAttr2.IsInvincible(self) then
 			return 0
 		end
 	else
-		local var_2_11 = {
-			damage = arg_2_1,
-			isHeal = var_2_3
+		-- 治疗的处理
+		local damageInfo = {
+			damage = dHP,
+			isHeal = isHeal
 		}
 
-		arg_2_0:TriggerBuff(var_0_4.BuffEffectType.ON_TAKE_HEALING, var_2_11)
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_TAKE_HEALING, damageInfo)
 
-		var_2_3 = var_2_11.isHeal
-		arg_2_1 = var_2_11.damage
+		isHeal = damageInfo.isHeal
+		dHP = damageInfo.damage
 	end
 
-	local var_2_12 = math.min(arg_2_0:GetMaxHP(), math.max(0, var_2_9 + arg_2_1)) - var_2_9
-	local var_2_13 = {
-		preShieldHP = var_2_8,
-		dHP = arg_2_1,
-		validDHP = var_2_12,
-		isMiss = var_2_1,
-		isCri = var_2_2,
-		isHeal = var_2_3,
-		font = var_2_6
+	-- 计算实际生效的血量变化值
+	local validDHP = math.min(self:GetMaxHP(), math.max(0, currentHP + dHP)) - currentHP
+	local updateHPArgs = {
+		preShieldHP = preShieldHP,
+		dHP = dHP,
+		validDHP = validDHP,
+		isMiss = isMiss,
+		isCri = isCri,
+		isHeal = isHeal,
+		font = font
 	}
 
-	if var_2_7 and not var_2_7:EqualZero() then
-		local var_2_14 = arg_2_0:GetPosition()
-		local var_2_15 = arg_2_0:GetBoxSize().x
-		local var_2_16 = var_2_14.x - var_2_15
-		local var_2_17 = var_2_14.x + var_2_15
-		local var_2_18 = var_2_7:Clone()
+	-- 调整碰撞位置到碰撞盒范围内
+	if cldPos and not cldPos:EqualZero() then
+		local position = self:GetPosition()
+		local boxSizeX = self:GetBoxSize().x
+		local cldBoxLeft = position.x - boxSizeX
+		local cldBoxRight = position.x + boxSizeX
+		local actualCldPos = cldPos:Clone()
 
-		var_2_18.x = Mathf.Clamp(var_2_18.x, var_2_16, var_2_17)
-		var_2_13.posOffset = var_2_14 - var_2_18
+		actualCldPos.x = Mathf.Clamp(actualCldPos.x, cldBoxLeft, cldBoxRight)
+		updateHPArgs.posOffset = position - actualCldPos
 	end
 
-	arg_2_0:UpdateHPAction(var_2_13)
+	self:UpdateHPAction(updateHPArgs)
 
-	if not arg_2_0:IsAlive() and var_2_0 then
-		arg_2_0:SetDeathReason(arg_2_2.damageReason)
-		arg_2_0:DeadAction()
+	if not self:IsAlive() and isAliveBeforeUpdate then
+		self:SetDeathReason(extraInfo.damageReason)
+		self:DeadAction()
 	end
 
-	if arg_2_0:IsAlive() then
-		arg_2_0:TriggerBuff(var_0_4.BuffEffectType.ON_HP_RATIO_UPDATE, {
-			dHP = arg_2_1,
-			unit = arg_2_0
+	if self:IsAlive() then
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {
+			dHP = dHP,
+			unit = self
 		})
 	end
 
-	return arg_2_1
+	return dHP
 end
 
-function var_0_9.UpdateHPAction(arg_3_0, arg_3_1)
-	arg_3_0:DispatchEvent(var_0_0.Event.New(var_0_7.UPDATE_COMMON_HP, arg_3_1))
-	var_0_9.super.UpdateHPAction(arg_3_0, arg_3_1)
+--- @class BattleCardPuzzlePlayerUnit
+--- @param args table: 血量更新参数
+--- @return nil
+--- 发送卡牌解谜模式的UPDATE_COMMON_HP事件和父类UPDATE_HP事件
+function BattleCardPuzzlePlayerUnit.UpdateHPAction(self, args)
+	self:DispatchEvent(ys.Event.New(BattleCardPuzzleEvent.UPDATE_COMMON_HP, args))
+	BattleCardPuzzlePlayerUnit.super.UpdateHPAction(self, args)
 end
 
-function var_0_9.SetTemplate(arg_4_0, arg_4_1, arg_4_2, arg_4_3)
-	arg_4_0._tmpID = arg_4_1
-	arg_4_0._tmpData = Clone(var_0_1.GetPuzzleShipDataTemplate(arg_4_0._tmpID))
-	arg_4_0._tmpData.scale = 100
-	arg_4_0._tmpData.parallel_max = {
+--- @class BattleCardPuzzlePlayerUnit
+--- @param templateID number: 模板ID
+--- @param extraAttr table: 额外属性
+--- @param extraInfo table: 额外信息
+--- @return nil
+--- 设置模板：从PuzzleShipDataTemplate获取模板数据
+function BattleCardPuzzlePlayerUnit.SetTemplate(self, templateID, extraAttr, extraInfo)
+	self._tmpID = templateID
+	self._tmpData = Clone(BattleDataFunction.GetPuzzleShipDataTemplate(self._tmpID))
+	self._tmpData.scale = 100
+	self._tmpData.parallel_max = {
 		1,
 		1,
 		1
 	}
 
-	arg_4_0:configWeaponQueueParallel()
-	arg_4_0:overrideSkin(arg_4_0._tmpData.skin_id, true)
-	arg_4_0:InitCldComponent()
-	arg_4_0:setAttrFromOutBattle(arg_4_2, arg_4_3)
+	self:configWeaponQueueParallel()
+	self:overrideSkin(self._tmpData.skin_id, true)
+	self:InitCldComponent()
+	self:setAttrFromOutBattle(extraAttr, extraInfo)
 
-	arg_4_0._personality = var_0_1.GetShipPersonality(2)
+	self._personality = BattleDataFunction.GetShipPersonality(2)
 
-	var_0_3.SetCurrent(arg_4_0, "srcShipType", arg_4_0._tmpData.type)
+	BattleFormulas.SetCurrent(self, "srcShipType", self._tmpData.type)
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._tmpData.tag) do
-		arg_4_0:AddLabelTag(iter_4_1)
+	for _, tag in ipairs(self._tmpData.tag) do
+		self:AddLabelTag(tag)
 	end
 end
 
-function var_0_9.GetTemplate(arg_5_0)
-	return arg_5_0._tmpData
+--- @class BattleCardPuzzlePlayerUnit
+--- @return table: 模板数据
+--- 获取模板数据
+function BattleCardPuzzlePlayerUnit.GetTemplate(self)
+	return self._tmpData
 end
 
-function var_0_9.InitCurrentHP(arg_6_0)
+--- @class BattleCardPuzzlePlayerUnit
+--- @return nil
+--- 初始化当前HP(卡牌模式不执行)
+function BattleCardPuzzlePlayerUnit.InitCurrentHP(self)
 	return
 end
 
-function var_0_9.InitFleetCurrentHP(arg_7_0, arg_7_1)
-	arg_7_0:TriggerBuff(var_0_4.BuffEffectType.ON_HP_RATIO_UPDATE, {})
+--- @class BattleCardPuzzlePlayerUnit
+--- @param initHPRate number: 初始血量比例
+--- @return nil
+--- 初始化舰队当前HP
+function BattleCardPuzzlePlayerUnit.InitFleetCurrentHP(self, initHPRate)
+	self:TriggerBuff(BattleConst.BuffEffectType.ON_HP_RATIO_UPDATE, {})
 end
 
-function var_0_9.SetCurrentHP(arg_8_0, arg_8_1)
+--- @class BattleCardPuzzlePlayerUnit
+--- @param hp number: 血量值
+--- @return nil
+--- 设置当前HP(卡牌模式不执行，由fleetCardPuzzleComponent管理)
+function BattleCardPuzzlePlayerUnit.SetCurrentHP(self, hp)
 	return
 end
 
-function var_0_9.GetCurrentHP(arg_9_0)
-	return arg_9_0._fleetCardPuzzleComponent:GetCurrentCommonHP()
+--- @class BattleCardPuzzlePlayerUnit
+--- @return number: 从fleetCardPuzzleComponent获取的当前共享HP
+--- 获取当前HP
+function BattleCardPuzzlePlayerUnit.GetCurrentHP(self)
+	return self._fleetCardPuzzleComponent:GetCurrentCommonHP()
 end
 
-function var_0_9.GetMaxHP(arg_10_0)
-	return arg_10_0._fleetCardPuzzleComponent:GetTotalCommonHP()
+--- @class BattleCardPuzzlePlayerUnit
+--- @return number: 从fleetCardPuzzleComponent获取的最大共享HP
+--- 获取最大HP
+function BattleCardPuzzlePlayerUnit.GetMaxHP(self)
+	return self._fleetCardPuzzleComponent:GetTotalCommonHP()
 end
 
-function var_0_9.GetHP(arg_11_0)
-	return arg_11_0:GetCurrentHP(), arg_11_0:GetMaxHP()
+--- @class BattleCardPuzzlePlayerUnit
+--- @return number, number: 当前HP, 最大HP
+--- 获取HP对
+function BattleCardPuzzlePlayerUnit.GetHP(self)
+	return self:GetCurrentHP(), self:GetMaxHP()
 end
 
-function var_0_9.GetHPRate(arg_12_0)
-	return arg_12_0:GetCurrentHP() / arg_12_0:GetMaxHP()
+--- @class BattleCardPuzzlePlayerUnit
+--- @return number: HP比例
+--- 获取HP比例
+function BattleCardPuzzlePlayerUnit.GetHPRate(self)
+	return self:GetCurrentHP() / self:GetMaxHP()
 end
 
-function var_0_9.SetFleetVO(arg_13_0, arg_13_1)
-	var_0_9.super.SetFleetVO(arg_13_0, arg_13_1)
+--- @class BattleCardPuzzlePlayerUnit
+--- @param fleetVO BattleFleetVO: 舰队VO
+--- @return nil
+--- 设置FleetVO并获取卡牌解谜组件
+function BattleCardPuzzlePlayerUnit.SetFleetVO(self, fleetVO)
+	BattleCardPuzzlePlayerUnit.super.SetFleetVO(self, fleetVO)
 
-	arg_13_0._fleetCardPuzzleComponent = arg_13_1:GetCardPuzzleComponent()
+	self._fleetCardPuzzleComponent = fleetVO:GetCardPuzzleComponent()
 end
 
-function var_0_9.LeaderSetting(arg_14_0)
-	arg_14_0._warningValue = 1
+--- @class BattleCardPuzzlePlayerUnit
+--- @return nil
+--- 旗舰设定：warningValue设为1
+function BattleCardPuzzlePlayerUnit.LeaderSetting(self)
+	self._warningValue = 1
 end
 
-function var_0_9.SetMainFleetUnit(arg_15_0, arg_15_1)
-	arg_15_0._isMainFleetUnit = true
+--- @class BattleCardPuzzlePlayerUnit
+--- @param isMainStatic boolean: 是否仍是主舰队
+--- @return nil
+--- 设置为主舰队单位
+function BattleCardPuzzlePlayerUnit.SetMainFleetUnit(self, isMainStatic)
+	self._isMainFleetUnit = true
 
-	arg_15_0:SetMainUnitStatic(true)
+	self:SetMainUnitStatic(true)
 
-	arg_15_0._mainUnitWarningValue = 1
+	self._mainUnitWarningValue = 1
 end
 
-function var_0_9.CheckWeaponInitial(arg_16_0)
+--- @class BattleCardPuzzlePlayerUnit
+--- @return nil
+--- 检查武器初始冷却(卡牌模式不执行)
+function BattleCardPuzzlePlayerUnit.CheckWeaponInitial(self)
 	return
 end
 
-function var_0_9.setWeapon(arg_17_0)
-	local var_17_0 = arg_17_0._tmpData.default_equip
+--- @class BattleCardPuzzlePlayerUnit
+--- @return nil
+--- 设置武器：从default_equip列表读取武器配置并创建WeaponUnit
+--- 注意：原代码中weaponType变量未定义，可能存在bug
+function BattleCardPuzzlePlayerUnit.setWeapon(self)
+	local defaultEquipList = self._tmpData.default_equip
 
-	for iter_17_0, iter_17_1 in ipairs(var_17_0) do
-		if iter_17_1 ~= 0 then
-			local var_17_1 = var_0_1.GetWeaponDataFromID(iter_17_1)
+	for _, equipID in ipairs(defaultEquipList) do
+		if equipID ~= 0 then
+			local weaponData = BattleDataFunction.GetWeaponDataFromID(equipID)
 
-			for iter_17_2, iter_17_3 in ipairs(var_17_1) do
-				if iter_17_3 ~= -1 then
-					local var_17_2 = var_0_0.Battle.BattleDataFunction.CreateWeaponUnit(iter_17_3, arg_17_0, nil, iter_17_0)
+			for _, weaponID in ipairs(weaponData) do
+				if weaponID ~= -1 then
+					local weapon = ys.Battle.BattleDataFunction.CreateWeaponUnit(weaponID, self, nil, equipID)
 
-					arg_17_0._totalWeapon[#arg_17_0._totalWeapon + 1] = var_17_2
+					self._totalWeapon[#self._totalWeapon + 1] = weapon
 
-					if weaponType == var_0_4.EquipmentType.STRIKE_AIRCRAFT then
+					if weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
 						-- block empty
 					else
-						assert(#var_17_1 < 2, "自动武器一组不允许配置多个")
-						arg_17_0:AddAutoWeapon(var_17_2)
+						assert(#weaponData < 2, "自动武器一组不允许配置多个")
+						self:AddAutoWeapon(weapon)
 					end
 
-					if weaponType == var_0_4.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == var_0_4.EquipmentType.STRIKE_AIRCRAFT then
-						arg_17_0._hiveList[#arg_17_0._hiveList + 1] = var_17_2
+					if weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+						self._hiveList[#self._hiveList + 1] = weapon
 					end
 
-					if weaponType == var_0_4.EquipmentType.ANTI_AIR then
-						arg_17_0._AAList[#arg_17_0._AAList + 1] = var_17_2
+					if weaponType == BattleConst.EquipmentType.ANTI_AIR then
+						self._AAList[#self._AAList + 1] = weapon
 					end
 				end
 			end

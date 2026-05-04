@@ -1,123 +1,171 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleTargetChoise
-local var_0_3 = var_0_0.Battle.BattleDataFunction
-local var_0_4 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattlePatternFunnelUnit = class("BattlePatternFunnelUnit", var_0_0.Battle.BattleAircraftUnit)
-var_0_0.Battle.BattlePatternFunnelUnit.__name = "BattlePatternFunnelUnit"
+ys.Battle.BattlePatternFunnelUnit = class("BattlePatternFunnelUnit", ys.Battle.BattleAircraftUnit)
+ys.Battle.BattlePatternFunnelUnit.__name = "BattlePatternFunnelUnit"
 
-local var_0_5 = var_0_0.Battle.BattlePatternFunnelUnit
+local BattlePatternFunnelUnit = ys.Battle.BattlePatternFunnelUnit
 
-var_0_5.STOP_STATE = "STOP_STATE"
-var_0_5.MOVE_STATE = "MOVE_STATE"
-var_0_5.CRASH_STATE = "CRASH_STATE"
+BattlePatternFunnelUnit.STOP_STATE = "STOP_STATE"
+BattlePatternFunnelUnit.MOVE_STATE = "MOVE_STATE"
+BattlePatternFunnelUnit.CRASH_STATE = "CRASH_STATE"
 
-function var_0_5.Ctor(arg_1_0, arg_1_1)
-	var_0_5.super.Ctor(arg_1_0, arg_1_1)
+--- @class BattlePatternFunnelUnit
+--- @param UID number: 单位唯一ID
+--- @return nil
+--- 构造函数：设置方向为左、类型为FUNNEL_UNIT，创建MoveComponent
+function BattlePatternFunnelUnit.Ctor(self, UID)
+	BattlePatternFunnelUnit.super.Ctor(self, UID)
 
-	arg_1_0._untDir = var_0_0.Battle.BattleConst.UnitDir.LEFT
-	arg_1_0._type = var_0_0.Battle.BattleConst.UnitType.FUNNEL_UNIT
-	arg_1_0._move = var_0_0.Battle.MoveComponent.New()
+	self._untDir = ys.Battle.BattleConst.UnitDir.LEFT
+	self._type = ys.Battle.BattleConst.UnitType.FUNNEL_UNIT
+	self._move = ys.Battle.MoveComponent.New()
 end
 
-function var_0_5.Update(arg_2_0, arg_2_1)
-	arg_2_0:updatePatrol(arg_2_1)
-	arg_2_0:UpdateWeapon()
-	arg_2_0:updatePosition()
+--- @class BattlePatternFunnelUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 图案浮游炮的Update函数：更新巡逻、武器和位置
+function BattlePatternFunnelUnit.Update(self, timeStamp)
+	self:updatePatrol(timeStamp)
+	self:UpdateWeapon()
+	self:updatePosition()
 end
 
-function var_0_5.OnMotherDead(arg_3_0)
-	arg_3_0:onDead()
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 当母单位死亡时调用：自身进入死亡状态
+function BattlePatternFunnelUnit.OnMotherDead(self)
+	self:onDead()
 end
 
-function var_0_5.updateExist(arg_4_0)
-	if not arg_4_0._existStartTime then
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 检查浮游炮是否超过存在时间，超过则进入CRASH状态
+function BattlePatternFunnelUnit.updateExist(self)
+	if not self._existStartTime then
 		return
 	end
 
-	if arg_4_0._existStartTime + arg_4_0._existDuration < pg.TimeMgr.GetInstance():GetCombatTime() then
-		arg_4_0:changePartolState(var_0_5.CRASH_STATE)
+	if self._existStartTime + self._existDuration < pg.TimeMgr.GetInstance():GetCombatTime() then
+		self:changePartolState(BattlePatternFunnelUnit.CRASH_STATE)
 	end
 end
 
-function var_0_5.UpdateWeapon(arg_5_0)
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0:GetWeapon()) do
-		iter_5_1:Update()
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 更新所有武器
+function BattlePatternFunnelUnit.UpdateWeapon(self)
+	for _, weapon in ipairs(self:GetWeapon()) do
+		weapon:Update()
 	end
 end
 
-function var_0_5.SetMotherUnit(arg_6_0, arg_6_1)
-	var_0_5.super.SetMotherUnit(arg_6_0, arg_6_1)
+--- @class BattlePatternFunnelUnit
+--- @param mother BattleUnit: 母单位
+--- @return nil
+--- 设置母单位后，根据敌对IFF获取活动边界
+function BattlePatternFunnelUnit.SetMotherUnit(self, mother)
+	BattlePatternFunnelUnit.super.SetMotherUnit(self, mother)
 
-	local var_6_0 = arg_6_0:GetIFF() * -1
+	local hostileIFF = self:GetIFF() * -1
 
-	arg_6_0._upperBound, arg_6_0._lowerBound, arg_6_0._leftBound, arg_6_0._rightBound = var_0_0.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(var_6_0)
+	self._upperBound, self._lowerBound, self._leftBound, self._rightBound = ys.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(hostileIFF)
 end
 
-function var_0_5.SetTemplate(arg_7_0, arg_7_1)
-	var_0_5.super.SetTemplate(arg_7_0, arg_7_1)
+--- @class BattlePatternFunnelUnit
+--- @param tmpData table: 模板数据(aircraft_template)
+--- @return nil
+--- 设置模板数据：读取浮游炮存在时间
+function BattlePatternFunnelUnit.SetTemplate(self, tmpData)
+	BattlePatternFunnelUnit.super.SetTemplate(self, tmpData)
 
-	arg_7_0._existDuration = arg_7_1.funnel_behavior.exist
+	self._existDuration = tmpData.funnel_behavior.exist
 end
 
-function var_0_5.changePartolState(arg_8_0, arg_8_1)
-	if arg_8_1 == var_0_5.MOVE_STATE then
-		arg_8_0:changeToMoveState()
+--- @class BattlePatternFunnelUnit
+--- @param state string: 目标巡逻状态
+--- @return nil
+--- 切换巡逻状态：仅处理MOVE_STATE的切换
+function BattlePatternFunnelUnit.changePartolState(self, state)
+	if state == BattlePatternFunnelUnit.MOVE_STATE then
+		self:changeToMoveState()
 	end
 
-	arg_8_0._portalState = arg_8_1
+	self._portalState = state
 end
 
-function var_0_5.AddCreateTimer(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_0._currentState = arg_9_0.STATE_CREATE
-	arg_9_0._speedDir = arg_9_1
-	arg_9_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(30)
+--- @class BattlePatternFunnelUnit
+--- @param direction Vector3: 创建时的飞行方向
+--- @param delay number: 创建后延迟巡逻时间(此处固定0.5)
+--- @return nil
+--- 添加创建计时器：初始以30速度飞出，0.5秒后进入MOVE巡逻状态
+function BattlePatternFunnelUnit.AddCreateTimer(self, direction, delay)
+	self._currentState = self.STATE_CREATE
+	self._speedDir = direction
+	self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(30)
 
-	local function var_9_0()
-		arg_9_0._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_9_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(arg_9_0._tmpData.speed)
+	local function onTimerEnds()
+		self._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(self._tmpData.speed)
 
-		arg_9_0:changePartolState(var_0_5.MOVE_STATE)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_9_0._createTimer)
+		self:changePartolState(BattlePatternFunnelUnit.MOVE_STATE)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._createTimer)
 
-		arg_9_0._createTimer = nil
+		self._createTimer = nil
 	end
 
-	arg_9_0.updatePatrol = arg_9_0._updateCreate
-	arg_9_0._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, 0.5, var_9_0)
+	self.updatePatrol = self._updateCreate
+	self._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, 0.5, onTimerEnds)
 end
 
-function var_0_5.updatePosition(arg_11_0)
-	arg_11_0._pos = arg_11_0._pos + arg_11_0._speed
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 位置更新：当前位置 += 当前速度
+function BattlePatternFunnelUnit.updatePosition(self)
+	self._pos = self._pos + self._speed
 end
 
-function var_0_5._updateCreate(arg_12_0)
-	arg_12_0:UpdateSpeed()
-	arg_12_0:updatePosition()
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 创建阶段的更新：更新速度和位置
+function BattlePatternFunnelUnit._updateCreate(self)
+	self:UpdateSpeed()
+	self:updatePosition()
 end
 
-function var_0_5.changeToMoveState(arg_13_0)
-	arg_13_0._currentState = var_0_5.MOVE_STATE
+--- @class BattlePatternFunnelUnit
+--- @return nil
+--- 切换到移动状态：根据funnel_behavior.AI创建AutoPilot并关联motherUnit作为HiveUnit
+function BattlePatternFunnelUnit.changeToMoveState(self)
+	self._currentState = BattlePatternFunnelUnit.MOVE_STATE
 
-	local var_13_0 = var_0_3.GetAITmpDataFromID(arg_13_0._tmpData.funnel_behavior.AI)
-	local var_13_1 = var_0_0.Battle.AutoPilot.New(arg_13_0, var_13_0)
+	-- 从模板获取AI数据，创建AutoPilot
+	local aiTmpData = BattleDataFunction.GetAITmpDataFromID(self._tmpData.funnel_behavior.AI)
+	local autoPilotAI = ys.Battle.AutoPilot.New(self, aiTmpData)
 
-	arg_13_0._move:ImmuneMaxAreaLimit(true)
-	arg_13_0._move:CancelFormationCtrl()
+	self._move:ImmuneMaxAreaLimit(true)
+	self._move:CancelFormationCtrl()
 
-	arg_13_0._autoPilotAI = var_13_1
+	self._autoPilotAI = autoPilotAI
 
-	arg_13_0._autoPilotAI:SetHiveUnit(arg_13_0._motherUnit)
+	self._autoPilotAI:SetHiveUnit(self._motherUnit)
 
-	arg_13_0.updatePatrol = arg_13_0._updateMove
+	self.updatePatrol = self._updateMove
 end
 
-function var_0_5._updateMove(arg_14_0, arg_14_1)
-	arg_14_0._move:Update()
-	arg_14_0._speed:Copy(arg_14_0._move:GetSpeed())
-	arg_14_0._speed:Mul(arg_14_0._velocity * arg_14_0:GetSpeedRatio())
-	arg_14_0:updatePosition()
+--- @class BattlePatternFunnelUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 移动状态的每帧更新：由MoveComponent和AutoPilot控制移动，乘以速度比
+function BattlePatternFunnelUnit._updateMove(self, timeStamp)
+	self._move:Update()
+	self._speed:Copy(self._move:GetSpeed())
+	self._speed:Mul(self._velocity * self:GetSpeedRatio())
+	self:updatePosition()
 end

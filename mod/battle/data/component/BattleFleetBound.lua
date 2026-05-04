@@ -1,89 +1,98 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = class("BattleFleetBound")
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleFleetBound = class("BattleFleetBound")
 
-var_0_0.Battle.BattleFleetBound = var_0_2
-var_0_2.__name = "BattleFleetBound"
+ys.Battle.BattleFleetBound = BattleFleetBound
+BattleFleetBound.__name = "BattleFleetBound"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._iff = arg_1_1
+--- @class BattleFleetBound
+--- @param iff number 敌我识别码
+--- 舰队边界组件：管理战场各类边界数值
+function BattleFleetBound.Ctor(self, iff)
+	self._iff = iff
 end
 
-function var_0_2.Dispose(arg_2_0)
-	arg_2_0._iff = nil
+function BattleFleetBound.Dispose(self)
+	self._iff = nil
 end
 
-function var_0_2.GetBound(arg_3_0)
-	return arg_3_0._upperBound, arg_3_0._lowerBound, arg_3_0._absoluteLeft, arg_3_0._absoluteRight, arg_3_0._bufferLeft, arg_3_0._bufferRight
+--- 获取所有边界值：上界、下界、绝对左界、绝对右界、缓冲左界、缓冲右界
+function BattleFleetBound.GetBound(self)
+	return self._upperBound, self._lowerBound, self._absoluteLeft, self._absoluteRight, self._bufferLeft, self._bufferRight
 end
 
-function var_0_2.GetAbsoluteRight(arg_4_0)
-	return arg_4_0._absoluteRight
+function BattleFleetBound.GetAbsoluteRight(self)
+	return self._absoluteRight
 end
 
-function var_0_2.ConfigAreaData(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._totalArea = setmetatable({}, {
-		__index = arg_5_1
+--- 根据关卡配置区域数据初始化边界
+function BattleFleetBound.ConfigAreaData(self, totalArea, playerArea)
+	self._totalArea = setmetatable({}, {
+		__index = totalArea
 	})
-	arg_5_0._playerArea = setmetatable({}, {
-		__index = arg_5_2
+	self._playerArea = setmetatable({}, {
+		__index = playerArea
 	})
-	arg_5_0._totalLeftBound = arg_5_0._totalArea[1]
-	arg_5_0._totalRightBound = arg_5_0._totalArea[1] + arg_5_0._totalArea[3]
-	arg_5_0._totalUpperBound = arg_5_0._totalArea[2] + arg_5_0._totalArea[4]
-	arg_5_0._totalLowerBound = arg_5_0._totalArea[2]
-	arg_5_0._upperBound = arg_5_0._playerArea[2] + arg_5_0._playerArea[4]
-	arg_5_0._lowerBound = arg_5_0._playerArea[2]
-	arg_5_0._middleLine = arg_5_0._playerArea[1] + arg_5_0._playerArea[3]
+	self._totalLeftBound = self._totalArea[1]
+	self._totalRightBound = self._totalArea[1] + self._totalArea[3]
+	self._totalUpperBound = self._totalArea[2] + self._totalArea[4]
+	self._totalLowerBound = self._totalArea[2]
+	self._upperBound = self._playerArea[2] + self._playerArea[4]
+	self._lowerBound = self._playerArea[2]
+	self._middleLine = self._playerArea[1] + self._playerArea[3]
 end
 
-function var_0_2.SwtichCommon(arg_6_0)
-	if arg_6_0._iff == var_0_1.FRIENDLY_CODE then
-		arg_6_0._absoluteLeft = arg_6_0._playerArea[1]
-		arg_6_0._absoluteRight = var_0_1.MaxRight
-		arg_6_0._bufferLeft = var_0_1.MaxLeft
-		arg_6_0._bufferRight = arg_6_0._middleLine
-	elseif arg_6_0._iff == var_0_1.FOE_CODE then
-		arg_6_0._absoluteLeft = arg_6_0._middleLine
-		arg_6_0._absoluteRight = arg_6_0._totalRightBound
-		arg_6_0._bufferLeft = arg_6_0._middleLine
-		arg_6_0._bufferRight = var_0_1.MaxRight
+--- 通用模式边界切换：友方占据左半场，敌方占据右半场
+function BattleFleetBound.SwtichCommon(self)
+	if self._iff == BattleConfig.FRIENDLY_CODE then
+		self._absoluteLeft = self._playerArea[1]
+		self._absoluteRight = BattleConfig.MaxRight
+		self._bufferLeft = BattleConfig.MaxLeft
+		self._bufferRight = self._middleLine
+	elseif self._iff == BattleConfig.FOE_CODE then
+		self._absoluteLeft = self._middleLine
+		self._absoluteRight = self._totalRightBound
+		self._bufferLeft = self._middleLine
+		self._bufferRight = BattleConfig.MaxRight
 	end
 end
 
-function var_0_2.SwtichDuelAggressive(arg_7_0)
-	if arg_7_0._iff == var_0_1.FRIENDLY_CODE then
-		arg_7_0._absoluteLeft = arg_7_0._middleLine
-		arg_7_0._absoluteRight = arg_7_0._totalRightBound
-		arg_7_0._bufferLeft = arg_7_0._middleLine
-		arg_7_0._bufferRight = var_0_1.MaxRight
-	elseif arg_7_0._iff == var_0_1.FOE_CODE then
-		arg_7_0._absoluteLeft = arg_7_0._playerArea[1]
-		arg_7_0._absoluteRight = var_0_1.MaxRight
-		arg_7_0._bufferLeft = var_0_1.MaxLeft
-		arg_7_0._bufferRight = arg_7_0._middleLine
+--- 决斗进攻模式边界切换：友方占据右半场，敌方在左半场
+function BattleFleetBound.SwtichDuelAggressive(self)
+	if self._iff == BattleConfig.FRIENDLY_CODE then
+		self._absoluteLeft = self._middleLine
+		self._absoluteRight = self._totalRightBound
+		self._bufferLeft = self._middleLine
+		self._bufferRight = BattleConfig.MaxRight
+	elseif self._iff == BattleConfig.FOE_CODE then
+		self._absoluteLeft = self._playerArea[1]
+		self._absoluteRight = BattleConfig.MaxRight
+		self._bufferLeft = BattleConfig.MaxLeft
+		self._bufferRight = self._middleLine
 	end
 end
 
-function var_0_2.SwtichDBRGL(arg_8_0)
-	if arg_8_0._iff == var_0_1.FRIENDLY_CODE then
-		arg_8_0._absoluteLeft = arg_8_0._playerArea[1]
-		arg_8_0._absoluteRight = arg_8_0._middleLine
-		arg_8_0._bufferLeft = var_0_1.MaxLeft
-		arg_8_0._bufferRight = var_0_1.MaxRight
-	elseif arg_8_0._iff == var_0_1.FOE_CODE then
-		arg_8_0._absoluteLeft = arg_8_0._middleLine
-		arg_8_0._absoluteRight = arg_8_0._totalRightBound
-		arg_8_0._bufferLeft = arg_8_0._middleLine
-		arg_8_0._bufferRight = var_0_1.MaxRight
+--- DBRGL模式边界切换：友方限制在中线内，允许跨全场
+function BattleFleetBound.SwtichDBRGL(self)
+	if self._iff == BattleConfig.FRIENDLY_CODE then
+		self._absoluteLeft = self._playerArea[1]
+		self._absoluteRight = self._middleLine
+		self._bufferLeft = BattleConfig.MaxLeft
+		self._bufferRight = BattleConfig.MaxRight
+	elseif self._iff == BattleConfig.FOE_CODE then
+		self._absoluteLeft = self._middleLine
+		self._absoluteRight = self._totalRightBound
+		self._bufferLeft = self._middleLine
+		self._bufferRight = BattleConfig.MaxRight
 	end
 end
 
-function var_0_2.FixCardPuzzleInput(arg_9_0, arg_9_1)
-	local var_9_0 = math.clamp(arg_9_1.x, arg_9_0._absoluteLeft, arg_9_0._absoluteRight)
-	local var_9_1 = math.clamp(arg_9_1.z, arg_9_0._lowerBound, arg_9_0._upperBound)
+--- 卡牌谜题输入修正：将输入位置限制在合法边界内
+function BattleFleetBound.FixCardPuzzleInput(self, position)
+	local clampedX = math.clamp(position.x, self._absoluteLeft, self._absoluteRight)
+	local clampedZ = math.clamp(position.z, self._lowerBound, self._upperBound)
 
-	arg_9_1:Set(var_9_0, 0, var_9_1)
+	position:Set(clampedX, 0, clampedZ)
 end

@@ -1,99 +1,119 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = class("BattleTeamVO")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleTeamVO = class("BattleTeamVO")
 
-var_0_0.Battle.BattleTeamVO = var_0_6
-var_0_6.__name = "BattleTeamVO"
--- TODO
-function var_0_6.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._teamID = arg_1_1
+ys.Battle.BattleTeamVO = BattleTeamVO
+BattleTeamVO.__name = "BattleTeamVO"
 
-	arg_1_0:init()
+--- @class BattleTeamVO
+--- @param teamID number 队伍ID
+--- @return nil
+--- 敌方小队VO的构造函数
+function BattleTeamVO.Ctor(self, teamID)
+	self._teamID = teamID
+
+	self:init()
 end
 
-function var_0_6.UpdateMotion(arg_2_0)
-	if arg_2_0._motionReferenceUnit then
-		arg_2_0._motionVO:UpdatePos(arg_2_0._motionReferenceUnit)
-		arg_2_0._motionVO:UpdateSpeed(arg_2_0._motionReferenceUnit:GetSpeed())
+--- @return nil
+--- 更新小队整体位置（基于motionReferenceUnit）
+function BattleTeamVO.UpdateMotion(self)
+	if self._motionReferenceUnit then
+		self._motionVO:UpdatePos(self._motionReferenceUnit)
+		self._motionVO:UpdateSpeed(self._motionReferenceUnit:GetSpeed())
 	end
 end
 
-function var_0_6.IsFatalDamage(arg_3_0)
-	return arg_3_0._count == 0
+--- @return boolean
+--- 小队是否已全灭（存活单位数为0）
+function BattleTeamVO.IsFatalDamage(self)
+	return self._count == 0
 end
 
-function var_0_6.AppendUnit(arg_4_0, arg_4_1)
-	arg_4_1:SetMotion(arg_4_0._motionVO)
+--- @param unit BattleUnit 敌方单位
+--- @return nil
+--- 添加单位到小队，刷新阵型
+function BattleTeamVO.AppendUnit(self, unit)
+	unit:SetMotion(self._motionVO)
 
-	arg_4_0._enemyList[#arg_4_0._enemyList + 1] = arg_4_1
-	arg_4_0._count = arg_4_0._count + 1
+	self._enemyList[#self._enemyList + 1] = unit
+	self._count = self._count + 1
 
-	arg_4_0:refreshTeamFormation()
-	arg_4_1:SetTeamVO(arg_4_0)
+	self:refreshTeamFormation()
+	unit:SetTeamVO(self)
 end
 
-function var_0_6.RemoveUnit(arg_5_0, arg_5_1)
-	local var_5_0 = 0
+--- @param unit BattleUnit 要移除的单位
+--- @return nil
+--- 从小队中移除单位，清除其TeamVO引用
+function BattleTeamVO.RemoveUnit(self, unit)
+	local removeIndex = 0
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._enemyList) do
-		if iter_5_1 == arg_5_1 then
-			var_5_0 = iter_5_0
+	for index, enemy in ipairs(self._enemyList) do
+		if enemy == unit then
+			removeIndex = index
 
 			break
 		end
 	end
 
-	table.remove(arg_5_0._enemyList, var_5_0)
+	table.remove(self._enemyList, removeIndex)
 
-	arg_5_0._count = arg_5_0._count - 1
+	self._count = self._count - 1
 
-	arg_5_1:SetTeamVO(nil)
-	arg_5_0:refreshTeamFormation()
+	unit:SetTeamVO(nil)
+	self:refreshTeamFormation()
 end
 
-function var_0_6.init(arg_6_0)
-	arg_6_0._enemyList = {}
-	arg_6_0._motionVO = var_0_0.Battle.BattleFleetMotionVO.New()
-	arg_6_0._count = 0
+--- @return nil
+--- 初始化小队数据
+function BattleTeamVO.init(self)
+	self._enemyList = {}
+	self._motionVO = ys.Battle.BattleFleetMotionVO.New()
+	self._count = 0
 end
 
-function var_0_6.refreshTeamFormation(arg_7_0)
-	local var_7_0 = 1
-	local var_7_1 = #arg_7_0._enemyList
-	local var_7_2 = {}
+--- @return nil
+--- 刷新小队阵型：根据pos_offset计算每个单位的位置偏移
+--- 第一个单位作为motionReferenceUnit，不跟随编队
+function BattleTeamVO.refreshTeamFormation(self)
+	local posIndex = 1
+	local enemyCount = #self._enemyList
+	local indexList = {}
 
-	while var_7_0 <= var_7_1 do
-		var_7_2[#var_7_2 + 1] = var_7_0
-		var_7_0 = var_7_0 + 1
+	while posIndex <= enemyCount do
+		indexList[#indexList + 1] = posIndex
+		posIndex = posIndex + 1
 	end
 
-	local var_7_3 = var_0_5.GetFormationTmpDataFromID(var_0_4.FORMATION_ID).pos_offset
+	local posOffset = BattleDataFunction.GetFormationTmpDataFromID(BattleConfig.FORMATION_ID).pos_offset
 
-	arg_7_0._enemyList = var_0_5.SortFleetList(var_7_2, arg_7_0._enemyList)
+	self._enemyList = BattleDataFunction.SortFleetList(indexList, self._enemyList)
 
-	local var_7_4 = var_0_4.BornOffset
+	local bornOffset = BattleConfig.BornOffset
 
-	for iter_7_0, iter_7_1 in ipairs(arg_7_0._enemyList) do
-		if iter_7_0 == 1 then
-			arg_7_0._motionReferenceUnit = iter_7_1
+	for index, enemy in ipairs(self._enemyList) do
+		if index == 1 then
+			self._motionReferenceUnit = enemy
 
-			iter_7_1:CancelFollowTeam()
+			enemy:CancelFollowTeam()
 		else
-			local var_7_5 = var_7_3[iter_7_0]
+			local offset = posOffset[index]
 
-			iter_7_1:UpdateFormationOffset(Vector3(var_7_5.x, var_7_5.y, var_7_5.z) + var_7_4 * (iter_7_0 - 1))
+			enemy:UpdateFormationOffset(Vector3(offset.x, offset.y, offset.z) + bornOffset * (index - 1))
 		end
 	end
 end
 
-function var_0_6.Dispose(arg_8_0)
-	arg_8_0._enemyList = nil
-	arg_8_0._motionReferenceUnit = nil
-	arg_8_0._motionVO = nil
+--- @return nil
+function BattleTeamVO.Dispose(self)
+	self._enemyList = nil
+	self._motionReferenceUnit = nil
+	self._motionVO = nil
 end

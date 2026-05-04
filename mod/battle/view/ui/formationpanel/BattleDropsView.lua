@@ -1,218 +1,266 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = class("BattleDropsView")
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDropsView = class("BattleDropsView")
 
-var_0_0.Battle.BattleDropsView = var_0_2
-var_0_2.__name = "BattleDropsView"
-var_0_2.FLOAT_DURATION = 0.4
+ys.Battle.BattleDropsView = BattleDropsView
+BattleDropsView.__name = "BattleDropsView"
+-- 掉落物飘向图标的动画持续时间
+BattleDropsView.FLOAT_DURATION = 0.4
 
-function var_0_2.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._container = arg_1_2
-	arg_1_0._containerTF = arg_1_0._container.transform
+--- 战斗掉落物飘动动画视图
+--- 当敌舰掉落资源时，在3D场景位置生成金币图标，飘向UI资源计数位置
+--- @param go GameObject 掉落视图的GameObject
+--- @param container Transform 用于容纳飘动物体的容器
+function BattleDropsView.Ctor(self, go, container)
+	self._go = go
+	self._tf = go.transform
+	self._container = container
+	self._containerTF = self._container.transform
 
-	arg_1_0:init()
+	self:init()
 end
 
-function var_0_2.SetActive(arg_2_0, arg_2_1)
-	setActive(arg_2_0._go, arg_2_1)
+--- 显示/隐藏掉落视图
+--- @param isActive boolean
+function BattleDropsView.SetActive(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_2.AddCamera(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._camera = arg_3_1
-	arg_3_0._uiCamera = arg_3_2
-	arg_3_0._cameraTF = arg_3_0._camera.transform
+--- 添加相机引用，用于3D坐标到UI坐标的转换
+--- @param camera Camera 3D场景相机
+--- @param uiCamera Camera UI相机
+function BattleDropsView.AddCamera(self, camera, uiCamera)
+	self._camera = camera
+	self._uiCamera = uiCamera
+	self._cameraTF = self._camera.transform
 
-	local var_3_0 = arg_3_0._cameraTF.localPosition
+	local cameraPos = self._cameraTF.localPosition
 
-	arg_3_0._cameraSrcX = var_3_0.x
-	arg_3_0._cameraSrcZ = var_3_0.z
-	arg_3_0._cameraXRotate = arg_3_0._cameraTF.localEulerAngles.x
+	-- 记录相机初始位置，用于追踪相机移动
+	self._cameraSrcX = cameraPos.x
+	self._cameraSrcZ = cameraPos.z
+	self._cameraXRotate = self._cameraTF.localEulerAngles.x
 end
 
-function var_0_2.RefreshScaleRate(arg_4_0)
-	local var_4_0 = UnityEngine.Screen.width
-	local var_4_1 = UnityEngine.Screen.height
-	local var_4_2 = arg_4_0._camera:ScreenToWorldPoint(Vector3(var_4_0, var_4_1, 0))
+--- 刷新屏幕缩放比例
+function BattleDropsView.RefreshScaleRate(self)
+	local screenWidth = UnityEngine.Screen.width
+	local screenHeight = UnityEngine.Screen.height
+	local worldPoint = self._camera:ScreenToWorldPoint(Vector3(screenWidth, screenHeight, 0))
 
-	arg_4_0._xScale = var_4_0 / var_4_2.x
-	arg_4_0._yScale = var_4_1 / var_4_2.y
+	self._xScale = screenWidth / worldPoint.x
+	self._yScale = screenHeight / worldPoint.y
 end
 
-function var_0_2.Update(arg_5_0)
-	if #arg_5_0._resourceList == #arg_5_0._resourcePool then
+--- 更新容器位置以跟随相机移动
+function BattleDropsView.Update(self)
+	if #self._resourceList == #self._resourcePool then
 		return
 	end
 
-	arg_5_0:updateContainerPosition()
+	self:updateContainerPosition()
 end
 
-function var_0_2.init(arg_6_0)
-	arg_6_0._resourceIcon = arg_6_0._tf:Find("resourceIcon")
-	arg_6_0._resourceText = arg_6_0._tf:Find("resourceText"):GetComponent(typeof(Text))
-	arg_6_0._resourceGO = arg_6_0._containerTF:Find("spin_gold")
+--- 初始化掉落视图的各项引用和对象池
+function BattleDropsView.init(self)
+	self._resourceIcon = self._tf:Find("resourceIcon")
+	self._resourceText = self._tf:Find("resourceText"):GetComponent(typeof(Text))
+	self._resourceGO = self._containerTF:Find("spin_gold")
 
-	local var_6_0 = arg_6_0._tf.rect.width / 2
-	local var_6_1 = arg_6_0._tf.rect.height / 2
+	-- 计算图标中心位置
+	local halfWidth = self._tf.rect.width / 2
+	local halfHeight = self._tf.rect.height / 2
 
-	arg_6_0._resourceIconX = arg_6_0._resourceIcon.transform.anchoredPosition.x + var_6_0
-	arg_6_0._resourceIconY = arg_6_0._resourceIcon.transform.anchoredPosition.y + var_6_1
-	arg_6_0._itemPool = {}
-	arg_6_0._resourcePool = {}
-	arg_6_0._resourceList = {}
-	arg_6_0._itemCount = 0
-	arg_6_0._resourceCount = 0
+	self._resourceIconX = self._resourceIcon.transform.anchoredPosition.x + halfWidth
+	self._resourceIconY = self._resourceIcon.transform.anchoredPosition.y + halfHeight
+	self._itemPool = {}
+	self._resourcePool = {}
+	self._resourceList = {}
+	self._itemCount = 0
+	self._resourceCount = 0
 
-	arg_6_0:updateCountText(arg_6_0._resourceText)
+	self:updateCountText(self._resourceText)
 
-	arg_6_0._timerList = {}
+	self._timerList = {}
 
-	local var_6_2 = {}
+	-- 预热对象池：pop再push 5个资源图标
+	local tempList = {}
 
-	for iter_6_0 = 1, 5 do
-		table.insert(var_6_2, arg_6_0:pop(arg_6_0._resourcePool))
+	for i = 1, 5 do
+		table.insert(tempList, self:pop(self._resourcePool))
 	end
 
-	for iter_6_1 = 1, 5 do
-		arg_6_0:push(var_6_2[iter_6_1], arg_6_0._resourcePool)
+	for i = 1, 5 do
+		self:push(tempList[i], self._resourcePool)
 	end
 
-	local var_6_3
+	local _ = nil -- 未使用的变量（用于保持某些引用）
 end
 
-function var_0_2.pop(arg_7_0, arg_7_1)
-	local var_7_0
+--- 从对象池中取出一个GameObject（池为空则Instantiate新的）
+--- @param pool table 对象池列表
+--- @return GameObject
+function BattleDropsView.pop(self, pool)
+	local obj
 
-	if #arg_7_1 == 0 then
-		if arg_7_1 == arg_7_0._resourcePool then
-			var_7_0 = Object.Instantiate(arg_7_0._resourceGO, Vector3.zero, Quaternion.identity)
-			arg_7_0._resourceList[#arg_7_0._resourceList + 1] = var_7_0
+	if #pool == 0 then
+		if pool == self._resourcePool then
+			obj = Object.Instantiate(self._resourceGO, Vector3.zero, Quaternion.identity)
+			self._resourceList[#self._resourceList + 1] = obj
 		end
 
-		var_7_0.transform:SetParent(arg_7_0._go, false)
+		obj.transform:SetParent(self._go, false)
 	else
-		var_7_0 = arg_7_1[#arg_7_1]
-		arg_7_1[#arg_7_1] = nil
+		obj = pool[#pool]
+		pool[#pool] = nil
 	end
 
-	return var_7_0
+	return obj
 end
 
-function var_0_2.push(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1.transform.localScale = Vector3(0.35, 0.35, 0.35)
-	arg_8_1:GetComponent(typeof(Animator)).enabled = false
+--- 将GameObject归还到对象池
+--- @param obj GameObject 要归还的对象
+--- @param pool table 目标对象池
+function BattleDropsView.push(self, obj, pool)
+	obj.transform.localScale = Vector3(0.35, 0.35, 0.35)
+	obj:GetComponent(typeof(Animator)).enabled = false
 
-	SetActive(arg_8_1, false)
+	SetActive(obj, false)
 
-	arg_8_2[#arg_8_2 + 1] = arg_8_1
+	pool[#pool + 1] = obj
 end
 
-function var_0_2.updateCountText(arg_9_0, arg_9_1)
-	local var_9_0
+--- 更新计数文本（支持k格式缩写）
+--- @param textComp Text 文本组件
+function BattleDropsView.updateCountText(self, textComp)
+	local count
 
-	if arg_9_1 == arg_9_0._resourceText then
-		var_9_0 = arg_9_0._resourceCount
+	if textComp == self._resourceText then
+		count = self._resourceCount
 	end
 
-	if var_9_0 > 999 then
-		arg_9_1.text = string.format("%s%.1f%s", "x", var_9_0 / 1000, "k")
+	if count > 999 then
+		textComp.text = string.format("%s%.1f%s", "x", count / 1000, "k")
 	else
-		arg_9_1.text = string.format("%s%d", "x", var_9_0)
+		textComp.text = string.format("%s%d", "x", count)
 	end
 end
 
-function var_0_2.ShowDrop(arg_10_0, arg_10_1)
-	if #arg_10_0._resourceList == #arg_10_0._resourcePool then
-		arg_10_0:updateContainerPosition()
+--- 显示掉落物动画
+--- 从3D场景位置生成飘动物体，飞向UI图标位置
+--- @param dropData table 掉落数据，含scenePos（场景坐标）和drops.resourceCount
+function BattleDropsView.ShowDrop(self, dropData)
+	if #self._resourceList == #self._resourcePool then
+		self:updateContainerPosition()
 	end
 
-	local var_10_0 = var_0_0.Battle.BattleVariable.CameraPosToUICamera(arg_10_1.scenePos:Clone())
-	local var_10_1 = Vector3(var_10_0.x, var_10_0.y, 2)
-	local var_10_2 = arg_10_1.drops.resourceCount
-	local var_10_3, var_10_4 = math.modf(var_10_2 / var_0_1.RESOURCE_STEP)
+	-- 将3D场景坐标转换为UI坐标
+	local uiPos = ys.Battle.BattleVariable.CameraPosToUICamera(dropData.scenePos:Clone())
+	local startPos = Vector3(uiPos.x, uiPos.y, 2)
+	local resourceAmount = dropData.drops.resourceCount
+	-- 按RESOURCE_STEP拆分，整数部分一次一个完整step，余数单独处理
+	local fullSteps, remainder = math.modf(resourceAmount / BattleConfig.RESOURCE_STEP)
 
-	if var_10_4 > 0 then
-		arg_10_0:makeFloatAnima(var_10_1, arg_10_0._resourcePool, arg_10_0._resourceIconX, arg_10_0._resourceIconY, arg_10_0._resourceIcon, "_resourceCount", var_10_4 * var_0_1.RESOURCE_STEP, arg_10_0._resourceText, 0)
+	if remainder > 0 then
+		self:makeFloatAnima(startPos, self._resourcePool, self._resourceIconX, self._resourceIconY, self._resourceIcon, "_resourceCount", remainder * BattleConfig.RESOURCE_STEP, self._resourceText, 0)
 	end
 
-	while var_10_3 > 0 do
-		arg_10_0:makeFloatAnima(var_10_1, arg_10_0._resourcePool, arg_10_0._resourceIconX, arg_10_0._resourceIconY, arg_10_0._resourceIcon, "_resourceCount", var_0_1.RESOURCE_STEP, arg_10_0._resourceText, var_10_3)
+	while fullSteps > 0 do
+		self:makeFloatAnima(startPos, self._resourcePool, self._resourceIconX, self._resourceIconY, self._resourceIcon, "_resourceCount", BattleConfig.RESOURCE_STEP, self._resourceText, fullSteps)
 
-		var_10_3 = var_10_3 - 1
+		fullSteps = fullSteps - 1
 	end
 end
 
-function var_0_2.updateContainerPosition(arg_11_0)
-	local var_11_0 = arg_11_0._cameraTF.localPosition
+--- 更新容器位置（跟随相机移动做偏移）
+function BattleDropsView.updateContainerPosition(self)
+	local cameraPos = self._cameraTF.localPosition
 
-	arg_11_0._containerTF.localPosition = Vector3(arg_11_0._xScale * (arg_11_0._cameraSrcX - var_11_0.x), arg_11_0._yScale * (arg_11_0._cameraSrcZ - var_11_0.z), 0)
+	self._containerTF.localPosition = Vector3(self._xScale * (self._cameraSrcX - cameraPos.x), self._yScale * (self._cameraSrcZ - cameraPos.z), 0)
 end
 
-function var_0_2.makeFloatAnima(arg_12_0, arg_12_1, arg_12_2, arg_12_3, arg_12_4, arg_12_5, arg_12_6, arg_12_7, arg_12_8, arg_12_9)
-	local var_12_0 = arg_12_0:pop(arg_12_2)
-	local var_12_1 = var_12_0.transform
+--- 创建一个掉落物的飘动动画
+--- 1. 从场景位置出现并横向随机偏移 -> 2. 缩小并飞向图标 -> 3. 更新计数
+--- @param startPos Vector3 起始位置（UI坐标）
+--- @param pool table 对象池
+--- @param targetIconX number 图标X坐标
+--- @param targetIconY number 图标Y坐标
+--- @param iconTF Transform 资源图标Transform
+--- @param countField string 计数字段名（如"_resourceCount"）
+--- @param amount number 本次增加的数量
+--- @param textComp Text 计数文本组件
+--- @param stepIndex number 步进索引（控制动画顺序延迟）
+function BattleDropsView.makeFloatAnima(self, startPos, pool, targetIconX, targetIconY, iconTF, countField, amount, textComp, stepIndex)
+	local floatObj = self:pop(pool)
+	local floatTF = floatObj.transform
 
-	SetActive(var_12_0, true)
+	SetActive(floatObj, true)
 
-	var_12_1.position = arg_12_1
-	var_12_1.localPosition = var_12_1.localPosition - arg_12_0._containerTF.localPosition
+	floatTF.position = startPos
+	floatTF.localPosition = floatTF.localPosition - self._containerTF.localPosition
 
-	arg_12_0:Update()
-	var_12_1:SetParent(arg_12_0._container, false)
+	self:Update()
+	floatTF:SetParent(self._container, false)
 
-	local var_12_2 = math.random() * 200 - 100
-	local var_12_3 = math.random() * 200
+	-- 随机水平偏移
+	local randomX = math.random() * 200 - 100
+	local randomY = math.random() * 200
 
-	LeanTween.moveX(rtf(var_12_0), var_12_1.anchoredPosition.x + var_12_2, var_0_1.RESOURCE_STAY_DURATION + arg_12_9 * 0.05):setOnComplete(System.Action(function()
-		LeanTween.scale(go(var_12_0), Vector3(0.2, 0.2, 1), var_0_2.FLOAT_DURATION)
+	-- 第一阶段：水平随机飘移
+	LeanTween.moveX(rtf(floatObj), floatTF.anchoredPosition.x + randomX, BattleConfig.RESOURCE_STAY_DURATION + stepIndex * 0.05):setOnComplete(System.Action(function()
+		LeanTween.scale(go(floatObj), Vector3(0.2, 0.2, 1), BattleDropsView.FLOAT_DURATION)
 
-		local var_13_0 = Vector3(arg_12_3 - var_12_1.position.x, arg_12_4 - var_12_1.position.y, 0)
+		-- 计算飞向目标的偏移向量
+		local targetOffset = Vector3(targetIconX - floatTF.position.x, targetIconY - floatTF.position.y, 0)
 
-		var_12_1.localPosition = var_12_1.localPosition + arg_12_0._containerTF.localPosition
+		floatTF.localPosition = floatTF.localPosition + self._containerTF.localPosition
 
-		var_12_1:SetParent(arg_12_0._go, false)
-		LeanTween.move(rtf(var_12_0), var_13_0, var_0_2.FLOAT_DURATION):setOnComplete(System.Action(function()
-			arg_12_0:push(var_12_0, arg_12_2)
+		floatTF:SetParent(self._go, false)
+		-- 飞向图标
+		LeanTween.move(rtf(floatObj), targetOffset, BattleDropsView.FLOAT_DURATION):setOnComplete(System.Action(function()
+			self:push(floatObj, pool)
 
-			arg_12_5.transform.localScale = Vector3(0.35, 0.35, 0.35)
-			arg_12_0[arg_12_6] = arg_12_0[arg_12_6] + arg_12_7
+			iconTF.transform.localScale = Vector3(0.35, 0.35, 0.35)
+			self[countField] = self[countField] + amount
 
-			arg_12_0:updateCountText(arg_12_8)
-			LeanTween.scale(go(arg_12_5), Vector3(0.5, 0.5, 0.5), 0.12):setEase(LeanTweenType.easeOutExpo):setOnComplete(System.Action(function()
-				LeanTween.scale(go(arg_12_5), Vector3(0.35, 0.35, 0.35), 0.3)
+			self:updateCountText(textComp)
+			-- 图标弹跳效果
+			LeanTween.scale(go(iconTF), Vector3(0.5, 0.5, 0.5), 0.12):setEase(LeanTweenType.easeOutExpo):setOnComplete(System.Action(function()
+				LeanTween.scale(go(iconTF), Vector3(0.35, 0.35, 0.35), 0.3)
 			end))
 		end))
 	end))
 
-	local var_12_4 = var_12_3 / 200
+	-- 垂直弹跳动画
+	local bounceRatio = randomY / 200
 
-	LeanTween.moveY(rtf(var_12_0), var_12_1.anchoredPosition.y + var_12_3, 0.5 * var_12_4):setOnComplete(System.Action(function()
-		var_12_0:GetComponent("Animator").enabled = true
+	LeanTween.moveY(rtf(floatObj), floatTF.anchoredPosition.y + randomY, 0.5 * bounceRatio):setOnComplete(System.Action(function()
+		floatObj:GetComponent("Animator").enabled = true
 
-		LeanTween.moveY(rtf(var_12_0), var_12_1.anchoredPosition.y - var_12_3, 1.5 * var_12_4):setEase(LeanTweenType.easeOutBounce)
+		LeanTween.moveY(rtf(floatObj), floatTF.anchoredPosition.y - randomY, 1.5 * bounceRatio):setEase(LeanTweenType.easeOutBounce)
 	end))
 end
 
-function var_0_2.Dispose(arg_17_0)
-	for iter_17_0, iter_17_1 in pairs(arg_17_0._timerList) do
-		if iter_17_1 then
-			pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_17_0)
+--- 清理所有定时器和缓动动画
+function BattleDropsView.Dispose(self)
+	for timerID, _ in pairs(self._timerList) do
+		if _ then
+			pg.TimeMgr.GetInstance():RemoveBattleTimer(timerID)
 		end
 	end
 
-	for iter_17_2, iter_17_3 in ipairs(arg_17_0._resourceList) do
-		LeanTween.cancel(go(iter_17_3))
+	for _, obj in ipairs(self._resourceList) do
+		LeanTween.cancel(go(obj))
 	end
 
-	arg_17_0._timerList = nil
-	arg_17_0._go = nil
-	arg_17_0._resourceIcon = nil
-	arg_17_0._resourceText = nil
-	arg_17_0._itemIcon = nil
-	arg_17_0._itemText = nil
-	arg_17_0._camera = nil
-	arg_17_0._uiCamera = nil
+	self._timerList = nil
+	self._go = nil
+	self._resourceIcon = nil
+	self._resourceText = nil
+	self._itemIcon = nil
+	self._itemText = nil
+	self._camera = nil
+	self._uiCamera = nil
 end

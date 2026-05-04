@@ -1,355 +1,391 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleConfig
-local var_0_3 = var_0_0.Battle.BattleCardPuzzleEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleConfig = ys.Battle.BattleCardPuzzleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 
-var_0_0.Battle.CardPuzzleHandBoard = class("CardPuzzleHandBoard")
+ys.Battle.CardPuzzleHandBoard = class("CardPuzzleHandBoard")
 
-local var_0_4 = var_0_0.Battle.CardPuzzleHandBoard
+local CardPuzzleHandBoard = ys.Battle.CardPuzzleHandBoard
 
-var_0_4.__name = "CardPuzzleHandBoard"
-var_0_4.BASE_GAP = 166
-var_0_4.BASE_SIBLING = 4
+CardPuzzleHandBoard.__name = "CardPuzzleHandBoard"
+-- 手牌间隔（像素）
+CardPuzzleHandBoard.BASE_GAP = 166
+-- 手牌相对渲染层级偏移
+CardPuzzleHandBoard.BASE_SIBLING = 4
 
-function var_0_4.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._go = arg_1_1
-	arg_1_0._areaGO = arg_1_2
+--- 卡牌拼图手牌面板
+--- 管理玩家手牌的显示、拖拽、出牌、回收等核心交互逻辑
 
-	arg_1_0:init()
+function CardPuzzleHandBoard.Ctor(self, go, areaGO)
+	self._go = go
+	self._areaGO = areaGO
+
+	self:init()
 end
 
-function var_0_4.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	arg_2_0._cardPuzzleInfo = arg_2_1
-	arg_2_0._hand = arg_2_0._cardPuzzleInfo:GetHand()
+--- 设置关联的卡牌拼图组件，注册手牌和属性更新事件
+function CardPuzzleHandBoard.SetCardPuzzleComponent(self, cardPuzzleInfo)
+	self._cardPuzzleInfo = cardPuzzleInfo
+	self._hand = self._cardPuzzleInfo:GetHand()
 
-	arg_2_0._hand:RegisterEventListener(arg_2_0, var_0_3.UPDATE_CARDS, arg_2_0.onUpdateCards)
-	arg_2_0._cardPuzzleInfo:RegisterEventListener(arg_2_0, var_0_3.UPDATE_FLEET_ATTR, arg_2_0.onUpdateFleetAttr)
-	arg_2_0:onUpdateCards()
+	self._hand:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_CARDS, self.onUpdateCards)
+	self._cardPuzzleInfo:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_FLEET_ATTR, self.onUpdateFleetAttr)
+	self:onUpdateCards()
 end
 
-function var_0_4.Update(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._activeCardList) do
-		iter_3_1:Update()
+--- 每帧更新所有活跃和空闲卡牌
+function CardPuzzleHandBoard.Update(self)
+	for _, card in ipairs(self._activeCardList) do
+		card:Update()
 	end
 
-	for iter_3_2, iter_3_3 in ipairs(arg_3_0._freeCardList) do
-		iter_3_3:Update()
+	for _, card in ipairs(self._freeCardList) do
+		card:Update()
 	end
 end
 
-function var_0_4.onUpdateCards(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0._hand:GetCardList()
-	local var_4_1 = #arg_4_0._activeCardList
+--- 手牌更新事件回调：同步手牌列表中卡牌的增删
+function CardPuzzleHandBoard.onUpdateCards(self, event)
+	local cardList = self._hand:GetCardList()
+	local count = #self._activeCardList
 
-	while var_4_1 > 0 do
-		local var_4_2 = arg_4_0._activeCardList[var_4_1]
-		local var_4_3 = var_4_2:GetCardInfo()
+	-- 先移除不在手牌中的卡牌
+	while count > 0 do
+		local card = self._activeCardList[count]
+		local cardInfo = card:GetCardInfo()
 
-		if not table.contains(var_4_0, var_4_3) then
-			if var_4_3:GetCurrentPile() == arg_4_0._cardPuzzleInfo.CARD_PILE_INDEX_DECK then
-				arg_4_0:delayRecyleCard(var_4_2)
+		if not table.contains(cardList, cardInfo) then
+			if cardInfo:GetCurrentPile() == self._cardPuzzleInfo.CARD_PILE_INDEX_DECK then
+				self:delayRecyleCard(card)
 			else
-				arg_4_0:recyleCard(var_4_2)
+				self:recyleCard(card)
 			end
 		end
 
-		var_4_1 = var_4_1 - 1
+		count = count - 1
 	end
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_0) do
-		local var_4_4
+	-- 再添加新进入手牌的卡牌
+	for _, cardInfo in ipairs(cardList) do
+		local existingCard
 
-		for iter_4_2, iter_4_3 in ipairs(arg_4_0._activeCardList) do
-			if iter_4_3:GetCardInfo() == iter_4_1 then
-				var_4_4 = iter_4_3
+		for _, activeCard in ipairs(self._activeCardList) do
+			if activeCard:GetCardInfo() == cardInfo then
+				existingCard = activeCard
 
 				break
 			end
 		end
 
-		if not var_4_4 then
-			local var_4_5 = arg_4_0:getCard()
+		if not existingCard then
+			local newCard = self:getCard()
 
-			var_4_5:SetCardInfo(iter_4_1)
-			var_4_5:UpdateView()
+			newCard:SetCardInfo(cardInfo)
+			newCard:UpdateView()
 
-			local var_4_6 = iter_4_1:GetFromPile() == arg_4_0._cardPuzzleInfo.CARD_PILE_INDEX_DECK and arg_4_0._drawPos or arg_4_0._generatePos
+			-- 根据来源堆确定入场动画的起始位置
+			local startPos
 
-			var_4_5:DrawAnima(var_4_6)
-			var_4_5:SetMoveLerp(0.1)
-			var_4_5:ChangeState(var_4_5.STATE_FREE)
-			table.insert(arg_4_0._activeCardList, var_4_5)
+			if cardInfo:GetFromPile() == self._cardPuzzleInfo.CARD_PILE_INDEX_DECK then
+				startPos = self._drawPos
+			else
+				startPos = self._generatePos
+			end
+
+			newCard:DrawAnima(startPos)
+			newCard:SetMoveLerp(0.1)
+			newCard:ChangeState(newCard.STATE_FREE)
+			table.insert(self._activeCardList, newCard)
 		end
 	end
 
-	arg_4_0:updateCardReferenceInHand()
+	self:updateCardReferenceInHand()
 end
 
-function var_0_4.getCard(arg_5_0)
-	local var_5_0
+--- 获取一张卡牌实例（优先从空闲池获取，否则新建）
+function CardPuzzleHandBoard.getCard(self)
+	local card
 
-	if #arg_5_0._idleCardList > 0 then
-		var_5_0 = table.remove(arg_5_0._idleCardList, 1)
+	if #self._idleCardList > 0 then
+		card = table.remove(self._idleCardList, 1)
 	else
-		local var_5_1 = arg_5_0._resManager:InstCardPuzzleCard().transform
+		local cardTF = self._resManager:InstCardPuzzleCard().transform
 
-		var_5_1:SetParent(arg_5_0._cardContainer)
+		cardTF:SetParent(self._cardContainer)
 
-		var_5_1.localScale = Vector3(0.57, 0.57, 0)
-		var_5_1.localPosition = Vector3.zero
-		var_5_0 = var_0_0.Battle.CardPuzzleCombatCard.New(var_5_1)
+		cardTF.localScale = Vector3(0.57, 0.57, 0)
+		cardTF.localPosition = Vector3.zero
+		card = ys.Battle.CardPuzzleCombatCard.New(cardTF)
 	end
 
-	local function var_5_2()
+	-- 拖拽开始回调
+	local function onDragStart()
 		return
 	end
 
-	local function var_5_3()
-		var_5_0:ChangeState(var_5_0.STATE_FREE)
-		arg_5_0._cardPuzzleInfo:LongPressCard(var_5_0, false)
+	-- 长按结束回调
+	local function onLongPressEnd()
+		card:ChangeState(card.STATE_FREE)
+		self._cardPuzzleInfo:LongPressCard(card, false)
 	end
 
-	local function var_5_4()
-		if var_5_0:GetState() == var_5_0.STATE_LONG_PRESS then
-			var_5_3()
+	-- 点击/拖拽开始回调：尝试拿起卡牌进行拖拽
+	local function onBeginDrag()
+		if card:GetState() == card.STATE_LONG_PRESS then
+			onLongPressEnd()
 		end
 
-		if var_5_0:GetState() ~= var_5_0.STATE_LOCK then
-			arg_5_0:LockCardInHand()
-			arg_5_0:UnlockCardInHand(var_5_0)
-			arg_5_0:setDragingCard(var_5_0)
+		if card:GetState() ~= card.STATE_LOCK then
+			self:LockCardInHand()
+			self:UnlockCardInHand(card)
+			self:setDragingCard(card)
 
-			arg_5_0._holdingCard = var_5_0
+			self._holdingCard = card
 
-			arg_5_0:activeHighlight(true)
-			arg_5_0._cardPuzzleInfo:BlockComponentByCard(true)
-			arg_5_0:SetAllCardBlockRayCast(false)
-			var_5_0:SetSibling(#arg_5_0._activeCardList + var_0_4.BASE_SIBLING)
-			var_5_0:SetMoveLerp(0.5)
-			var_5_0:ChangeState(var_5_0.STATE_DRAG)
+			self:activeHighlight(true)
+			self._cardPuzzleInfo:BlockComponentByCard(true)
+			self:SetAllCardBlockRayCast(false)
+			card:SetSibling(#self._activeCardList + CardPuzzleHandBoard.BASE_SIBLING)
+			card:SetMoveLerp(0.5)
+			card:ChangeState(card.STATE_DRAG)
 		end
 	end
 
-	local function var_5_5(arg_9_0)
-		var_5_0:UpdateDragPosition(arg_9_0)
+	-- 拖拽中回调：更新卡牌位置
+	local function onDrag(screenPos)
+		card:UpdateDragPosition(screenPos)
 	end
 
-	local function var_5_6()
-		local var_10_0 = true
+	-- 拖拽结束回调：尝试出牌或回手
+	local function onDragEnd()
+		local success = true
 
-		arg_5_0:setDragingCard()
+		self:setDragingCard()
 
-		if arg_5_0._cardEnterDeck then
-			var_10_0 = arg_5_0:TryPlayReturnCard(var_5_0)
+		if self._cardEnterDeck then
+			success = self:TryPlayReturnCard(card)
 		else
-			var_10_0 = (arg_5_0._cardEnterHand ~= true or false) and arg_5_0:TryPlayCard(var_5_0)
+			success = (self._cardEnterHand ~= true or false) and self:TryPlayCard(card)
 		end
 
-		if not var_10_0 then
-			var_5_0:SetMoveLerp()
-			arg_5_0:updateCardReferenceInHand()
+		if not success then
+			card:SetMoveLerp()
+			self:updateCardReferenceInHand()
 		end
 
-		arg_5_0._cardEnterHand = nil
-		arg_5_0._cardEnterDeck = nil
+		self._cardEnterHand = nil
+		self._cardEnterDeck = nil
 
-		arg_5_0:UnlockCardInHand()
-		arg_5_0:activeHighlight(false)
-		arg_5_0:SetAllCardBlockRayCast(true)
+		self:UnlockCardInHand()
+		self:activeHighlight(false)
+		self:SetAllCardBlockRayCast(true)
 		onDelayTick(function()
-			arg_5_0._cardPuzzleInfo:BlockComponentByCard(false)
+			self._cardPuzzleInfo:BlockComponentByCard(false)
 		end, 0.06)
 	end
 
-	local function var_5_7()
-		var_5_0:ChangeState(var_5_0.STATE_LONG_PRESS)
-		arg_5_0._cardPuzzleInfo:LongPressCard(var_5_0, true)
+	-- 长按回调：进入长按预览状态
+	local function onLongPress()
+		card:ChangeState(card.STATE_LONG_PRESS)
+		self._cardPuzzleInfo:LongPressCard(card, true)
 	end
 
-	var_5_0:ConfigOP(var_5_2, var_5_4, var_5_5, var_5_6, var_5_7, var_5_3)
+	card:ConfigOP(onBeginDrag, onDrag, onDragEnd, onLongPress, onLongPressEnd)
 
-	return var_5_0
+	return card
 end
 
-function var_0_4.recyleCard(arg_13_0, arg_13_1)
-	for iter_13_0, iter_13_1 in ipairs(arg_13_0._activeCardList) do
-		if iter_13_1 == arg_13_1 then
-			arg_13_1:SetToObjPoolRecylePos()
-			table.remove(arg_13_0._activeCardList, iter_13_0)
+--- 回收卡牌到空闲池
+function CardPuzzleHandBoard.recyleCard(self, card)
+	for i, activeCard in ipairs(self._activeCardList) do
+		if activeCard == card then
+			card:SetToObjPoolRecylePos()
+			table.remove(self._activeCardList, i)
 
 			break
 		end
 	end
 
-	table.insert(arg_13_0._idleCardList, arg_13_1)
+	table.insert(self._idleCardList, card)
 end
 
-function var_0_4.delayRecyleCard(arg_14_0, arg_14_1)
-	arg_14_1:ChangeState(arg_14_1.STATE_LOCK)
+--- 延迟回收卡牌（动画后回收，用于退回牌组的情况）
+function CardPuzzleHandBoard.delayRecyleCard(self, card)
+	card:ChangeState(card.STATE_LOCK)
 
-	for iter_14_0, iter_14_1 in ipairs(arg_14_0._activeCardList) do
-		if iter_14_1 == arg_14_1 then
-			table.remove(arg_14_0._activeCardList, iter_14_0)
+	for i, activeCard in ipairs(self._activeCardList) do
+		if activeCard == card then
+			table.remove(self._activeCardList, i)
 
 			break
 		end
 	end
 
-	table.insert(arg_14_0._freeCardList, arg_14_1)
-	arg_14_1:MoveToDeck(function()
-		for iter_15_0, iter_15_1 in ipairs(arg_14_0._freeCardList) do
-			if iter_15_1 == arg_14_1 then
-				arg_14_1:SetToObjPoolRecylePos()
-				table.remove(arg_14_0._freeCardList, iter_15_0)
+	table.insert(self._freeCardList, card)
+	card:MoveToDeck(function()
+		for i, freeCard in ipairs(self._freeCardList) do
+			if freeCard == card then
+				card:SetToObjPoolRecylePos()
+				table.remove(self._freeCardList, i)
 
 				break
 			end
 		end
 
-		table.insert(arg_14_0._idleCardList, arg_14_1)
-	end, arg_14_0._drawPos)
+		table.insert(self._idleCardList, card)
+	end, self._drawPos)
 end
 
-function var_0_4.onUpdateFleetAttr(arg_16_0, arg_16_1)
-	for iter_16_0, iter_16_1 in ipairs(arg_16_0._activeCardList) do
-		iter_16_1:UpdateTotalCost()
-		iter_16_1:UpdateBoostHint()
+--- 舰队属性更新回调：刷新所有卡牌的费用和增益提示
+function CardPuzzleHandBoard.onUpdateFleetAttr(self, event)
+	for _, card in ipairs(self._activeCardList) do
+		card:UpdateTotalCost()
+		card:UpdateBoostHint()
 
-		local var_16_0 = iter_16_1:GetCardInfo()
+		local cardInfo = card:GetCardInfo()
 	end
 end
 
-function var_0_4.init(arg_17_0)
-	var_0_0.EventListener.AttachEventListener(arg_17_0)
+function CardPuzzleHandBoard.init(self)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_17_0._cardContainer = arg_17_0._go.transform
-	arg_17_0._resManager = var_0_0.Battle.BattleResourceManager.GetInstance()
-	arg_17_0._activeCardList = {}
-	arg_17_0._idleCardList = {}
-	arg_17_0._freeCardList = {}
-	arg_17_0._startPos = arg_17_0._cardContainer:Find("handStart").localPosition
-	arg_17_0._generatePos = arg_17_0._cardContainer:Find("generateStart").localPosition
-	arg_17_0._drawPos = arg_17_0._cardContainer:Find("drawStart").localPosition
-	arg_17_0._cancelArea = arg_17_0._cardContainer:Find("cancel_area")
-	arg_17_0._returnArea = arg_17_0._cardContainer:Find("return_area")
-	arg_17_0._handDelegate = GetOrAddComponent(arg_17_0._cancelArea, "EventTriggerListener")
-	arg_17_0._deckDelegate = GetOrAddComponent(arg_17_0._returnArea, "EventTriggerListener")
-	arg_17_0._area = arg_17_0._areaGO.transform
-	arg_17_0._cancelHint = arg_17_0._area:Find("hand_hint")
-	arg_17_0._returnHint = arg_17_0._area:Find("deck_hint")
-	arg_17_0._readyHint = arg_17_0._area:Find("cast_hint")
+	self._cardContainer = self._go.transform
+	self._resManager = ys.Battle.BattleResourceManager.GetInstance()
+	self._activeCardList = {}
+	self._idleCardList = {}
+	self._freeCardList = {}
+	self._startPos = self._cardContainer:Find("handStart").localPosition
+	self._generatePos = self._cardContainer:Find("generateStart").localPosition
+	self._drawPos = self._cardContainer:Find("drawStart").localPosition
+	self._cancelArea = self._cardContainer:Find("cancel_area")
+	self._returnArea = self._cardContainer:Find("return_area")
+	self._handDelegate = GetOrAddComponent(self._cancelArea, "EventTriggerListener")
+	self._deckDelegate = GetOrAddComponent(self._returnArea, "EventTriggerListener")
+	self._area = self._areaGO.transform
+	self._cancelHint = self._area:Find("hand_hint")
+	self._returnHint = self._area:Find("deck_hint")
+	self._readyHint = self._area:Find("cast_hint")
 end
 
-function var_0_4.updateCardReferenceInHand(arg_18_0)
-	for iter_18_0, iter_18_1 in ipairs(arg_18_0._activeCardList) do
-		local var_18_0 = arg_18_0:getcardGap()
-		local var_18_1 = Vector3.New(arg_18_0._startPos.x + (iter_18_0 - 1) * var_18_0, arg_18_0._startPos.y, 0)
+--- 更新手牌中各卡牌的参考位置（扇形排列）
+function CardPuzzleHandBoard.updateCardReferenceInHand(self)
+	for i, card in ipairs(self._activeCardList) do
+		local gap = self:getcardGap()
+		local targetPos = Vector3.New(self._startPos.x + (i - 1) * gap, self._startPos.y, 0)
 
-		iter_18_1:SetReferencePos(var_18_1)
-		iter_18_1:SetSibling(iter_18_0 + var_0_4.BASE_SIBLING)
+		card:SetReferencePos(targetPos)
+		card:SetSibling(i + CardPuzzleHandBoard.BASE_SIBLING)
 	end
 end
 
-function var_0_4.getcardGap(arg_19_0)
-	local var_19_0 = #arg_19_0._activeCardList
+--- 计算手牌间距（超出基础手牌数时压缩间距）
+function CardPuzzleHandBoard.getcardGap(self)
+	local handCount = #self._activeCardList
 
-	if #arg_19_0._activeCardList <= var_0_2.BASE_MAX_HAND then
-		return var_0_4.BASE_GAP
+	if #self._activeCardList <= BattleCardPuzzleConfig.BASE_MAX_HAND then
+		return CardPuzzleHandBoard.BASE_GAP
 	else
-		return 830 / (var_19_0 - 1)
+		return 830 / (handCount - 1)
 	end
 end
 
-function var_0_4.setDragingCard(arg_20_0, arg_20_1)
-	arg_20_0._cardPuzzleInfo:SetDragingCard(arg_20_1)
-	arg_20_0._cardPuzzleInfo:SendUpdateAim()
+--- 设置当前拖拽中的卡牌
+function CardPuzzleHandBoard.setDragingCard(self, card)
+	self._cardPuzzleInfo:SetDragingCard(card)
+	self._cardPuzzleInfo:SendUpdateAim()
 end
 
-function var_0_4.sort(arg_21_0)
+function CardPuzzleHandBoard.sort(self)
 	return
 end
 
-function var_0_4.activeHighlight(arg_22_0, arg_22_1)
-	if arg_22_1 then
-		arg_22_0._handDelegate:AddPointEnterFunc(function()
-			arg_22_0._cardEnterHand = true
+--- 激活/取消高亮提示区域（拖拽时显示取消/回手/释放提示）
+function CardPuzzleHandBoard.activeHighlight(self, isActive)
+	if isActive then
+		self._handDelegate:AddPointEnterFunc(function()
+			self._cardEnterHand = true
 
-			setActive(arg_22_0._cancelHint, true)
-			setActive(arg_22_0._returnHint, false)
-			setActive(arg_22_0._readyHint, false)
+			setActive(self._cancelHint, true)
+			setActive(self._returnHint, false)
+			setActive(self._readyHint, false)
 		end)
-		arg_22_0._handDelegate:AddPointExitFunc(function()
-			arg_22_0._cardEnterHand = false
+		self._handDelegate:AddPointExitFunc(function()
+			self._cardEnterHand = false
 
-			setActive(arg_22_0._cancelHint, false)
-			setActive(arg_22_0._readyHint, true)
+			setActive(self._cancelHint, false)
+			setActive(self._readyHint, true)
 		end)
-		arg_22_0._deckDelegate:AddPointEnterFunc(function()
-			arg_22_0._cardEnterDeck = true
+		self._deckDelegate:AddPointEnterFunc(function()
+			self._cardEnterDeck = true
 
-			setActive(arg_22_0._readyHint, false)
+			setActive(self._readyHint, false)
 
-			local var_25_0 = arg_22_0._holdingCard:GetCardInfo():GetReturnCost() ~= nil
+			local canReturn = self._holdingCard:GetCardInfo():GetReturnCost() ~= nil
 
-			setActive(arg_22_0._cancelHint, not var_25_0)
-			setActive(arg_22_0._returnHint, var_25_0)
+			setActive(self._cancelHint, not canReturn)
+			setActive(self._returnHint, canReturn)
 		end)
-		arg_22_0._deckDelegate:AddPointExitFunc(function()
-			arg_22_0._cardEnterDeck = false
+		self._deckDelegate:AddPointExitFunc(function()
+			self._cardEnterDeck = false
 
-			setActive(arg_22_0._cancelHint, false)
-			setActive(arg_22_0._readyHint, true)
+			setActive(self._cancelHint, false)
+			setActive(self._readyHint, true)
 		end)
 	else
-		setActive(arg_22_0._cancelHint, false)
-		setActive(arg_22_0._returnHint, false)
-		setActive(arg_22_0._readyHint, false)
-		arg_22_0._handDelegate:RemovePointEnterFunc()
-		arg_22_0._handDelegate:RemovePointExitFunc()
-		arg_22_0._deckDelegate:RemovePointEnterFunc()
-		arg_22_0._deckDelegate:RemovePointExitFunc()
+		setActive(self._cancelHint, false)
+		setActive(self._returnHint, false)
+		setActive(self._readyHint, false)
+		self._handDelegate:RemovePointEnterFunc()
+		self._handDelegate:RemovePointExitFunc()
+		self._deckDelegate:RemovePointEnterFunc()
+		self._deckDelegate:RemovePointExitFunc()
 	end
 
-	setActive(arg_22_0._cancelArea, arg_22_1)
-	setActive(arg_22_0._returnArea, arg_22_1)
+	setActive(self._cancelArea, isActive)
+	setActive(self._returnArea, isActive)
 end
 
-function var_0_4.LockCardInHand(arg_27_0)
-	for iter_27_0, iter_27_1 in ipairs(arg_27_0._activeCardList) do
-		iter_27_1:ChangeState(iter_27_1.STATE_LOCK)
-	end
-end
-
-function var_0_4.SetAllCardBlockRayCast(arg_28_0, arg_28_1)
-	for iter_28_0, iter_28_1 in ipairs(arg_28_0._activeCardList) do
-		iter_28_1:BlockRayCast(arg_28_1)
+--- 锁定手牌中所有卡牌（防误触）
+function CardPuzzleHandBoard.LockCardInHand(self)
+	for _, card in ipairs(self._activeCardList) do
+		card:ChangeState(card.STATE_LOCK)
 	end
 end
 
-function var_0_4.UnlockCardInHand(arg_29_0, arg_29_1)
-	if arg_29_1 then
-		arg_29_1:ChangeState(var_0_0.Battle.CardPuzzleCombatCard.STATE_FREE)
+--- 设置所有卡牌的射线阻挡
+function CardPuzzleHandBoard.SetAllCardBlockRayCast(self, blocksRaycasts)
+	for _, card in ipairs(self._activeCardList) do
+		card:BlockRayCast(blocksRaycasts)
+	end
+end
+
+--- 解锁手牌中卡牌（可指定某张保留锁定）
+function CardPuzzleHandBoard.UnlockCardInHand(self, exceptCard)
+	if exceptCard then
+		exceptCard:ChangeState(ys.Battle.CardPuzzleCombatCard.STATE_FREE)
 	else
-		for iter_29_0, iter_29_1 in ipairs(arg_29_0._activeCardList) do
-			iter_29_1:ChangeState(var_0_0.Battle.CardPuzzleCombatCard.STATE_FREE)
+		for _, card in ipairs(self._activeCardList) do
+			card:ChangeState(ys.Battle.CardPuzzleCombatCard.STATE_FREE)
 		end
 	end
 end
 
-function var_0_4.TryPlayCard(arg_30_0, arg_30_1)
-	local var_30_0 = arg_30_1:GetCardInfo()
+--- 尝试出牌
+function CardPuzzleHandBoard.TryPlayCard(self, card)
+	local cardInfo = card:GetCardInfo()
 
-	return (arg_30_0._cardPuzzleInfo:PlayCard(var_30_0))
+	return (self._cardPuzzleInfo:PlayCard(cardInfo))
 end
 
-function var_0_4.TryPlayReturnCard(arg_31_0, arg_31_1)
-	local var_31_0 = arg_31_1:GetCardInfo()
+--- 尝试回手（将卡牌退回牌组）
+function CardPuzzleHandBoard.TryPlayReturnCard(self, card)
+	local cardInfo = card:GetCardInfo()
 
-	return (arg_31_0._cardPuzzleInfo:ReturnCard(var_31_0))
+	return (self._cardPuzzleInfo:ReturnCard(cardInfo))
 end
 
-function var_0_4.Dispose(arg_32_0)
+function CardPuzzleHandBoard.Dispose(self)
 	return
 end

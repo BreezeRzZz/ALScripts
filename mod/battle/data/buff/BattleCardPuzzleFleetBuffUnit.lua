@@ -1,189 +1,210 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBuffEvent
-local var_0_2 = var_0_0.Battle.BattleConst.BuffEffectType
-local var_0_3 = var_0_0.Battle.BattleCardPuzzleFormulas
-local var_0_4 = class("BattleCardPuzzleFleetBuffUnit")
+local ys = ys
+local BattleBuffEvent = ys.Battle.BattleBuffEvent
+local BuffEffectType = ys.Battle.BattleConst.BuffEffectType
+local BattleCardPuzzleFormulas = ys.Battle.BattleCardPuzzleFormulas
+local BattleCardPuzzleFleetBuffUnit = class("BattleCardPuzzleFleetBuffUnit")
 
-var_0_0.Battle.BattleCardPuzzleFleetBuffUnit = var_0_4
-var_0_4.__name = "BattleCardPuzzleFleetBuffUnit"
+ys.Battle.BattleCardPuzzleFleetBuffUnit = BattleCardPuzzleFleetBuffUnit
+BattleCardPuzzleFleetBuffUnit.__name = "BattleCardPuzzleFleetBuffUnit"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_2 = arg_1_2 or 1
-	arg_1_0._id = arg_1_1
-	arg_1_0._tempData = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(arg_1_1, arg_1_2)
-	arg_1_0._effectList = {}
-	arg_1_0._triggerSearchTable = {}
-	arg_1_0._level = arg_1_2
+--- @class BattleCardPuzzleFleetBuffUnit
+--- @param buffID number Buff模板ID
+--- @param level number Buff等级
+--- 卡牌谜题舰队Buff构造
+function BattleCardPuzzleFleetBuffUnit.Ctor(self, buffID, level)
+	level = level or 1
+	self._id = buffID
+	self._tempData = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, level)
+	self._effectList = {}
+	self._triggerSearchTable = {}
+	self._level = level
 
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.effect_list) do
-		local var_1_0 = var_0_0.Battle[iter_1_1.type].New(iter_1_1)
+	for index, effectData in ipairs(self._tempData.effect_list) do
+		local effect = ys.Battle[effectData.type].New(effectData)
 
-		arg_1_0._effectList[iter_1_0] = var_1_0
+		self._effectList[index] = effect
 
-		local var_1_1 = iter_1_1.trigger
+		local triggerList = effectData.trigger
 
-		for iter_1_2, iter_1_3 in ipairs(var_1_1) do
-			local var_1_2 = arg_1_0._triggerSearchTable[iter_1_3]
+		for _, trigger in ipairs(triggerList) do
+			-- 该Trigger对应能触发的Effect列表
+			local effectList = self._triggerSearchTable[trigger]
 
-			if var_1_2 == nil then
-				var_1_2 = {}
-				arg_1_0._triggerSearchTable[iter_1_3] = var_1_2
+			if effectList == nil then
+				effectList = {}
+				self._triggerSearchTable[trigger] = effectList
 			end
 
-			var_1_2[#var_1_2 + 1] = var_1_0
+			effectList[#effectList + 1] = effect
 		end
 	end
 
-	arg_1_0:SetActive()
+	self:SetActive()
 end
 
-function var_0_4.IsResponTo(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_0._triggerSearchTable[arg_2_1]
+--- 检查是否响应某个Trigger类型
+function BattleCardPuzzleFleetBuffUnit.IsResponTo(self, trigger)
+	local effectList = self._triggerSearchTable[trigger]
 
-	if var_2_0 ~= nil and #var_2_0 > 0 then
+	if effectList ~= nil and #effectList > 0 then
 		return true
 	end
 
 	return false
 end
 
-function var_0_4.SetArgs(arg_3_0, arg_3_1)
-	arg_3_0._host = arg_3_1
+--- 设置Buff宿主及参数
+function BattleCardPuzzleFleetBuffUnit.SetArgs(self, host)
+	self._host = host
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._effectList) do
-		iter_3_1:SetArgs(arg_3_1, arg_3_0)
+	for _, effect in ipairs(self._effectList) do
+		effect:SetArgs(host, self)
 	end
 end
 
-function var_0_4.setRemoveTime(arg_4_0)
-	if arg_4_0._tempData.time == nil then
+--- 设置移除时间。支持字符串公式解析持续时间
+function BattleCardPuzzleFleetBuffUnit.setRemoveTime(self)
+	if self._tempData.time == nil then
 		return
 	end
 
-	local var_4_0 = arg_4_0._tempData.time
+	local rawTime = self._tempData.time
 
-	if type(var_4_0) == "string" then
-		arg_4_0._duration = math.max(0, var_0_3.parseFormula(var_4_0, arg_4_0._host:GetAttrManager()))
+	-- 字符串型持续时间为公式，需要解析计算
+	if type(rawTime) == "string" then
+		self._duration = math.max(0, BattleCardPuzzleFormulas.parseFormula(rawTime, self._host:GetAttrManager()))
 	else
-		arg_4_0._duration = var_4_0
+		self._duration = rawTime
 	end
 
-	arg_4_0._expireTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime() + arg_4_0._duration
+	self._expireTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime() + self._duration
 end
 
-function var_0_4.Attach(arg_5_0, arg_5_1)
-	arg_5_0._stack = 1
+--- 附加Buff：设置堆叠为1，触发ON_ATTACH
+function BattleCardPuzzleFleetBuffUnit.Attach(self, host)
+	self._stack = 1
 
-	arg_5_0:SetArgs(arg_5_1)
-	arg_5_0:onTrigger(var_0_2.ON_ATTACH)
-	arg_5_0:setRemoveTime()
+	self:SetArgs(host)
+	self:onTrigger(BuffEffectType.ON_ATTACH)
+	self:setRemoveTime()
 end
 
-function var_0_4.Stack(arg_6_0)
-	if arg_6_0._tempData.stack == 0 then
-		arg_6_0._stack = arg_6_0._stack + 1
+--- 堆叠Buff：stack=0时无限堆叠
+function BattleCardPuzzleFleetBuffUnit.Stack(self)
+	if self._tempData.stack == 0 then
+		self._stack = self._stack + 1
 	else
-		arg_6_0._stack = math.min(arg_6_0._stack + 1, arg_6_0._tempData.stack)
+		self._stack = math.min(self._stack + 1, self._tempData.stack)
 	end
 
-	arg_6_0:onTrigger(var_0_2.ON_STACK)
-	arg_6_0:setRemoveTime()
+	self:onTrigger(BuffEffectType.ON_STACK)
+	self:setRemoveTime()
 end
 
-function var_0_4.InitStack(arg_7_0)
+--- 初始化堆叠（卡牌谜题模式无操作）
+function BattleCardPuzzleFleetBuffUnit.InitStack(self)
 	return
 end
 
-function var_0_4.UpdateStack(arg_8_0, arg_8_1)
+--- 更新堆叠（卡牌谜题模式无操作）
+function BattleCardPuzzleFleetBuffUnit.UpdateStack(self, stack)
 	return
 end
 
-function var_0_4.Remove(arg_9_0)
-	arg_9_0:onTrigger(var_0_2.ON_REMOVE)
+--- 移除Buff：触发ON_REMOVE并从舰队Buff列表清除
+function BattleCardPuzzleFleetBuffUnit.Remove(self)
+	self:onTrigger(BuffEffectType.ON_REMOVE)
 
-	arg_9_0._host:GetBuffManager():GetCardPuzzleBuffList()[arg_9_0._id] = nil
+	self._host:GetBuffManager():GetCardPuzzleBuffList()[self._id] = nil
 
-	arg_9_0:Clear()
+	self:Clear()
 end
 
-function var_0_4.Update(arg_10_0, arg_10_1)
-	if arg_10_0:IsExpire(arg_10_1) then
-		arg_10_0:Remove()
+--- Buff更新：检查是否过期，否则触发ON_UPDATE
+function BattleCardPuzzleFleetBuffUnit.Update(self, timeStamp)
+	if self:IsExpire(timeStamp) then
+		self:Remove()
 	else
-		arg_10_0:onTrigger(var_0_2.ON_UPDATE, arg_10_1)
+		self:onTrigger(BuffEffectType.ON_UPDATE, timeStamp)
 	end
 end
 
-function var_0_4.onTrigger(arg_11_0, arg_11_1, arg_11_2)
-	local var_11_0 = arg_11_0._triggerSearchTable[arg_11_1]
+--- Buff触发接口具体实现：遍历对应触发类型的所有Effect
+function BattleCardPuzzleFleetBuffUnit.onTrigger(self, trigger, args)
+	local buffEffectList = self._triggerSearchTable[trigger]
 
-	if var_11_0 == nil or #var_11_0 == 0 then
+	if buffEffectList == nil or #buffEffectList == 0 then
 		return
 	end
 
-	for iter_11_0, iter_11_1 in ipairs(var_11_0) do
-		assert(type(iter_11_1[arg_11_1]) == "function", "fleet buff效果的触发函数缺失,buff id:>>" .. arg_11_0._id .. "<<, trigger:>>" .. arg_11_1 .. "<<")
+	for _, buffEffect in ipairs(buffEffectList) do
+		assert(type(buffEffect[trigger]) == "function", "fleet buff效果的触发函数缺失,buff id:>>" .. self._id .. "<<, trigger:>>" .. trigger .. "<<")
 
-		if iter_11_1:IsActive() then
-			iter_11_1:NotActive()
-			iter_11_1:Trigger(arg_11_1, arg_11_2)
-			iter_11_1:SetActive()
+		if buffEffect:IsActive() then
+			buffEffect:NotActive()
+			buffEffect:Trigger(trigger, args)
+			buffEffect:SetActive()
 		end
 	end
 end
 
-function var_0_4.IsExpire(arg_12_0, arg_12_1)
-	if arg_12_0._expireTimeStamp == nil then
+--- 检查是否过期（无过期时间则永不过期）
+function BattleCardPuzzleFleetBuffUnit.IsExpire(self, timeStamp)
+	if self._expireTimeStamp == nil then
 		return false
 	else
-		return arg_12_1 >= arg_12_0._expireTimeStamp
+		return timeStamp >= self._expireTimeStamp
 	end
 end
 
-function var_0_4.IsActive(arg_13_0)
-	return arg_13_0._isActive
+function BattleCardPuzzleFleetBuffUnit.IsActive(self)
+	return self._isActive
 end
 
-function var_0_4.SetActive(arg_14_0)
-	arg_14_0._isActive = true
+function BattleCardPuzzleFleetBuffUnit.SetActive(self)
+	self._isActive = true
 end
 
-function var_0_4.NotActive(arg_15_0)
-	arg_15_0._isActive = false
+function BattleCardPuzzleFleetBuffUnit.NotActive(self)
+	self._isActive = false
 end
 
-function var_0_4.GetCaster(arg_16_0)
+--- 舰队Buff无施法者
+function BattleCardPuzzleFleetBuffUnit.GetCaster(self)
 	return nil
 end
 
-function var_0_4.GetID(arg_17_0)
-	return arg_17_0._id
+function BattleCardPuzzleFleetBuffUnit.GetID(self)
+	return self._id
 end
 
-function var_0_4.GetStack(arg_18_0)
-	return arg_18_0._stack
+function BattleCardPuzzleFleetBuffUnit.GetStack(self)
+	return self._stack
 end
 
-function var_0_4.GetLv(arg_19_0)
+--- 舰队Buff等级固定为1
+function BattleCardPuzzleFleetBuffUnit.GetLv(self)
 	return 1
 end
 
-function var_0_4.GetDurationRate(arg_20_0)
-	if arg_20_0._expireTimeStamp == nil then
+--- 获取剩余持续时间比例（无过期时间则返回1）
+function BattleCardPuzzleFleetBuffUnit.GetDurationRate(self)
+	if self._expireTimeStamp == nil then
 		return 1
 	else
-		local var_20_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+		local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-		return (arg_20_0._expireTimeStamp - var_20_0) / arg_20_0._duration
+		return (self._expireTimeStamp - currentTime) / self._duration
 	end
 end
 
-function var_0_4.Clear(arg_21_0)
-	arg_21_0._host = nil
+--- 清理：释放宿主引用及Effect资源
+function BattleCardPuzzleFleetBuffUnit.Clear(self)
+	self._host = nil
 
-	for iter_21_0, iter_21_1 in ipairs(arg_21_0._effectList) do
-		iter_21_1:Clear()
+	for _, effect in ipairs(self._effectList) do
+		effect:Clear()
 	end
 end

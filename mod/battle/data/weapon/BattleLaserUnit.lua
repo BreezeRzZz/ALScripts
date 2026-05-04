@@ -170,6 +170,7 @@ function BattleLaserUnit.createBeam(self, beam)
 	local delay = beamInfo.delay
 	local hostIFF = self._host:GetIFF()
 	local sourcePos = Vector3(self._hostPos.x + offsetX, 0, self._hostPos.z + offsetZ)
+	-- 这里deltaOffsetX作为了AOE的width(x轴方向)，deltaOffsetZ作为了AOE的height(z轴方向)
 	local lastingCubeAOE = self._dataProxy:SpawnLastingCubeArea(BattleConst.AOEField.SURFACE, hostIFF, sourcePos, deltaOffsetX, deltaOffsetZ, delay, cldFunc, exitCldFunc, false, bulletInfo.modle_ID)
 
 	if self._aimPos == nil then

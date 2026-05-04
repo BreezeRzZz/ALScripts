@@ -1,461 +1,527 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = class("BattleBossCharacter", var_0_0.Battle.BattleEnemyCharacter)
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleBossCharacter = class("BattleBossCharacter", ys.Battle.BattleEnemyCharacter)
 
-var_0_0.Battle.BattleBossCharacter = var_0_2
-var_0_2.__name = "BattleBossCharacter"
+ys.Battle.BattleBossCharacter = BattleBossCharacter
+BattleBossCharacter.__name = "BattleBossCharacter"
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+--- 构造函数：调用父类初始化
+function BattleBossCharacter.Ctor(self)
+	BattleBossCharacter.super.Ctor(self)
 end
 
-function var_0_2.Dispose(arg_2_0)
-	if not arg_2_0._chargeTimer.paused then
-		arg_2_0._chargeTimer:Stop()
+--- 销毁Boss角色：停止HP条tween，清理施法时钟和瞄准偏斜条
+function BattleBossCharacter.Dispose(self)
+	if not self._chargeTimer.paused then
+		self._chargeTimer:Stop()
 	end
 
-	if arg_2_0._castClock then
-		arg_2_0._castClock:Dispose()
+	if self._castClock then
+		self._castClock:Dispose()
 
-		arg_2_0._castClock = nil
+		self._castClock = nil
 	end
 
-	if arg_2_0._aimBiarBar then
-		local var_2_0 = arg_2_0._aimBiarBar:GetGO()
+	if self._aimBiarBar then
+		local aimBiasGO = self._aimBiarBar:GetGO()
 
-		arg_2_0._factory:GetHPBarPool():DestroyObj(var_2_0)
-		arg_2_0._aimBiarBar:Dispose()
+		self._factory:GetHPBarPool():DestroyObj(aimBiasGO)
+		self._aimBiarBar:Dispose()
 
-		arg_2_0._aimBiarBar = nil
+		self._aimBiarBar = nil
 	end
 
-	LeanTween.cancel(arg_2_0._HPBar)
-	var_0_2.super.Dispose(arg_2_0)
+	LeanTween.cancel(self._HPBar)
+	BattleBossCharacter.super.Dispose(self)
 end
 
-function var_0_2.Update(arg_3_0)
-	var_0_2.super.Update(arg_3_0)
-	arg_3_0:UpdateCastClockPosition()
+--- 每帧Update：施法时钟、护甲时钟、屏障时钟位置更新
+function BattleBossCharacter.Update(self)
+	BattleBossCharacter.super.Update(self)
+	self:UpdateCastClockPosition()
 
-	if arg_3_0._armor then
-		arg_3_0:UpdateCastClock()
+	if self._armor then
+		self:UpdateCastClock()
 	end
 
-	arg_3_0:UpdateBarrierClockPosition()
+	self:UpdateBarrierClockPosition()
 
-	if arg_3_0._barrier then
-		arg_3_0:updateBarrierClock()
+	if self._barrier then
+		self:updateBarrierClock()
 	end
 end
 
-function var_0_2.UpdateVigilantBarPosition(arg_4_0)
-	local var_4_0 = arg_4_0._referenceVector + arg_4_0._hpBarOffset
+--- 更新反潜警戒条位置（Boss使用HP条偏移而不是默认的_hpBarPos）
+function BattleBossCharacter.UpdateVigilantBarPosition(self)
+	local vigilantPos = self._referenceVector + self._hpBarOffset
 
-	arg_4_0._vigilantBar:UpdateVigilantBarPosition(var_4_0)
+	self._vigilantBar:UpdateVigilantBarPosition(vigilantPos)
 end
 
-function var_0_2.RegisterWeaponListener(arg_5_0, arg_5_1)
-	var_0_2.super.RegisterWeaponListener(arg_5_0, arg_5_1)
-	arg_5_1:RegisterEventListener(arg_5_0, var_0_1.WEAPON_INTERRUPT, arg_5_0.onWeaponInterrupted)
+--- Boss额外注册武器打断事件
+function BattleBossCharacter.RegisterWeaponListener(self, weapon)
+	BattleBossCharacter.super.RegisterWeaponListener(self, weapon)
+	weapon:RegisterEventListener(self, BattleUnitEvent.WEAPON_INTERRUPT, self.onWeaponInterrupted)
 end
 
-function var_0_2.UnregisterWeaponListener(arg_6_0, arg_6_1)
-	var_0_2.super.UnregisterWeaponListener(arg_6_0, arg_6_1)
-	arg_6_1:UnregisterEventListener(arg_6_0, var_0_1.WEAPON_INTERRUPT)
+--- 取消武器打断事件
+function BattleBossCharacter.UnregisterWeaponListener(self, weapon)
+	BattleBossCharacter.super.UnregisterWeaponListener(self, weapon)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.WEAPON_INTERRUPT)
 end
 
-function var_0_2.AddHPBar(arg_7_0, arg_7_1, arg_7_2)
-	arg_7_0._HPBar = arg_7_1
-	arg_7_0._HPBarTf = arg_7_1.transform
+--- 添加Boss专用的多层HP条系统
+--- - 显示Boss名称、等级、头像
+--- - 初始化护甲条和屏障条
+--- - 设置多层HP视觉
+--- @param hpBarObj GameObject HP条对象
+--- @param activeVernier boolean 是否激活游标
+function BattleBossCharacter.AddHPBar(self, hpBarObj, activeVernier)
+	self._HPBar = hpBarObj
+	self._HPBarTf = hpBarObj.transform
 
-	arg_7_1:SetActive(true)
-	arg_7_0._unitData:RegisterEventListener(arg_7_0, var_0_1.UPDATE_HP, arg_7_0.OnUpdateHP)
+	hpBarObj:SetActive(true)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.OnUpdateHP)
 
-	arg_7_0._HPBarCountText = arg_7_0._HPBarTf:Find("HPBarCount"):GetComponent(typeof(Text))
-	arg_7_0._activeVernier = arg_7_2
+	self._HPBarCountText = self._HPBarTf:Find("HPBarCount"):GetComponent(typeof(Text))
+	self._activeVernier = activeVernier
 
-	arg_7_0:SetTemplateInfo()
-	arg_7_0:initBarComponent()
-	arg_7_0:SetHPBarCountText(arg_7_0._HPBarTotalCount)
+	self:SetTemplateInfo()
+	self:initBarComponent()
+	self:SetHPBarCountText(self._HPBarTotalCount)
 
-	arg_7_0._cacheHP = arg_7_0._unitData:GetMaxHP()
+	self._cacheHP = self._unitData:GetMaxHP()
 
-	arg_7_0:UpdateHpBar()
-	arg_7_0:initBarrierBar()
+	self:UpdateHpBar()
+	self:initBarrierBar()
 end
 
-function var_0_2.SetTemplateInfo(arg_8_0)
-	local var_8_0 = arg_8_0._unitData:GetTemplate()
-	local var_8_1 = ""
+--- 设置Boss HP条的模板信息：名称、等级、类型图标、头像
+function BattleBossCharacter.SetTemplateInfo(self)
+	local unitTemplate = self._unitData:GetTemplate()
+	local bossName = ""
 
-	if var_8_0 then
-		var_8_1 = var_8_0.name
+	if unitTemplate then
+		bossName = unitTemplate.name
 	end
 
-	arg_8_0._HPBarTf:Find("BossNameBG/BossName"):GetComponent(typeof(Text)).text = var_8_1
-	arg_8_0._HPBarTf:Find("BossNameBG/BossLv"):GetComponent(typeof(Text)).text = "Lv." .. arg_8_0._unitData:GetLevel()
+	self._HPBarTf:Find("BossNameBG/BossName"):GetComponent(typeof(Text)).text = bossName
+	self._HPBarTf:Find("BossNameBG/BossLv"):GetComponent(typeof(Text)).text = "Lv." .. self._unitData:GetLevel()
 
-	local var_8_2 = pg.enemy_data_by_type[var_8_0.type].type
-	local var_8_3 = GetSpriteFromAtlas("shiptype", shipType2Battleprint(var_8_2))
+	local enemyType = pg.enemy_data_by_type[unitTemplate.type].type
+	local typeSprite = GetSpriteFromAtlas("shiptype", shipType2Battleprint(enemyType))
 
-	setImageSprite(arg_8_0._HPBarTf:Find("BossIcon/typeIcon/icon"), var_8_3, true)
+	setImageSprite(self._HPBarTf:Find("BossIcon/typeIcon/icon"), typeSprite, true)
 
-	local var_8_4 = var_0_0.Battle.BattleResourceManager.GetInstance():GetCharacterSquareIcon(arg_8_0._bossIcon)
+	local bossIcon = ys.Battle.BattleResourceManager.GetInstance():GetCharacterSquareIcon(self._bossIcon)
 
-	setImageSprite(findTF(arg_8_0._HPBarTf, "BossIcon/icon"), var_8_4)
+	setImageSprite(findTF(self._HPBarTf, "BossIcon/icon"), bossIcon)
 
-	arg_8_0._armorBar = arg_8_0._HPBarTf:Find("ArmorBar")
-	arg_8_0._armorProgress = arg_8_0._HPBarTf:Find("ArmorBar/armorProgress"):GetComponent(typeof(Image))
+	-- 护甲条
+	self._armorBar = self._HPBarTf:Find("ArmorBar")
+	self._armorProgress = self._HPBarTf:Find("ArmorBar/armorProgress"):GetComponent(typeof(Image))
 
-	SetActive(arg_8_0._armorBar, false)
+	SetActive(self._armorBar, false)
 
-	arg_8_0._barrierBar = arg_8_0._HPBarTf:Find("ShieldBar")
-	arg_8_0._barrierProgress = arg_8_0._barrierBar:Find("shieldProgress"):GetComponent(typeof(Image))
+	-- 屏障条
+	self._barrierBar = self._HPBarTf:Find("ShieldBar")
+	self._barrierProgress = self._barrierBar:Find("shieldProgress"):GetComponent(typeof(Image))
 
-	SetActive(arg_8_0._barrierBar, false)
+	SetActive(self._barrierBar, false)
 end
 
-function var_0_2.SetBossData(arg_9_0, arg_9_1)
-	arg_9_0._bossBarInfoList = {}
-	arg_9_0._HPBarTotalCount = arg_9_1.hpBarNum or 1
-	arg_9_0._hideBarNum = arg_9_1.hideBarNum
-	arg_9_0._bossIcon = arg_9_0:GetUnitData():GetTemplate().icon
-	arg_9_0._bossIndex = arg_9_1.bossCount
+--- 设置Boss关卡数据：HP条数量、图标、Boss序号
+--- @param bossData table {hpBarNum, hideBarNum, icon, bossCount}
+function BattleBossCharacter.SetBossData(self, bossData)
+	self._bossBarInfoList = {}
+	self._HPBarTotalCount = bossData.hpBarNum or 1
+	self._hideBarNum = bossData.hideBarNum
+	self._bossIcon = self:GetUnitData():GetTemplate().icon
+	self._bossIndex = bossData.bossCount
 end
 
-function var_0_2.GetBossIndex(arg_10_0)
-	return arg_10_0._bossIndex
+--- @return number Boss序号
+function BattleBossCharacter.GetBossIndex(self)
+	return self._bossIndex
 end
 
-function var_0_2.initBarComponent(arg_11_0)
-	arg_11_0._stepHP = arg_11_0:GetUnitData():GetMaxHP() / arg_11_0._HPBarTotalCount
+--- 初始化多层HP条组件：创建5个HP条段、游标和循环tween定时器
+function BattleBossCharacter.initBarComponent(self)
+	self._stepHP = self:GetUnitData():GetMaxHP() / self._HPBarTotalCount
 
-	local var_11_0 = 1
+	local barIndex = 1
 
-	arg_11_0._resTotalCount = 5
-	arg_11_0._bossBarInfoList = {}
+	self._resTotalCount = 5
+	self._bossBarInfoList = {}
 
-	while var_11_0 <= arg_11_0._resTotalCount do
-		local var_11_1 = {}
-		local var_11_2 = "bloodBarContainer/hp_" .. var_11_0
-		local var_11_3 = var_11_2 .. "_delta"
-		local var_11_4 = arg_11_0._HPBarTf:Find(var_11_2)
-		local var_11_5 = arg_11_0._HPBarTf:Find(var_11_3)
+	-- 创建5个HP条段（hp_1 ~ hp_5，各有delta）
+	while barIndex <= self._resTotalCount do
+		local barInfo = {}
+		local barPath = "bloodBarContainer/hp_" .. barIndex
+		local deltaPath = barPath .. "_delta"
+		local barTF = self._HPBarTf:Find(barPath)
+		local deltaTF = self._HPBarTf:Find(deltaPath)
 
-		var_11_1.progressImage = var_11_4:GetComponent(typeof(Image))
-		var_11_1.deltaImage = var_11_5:GetComponent(typeof(Image))
-		var_11_1.progressTF = var_11_4.transform
-		var_11_1.deltaTF = var_11_5.transform
-		var_11_1.progressImage.fillAmount = 1
-		var_11_1.deltaImage.fillAmount = 1
-		arg_11_0._bossBarInfoList[var_11_0] = var_11_1
-		var_11_0 = var_11_0 + 1
+		barInfo.progressImage = barTF:GetComponent(typeof(Image))
+		barInfo.deltaImage = deltaTF:GetComponent(typeof(Image))
+		barInfo.progressTF = barTF.transform
+		barInfo.deltaTF = deltaTF.transform
+		barInfo.progressImage.fillAmount = 1
+		barInfo.deltaImage.fillAmount = 1
+		self._bossBarInfoList[barIndex] = barInfo
+		barIndex = barIndex + 1
 	end
 
-	arg_11_0._topBarIndex = arg_11_0._HPBarTf.childCount - 1
-	arg_11_0._currentFmod = math.fmod(arg_11_0._HPBarTotalCount, arg_11_0._resTotalCount)
+	self._topBarIndex = self._HPBarTf.childCount - 1
+	self._currentFmod = math.fmod(self._HPBarTotalCount, self._resTotalCount)
 
-	if arg_11_0._currentFmod == 0 then
-		arg_11_0._currentFmod = arg_11_0._resTotalCount
+	if self._currentFmod == 0 then
+		self._currentFmod = self._resTotalCount
 	end
 
-	if arg_11_0._HPBarTotalCount < 5 then
-		local var_11_6 = arg_11_0._resTotalCount
+	-- HP条总数少于5时隐藏多余的条
+	if self._HPBarTotalCount < 5 then
+		local hideIdx = self._resTotalCount
 
-		while var_11_6 > arg_11_0._HPBarTotalCount do
-			local var_11_7 = "bloodBarContainer/hp_" .. var_11_6
+		while hideIdx > self._HPBarTotalCount do
+			local barPath = "bloodBarContainer/hp_" .. hideIdx
 
-			SetActive(arg_11_0._HPBarTf:Find(var_11_7), false)
-			SetActive(arg_11_0._HPBarTf:Find(var_11_7 .. "_delta"), false)
+			SetActive(self._HPBarTf:Find(barPath), false)
+			SetActive(self._HPBarTf:Find(barPath .. "_delta"), false)
 
-			var_11_6 = var_11_6 - 1
+			hideIdx = hideIdx - 1
 		end
 	else
-		local var_11_8 = arg_11_0._resTotalCount
+		-- 总数>=5时把多余的条沉底（用于循环复用）
+		local overflowIdx = self._resTotalCount
 
-		while var_11_8 > arg_11_0._currentFmod do
-			local var_11_9 = "bloodBarContainer/hp_" .. var_11_8
+		while overflowIdx > self._currentFmod do
+			local barPath = "bloodBarContainer/hp_" .. overflowIdx
 
-			arg_11_0._HPBarTf:Find(var_11_9).transform:SetSiblingIndex(0)
-			arg_11_0._HPBarTf:Find(var_11_9 .. "_delta").transform:SetSiblingIndex(0)
+			self._HPBarTf:Find(barPath).transform:SetSiblingIndex(0)
+			self._HPBarTf:Find(barPath .. "_delta").transform:SetSiblingIndex(0)
 
-			var_11_8 = var_11_8 - 1
+			overflowIdx = overflowIdx - 1
 		end
 	end
 
-	if arg_11_0._activeVernier then
-		arg_11_0._vernier = arg_11_0._HPBarTf:Find("vernier/tag")
+	if self._activeVernier then
+		self._vernier = self._HPBarTf:Find("vernier/tag")
 
-		SetActive(arg_11_0._HPBarTf:Find("vernier"), arg_11_0._activeVernier)
+		SetActive(self._HPBarTf:Find("vernier"), self._activeVernier)
 	end
 
-	arg_11_0._chargeTimer = Timer.New(function()
-		arg_11_0._currentTween = arg_11_0:generateTween()
+	-- HP条delta动画定时器（每秒生成tween）
+	self._chargeTimer = Timer.New(function()
+		self._currentTween = self:generateTween()
 	end, 1)
 end
 
-function var_0_2.UpdateHpBar(arg_13_0)
-	local var_13_0 = arg_13_0._unitData:GetCurrentHP()
+--- 更新Boss HP条：计算当前分条和填充量，播放delta动画
+function BattleBossCharacter.UpdateHpBar(self)
+	local currentHP = self._unitData:GetCurrentHP()
 
-	if arg_13_0._cacheHP == var_13_0 then
+	if self._cacheHP == currentHP then
 		return
 	end
 
-	if not arg_13_0._chargeTimer.paused then
-		arg_13_0._chargeTimer:Stop()
-		arg_13_0._chargeTimer:Stop()
-		arg_13_0._chargeTimer:Reset()
+	if not self._chargeTimer.paused then
+		self._chargeTimer:Stop()
+		self._chargeTimer:Stop()
+		self._chargeTimer:Reset()
 	end
 
-	local var_13_1, var_13_2, var_13_3 = arg_13_0:GetCurrentFmod()
+	local currentFmod, fillAmount, currentDivision = self:GetCurrentFmod()
 
-	arg_13_0:SortBar(var_13_1, var_13_3)
+	self:SortBar(currentFmod, currentDivision)
 
-	arg_13_0._currentFmod = var_13_1
-	arg_13_0._currentDivision = var_13_3
+	self._currentFmod = currentFmod
+	self._currentDivision = currentDivision
 
-	if var_13_0 < arg_13_0._cacheHP then
-		if arg_13_0._currentDivision ~= var_13_3 then
-			LeanTween.cancel(arg_13_0._HPBar)
+	if currentHP < self._cacheHP then
+		if self._currentDivision ~= currentDivision then
+			LeanTween.cancel(self._HPBar)
 		end
 
-		arg_13_0._chargeTimer:Start()
+		self._chargeTimer:Start()
 	end
 
-	arg_13_0._bossBarInfoList[var_13_1].progressImage.fillAmount = var_13_2
+	self._bossBarInfoList[currentFmod].progressImage.fillAmount = fillAmount
 
-	if arg_13_0._activeVernier then
-		arg_13_0._vernier.anchorMin = Vector2(var_13_2, 0.5)
-		arg_13_0._vernier.anchorMax = Vector2(var_13_2, 0.5)
+	if self._activeVernier then
+		self._vernier.anchorMin = Vector2(fillAmount, 0.5)
+		self._vernier.anchorMax = Vector2(fillAmount, 0.5)
 	end
 
-	arg_13_0:SetHPBarCountText(var_13_3)
+	self:SetHPBarCountText(currentDivision)
 
-	arg_13_0._cacheHP = var_13_0
+	self._cacheHP = currentHP
 end
 
-function var_0_2.generateTween(arg_14_0)
-	local var_14_0 = arg_14_0._bossBarInfoList[arg_14_0._currentFmod]
-	local var_14_1 = var_14_0.deltaImage
-	local var_14_2 = var_14_0.progressImage.fillAmount
+--- 生成HP条delta动画tween（当前段从delta值渐变到progress值）
+--- @return LeanTween tween对象
+function BattleBossCharacter.generateTween(self)
+	local barInfo = self._bossBarInfoList[self._currentFmod]
+	local deltaImage = barInfo.deltaImage
+	local targetFill = barInfo.progressImage.fillAmount
 
 	duration = duration or 0.7
 
-	return (LeanTween.value(go(arg_14_0._HPBar), var_14_1.fillAmount, var_14_2, 0.7):setOnUpdate(System.Action_float(function(arg_15_0)
-		var_14_1.fillAmount = arg_15_0
+	return (LeanTween.value(go(self._HPBar), deltaImage.fillAmount, targetFill, 0.7):setOnUpdate(System.Action_float(function(value)
+		deltaImage.fillAmount = value
 	end)))
 end
 
-function var_0_2.GetCurrentFmod(arg_16_0)
-	local var_16_0 = arg_16_0._unitData:GetCurrentHP()
-	local var_16_1, var_16_2 = math.modf(var_16_0 / arg_16_0._stepHP)
-	local var_16_3 = var_16_1 + 1
-	local var_16_4 = math.fmod(var_16_3, arg_16_0._resTotalCount)
+--- 获取当前HP的分段信息
+--- @return number currentFmod 当前段索引 (1-5)
+--- @return number fillAmount 当前段填充比例 (0-1)
+--- @return number currentDivision 当前是第几管HP
+function BattleBossCharacter.GetCurrentFmod(self)
+	local currentHP = self._unitData:GetCurrentHP()
+	local barIndex, fillAmount = math.modf(currentHP / self._stepHP)
+	local currentDivision = barIndex + 1
+	local currentFmod = math.fmod(currentDivision, self._resTotalCount)
 
-	if var_16_4 == 0 then
-		var_16_4 = 5
+	if currentFmod == 0 then
+		currentFmod = 5
 	end
 
-	return var_16_4, var_16_2, var_16_3
+	return currentFmod, fillAmount, currentDivision
 end
 
-function var_0_2.SortBar(arg_17_0, arg_17_1, arg_17_2)
-	if arg_17_1 == arg_17_0._currentFmod then
+--- 分段HP条排序：当HP跨段时显示/隐藏对应的条段
+--- @param newFmod number 新的当前段索引
+--- @param currentDivision number 当前第几管
+function BattleBossCharacter.SortBar(self, newFmod, currentDivision)
+	if newFmod == self._currentFmod then
 		return
-	elseif arg_17_1 > arg_17_0._currentFmod then
-		local var_17_0 = arg_17_0._currentFmod
+	elseif newFmod > self._currentFmod then
+		-- HP增加（回血）：从旧段到新段逐段填满并置顶
+		local fillIdx = self._currentFmod
 
-		arg_17_0._bossBarInfoList[var_17_0].progressImage.fillAmount = 1
-		arg_17_0._bossBarInfoList[var_17_0].deltaImage.fillAmount = 1
+		self._bossBarInfoList[fillIdx].progressImage.fillAmount = 1
+		self._bossBarInfoList[fillIdx].deltaImage.fillAmount = 1
 
-		while var_17_0 < arg_17_1 do
-			var_17_0 = var_17_0 + 1
+		while fillIdx < newFmod do
+			fillIdx = fillIdx + 1
 
-			local var_17_1 = arg_17_0._bossBarInfoList[var_17_0]
+			local barInfo = self._bossBarInfoList[fillIdx]
 
-			var_17_1.deltaTF:SetSiblingIndex(arg_17_0._topBarIndex)
-			var_17_1.progressTF:SetSiblingIndex(arg_17_0._topBarIndex)
-			SetActive(var_17_1.progressImage, true)
-			SetActive(var_17_1.deltaImage, true)
+			barInfo.deltaTF:SetSiblingIndex(self._topBarIndex)
+			barInfo.progressTF:SetSiblingIndex(self._topBarIndex)
+			SetActive(barInfo.progressImage, true)
+			SetActive(barInfo.deltaImage, true)
 		end
-	elseif arg_17_1 < arg_17_0._currentFmod then
-		local var_17_2 = arg_17_0._currentFmod
+	elseif newFmod < self._currentFmod then
+		-- HP减少（扣血）：旧段填满并沉底
+		local clearIdx = self._currentFmod
 
-		while arg_17_1 < var_17_2 do
-			local var_17_3 = arg_17_0._bossBarInfoList[var_17_2]
+		while newFmod < clearIdx do
+			local barInfo = self._bossBarInfoList[clearIdx]
 
-			var_17_3.progressImage.fillAmount = 1
-			var_17_3.deltaImage.fillAmount = 1
+			barInfo.progressImage.fillAmount = 1
+			barInfo.deltaImage.fillAmount = 1
 
-			var_17_3.progressTF:SetSiblingIndex(0)
-			var_17_3.deltaTF:SetSiblingIndex(0)
+			barInfo.progressTF:SetSiblingIndex(0)
+			barInfo.deltaTF:SetSiblingIndex(0)
 
-			if arg_17_2 < arg_17_0._resTotalCount then
-				SetActive(var_17_3.progressImage, false)
-				SetActive(var_17_3.deltaImage, false)
+			if currentDivision < self._resTotalCount then
+				SetActive(barInfo.progressImage, false)
+				SetActive(barInfo.deltaImage, false)
 			end
 
-			var_17_2 = var_17_2 - 1
+			clearIdx = clearIdx - 1
 		end
 	end
 end
 
-function var_0_2.SetHPBarCountText(arg_18_0, arg_18_1)
-	if arg_18_0._hideBarNum then
-		arg_18_0._HPBarCountText.text = "X??"
+--- 设置HP条计数文本（"X N"或"X??"如果隐藏）
+--- @param count number 当前HP管序号
+function BattleBossCharacter.SetHPBarCountText(self, count)
+	if self._hideBarNum then
+		self._HPBarCountText.text = "X??"
 	else
-		arg_18_0._HPBarCountText.text = "X " .. arg_18_1
+		self._HPBarCountText.text = "X " .. count
 	end
 end
 
-function var_0_2.UpdateHPBarPosition(arg_19_0)
-	if arg_19_0._normalHPTF and not arg_19_0._hideHP then
-		arg_19_0._hpBarPos:Copy(arg_19_0._referenceVector):Add(arg_19_0._hpBarOffset)
+--- 更新HP条位置（使用_normalHPTF位置）
+function BattleBossCharacter.UpdateHPBarPosition(self)
+	if self._normalHPTF and not self._hideHP then
+		self._hpBarPos:Copy(self._referenceVector):Add(self._hpBarOffset)
 
-		arg_19_0._normalHPTF.position = arg_19_0._hpBarPos
+		self._normalHPTF.position = self._hpBarPos
 	end
 end
 
-function var_0_2.onWeaponPreCast(arg_20_0, arg_20_1)
-	var_0_2.super.onWeaponPreCast(arg_20_0, arg_20_1)
+--- 武器前摇：初始化护甲条和施法时钟
+--- @param event table {Data = {fx, armor, time}}
+function BattleBossCharacter.onWeaponPreCast(self, event)
+	BattleBossCharacter.super.onWeaponPreCast(self, event)
 
-	local var_20_0 = arg_20_1.Data
-	local var_20_1 = var_20_0.armor
+	local precastData = event.Data
+	local armorValue = precastData.armor
 
-	arg_20_0:initArmorBar(var_20_0.armor)
+	self:initArmorBar(precastData.armor)
 
-	if var_20_1 and var_20_1 ~= 0 then
-		arg_20_0:initCastClock(var_20_0.time, arg_20_1.Dispatcher)
+	if armorValue and armorValue ~= 0 then
+		self:initCastClock(precastData.time, event.Dispatcher)
 	end
 end
 
-function var_0_2.onWeaponPrecastFinish(arg_21_0, arg_21_1)
-	var_0_2.super.onWeaponPrecastFinish(arg_21_0, arg_21_1)
+--- 武器前摇结束：清除护甲和施法时钟（护甲被打穿则强制中断）
+--- @param event table {Data = {armor}, Dispatcher}
+function BattleBossCharacter.onWeaponPrecastFinish(self, event)
+	BattleBossCharacter.super.onWeaponPrecastFinish(self, event)
 
-	local var_21_0 = arg_21_1.Data.armor
-	local var_21_1 = arg_21_1.Dispatcher
+	local armorValue = event.Data.armor
+	local weapon = event.Dispatcher
 
-	if arg_21_0._castClock:GetCastingWeapon() == var_21_1 and var_21_0 and var_21_0 ~= 0 then
-		if arg_21_0._armor <= 0 then
-			arg_21_0._castClock:Interrupt(true)
+	if self._castClock:GetCastingWeapon() == weapon and armorValue and armorValue ~= 0 then
+		if self._armor <= 0 then
+			self._castClock:Interrupt(true)
 		else
-			arg_21_0._castClock:Interrupt(false)
+			self._castClock:Interrupt(false)
 		end
 
-		arg_21_0._armor = nil
+		self._armor = nil
 
-		SetActive(arg_21_0._armorBar, false)
+		SetActive(self._armorBar, false)
 	end
 end
 
-function var_0_2.onWeaponInterrupted(arg_22_0, arg_22_1)
-	arg_22_0._unitData:StateChange(var_0_0.Battle.UnitState.STATE_INTERRUPT)
+--- 武器被打断：切换到中断状态
+function BattleBossCharacter.onWeaponInterrupted(self, event)
+	self._unitData:StateChange(ys.Battle.UnitState.STATE_INTERRUPT)
 end
 
-function var_0_2.initArmorBar(arg_23_0, arg_23_1)
-	if arg_23_1 and arg_23_1 ~= 0 then
-		arg_23_0._armor = arg_23_1
-		arg_23_0._totalArmor = arg_23_1
+--- 初始化护甲条：设置护甲值和总护甲，显示护甲UI
+--- @param armorValue number 护甲值
+function BattleBossCharacter.initArmorBar(self, armorValue)
+	if armorValue and armorValue ~= 0 then
+		self._armor = armorValue
+		self._totalArmor = armorValue
 
-		arg_23_0:updateWeaponArmor()
-		SetActive(arg_23_0._armorBar, true)
+		self:updateWeaponArmor()
+		SetActive(self._armorBar, true)
 	end
 end
 
-function var_0_2.OnUpdateHP(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_1.Data.preShieldHP
+--- HP更新：处理屏障和护甲的伤害穿透
+--- @param event table {Data = {dHP, preShieldHP}}
+function BattleBossCharacter.OnUpdateHP(self, event)
+	local preShieldHP = event.Data.preShieldHP
 
-	if arg_24_0._barrier and var_24_0 < 0 then
-		arg_24_0._barrier = arg_24_0._barrier + var_24_0
+	-- 屏障先吸收伤害
+	if self._barrier and preShieldHP < 0 then
+		self._barrier = self._barrier + preShieldHP
 
-		arg_24_0:updateBarrierBar()
+		self:updateBarrierBar()
 	end
 
-	var_0_2.super.OnUpdateHP(arg_24_0, arg_24_1)
+	BattleBossCharacter.super.OnUpdateHP(self, event)
 
-	local var_24_1 = arg_24_1.Data.dHP
+	local dHP = event.Data.dHP
 
-	if arg_24_0._armor and var_24_1 < 0 then
-		arg_24_0._armor = arg_24_0._armor + var_24_1
+	-- 护甲承受剩余伤害
+	if self._armor and dHP < 0 then
+		self._armor = self._armor + dHP
 
-		arg_24_0:updateWeaponArmor()
+		self:updateWeaponArmor()
 	end
 end
 
-function var_0_2.updateWeaponArmor(arg_25_0)
-	arg_25_0._armorProgress.fillAmount = arg_25_0._armor / arg_25_0._totalArmor
+--- 更新护甲填充量
+function BattleBossCharacter.updateWeaponArmor(self)
+	self._armorProgress.fillAmount = self._armor / self._totalArmor
 end
 
-function var_0_2.initCastClock(arg_26_0, arg_26_1, arg_26_2)
-	arg_26_0._castClock:Casting(arg_26_1, arg_26_2)
+--- 初始化施法时钟：记录施法结束时间和总时长
+--- @param duration number 施法时长
+--- @param weapon BattleWeaponUnit 施法武器
+function BattleBossCharacter.initCastClock(self, duration, weapon)
+	self._castClock:Casting(duration, weapon)
 
-	arg_26_0._castFinishTime = pg.TimeMgr.GetInstance():GetCombatTime() + arg_26_1
-	arg_26_0._castDuration = arg_26_1
+	self._castFinishTime = pg.TimeMgr.GetInstance():GetCombatTime() + duration
+	self._castDuration = duration
 end
 
-function var_0_2.UpdateCastClock(arg_27_0)
-	arg_27_0._castClock:UpdateCastClock()
+--- 更新施法时钟进度
+function BattleBossCharacter.UpdateCastClock(self)
+	self._castClock:UpdateCastClock()
 end
 
-function var_0_2.updateComponentDiveInvisible(arg_28_0)
-	var_0_2.super.updateComponentDiveInvisible(arg_28_0)
-	SetActive(arg_28_0._HPBarTf, true)
+--- Boss的HP条在潜入时也保持可见
+function BattleBossCharacter.updateComponentDiveInvisible(self)
+	BattleBossCharacter.super.updateComponentDiveInvisible(self)
+	SetActive(self._HPBarTf, true)
 end
 
-function var_0_2.updateComponentVisible(arg_29_0)
-	var_0_2.super.updateComponentVisible(arg_29_0)
-	SetActive(arg_29_0._HPBarTf, true)
+--- Boss的HP条始终可见
+function BattleBossCharacter.updateComponentVisible(self)
+	BattleBossCharacter.super.updateComponentVisible(self)
+	SetActive(self._HPBarTf, true)
 end
 
-function var_0_2.initBarrierBar(arg_30_0)
-	arg_30_0._unitData:RegisterEventListener(arg_30_0, var_0_1.BARRIER_STATE_CHANGE, arg_30_0.onBarrierStateChange)
+--- 初始化屏障条事件监听
+function BattleBossCharacter.initBarrierBar(self)
+	self._unitData:RegisterEventListener(self, BattleUnitEvent.BARRIER_STATE_CHANGE, self.onBarrierStateChange)
 end
 
-function var_0_2.onBarrierStateChange(arg_31_0, arg_31_1)
-	local var_31_0 = arg_31_1.Data.barrierDurability
-	local var_31_1 = arg_31_1.Data.barrierDuration
+--- 屏障状态变化：初始化或移除屏障UI
+--- @param event table {Data = {barrierDurability, barrierDuration}}
+function BattleBossCharacter.onBarrierStateChange(self, event)
+	local barrierDurability = event.Data.barrierDurability
+	local barrierDuration = event.Data.barrierDuration
 
-	SetActive(arg_31_0._barrierBar, var_31_0 > 0)
+	SetActive(self._barrierBar, barrierDurability > 0)
 
-	if var_31_0 > 0 then
-		arg_31_0._totalBarrier = var_31_0
-		arg_31_0._barrier = var_31_0
+	if barrierDurability > 0 then
+		self._totalBarrier = barrierDurability
+		self._barrier = barrierDurability
 
-		arg_31_0:initBarrierClock(var_31_1)
-		arg_31_0:updateBarrierBar()
-		arg_31_0:updateBarrierClock()
+		self:initBarrierClock(barrierDuration)
+		self:updateBarrierBar()
+		self:updateBarrierClock()
 	else
-		arg_31_0._barrier = nil
-		arg_31_0._totalBarrier = nil
+		self._barrier = nil
+		self._totalBarrier = nil
 
-		arg_31_0._barrierClock:Interrupt()
+		self._barrierClock:Interrupt()
 	end
 end
 
-function var_0_2.updateBarrierBar(arg_32_0)
-	arg_32_0._barrierProgress.fillAmount = arg_32_0._barrier / arg_32_0._totalBarrier
+--- 更新屏障填充量
+function BattleBossCharacter.updateBarrierBar(self)
+	self._barrierProgress.fillAmount = self._barrier / self._totalBarrier
 end
 
-function var_0_2.updateBarrierClock(arg_33_0)
-	arg_33_0._barrierClock:UpdateBarrierClockProgress()
+--- 更新屏障时钟进度
+function BattleBossCharacter.updateBarrierClock(self)
+	self._barrierClock:UpdateBarrierClockProgress()
 end
 
-function var_0_2.initBarrierClock(arg_34_0, arg_34_1)
-	arg_34_0._barrierClock:Shielding(arg_34_1)
+--- 初始化屏障时钟
+--- @param duration number 屏障持续时间
+function BattleBossCharacter.initBarrierClock(self, duration)
+	self._barrierClock:Shielding(duration)
 end
 
-function var_0_2.AddAimBiasBar(arg_35_0, arg_35_1)
-	arg_35_0._normalHPTF = arg_35_1
-	arg_35_0._aimBiarBarTF = arg_35_1:Find("biasBar")
-	arg_35_0._aimBiarBar = var_0_0.Battle.BattleAimbiasBar.New(arg_35_0._aimBiarBarTF)
+--- Boss的瞄准偏斜条：在HP条容器内找到biasBar子对象
+--- @param aimBiasBarObj GameObject 偏斜条容器
+function BattleBossCharacter.AddAimBiasBar(self, aimBiasBarObj)
+	self._normalHPTF = aimBiasBarObj
+	self._aimBiarBarTF = aimBiasBarObj:Find("biasBar")
+	self._aimBiarBar = ys.Battle.BattleAimbiasBar.New(self._aimBiarBarTF)
 
-	arg_35_0._aimBiarBar:ConfigAimBias(arg_35_0._unitData:GetAimBias())
-	arg_35_0._aimBiarBar:UpdateAimBiasProgress()
+	self._aimBiarBar:ConfigAimBias(self._unitData:GetAimBias())
+	self._aimBiarBar:UpdateAimBiasProgress()
 end
 
-function var_0_2.AddModel(arg_36_0, arg_36_1)
-	var_0_2.super.AddModel(arg_36_0, arg_36_1)
-	arg_36_0:UpdatePosition()
+--- 添加模型后立即更新位置
+function BattleBossCharacter.AddModel(self, modelGO)
+	BattleBossCharacter.super.AddModel(self, modelGO)
+	self:UpdatePosition()
 end

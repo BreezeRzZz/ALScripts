@@ -1,314 +1,361 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = class("BattleReferenceBoxMediator", var_0_0.MVC.Mediator)
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleReferenceBoxMediator = var_0_4
-var_0_4.__name = "BattleReferenceBoxMediator"
+--- @class BattleReferenceBoxMediator : ys.MVC.Mediator
+--- @classdesc 战斗引用盒中介者——用于 Debug/开发阶段的碰撞盒可视化。
+--- 可切换显示三类碰撞盒：单位碰撞盒、子弹碰撞盒、墙体碰撞盒。
+--- 还管理 BattleUnitDetailView（单位详细信息面板）。
+---
+--- 碰撞盒类型：
+---   - Cylinder/Cube_friendly: 友方单位（圆筒形/立方体）
+---   - Cylinder/Cube_foe: 敌方单位（圆筒形/立方体）
+---   - Cube_friendly/Cube_foe: 子弹碰撞盒（立方体）
+--- @field _dataProxy BattleDataProxy 数据层代理
+--- @field _sceneMediator BattleSceneMediator 场景中介者（用于实例化UI组件）
+--- @field _boxContainer UnityEngine.GameObject 碰撞盒根容器
+--- @field _detailContainer UnityEngine.GameObject 单位详情面板容器
+--- @field _unitBoxList table<number, GameObject> 单位碰撞盒映射
+--- @field _bulletBoxList table<number, GameObject> 子弹碰撞盒映射
+--- @field _wallBoxList table<number, GameObject> 墙体碰撞盒映射
+--- @field _detailViewList table<number, BattleUnitDetailView> 单位详情视图映射
+local BattleReferenceBoxMediator = class("BattleReferenceBoxMediator", ys.MVC.Mediator)
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+ys.Battle.BattleReferenceBoxMediator = BattleReferenceBoxMediator
+BattleReferenceBoxMediator.__name = "BattleReferenceBoxMediator"
+
+function BattleReferenceBoxMediator.Ctor(self)
+	BattleReferenceBoxMediator.super.Ctor(self)
 end
 
-function var_0_4.Initialize(arg_2_0)
-	var_0_4.super.Initialize(arg_2_0)
+--- 初始化：获取 dataProxy/sceneMediator，创建容器，注册事件
+function BattleReferenceBoxMediator.Initialize(self)
+	BattleReferenceBoxMediator.super.Initialize(self)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
-	arg_2_0._sceneMediator = arg_2_0._state:GetSceneMediator()
-	arg_2_0._boxContainer = GameObject("BoxContainer")
-	arg_2_0._detailContainer = arg_2_0._state:GetUI()._tf:Find("CharacterDetailContainer").gameObject
-	arg_2_0._unitBoxList = {}
-	arg_2_0._bulletBoxList = {}
-	arg_2_0._wallBoxList = {}
-	arg_2_0._detailViewList = {}
-	arg_2_0._unitBoxActive = false
-	arg_2_0._bulletBoxActive = false
-	arg_2_0._detailViewActive = false
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
+	self._sceneMediator = self._state:GetSceneMediator()
+	self._boxContainer = GameObject("BoxContainer")
+	self._detailContainer = self._state:GetUI()._tf:Find("CharacterDetailContainer").gameObject
+	self._unitBoxList = {}
+	self._bulletBoxList = {}
+	self._wallBoxList = {}
+	self._detailViewList = {}
+	self._unitBoxActive = false
+	self._bulletBoxActive = false
+	self._detailViewActive = false
 
-	arg_2_0:initUnitEvent()
+	self:initUnitEvent()
 end
 
-function var_0_4.ActiveUnitBoxes(arg_3_0, arg_3_1)
-	if arg_3_1 and not arg_3_0._unitBoxActive then
-		arg_3_0._unitBoxActive = true
-
-		arg_3_0:createExistBoxes()
-	elseif not arg_3_1 and arg_3_0._unitBoxActive then
-		arg_3_0._unitBoxActive = false
-
-		arg_3_0:removeAllBoxes()
+--- 切换单位碰撞盒显示
+--- @param active boolean 是否显示
+function BattleReferenceBoxMediator.ActiveUnitBoxes(self, active)
+	if active and not self._unitBoxActive then
+		self._unitBoxActive = true
+		-- 为已存在的所有单位创建碰撞盒
+		self:createExistBoxes()
+	elseif not active and self._unitBoxActive then
+		self._unitBoxActive = false
+		self:removeAllBoxes()
 	end
 end
 
-function var_0_4.ActiveBulletBoxes(arg_4_0, arg_4_1)
-	if arg_4_1 and not arg_4_0._bulletBoxActive then
-		arg_4_0:initBulletEvent()
-
-		arg_4_0._bulletBoxActive = true
-	elseif not arg_4_1 and arg_4_0._bulletBoxActive then
-		arg_4_0:disInitBulletEvent()
-		arg_4_0:removeAllBulletBoxes()
-
-		arg_4_0._bulletBoxActive = false
+--- 切换子弹碰撞盒显示
+--- @param active boolean 是否显示
+function BattleReferenceBoxMediator.ActiveBulletBoxes(self, active)
+	if active and not self._bulletBoxActive then
+		self:initBulletEvent()
+		self._bulletBoxActive = true
+	elseif not active and self._bulletBoxActive then
+		self:disInitBulletEvent()
+		self:removeAllBulletBoxes()
+		self._bulletBoxActive = false
 	end
 end
 
-function var_0_4.ActiveUnitDetail(arg_5_0, arg_5_1)
-	SetActive(arg_5_0._detailContainer, arg_5_1)
+--- 切换单位详情面板显示
+--- @param active boolean 是否显示
+function BattleReferenceBoxMediator.ActiveUnitDetail(self, active)
+	SetActive(self._detailContainer, active)
 
-	if arg_5_1 and not arg_5_0._detailViewActive then
-		for iter_5_0, iter_5_1 in ipairs(arg_5_0._dataProxy:GetFleetList()) do
-			local var_5_0 = iter_5_1:GetUnitList()
-
-			for iter_5_2, iter_5_3 in ipairs(var_5_0) do
-				arg_5_0:createDetail(iter_5_3)
+	if active and not self._detailViewActive then
+		-- 为所有舰队单位创建详情面板
+		for _, fleet in ipairs(self._dataProxy:GetFleetList()) do
+			local unitList = fleet:GetUnitList()
+			for _, unit in ipairs(unitList) do
+				self:createDetail(unit)
 			end
 		end
 
-		for iter_5_4, iter_5_5 in pairs(arg_5_0._dataProxy:GetUnitList()) do
-			if table.contains(var_0_0.Battle.BattleUnitDetailView.EnemyMarkList, iter_5_5:GetTemplate().id) then
-				arg_5_0:createDetail(unit)
+		-- 为标记的敌方单位创建详情面板
+		for unitID, unit in pairs(self._dataProxy:GetUnitList()) do
+			if table.contains(ys.Battle.BattleUnitDetailView.EnemyMarkList, unit:GetTemplate().id) then
+				self:createDetail(unit)
 			end
 		end
 
-		arg_5_0._detailViewActive = true
-	elseif not arg_5_1 and arg_5_0._detailViewActive then
-		arg_5_0._detailViewActive = false
-
-		arg_5_0:removeAllDetail()
+		self._detailViewActive = true
+	elseif not active and self._detailViewActive then
+		self._detailViewActive = false
+		self:removeAllDetail()
 	end
 end
 
-function var_0_4.Update(arg_6_0)
-	for iter_6_0, iter_6_1 in pairs(arg_6_0._dataProxy:GetUnitList()) do
-		local var_6_0 = arg_6_0._unitBoxList[iter_6_0]
-
-		if var_6_0 then
-			var_6_0.transform.localPosition = iter_6_1:GetPosition()
+--- 每帧更新：更新碰撞盒位置/缩放/旋转以匹配实际数据模型的位置
+function BattleReferenceBoxMediator.Update(self)
+	-- 更新单位碰撞盒位置
+	for unitID, unit in pairs(self._dataProxy:GetUnitList()) do
+		local box = self._unitBoxList[unitID]
+		if box then
+			box.transform.localPosition = unit:GetPosition()
 		end
 	end
 
-	if arg_6_0._bulletBoxActive then
-		for iter_6_2, iter_6_3 in pairs(arg_6_0._dataProxy:GetBulletList()) do
-			local var_6_1 = arg_6_0._bulletBoxList[iter_6_2] or arg_6_0:createBulletBox(iter_6_3)
+	-- 更新子弹碰撞盒（仅在激活状态下）
+	if self._bulletBoxActive then
+		for bulletID, bullet in pairs(self._dataProxy:GetBulletList()) do
+			local box = self._bulletBoxList[bulletID] or self:createBulletBox(bullet)
+			box.transform.localPosition = bullet:GetPosition()
+			box.transform.localEulerAngles = Vector3(0, -bullet:GetYAngle(), 0)
 
-			var_6_1.transform.localPosition = iter_6_3:GetPosition()
-			var_6_1.transform.localEulerAngles = Vector3(0, -iter_6_3:GetYAngle(), 0)
-
-			local var_6_2 = iter_6_3:GetBoxSize() * 2
-
-			var_6_1.transform.localScale = Vector3(var_6_2.x, var_6_2.y, var_6_2.z)
+			local boxSize = bullet:GetBoxSize() * 2
+			box.transform.localScale = Vector3(boxSize.x, boxSize.y, boxSize.z)
 		end
 
-		for iter_6_4, iter_6_5 in pairs(arg_6_0._dataProxy:GetWallList()) do
-			(arg_6_0._wallBoxList[iter_6_4] or arg_6_0:createWallBox(iter_6_5)).transform.localPosition = iter_6_5:GetPosition()
+		for wallID, wall in pairs(self._dataProxy:GetWallList()) do
+			(self._wallBoxList[wallID] or self:createWallBox(wall)).transform.localPosition = wall:GetPosition()
 		end
 	end
 
-	if arg_6_0._detailViewActive then
-		for iter_6_6, iter_6_7 in pairs(arg_6_0._detailViewList) do
-			iter_6_7:Update()
-		end
-	end
-end
-
-function var_0_4.initUnitEvent(arg_7_0)
-	arg_7_0._dataProxy:RegisterEventListener(arg_7_0, var_0_1.ADD_UNIT, arg_7_0.onAddUnit)
-	arg_7_0._dataProxy:RegisterEventListener(arg_7_0, var_0_1.REMOVE_UNIT, arg_7_0.onRemoveUnit)
-end
-
-function var_0_4.disInitUnitEvent(arg_8_0)
-	arg_8_0._dataProxy:UnregisterEventListener(arg_8_0, var_0_1.ADD_UNIT)
-	arg_8_0._dataProxy:UnregisterEventListener(arg_8_0, var_0_1.REMOVE_UNIT)
-end
-
-function var_0_4.onAddUnit(arg_9_0, arg_9_1)
-	local var_9_0 = arg_9_1.Data.type
-	local var_9_1 = arg_9_1.Data.unit
-
-	if arg_9_0._unitBoxActive then
-		local var_9_2 = arg_9_0:createBox(var_9_1)
-
-		arg_9_0._unitBoxList[var_9_1:GetUniqueID()] = var_9_2
-	end
-
-	if arg_9_0._detailViewActive then
-		if var_9_0 == var_0_2.UnitType.PLAYER_UNIT then
-			arg_9_0:createDetail(var_9_1)
-		elseif table.contains(var_0_0.Battle.BattleUnitDetailView.EnemyMarkList, var_9_1:GetTemplate().id) then
-			arg_9_0:createDetail(var_9_1)
+	-- 更新详情面板
+	if self._detailViewActive then
+		for unitID, detailView in pairs(self._detailViewList) do
+			detailView:Update()
 		end
 	end
 end
 
-function var_0_4.createBox(arg_10_0, arg_10_1)
-	local var_10_0
-	local var_10_1
-	local var_10_2
-	local var_10_3 = arg_10_1:GetIFF() == 1 and "_friendly" or "_foe"
-	local var_10_4 = arg_10_1:GetBoxSize()
+--- 注册单位的添加/移除事件
+function BattleReferenceBoxMediator.initUnitEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+end
 
-	if var_10_4.range then
-		var_10_0 = arg_10_0._sceneMediator:InstantiateCharacterComponent("Cylinder" .. var_10_3)
+--- 注销单位的添加/移除事件
+function BattleReferenceBoxMediator.disInitUnitEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+end
+
+--- 处理单位添加事件：若碰撞盒已激活则创建碰撞盒，若详情已激活则创建详情
+--- @param event ys.Event 事件对象，Data 中包含 type 和 unit
+function BattleReferenceBoxMediator.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
+
+	if self._unitBoxActive then
+		local box = self:createBox(unit)
+		self._unitBoxList[unit:GetUniqueID()] = box
+	end
+
+	if self._detailViewActive then
+		if unitType == BattleConst.UnitType.PLAYER_UNIT then
+			self:createDetail(unit)
+		elseif table.contains(ys.Battle.BattleUnitDetailView.EnemyMarkList, unit:GetTemplate().id) then
+			self:createDetail(unit)
+		end
+	end
+end
+
+--- 为指定单位创建一个碰撞盒可视化GameObject
+--- @param unit table 战斗单位数据
+--- @return UnityEngine.GameObject 碰撞盒GameObject
+function BattleReferenceBoxMediator.createBox(self, unit)
+	local boxObj
+	local boxSize = unit:GetBoxSize()
+	local sideTag -- 碰撞盒预制件后缀，区分友方/敌方 "_friendly" / "_foe"
+	local iffTag = unit:GetIFF() == 1 and "_friendly" or "_foe"
+
+	if boxSize.range then
+		-- 圆形碰撞（声纳等），用 Cylinder 预制件
+		boxObj = self._sceneMediator:InstantiateCharacterComponent("Cylinder" .. iffTag)
 	else
-		var_10_0 = arg_10_0._sceneMediator:InstantiateCharacterComponent("Cube" .. var_10_3)
-		var_10_4 = var_10_4 * 2
+		-- 方形碰撞，用 Cube 预制件
+		boxObj = self._sceneMediator:InstantiateCharacterComponent("Cube" .. iffTag)
+		boxSize = boxSize * 2
 	end
 
-	var_10_0.transform:SetParent(arg_10_0._boxContainer.transform)
+	boxObj.transform:SetParent(self._boxContainer.transform)
+	boxObj.layer = LayerMask.NameToLayer("Default")
 
-	var_10_0.layer = LayerMask.NameToLayer("Default")
-
-	if var_10_4.range then
-		var_10_0.transform.localScale = Vector3(var_10_4.range * 2, var_10_4.tickness * 2, var_10_4.range * 2)
+	if boxSize.range then
+		boxObj.transform.localScale = Vector3(boxSize.range * 2, boxSize.tickness * 2, boxSize.range * 2)
 	else
-		var_10_0.transform.localScale = Vector3(var_10_4.x, var_10_4.y, var_10_4.z)
+		boxObj.transform.localScale = Vector3(boxSize.x, boxSize.y, boxSize.z)
 	end
 
-	SetActive(var_10_0, true)
+	SetActive(boxObj, true)
 
-	return var_10_0
+	return boxObj
 end
 
-function var_0_4.createExistBoxes(arg_11_0)
-	for iter_11_0, iter_11_1 in pairs(arg_11_0._dataProxy:GetUnitList()) do
-		arg_11_0._unitBoxList[iter_11_0] = arg_11_0:createBox(iter_11_1)
-	end
-end
-
-function var_0_4.createDetail(arg_12_0, arg_12_1)
-	local var_12_0 = var_0_0.Battle.BattleUnitDetailView.New()
-	local var_12_1 = arg_12_1:GetIFF()
-	local var_12_2 = arg_12_0._state:GetUI()._tf:Find("CharacterDetailContainer/" .. arg_12_1:GetIFF())
-	local var_12_3 = arg_12_0._sceneMediator:InstantiateCharacterComponent("CharacterDetailContainer/detailPanel")
-
-	var_12_3.transform:SetParent(var_12_2, true)
-	var_12_0:ConfigSkin(var_12_3)
-	var_12_0:SetUnit(arg_12_1)
-
-	arg_12_0._detailViewList[arg_12_1:GetUniqueID()] = var_12_0
-
-	return var_12_0
-end
-
-function var_0_4.onRemoveUnit(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1.Data.type
-
-	if arg_13_0._unitBoxActive then
-		arg_13_0:removeBox(arg_13_1.Data.UID)
-	end
-
-	if arg_13_0._detailViewActive and (var_13_0 ~= var_0_2.UnitType.PLAYER_UNIT or var_13_0 ~= var_0_2.UnitType.ENEMY_UNIT or var_13_0 ~= var_0_2.UnitType.BOSS_UNIT) and arg_13_0._detailViewList[arg_13_1.Data.UID] then
-		arg_13_0:removeDetail(arg_13_1.Data.UID)
+--- 为当前所有已存在的单位批量创建碰撞盒
+function BattleReferenceBoxMediator.createExistBoxes(self)
+	for unitID, unit in pairs(self._dataProxy:GetUnitList()) do
+		self._unitBoxList[unitID] = self:createBox(unit)
 	end
 end
 
-function var_0_4.removeBox(arg_14_0, arg_14_1)
-	GameObject.Destroy(arg_14_0._unitBoxList[arg_14_1])
+--- 创建单位详情视图
+--- @param unit table 战斗单位
+--- @return BattleUnitDetailView
+function BattleReferenceBoxMediator.createDetail(self, unit)
+	local detailView = ys.Battle.BattleUnitDetailView.New()
+	local unitIFF = unit:GetIFF()
+	local detailParent = self._state:GetUI()._tf:Find("CharacterDetailContainer/" .. unit:GetIFF())
+	local detailPanel = self._sceneMediator:InstantiateCharacterComponent("CharacterDetailContainer/detailPanel")
 
-	arg_14_0._unitBoxList[arg_14_1] = nil
+	detailPanel.transform:SetParent(detailParent, true)
+	detailView:ConfigSkin(detailPanel)
+	detailView:SetUnit(unit)
+
+	self._detailViewList[unit:GetUniqueID()] = detailView
+
+	return detailView
 end
 
-function var_0_4.removeDetail(arg_15_0, arg_15_1)
-	arg_15_0._detailViewList[arg_15_1]:Dispose()
+--- 处理单位移除事件
+function BattleReferenceBoxMediator.onRemoveUnit(self, event)
+	local unitType = event.Data.type
 
-	arg_15_0._detailViewList[arg_15_1] = nil
-end
+	if self._unitBoxActive then
+		self:removeBox(event.Data.UID)
+	end
 
-function var_0_4.removeAllBoxes(arg_16_0)
-	for iter_16_0, iter_16_1 in pairs(arg_16_0._dataProxy:GetUnitList()) do
-		arg_16_0:removeBox(iter_16_0)
+	if self._detailViewActive
+		and (unitType ~= BattleConst.UnitType.PLAYER_UNIT or unitType ~= BattleConst.UnitType.ENEMY_UNIT or unitType ~= BattleConst.UnitType.BOSS_UNIT)
+		and self._detailViewList[event.Data.UID] then
+		self:removeDetail(event.Data.UID)
 	end
 end
 
-function var_0_4.removeAllDetail(arg_17_0)
-	for iter_17_0, iter_17_1 in pairs(arg_17_0._detailViewList) do
-		arg_17_0:removeDetail(iter_17_0)
+--- 移除单位碰撞盒
+--- @param unitID number 单位UID
+function BattleReferenceBoxMediator.removeBox(self, unitID)
+	GameObject.Destroy(self._unitBoxList[unitID])
+	self._unitBoxList[unitID] = nil
+end
+
+--- 移除单位详情视图
+--- @param unitID number 单位UID
+function BattleReferenceBoxMediator.removeDetail(self, unitID)
+	self._detailViewList[unitID]:Dispose()
+	self._detailViewList[unitID] = nil
+end
+
+--- 移除所有单位碰撞盒
+function BattleReferenceBoxMediator.removeAllBoxes(self)
+	for unitID, _ in pairs(self._dataProxy:GetUnitList()) do
+		self:removeBox(unitID)
 	end
 end
 
-function var_0_4.initBulletEvent(arg_18_0)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, var_0_1.REMOVE_BULLET, arg_18_0.onRemoveBullet)
-end
-
-function var_0_4.disInitBulletEvent(arg_19_0)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, var_0_1.REMOVE_BULLET)
-end
-
-function var_0_4.onRemoveBullet(arg_20_0, arg_20_1)
-	arg_20_0:removeBulletBox(arg_20_1.Data.UID)
-end
-
-function var_0_4.removeBulletBox(arg_21_0, arg_21_1)
-	GameObject.Destroy(arg_21_0._bulletBoxList[arg_21_1])
-
-	arg_21_0._bulletBoxList[arg_21_1] = nil
-end
-
-function var_0_4.removeAllBulletBoxes(arg_22_0)
-	for iter_22_0, iter_22_1 in pairs(arg_22_0._bulletBoxList) do
-		arg_22_0:removeBulletBox(iter_22_0)
+--- 移除所有单位详情
+function BattleReferenceBoxMediator.removeAllDetail(self)
+	for unitID, _ in pairs(self._detailViewList) do
+		self:removeDetail(unitID)
 	end
 end
 
-function var_0_4.createBulletBox(arg_23_0, arg_23_1)
-	local var_23_0
+--- 注册子弹移除事件（用于同步移除碰撞盒）
+function BattleReferenceBoxMediator.initBulletEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_BULLET, self.onRemoveBullet)
+end
 
-	if arg_23_1:GetIFF() == 1 then
-		var_23_0 = arg_23_0._sceneMediator:InstantiateCharacterComponent("Cube_friendly")
+--- 注销子弹移除事件
+function BattleReferenceBoxMediator.disInitBulletEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_BULLET)
+end
+
+--- 处理子弹移除事件
+function BattleReferenceBoxMediator.onRemoveBullet(self, event)
+	self:removeBulletBox(event.Data.UID)
+end
+
+--- 移除子弹碰撞盒
+--- @param bulletID number 子弹UID
+function BattleReferenceBoxMediator.removeBulletBox(self, bulletID)
+	GameObject.Destroy(self._bulletBoxList[bulletID])
+	self._bulletBoxList[bulletID] = nil
+end
+
+--- 移除所有子弹碰撞盒
+function BattleReferenceBoxMediator.removeAllBulletBoxes(self)
+	for bulletID, _ in pairs(self._bulletBoxList) do
+		self:removeBulletBox(bulletID)
+	end
+end
+
+--- 为指定子弹创建碰撞盒可视化（每帧首次出现时惰性创建）
+--- @param bullet table 子弹数据
+--- @return UnityEngine.GameObject 碰撞盒GameObject
+function BattleReferenceBoxMediator.createBulletBox(self, bullet)
+	local boxObj
+
+	if bullet:GetIFF() == 1 then
+		boxObj = self._sceneMediator:InstantiateCharacterComponent("Cube_friendly")
 	else
-		var_23_0 = arg_23_0._sceneMediator:InstantiateCharacterComponent("Cube_foe")
+		boxObj = self._sceneMediator:InstantiateCharacterComponent("Cube_foe")
 	end
 
-	var_23_0.transform:SetParent(arg_23_0._boxContainer.transform)
+	boxObj.transform:SetParent(self._boxContainer.transform)
+	boxObj.layer = LayerMask.NameToLayer("Default")
 
-	var_23_0.layer = LayerMask.NameToLayer("Default")
+	local boxSize = bullet:GetBoxSize() * 2
+	boxObj.transform.localScale = Vector3(boxSize.x, boxSize.y, boxSize.z)
 
-	local var_23_1 = arg_23_1:GetBoxSize() * 2
+	SetActive(boxObj, true)
 
-	var_23_0.transform.localScale = Vector3(var_23_1.x, var_23_1.y, var_23_1.z)
+	self._bulletBoxList[bullet:GetUniqueID()] = boxObj
 
-	SetActive(var_23_0, true)
-
-	arg_23_0._bulletBoxList[arg_23_1:GetUniqueID()] = var_23_0
-
-	return var_23_0
+	return boxObj
 end
 
-function var_0_4.createWallBox(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_0:createBox(arg_24_1)
-
-	arg_24_0._wallBoxList[arg_24_1:GetUniqueID()] = var_24_0
-
-	return var_24_0
+--- 创建墙体碰撞盒可视化
+--- @param wall table 墙体数据
+--- @return UnityEngine.GameObject
+function BattleReferenceBoxMediator.createWallBox(self, wall)
+	local box = self:createBox(wall)
+	self._wallBoxList[wall:GetUniqueID()] = box
+	return box
 end
 
-function var_0_4.Dispose(arg_25_0)
-	arg_25_0:disInitUnitEvent()
+--- 销毁中介者：清理所有碰撞盒和详情视图
+function BattleReferenceBoxMediator.Dispose(self)
+	self:disInitUnitEvent()
 
-	for iter_25_0, iter_25_1 in pairs(arg_25_0._unitBoxList) do
-		GameObject.Destroy(iter_25_1)
+	for _, box in pairs(self._unitBoxList) do
+		GameObject.Destroy(box)
 	end
 
-	for iter_25_2, iter_25_3 in pairs(arg_25_0._bulletBoxList) do
-		GameObject.Destroy(iter_25_3)
+	for _, bulletBox in pairs(self._bulletBoxList) do
+		GameObject.Destroy(bulletBox)
 	end
 
-	for iter_25_4, iter_25_5 in pairs(arg_25_0._wallBoxList) do
-		GameObject.Destroy(iter_25_5)
+	for _, wallBox in pairs(self._wallBoxList) do
+		GameObject.Destroy(wallBox)
 	end
 
-	arg_25_0._unitBoxList = nil
-	arg_25_0._wallBoxList = nil
-	arg_25_0._bulletBoxList = nil
+	self._unitBoxList = nil
+	self._wallBoxList = nil
+	self._bulletBoxList = nil
 
-	arg_25_0:removeAllDetail()
+	self:removeAllDetail()
+	self._detailViewList = nil
 
-	arg_25_0._detailViewList = nil
-
-	GameObject.Destroy(arg_25_0._boxContainer)
-	var_0_4.super.Dispose(arg_25_0)
+	GameObject.Destroy(self._boxContainer)
+	BattleReferenceBoxMediator.super.Dispose(self)
 end

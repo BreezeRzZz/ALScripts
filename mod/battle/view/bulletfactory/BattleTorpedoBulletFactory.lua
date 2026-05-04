@@ -1,100 +1,122 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleTorpedoBulletFactory = singletonClass("BattleTorpedoBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleTorpedoBulletFactory.__name = "BattleTorpedoBulletFactory"
+ys.Battle.BattleTorpedoBulletFactory = singletonClass("BattleTorpedoBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleTorpedoBulletFactory.__name = "BattleTorpedoBulletFactory"
 
-local var_0_1 = var_0_0.Battle.BattleTorpedoBulletFactory
+local BattleTorpedoBulletFactory = ys.Battle.BattleTorpedoBulletFactory
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+function BattleTorpedoBulletFactory.Ctor(self)
+	BattleTorpedoBulletFactory.super.Ctor(self)
 end
 
-function var_0_1.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleTorpedoBullet.New()
+--- 创建鱼雷类型的BulletUnit View
+--- @return BattleTorpedoBullet
+function BattleTorpedoBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleTorpedoBullet.New()
 end
 
-function var_0_1.onBulletHitFunc(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_0:GetBulletData():GetTemplate().hit_type
-	local var_3_1 = var_0_1.GetDataProxy()
-	local var_3_2 = arg_3_0:GetBulletData()
-	local var_3_3 = var_3_2:GetTemplate()
+--- 鱼雷命中/爆炸回调
+--- 鱼雷的 hit 和 miss 共用同一逻辑（碰撞即爆炸，没有miss概念）
+--- 爆炸区域支持两种形状：
+--- 1. 圆形柱体（hit_type.range 存在时）
+--- 2. 矩形盒体（hit_type.width + hit_type.height 存在时）
+--- 伤害支持距离衰减（hit_type.decay）
+--- @param targetUID number 未使用（鱼雷不依赖单个命中目标，而是范围爆炸）
+--- @param unitType number 未使用
+function BattleTorpedoBulletFactory.onBulletHitFunc(self, targetUID, unitType)
+	local hitType = self:GetBulletData():GetTemplate().hit_type
+	local dataProxy = BattleTorpedoBulletFactory.GetDataProxy()
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
 
-	var_0_0.Battle.PlayBattleSFX(var_3_2:GetHitSFX())
+	ys.Battle.PlayBattleSFX(bulletData:GetHitSFX())
 
-	local var_3_4 = {
-		_bullet = var_3_2,
-		equipIndex = var_3_2:GetWeapon():GetEquipmentIndex(),
-		bulletTag = var_3_2:GetExtraTag()
+	local triggerData = {
+		_bullet = bulletData,
+		equipIndex = bulletData:GetWeapon():GetEquipmentIndex(),
+		bulletTag = bulletData:GetExtraTag()
 	}
 
-	var_3_2:BuffTrigger(var_0_0.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_BANG, var_3_4)
+	-- 鱼雷爆炸前Buff触发
+	bulletData:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_TORPEDO_BULLET_BANG, triggerData)
 
-	local var_3_5 = var_3_2:GetDiveFilter()
-	local var_3_6
+	local diveFilter = bulletData:GetDiveFilter()
+	local areaInfo
 
-	local function var_3_7(arg_4_0)
-		local var_4_0 = var_3_0.decay
+	-- 爆炸区域内的每帧伤害处理
+	local function onAreaTick(unitList)
+		local decay = hitType.decay
 
-		if var_4_0 then
-			var_3_6:UpdateDistanceInfo()
+		if decay then
+			areaInfo:UpdateDistanceInfo()
 		end
 
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-			if iter_4_1.Active then
-				local var_4_1 = iter_4_1.UID
-				local var_4_2 = 0
+		for index, unitEntry in ipairs(unitList) do
+			if unitEntry.Active then
+				local uid = unitEntry.UID
+				local decayFactor = 0
 
-				if var_4_0 then
-					var_4_2 = var_3_6:GetDistance(var_4_1) / (var_3_0.range * 0.5) * var_4_0
+				if decay then
+					-- 距离衰减：距中心越远伤害越低
+					decayFactor = areaInfo:GetDistance(uid) / (hitType.range * 0.5) * decay
 				end
 
-				local var_4_3 = var_0_1:GetSceneMediator():GetCharacter(var_4_1):GetUnitData()
+				local unitData = BattleTorpedoBulletFactory:GetSceneMediator():GetCharacter(uid):GetUnitData()
 
-				var_3_1:HandleDamage(var_3_2, var_4_3, var_4_2)
+				dataProxy:HandleDamage(bulletData, unitData, decayFactor)
 			end
 		end
 	end
 
-	if var_3_0.range then
-		var_3_6 = var_3_1:SpawnColumnArea(var_3_2:GetEffectField(), var_3_2:GetIFF(), pg.Tool.FilterY(arg_3_0:GetPosition():Clone()), var_3_0.range, var_3_0.time, var_3_7)
+	-- 根据hit_type选择圆形或矩形爆炸区域
+	if hitType.range then
+		areaInfo = dataProxy:SpawnColumnArea(bulletData:GetEffectField(), bulletData:GetIFF(), pg.Tool.FilterY(self:GetPosition():Clone()), hitType.range, hitType.time, onAreaTick)
 	else
-		var_3_6 = var_3_1:SpawnCubeArea(var_3_2:GetEffectField(), var_3_2:GetIFF(), pg.Tool.FilterY(arg_3_0:GetPosition():Clone()), var_3_0.width, var_3_0.height, var_3_0.time, var_3_7)
+		areaInfo = dataProxy:SpawnCubeArea(bulletData:GetEffectField(), bulletData:GetIFF(), pg.Tool.FilterY(self:GetPosition():Clone()), hitType.width, hitType.height, hitType.time, onAreaTick)
 	end
 
-	var_3_6:SetDiveFilter(var_3_5)
+	areaInfo:SetDiveFilter(diveFilter)
 
-	local var_3_8, var_3_9 = var_0_1.GetFXPool():GetFX(arg_3_0:GetFXID())
-	local var_3_10 = arg_3_0:GetTf().localPosition
+	-- 播放爆炸特效
+	local hitFX, hitOffset = BattleTorpedoBulletFactory.GetFXPool():GetFX(self:GetFXID())
+	local hitPos = self:GetTf().localPosition
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_3_8, var_3_9:Add(var_3_10), true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(hitFX, hitOffset:Add(hitPos), true)
 
-	if var_3_2:GetPierceCount() <= 0 then
-		var_3_1:RemoveBulletUnit(var_3_2:GetUniqueID())
+	-- 穿透耗尽时移除子弹
+	if bulletData:GetPierceCount() <= 0 then
+		dataProxy:RemoveBulletUnit(bulletData:GetUniqueID())
 	end
 end
 
-function var_0_1.onBulletMissFunc(arg_5_0)
-	var_0_1.onBulletHitFunc(arg_5_0)
+--- 鱼雷脱靶回调（与命中相同，碰撞即爆炸）
+function BattleTorpedoBulletFactory.onBulletMissFunc(self)
+	BattleTorpedoBulletFactory.onBulletHitFunc(self)
 end
 
-function var_0_1.MakeModel(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = arg_6_1:GetBulletData()
-	local var_6_1 = var_6_0:GetTemplate()
-	local var_6_2 = arg_6_0:GetDataProxy()
+--- 创建鱼雷的视觉模型
+--- 敌方鱼雷会额外生成预警圈特效（alert_fx），提醒玩家规避
+--- @param bulletView BattleBulletUnit View层子弹
+--- @param spawnPos Vector3 生成位置
+function BattleTorpedoBulletFactory.MakeModel(self, bulletView, spawnPos)
+	local bulletData = bulletView:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
+	local dataProxy = self:GetDataProxy()
 
-	if not arg_6_0:GetBulletPool():InstBullet(arg_6_1:GetModleID(), function(arg_7_0)
-		arg_6_1:AddModel(arg_7_0)
+	if not self:GetBulletPool():InstBullet(bulletData:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
-		arg_6_1:AddTempModel(arg_6_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_6_1:SetSpawn(arg_6_2)
-	arg_6_1:SetFXFunc(arg_6_0.onBulletHitFunc, arg_6_0.onBulletMissFunc)
-	arg_6_0:GetSceneMediator():AddBullet(arg_6_1)
+	bulletView:SetSpawn(spawnPos)
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 
-	if var_6_0:GetIFF() ~= var_6_2:GetFriendlyCode() and var_6_1.alert_fx ~= "" then
-		arg_6_1:MakeAlert(arg_6_0:GetFXPool():GetFX(var_6_1.alert_fx))
+	-- 敌方鱼雷显示预警圈
+	if bulletData:GetIFF() ~= dataProxy:GetFriendlyCode() and bulletTemplate.alert_fx ~= "" then
+		bulletView:MakeAlert(self:GetFXPool():GetFX(bulletTemplate.alert_fx))
 	end
 end

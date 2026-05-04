@@ -1,54 +1,61 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSubmarineButton", var_0_0.Battle.BattleWeaponButton)
+local ys = ys
+local BattleSubmarineButton = class("BattleSubmarineButton", ys.Battle.BattleWeaponButton)
 
-var_0_0.Battle.BattleSubmarineButton = var_0_1
-var_0_1.__name = "BattleSubmarineButton"
+ys.Battle.BattleSubmarineButton = BattleSubmarineButton
+BattleSubmarineButton.__name = "BattleSubmarineButton"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 潜艇专用武器按钮
+--- 继承自 BattleWeaponButton，隐藏进度条和填装特效，使用简化的弹药计数
+
+function BattleSubmarineButton.Ctor(self)
+	BattleSubmarineButton.super.Ctor(self)
 end
 
-function var_0_1.OnCountChange(arg_2_0)
-	local var_2_0 = arg_2_0._progressInfo:GetCount()
-	local var_2_1 = arg_2_0._progressInfo:GetTotal()
+--- 只显示当前弹药数（不显示总数）
+function BattleSubmarineButton.OnCountChange(self)
+	local currentCount = self._progressInfo:GetCount()
+	local totalCount = self._progressInfo:GetTotal()
 
-	arg_2_0._countTxt.text = string.format("%d", var_2_0)
+	self._countTxt.text = string.format("%d", currentCount)
 end
 
-function var_0_1.ConfigSkin(arg_3_0, arg_3_1)
-	var_0_1.super.ConfigSkin(arg_3_0, arg_3_1)
-	arg_3_0._progress.gameObject:SetActive(false)
-	arg_3_0._filledEffect.gameObject:SetActive(false)
+--- 配置皮肤时隐藏进度条和填满特效
+function BattleSubmarineButton.ConfigSkin(self, skin)
+	BattleSubmarineButton.super.ConfigSkin(self, skin)
+	self._progress.gameObject:SetActive(false)
+	self._filledEffect.gameObject:SetActive(false)
 end
 
-function var_0_1.ConfigCallback(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4)
-	local function var_4_0()
-		arg_4_2()
+--- 配置回调时，将 up 回调替换为 cancel 回调（潜艇按钮不需要"松手"操作）
+function BattleSubmarineButton.ConfigCallback(self, downFunc, upFunc, cancelFunc, emptyFunc)
+	local function wrappedCancel()
+		upFunc()
 	end
 
-	var_0_1.super.ConfigCallback(arg_4_0, arg_4_1, var_4_0, arg_4_3, arg_4_4)
+	BattleSubmarineButton.super.ConfigCallback(self, downFunc, wrappedCancel, cancelFunc, emptyFunc)
 end
 
-function var_0_1.OnOverLoadChange(arg_6_0, arg_6_1)
-	var_0_1.super.OnOverLoadChange(arg_6_0, arg_6_1)
+--- 过载状态变化：弹药满时播放入场动画，空时播放使用动画
+function BattleSubmarineButton.OnOverLoadChange(self, event)
+	BattleSubmarineButton.super.OnOverLoadChange(self, event)
 
-	if arg_6_0._progressInfo:GetTotal() == arg_6_0._progressInfo:GetCount() then
-		quickCheckAndPlayAnimator(arg_6_0._skin, "weapon_button_into")
-	elseif arg_6_0._progressInfo:GetCount() == 0 then
-		quickCheckAndPlayAnimator(arg_6_0._skin, "weapon_button_use")
+	if self._progressInfo:GetTotal() == self._progressInfo:GetCount() then
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_into")
+	elseif self._progressInfo:GetCount() == 0 then
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_use")
 	end
 end
 
-function var_0_1.Update(arg_7_0)
+function BattleSubmarineButton.Update(self)
 	return
 end
 
-function var_0_1.updateProgressBar(arg_8_0)
+function BattleSubmarineButton.updateProgressBar(self)
 	return
 end
 
-function var_0_1.OnfilledEffect(arg_9_0)
+function BattleSubmarineButton.OnfilledEffect(self)
 	return
 end

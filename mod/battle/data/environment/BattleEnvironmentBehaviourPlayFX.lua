@@ -1,45 +1,50 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourPlayFX", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourPlayFX = class("BattleEnvironmentBehaviourPlayFX", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourPlayFX = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourPlayFX"
+ys.Battle.BattleEnvironmentBehaviourPlayFX = BattleEnvironmentBehaviourPlayFX
+BattleEnvironmentBehaviourPlayFX.__name = "BattleEnvironmentBehaviourPlayFX"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- @class BattleEnvironmentBehaviourPlayFX : BattleEnvironmentBehaviour
+--- 环境特效行为：在AOE区域位置播放视觉特效，支持缩放
+function BattleEnvironmentBehaviourPlayFX.Ctor(self)
+	BattleEnvironmentBehaviourPlayFX.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取FX_ID和位置偏移
+--- @param tmpData table
+function BattleEnvironmentBehaviourPlayFX.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourPlayFX.super.SetTemplate(self, tmpData)
 
-	arg_2_0._FXID = arg_2_0._tmpData.FX_ID
-	arg_2_0._offset = arg_2_0._tmpData.offset and Vector3(unpack(arg_2_0._tmpData.offset)) or Vector3.zero
+	self._FXID = self._tmpData.FX_ID
+	self._offset = self._tmpData.offset and Vector3(unpack(self._tmpData.offset)) or Vector3.zero
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	local var_3_0 = 1
+--- 根据AOE区域类型（CUBE取宽度/COLUMN取半径）计算缩放，生成特效
+function BattleEnvironmentBehaviourPlayFX.doBehaviour(self)
+	local scale = 1
 
-	if arg_3_0._tmpData.scaleRate then
-		local var_3_1 = arg_3_0._unit:GetAOEData()
-		local var_3_2 = var_3_1:GetAreaType()
-		local var_3_3
+	if self._tmpData.scaleRate then
+		local aoeData = self._unit:GetAOEData()
+		local areaType = aoeData:GetAreaType()
+		local size
 
-		if var_3_2 == var_0_1.AreaType.CUBE then
-			var_3_3 = var_3_1:GetWidth()
-		elseif var_3_2 == var_0_1.AreaType.COLUMN then
-			var_3_3 = var_3_1:GetRange()
+		if areaType == BattleConst.AreaType.CUBE then
+			size = aoeData:GetWidth()
+		elseif areaType == BattleConst.AreaType.COLUMN then
+			size = aoeData:GetRange()
 		end
 
-		var_3_0 = arg_3_0._tmpData.scaleRate * var_3_3
-	elseif arg_3_0._tmpData.scale then
-		var_3_0 = arg_3_0._tmpData.scale
+		scale = self._tmpData.scaleRate * size
+	elseif self._tmpData.scale then
+		scale = self._tmpData.scale
 	end
 
-	local var_3_4 = arg_3_0._unit:GetAOEData():GetPosition() + arg_3_0._offset
+	local pos = self._unit:GetAOEData():GetPosition() + self._offset
 
-	var_0_0.Battle.BattleDataProxy.GetInstance():SpawnEffect(arg_3_0._FXID, var_3_4, var_3_0)
-	var_0_3.super.doBehaviour(arg_3_0)
+	ys.Battle.BattleDataProxy.GetInstance():SpawnEffect(self._FXID, pos, scale)
+	BattleEnvironmentBehaviourPlayFX.super.doBehaviour(self)
 end

@@ -1,138 +1,168 @@
 ys = ys or {}
 
-local var_0_0 = ys
--- TODO
-var_0_0.Battle.BattleGravitationBulletFactory = singletonClass("BattleGravitationBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleGravitationBulletFactory.__name = "BattleGravitationBulletFactory"
+local ys = ys
 
-local var_0_1 = var_0_0.Battle.BattleGravitationBulletFactory
+ys.Battle.BattleGravitationBulletFactory = singletonClass("BattleGravitationBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleGravitationBulletFactory.__name = "BattleGravitationBulletFactory"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+local BattleGravitationBulletFactory = ys.Battle.BattleGravitationBulletFactory
+
+function BattleGravitationBulletFactory.Ctor(self)
+	BattleGravitationBulletFactory.super.Ctor(self)
 end
 
-function var_0_1.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleTorpedoBullet.New()
+--- 创建引力弹的BulletUnit View（复用TorpedoBullet类型）
+--- 引力弹在视觉层使用鱼雷实例，因为二者都是大型爆炸特效
+--- @return BattleTorpedoBullet
+function BattleGravitationBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleTorpedoBullet.New()
 end
 
-function var_0_1.onBulletHitFunc(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_0:GetBulletData()
+--- 引力弹命中/爆炸回调
+--- 生成持续圆形区域（LastingColumnArea），区域内单位受到以下效果：
+--- 1. 引力Buff（buff_id / buff_level）
+--- 2. 持续伤害（HandleDamage，除非noIntervalDMG）
+--- 3. 向心力（SetUncontrollableSpeed）：将单位向爆炸中心吸引
+--- 4. 爆炸结束伤害（exploDMG + knockBack击退）
+---
+--- 视觉：生成持续区域特效（areaFX），结束时播放爆炸特效
+--- @param targetUID number
+--- @param unitType number
+function BattleGravitationBulletFactory.onBulletHitFunc(self, targetUID, unitType)
+	local bulletView = self:GetBulletData()
 
-	if var_3_0:GetPierceCount() <= 0 then
+	-- 穿透次数耗尽时不触发
+	if bulletView:GetPierceCount() <= 0 then
 		return
 	end
 
-	local var_3_1 = var_3_0:GetTemplate().hit_type
-	local var_3_2 = var_0_1.GetDataProxy()
-	local var_3_3 = arg_3_0:GetBulletData()
-	local var_3_4 = var_3_3:GetTemplate()
+	local hitType = bulletView:GetTemplate().hit_type
+	local dataProxy = BattleGravitationBulletFactory.GetDataProxy()
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
 
-	var_0_0.Battle.PlayBattleSFX(var_3_3:GetHitSFX())
+	ys.Battle.PlayBattleSFX(bulletData:GetHitSFX())
 
-	local var_3_5 = var_3_3:GetDiveFilter()
-	local var_3_6 = var_3_3:GetPosition():Clone()
-	local var_3_7 = var_3_3:GetTemplate().extra_param
-	local var_3_8 = var_3_7.buff_id
-	local var_3_9 = var_3_7.buff_level or 1
+	local diveFilter = bulletData:GetDiveFilter()
+	local centerPos = bulletData:GetPosition():Clone()
+	local extraParam = bulletData:GetTemplate().extra_param
+	local buffID = extraParam.buff_id
+	local buffLevel = extraParam.buff_level or 1
 
-	local function var_3_10(arg_4_0)
-		if var_3_3:CanDealDamage() then
-			for iter_4_0, iter_4_1 in ipairs(arg_4_0) do
-				if iter_4_1.Active then
-					local var_4_0 = var_0_1:GetSceneMediator():GetCharacter(iter_4_1.UID):GetUnitData()
-					local var_4_1 = var_0_0.Battle.BattleBuffUnit.New(var_3_8, var_3_9)
+	-- 区域持续期间每帧回调：添加Buff、造成伤害、施加向心力
+	local function onAreaTick(unitList)
+		if bulletData:CanDealDamage() then
+			for index, unitEntry in ipairs(unitList) do
+				if unitEntry.Active then
+					local unitData = BattleGravitationBulletFactory:GetSceneMediator():GetCharacter(unitEntry.UID):GetUnitData()
+					local buffUnit = ys.Battle.BattleBuffUnit.New(buffID, buffLevel)
 
-					var_4_0:AddBuff(var_4_1)
+					unitData:AddBuff(buffUnit)
 
-					if not var_3_7.noIntervalDMG then
-						var_3_2:HandleDamage(var_3_3, var_4_0)
+					-- 持续伤害（可选关闭）
+					if not extraParam.noIntervalDMG then
+						dataProxy:HandleDamage(bulletData, unitData)
 					end
 
-					local var_4_2 = var_3_7.force or 0.1
-					local var_4_3 = pg.Tool.FilterY(var_3_6 - var_4_0:GetPosition())
+					-- 向心力：将单位向爆炸中心吸引
+					-- force控制吸引力大小，小于引力距离时使用弱吸引力
+					local gravForce = extraParam.force or 0.1
+					local toCenter = pg.Tool.FilterY(centerPos - unitData:GetPosition())
 
-					if var_4_2 > var_4_3.magnitude then
-						var_4_0:SetUncontrollableSpeed(var_4_3, 0.001, 1e-06)
+					if gravForce > toCenter.magnitude then
+						unitData:SetUncontrollableSpeed(toCenter, 0.001, 1e-06)
 					else
-						var_4_0:SetUncontrollableSpeed(var_4_3, var_4_2, 1e-07)
+						unitData:SetUncontrollableSpeed(toCenter, gravForce, 1e-07)
 					end
 				end
 			end
 
-			var_3_3:DealDamage()
+			bulletData:DealDamage()
 		end
 	end
 
-	local function var_3_11(arg_5_0)
-		if arg_5_0.Active then
-			local var_5_0 = var_0_1:GetSceneMediator():GetCharacter(arg_5_0.UID):GetUnitData()
+	-- 单位离开区域：清除不受控速度并移除Buff
+	local function onExitArea(unitEntry)
+		if unitEntry.Active then
+			local unitData = BattleGravitationBulletFactory:GetSceneMediator():GetCharacter(unitEntry.UID):GetUnitData()
 
-			var_5_0:ClearUncontrollableSpeed()
-			var_5_0:RemoveBuff(var_3_8)
+			unitData:ClearUncontrollableSpeed()
+			unitData:RemoveBuff(buffID)
 		end
 	end
 
-	local function var_3_12(arg_6_0)
-		local var_6_0 = var_3_7.exploDMG
-		local var_6_1 = var_3_7.knockBack
+	-- 区域结束时：最后爆炸伤害 + 击退
+	local function onAreaEnd(unitList)
+		local exploDMG = extraParam.exploDMG
+		local knockBack = extraParam.knockBack
 
-		for iter_6_0, iter_6_1 in ipairs(arg_6_0) do
-			if iter_6_1.Active then
-				local var_6_2 = var_0_1:GetSceneMediator():GetCharacter(iter_6_1.UID):GetUnitData()
-				local var_6_3 = false
-				local var_6_4 = var_6_2:GetCurrentOxyState()
+		for index, unitEntry in ipairs(unitList) do
+			if unitEntry.Active then
+				local unitData = BattleGravitationBulletFactory:GetSceneMediator():GetCharacter(unitEntry.UID):GetUnitData()
+				local isFiltered = false
+				local oxyState = unitData:GetCurrentOxyState()
 
-				for iter_6_2, iter_6_3 in ipairs(var_3_5) do
-					if var_6_4 == iter_6_3 then
-						var_6_3 = true
+				-- 检查潜水状态是否在过滤列表中
+				for filterIndex, filterState in ipairs(diveFilter) do
+					if oxyState == filterState then
+						isFiltered = true
 					end
 				end
 
-				if not var_6_3 then
-					var_3_2:HandleDirectDamage(var_6_2, var_6_0, var_3_3)
+				if not isFiltered then
+					-- 爆炸直伤
+					dataProxy:HandleDirectDamage(unitData, exploDMG, bulletData)
 
-					if var_6_2:IsAlive() then
-						local var_6_5 = pg.Tool.FilterY(var_6_2:GetPosition() - var_3_6)
+					if unitData:IsAlive() then
+						local knockBackDir = pg.Tool.FilterY(unitData:GetPosition() - centerPos)
 
-						if var_6_1 ~= false then
-							var_6_2:SetUncontrollableSpeed(var_6_5, 1, 0.2, 6)
+						-- 击退效果（knockBack不为false时）
+						if knockBack ~= false then
+							unitData:SetUncontrollableSpeed(knockBackDir, 1, 0.2, 6)
 						end
 
-						var_6_2:RemoveBuff(var_3_8)
+						unitData:RemoveBuff(buffID)
 					end
 				end
 			end
 		end
 
-		local var_6_6, var_6_7 = var_0_1.GetFXPool():GetFX(arg_3_0:GetMissFXID())
+		-- 播放爆炸结束特效
+		local endFX, endOffset = BattleGravitationBulletFactory.GetFXPool():GetFX(self:GetMissFXID())
 
-		pg.EffectMgr.GetInstance():PlayBattleEffect(var_6_6, var_6_7:Add(var_3_6), true)
-		var_3_2:RemoveBulletUnit(var_3_3:GetUniqueID())
+		pg.EffectMgr.GetInstance():PlayBattleEffect(endFX, endOffset:Add(centerPos), true)
+		dataProxy:RemoveBulletUnit(bulletData:GetUniqueID())
 	end
 
-	var_3_2:SpawnLastingColumnArea(var_3_3:GetEffectField(), var_3_3:GetIFF(), pg.Tool.FilterY(var_3_6), var_3_1.range, var_3_1.time, var_3_10, var_3_11, false, arg_3_0:GetFXID(), var_3_12, true):SetDiveFilter(var_3_5)
+	dataProxy:SpawnLastingColumnArea(bulletData:GetEffectField(), bulletData:GetIFF(), pg.Tool.FilterY(centerPos), hitType.range, hitType.time, onAreaTick, onExitArea, false, self:GetFXID(), onAreaEnd, true):SetDiveFilter(diveFilter)
 end
 
-function var_0_1.onBulletMissFunc(arg_7_0)
-	var_0_1.onBulletHitFunc(arg_7_0)
+--- 引力弹未命中回调（与命中相同，都是碰撞即触发）
+function BattleGravitationBulletFactory.onBulletMissFunc(self)
+	BattleGravitationBulletFactory.onBulletHitFunc(self)
 end
 
-function var_0_1.MakeModel(arg_8_0, arg_8_1, arg_8_2)
-	local var_8_0 = arg_8_1:GetBulletData()
-	local var_8_1 = var_8_0:GetTemplate()
-	local var_8_2 = arg_8_0:GetDataProxy()
+--- 创建引力弹的视觉模型
+--- 敌方引力弹显示预警圈
+--- @param bulletView BattleBulletUnit View层子弹
+--- @param spawnPos Vector3
+function BattleGravitationBulletFactory.MakeModel(self, bulletView, spawnPos)
+	local bulletData = bulletView:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
+	local dataProxy = self:GetDataProxy()
 
-	if not arg_8_0:GetBulletPool():InstBullet(arg_8_1:GetModleID(), function(arg_9_0)
-		arg_8_1:AddModel(arg_9_0)
+	if not self:GetBulletPool():InstBullet(bulletData:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
-		arg_8_1:AddTempModel(arg_8_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_8_1:SetSpawn(arg_8_2)
-	arg_8_1:SetFXFunc(arg_8_0.onBulletHitFunc, arg_8_0.onBulletMissFunc)
-	arg_8_0:GetSceneMediator():AddBullet(arg_8_1)
+	bulletView:SetSpawn(spawnPos)
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 
-	if var_8_0:GetIFF() ~= var_8_2:GetFriendlyCode() and var_8_1.alert_fx ~= "" then
-		arg_8_1:MakeAlert(arg_8_0:GetFXPool():GetFX(var_8_1.alert_fx))
+	-- 敌方引力弹显示预警圈
+	if bulletData:GetIFF() ~= dataProxy:GetFriendlyCode() and bulletTemplate.alert_fx ~= "" then
+		bulletView:MakeAlert(self:GetFXPool():GetFX(bulletTemplate.alert_fx))
 	end
 end

@@ -1,36 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleGuideWave = class("BattleGuideWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleGuideWave.__name = "BattleGuideWave"
+ys.Battle.BattleGuideWave = class("BattleGuideWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleGuideWave.__name = "BattleGuideWave"
 
-local var_0_1 = var_0_0.Battle.BattleGuideWave
+local BattleGuideWave = ys.Battle.BattleGuideWave
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 波次类型：新手引导波
+--- 触发新手引导系统 (NewGuideMgr)，展示指定的引导步骤。
+--- 引导播放完成后通过回调 doPass()；若引导功能禁用或系列引导已结束则跳过。
+function BattleGuideWave.Ctor(self)
+	BattleGuideWave.super.Ctor(self)
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
+--- 设置波次数据，从 triggerParams 读取引导配置
+--- @param waveData table 关卡配置中对应的 wave 数据
+function BattleGuideWave.SetWaveData(self, waveData)
+	BattleGuideWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._guideType = arg_2_0._param.type or 0
-	arg_2_0._guideStep = arg_2_0._param.id
-	arg_2_0._event = arg_2_0._param.event
+	self._guideType = self._param.type or 0  -- 引导类型：0=普通引导，1=系列引导
+	self._guideStep = self._param.id          -- 引导步骤 ID
+	self._event     = self._param.event       -- 引导触发事件名
 end
 
-function var_0_1.DoWave(arg_3_0)
-	var_0_1.super.DoWave(arg_3_0)
+--- 执行波次：根据引导状态分三种情况处理
+--- 1. 引导功能禁用 -> 直接通过
+--- 2. 系列引导已全部完成 -> 视为失败跳过（避免不必要的等待）
+--- 3. 否则播放引导步骤，播放完成后回调 doPass()
+function BattleGuideWave.DoWave(self)
+	BattleGuideWave.super.DoWave(self)
 
 	if not pg.NewGuideMgr.ENABLE_GUIDE then
-		arg_3_0:doPass()
-	elseif arg_3_0._guideType == 1 and pg.SeriesGuideMgr.GetInstance():isEnd() then
-		arg_3_0:doFail()
+		-- 引导系统全局关闭
+		self:doPass()
+	elseif self._guideType == 1 and pg.SeriesGuideMgr.GetInstance():isEnd() then
+		-- 系列引导已全部完成，该波次无需再播放
+		self:doFail()
 	else
-		pg.NewGuideMgr.GetInstance():Play(arg_3_0._guideStep, {
-			arg_3_0._event
+		-- 播放指定引导步骤
+		pg.NewGuideMgr.GetInstance():Play(self._guideStep, {
+			self._event
 		}, function()
-			arg_3_0:doPass()
+			self:doPass()
 		end)
 	end
 end

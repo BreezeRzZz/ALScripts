@@ -1,40 +1,55 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleSubmarineAidVO = class("BattleSubmarineAidVO", var_0_0.Battle.BattlePlayerWeaponVO)
-var_0_0.Battle.BattleSubmarineAidVO.__name = "BattleSubmarineAidVO"
+ys.Battle.BattleSubmarineAidVO = class("BattleSubmarineAidVO", ys.Battle.BattlePlayerWeaponVO)
+ys.Battle.BattleSubmarineAidVO.__name = "BattleSubmarineAidVO"
 
-local var_0_2 = var_0_0.Battle.BattleSubmarineAidVO
+local BattleSubmarineAidVO = ys.Battle.BattleSubmarineAidVO
 
-var_0_2.GCD = var_0_1.AirAssistCFG.GCD
+-- 潜艇特殊技能VO，GCD复用空袭支援的冷却配置
+BattleSubmarineAidVO.GCD = BattleConfig.AirAssistCFG.GCD
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0, var_0_2.GCD)
+--- @class BattleSubmarineAidVO : BattlePlayerWeaponVO
+--- @param self BattleSubmarineAidVO
+--- 构造函数，调用父类Ctor并传入GCD
+function BattleSubmarineAidVO.Ctor(self)
+	BattleSubmarineAidVO.super.Ctor(self, BattleSubmarineAidVO.GCD)
 end
 
-function var_0_2.SetUseable(arg_2_0, arg_2_1)
-	arg_2_0._useable = arg_2_1
-	arg_2_0._current = arg_2_1 and 1 or 0
-	arg_2_0._max = 1
+--- 设置潜艇特殊技能是否可用
+--- @param self BattleSubmarineAidVO
+--- @param useable boolean 是否可用
+function BattleSubmarineAidVO.SetUseable(self, useable)
+	self._useable = useable
+	self._current = useable and 1 or 0
+	self._max = 1
 
-	arg_2_0:DispatchOverLoadChange()
-	arg_2_0:DispatchCountChange()
+	self:DispatchOverLoadChange()
+	self:DispatchCountChange()
 end
 
-function var_0_2.GetUseable(arg_3_0)
-	return arg_3_0._useable
+--- 获取是否可用
+--- @param self BattleSubmarineAidVO
+--- @return boolean 是否可用
+function BattleSubmarineAidVO.GetUseable(self)
+	return self._useable
 end
 
-function var_0_2.IsOverLoad(arg_4_0)
-	return arg_4_0._current < arg_4_0._max or arg_4_0._count < 1
+--- 检测是否过载（充能未满或次数耗尽）
+--- @param self BattleSubmarineAidVO
+--- @return boolean 是否过载
+function BattleSubmarineAidVO.IsOverLoad(self)
+	return self._current < self._max or self._count < 1
 end
 
-function var_0_2.Cast(arg_5_0)
-	arg_5_0._count = arg_5_0._count - 1
+--- 使用特殊技能，减少一次次数并重置充能
+--- @param self BattleSubmarineAidVO
+function BattleSubmarineAidVO.Cast(self)
+	self._count = self._count - 1
 
-	arg_5_0:resetCurrent()
-	arg_5_0:DispatchOverLoadChange()
-	arg_5_0:DispatchCountChange()
+	self:resetCurrent()
+	self:DispatchOverLoadChange()
+	self:DispatchCountChange()
 end

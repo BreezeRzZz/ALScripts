@@ -1,54 +1,75 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleChargeArea = class("BattleChargeArea")
-var_0_0.Battle.BattleChargeArea.__name = "BattleChargeArea"
+ys.Battle.BattleChargeArea = class("BattleChargeArea")
+ys.Battle.BattleChargeArea.__name = "BattleChargeArea"
 
-function var_0_0.Battle.BattleChargeArea.Ctor(arg_1_0, arg_1_1)
-	arg_1_1.gameObject:SetActive(false)
+--- @class BattleChargeArea
+--- 蓄力武器范围显示（如战列舰瞄准圈）
+--- 从武器模板读取range和angle，动态调整扇形区域的尺寸和角度范围
+--- @param chargeAreaGO GameObject 蓄力区域GameObject（挂载ChargeArea组件）
+function ys.Battle.BattleChargeArea.Ctor(self, chargeAreaGO)
+	chargeAreaGO.gameObject:SetActive(false)
 
-	arg_1_0._areaTf = arg_1_1.transform
-	arg_1_0._areaGO = arg_1_1
+	self._areaTf = chargeAreaGO.transform
+	self._areaGO = chargeAreaGO
 end
 
-function var_0_0.Battle.BattleChargeArea.InitArea(arg_2_0)
-	local var_2_0 = arg_2_0._areaTf
+--- 初始化区域参数
+--- 从关联武器读取range/angle，计算扇形显示尺寸
+--- 5.5 是基准range对应的缩放值
+function ys.Battle.BattleChargeArea.InitArea(self)
+	local areaTf = self._areaTf
 
-	arg_2_0._controller = var_2_0:GetComponent("ChargeArea")
+	self._controller = areaTf:GetComponent("ChargeArea")
 
-	local var_2_1 = arg_2_0._chargeWeapon:GetTemplateData().range
-	local var_2_2 = arg_2_0._chargeWeapon:GetTemplateData().angle
-	local var_2_3 = var_2_0.localScale
+	local weaponRange = self._chargeWeapon:GetTemplateData().range
+	local weaponAngle = self._chargeWeapon:GetTemplateData().angle
+	local scale = areaTf.localScale
 
-	var_2_3.x = var_2_1 / 5.5
-	var_2_3.y = var_2_1 / 5.5
-	var_2_0.localScale = var_2_3
-	arg_2_0._controller.maxAngle = var_2_2
-	arg_2_0._controller.minAngle = arg_2_0._chargeWeapon:GetMinAngle()
-	var_2_0:Find("UpperEdge").transform.localScale = Vector3(1, 1 / var_2_3.y, 1)
-	var_2_0:Find("LowerEdge").transform.localScale = Vector3(1, 1 / var_2_3.y, 1)
-	arg_2_0._controller.rate = 0.5
+	-- 范围映射到缩放：range / 5.5（5.5是基础比例因子）
+	scale.x = weaponRange / 5.5
+	scale.y = weaponRange / 5.5
+	areaTf.localScale = scale
+	self._controller.maxAngle = weaponAngle
+	self._controller.minAngle = self._chargeWeapon:GetMinAngle()
+
+	-- 修正上下边沿缩放，防止拉伸变形
+	areaTf:Find("UpperEdge").transform.localScale = Vector3(1, 1 / scale.y, 1)
+	areaTf:Find("LowerEdge").transform.localScale = Vector3(1, 1 / scale.y, 1)
+
+	-- 初始蓄力速率
+	self._controller.rate = 0.5
 end
 
-function var_0_0.Battle.BattleChargeArea.Update(arg_3_0, arg_3_1)
-	arg_3_0._areaTf.position = arg_3_1
+--- 每帧更新位置
+--- @param worldPos Vector3 世界坐标
+function ys.Battle.BattleChargeArea.Update(self, worldPos)
+	self._areaTf.position = worldPos
 end
 
-function var_0_0.Battle.BattleChargeArea.SetWeapon(arg_4_0, arg_4_1)
-	arg_4_0._chargeWeapon = arg_4_1
+--- 绑定武器，初始化显示参数
+--- @param weapon BattleWeaponUnit
+function ys.Battle.BattleChargeArea.SetWeapon(self, weapon)
+	self._chargeWeapon = weapon
 
-	arg_4_0:InitArea()
+	self:InitArea()
 end
 
-function var_0_0.Battle.BattleChargeArea.SetActive(arg_5_0, arg_5_1)
-	arg_5_0._areaGO:SetActive(arg_5_1)
+--- 激活/隐藏蓄力区域
+--- @param isActive boolean
+function ys.Battle.BattleChargeArea.SetActive(self, isActive)
+	self._areaGO:SetActive(isActive)
 end
 
-function var_0_0.Battle.BattleChargeArea.GetActive(arg_6_0)
-	return arg_6_0._areaGO:GetActive()
+--- 获取当前激活状态
+--- @return boolean
+function ys.Battle.BattleChargeArea.GetActive(self)
+	return self._areaGO:GetActive()
 end
 
-function var_0_0.Battle.BattleChargeArea.Reset(arg_7_0)
-	arg_7_0._controller.rate = 1
+--- 重置蓄力速率到满值
+function ys.Battle.BattleChargeArea.Reset(self)
+	self._controller.rate = 1
 end

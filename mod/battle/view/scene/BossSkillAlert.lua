@@ -1,42 +1,58 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BossSkillAlert = class("BossSkillAlert")
-var_0_0.Battle.BossSkillAlert.__name = "BossSkillAlert"
+ys.Battle.BossSkillAlert = class("BossSkillAlert")
+ys.Battle.BossSkillAlert.__name = "BossSkillAlert"
 
-function var_0_0.Battle.BossSkillAlert.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._alertGO = arg_1_1
-	arg_1_0._alertTF = arg_1_1.transform
-	arg_1_0._alertTF.localPosition = Vector3.zero
+--- @class BossSkillAlert
+--- Boss技能预警提示
+--- 在屏幕中央显示Boss即将释放技能的提示，带呼吸式透明闪烁动画
+--- 支持自定义缩放和定时自动消失
+--- @param alertGO GameObject 预警GameObject
+function ys.Battle.BossSkillAlert.Ctor(self, alertGO)
+	self._alertGO = alertGO
+	self._alertTF = alertGO.transform
+	self._alertTF.localPosition = Vector3.zero
 
-	LeanTween.alpha(arg_1_1, 0.3, 0.1):setDelay(0.1):setLoopPingPong()
+	-- 透明呼吸动画：在0.3和原始alpha之间持续切换
+	LeanTween.alpha(alertGO, 0.3, 0.1):setDelay(0.1):setLoopPingPong()
 end
 
-function var_0_0.Battle.BossSkillAlert.SetActive(arg_2_0, arg_2_1)
-	arg_2_0._alertGO:SetActive(arg_2_1)
+--- 显示/隐藏预警
+--- @param isActive boolean
+function ys.Battle.BossSkillAlert.SetActive(self, isActive)
+	self._alertGO:SetActive(isActive)
 end
 
-function var_0_0.Battle.BossSkillAlert.GetActive(arg_3_0)
-	return arg_3_0._alertGO.activeSelf
+--- 获取当前激活状态
+--- @return boolean
+function ys.Battle.BossSkillAlert.GetActive(self)
+	return self._alertGO.activeSelf
 end
 
-function var_0_0.Battle.BossSkillAlert.SetScale(arg_4_0, arg_4_1)
-	arg_4_0._alertTF.localScale = arg_4_1
+--- 设置预警缩放
+--- @param scale Vector3 缩放值
+function ys.Battle.BossSkillAlert.SetScale(self, scale)
+	self._alertTF.localScale = scale
 end
 
-function var_0_0.Battle.BossSkillAlert.SetExistTime(arg_5_0, arg_5_1)
-	arg_5_0._timer = pg.TimeMgr.GetInstance():AddBattleTimer("BossSkillAlert", 0, arg_5_1, function()
-		if arg_5_0._alertGO then
-			arg_5_0:Dispose()
+--- 设置存在时间，到时自动销毁
+--- @param duration number 存在时长（秒）
+function ys.Battle.BossSkillAlert.SetExistTime(self, duration)
+	-- 创建倒计时定时器，到期后自动Dispose
+	self._timer = pg.TimeMgr.GetInstance():AddBattleTimer("BossSkillAlert", 0, duration, function()
+		if self._alertGO then
+			self:Dispose()
 		end
 	end)
 end
 
-function var_0_0.Battle.BossSkillAlert.Dispose(arg_7_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_7_0._timer)
-	LeanTween.cancel(arg_7_0._alertGO)
-	Object.Destroy(arg_7_0._alertGO)
+--- 销毁预警
+function ys.Battle.BossSkillAlert.Dispose(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._timer)
+	LeanTween.cancel(self._alertGO)
+	Object.Destroy(self._alertGO)
 
-	arg_7_0._alertGO = nil
+	self._alertGO = nil
 end

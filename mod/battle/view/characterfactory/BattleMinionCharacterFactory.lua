@@ -1,92 +1,128 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleMinionCharacterFactory", var_0_0.Battle.BattleCharacterFactory)
+local ys = ys
+local MinionCharacterFactory = singletonClass("BattleMinionCharacterFactory", ys.Battle.BattleCharacterFactory)
 
-var_0_0.Battle.BattleMinionCharacterFactory = var_0_1
-var_0_1.__name = "BattleMinionCharacterFactory"
+ys.Battle.BattleMinionCharacterFactory = MinionCharacterFactory
+--- 召唤物/仆从角色工厂（如玩家航母的召唤飞机、敌方召唤单位等）
+MinionCharacterFactory.__name = "BattleMinionCharacterFactory"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- @class BattleMinionCharacterFactory
+--- @return nil
+--- 构造函数：无特殊初始化，HP条等由方法动态判断。
+function MinionCharacterFactory.Ctor(self)
+	MinionCharacterFactory.super.Ctor(self)
 end
 
-function var_0_1.MakeCharacter(arg_2_0)
-	return var_0_0.Battle.BattleMinionCharacter.New()
+--- @class BattleMinionCharacterFactory
+--- @return BattleMinionCharacter: 召唤物视觉对象
+--- 创建BattleMinionCharacter实例。
+function MinionCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleMinionCharacter.New()
 end
 
-function var_0_1.MakeModel(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_1:GetUnitData()
+--- @class BattleMinionCharacterFactory
+--- @param character BattleMinionCharacter: 角色视觉对象
+--- @return nil
+--- 创建召唤物视觉模型：
+--- 1) 异步加载模型 -> AddModel
+--- 2) 注册到SceneMediator作为敌方角色（AddEnemyCharacter，因为召唤物通常由玩家编队产生但按敌方逻辑显示）
+--- 3) 装配全套UI和特效：HP条（根据IFF动态选类型）、浪花、烟雾、出场特效等
+--- 4) 更新潜水隐身和致盲隐身
+function MinionCharacterFactory.MakeModel(self, character)
+	local unitData = character:GetUnitData()
 
-	local function var_3_1(arg_4_0)
-		arg_3_1:AddModel(arg_4_0)
+	local function onModelLoaded(modelObj)
+		character:AddModel(modelObj)
 
-		local var_4_0 = arg_3_0:GetSceneMediator()
+		local mediator = self:GetSceneMediator()
 
-		arg_3_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
-		var_4_0:AddEnemyCharacter(arg_3_1)
-		arg_3_0:MakeUIComponentContainer(arg_3_1)
-		arg_3_0:MakeFXContainer(arg_3_1)
-		arg_3_0:MakePopNumPool(arg_3_1)
-		arg_3_0:MakeBloodBar(arg_3_1)
-		arg_3_0:MakeWaveFX(arg_3_1)
-		arg_3_0:MakeSmokeFX(arg_3_1)
-		arg_3_1:UpdateDiveInvisible(true)
-		arg_3_1:UpdateBlindInvisible()
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
+		mediator:AddEnemyCharacter(character)
+		self:MakeUIComponentContainer(character)
+		self:MakeFXContainer(character)
+		self:MakePopNumPool(character)
+		self:MakeBloodBar(character)
+		self:MakeWaveFX(character)
+		self:MakeSmokeFX(character)
+		character:UpdateDiveInvisible(true)
+		character:UpdateBlindInvisible()
 
-		local var_4_1 = var_3_0:GetTemplate().appear_fx
+		-- 添加模板配置的出场特效
+		local appearFXList = unitData:GetTemplate().appear_fx
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_1) do
-			arg_3_1:AddFX(iter_4_1)
+		for _, fxID in ipairs(appearFXList) do
+			character:AddFX(fxID)
 		end
 
-		if arg_3_1:GetUnitData():GetAimBias() then
-			arg_3_0:MakeAimBiasBar(arg_3_1)
+		-- 如果有瞄准偏差系统，创建偏差条
+		if character:GetUnitData():GetAimBias() then
+			self:MakeAimBiasBar(character)
 		end
 	end
 
-	arg_3_0:GetCharacterPool():InstCharacter(arg_3_1:GetModleID(), function(arg_5_0)
-		var_3_1(arg_5_0)
+	self:GetCharacterPool():InstCharacter(character:GetModleID(), function(modelObj)
+		onModelLoaded(modelObj)
 	end)
 end
 
-function var_0_1.MakeBloodBar(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_1:GetUnitData()
-	local var_6_1
+--- @class BattleMinionCharacterFactory
+--- @param character BattleMinionCharacter: 角色视觉对象
+--- @return nil
+--- 创建召唤物HP血条：根据IFF动态选择友方/敌方条。
+--- 若IFF为友方(FRIENDLY_CODE)用heroBlood，否则用enemyBlood。
+--- 隐藏船型图标，因为召唤物通常不需要。
+function MinionCharacterFactory.MakeBloodBar(self, character)
+	local unitData = character:GetUnitData()
+	local barName
 
-	if var_6_0:GetIFF() == var_0_0.Battle.BattleConfig.FRIENDLY_CODE then
-		var_6_1 = var_0_0.Battle.BattleHPBarManager.HP_BAR_FRIENDLY
+	if unitData:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
+		barName = ys.Battle.BattleHPBarManager.HP_BAR_FRIENDLY
 	else
-		var_6_1 = var_0_0.Battle.BattleHPBarManager.HP_BAR_FOE
+		barName = ys.Battle.BattleHPBarManager.HP_BAR_FOE
 	end
 
-	local var_6_2 = arg_6_0:GetHPBarPool():GetHPBar(var_6_1)
-	local var_6_3 = var_6_0:GetTemplate().icon_type
-	local var_6_4 = findTF(var_6_2, "type")
+	local hpBar = self:GetHPBarPool():GetHPBar(barName)
+	local iconType = unitData:GetTemplate().icon_type
+	local typeTf = findTF(hpBar, "type")
 
-	if var_6_4 then
-		SetActive(var_6_4, false)
+	-- 召唤物隐藏船型图标
+	if typeTf then
+		SetActive(typeTf, false)
 	end
 
-	arg_6_1:AddHPBar(var_6_2)
-	arg_6_1:UpdateHPBarPosition()
+	character:AddHPBar(hpBar)
+	character:UpdateHPBarPosition()
 end
 
-function var_0_1.MakeAimBiasBar(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_1._HPBarTf:Find("biasBar")
+--- @class BattleMinionCharacterFactory
+--- @param character BattleMinionCharacter: 角色视觉对象
+--- @return nil
+--- 创建瞄准偏差条：从HP条容器中查找biasBar，附加迷雾特效。
+function MinionCharacterFactory.MakeAimBiasBar(self, character)
+	local biasBar = character._HPBarTf:Find("biasBar")
 
-	arg_7_1:AddAimBiasBar(var_7_0)
-	arg_7_1:AddAimBiasFogFX()
+	character:AddAimBiasBar(biasBar)
+	character:AddAimBiasFogFX()
 end
 
-function var_0_1.MakeWaveFX(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_1:GetUnitData():GetTemplate().wave_fx
+--- @class BattleMinionCharacterFactory
+--- @param character BattleMinionCharacter: 角色视觉对象
+--- @return nil
+--- 创建浪花特效：从模板wave_fx读取自定义名称。空字符串时使用基类默认。
+function MinionCharacterFactory.MakeWaveFX(self, character)
+	local waveFxName = character:GetUnitData():GetTemplate().wave_fx
 
-	if var_8_0 ~= "" then
-		arg_8_1:AddWaveFX(var_8_0)
+	if waveFxName ~= "" then
+		character:AddWaveFX(waveFxName)
 	end
 end
 
-function var_0_1.RemoveCharacter(arg_9_0, arg_9_1)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[var_0_0.Battle.BattleConst.ShakeType.UNIT_DIE])
-	var_0_1.super.RemoveCharacter(arg_9_0, arg_9_1)
+--- @class BattleMinionCharacterFactory
+--- @param character BattleMinionCharacter: 角色视觉对象
+--- @return nil
+--- 移除召唤物：触发屏幕震动后调用基类RemoveCharacter。
+function MinionCharacterFactory.RemoveCharacter(self, character)
+	ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[ys.Battle.BattleConst.ShakeType.UNIT_DIE])
+	MinionCharacterFactory.super.RemoveCharacter(self, character)
 end

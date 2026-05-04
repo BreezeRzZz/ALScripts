@@ -1,74 +1,93 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleEnvironmentWave = class("BattleEnvironmentWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleEnvironmentWave.__name = "BattleEnvironmentWave"
+ys.Battle.BattleEnvironmentWave = class("BattleEnvironmentWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleEnvironmentWave.__name = "BattleEnvironmentWave"
 
-local var_0_1 = var_0_0.Battle.BattleEnvironmentWave
+local BattleEnvironmentWave = ys.Battle.BattleEnvironmentWave
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 波次类型：环境触发波
+--- 生成战场环境元素（如天气效果、场景机制等）。
+--- 支持延迟生成（通过 BattleTimer），并可在警告启用时通过 doPass 关闭警告。
+function BattleEnvironmentWave.Ctor(self)
+	BattleEnvironmentWave.super.Ctor(self)
 
-	arg_1_0._spawnTimerList = {}
+	self._spawnTimerList = {}
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
+--- 设置波次数据，从 waveData 读取生成列表和警告配置
+--- @param waveData table 关卡配置中对应的 wave 数据
+function BattleEnvironmentWave.SetWaveData(self, waveData)
+	BattleEnvironmentWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._spawnData = arg_2_1.spawn or {}
-	arg_2_0._environWarning = arg_2_1.warning
+	self._spawnData      = waveData.spawn or {}    -- 环境元素的生成数据列表
+	self._environWarning = waveData.warning          -- 是否显示环境警告提示
 end
 
-function var_0_1.DoWave(arg_3_0)
-	var_0_1.super.DoWave(arg_3_0)
+--- 执行波次：遍历 spawnData，有延迟的启动定时器，无延迟的直接生成
+--- 如果配置了 warning，则通过 DataProxy 显示警告
+function BattleEnvironmentWave.DoWave(self)
+	BattleEnvironmentWave.super.DoWave(self)
 
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._spawnData) do
-		if iter_3_1.delay and iter_3_1.delay > 0 then
-			arg_3_0:spawnTimer(iter_3_1)
+	for _, spawnItem in ipairs(self._spawnData) do
+		if spawnItem.delay and spawnItem.delay > 0 then
+			-- 延迟生成：启动 BattleTimer
+			self:spawnTimer(spawnItem)
 		else
-			arg_3_0:doSpawn(iter_3_1)
+			-- 立即生成环境元素
+			self:doSpawn(spawnItem)
 		end
 	end
 
-	if arg_3_0._environWarning then
-		var_0_0.Battle.BattleDataProxy.GetInstance():DispatchWarning(true)
+	-- 显示环境警告提示
+	if self._environWarning then
+		ys.Battle.BattleDataProxy.GetInstance():DispatchWarning(true)
 	end
 end
 
-function var_0_1.doSpawn(arg_4_0, arg_4_1)
-	local var_4_0 = var_0_0.Battle.BattleDataProxy.GetInstance():SpawnEnvironment(arg_4_1)
+--- 生成单个环境元素
+--- 调用 DataProxy.SpawnEnvironment 创建环境对象，生成完成后回调 doPass
+--- @param spawnItem table 单个环境元素生成数据
+function BattleEnvironmentWave.doSpawn(self, spawnItem)
+	local environmentObj = ys.Battle.BattleDataProxy.GetInstance():SpawnEnvironment(spawnItem)
 
-	local function var_4_1()
-		arg_4_0:doPass()
+	-- 环境对象生成完成后回调 doPass
+	local function onEnvironmentReady()
+		self:doPass()
 	end
 
-	var_4_0:ConfigCallback(var_4_1)
+	environmentObj:ConfigCallback(onEnvironmentReady)
 end
 
-function var_0_1.doPass(arg_6_0)
-	if arg_6_0._environWarning then
-		var_0_0.Battle.BattleDataProxy.GetInstance():DispatchWarning(false)
+--- 覆写 doPass，关闭环境警告提示
+function BattleEnvironmentWave.doPass(self)
+	if self._environWarning then
+		ys.Battle.BattleDataProxy.GetInstance():DispatchWarning(false)
 	end
 end
 
-function var_0_1.spawnTimer(arg_7_0, arg_7_1)
-	local var_7_0
-	local var_7_1 = arg_7_1.delay
+--- 为指定环境元素启动延迟生成定时器
+--- @param spawnItem table 单个环境元素生成数据
+function BattleEnvironmentWave.spawnTimer(self, spawnItem)
+	local spawnTimer
+	local delayTime = spawnItem.delay
 
-	local function var_7_2()
-		arg_7_0:doSpawn(arg_7_1)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_7_0)
+	-- 定时器回调：生成环境元素，移除定时器
+	local function onTimerEnds()
+		self:doSpawn(spawnItem)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(spawnTimer)
 	end
 
-	var_7_0 = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, var_7_1, var_7_2, true)
-	arg_7_0._spawnTimerList[var_7_0] = true
+	spawnTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, delayTime, onTimerEnds, true)
+	self._spawnTimerList[spawnTimer] = true
 end
 
-function var_0_1.Dispose(arg_9_0)
-	for iter_9_0, iter_9_1 in pairs(arg_9_0._spawnTimerList) do
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_9_0)
+--- 销毁：清除所有未完成的 spawnTimer
+function BattleEnvironmentWave.Dispose(self)
+	for timer, _ in pairs(self._spawnTimerList) do
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 	end
 
-	arg_9_0._spawnTimerList = nil
+	self._spawnTimerList = nil
 end

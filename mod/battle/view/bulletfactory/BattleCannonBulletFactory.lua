@@ -1,124 +1,145 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.UnitType
-local var_0_2 = var_0_0.Battle.BattleConst.AircraftUnitType
-local var_0_3 = var_0_0.Battle.BattleConst.CharacterUnitType
+local ys = ys
+local UnitType = ys.Battle.BattleConst.UnitType
+local AircraftUnitType = ys.Battle.BattleConst.AircraftUnitType
+local CharacterUnitType = ys.Battle.BattleConst.CharacterUnitType
 
-var_0_0.Battle.BattleCannonBulletFactory = singletonClass("BattleCannonBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleCannonBulletFactory.__name = "BattleCannonBulletFactory"
+ys.Battle.BattleCannonBulletFactory = singletonClass("BattleCannonBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleCannonBulletFactory.__name = "BattleCannonBulletFactory"
 
-local var_0_4 = var_0_0.Battle.BattleCannonBulletFactory
+local BattleCannonBulletFactory = ys.Battle.BattleCannonBulletFactory
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+function BattleCannonBulletFactory.Ctor(self)
+	BattleCannonBulletFactory.super.Ctor(self)
 end
 
-function var_0_4.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleCannonBullet.New()
+--- 创建炮弹类型的BulletUnit View
+--- @return BattleCannonBullet
+function BattleCannonBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleCannonBullet.New()
 end
 
-local var_0_5 = Quaternion.Euler(-90, 0, 0)
+-- 命中特效旋转用的预计算四元数（绕X轴-90度，用于将特效对齐到目标表面法线方向）
+local hitFXRotation = Quaternion.Euler(-90, 0, 0)
 
-function var_0_4.onBulletHitFunc(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = var_0_4.GetDataProxy()
-	local var_3_1 = arg_3_0:GetBulletData()
-	local var_3_2 = var_3_1:GetTemplate()
-	local var_3_3
-
-	if table.contains(var_0_2, arg_3_2) then
-		var_3_3 = var_0_4.GetSceneMediator():GetAircraft(arg_3_1)
-	elseif table.contains(var_0_3, arg_3_2) then
-		var_3_3 = var_0_4.GetSceneMediator():GetCharacter(arg_3_1)
+--- 炮弹命中回调（碰撞检测触发）
+--- 处理命中/未命中视觉效果、伤害结算、碰撞前Buff触发
+--- @param targetUID number 被命中单位的UID
+--- @param unitType number 单位类型（Aircraft / Character）
+function BattleCannonBulletFactory.onBulletHitFunc(self, targetUID, unitType)
+	local dataProxy = BattleCannonBulletFactory.GetDataProxy()
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
+	local targetUnit
+	-- 根据单位类型从SceneMediator获取对应的GameObject
+	if table.contains(AircraftUnitType, unitType) then
+		targetUnit = BattleCannonBulletFactory.GetSceneMediator():GetAircraft(targetUID)
+	elseif table.contains(CharacterUnitType, unitType) then
+		targetUnit = BattleCannonBulletFactory.GetSceneMediator():GetCharacter(targetUID)
 	end
 
-	if not var_3_3 then
+	if not targetUnit then
 		return
 	end
 
-	local var_3_4 = var_3_3:GetUnitData()
-	local var_3_5 = {
-		_bullet = var_3_1,
-		equipIndex = var_3_1:GetWeapon():GetEquipmentIndex(),
-		bulletTag = var_3_1:GetExtraTag()
+	local targetUnitData = targetUnit:GetUnitData()
+	local triggerData = {
+		_bullet = bulletData,
+		equipIndex = bulletData:GetWeapon():GetEquipmentIndex(),
+		bulletTag = bulletData:GetExtraTag()
 	}
 
-	var_3_1:BuffTrigger(var_0_0.Battle.BattleConst.BuffEffectType.ON_BULLET_COLLIDE_BEFORE, var_3_5)
+	-- 子弹碰撞前Buff触发（ON_BULLET_COLLIDE_BEFORE）
+	bulletData:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BULLET_COLLIDE_BEFORE, triggerData)
 
-	local var_3_6, var_3_7 = var_3_0:HandleDamage(var_3_1, var_3_4)
-	local var_3_8
+	local isMiss, damageResult = dataProxy:HandleDamage(bulletData, targetUnitData)
+	local hitEffect
 
-	if var_3_3:GetGO() then
-		if var_3_6 then
-			local var_3_9, var_3_10 = var_0_4.GetFXPool():GetFX(arg_3_0:GetMissFXID())
-			local var_3_11 = var_3_3:GetUnitData():GetBoxSize()
-			local var_3_12 = math.random(0, 1)
+	if targetUnit:GetGO() then
+		if isMiss then
+			-- 未命中：在目标附近随机位置播放miss特效
+			local missFX, missOffset = BattleCannonBulletFactory.GetFXPool():GetFX(self:GetMissFXID())
+			local boxSize = targetUnit:GetUnitData():GetBoxSize()
+			local randomSide = math.random(0, 1)
 
-			if var_3_12 == 0 then
-				var_3_12 = -1
+			if randomSide == 0 then
+				randomSide = -1
 			end
 
-			local var_3_13 = (math.random() - 0.5) * var_3_11.x
-			local var_3_14 = Vector3(var_3_13, 0, var_3_11.z * var_3_12):Add(var_3_3:GetPosition())
+			local randomX = (math.random() - 0.5) * boxSize.x
+			local missPos = Vector3(randomX, 0, boxSize.z * randomSide):Add(targetUnit:GetPosition())
 
-			pg.EffectMgr.GetInstance():PlayBattleEffect(var_3_9, var_3_14:Add(var_3_10), true)
-			var_0_0.Battle.PlayBattleSFX(var_3_1:GetMissSFX())
+			pg.EffectMgr.GetInstance():PlayBattleEffect(missFX, missPos:Add(missOffset), true)
+			ys.Battle.PlayBattleSFX(bulletData:GetMissSFX())
 		else
-			var_3_8 = var_3_3:AddFX(arg_3_0:GetFXID())
+			-- 命中：在目标身上添加命中特效，并根据碰撞方向调整特效位置
+			hitEffect = targetUnit:AddFX(self:GetFXID())
 
-			var_0_0.Battle.PlayBattleSFX(var_3_1:GetHitSFX())
+			ys.Battle.PlayBattleSFX(bulletData:GetHitSFX())
 
-			local var_3_15 = var_3_4:GetDirection()
-			local var_3_16 = arg_3_0:GetPosition() - var_3_3:GetPosition()
+			local direction = targetUnitData:GetDirection()
+			local hitDir = self:GetPosition() - targetUnit:GetPosition()
 
-			var_3_16.x = var_3_16.x * var_3_15
+			hitDir.x = hitDir.x * direction
 
-			local var_3_17 = var_3_8.transform.localPosition
-			local var_3_18 = (var_0_5 * var_3_3:GetTf().localRotation).eulerAngles.x
+			local hitLocalPos = hitEffect.transform.localPosition
+			local targetRotX = (hitFXRotation * targetUnit:GetTf().localRotation).eulerAngles.x
 
-			var_3_16.y = math.cos(math.deg2Rad * var_3_18) * var_3_16.z
-			var_3_16.z = 0
+			hitDir.y = math.cos(math.deg2Rad * targetRotX) * hitDir.z
+			hitDir.z = 0
 
-			local var_3_19 = var_3_16 / var_3_3:GetInitScale()
+			local localHitDir = hitDir / targetUnit:GetInitScale()
 
-			var_3_17:Add(var_3_19)
+			hitLocalPos:Add(localHitDir)
 
-			var_3_8.transform.localPosition = var_3_17
+			hitEffect.transform.localPosition = hitLocalPos
 		end
 	end
 
-	if var_3_8 and var_3_4:GetIFF() == var_3_0:GetFoeCode() then
-		local var_3_20 = var_3_8.transform
-		local var_3_21 = var_3_20.localRotation
+	-- 命中敌方单位时翻转特效Y轴，使特效朝向正确方向
+	if hitEffect and targetUnitData:GetIFF() == dataProxy:GetFoeCode() then
+		local hitEffectTF = hitEffect.transform
+		local hitEffectRot = hitEffectTF.localRotation
 
-		var_3_20.localRotation = Vector3(var_3_21.x, 180, var_3_21.z)
+		hitEffectTF.localRotation = Vector3(hitEffectRot.x, 180, hitEffectRot.z)
 	end
 
-	if var_3_1:GetPierceCount() <= 0 then
-		var_3_0:RemoveBulletUnit(var_3_1:GetUniqueID())
+	-- 穿透次数耗尽时移除子弹
+	if bulletData:GetPierceCount() <= 0 then
+		dataProxy:RemoveBulletUnit(bulletData:GetUniqueID())
 	end
 end
 
-function var_0_4.onBulletMissFunc(arg_4_0)
-	local var_4_0 = arg_4_0:GetBulletData()
-	local var_4_1 = var_4_0:GetTemplate()
-	local var_4_2, var_4_3 = var_0_4.GetFXPool():GetFX(arg_4_0:GetMissFXID())
+--- 炮弹未命中回调（飞出边界/脱靶时触发）
+--- 在当前位置播放miss特效和音效
+function BattleCannonBulletFactory.onBulletMissFunc(self)
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
+	local missFX, missOffset = BattleCannonBulletFactory.GetFXPool():GetFX(self:GetMissFXID())
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_4_2, var_4_3:Add(arg_4_0:GetPosition()), true)
-	var_0_0.Battle.PlayBattleSFX(var_4_0:GetMissSFX())
+	pg.EffectMgr.GetInstance():PlayBattleEffect(missFX, missOffset:Add(self:GetPosition()), true)
+	ys.Battle.PlayBattleSFX(bulletData:GetMissSFX())
 end
 
-function var_0_4.MakeModel(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4)
-	local var_5_0 = arg_5_0:GetDataProxy()
-	local var_5_1 = arg_5_1:GetBulletData()
+--- 创建炮弹的视觉模型
+--- 通过ResourceManager异步实例化模型，若资源未就绪则使用临时占位对象
+--- 设置生成位置、命中/未命中回调，并注册到SceneMediator
+--- @param bulletView BattleBulletUnit View层子弹
+--- @param spawnPos Vector3 生成位置
+--- @param fireFXID string 发射特效ID（此方法内未使用，由父类CreateBullet调用PlayFireFX）
+--- @param dir BattleConst.UnitDir 方向（未使用）
+function BattleCannonBulletFactory.MakeModel(self, bulletView, spawnPos, fireFXID, dir)
+	local dataProxy = self:GetDataProxy()
+	local bulletData = bulletView:GetBulletData()
 
-	if not arg_5_0:GetBulletPool():InstBullet(arg_5_1:GetModleID(), function(arg_6_0)
-		arg_5_1:AddModel(arg_6_0)
+	if not self:GetBulletPool():InstBullet(bulletData:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
-		arg_5_1:AddTempModel(arg_5_0:GetTempGOPool():GetObject())
+		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
 
-	arg_5_1:SetSpawn(arg_5_2)
-	arg_5_1:SetFXFunc(arg_5_0.onBulletHitFunc, arg_5_0.onBulletMissFunc)
-	arg_5_0:GetSceneMediator():AddBullet(arg_5_1)
+	bulletView:SetSpawn(spawnPos)
+	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
+	self:GetSceneMediator():AddBullet(bulletView)
 end

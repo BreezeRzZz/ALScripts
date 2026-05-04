@@ -1,101 +1,133 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.SkillState = class("SkillState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.SkillState.__name = "SkillState"
+ys.Battle.SkillState = class("SkillState", ys.Battle.IUnitState)
+ys.Battle.SkillState.__name = "SkillState"
 
-local var_0_2 = var_0_0.Battle.SkillState
+local SkillState = ys.Battle.SkillState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class SkillState : IUnitState
+--- 技能主状态：单位正在释放技能时的核心状态
+--- 机制说明：
+--- - 技能状态下允许攻击、法术、死亡、中断、技能子状态(SkillStart/SkillEnd)、胜利
+--- - 禁止移动(Move/MoveLeft/Idle)、站立(Stand)、潜水相关(Dive/DiveLeft/Diving)
+--- - OnEnd时根据目标是否正在移动，切换到MoveState或IdleState
+---   - 这意味着技能释放完毕后，单位会恢复到技能前的运动状态
+--- - 缓存武器(CacheWeapon=true)，技能动画前摇期间预生成子弹
+function SkillState.Ctor(self)
+	SkillState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 技能状态下禁止切换到Idle
+function SkillState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 技能状态下禁止切换到Move
+function SkillState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 技能状态下禁止切换到MoveLeft
+function SkillState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_1:OnAttackState(arg_5_2)
+--- 技能状态下允许攻击：委托给UnitState的OnAttackState处理
+function SkillState.AddAttackState(self, unitState, inputInfo)
+	unitState:OnAttackState(inputInfo)
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 技能状态下允许死亡：委托给UnitState的OnDeadState处理
+function SkillState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSpellState(arg_7_0, arg_7_1, arg_7_2)
-	arg_7_1:OnSpellState()
+--- 技能状态下允许法术：委托给UnitState的OnSpellState处理
+function SkillState.AddSpellState(self, unitState, inputInfo)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddSkillState(arg_8_0, arg_8_1, arg_8_2)
+--- 已经在技能状态中，不重复切换
+function SkillState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 技能状态下允许胜利：委托给UnitState的OnVictoryState处理
+function SkillState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 技能状态下允许胜利浮游：委托给UnitState的OnVictorySwimState处理
+function SkillState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 技能状态下禁止切换到Stand
+function SkillState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 技能状态下禁止切换到Dive
+function SkillState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 技能状态下禁止切换到DiveLeft
+function SkillState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- 技能状态下允许中断：委托给UnitState的OnInterruptState处理
+function SkillState.AddInterruptState(self, unitState, inputInfo)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 技能状态下禁止切换到Diving
+function SkillState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- 技能状态内允许SkillStart子状态：前摇阶段的过渡
+function SkillState.AddSkillStartState(self, unitState, inputInfo)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 技能状态下忽略SkillEnd子状态（由当前OnEnd处理后摇）
+function SkillState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+--- 动画触发点回调：不执行任何操作
+function SkillState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- 状态开始回调：不执行任何操作
+function SkillState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	if arg_20_1:GetTarget():IsMoving() then
-		arg_20_1:OnMoveState()
+--- 状态结束回调：根据目标是否移动决定恢复状态
+--- 如果目标正在移动 → 恢复到MoveState
+--- 如果目标静止 → 恢复到IdleState
+--- 这样确保技能释放完毕后，单位恢复到正确的运动状态
+function SkillState.OnEnd(self, unitState)
+	if unitState:GetTarget():IsMoving() then
+		unitState:OnMoveState()
 	else
-		arg_20_1:OnIdleState()
+		unitState:OnIdleState()
 	end
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 技能状态需要缓存武器：在动画前摇阶段预生成子弹
+function SkillState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 技能状态不刷新ActionKeyOffset
+function SkillState.FreshActionKeyOffset(self)
 	return false
 end

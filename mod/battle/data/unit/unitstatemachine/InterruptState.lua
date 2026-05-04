@@ -1,102 +1,148 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.InterruptState = class("InterruptState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.InterruptState.__name = "InterruptState"
+ys.Battle.InterruptState = class("InterruptState", ys.Battle.IUnitState)
+ys.Battle.InterruptState.__name = "InterruptState"
 
-local var_0_2 = var_0_0.Battle.InterruptState
+local InterruptState = ys.Battle.InterruptState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class InterruptState : IUnitState
+--- 中断/打断状态：单位被中断（如眩晕、击退等）时的状态
+--- 机制说明：
+--- - 当单位被中断打断时进入此状态，对应失控/硬直动画
+--- - 禁止Idle、Move、MoveLeft、Attack、Skill、Spell、Stand、潜水相关
+--- - 关键机制：OnTrigger时设置sickness状态
+---   - SetInterruptSickness(true)：标记单位为"sickness"状态
+---   - 在BattleUnit.UpdateWeapon中检查_isSickness：sickness时不能更新武器
+---   - 在BattleUnit.Update中检查_isSickness：sickness时不能更新运动
+---   - 即中断期间单位完全无法行动（不能移动、不能开火）
+--- - OnEnd时清除sickness并恢复移动
+---   - SetInterruptSickness(false)：恢复行动能力
+---   - ChangeToMoveState()：切换到移动状态
+--- - 特殊：AddDivingState → OnDivingState()：中断期间可以进入潜水过渡？
+---   - 这是一个非直观的设计：被中断时仍然可以开始潜水
+--- - 仅允许：死亡、胜利(Victory/VictorySwim)、Diving、SkillStart
+--- - 缓存武器(CacheWeapon=true)：中断动画期间预缓存武器
+--- - 对应动画名：INTERRUPT
+function InterruptState.Ctor(self)
+	InterruptState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 中断状态下禁止Idle
+function InterruptState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 中断状态下禁止Move
+function InterruptState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 中断状态下禁止MoveLeft
+function InterruptState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- 中断状态下禁止Attack
+function InterruptState.AddAttackState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 死亡可以打断中断状态（死亡优先级最高）
+function InterruptState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- 中断状态下禁止Skill
+function InterruptState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
+--- 中断状态下禁止Spell
+function InterruptState.AddSpellState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 胜利可以打断中断状态
+function InterruptState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 胜利浮游可以打断中断状态
+function InterruptState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 中断状态下禁止Stand
+function InterruptState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 中断状态下禁止Dive
+function InterruptState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 中断状态下禁止DiveLeft
+function InterruptState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
+--- 已经处于中断状态，不重复
+function InterruptState.AddInterruptState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1:OnDivingState()
+--- 特殊设计：中断状态中允许进入潜水过渡(Diving)
+--- 这意味着即使被中断/眩晕，单位仍然可以开始潜水动画
+--- 这是一个非直观但有意为之的设计选择
+function InterruptState.AddDivingState(self, unitState, inputInfo)
+	unitState:OnDivingState()
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- 中断状态下允许SkillStart
+function InterruptState.AddSkillStartState(self, unitState, inputInfo)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 中断状态下禁止SkillEnd
+function InterruptState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
-	arg_18_1:GetTarget():SetInterruptSickness(true)
+--- 中断动画触发点：设置目标为sickness状态
+--- SetInterruptSickness(true) → BattleUnit._isSickness = true
+--- sickness状态下：不能更新运动(BattleUnit.Update检查)、不能更新武器(BattleUnit.UpdateWeapon检查)
+--- 即单位在中断动画开始时就完全失去行动能力
+function InterruptState.OnTrigger(self, unitState)
+	unitState:GetTarget():SetInterruptSickness(true)
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function InterruptState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:GetTarget():SetInterruptSickness(false)
-	arg_20_1:ChangeToMoveState()
+--- 中断动画结束：清除sickness状态并恢复移动
+--- 1. SetInterruptSickness(false)：恢复行动能力
+--- 2. ChangeToMoveState()：切换到移动状态
+function InterruptState.OnEnd(self, unitState)
+	unitState:GetTarget():SetInterruptSickness(false)
+	unitState:ChangeToMoveState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 中断状态需要缓存武器
+function InterruptState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 中断状态不刷新ActionKeyOffset
+function InterruptState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.INTERRUPT
+--- 获取动画名称：返回INTERRUPT，播放中断/硬直动画
+function InterruptState.GetActionName(self, unit)
+	return ActionName.INTERRUPT
 end

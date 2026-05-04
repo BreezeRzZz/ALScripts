@@ -1,24 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourPlaySFX", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourPlaySFX = class("BattleEnvironmentBehaviourPlaySFX", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourPlaySFX = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourPlaySFX"
+ys.Battle.BattleEnvironmentBehaviourPlaySFX = BattleEnvironmentBehaviourPlaySFX
+BattleEnvironmentBehaviourPlaySFX.__name = "BattleEnvironmentBehaviourPlaySFX"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- @class BattleEnvironmentBehaviourPlaySFX : BattleEnvironmentBehaviour
+--- 环境音效行为：播放战斗音效
+function BattleEnvironmentBehaviourPlaySFX.Ctor(self)
+	BattleEnvironmentBehaviourPlaySFX.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取SFX_ID
+--- @param tmpData table
+function BattleEnvironmentBehaviourPlaySFX.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourPlaySFX.super.SetTemplate(self, tmpData)
 
-	arg_2_0._sfx = arg_2_0._tmpData.SFX_ID
+	self._sfx = self._tmpData.SFX_ID
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	var_0_0.Battle.PlayBattleSFX(arg_3_0._sfx)
-	var_0_3.super.doBehaviour(arg_3_0)
+--- 播放指定战斗音效
+function BattleEnvironmentBehaviourPlaySFX.doBehaviour(self)
+	ys.Battle.PlayBattleSFX(self._sfx)
+	BattleEnvironmentBehaviourPlaySFX.super.doBehaviour(self)
 end

@@ -1,32 +1,37 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourBuff", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourBuff = class("BattleEnvironmentBehaviourBuff", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourBuff = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourBuff"
+ys.Battle.BattleEnvironmentBehaviourBuff = BattleEnvironmentBehaviourBuff
+BattleEnvironmentBehaviourBuff.__name = "BattleEnvironmentBehaviourBuff"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- @class BattleEnvironmentBehaviourBuff : BattleEnvironmentBehaviour
+--- 环境Buff行为：对碰撞区域内的所有存活单位施加指定Buff
+function BattleEnvironmentBehaviourBuff.Ctor(self)
+	BattleEnvironmentBehaviourBuff.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取buff_id和等级
+--- @param tmpData table 行为配置（含buff_id和level）
+function BattleEnvironmentBehaviourBuff.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourBuff.super.SetTemplate(self, tmpData)
 
-	arg_2_0._buffID = arg_2_0._tmpData.buff_id
-	arg_2_0._buffLevel = arg_2_0._tmpData.level or 1
+	self._buffID = self._tmpData.buff_id
+	self._buffLevel = self._tmpData.level or 1
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0._cldUnitList) do
-		if iter_3_1:IsAlive() then
-			local var_3_0 = var_0_0.Battle.BattleBuffUnit.New(arg_3_0._buffID, arg_3_0._buffLevel)
+--- 对区域内每个存活单位创建并添加Buff
+function BattleEnvironmentBehaviourBuff.doBehaviour(self)
+	for _, unit in ipairs(self._cldUnitList) do
+		if unit:IsAlive() then
+			local buff = ys.Battle.BattleBuffUnit.New(self._buffID, self._buffLevel)
 
-			iter_3_1:AddBuff(var_3_0)
+			unit:AddBuff(buff)
 		end
 	end
 
-	var_0_3.super.doBehaviour(arg_3_0)
+	BattleEnvironmentBehaviourBuff.super.doBehaviour(self)
 end

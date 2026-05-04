@@ -1,97 +1,110 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local BattleWorldBossCommand = class("BattleWorldBossCommand", var_0_0.Battle.BattleSingleDungeonCommand)
+--- @class BattleWorldBossCommand : BattleSingleDungeonCommand
+--- 世界 Boss（共斗/World Joint）战斗指令。继承自 BattleSingleDungeonCommand，
+--- 根据 ActID + bossConfigId + bossLevel 获取特定敌人列表，
+--- 并计算世界 Boss 伤害数据。与 InheritDungeon 和 GuildBoss 的区别在于
+--- Boss 有等级（bossLevel）参数，且使用 CalcWorldBossDamageInfo 进行结算。
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleWorldBossCommand = class("BattleWorldBossCommand", ys.Battle.BattleSingleDungeonCommand)
 
-var_0_0.Battle.BattleWorldBossCommand = BattleWorldBossCommand
+ys.Battle.BattleWorldBossCommand = BattleWorldBossCommand
 BattleWorldBossCommand.__name = "BattleWorldBossCommand"
 
-function BattleWorldBossCommand.Ctor(arg_1_0)
-	BattleWorldBossCommand.super.Ctor(arg_1_0)
+function BattleWorldBossCommand.Ctor(self)
+	BattleWorldBossCommand.super.Ctor(self)
 end
 
-function BattleWorldBossCommand.initWaveModule(arg_2_0)
-	local function var_2_0(arg_3_0, arg_3_1, arg_3_2)
-		arg_2_0._dataProxy:SpawnMonster(arg_3_0, arg_3_1, arg_3_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+--- 初始化波次模块。重写父类方法，在战斗结束时额外调用 calcDamageData。
+function BattleWorldBossCommand.initWaveModule(self)
+	local function spawnFunc(spawnItem, waveIndex, enemyType)
+		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
-	local function var_2_1(arg_4_0)
-		arg_2_0._dataProxy:SpawnAirFighter(arg_4_0)
+	local function airFighterFunc(tmpData)
+		self._dataProxy:SpawnAirFighter(tmpData)
 	end
 
-	local function var_2_2()
-		if arg_2_0._vertifyFail then
+	local function clearFunc()
+		if self._vertifyFail then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_2_0._vertifyFail
+				reason = self._vertifyFail
 			})
 
 			return
 		end
 
-		arg_2_0._dataProxy:TriggerFinishBattle()
-		arg_2_0:CalcStatistic()
-		arg_2_0:calcDamageData()
-		arg_2_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 	end
 
-	local function var_2_3(arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
-		arg_2_0._dataProxy:SpawnCubeArea(var_0_0.Battle.BattleConst.AOEField.SURFACE, -1, arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
+	local function spawnAreaFunc(x, y, z, width, height)
+		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, x, y, z, width, height)
 	end
 
-	arg_2_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_2_0, var_2_1, var_2_2, var_2_3)
+	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)
 end
 
-function BattleWorldBossCommand.onInitBattle(arg_7_0)
-	BattleWorldBossCommand.super.onInitBattle(arg_7_0)
+--- 战斗数据初始化完成回调。获取世界 Boss 特定敌人列表，
+--- 使用 ActID、bossConfigId 和 bossLevel 三个维度进行查询。
+function BattleWorldBossCommand.onInitBattle(self)
+	BattleWorldBossCommand.super.onInitBattle(self)
 
-	local var_7_0 = arg_7_0._dataProxy:GetInitData()
+	local initData = self._dataProxy:GetInitData()
 
-	arg_7_0._specificEnemyList = var_0_0.Battle.BattleDataFunction.GetSpecificWorldJointEnemyList(var_7_0.ActID, var_7_0.bossConfigId, var_7_0.bossLevel)
+	self._specificEnemyList = ys.Battle.BattleDataFunction.GetSpecificWorldJointEnemyList(initData.ActID, initData.bossConfigId, initData.bossLevel)
 end
 
-function BattleWorldBossCommand.onAddUnit(arg_8_0, arg_8_1)
-	BattleWorldBossCommand.super.onAddUnit(arg_8_0, arg_8_1)
+--- 单位添加回调。若单位在特定敌人列表中则初始化其统计信息。
+function BattleWorldBossCommand.onAddUnit(self, event)
+	BattleWorldBossCommand.super.onAddUnit(self, event)
 
-	local var_8_0 = arg_8_1.Data.unit
+	local unit = event.Data.unit
 
-	if table.contains(arg_8_0._specificEnemyList, var_8_0:GetTemplateID()) then
-		arg_8_0._dataProxy:InitSpecificEnemyStatistics(var_8_0)
+	if table.contains(self._specificEnemyList, unit:GetTemplateID()) then
+		self._dataProxy:InitSpecificEnemyStatistics(unit)
 	end
 end
 
-function BattleWorldBossCommand.onPlayerShutDown(arg_9_0, arg_9_1)
-	if arg_9_0._state:GetState() ~= arg_9_0._state.BATTLE_STATE_FIGHT then
+--- 玩家单位沉没问题。旗舰或前卫全灭时，调用 TriggerFinishBattle 再触发 calcDamageData 后结束战斗。
+function BattleWorldBossCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if arg_9_1.Data.unit == arg_9_0._userFleet:GetFlagShip() and arg_9_0._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and arg_9_0._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
-		arg_9_0._dataProxy:TriggerFinishBattle()
-		arg_9_0:CalcStatistic()
-		arg_9_0:calcDamageData()
-		arg_9_0._state:BattleEnd()
+	if event.Data.unit == self._userFleet:GetFlagShip() and self._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and self._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 
 		return
 	end
 
-	if #arg_9_0._userFleet:GetScoutList() == 0 then
-		arg_9_0._dataProxy:TriggerFinishBattle()
-		arg_9_0:CalcStatistic()
-		arg_9_0:calcDamageData()
-		arg_9_0._state:BattleEnd()
+	if #self._userFleet:GetScoutList() == 0 then
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 	end
 end
 
-function BattleWorldBossCommand.onUpdateCountDown(arg_10_0, arg_10_1)
-	if arg_10_0._dataProxy:GetCountDown() <= 0 then
-		arg_10_0._dataProxy:EnemyEscape()
-		arg_10_0:CalcStatistic()
-		arg_10_0:calcDamageData()
-		arg_10_0._state:BattleTimeUp()
+--- 倒计时归零时的超时结算。
+function BattleWorldBossCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		self._dataProxy:EnemyEscape()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleTimeUp()
 	end
 end
 
+--- 计算世界 Boss 伤害数据。将本次战斗伤害按 ActID + bossConfigId + bossLevel
+--- 三个维度汇总到世界 Boss 总伤害池。
 function BattleWorldBossCommand.calcDamageData(self)
 	local initData = self._dataProxy:GetInitData()
 

@@ -1,155 +1,177 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleEnmeyHpBarView")
+local ys = ys
+local BattleEnmeyHpBarView = class("BattleEnmeyHpBarView")
 
-var_0_0.Battle.BattleEnmeyHpBarView = var_0_1
-var_0_1.__name = "BattleEnmeyHpBarView"
+ys.Battle.BattleEnmeyHpBarView = BattleEnmeyHpBarView
+BattleEnmeyHpBarView.__name = "BattleEnmeyHpBarView"
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._monsterTF = arg_1_1
-	arg_1_0.orgPos = arg_1_1.anchoredPosition
-	arg_1_0.HidePos = arg_1_0.orgPos + Vector2(0, 100)
-	arg_1_0._hpBarTF = arg_1_1:Find("hpbar")
-	arg_1_0._hpBar = arg_1_0._hpBarTF.gameObject
-	arg_1_0._hpBarProgress = arg_1_0._hpBarTF:GetComponent(typeof(Image))
-	arg_1_0._hpBarText = arg_1_0._hpBarTF:Find("Text"):GetComponent(typeof(Text))
-	arg_1_0._nameTF = arg_1_1:Find("nameContain/name")
-	arg_1_0._lvText = arg_1_1:Find("nameContain/Text"):GetComponent(typeof(Text))
-	arg_1_0._level = arg_1_1:Find("level")
-	arg_1_0._typeIcon = arg_1_1:Find("typeIcon/icon"):GetComponent(typeof(Image))
-	arg_1_0._eliteLabel = arg_1_1:Find("grade/elite")
-	arg_1_0._generalLabel = arg_1_1:Find("grade/general")
-	arg_1_0._flag = true
-	arg_1_0._isExistBoos = false
+--- 敌方血条视图（注意：原始拼写就是"Enmey"而非"Enemy"）
+--- 显示当前锁定敌人的血条、名称、等级和类型图标
+--- @param monsterTF Transform 敌方信息面板的Transform
+function BattleEnmeyHpBarView.Ctor(self, monsterTF)
+	self._monsterTF = monsterTF
+	self.orgPos = monsterTF.anchoredPosition
+	-- 隐藏位置：向下偏移100
+	self.HidePos = self.orgPos + Vector2(0, 100)
+	self._hpBarTF = monsterTF:Find("hpbar")
+	self._hpBar = self._hpBarTF.gameObject
+	self._hpBarProgress = self._hpBarTF:GetComponent(typeof(Image))
+	self._hpBarText = self._hpBarTF:Find("Text"):GetComponent(typeof(Text))
+	self._nameTF = monsterTF:Find("nameContain/name")
+	self._lvText = monsterTF:Find("nameContain/Text"):GetComponent(typeof(Text))
+	self._level = monsterTF:Find("level")
+	self._typeIcon = monsterTF:Find("typeIcon/icon"):GetComponent(typeof(Image))
+	self._eliteLabel = monsterTF:Find("grade/elite")
+	self._generalLabel = monsterTF:Find("grade/general")
+	self._flag = true
+	self._isExistBoos = false
 
-	arg_1_0:Show(false)
+	self:Show(false)
 end
 
-function var_0_1.GetCurrentTarget(arg_2_0)
-	return arg_2_0._targetUnit
+--- @return table 当前目标单位
+function BattleEnmeyHpBarView.GetCurrentTarget(self)
+	return self._targetUnit
 end
 
-function var_0_1.Show(arg_3_0, arg_3_1)
-	if arg_3_0._curActive ~= arg_3_1 then
-		arg_3_0._curActive = arg_3_1
+--- 显示/隐藏血条面板（通过移动位置实现隐藏）
+--- @param show boolean
+function BattleEnmeyHpBarView.Show(self, show)
+	if self._curActive ~= show then
+		self._curActive = show
 
-		if arg_3_1 then
-			arg_3_0._monsterTF.anchoredPosition = arg_3_0.orgPos
+		if show then
+			self._monsterTF.anchoredPosition = self.orgPos
 		else
-			arg_3_0._monsterTF.anchoredPosition = arg_3_0.HidePos
+			self._monsterTF.anchoredPosition = self.HidePos
 		end
 	end
 end
 
-function var_0_1.SetIconType(arg_4_0, arg_4_1)
-	if arg_4_0._eliteType == arg_4_1 then
+--- 设置图标类型（精英/普通标签）
+--- @param isElite boolean 是否为精英敌人
+function BattleEnmeyHpBarView.SetIconType(self, isElite)
+	if self._eliteType == isElite then
 		return
 	end
 
-	arg_4_0._eliteType = arg_4_1
+	self._eliteType = isElite
 
-	setActive(arg_4_0._generalLabel, not arg_4_1)
-	setActive(arg_4_0._eliteLabel, arg_4_1)
+	setActive(self._generalLabel, not isElite)
+	setActive(self._eliteLabel, isElite)
 end
 
-function var_0_1.SwitchTarget(arg_5_0, arg_5_1, arg_5_2)
-	for iter_5_0, iter_5_1 in pairs(arg_5_2) do
-		if iter_5_1:IsBoss() then
-			arg_5_0._isExistBoos = true
+--- 切换到新的目标单位
+--- 检查是否有Boss存在，有Boss时不显示小怪血条
+--- @param targetUnit table 目标单位
+--- @param unitList table 所有可见单位的列表（用于检查是否存在Boss）
+function BattleEnmeyHpBarView.SwitchTarget(self, targetUnit, unitList)
+	-- 检查列表中是否存在Boss
+	for _, unit in pairs(unitList) do
+		if unit:IsBoss() then
+			self._isExistBoos = true
 
 			break
 		end
 	end
 
-	if arg_5_0._flag == false or arg_5_0._isExistBoos == true then
-		arg_5_0:Show(false)
+	if self._flag == false or self._isExistBoos == true then
+		self:Show(false)
 
 		return
 	end
 
-	arg_5_0._targetUnit = arg_5_1
+	self._targetUnit = targetUnit
 
-	arg_5_0:Show(true)
+	self:Show(true)
 
-	local var_5_0 = arg_5_1:GetHPRate()
+	local hpRate = targetUnit:GetHPRate()
 
-	arg_5_0._hpBarProgress.fillAmount = var_5_0
+	self._hpBarProgress.fillAmount = hpRate
 
-	arg_5_0:UpdateHpText(arg_5_1)
-	arg_5_0:SetIconType(arg_5_1:GetTemplate().icon_type ~= 0)
+	self:UpdateHpText(targetUnit)
+	self:SetIconType(targetUnit:GetTemplate().icon_type ~= 0)
 
-	local var_5_1 = var_0_0.Battle.BattleDataFunction.GetEnemyTypeDataByType(arg_5_1:GetTemplate().type).type
-	local var_5_2 = GetSpriteFromAtlas("shiptype", shipType2Battleprint(var_5_1))
+	-- 设置船型图标
+	local shipType = ys.Battle.BattleDataFunction.GetEnemyTypeDataByType(targetUnit:GetTemplate().type).type
+	local typeSprite = GetSpriteFromAtlas("shiptype", shipType2Battleprint(shipType))
 
-	arg_5_0._typeIcon.sprite = var_5_2
+	self._typeIcon.sprite = typeSprite
 
-	arg_5_0._typeIcon:SetNativeSize()
-	changeToScrollText(arg_5_0._nameTF, arg_5_1._tmpData.name)
+	self._typeIcon:SetNativeSize()
+	-- 滚动显示名称
+	changeToScrollText(self._nameTF, targetUnit._tmpData.name)
 
-	arg_5_0._lvText.text = " Lv." .. arg_5_1:GetLevel()
+	self._lvText.text = " Lv." .. targetUnit:GetLevel()
 end
 
-function var_0_1.UpdateHpText(arg_6_0)
-	local var_6_0, var_6_1 = arg_6_0._targetUnit:GetHP()
+--- 更新血条上的HP数值文本
+function BattleEnmeyHpBarView.UpdateHpText(self)
+	local currentHP, maxHP = self._targetUnit:GetHP()
 
-	arg_6_0._hpBarText.text = tostring(math.floor(var_6_0) .. "/" .. math.floor(var_6_1))
+	self._hpBarText.text = tostring(math.floor(currentHP) .. "/" .. math.floor(maxHP))
 end
 
-function var_0_1.UpdateHpBar(arg_7_0)
-	if arg_7_0._flag == false or arg_7_0._isExistBoos == true then
+--- 更新血条（动画平滑过渡），HP为0时移除单位
+function BattleEnmeyHpBarView.UpdateHpBar(self)
+	if self._flag == false or self._isExistBoos == true then
 		return
 	end
 
-	LeanTween.cancel(arg_7_0._hpBar)
+	LeanTween.cancel(self._hpBar)
 
-	local var_7_0 = arg_7_0._targetUnit:GetHPRate()
+	local hpRate = self._targetUnit:GetHPRate()
 
-	arg_7_0:UpdateHpText(target)
+	self:UpdateHpText(target)
 
-	local var_7_1 = arg_7_0._hpBarProgress.fillAmount
+	local currentFill = self._hpBarProgress.fillAmount
 
-	if var_7_0 < var_7_1 then
-		LeanTween.value(arg_7_0._hpBar, var_7_1, var_7_0, 0.5):setOnUpdate(System.Action_float(function(arg_8_0)
-			arg_7_0._hpBarProgress.fillAmount = arg_8_0
+	-- HP下降时使用平滑动画
+	if hpRate < currentFill then
+		LeanTween.value(self._hpBar, currentFill, hpRate, 0.5):setOnUpdate(System.Action_float(function(fillValue)
+			self._hpBarProgress.fillAmount = fillValue
 		end))
 	else
-		arg_7_0._hpBarProgress.fillAmount = var_7_0
+		self._hpBarProgress.fillAmount = hpRate
 	end
 
-	if var_7_0 == 0 then
-		arg_7_0:RemoveUnit()
+	if hpRate == 0 then
+		self:RemoveUnit()
 	end
 end
 
-function var_0_1.RemoveUnit(arg_9_0, arg_9_1)
-	arg_9_0._targetUnit = nil
-	arg_9_0._flag = false
+--- 移除当前目标单位
+--- @param useDeathTimer boolean 是否使用死亡延迟（等待死亡动画）
+function BattleEnmeyHpBarView.RemoveUnit(self, useDeathTimer)
+	self._targetUnit = nil
+	self._flag = false
 
-	local function var_9_0()
-		arg_9_0._flag = true
+	local function resetFlag()
+		self._flag = true
 
-		arg_9_0:Show(false)
+		self:Show(false)
 	end
 
-	if arg_9_1 then
-		arg_9_0._deathTimer = pg.TimeMgr.GetInstance():AddBattleTimer("death", 0, 1, function()
-			var_9_0()
-			pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_9_0._deathTimer)
+	if useDeathTimer then
+		self._deathTimer = pg.TimeMgr.GetInstance():AddBattleTimer("death", 0, 1, function()
+			resetFlag()
+			pg.TimeMgr.GetInstance():RemoveBattleTimer(self._deathTimer)
 		end)
 	else
-		var_9_0()
+		resetFlag()
 	end
 end
 
-function var_0_1.Dispose(arg_12_0)
-	arg_12_0:Show(false)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_12_0._deathTimer)
-	LeanTween.cancel(arg_12_0._hpBar)
+--- 清理资源
+function BattleEnmeyHpBarView.Dispose(self)
+	self:Show(false)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._deathTimer)
+	LeanTween.cancel(self._hpBar)
 
-	arg_12_0._hpBarProgress = nil
-	arg_12_0._hpBar = nil
-	arg_12_0._hpBarTF = nil
-	arg_12_0._monsterTF = nil
-	arg_12_0._monster = nil
+	self._hpBarProgress = nil
+	self._hpBar = nil
+	self._hpBarTF = nil
+	self._monsterTF = nil
+	self._monster = nil
 end

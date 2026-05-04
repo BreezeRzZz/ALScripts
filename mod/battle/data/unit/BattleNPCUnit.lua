@@ -1,39 +1,46 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleFormulas
-local var_0_4 = var_0_0.Battle.BattleAttr
-local var_0_5 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleAttr = ys.Battle.BattleAttr
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleNPCUnit = class("BattleNPCUnit", var_0_0.Battle.BattleEnemyUnit)
+ys.Battle.BattleNPCUnit = class("BattleNPCUnit", ys.Battle.BattleEnemyUnit)
 
-local var_0_6 = var_0_0.Battle.BattleNPCUnit
+local BattleNPCUnit = ys.Battle.BattleNPCUnit
 
-function var_0_6.SetTemplate(arg_1_0, arg_1_1, arg_1_2)
-	var_0_6.super.SetTemplate(arg_1_0, arg_1_1)
+--- @class BattleNPCUnit
+--- @param templateID number: 模板ID
+--- @param extraData table: 额外数据(可包含template和attr)
+--- @return nil
+--- 设置模板：以MonsterTmpData为基础，支持通过extraData.template覆盖字段，通过extraData.attr设置属性
+function BattleNPCUnit.SetTemplate(self, templateID, extraData)
+	BattleNPCUnit.super.SetTemplate(self, templateID)
 
-	arg_1_0._tmpData = setmetatable({}, {
-		__index = var_0_0.Battle.BattleDataFunction.GetMonsterTmpDataFromID(arg_1_0._tmpID)
+	-- 创建以MonsterTmpData为后备的元表代理，支持extraData.template覆盖
+	self._tmpData = setmetatable({}, {
+		__index = ys.Battle.BattleDataFunction.GetMonsterTmpDataFromID(self._tmpID)
 	})
 
-	if arg_1_2.template then
-		for iter_1_0, iter_1_1 in pairs(arg_1_2.template) do
-			arg_1_0._tmpData[iter_1_0] = iter_1_1
+	if extraData.template then
+		for iter_1_0, iter_1_1 in pairs(extraData.template) do
+			self._tmpData[iter_1_0] = iter_1_1
 		end
 
-		arg_1_0._tmpData.id = arg_1_1
+		self._tmpData.id = templateID
 	end
 
-	if arg_1_2.attr then
-		var_0_4.SetAttr(arg_1_0, arg_1_2.attr)
+	-- 设置属性：优先使用extraData.attr，否则使用默认SetAttr
+	if extraData.attr then
+		BattleAttr.SetAttr(self, extraData.attr)
 	else
-		arg_1_0:SetAttr()
+		self:SetAttr()
 	end
 
-	local var_1_0 = arg_1_2.currentHP or arg_1_0:GetMaxHP()
+	local currentHPValue = extraData.currentHP or self:GetMaxHP()
 
-	arg_1_0:SetCurrentHP(var_1_0)
-	arg_1_0:InitCldComponent()
+	self:SetCurrentHP(currentHPValue)
+	self:InitCldComponent()
 end

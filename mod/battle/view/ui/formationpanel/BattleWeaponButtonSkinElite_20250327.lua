@@ -1,123 +1,135 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleWeaponButtonSkinElite_20250327", var_0_0.Battle.BattleWeaponButton)
+local ys = ys
+local BattleWeaponButtonSkinElite_20250327 = class("BattleWeaponButtonSkinElite_20250327", ys.Battle.BattleWeaponButton)
 
-var_0_0.Battle.BattleWeaponButtonSkinElite_20250327 = var_0_1
-var_0_1.__name = "BattleWeaponButtonSkinElite_20250327"
+ys.Battle.BattleWeaponButtonSkinElite_20250327 = BattleWeaponButtonSkinElite_20250327
+BattleWeaponButtonSkinElite_20250327.__name = "BattleWeaponButtonSkinElite_20250327"
 
-function var_0_1.OnTotalChange(arg_1_0, arg_1_1)
-	if arg_1_0._progressInfo:GetTotal() <= 0 then
-		arg_1_0._block:SetActive(true)
+--- 2025年3月27日精英武器按钮皮肤
+--- 继承自 BattleWeaponButton，用于精英活动期间的武器按钮样式
 
-		arg_1_0._progressBar.fillAmount = 0
-		arg_1_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
-		arg_1_0._text:GetComponent(typeof(Text)).text = "0/0"
+function BattleWeaponButtonSkinElite_20250327.OnTotalChange(self, event)
+	if self._progressInfo:GetTotal() <= 0 then
+		self._block:SetActive(true)
 
-		arg_1_0:SetControllerActive(false)
-		SetActive(arg_1_0._glowEff, false)
-		arg_1_0:OnUnfill()
-		arg_1_0:OnUnSelect()
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+		self._text:GetComponent(typeof(Text)).text = "0/0"
+
+		self:SetControllerActive(false)
+		SetActive(self._glowEff, false)
+		self:OnUnfill()
+		self:OnUnSelect()
 	else
-		if arg_1_0._progressInfo:GetTotal() == arg_1_0._progressInfo:GetCount() then
-			SetActive(arg_1_0._glowEff, true)
+		-- 满弹时显示发光特效
+		if self._progressInfo:GetTotal() == self._progressInfo:GetCount() then
+			SetActive(self._glowEff, true)
 		end
 
-		arg_1_0:OnCountChange()
-		arg_1_0:SetControllerActive(true)
+		self:OnCountChange()
+		self:SetControllerActive(true)
 
-		if arg_1_1 then
-			local var_1_0 = arg_1_1.Data.index
+		if event then
+			local index = event.Data.index
 
-			if var_1_0 and var_1_0 == 1 then
-				arg_1_0:OnUnSelect()
+			if index and index == 1 then
+				self:OnUnSelect()
 			end
 		end
 	end
 end
 
-function var_0_1.ConfigSkin(arg_2_0, arg_2_1)
-	var_0_1.super.ConfigSkin(arg_2_0, arg_2_1)
+function BattleWeaponButtonSkinElite_20250327.ConfigSkin(self, skin)
+	BattleWeaponButtonSkinElite_20250327.super.ConfigSkin(self, skin)
 
-	arg_2_0._glowEff = arg_2_0._btn:Find("gizmos_1")
+	-- 从按钮内部查找发光特效节点
+	self._glowEff = self._btn:Find("gizmos_1")
 end
 
-function var_0_1.OnCountChange(arg_3_0)
-	var_0_1.super.OnCountChange(arg_3_0)
-	SetActive(arg_3_0._glowEff, arg_3_0._progressInfo:GetCount() > 0)
+function BattleWeaponButtonSkinElite_20250327.OnCountChange(self)
+	BattleWeaponButtonSkinElite_20250327.super.OnCountChange(self)
+	-- 有弹药时显示发光
+	SetActive(self._glowEff, self._progressInfo:GetCount() > 0)
 end
 
-function var_0_1.SetToCombatUIPreview(arg_4_0, arg_4_1)
-	if arg_4_1 then
-		SetActive(arg_4_0._filled, true)
-		SetActive(arg_4_0._unfill, false)
+--- 设置战斗UI预览模式
+function BattleWeaponButtonSkinElite_20250327.SetToCombatUIPreview(self, isActive)
+	if isActive then
+		SetActive(self._filled, true)
+		SetActive(self._unfill, false)
 
-		arg_4_0._progressBar.fillAmount = 1
-		arg_4_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
-		arg_4_0._countTxt.text = "1/1"
+		self._progressBar.fillAmount = 1
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+		self._countTxt.text = "1/1"
 
-		if arg_4_0._gizmos1 then
-			SetActive(arg_4_0._gizmos1, true)
-			SetActive(arg_4_0._gizmosXue, true)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, true)
+			SetActive(self._gizmosXue, true)
 		end
 
-		SetActive(arg_4_0._glowEff, true)
-		quickCheckAndPlayAnimator(arg_4_0._skin, "weapon_button_progress_filled")
+		SetActive(self._glowEff, true)
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
 	else
-		SetActive(arg_4_0._unfill, true)
-		SetActive(arg_4_0._filled, false)
+		SetActive(self._unfill, true)
+		SetActive(self._filled, false)
 
-		arg_4_0._progressBar.fillAmount = 0
-		arg_4_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
-		arg_4_0._countTxt.text = "0/0"
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+		self._countTxt.text = "0/0"
 
-		SetActive(arg_4_0._glowEff, false)
+		SetActive(self._glowEff, false)
 
-		if arg_4_0._gizmos1 then
-			SetActive(arg_4_0._gizmos1, false)
-			SetActive(arg_4_0._gizmosXue, false)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, false)
+			SetActive(self._gizmosXue, false)
 		end
 	end
 end
 
-function var_0_1.updateProgressBar(arg_5_0)
-	local var_5_0 = arg_5_0._progressInfo:GetCurrent() / arg_5_0._progressInfo:GetMax()
+--- 更新进度条填充量
+function BattleWeaponButtonSkinElite_20250327.updateProgressBar(self)
+	local ratio = self._progressInfo:GetCurrent() / self._progressInfo:GetMax()
 
-	arg_5_0._progressBar.fillAmount = var_5_0
+	self._progressBar.fillAmount = ratio
 
-	if arg_5_0._progressInfo.GetCount and arg_5_0._progressInfo:GetCount() > 0 then
-		arg_5_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+	-- 有弹药时隐藏背景特效，否则根据比例逐渐显示
+	if self._progressInfo.GetCount and self._progressInfo:GetCount() > 0 then
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
 	else
-		arg_5_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1 - var_5_0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1 - ratio
 	end
 end
 
-function var_0_1.OnOverLoadChange(arg_6_0, arg_6_1)
-	if arg_6_0._progressInfo:IsOverLoad() then
-		arg_6_0._block:SetActive(true)
-		arg_6_0:OnUnfill()
+--- 过载状态变化处理
+function BattleWeaponButtonSkinElite_20250327.OnOverLoadChange(self, event)
+	if self._progressInfo:IsOverLoad() then
+		self._block:SetActive(true)
+		self:OnUnfill()
 	else
-		arg_6_0._block:SetActive(false)
-		arg_6_0:OnFilled()
+		self._block:SetActive(false)
+		self:OnFilled()
 	end
 
-	if arg_6_0._progressInfo:GetCount() >= 1 and arg_6_1 and arg_6_1.Data then
-		local var_6_0 = arg_6_1.Data.preCast
+	-- 有弹药且非过载时，根据预装填/充能状态播放动画
+	if self._progressInfo:GetCount() >= 1 and event and event.Data then
+		local preCast = event.Data.preCast
 
-		if var_6_0 then
-			if var_6_0 == 0 then
-				quickCheckAndPlayAnimator(arg_6_0._skin, "weapon_button_progress_filled")
-			elseif var_6_0 > 0 then
-				quickCheckAndPlayAnimator(arg_6_0._skin, "weapon_button_progress_charge")
+		if preCast then
+			if preCast == 0 then
+				quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
+			elseif preCast > 0 then
+				quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_charge")
 			end
 		end
 	end
 
-	if arg_6_1 and arg_6_1.Data and arg_6_1.Data.postCast then
-		quickCheckAndPlayAnimator(arg_6_0._skin, "weapon_button_progress_use")
+	-- 后装填时播放使用动画
+	if event and event.Data and event.Data.postCast then
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_use")
 	end
 
-	if arg_6_0._progressInfo:GetTotal() > 0 then
-		arg_6_0:updateProgressBar()
+	if self._progressInfo:GetTotal() > 0 then
+		self:updateProgressBar()
 	end
 end

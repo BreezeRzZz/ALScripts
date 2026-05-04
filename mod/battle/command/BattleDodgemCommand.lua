@@ -1,72 +1,82 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleDodgemCommand", var_0_0.Battle.BattleSingleDungeonCommand)
+-- 躲避战（Dodgem）战斗Command，继承自BattleSingleDungeonCommand
+-- 核心特性：特殊碰撞伤害公式（LockS2M / UnilateralCrush）、躲避计数初始化、运输船碰撞计分
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleDodgemCommand = class("BattleDodgemCommand", ys.Battle.BattleSingleDungeonCommand)
 
-var_0_0.Battle.BattleDodgemCommand = var_0_3
-var_0_3.__name = "BattleDodgemCommand"
+ys.Battle.BattleDodgemCommand = BattleDodgemCommand
+BattleDodgemCommand.__name = "BattleDodgemCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleDodgemCommand.Ctor(self)
+	BattleDodgemCommand.super.Ctor(self)
 end
 
-function var_0_3.Initialize(arg_2_0)
-	var_0_3.super.Initialize(arg_2_0)
-	arg_2_0._dataProxy:DodgemCountInit()
+-- 初始化：额外调用DodgemCountInit进行躲避计数初始化
+function BattleDodgemCommand.Initialize(self)
+	BattleDodgemCommand.super.Initialize(self)
+	self._dataProxy:DodgemCountInit()
 end
 
-function var_0_3.DoPrologue(arg_3_0)
+-- 入场序幕：设置特殊的碰撞伤害公式，显示躲避计分条
+-- 使用LockS2M（锁定伤害公式）和UnilateralCrush（单向碾压）替代默认伤害计算
+function BattleDodgemCommand.DoPrologue(self)
 	pg.UIMgr.GetInstance():Marching()
 
-	local function var_3_0()
-		arg_3_0._uiMediator:OpeningEffect(function()
-			arg_3_0._dataProxy:SetupDamageKamikazeShip(var_0_0.Battle.BattleFormulas.CalcDamageLockS2M)
-			arg_3_0._dataProxy:SetupDamageCrush(var_0_0.Battle.BattleFormulas.UnilateralCrush)
-			arg_3_0._uiMediator:ShowTimer()
-			arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
-			arg_3_0._waveUpdater:Start()
+	local function afterSurfaceShift()
+		self._uiMediator:OpeningEffect(function()
+			self._dataProxy:SetupDamageKamikazeShip(ys.Battle.BattleFormulas.CalcDamageLockS2M) -- 神风船锁定伤害
+			self._dataProxy:SetupDamageCrush(ys.Battle.BattleFormulas.UnilateralCrush) -- 碰撞碾压伤害
+			self._uiMediator:ShowTimer()
+			self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+			self._waveUpdater:Start()
 		end)
-		arg_3_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
+		self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE):FleetWarcry()
 	end
 
-	arg_3_0._uiMediator:SeaSurfaceShift(45, 0, nil, var_3_0)
-	arg_3_0._uiMediator:ShowDodgemScoreBar()
+	self._uiMediator:SeaSurfaceShift(45, 0, nil, afterSurfaceShift)
+	self._uiMediator:ShowDodgemScoreBar()
 end
 
-function var_0_3.initWaveModule(arg_6_0)
-	local function var_6_0(arg_7_0, arg_7_1, arg_7_2)
-		arg_6_0._dataProxy:SpawnMonster(arg_7_0, arg_7_1, arg_7_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+-- 波次模块：无空袭和AOE区域，仅刷怪和Dodgem专属结算
+function BattleDodgemCommand.initWaveModule(self)
+	-- 刷怪回调
+	local function spawnFunc(spawnItem, waveIndex, enemyType)
+		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
-	local function var_6_1()
-		if arg_6_0._vertifyFail then
+	-- 战斗结束回调：计算躲避战分数
+	local function clearFunc()
+		if self._vertifyFail then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_6_0._vertifyFail
+				reason = self._vertifyFail
 			})
 
 			return
 		end
 
-		arg_6_0._dataProxy:TriggerFinishBattle()
-		arg_6_0._dataProxy:CalcDodgemScore()
-		arg_6_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcDodgemScore()
+		self._state:BattleEnd()
 	end
 
-	arg_6_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_6_0, nil, var_6_1, nil)
+	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, nil, clearFunc, nil)
 end
 
-function var_0_3.onWillDie(arg_9_0, arg_9_1)
-	local var_9_0 = arg_9_1.Dispatcher
+-- 单位即将死亡：累计躲避计数，运输船被碾压时发放积分
+function BattleDodgemCommand.onWillDie(self, event)
+	local unit = event.Dispatcher
 
-	arg_9_0._dataProxy:CalcDodgemCount(var_9_0)
+	self._dataProxy:CalcDodgemCount(unit)
 
-	local var_9_1 = var_9_0:GetDeathReason()
+	local deathReason = unit:GetDeathReason()
 
-	if var_9_0:GetTemplate().type == ShipType.JinBi and var_9_1 == var_0_0.Battle.BattleConst.UnitDeathReason.CRUSH then
-		local var_9_2 = arg_9_0._dataProxy:GetScorePoint()
+	-- 运输船被碾压（CRUSH） → 获取当前积分点并分发给该单位
+	if unit:GetTemplate().type == ShipType.JinBi and deathReason == ys.Battle.BattleConst.UnitDeathReason.CRUSH then
+		local scorePoint = self._dataProxy:GetScorePoint()
 
-		var_9_0:DispatchScorePoint(var_9_2)
+		unit:DispatchScorePoint(scorePoint)
 	end
 end

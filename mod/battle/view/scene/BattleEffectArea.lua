@@ -1,102 +1,131 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEffectArea")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEffectArea = class("BattleEffectArea")
 
-var_0_0.Battle.BattleEffectArea = var_0_3
-var_0_3.__name = "BattleEffectArea"
+ys.Battle.BattleEffectArea = BattleEffectArea
+BattleEffectArea.__name = "BattleEffectArea"
 
-local var_0_4 = Vector3(0, 3.5, -5)
+--- 顶部覆盖偏移（用于战场表层特效）
+local topCoverOffset = Vector3(0, 3.5, -5)
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2, arg_1_3)
-	arg_1_0._go = arg_1_1
-	arg_1_0._aoeData = arg_1_2
-	arg_1_0._topCover = arg_1_3
+--- @class BattleEffectArea
+--- 战场效果区域（AOE范围显示）
+--- 负责在场景中可视化AoE效果（如弹幕范围、燃烧区域等）
+--- 支持三种区域类型：
+---   - CUBE/立方体区域：按width x height缩放
+---   - COLUMN/柱形区域：按range等比缩放
+---   - 其他：不更新缩放
+--- 根据IFF（敌我识别）决定旋转方向
+--- @param go GameObject 特效GameObject
+--- @param aoeData BattleAOEData AoE数据对象
+--- @param topCover boolean 是否为顶部覆盖层（影响位置偏移和旋转朝向）
+function BattleEffectArea.Ctor(self, go, aoeData, topCover)
+	self._go = go
+	self._aoeData = aoeData
+	self._topCover = topCover
 
-	arg_1_0:Init()
+	self:Init()
 end
 
-function var_0_3.Init(arg_2_0)
-	arg_2_0._tf = arg_2_0._go.transform
-	arg_2_0._areaType = arg_2_0._aoeData:GetAreaType()
+--- 初始化：设置缩放策略、旋转策略、首次更新
+function BattleEffectArea.Init(self)
+	self._tf = self._go.transform
+	self._areaType = self._aoeData:GetAreaType()
 
-	if arg_2_0._areaType == var_0_1.AreaType.CUBE or arg_2_0._areaType == var_0_1.AreaType.ELLIPSE then
-		arg_2_0.UpdateScale = arg_2_0.updateCubeScale
-	elseif arg_2_0._areaType == var_0_1.AreaType.COLUMN then
-		arg_2_0.UpdateScale = arg_2_0.updateColumnScale
+	-- 根据区域类型绑定不同的缩放更新函数
+	if self._areaType == BattleConst.AreaType.CUBE or self._areaType == BattleConst.AreaType.ELLIPSE then
+		self.UpdateScale = self.updateCubeScale
+	elseif self._areaType == BattleConst.AreaType.COLUMN then
+		self.UpdateScale = self.updateColumnScale
 	end
 
-	if arg_2_0._aoeData:GetIFF() == var_0_2.FOE_CODE then
-		function arg_2_0.GetAngle()
-			return arg_2_0._aoeData:GetAngle() * -1 + 180
+	-- 根据IFF决定角度计算方式
+	-- 敌方：角度反转 + 180度（朝向玩家侧）
+	-- 我方：角度仅反转
+	if self._aoeData:GetIFF() == BattleConfig.FOE_CODE then
+		function self.GetAngle()
+			return self._aoeData:GetAngle() * -1 + 180
 		end
 	else
-		function arg_2_0.GetAngle()
-			return arg_2_0._aoeData:GetAngle() * -1
+		function self.GetAngle()
+			return self._aoeData:GetAngle() * -1
 		end
 	end
 
-	arg_2_0:Update()
+	self:Update()
 end
 
-function var_0_3.Update(arg_5_0)
-	arg_5_0:UpdateScale()
-	arg_5_0:UpdatePosition()
-	arg_5_0:UpdateRotation()
+--- 每帧总更新：缩放 + 位置 + 旋转
+function BattleEffectArea.Update(self)
+	self:UpdateScale()
+	self:UpdatePosition()
+	self:UpdateRotation()
 end
 
-function var_0_3.updateCubeScale(arg_6_0)
-	local var_6_0 = 1
-	local var_6_1 = 1
+--- 更新立方体/ELLIPSE区域的缩放
+--- 从AoE数据读取width和height动态缩放（非静态特效时）
+--- width方向乘以IFF以实现朝向翻转
+function BattleEffectArea.updateCubeScale(self)
+	local scaleX = 1
+	local scaleZ = 1
 
-	if not arg_6_0._aoeData:GetFXStatic() then
-		var_6_0 = arg_6_0._aoeData:GetWidth() * arg_6_0._aoeData:GetIFF()
-		var_6_1 = arg_6_0._aoeData:GetHeight()
+	if not self._aoeData:GetFXStatic() then
+		scaleX = self._aoeData:GetWidth() * self._aoeData:GetIFF()
+		scaleZ = self._aoeData:GetHeight()
 	end
 
-	if var_6_0 == arg_6_0._preWidth and var_6_1 == arg_6_0._preHeight then
+	-- 仅当尺寸变化时才更新
+	if scaleX == self._preWidth and scaleZ == self._preHeight then
 		return
 	end
 
-	arg_6_0._tf.localScale = Vector3(var_6_0, 1, var_6_1)
-	arg_6_0._preWidth = var_6_0
-	arg_6_0._preHeight = var_6_1
+	self._tf.localScale = Vector3(scaleX, 1, scaleZ)
+	self._preWidth = scaleX
+	self._preHeight = scaleZ
 end
 
-function var_0_3.updateColumnScale(arg_7_0)
-	local var_7_0 = arg_7_0._aoeData:GetRange()
+--- 更新柱形区域的缩放
+--- 从AoE数据读取range，等比缩放X和Z
+function BattleEffectArea.updateColumnScale(self)
+	local range = self._aoeData:GetRange()
 
-	if var_7_0 == arg_7_0._preRange then
+	if range == self._preRange then
 		return
 	end
 
-	arg_7_0._tf.localScale = Vector3(var_7_0, 1, var_7_0)
-	arg_7_0._preRange = var_7_0
+	self._tf.localScale = Vector3(range, 1, range)
+	self._preRange = range
 end
 
-function var_0_3.UpdatePosition(arg_8_0)
-	if arg_8_0._topCover then
-		arg_8_0._tf.position = arg_8_0._aoeData:GetPosition() + var_0_4
+--- 更新位置
+--- 顶部覆盖层有额外偏移量，普通层直接使用AoE位置
+function BattleEffectArea.UpdatePosition(self)
+	if self._topCover then
+		self._tf.position = self._aoeData:GetPosition() + topCoverOffset
 	else
-		arg_8_0._tf.position = arg_8_0._aoeData:GetPosition()
+		self._tf.position = self._aoeData:GetPosition()
 	end
 end
 
-function var_0_3.UpdateRotation(arg_9_0)
-	local var_9_0 = arg_9_0:GetAngle()
+--- 更新旋转角度
+--- 通过GetAngle()获取计算后的角度（已在Init中根据IFF绑定）
+function BattleEffectArea.UpdateRotation(self)
+	local angle = self:GetAngle()
 
-	if arg_9_0._preAngle == var_9_0 then
+	if self._preAngle == angle then
 		return
 	end
 
-	arg_9_0._tf.localEulerAngles = Vector3(0, var_9_0, 0)
-	arg_9_0._preAngle = var_9_0
+	self._tf.localEulerAngles = Vector3(0, angle, 0)
+	self._preAngle = angle
 end
 
-function var_0_3.Dispose(arg_10_0)
-	var_0_0.Battle.BattleResourceManager.GetInstance():DestroyOb(arg_10_0._go)
+--- 销毁特效区域
+function BattleEffectArea.Dispose(self)
+	ys.Battle.BattleResourceManager.GetInstance():DestroyOb(self._go)
 
-	arg_10_0._go = nil
+	self._go = nil
 end

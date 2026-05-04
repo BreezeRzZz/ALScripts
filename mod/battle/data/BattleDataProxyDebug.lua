@@ -1,73 +1,88 @@
-local var_0_0 = ys.Battle.BattleDataProxy
-local var_0_1 = ys.Battle.BattleEvent
-local var_0_2 = ys.Battle.BattleFormulas
-local var_0_3 = ys.Battle.BattleConst
-local var_0_4 = ys.Battle.BattleConfig
-local var_0_5 = ys.Battle.BattleDataFunction
-local var_0_6 = ys.Battle.BattleAttr
-local var_0_7 = ys.Battle.BattleVariable
+local BattleDataProxy = ys.Battle.BattleDataProxy
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
 
-function var_0_0.__debug__BlockCldUpdate__(arg_1_0, arg_1_1)
-	arg_1_0:UpdateCountDown(arg_1_1)
+--- Debug用碰撞更新循环：跳过碰撞检测，仅更新运动、子弹出界等逻辑
+--- @param self BattleDataProxy
+--- @param timeStamp number 时间戳
+function BattleDataProxy.__debug__BlockCldUpdate__(self, timeStamp)
+	self:UpdateCountDown(timeStamp)
 
-	for iter_1_0, iter_1_1 in pairs(arg_1_0._fleetList) do
-		iter_1_1:UpdateMotion()
+	-- 更新舰队运动
+	for _, fleet in pairs(self._fleetList) do
+		fleet:UpdateMotion()
 	end
 
-	for iter_1_2, iter_1_3 in pairs(arg_1_0._unitList) do
-		iter_1_3:Update(arg_1_1)
+	-- 更新所有单位
+	for _, unit in pairs(self._unitList) do
+		unit:Update(timeStamp)
 	end
 
-	for iter_1_4, iter_1_5 in pairs(arg_1_0._bulletList) do
-		local var_1_0 = iter_1_5:GetSpeed()
-		local var_1_1 = iter_1_5:GetPosition()
+	-- 更新所有子弹（含出界判定）
+	for _, bullet in pairs(self._bulletList) do
+		local speed = bullet:GetSpeed()
+		local pos = bullet:GetPosition()
 
-		if var_1_1.x > arg_1_0._bulletRightBound and var_1_0.x > 0 or var_1_1.z < arg_1_0._bulletLowerBound and var_1_0.z < 0 then
-			arg_1_0:RemoveBulletUnit(iter_1_5:GetUniqueID())
-		elseif var_1_1.x < arg_1_0._bulletLeftBound and var_1_0.x < 0 and iter_1_5:GetType() ~= var_0_3.BulletType.BOMB then
-			arg_1_0:RemoveBulletUnit(iter_1_5:GetUniqueID())
+		-- 右侧/底部出界
+		if pos.x > self._bulletRightBound and speed.x > 0 or pos.z < self._bulletLowerBound and speed.z < 0 then
+			self:RemoveBulletUnit(bullet:GetUniqueID())
+		-- 左侧出界（炸弹类型除外，炸弹允许飞天）
+		elseif pos.x < self._bulletLeftBound and speed.x < 0 and bullet:GetType() ~= BattleConst.BulletType.BOMB then
+			self:RemoveBulletUnit(bullet:GetUniqueID())
 		else
-			iter_1_5:Update(arg_1_1)
+			bullet:Update(timeStamp)
 
-			if var_1_1.z > arg_1_0._bulletUpperBound and var_1_0.z > 0 or iter_1_5:IsOutRange(arg_1_1) then
-				iter_1_5:OutRange()
+			-- 顶部出界或射程耗尽
+			if pos.z > self._bulletUpperBound and speed.z > 0 or bullet:IsOutRange(timeStamp) then
+				bullet:OutRange()
 			end
 		end
 	end
 
-	for iter_1_6, iter_1_7 in pairs(arg_1_0._aircraftList) do
-		iter_1_7:Update(arg_1_1)
+	-- 更新所有舰载机（含出界判定）
+	for _, aircraft in pairs(self._aircraftList) do
+		aircraft:Update(timeStamp)
 
-		local var_1_2, var_1_3 = iter_1_7:GetIFF()
+		local iff, bound = aircraft:GetIFF()
 
-		if var_1_2 == var_0_4.FRIENDLY_CODE then
-			var_1_3 = arg_1_0._totalRightBound
-		elseif var_1_2 == var_0_4.FOE_CODE then
-			var_1_3 = arg_1_0._totalLeftBound
+		-- 根据敌我阵营确定出界边界
+		if iff == BattleConfig.FRIENDLY_CODE then
+			bound = self._totalRightBound
+		elseif iff == BattleConfig.FOE_CODE then
+			bound = self._totalLeftBound
 		end
 
-		if iter_1_7:GetPosition().x * var_1_2 > math.abs(var_1_3) and iter_1_7:GetSpeed().x * var_1_2 > 0 then
-			iter_1_7:OutBound()
+		-- 飞出边界时触发OutBound
+		if aircraft:GetPosition().x * iff > math.abs(bound) and aircraft:GetSpeed().x * iff > 0 then
+			aircraft:OutBound()
 		end
 
-		if not iter_1_7:IsAlive() then
-			arg_1_0:KillAircraft(iter_1_7:GetUniqueID())
-		end
-	end
-
-	for iter_1_8, iter_1_9 in pairs(arg_1_0._AOEList) do
-		iter_1_9:Settle()
-
-		if iter_1_9:GetActiveFlag() == false then
-			arg_1_0:RemoveAreaOfEffect(iter_1_9:GetUniqueID())
+		-- 飞机死亡移除
+		if not aircraft:IsAlive() then
+			self:KillAircraft(aircraft:GetUniqueID())
 		end
 	end
 
-	for iter_1_10, iter_1_11 in pairs(arg_1_0._foeShipList) do
-		if iter_1_11:GetPosition().x + iter_1_11:GetBoxSize().x < arg_1_0._leftZoneLeftBound then
-			iter_1_11:DeadAction()
-			arg_1_0:KillUnit(iter_1_11:GetUniqueID())
-			arg_1_0:HandleShipMissDamage(iter_1_11, arg_1_0._fleetList[var_0_4.FRIENDLY_CODE])
+	-- AOE区域结算
+	for _, aoe in pairs(self._AOEList) do
+		aoe:Settle()
+
+		if aoe:GetActiveFlag() == false then
+			self:RemoveAreaOfEffect(aoe:GetUniqueID())
+		end
+	end
+
+	-- 敌方舰船超左边界强制死亡处理
+	for _, foeShip in pairs(self._foeShipList) do
+		if foeShip:GetPosition().x + foeShip:GetBoxSize().x < self._leftZoneLeftBound then
+			foeShip:DeadAction()
+			self:KillUnit(foeShip:GetUniqueID())
+			self:HandleShipMissDamage(foeShip, self._fleetList[BattleConfig.FRIENDLY_CODE])
 		end
 	end
 end

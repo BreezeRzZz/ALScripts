@@ -1,229 +1,259 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = var_0_0.Battle.BattleVariable
-local var_0_8 = var_0_0.Battle.BattleTargetChoise
-local var_0_9 = var_0_4.VAN_SONAR_PROPERTY
-local var_0_10 = class("BattleFleetStaticSonar")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local VAN_SONAR_PROPERTY = BattleConfig.VAN_SONAR_PROPERTY
+local BattleFleetStaticSonar = class("BattleFleetStaticSonar")
 
-var_0_0.Battle.BattleFleetStaticSonar = var_0_10
-var_0_10.__name = "BattleFleetStaticSonar"
-var_0_10.STATE_DISABLE = "DISABLE"
-var_0_10.STATE_READY = "READY"
+ys.Battle.BattleFleetStaticSonar = BattleFleetStaticSonar
+BattleFleetStaticSonar.__name = "BattleFleetStaticSonar"
+BattleFleetStaticSonar.STATE_DISABLE = "DISABLE"
+BattleFleetStaticSonar.STATE_READY = "READY"
 
-function var_0_10.Ctor(arg_1_0, arg_1_1)
-	arg_1_0:init()
+--- @class BattleFleetStaticSonar
+--- @param fleetVO table 舰队VO对象
+--- 舰队静态声呐：管理多个船员单元的反潜探测，计算综合声呐范围，检测潜航状态的敌方单位
+function BattleFleetStaticSonar.Ctor(self, fleetVO)
+	self:init()
 
-	arg_1_0._fleetVO = arg_1_1
-	arg_1_0._currentState = var_0_10.STATE_DISABLE
+	self._fleetVO = fleetVO
+	self._currentState = BattleFleetStaticSonar.STATE_DISABLE
 end
 
-function var_0_10.GetCurrentState(arg_2_0)
-	return arg_2_0._currentState
+--- @return string 当前状态
+function BattleFleetStaticSonar.GetCurrentState(self)
+	return self._currentState
 end
 
-function var_0_10.Dispose(arg_3_0)
-	arg_3_0._detectedList = nil
-	arg_3_0._crewUnitList = nil
-	arg_3_0._host = nil
+function BattleFleetStaticSonar.Dispose(self)
+	self._detectedList = nil
+	self._crewUnitList = nil
+	self._host = nil
 end
 
-function var_0_10.init(arg_4_0)
-	arg_4_0._crewUnitList = {}
-	arg_4_0._detectedList = {}
-	arg_4_0._skillDiameter = 0
-	arg_4_0._radius = 0
-	arg_4_0._diameter = 0
+function BattleFleetStaticSonar.init(self)
+	self._crewUnitList = {}
+	self._detectedList = {}
+	self._skillDiameter = 0
+	self._radius = 0
+	self._diameter = 0
 end
 
-function var_0_10.AppendExtraSkillRange(arg_5_0, arg_5_1)
-	arg_5_0._skillDiameter = arg_5_0._skillDiameter + arg_5_1
+--- @param extraRange number 技能额外声呐范围
+function BattleFleetStaticSonar.AppendExtraSkillRange(self, extraRange)
+	self._skillDiameter = self._skillDiameter + extraRange
 
-	if arg_5_0._radius ~= 0 then
-		arg_5_0._radius = arg_5_0._radius + arg_5_1 * 0.5
+	if self._radius ~= 0 then
+		self._radius = self._radius + extraRange * 0.5
 	end
 end
 
-function var_0_10.AppendCrewUnit(arg_6_0, arg_6_1)
-	arg_6_0._crewUnitList[arg_6_1:GetUniqueID()] = arg_6_1
+--- @param crewUnit CrewUnit 加入的船员单元
+function BattleFleetStaticSonar.AppendCrewUnit(self, crewUnit)
+	self._crewUnitList[crewUnit:GetUniqueID()] = crewUnit
 
-	arg_6_0:flush()
+	self:flush()
 end
 
-function var_0_10.RemoveCrewUnit(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_1:GetUniqueID()
+--- @param crewUnit CrewUnit 移除的船员单元
+function BattleFleetStaticSonar.RemoveCrewUnit(self, crewUnit)
+	local uid = crewUnit:GetUniqueID()
 
-	if arg_7_0._crewUnitList[var_7_0] then
-		arg_7_0._crewUnitList[var_7_0] = nil
+	if self._crewUnitList[uid] then
+		self._crewUnitList[uid] = nil
 
-		arg_7_0:updateSonarState()
+		self:updateSonarState()
 
-		if arg_7_0._currentState == var_0_10.STATE_DISABLE then
-			arg_7_0:Undetect()
+		if self._currentState == BattleFleetStaticSonar.STATE_DISABLE then
+			self:Undetect()
 		end
 	end
 end
 
-function var_0_10.SwitchHost(arg_8_0, arg_8_1)
-	arg_8_0._host = arg_8_1
+--- @param host BattleUnit 切换宿主
+function BattleFleetStaticSonar.SwitchHost(self, host)
+	self._host = host
 end
 
-function var_0_10.GetRange(arg_9_0)
-	return arg_9_0._diameter
+--- @return number 声呐覆盖直径
+function BattleFleetStaticSonar.GetRange(self)
+	return self._diameter
 end
 
-function var_0_10.flush(arg_10_0)
-	arg_10_0._diameter = 0
+--- 刷新声呐属性
+function BattleFleetStaticSonar.flush(self)
+	self._diameter = 0
 
-	local var_10_0, var_10_1, var_10_2 = arg_10_0:calcSonarRange()
+	local baseRange, extraRange, mainRange = self:calcSonarRange()
 
-	if var_10_0 ~= 0 then
-		arg_10_0._diameter = var_10_0 + var_10_2 + var_10_1
-		arg_10_0._radius = arg_10_0._diameter * 0.5
+	if baseRange ~= 0 then
+		self._diameter = baseRange + mainRange + extraRange
+		self._radius = self._diameter * 0.5
 	end
 
-	arg_10_0:updateSonarState()
+	self:updateSonarState()
 end
 
-function var_0_10.calcSonarRange(arg_11_0)
-	local var_11_0 = 0
-	local var_11_1 = 0
-	local var_11_2 = 0
+--- @return number baseRange 基础声呐范围（取各船员最大值）
+--- @return number mainRange 主力舰反潜范围
+--- @return number extraRange 额外声呐范围
+function BattleFleetStaticSonar.calcSonarRange(self)
+	local baseRange = 0
+	local extraRange = 0
+	local mainRange = 0
 
-	for iter_11_0, iter_11_1 in pairs(arg_11_0._crewUnitList) do
-		local var_11_3, var_11_4, var_11_5 = arg_11_0.getSonarProperty(iter_11_1)
+	for _, crewUnit in pairs(self._crewUnitList) do
+		local baseR, extraR, mainR = self.getSonarProperty(crewUnit)
 
-		if var_11_3 > 0 then
-			var_11_0 = math.max(var_11_3, var_11_0)
+		if baseR > 0 then
+			baseRange = math.max(baseR, baseRange)
 		end
 
-		var_11_1 = var_11_1 + var_11_4
-		var_11_2 = var_11_2 + var_11_5
+		extraRange = extraRange + extraR
+		mainRange = mainRange + mainR
 	end
 
-	local var_11_6 = var_0_4.MAIN_SONAR_PROPERTY
-	local var_11_7 = var_11_2 / var_11_6.a
-	local var_11_8 = Mathf.Clamp(var_11_7, var_11_6.minRange, var_11_6.maxRange)
+	local mainProperty = BattleConfig.MAIN_SONAR_PROPERTY
+	local mainRatio = mainRange / mainProperty.a
+	local mainClamped = Mathf.Clamp(mainRatio, mainProperty.minRange, mainProperty.maxRange)
 
-	return var_11_0, var_11_8, var_11_1
+	return baseRange, mainClamped, extraRange
 end
 
-function var_0_10.updateSonarState(arg_12_0)
-	local var_12_0 = 0
+--- 更新声呐状态：有任意船员具有声呐属性则为READY
+function BattleFleetStaticSonar.updateSonarState(self)
+	local activeCount = 0
 
-	for iter_12_0, iter_12_1 in pairs(arg_12_0._crewUnitList) do
-		if arg_12_0.getSonarProperty(iter_12_1) > 0 then
-			var_12_0 = var_12_0 + 1
+	for _, crewUnit in pairs(self._crewUnitList) do
+		if self.getSonarProperty(crewUnit) > 0 then
+			activeCount = activeCount + 1
 		end
 	end
 
-	if var_12_0 > 0 then
-		arg_12_0._currentState = var_0_10.STATE_READY
+	if activeCount > 0 then
+		self._currentState = BattleFleetStaticSonar.STATE_READY
 	else
-		arg_12_0._currentState = var_0_10.STATE_DISABLE
+		self._currentState = BattleFleetStaticSonar.STATE_DISABLE
 	end
 
-	local var_12_1 = var_0_0.Event.New(var_0_0.Battle.BattleEvent.SONAR_UPDATE)
+	local sonarEvent = ys.Event.New(ys.Battle.BattleEvent.SONAR_UPDATE)
 
-	arg_12_0._fleetVO:DispatchEvent(var_12_1)
+	self._fleetVO:DispatchEvent(sonarEvent)
 end
 
-function var_0_10.getSonarProperty(arg_13_0)
-	local var_13_0 = arg_13_0:GetTemplate().type
-	local var_13_1 = var_0_9[var_13_0]
-	local var_13_2 = 0
+--- @param crewUnit CrewUnit
+--- @return number baseRange 基础声呐范围
+--- @return number sonarRange 声呐范围属性
+--- @return number mainRange 主力舰反潜值
+function BattleFleetStaticSonar.getSonarProperty(self, crewUnit)
+	local shipType = crewUnit:GetTemplate().type
+	local shipProperty = VAN_SONAR_PROPERTY[shipType]
+	local baseRange = 0
 
-	if var_13_1 then
-		local var_13_3 = arg_13_0:GetAttrByName("baseAntiSubPower") / var_13_1.a - var_13_1.b
+	if shipProperty then
+		local rawValue = crewUnit:GetAttrByName("baseAntiSubPower") / shipProperty.a - shipProperty.b
 
-		var_13_2 = Mathf.Clamp(var_13_3, var_13_1.minRange, var_13_1.maxRange)
+		baseRange = Mathf.Clamp(rawValue, shipProperty.minRange, shipProperty.maxRange)
 	end
 
-	local var_13_4 = arg_13_0:GetAttrByName("sonarRange")
-	local var_13_5 = 0
+	local sonarRange = crewUnit:GetAttrByName("sonarRange")
+	local mainRange = 0
 
-	if table.contains(ShipType.MainShipType, var_13_0) then
-		var_13_5 = arg_13_0:GetAttrByName("baseAntiSubPower")
+	if table.contains(ShipType.MainShipType, shipType) then
+		mainRange = crewUnit:GetAttrByName("baseAntiSubPower")
 	end
 
-	return var_13_2, var_13_4, var_13_5
+	return baseRange, sonarRange, mainRange
 end
 
-function var_0_10.Update(arg_14_0, arg_14_1)
-	if arg_14_0._currentState ~= var_0_10.STATE_DISABLE then
-		arg_14_0._fleetVO:DispatchSonarScan()
-		arg_14_0:updateDetectedList()
+--- @param timeStamp number 时间戳
+function BattleFleetStaticSonar.Update(self, timeStamp)
+	if self._currentState ~= BattleFleetStaticSonar.STATE_DISABLE then
+		self._fleetVO:DispatchSonarScan()
+		self:updateDetectedList()
 	end
 end
 
-function var_0_10.Undetect(arg_15_0)
-	local var_15_0 = arg_15_0._detectedList
+--- 取消所有探测
+function BattleFleetStaticSonar.Undetect(self)
+	local detectedList = self._detectedList
 
-	for iter_15_0, iter_15_1 in ipairs(var_15_0) do
-		if iter_15_1:IsAlive() then
-			iter_15_1:Undetected()
+	for _, enemy in ipairs(detectedList) do
+		if enemy:IsAlive() then
+			enemy:Undetected()
 		end
 	end
 
-	arg_15_0._detectedList = {}
+	self._detectedList = {}
 end
 
-function var_0_10.updateDetectedList(arg_16_0)
-	local var_16_0 = var_0_8.LegalTarget(arg_16_0._host)
-	local var_16_1 = var_0_8.TargetDiveState(arg_16_0._host, {
-		diveState = var_0_3.OXY_STATE.DIVE
-	}, var_16_0)
-	local var_16_2 = arg_16_0:FilterRange(var_16_1)
+--- 更新探测列表：对比新筛选结果与当前列表，处理进出探测范围的单位
+function BattleFleetStaticSonar.updateDetectedList(self)
+	local legalTargets = BattleTargetChoise.LegalTarget(self._host)
+	local diveTargets = BattleTargetChoise.TargetDiveState(self._host, {
+		diveState = BattleConst.OXY_STATE.DIVE
+	}, legalTargets)
+	local inRange = self:FilterRange(diveTargets)
 
-	for iter_16_0, iter_16_1 in ipairs(var_16_1) do
-		local var_16_3 = table.contains(var_16_2, iter_16_1)
-		local var_16_4 = table.contains(arg_16_0._detectedList, iter_16_1)
+	for _, target in ipairs(diveTargets) do
+		local isInRange = table.contains(inRange, target)
+		local wasDetected = table.contains(self._detectedList, target)
 
-		if var_16_4 then
-			if not var_16_3 then
-				iter_16_1:Undetected()
+		if wasDetected then
+			if not isInRange then
+				target:Undetected()
 			end
-		elseif not var_16_4 and var_16_3 then
-			iter_16_1:Detected()
+		elseif not wasDetected and isInRange then
+			target:Detected()
 		end
 	end
 
-	arg_16_0._detectedList = var_16_2
+	self._detectedList = inRange
 end
 
-function var_0_10.FilterTarget(arg_17_0)
-	local var_17_0 = var_0_8.LegalTarget(arg_17_0._host)
-	local var_17_1 = var_0_8.TargetDiveState(arg_17_0._host, {
-		diveState = var_0_3.OXY_STATE.DIVE
-	}, var_17_0)
+--- @return table<number, BattleUnit> 在声呐范围内的潜航敌方单位
+function BattleFleetStaticSonar.FilterTarget(self)
+	local legalTargets = BattleTargetChoise.LegalTarget(self._host)
+	local diveTargets = BattleTargetChoise.TargetDiveState(self._host, {
+		diveState = BattleConst.OXY_STATE.DIVE
+	}, legalTargets)
 
-	return (arg_17_0:FilterRange(var_17_1))
+	return (self:FilterRange(diveTargets))
 end
 
-function var_0_10.FilterRange(arg_18_0, arg_18_1)
-	local var_18_0 = {}
+--- @param targets table<number, BattleUnit>
+--- @return table<number, BattleUnit> 在声呐半径内的目标
+function BattleFleetStaticSonar.FilterRange(self, targets)
+	local inRange = {}
 
-	for iter_18_0, iter_18_1 in ipairs(arg_18_1) do
-		if not arg_18_0:isOutOfRange(iter_18_1) then
-			table.insert(var_18_0, iter_18_1)
+	for _, target in ipairs(targets) do
+		if not self:isOutOfRange(target) then
+			table.insert(inRange, target)
 		end
 	end
 
-	return var_18_0
+	return inRange
 end
 
-function var_0_10.isOutOfRange(arg_19_0, arg_19_1)
-	return arg_19_0._host:GetDistance(arg_19_1) > arg_19_0._radius
+--- @param target BattleUnit
+--- @return boolean 是否超出探测半径
+function BattleFleetStaticSonar.isOutOfRange(self, target)
+	return self._host:GetDistance(target) > self._radius
 end
 
-function var_0_10.GetTotalRangeDetail(arg_20_0)
-	local var_20_0, var_20_1, var_20_2 = arg_20_0:calcSonarRange()
+--- @return number baseRange
+--- @return number mainRange
+--- @return number extraRange
+--- @return number skillDiameter
+function BattleFleetStaticSonar.GetTotalRangeDetail(self)
+	local baseRange, mainRange, extraRange = self:calcSonarRange()
 
-	return var_20_0, var_20_1, var_20_2, arg_20_0._skillDiameter
+	return baseRange, mainRange, extraRange, self._skillDiameter
 end

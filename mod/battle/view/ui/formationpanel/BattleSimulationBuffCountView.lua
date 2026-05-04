@@ -1,35 +1,40 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleSimulationBuffCountView")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleSimulationBuffCountView = class("BattleSimulationBuffCountView")
 
-var_0_0.Battle.BattleSimulationBuffCountView = var_0_3
-var_0_3.__name = "BattleSimulationBuffCountView"
+ys.Battle.BattleSimulationBuffCountView = BattleSimulationBuffCountView
+BattleSimulationBuffCountView.__name = "BattleSimulationBuffCountView"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+--- 模拟战增益Buff倒计时视图
+--- 显示模拟战（Simulation）中的增益倒计时/"强化"文本
 
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._timer = arg_1_0._tf:Find("buff_count/Text")
-	arg_1_0._text = arg_1_0._timer:GetComponent(typeof(Text))
+function BattleSimulationBuffCountView.Ctor(self, go)
+	ys.EventListener.AttachEventListener(self)
+
+	self._go = go
+	self._tf = go.transform
+	self._timer = self._tf:Find("buff_count/Text")
+	self._text = self._timer:GetComponent(typeof(Text))
 end
 
-function var_0_3.SetActive(arg_2_0, arg_2_1)
-	setActive(arg_2_0._go, arg_2_1)
+function BattleSimulationBuffCountView.SetActive(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_3.SetCountDownText(arg_3_0, arg_3_1)
-	arg_3_0._text.text = i18n("simulation_advantage_counting", math.floor(arg_3_1))
+--- 设置倒计时文本
+function BattleSimulationBuffCountView.SetCountDownText(self, timeLeft)
+	self._text.text = i18n("simulation_advantage_counting", math.floor(timeLeft))
 end
 
-function var_0_3.SetEnhancedText(arg_4_0)
-	arg_4_0._text.text = i18n("simulation_enhanced")
+--- 设置"已强化"文本
+function BattleSimulationBuffCountView.SetEnhancedText(self)
+	self._text.text = i18n("simulation_enhanced")
 end
 
-function var_0_3.Dispose(arg_5_0)
-	arg_5_0._rateBarList = nil
-	arg_5_0._progressList = nil
+function BattleSimulationBuffCountView.Dispose(self)
+	self._rateBarList = nil
+	self._progressList = nil
 end

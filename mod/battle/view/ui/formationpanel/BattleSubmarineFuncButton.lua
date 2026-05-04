@@ -1,49 +1,54 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleSubmarineFuncButton", var_0_0.Battle.BattleWeaponButton)
+local ys = ys
+local BattleSubmarineFuncButton = class("BattleSubmarineFuncButton", ys.Battle.BattleWeaponButton)
 
-var_0_0.Battle.BattleSubmarineFuncButton = var_0_1
-var_0_1.__name = "BattleSubmarineFuncButton"
+ys.Battle.BattleSubmarineFuncButton = BattleSubmarineFuncButton
+BattleSubmarineFuncButton.__name = "BattleSubmarineFuncButton"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+--- 潜艇功能按钮（如浮上/下潜切换）
+--- 继承自 BattleWeaponButton，简化为只有状态切换的功能按钮
 
-	arg_1_0.eventTriggers = {}
+function BattleSubmarineFuncButton.Ctor(self)
+	ys.EventListener.AttachEventListener(self)
+
+	self.eventTriggers = {}
 end
 
-function var_0_1.OnfilledEffect(arg_2_0)
-	SetActive(arg_2_0._filledEffect, true)
+function BattleSubmarineFuncButton.OnfilledEffect(self)
+	SetActive(self._filledEffect, true)
 end
 
-function var_0_1.SetProgressInfo(arg_3_0, arg_3_1)
-	arg_3_0._progressInfo = arg_3_1
+--- 设置进度信息，只注册武器计数增加和过载变化事件
+function BattleSubmarineFuncButton.SetProgressInfo(self, progressInfo)
+	self._progressInfo = progressInfo
 
-	arg_3_0._progressInfo:RegisterEventListener(arg_3_0, var_0_0.Battle.BattleEvent.WEAPON_COUNT_PLUS, arg_3_0.OnfilledEffect)
-	arg_3_0._progressInfo:RegisterEventListener(arg_3_0, var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE, arg_3_0.OnOverLoadChange)
-	arg_3_0:OnOverLoadChange()
-	arg_3_0:SetControllerActive(true)
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS, self.OnfilledEffect)
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.OVER_LOAD_CHANGE, self.OnOverLoadChange)
+	self:OnOverLoadChange()
+	self:SetControllerActive(true)
 end
 
-function var_0_1.Update(arg_4_0)
-	if arg_4_0._progressInfo:GetCurrent() < arg_4_0._progressInfo:GetMax() then
-		arg_4_0:updateProgressBar()
+--- 每帧更新进度条
+function BattleSubmarineFuncButton.Update(self)
+	if self._progressInfo:GetCurrent() < self._progressInfo:GetMax() then
+		self:updateProgressBar()
 	end
 end
 
-function var_0_1.Dispose(arg_5_0)
-	if arg_5_0.eventTriggers then
-		for iter_5_0, iter_5_1 in pairs(arg_5_0.eventTriggers) do
-			ClearEventTrigger(iter_5_0)
+function BattleSubmarineFuncButton.Dispose(self)
+	if self.eventTriggers then
+		for trigger, _ in pairs(self.eventTriggers) do
+			ClearEventTrigger(trigger)
 		end
 
-		arg_5_0.eventTriggers = nil
+		self.eventTriggers = nil
 	end
 
-	arg_5_0._progress = nil
-	arg_5_0._progressBar = nil
+	self._progress = nil
+	self._progressBar = nil
 
-	arg_5_0._progressInfo:UnregisterEventListener(arg_5_0, var_0_0.Battle.BattleEvent.OVER_LOAD_CHANGE)
-	arg_5_0._progressInfo:UnregisterEventListener(arg_5_0, var_0_0.Battle.BattleEvent.WEAPON_COUNT_PLUS)
-	var_0_0.EventListener.DetachEventListener(arg_5_0)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.OVER_LOAD_CHANGE)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
+	ys.EventListener.DetachEventListener(self)
 end

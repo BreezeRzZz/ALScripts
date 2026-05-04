@@ -1,64 +1,90 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleVigilantBar = class("BattleVigilantBar")
-var_0_0.Battle.BattleVigilantBar.__name = "BattleVigilantBar"
+ys.Battle.BattleVigilantBar = class("BattleVigilantBar")
+ys.Battle.BattleVigilantBar.__name = "BattleVigilantBar"
 
-local var_0_1 = var_0_0.Battle.BattleVigilantBar
+local BattleVigilantBar = ys.Battle.BattleVigilantBar
 
-var_0_1.MIN = 0.267
-var_0_1.MAX = 0.7335
-var_0_1.METER_LENGTH = var_0_1.MAX - var_0_1.MIN
-var_0_1.STATE_CALM = 0
-var_0_1.STATE_SUSPICIOUS = 1
-var_0_1.STATE_VIGILANT = 2
-var_0_1.STATE_ENGAGE = 3
+-- ============================================================
+-- 警戒条常量（雷达式进度条）
+-- ============================================================
+--- 进度条最小填充量（刻度范围起点）
+BattleVigilantBar.MIN = 0.267
+--- 进度条最大填充量（刻度范围终点）
+BattleVigilantBar.MAX = 0.7335
+--- 刻度总长度
+BattleVigilantBar.METER_LENGTH = BattleVigilantBar.MAX - BattleVigilantBar.MIN
 
-function var_0_1.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._vigilantBar = arg_1_1
-	arg_1_0._vigilantBarGO = arg_1_0._vigilantBar.gameObject
-	arg_1_0._progress = arg_1_0._vigilantBar:Find("progress"):GetComponent(typeof(Image))
-	arg_1_0._markList = {}
-	arg_1_0._markList[var_0_1.STATE_CALM] = arg_1_0._vigilantBar:Find("mark/" .. var_0_1.STATE_CALM)
-	arg_1_0._markList[var_0_1.STATE_SUSPICIOUS] = arg_1_0._vigilantBar:Find("mark/" .. var_0_1.STATE_SUSPICIOUS)
-	arg_1_0._markList[var_0_1.STATE_VIGILANT] = arg_1_0._vigilantBar:Find("mark/" .. var_0_1.STATE_VIGILANT)
-	arg_1_0._markList[var_0_1.STATE_ENGAGE] = arg_1_0._vigilantBar:Find("mark/" .. var_0_1.STATE_ENGAGE)
+--- 警戒状态常量
+BattleVigilantBar.STATE_CALM = 0        -- 平静
+BattleVigilantBar.STATE_SUSPICIOUS = 1  -- 可疑
+BattleVigilantBar.STATE_VIGILANT = 2    -- 警戒
+BattleVigilantBar.STATE_ENGAGE = 3      -- 交战
+
+--- @class BattleVigilantBar
+--- 警戒条/探测条视图
+--- 显示敌人对玩家舰队的警戒程度，从 CALM -> SUSPICIOUS -> VIGILANT -> ENGAGE 逐级上升
+--- 使用雷达式进度条，包含4个状态标记
+--- @param vigilantBar Transform 警戒条Transform
+function BattleVigilantBar.Ctor(self, vigilantBar)
+	self._vigilantBar = vigilantBar
+	self._vigilantBarGO = self._vigilantBar.gameObject
+	self._progress = self._vigilantBar:Find("progress"):GetComponent(typeof(Image))
+	self._markList = {}
+	-- 四个状态标记子节点
+	self._markList[BattleVigilantBar.STATE_CALM] = self._vigilantBar:Find("mark/" .. BattleVigilantBar.STATE_CALM)
+	self._markList[BattleVigilantBar.STATE_SUSPICIOUS] = self._vigilantBar:Find("mark/" .. BattleVigilantBar.STATE_SUSPICIOUS)
+	self._markList[BattleVigilantBar.STATE_VIGILANT] = self._vigilantBar:Find("mark/" .. BattleVigilantBar.STATE_VIGILANT)
+	self._markList[BattleVigilantBar.STATE_ENGAGE] = self._vigilantBar:Find("mark/" .. BattleVigilantBar.STATE_ENGAGE)
 end
 
-function var_0_1.ConfigVigilant(arg_2_0, arg_2_1)
-	arg_2_0._vigilantState = arg_2_1
+--- 绑定警戒状态数据
+--- @param vigilantState BattleUnitVigilantComponent 警戒组件
+function BattleVigilantBar.ConfigVigilant(self, vigilantState)
+	self._vigilantState = vigilantState
 end
 
-function var_0_1.UpdateVigilantProgress(arg_3_0)
-	local var_3_0 = arg_3_0._vigilantState:GetVigilantRate()
+--- 每帧更新警戒进度条填充量
+--- 从警戒组件获取当前rate，映射到雷达进度条的fillAmount范围
+function BattleVigilantBar.UpdateVigilantProgress(self)
+	local vigilantRate = self._vigilantState:GetVigilantRate()
 
-	arg_3_0._progress.fillAmount = arg_3_0.meterConvert(var_3_0)
+	self._progress.fillAmount = self.meterConvert(vigilantRate)
 end
 
-function var_0_1.UpdateVigilantMark(arg_4_0)
-	local var_4_0 = arg_4_0._vigilantState:GetVigilantMark()
+--- 更新当前警戒状态标记（高亮对应状态的mark节点）
+function BattleVigilantBar.UpdateVigilantMark(self)
+	local currentMark = self._vigilantState:GetVigilantMark()
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._markList) do
-		SetActive(iter_4_1, var_4_0 == iter_4_0)
+	for markIndex, markTF in ipairs(self._markList) do
+		SetActive(markTF, currentMark == markIndex)
 	end
 end
 
-function var_0_1.UpdateVigilantBarPosition(arg_5_0, arg_5_1)
-	arg_5_0._vigilantBar.position = arg_5_1
+--- 更新警戒条屏幕位置
+--- @param worldPos Vector3 世界坐标
+function BattleVigilantBar.UpdateVigilantBarPosition(self, worldPos)
+	self._vigilantBar.position = worldPos
 end
 
-function var_0_1.meterConvert(arg_6_0)
-	return var_0_1.METER_LENGTH * arg_6_0 + var_0_1.MIN
+--- 将警戒率映射到进度条fillAmount范围
+--- [0, 1] -> [MIN, MAX]
+--- @param rate number 0~1 警戒率
+--- @return number fillAmount 0.267~0.7335
+function BattleVigilantBar.meterConvert(rate)
+	return BattleVigilantBar.METER_LENGTH * rate + BattleVigilantBar.MIN
 end
 
-function var_0_1.Dispose(arg_7_0)
-	arg_7_0._vigilantState = nil
+--- 销毁警戒条
+function BattleVigilantBar.Dispose(self)
+	self._vigilantState = nil
 
-	Object.Destroy(arg_7_0._vigilantBarGO)
+	Object.Destroy(self._vigilantBarGO)
 
-	arg_7_0._vigilantBar = nil
-	arg_7_0._vigilantBarGO = nil
-	arg_7_0._markList = nil
-	arg_7_0._progress = nil
+	self._vigilantBar = nil
+	self._vigilantBarGO = nil
+	self._markList = nil
+	self._progress = nil
 end

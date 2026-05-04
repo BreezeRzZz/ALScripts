@@ -1,52 +1,63 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = class("BattleCustomWarningLabel")
+local ys = ys
+-- 未在文件中直接使用的引用，可能为下游预留
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleCustomWarningLabel = class("BattleCustomWarningLabel")
 
-var_0_0.Battle.BattleCustomWarningLabel = var_0_2
-var_0_2.__name = "BattleCustomWarningLabel"
+ys.Battle.BattleCustomWarningLabel = BattleCustomWarningLabel
+BattleCustomWarningLabel.__name = "BattleCustomWarningLabel"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._expire = false
+--- 技能自定义警告标签，显示在屏幕指定位置，有持续时间
+--- @param go GameObject 标签的GameObject
+function BattleCustomWarningLabel.Ctor(self, go)
+	self._go = go
+	self._tf = go.transform
+	self._expire = false
 end
 
-function var_0_2.ConfigData(arg_2_0, arg_2_1)
-	setText(arg_2_0._tf:Find("text"), i18n(arg_2_1.dialogue))
+--- 配置警告标签的数据（文本、位置、持续时间）
+--- @param data table 含dialogue（对话文本）、x/y（屏幕坐标，范围-1~1）、duration（持续时间，秒）
+function BattleCustomWarningLabel.ConfigData(self, data)
+	setText(self._tf:Find("text"), i18n(data.dialogue))
 
-	arg_2_0._duration = arg_2_1.duration
+	self._duration = data.duration
 
-	local var_2_0 = (arg_2_1.x + 1) * 0.5
-	local var_2_1 = (arg_2_1.y + 1) * 0.5
+	-- 将-1~1的坐标映射到0~1的anchor范围
+	local anchorX = (data.x + 1) * 0.5
+	local anchorY = (data.y + 1) * 0.5
 
-	arg_2_0._tf.anchorMin = Vector2(var_2_0, var_2_1)
-	arg_2_0._tf.anchorMax = Vector2(var_2_0, var_2_1)
-	arg_2_0._startTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._tf.anchorMin = Vector2(anchorX, anchorY)
+	self._tf.anchorMax = Vector2(anchorX, anchorY)
+	self._startTimeStamp = pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function var_0_2.GetDuration(arg_3_0)
-	return arg_3_0._duration
+--- @return number 标签的持续时间（0表示永久）
+function BattleCustomWarningLabel.GetDuration(self)
+	return self._duration
 end
 
-function var_0_2.SetExpire(arg_4_0)
-	arg_4_0._expire = true
+--- 标记为过期
+function BattleCustomWarningLabel.SetExpire(self)
+	self._expire = true
 end
 
-function var_0_2.IsExpire(arg_5_0)
-	return arg_5_0._expire
+--- @return boolean 是否已过期
+function BattleCustomWarningLabel.IsExpire(self)
+	return self._expire
 end
 
-function var_0_2.Update(arg_6_0)
-	if arg_6_0._duration > 0 and pg.TimeMgr.GetInstance():GetCombatTime() - arg_6_0._startTimeStamp > arg_6_0._duration then
-		arg_6_0:SetExpire()
+--- 检查持续时间，如果已超过则标记过期
+function BattleCustomWarningLabel.Update(self)
+	if self._duration > 0 and pg.TimeMgr.GetInstance():GetCombatTime() - self._startTimeStamp > self._duration then
+		self:SetExpire()
 	end
 end
 
-function var_0_2.Dispose(arg_7_0)
-	Destroy(arg_7_0._go)
+--- 销毁标签的GameObject
+function BattleCustomWarningLabel.Dispose(self)
+	Destroy(self._go)
 
-	arg_7_0._go = nil
-	arg_7_0._tf = nil
+	self._go = nil
+	self._tf = nil
 end

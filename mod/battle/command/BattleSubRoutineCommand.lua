@@ -1,104 +1,118 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = class("BattleSubRoutineCommand", var_0_0.Battle.BattleSubmarineRunCommand)
+-- 潜艇日常（SubRoutine）战斗Command，继承自BattleSubmarineRunCommand
+-- 核心差异：添加buff 9040、玩家沉没后可手动切换替补潜艇、有独立的结算方法
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleConst = ys.Battle.BattleConst
+local BattleSubRoutineCommand = class("BattleSubRoutineCommand", ys.Battle.BattleSubmarineRunCommand)
 
-var_0_0.Battle.BattleSubRoutineCommand = var_0_4
-var_0_4.__name = "BattleSubRoutineCommand"
+ys.Battle.BattleSubRoutineCommand = BattleSubRoutineCommand
+BattleSubRoutineCommand.__name = "BattleSubRoutineCommand"
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+function BattleSubRoutineCommand.Ctor(self)
+	BattleSubRoutineCommand.super.Ctor(self)
 end
 
-function var_0_4.Initialize(arg_2_0)
-	var_0_4.super.Initialize(arg_2_0)
-	arg_2_0._dataProxy:SubmarineRunInit()
+function BattleSubRoutineCommand.Initialize(self)
+	BattleSubRoutineCommand.super.Initialize(self)
+	self._dataProxy:SubmarineRunInit()
 end
 
-function var_0_4.DoPrologue(arg_3_0)
+-- 入场序幕：除继承SubmarineRun的标准流程外，额外给所有单位添加buff 9040
+function BattleSubRoutineCommand.DoPrologue(self)
 	pg.UIMgr.GetInstance():Marching()
 
-	local function var_3_0()
-		arg_3_0._uiMediator:OpeningEffect(function()
-			arg_3_0._uiMediator:ShowTimer()
-			arg_3_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
-			arg_3_0._waveUpdater:Start()
+	local function afterSurfaceShift()
+		self._uiMediator:OpeningEffect(function()
+			self._uiMediator:ShowTimer()
+			self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+			self._waveUpdater:Start()
 		end, SYSTEM_SUB_ROUTINE)
 
-		local var_4_0 = arg_3_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
+		-- 获取己方舰队，设置为自由下潜模式
+		local fleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 
-		var_4_0:FleetWarcry()
-		var_4_0:ChangeSubmarineState(var_0_0.Battle.OxyState.STATE_FREE_DIVE)
-		var_4_0:GetSubBoostVO():ResetCurrent()
-		arg_3_0._dataProxy:InitAllFleetUnitsWeaponCD()
-		arg_3_0._dataProxy:TriggerBattleStartBuffs()
+		fleet:FleetWarcry()
+		fleet:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_DIVE)
+		fleet:GetSubBoostVO():ResetCurrent()
+		self._dataProxy:InitAllFleetUnitsWeaponCD()
+		self._dataProxy:TirggerBattleStartBuffs()
 	end
 
-	arg_3_0._dataProxy:AutoStatistics(0)
+	self._dataProxy:AutoStatistics(0)
 
-	local var_3_1 = arg_3_0._userFleet:GetUnitList()
+	local unitList = self._userFleet:GetUnitList()
 
-	for iter_3_0, iter_3_1 in ipairs(var_3_1) do
-		local var_3_2 = var_0_0.Battle.BattleBuffUnit.New(9040)
+	for _, unit in ipairs(unitList) do
+		-- 给所有单位添加SubRoutine专属buff 9040
+		local subRoutineBuff = ys.Battle.BattleBuffUnit.New(9040)
 
-		iter_3_1:AddBuff(var_3_2)
-		iter_3_1:RemoveBuff(8520)
+		unit:AddBuff(subRoutineBuff)
+		unit:RemoveBuff(8520)
 	end
 
-	arg_3_0._uiMediator:SeaSurfaceShift(45, 0, nil, var_3_0)
+	self._uiMediator:SeaSurfaceShift(45, 0, nil, afterSurfaceShift)
 end
 
-function var_0_4.initWaveModule(arg_6_0)
-	local function var_6_0(arg_7_0, arg_7_1, arg_7_2)
-		arg_6_0._dataProxy:SpawnMonster(arg_7_0, arg_7_1, arg_7_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+-- 波次模块：无空袭和AOE区域，仅刷怪和结算（与SubmarineRun相同但结算方法不同）
+function BattleSubRoutineCommand.initWaveModule(self)
+	-- 刷怪回调
+	local function spawnFunc(spawnItem, waveIndex, enemyType)
+		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
-	local function var_6_1()
-		if arg_6_0._vertifyFail then
+	-- 战斗结束回调：使用SubRoutine专属结算
+	local function clearFunc()
+		if self._vertifyFail then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_6_0._vertifyFail
+				reason = self._vertifyFail
 			})
 
 			return
 		end
 
-		arg_6_0._dataProxy:TriggerFinishBattle()
-		arg_6_0._dataProxy:CalcSubRoutineScore()
-		arg_6_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcSubRoutineScore()
+		self._state:BattleEnd()
 	end
 
-	arg_6_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_6_0, nil, var_6_1, nil)
+	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, nil, clearFunc, nil)
 end
 
-function var_0_4.onUpdateCountDown(arg_9_0, arg_9_1)
-	if arg_9_0._dataProxy:GetCountDown() <= 0 then
-		arg_9_0._dataProxy:EnemyEscape()
-		arg_9_0._dataProxy:CalcSubRountineTimeUp()
-		arg_9_0._state:BattleTimeUp()
+-- 倒计时归零 → 敌人逃脱，按时间到结算
+function BattleSubRoutineCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		self._dataProxy:EnemyEscape()
+		self._dataProxy:CalcSubRountineTimeUp()
+		self._state:BattleTimeUp()
 	end
 end
 
-function var_0_4.onShutDownPlayer(arg_10_0, arg_10_1)
-	local var_10_0 = arg_10_1.Dispatcher:GetUniqueID()
+-- 单位ShutDown：从Dispatcher获取UID并调用ShutdownPlayerUnit
+function BattleSubRoutineCommand.onShutDownPlayer(self, event)
+	local uid = event.Dispatcher:GetUniqueID()
 
-	arg_10_0._dataProxy:ShutdownPlayerUnit(var_10_0)
+	self._dataProxy:ShutdownPlayerUnit(uid)
 end
 
-function var_0_4.onPlayerShutDown(arg_11_0, arg_11_1)
-	if arg_11_0._state:GetState() ~= arg_11_0._state.BATTLE_STATE_FIGHT then
+-- 玩家沉没处理：如果有后备潜艇（SubBench），则手动切换；否则战斗结束
+-- 这是SubRoutine与SubmarineRun最大的不同——允许替补潜艇接力
+function BattleSubRoutineCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	local var_11_0 = arg_11_1.Data.unit
+	local unit = event.Data.unit
 
-	if #arg_11_0._userFleet:GetSubBench() > 0 then
-		arg_11_0._userFleet:ShiftManualSub()
+	-- 检查是否有后备潜艇可切换
+	if #self._userFleet:GetSubBench() > 0 then
+		self._userFleet:ShiftManualSub() -- 手动切换替补潜艇
 	else
-		arg_11_0._dataProxy:TriggerFinishBattle()
-		arg_11_0._dataProxy:CalcSubRountineElimate()
-		arg_11_0._state:BattleEnd()
+		-- 无后备 → 战斗失败
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcSubRountineElimate()
+		self._state:BattleEnd()
 	end
 end

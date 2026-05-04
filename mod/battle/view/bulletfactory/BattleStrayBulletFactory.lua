@@ -1,17 +1,20 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.UnitType
+local ys = ys
+local UnitType = ys.Battle.BattleConst.UnitType
 
-var_0_0.Battle.BattleStrayBulletFactory = singletonClass("BattleStrayBulletFactory", var_0_0.Battle.BattleCannonBulletFactory)
-var_0_0.Battle.BattleStrayBulletFactory.__name = "BattleStrayBulletFactory"
+ys.Battle.BattleStrayBulletFactory = singletonClass("BattleStrayBulletFactory", ys.Battle.BattleCannonBulletFactory)
+ys.Battle.BattleStrayBulletFactory.__name = "BattleStrayBulletFactory"
 
-local var_0_2 = var_0_0.Battle.BattleStrayBulletFactory
+local BattleStrayBulletFactory = ys.Battle.BattleStrayBulletFactory
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+function BattleStrayBulletFactory.Ctor(self)
+	BattleStrayBulletFactory.super.Ctor(self)
 end
 
-function var_0_2.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleStrayBullet.New()
+--- 创建流弹类型的BulletUnit View
+--- 流弹继承自CannonBulletFactory的所有行为（命中/未命中/模型），仅创建不同的BulletUnit类型
+--- @return BattleStrayBullet
+function BattleStrayBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleStrayBullet.New()
 end

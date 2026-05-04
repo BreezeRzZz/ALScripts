@@ -1,61 +1,87 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleUnitEvent
-local var_0_3 = var_0_0.Battle.BattleTargetChoise
-local var_0_4 = class("BattleAutoMissileUnit", var_0_0.Battle.BattleWeaponUnit)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
 
-var_0_0.Battle.BattleAutoMissileUnit = var_0_4
-var_0_4.__name = "BattleAutoMissileUnit"
+local BattleAutoMissileUnit = class("BattleAutoMissileUnit", ys.Battle.BattleWeaponUnit)
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+ys.Battle.BattleAutoMissileUnit = BattleAutoMissileUnit
+BattleAutoMissileUnit.__name = "BattleAutoMissileUnit"
+
+--- @class BattleAutoMissileUnit : BattleWeaponUnit
+--- @param self BattleAutoMissileUnit
+--- 构造函数，直接调用父类Ctor
+function BattleAutoMissileUnit.Ctor(self)
+	BattleAutoMissileUnit.super.Ctor(self)
 end
 
-function var_0_4.createMajorEmitter(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	local function var_2_0(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4)
-		local var_3_0 = arg_2_0._emitBulletIDList[arg_2_2]
-		local var_3_1 = arg_2_0:Spawn(var_3_0, arg_3_4, var_0_4.INTERNAL)
+--- 创建主发射器（自动追踪导弹武器）
+--- @param self BattleAutoMissileUnit
+--- @param barrageID number 弹幕ID
+--- @param index number 发射器序号
+--- @param emitterType string 发射器类型（可选，默认EMITTER_NORMAL）
+--- @return BattleBulletEmitter 创建的发射器
+function BattleAutoMissileUnit.createMajorEmitter(self, barrageID, index, emitterType)
+	--- 子弹生成回调：创建带追踪目标的导弹子弹
+	--- @param offsetX number X轴偏移
+	--- @param offsetZ number Z轴偏移
+	--- @param angle number 发射角度
+	--- @param offsetPriority number 偏移优先级
+	--- @param target BattleUnit 追踪目标
+	--- @return BattleBulletUnit 生成的子弹
+	local function spawnFunc(offsetX, offsetZ, angle, offsetPriority, target)
+		local bulletID = self._emitBulletIDList[index]
+		local bullet = self:Spawn(bulletID, target, BattleAutoMissileUnit.INTERNAL)
 
-		var_3_1:SetOffsetPriority(arg_3_3)
-		var_3_1:SetShiftInfo(arg_3_0, arg_3_1)
+		bullet:SetOffsetPriority(offsetPriority)
+		bullet:SetShiftInfo(offsetX, offsetZ)
 
-		if arg_2_0._tmpData.aim_type == var_0_1.WeaponAimType.AIM and arg_3_4 ~= nil then
-			var_3_1:SetRotateInfo(arg_3_4:GetBeenAimedPosition(), arg_2_0:GetBaseAngle(), arg_3_2)
+		-- 如果瞄准类型为AIM且有目标，则设置旋转指向目标位置
+		if self._tmpData.aim_type == BattleConst.WeaponAimType.AIM and target ~= nil then
+			bullet:SetRotateInfo(target:GetBeenAimedPosition(), self:GetBaseAngle(), angle)
 		else
-			var_3_1:SetRotateInfo(nil, arg_2_0:GetBaseAngle(), arg_3_2)
+			bullet:SetRotateInfo(nil, self:GetBaseAngle(), angle)
 		end
 
-		var_3_1:setTrackingTarget(arg_3_4)
+		-- 设置追踪目标
+		bullet:setTrackingTarget(target)
 
-		local var_3_2 = {}
+		-- 追踪特效数据（空表）
+		local trackingFXData = {}
 
-		var_3_1:SetTrackingFXData(var_3_2)
-		arg_2_0:DispatchBulletEvent(var_3_1)
+		bullet:SetTrackingFXData(trackingFXData)
+		self:DispatchBulletEvent(bullet)
 
-		return var_3_1
+		return bullet
 	end
 
-	local function var_2_1()
-		for iter_4_0, iter_4_1 in ipairs(arg_2_0._majorEmitterList) do
-			if iter_4_1:GetState() ~= iter_4_1.STATE_STOP then
+	--- 所有发射器完成后的回调：如果所有发射器都已停止，则进入冷却
+	local function allEmitterFinished()
+		for _, emitter in ipairs(self._majorEmitterList) do
+			if emitter:GetState() ~= emitter.STATE_STOP then
 				return
 			end
 		end
 
-		arg_2_0:EnterCoolDown()
+		self:EnterCoolDown()
 	end
 
-	arg_2_3 = arg_2_3 or var_0_4.EMITTER_NORMAL
+	-- 默认发射器类型为NORMAL
+	emitterType = emitterType or BattleAutoMissileUnit.EMITTER_NORMAL
 
-	local var_2_2 = var_0_0.Battle[arg_2_3].New(var_2_0, var_2_1, arg_2_1)
+	-- 根据emitterType字符串动态查找对应的发射器类并创建实例
+	local emitter = ys.Battle[emitterType].New(spawnFunc, allEmitterFinished, barrageID)
 
-	arg_2_0._majorEmitterList[#arg_2_0._majorEmitterList + 1] = var_2_2
+	self._majorEmitterList[#self._majorEmitterList + 1] = emitter
 
-	return var_2_2
+	return emitter
 end
 
-function var_0_4.Tracking(arg_5_0)
-	return var_0_3.TargetWeightiest(arg_5_0, nil, arg_5_0:GetFilteredList())[1]
+--- 追踪目标：选择权重最高的目标
+--- @param self BattleAutoMissileUnit
+--- @return BattleUnit 权重最高的目标单位
+function BattleAutoMissileUnit.Tracking(self)
+	return BattleTargetChoise.TargetWeightiest(self, nil, self:GetFilteredList())[1]
 end

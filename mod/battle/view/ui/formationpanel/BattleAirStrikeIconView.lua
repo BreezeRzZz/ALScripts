@@ -1,78 +1,100 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = class("BattleAirStrikeIconView")
+local ys = ys
+-- 用于获取飞机模板数据（icon字段）
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAirStrikeIconView = class("BattleAirStrikeIconView")
 
-var_0_0.Battle.BattleAirStrikeIconView = var_0_2
-var_0_2.__name = "BattleAirStrikeIconView"
-var_0_2.DEFAULT_ICON_NAME = "99shijianbao"
+ys.Battle.BattleAirStrikeIconView = BattleAirStrikeIconView
+BattleAirStrikeIconView.__name = "BattleAirStrikeIconView"
+-- 无飞机数据时使用的默认图标
+BattleAirStrikeIconView.DEFAULT_ICON_NAME = "99shijianbao"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._iconList = {}
+--- 在BattleUIMediator.FighterIconCallBack中初始化
+--- 管理空袭图标列表的显示
+--- @param iconTpl Transform 图标模板
+function BattleAirStrikeIconView.Ctor(self, iconTpl)
+	self._iconList = {}
 
-	arg_1_0:ConfigIconSkin(arg_1_1)
+	self:ConfigIconSkin(iconTpl)
 end
 
-function var_0_2.ConfigIconSkin(arg_2_0, arg_2_1)
-	arg_2_0._iconTpl = arg_2_1
-	arg_2_0._iconContainer = arg_2_1.parent
+--- 配置图标模板和容器
+--- @param iconTpl Transform 图标模板（其parent即为容器）
+function BattleAirStrikeIconView.ConfigIconSkin(self, iconTpl)
+	self._iconTpl = iconTpl
+	self._iconContainer = iconTpl.parent
 end
 
-function var_0_2.AppendIcon(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = cloneTplTo(arg_3_0._iconTpl, arg_3_0._iconContainer).gameObject
-	local var_3_1 = var_3_0.transform:Find("FighterIcon")
+--- 添加一个空袭图标到列表中
+--- @param index number 图标列表的key（通常为1-based序号）
+--- @param airStrikeData table 空袭数据，含templateID和totalNumber
+function BattleAirStrikeIconView.AppendIcon(self, index, airStrikeData)
+	local iconGO = cloneTplTo(self._iconTpl, self._iconContainer).gameObject
+	local fighterIconTF = iconGO.transform:Find("FighterIcon")
 
-	var_3_0:SetActive(true)
-	arg_3_0:setIconNumber(var_3_1, arg_3_2.totalNumber)
+	iconGO:SetActive(true)
+	self:setIconNumber(fighterIconTF, airStrikeData.totalNumber)
 
-	local var_3_2 = var_0_1.GetAircraftTmpDataFromID(arg_3_2.templateID).icon or var_0_2.DEFAULT_ICON_NAME
-	local var_3_3 = var_0_0.Battle.BattleResourceManager.GetInstance():GetAircraftIcon(var_3_2)
+	-- 优先使用飞机模板配置的图标，否则使用默认图标
+	local iconName = BattleDataFunction.GetAircraftTmpDataFromID(airStrikeData.templateID).icon or BattleAirStrikeIconView.DEFAULT_ICON_NAME
+	local iconSprite = ys.Battle.BattleResourceManager.GetInstance():GetAircraftIcon(iconName)
 
-	setImageSprite(var_3_1, var_3_3)
+	setImageSprite(fighterIconTF, iconSprite)
 
-	arg_3_0._iconList[arg_3_1] = var_3_0
+	self._iconList[index] = iconGO
 
-	if var_3_0:GetComponent(typeof(Animation)) then
-		quickPlayAnimation(var_3_0, "anim_skinui_AFC_in")
+	-- 如果有动画组件，播放入场动画
+	if iconGO:GetComponent(typeof(Animation)) then
+		quickPlayAnimation(iconGO, "anim_skinui_AFC_in")
 	end
 end
 
-function var_0_2.RemoveIcon(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = arg_4_0._iconList[arg_4_1]
+--- 移除一个空袭图标
+--- @param index number 图标列表的key
+--- @param airStrikeData table 空袭数据，含totalNumber
+function BattleAirStrikeIconView.RemoveIcon(self, index, airStrikeData)
+	local iconGO = self._iconList[index]
 
-	if not var_4_0 then
+	if not iconGO then
 		return
 	end
 
-	if arg_4_2.totalNumber <= 0 then
-		local function var_4_1()
-			Object.Destroy(var_4_0)
+	-- 数量归零则销毁图标GameObject
+	if airStrikeData.totalNumber <= 0 then
+		local function destroyIcon()
+			Object.Destroy(iconGO)
 
-			arg_4_0._iconList[arg_4_1] = nil
+			self._iconList[index] = nil
 		end
 
-		if var_4_0:GetComponent(typeof(Animation)) then
-			var_4_0:GetComponent("DftAniEvent"):SetEndEvent(function(arg_6_0)
-				var_4_1()
+		-- 有动画组件时先播放退出动画再销毁
+		if iconGO:GetComponent(typeof(Animation)) then
+			iconGO:GetComponent("DftAniEvent"):SetEndEvent(function(_)
+				destroyIcon()
 			end)
-			quickPlayAnimation(var_4_0, "anim_skinui_AFC_out")
+			quickPlayAnimation(iconGO, "anim_skinui_AFC_out")
 		else
-			var_4_1()
+			destroyIcon()
 		end
 	else
-		arg_4_0:setIconNumber(var_4_0.transform:Find("FighterIcon"), arg_4_2.totalNumber)
+		-- 数量未归零则仅更新数量文本
+		self:setIconNumber(iconGO.transform:Find("FighterIcon"), airStrikeData.totalNumber)
 	end
 end
 
-function var_0_2.Dispose(arg_7_0)
-	for iter_7_0, iter_7_1 in pairs(arg_7_0._iconList) do
-		Object.Destroy(iter_7_1)
+--- 清理所有图标
+function BattleAirStrikeIconView.Dispose(self)
+	for _, iconGO in pairs(self._iconList) do
+		Object.Destroy(iconGO)
 	end
 
-	arg_7_0._iconList = nil
+	self._iconList = nil
 end
 
-function var_0_2.setIconNumber(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1.transform:Find("FighterNum"):GetComponent(typeof(Text)).text = "X" .. arg_8_2
+--- 设置图标上显示的数量文本（X格式）
+--- @param fighterIconTF Transform FighterIcon的Transform
+--- @param number number 要显示的飞机数量
+function BattleAirStrikeIconView.setIconNumber(self, fighterIconTF, number)
+	fighterIconTF.transform:Find("FighterNum"):GetComponent(typeof(Text)).text = "X" .. number
 end

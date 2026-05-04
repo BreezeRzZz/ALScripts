@@ -1,272 +1,412 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = singletonClass("BattleCharacterFactory")
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCharacterFactory = singletonClass("BattleCharacterFactory")
 
-var_0_0.Battle.BattleCharacterFactory = var_0_2
-var_0_2.__name = "BattleCharacterFactory"
-var_0_2.HP_BAR_NAME = ""
-var_0_2.POPUP_NAME = "popup"
-var_0_2.TAG_NAME = "ChargeAreaContainer/LockTag"
-var_0_2.MOVE_WAVE_FX_POS = Vector3(0, -2.3, -1.5)
-var_0_2.MOVE_WAVE_FX_NAME = "movewave"
-var_0_2.SMOKE_FX_NAME = "smoke"
-var_0_2.BOMB_FX_NAME = "Bomb"
-var_0_2.DANCHUAN_MOVE_WAVE_FX_NAME = "danchuanlanghuazhong2"
+ys.Battle.BattleCharacterFactory = BattleCharacterFactory
+BattleCharacterFactory.__name = "BattleCharacterFactory"
 
-function var_0_2.Ctor(arg_1_0)
+--- 友方HP条资源名（子类覆盖）
+BattleCharacterFactory.HP_BAR_NAME = ""
+--- 弹出提示UI资源名
+BattleCharacterFactory.POPUP_NAME = "popup"
+--- 锁定标记UI资源路径
+BattleCharacterFactory.TAG_NAME = "ChargeAreaContainer/LockTag"
+--- 移动浪花特效偏移位置
+BattleCharacterFactory.MOVE_WAVE_FX_POS = Vector3(0, -2.3, -1.5)
+--- 移动浪花特效资源名
+BattleCharacterFactory.MOVE_WAVE_FX_NAME = "movewave"
+--- 烟雾特效资源名
+BattleCharacterFactory.SMOKE_FX_NAME = "smoke"
+--- 默认爆炸特效资源名
+BattleCharacterFactory.BOMB_FX_NAME = "Bomb"
+--- 单船浪花特效资源名（小型船只/舢板专用）
+BattleCharacterFactory.DANCHUAN_MOVE_WAVE_FX_NAME = "danchuanlanghuazhong2"
+
+--- @class BattleCharacterFactory
+--- @return nil
+--- 构造函数。子类在Ctor中设置HP_BAR_NAME、ARROW_BAR_NAME等资源名。
+function BattleCharacterFactory.Ctor(self)
 	return
 end
 
-function var_0_2.CreateCharacter(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_1.unit
-	local var_2_1 = arg_2_0:MakeCharacter()
+--- @class BattleCharacterFactory
+--- @param data table: 创建数据，包含unit字段（BattleUnit数据层对象）
+--- @return BattleCharacter: 创建好的角色视觉对象
+--- 创建角色的主入口：1) 分配角色对象 2) 绑定工厂和数据层 3) 创建视觉模型。
+function BattleCharacterFactory.CreateCharacter(self, data)
+	local unit = data.unit
+	local character = self:MakeCharacter()
 
-	var_2_1:SetFactory(arg_2_0)
-	var_2_1:SetUnitData(var_2_0)
-	arg_2_0:MakeModel(var_2_1)
+	character:SetFactory(self)
+	character:SetUnitData(unit)
+	self:MakeModel(character)
 
-	return var_2_1
+	return character
 end
 
-function var_0_2.GetSceneMediator(arg_3_0)
-	return var_0_0.Battle.BattleState.GetInstance():GetMediatorByName(var_0_0.Battle.BattleSceneMediator.__name)
+--- @class BattleCharacterFactory
+--- @return BattleSceneMediator: 场景中介者
+--- 获取当前战斗场景的中介者，用于实例化UI组件。
+function BattleCharacterFactory.GetSceneMediator(self)
+	return ys.Battle.BattleState.GetInstance():GetMediatorByName(ys.Battle.BattleSceneMediator.__name)
 end
 
-function var_0_2.GetFXPool(arg_4_0)
-	return var_0_0.Battle.BattleFXPool.GetInstance()
+--- @class BattleCharacterFactory
+--- @return BattleFXPool: 特效对象池
+--- 获取BattleFXPool（即BattleCharacterFXContainersPool别名，用于角色特效挂点回收）。
+function BattleCharacterFactory.GetFXPool(self)
+	return ys.Battle.BattleFXPool.GetInstance()
 end
 
-function var_0_2.GetCharacterPool(arg_5_0)
-	return var_0_0.Battle.BattleResourceManager.GetInstance()
+--- @class BattleCharacterFactory
+--- @return BattleResourceManager: 角色资源管理器
+--- 获取角色模型资源管理器（负责加载Spine/模型prefab）。
+function BattleCharacterFactory.GetCharacterPool(self)
+	return ys.Battle.BattleResourceManager.GetInstance()
 end
 
-function var_0_2.GetHPBarPool(arg_6_0)
-	return var_0_0.Battle.BattleHPBarManager.GetInstance()
+--- @class BattleCharacterFactory
+--- @return BattleHPBarManager: HP条管理器
+--- 获取HP条对象池管理器。
+function BattleCharacterFactory.GetHPBarPool(self)
+	return ys.Battle.BattleHPBarManager.GetInstance()
 end
 
-function var_0_2.GetDivingFilterColor(arg_7_0)
-	local var_7_0 = var_0_0.Battle.BattleDataProxy.GetInstance()._mapId
-	local var_7_1 = var_0_0.Battle.BattleDataFunction.GetDivingFilter(var_7_0)
+--- @class BattleCharacterFactory
+--- @return Color: 潜水滤镜颜色
+--- 根据当前地图的潜水滤镜配置返回Color。用于水下场景的颜色校正。
+function BattleCharacterFactory.GetDivingFilterColor(self)
+	local mapId = ys.Battle.BattleDataProxy.GetInstance()._mapId
+	local filterData = ys.Battle.BattleDataFunction.GetDivingFilter(mapId)
 
-	return (Color.New(var_7_1.r, var_7_1.g, var_7_1.b, var_7_1.a))
+	return (Color.New(filterData.r, filterData.g, filterData.b, filterData.a))
 end
 
-function var_0_2.GetFXContainerPool(arg_8_0)
-	return var_0_0.Battle.BattleCharacterFXContainersPool.GetInstance()
+--- @class BattleCharacterFactory
+--- @return BattleCharacterFXContainersPool: 特效挂点容器池
+--- 获取角色特效挂点容器池。
+function BattleCharacterFactory.GetFXContainerPool(self)
+	return ys.Battle.BattleCharacterFXContainersPool.GetInstance()
 end
 
-function var_0_2.MakeCharacter(arg_9_0)
+--- @class BattleCharacterFactory
+--- @return BattleCharacter|nil
+--- 虚函数：子类重写，创建对应类型的角色数据对象。
+function BattleCharacterFactory.MakeCharacter(self)
 	return nil
 end
 
-function var_0_2.MakeModel(arg_10_0, arg_10_1)
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 虚函数：子类重写，加载并设置角色的视觉模型。
+function BattleCharacterFactory.MakeModel(self, character)
 	return nil
 end
 
-function var_0_2.MakeBloodBar(arg_11_0, arg_11_1)
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 虚函数：子类重写，创建HP血条UI。
+function BattleCharacterFactory.MakeBloodBar(self, character)
 	return nil
 end
 
-function var_0_2.MakeAimBiasBar(arg_12_0)
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 虚函数：创建瞄准偏差条（AimBias）。仅当该角色为AimBias宿主时由子类调用。
+function BattleCharacterFactory.MakeAimBiasBar(self, character)
 	return nil
 end
 
-function var_0_2.SetHPBarWidth(arg_13_0, arg_13_1, arg_13_2, arg_13_3)
-	local var_13_0 = arg_13_1:GetUnitData():GetTemplate().hp_bar[1]
-	local var_13_1 = arg_13_2.transform
-	local var_13_2 = var_13_1.rect.height
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @param barObj GameObject: HP条GameObject
+--- @param extraWidth number|nil: 额外宽度偏移（如Boss）或nil
+--- @return nil
+--- 设置HP条宽度：从模板的hp_bar[1]读取基准宽度，分别设置背景和血条fill的sizeDelta。
+function BattleCharacterFactory.SetHPBarWidth(self, character, barObj, extraWidth)
+	local barWidth = character:GetUnitData():GetTemplate().hp_bar[1]
+	local barTf = barObj.transform
+	local barHeight = barTf.rect.height
 
-	var_13_1.sizeDelta = Vector2(var_13_0, var_13_2)
+	barTf.sizeDelta = Vector2(barWidth, barHeight)
 
-	local var_13_3 = var_13_1:Find("blood").transform
-	local var_13_4 = var_13_3.rect.height
+	local bloodTf = barTf:Find("blood").transform
+	local bloodHeight = bloodTf.rect.height
 
-	var_13_3.sizeDelta = Vector2(var_13_0 + arg_13_3 or 0, var_13_4)
+	bloodTf.sizeDelta = Vector2(barWidth + extraWidth or 0, bloodHeight)
 end
 
-function var_0_2.MakeUIComponentContainer(arg_14_0, arg_14_1)
-	arg_14_1:AddUIComponentContainer()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 为角色创建UI组件容器（Popup弹出提示、Tag锁定标记等容器）。
+function BattleCharacterFactory.MakeUIComponentContainer(self, character)
+	character:AddUIComponentContainer()
 end
 
-function var_0_2.MakeFXContainer(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_1:GetTf()
-	local var_15_1 = arg_15_0:GetFXPool():PopCharacterAttachPoint()
-	local var_15_2 = var_15_1.transform
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 为角色创建特效挂点容器。从池中弹出一个挂点，附着到角色transform，
+--- 并遍历BattleConst.FXContainerIndex从模板中读取各挂点坐标偏移。
+function BattleCharacterFactory.MakeFXContainer(self, character)
+	local characterTf = character:GetTf()
+	local attachPoint = self:GetFXPool():PopCharacterAttachPoint()
+	local attachTf = attachPoint.transform
 
-	SetActive(var_15_2, true)
-	var_15_2:SetParent(var_15_0, false)
+	SetActive(attachTf, true)
+	attachTf:SetParent(characterTf, false)
 
-	var_15_2.localPosition = Vector3.zero
+	attachTf.localPosition = Vector3.zero
 
-	local var_15_3 = var_15_0.localEulerAngles
+	local charEulerAngles = characterTf.localEulerAngles
 
-	var_15_2.localEulerAngles = Vector3(var_15_3.x * -1, var_15_3.y, var_15_3.z)
+	-- 反转X轴方向以适配挂点坐标（挂点使用独立坐标系）
+	attachTf.localEulerAngles = Vector3(charEulerAngles.x * -1, charEulerAngles.y, charEulerAngles.z)
 
-	local var_15_4 = arg_15_1:GetUnitData():GetTemplate().fx_container
-	local var_15_5 = {}
+	local fxContainerData = character:GetUnitData():GetTemplate().fx_container
+	local fxOffsets = {}
 
-	for iter_15_0, iter_15_1 in ipairs(var_0_0.Battle.BattleConst.FXContainerIndex) do
-		local var_15_6 = var_15_4[iter_15_0]
+	for index, fxIndexName in ipairs(ys.Battle.BattleConst.FXContainerIndex) do
+		local posData = fxContainerData[index]
 
-		var_15_5[iter_15_0] = Vector3(var_15_6[1], var_15_6[2], var_15_6[3])
+		fxOffsets[index] = Vector3(posData[1], posData[2], posData[3])
 	end
 
-	arg_15_1:AddFXOffsets(var_15_1, var_15_5)
+	character:AddFXOffsets(attachPoint, fxOffsets)
 end
 
-function var_0_2.MakeShadow(arg_16_0)
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 虚函数：子类重写，创建角色阴影（飞机等空中单位需要）。
+function BattleCharacterFactory.MakeShadow(self, character)
 	return nil
 end
 
-function var_0_2.MakeSmokeFX(arg_17_0, arg_17_1)
-	local var_17_0 = arg_17_1:GetUnitData():GetTemplate().smoke
-	local var_17_1 = {}
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建烟雾特效：从模板的smoke配置中读取多组烟雾信息。
+--- 每组烟雾包含触发HP百分比阈值（rate）和若干特效资源（smokes）。
+--- smokes列表的每个元素包含resID（资源ID）和pos（相对位置偏移）。
+function BattleCharacterFactory.MakeSmokeFX(self, character)
+	local smokeConfig = character:GetUnitData():GetTemplate().smoke
+	local smokeGroups = {}
 
-	for iter_17_0, iter_17_1 in ipairs(var_17_0) do
-		local var_17_2 = iter_17_1[2]
-		local var_17_3 = {}
+	for groupIndex, groupData in ipairs(smokeConfig) do
+		local smokeList = groupData[2]
+		local smokes = {}
 
-		for iter_17_2, iter_17_3 in ipairs(var_17_2) do
-			local var_17_4 = {}
+		for _, smokeItem in ipairs(smokeList) do
+			local smokeEntry = {}
 
-			var_17_4.unInitialize = true
-			var_17_4.resID = iter_17_3[1]
-			var_17_4.pos = Vector3(iter_17_3[2][1], iter_17_3[2][2], iter_17_3[2][3])
-			var_17_3[var_17_4] = false
+			smokeEntry.unInitialize = true
+			smokeEntry.resID = smokeItem[1]
+			smokeEntry.pos = Vector3(smokeItem[2][1], smokeItem[2][2], smokeItem[2][3])
+			smokes[smokeEntry] = false
 		end
 
-		var_17_1[iter_17_0] = {
+		-- groupData[1] 是触发烟雾的HP百分比（除以100得到0~1比例）
+		smokeGroups[groupIndex] = {
 			active = false,
-			rate = iter_17_1[1] / 100,
-			smokes = var_17_3
+			rate = groupData[1] / 100,
+			smokes = smokes
 		}
 	end
 
-	arg_17_1:AddSmokeFXs(var_17_1)
+	character:AddSmokeFXs(smokeGroups)
 end
 
-function var_0_2.MakeWaveFX(arg_18_0, arg_18_1)
-	arg_18_1:AddWaveFX(arg_18_0.MOVE_WAVE_FX_NAME)
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建移动浪花特效（默认使用MOVE_WAVE_FX_NAME）。水面单位移动时显示。
+function BattleCharacterFactory.MakeWaveFX(self, character)
+	character:AddWaveFX(self.MOVE_WAVE_FX_NAME)
 end
 
-function var_0_2.MakePopNumPool(arg_19_0, arg_19_1)
-	arg_19_1:AddPopNumPool(arg_19_0:GetSceneMediator():GetPopNumPool())
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 为角色添加伤害/治疗数字弹出池。
+function BattleCharacterFactory.MakePopNumPool(self, character)
+	character:AddPopNumPool(self:GetSceneMediator():GetPopNumPool())
 end
 
-function var_0_2.MakeTag(arg_20_0, arg_20_1)
-	return (var_0_0.Battle.BattleLockTag.New(arg_20_0:GetSceneMediator():InstantiateCharacterComponent(arg_20_0.TAG_NAME), arg_20_1))
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return BattleLockTag: 锁定标记组件
+--- 创建锁定标记（显示在角色头顶，用于指示当前被锁定的目标）。
+function BattleCharacterFactory.MakeTag(self, character)
+	return (ys.Battle.BattleLockTag.New(self:GetSceneMediator():InstantiateCharacterComponent(self.TAG_NAME), character))
 end
 
-function var_0_2.MakePopup(arg_21_0)
-	return (arg_21_0:GetSceneMediator():InstantiateCharacterComponent(arg_21_0.POPUP_NAME))
+--- @class BattleCharacterFactory
+--- @return GameObject: 弹出提示GameObject
+--- 实例化弹出提示UI组件（用于显示闪避/EVA等提示）。
+function BattleCharacterFactory.MakePopup(self)
+	return (self:GetSceneMediator():InstantiateCharacterComponent(self.POPUP_NAME))
 end
 
-function var_0_2.MakeArrowBar(arg_22_0, arg_22_1)
-	local var_22_0 = arg_22_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建箭头指示条（用于指向敌方位置/船锚目标），通过场景中介者实例化。
+function BattleCharacterFactory.MakeArrowBar(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_22_1:AddArrowBar(var_22_0:InstantiateCharacterComponent(arg_22_0.ARROW_BAR_NAME))
-	arg_22_1:UpdateArrowBarPosition()
+	character:AddArrowBar(mediator:InstantiateCharacterComponent(self.ARROW_BAR_NAME))
+	character:UpdateArrowBarPosition()
 end
 
-function var_0_2.MakeCastClock(arg_23_0, arg_23_1)
-	local var_23_0 = arg_23_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建技能施法时钟（显示技能冷却/施法进度的环形计时器）。
+function BattleCharacterFactory.MakeCastClock(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_23_1:AddCastClock(var_23_0:InstantiateCharacterComponent("CastClockContainer/castClock"))
+	character:AddCastClock(mediator:InstantiateCharacterComponent("CastClockContainer/castClock"))
 end
 
-function var_0_2.MakeBuffClock(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建Buff时钟（Buff持续时间的环形计时器）。
+function BattleCharacterFactory.MakeBuffClock(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_24_1:AddBuffClock(var_24_0:InstantiateCharacterComponent("CastClockContainer/buffClock"))
+	character:AddBuffClock(mediator:InstantiateCharacterComponent("CastClockContainer/buffClock"))
 end
 
-function var_0_2.MakeBarrierClock(arg_25_0, arg_25_1)
-	local var_25_0 = arg_25_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建屏障/护盾时钟（护盾持续时间的环形计时器）。
+function BattleCharacterFactory.MakeBarrierClock(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_25_1:AddBarrierClock(var_25_0:InstantiateCharacterComponent("CastClockContainer/shieldClock"))
+	character:AddBarrierClock(mediator:InstantiateCharacterComponent("CastClockContainer/shieldClock"))
 end
 
-function var_0_2.MakeVigilantBar(arg_26_0, arg_26_1)
-	local var_26_0 = arg_26_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建对潜警戒条（反潜探测/索敌进度条）。
+function BattleCharacterFactory.MakeVigilantBar(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_26_1:AddVigilantBar(var_26_0:InstantiateCharacterComponent("AntiSubVigilantContainer/antiSubMeter"))
-	arg_26_1:UpdateVigilantBarPosition()
+	character:AddVigilantBar(mediator:InstantiateCharacterComponent("AntiSubVigilantContainer/antiSubMeter"))
+	character:UpdateVigilantBarPosition()
 end
 
-function var_0_2.MakeCloakBar(arg_27_0, arg_27_1)
-	local var_27_0 = arg_27_0:GetSceneMediator()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建隐形/潜行条（潜艇隐蔽进度条，显示何时完全暴露）。
+function BattleCharacterFactory.MakeCloakBar(self, character)
+	local mediator = self:GetSceneMediator()
 
-	arg_27_1:AddCloakBar(var_27_0:InstantiateCharacterComponent("CloakContainer/cloakMeter"))
-	arg_27_1:UpdateCloakBarPosition()
+	character:AddCloakBar(mediator:InstantiateCharacterComponent("CloakContainer/cloakMeter"))
+	character:UpdateCloakBarPosition()
 end
 
-function var_0_2.MakeSkinOrbit(arg_28_0, arg_28_1)
-	local var_28_0 = arg_28_1:GetUnitData():GetSkinAttachmentInfo()
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @return nil
+--- 创建皮肤环绕轨道特效（orbit effect）。根据角色的皮肤附件信息（equip_skin），
+--- 实例化对应的环绕特效。支持双人角色（IsDoubleChar）的左右分侧轨道分配：
+---   - double_char_bone[1]=1 表示char2也有轨道
+---   - double_char_bone[2]=1 表示默认位置（右侧）
+---   - double_char_bone[3]=1 表示char1（左侧）
+function BattleCharacterFactory.MakeSkinOrbit(self, character)
+	local skinAttachmentInfo = character:GetUnitData():GetSkinAttachmentInfo()
 
-	if var_28_0 then
-		for iter_28_0, iter_28_1 in ipairs(var_28_0) do
-			local var_28_1 = var_0_0.Battle.BattleDataFunction.GetEquipSkinDataFromID(iter_28_1)
+	if skinAttachmentInfo then
+		for _, equipSkinID in ipairs(skinAttachmentInfo) do
+			local equipSkinData = ys.Battle.BattleDataFunction.GetEquipSkinDataFromID(equipSkinID)
 
-			if arg_28_1:IsDoubleChar() then
-				local var_28_2 = var_0_0.Battle.BattleResourceManager.GetInstance():InstOrbit(var_28_1.orbit_combat)
-				local var_28_3 = var_0_0.Battle.BattleResourceManager.GetInstance():InstOrbit(var_28_1.orbit_combat)
-				local var_28_4 = var_28_1.double_char_bone
+			if character:IsDoubleChar() then
+				-- 双人角色：需要左右两侧分别实例化
+				local orbitForCharA = ys.Battle.BattleResourceManager.GetInstance():InstOrbit(equipSkinData.orbit_combat)
+				local orbitForCharB = ys.Battle.BattleResourceManager.GetInstance():InstOrbit(equipSkinData.orbit_combat)
+				local doubleCharBone = equipSkinData.double_char_bone
 
-				if var_28_4 and #var_28_4 > 0 and var_28_4[1] == 1 then
-					arg_28_1:AddOrbit(var_28_3, var_28_1, "char2")
+				if doubleCharBone and #doubleCharBone > 0 and doubleCharBone[1] == 1 then
+					character:AddOrbit(orbitForCharB, equipSkinData, "char2")
 				end
 
-				if var_28_4 and #var_28_4 > 0 and var_28_4[2] == 1 then
-					arg_28_1:AddOrbit(var_28_2, var_28_1)
+				if doubleCharBone and #doubleCharBone > 0 and doubleCharBone[2] == 1 then
+					character:AddOrbit(orbitForCharA, equipSkinData)
 				end
 
-				if var_28_4 and #var_28_4 > 0 and var_28_4[3] == 1 then
-					arg_28_1:AddOrbit(var_28_2, var_28_1, "char1")
+				if doubleCharBone and #doubleCharBone > 0 and doubleCharBone[3] == 1 then
+					character:AddOrbit(orbitForCharA, equipSkinData, "char1")
 				end
 			else
-				local var_28_5 = var_0_0.Battle.BattleResourceManager.GetInstance():InstOrbit(var_28_1.orbit_combat)
+				-- 单角色：实例化一份即即
+				local orbit = ys.Battle.BattleResourceManager.GetInstance():InstOrbit(equipSkinData.orbit_combat)
 
-				arg_28_1:AddOrbit(var_28_5, var_28_1)
+				character:AddOrbit(orbit, equipSkinData)
 			end
 		end
 	end
 end
 
-function var_0_2.RemoveCharacter(arg_29_0, arg_29_1, arg_29_2)
-	local var_29_0 = arg_29_1:GetUnitData():GetTemplate().nationality
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @param reason UnitDeathReason|nil: 死亡原因（KILLED/撤退等）
+--- @return nil
+--- 移除角色（死亡/撤退时调用）：
+---   1) 根据国籍决定爆炸特效：甜甜圈国籍跳过，非KILLED死亡原因跳过
+---   2) 播放死亡特效（BOMB_FX_NAME或模板指定的DeadFX）
+---   3) Dispose角色，回收挂点
+function BattleCharacterFactory.RemoveCharacter(self, character, reason)
+	local nationality = character:GetUnitData():GetTemplate().nationality
 
-	if var_29_0 and table.contains(var_0_1.SWEET_DEATH_NATIONALITY, var_29_0) then
-		-- block empty
-	elseif arg_29_2 and arg_29_2 ~= var_0_0.Battle.BattleConst.UnitDeathReason.KILLED then
-		-- block empty
+	-- 甜甜圈国籍（SWEET_DEATH_NATIONALITY 表包含的国籍）不播常规爆炸
+	if nationality and table.contains(BattleConfig.SWEET_DEATH_NATIONALITY, nationality) then
+		-- 由特殊死亡动画系统处理，跳过爆炸
+	elseif reason and reason ~= ys.Battle.BattleConst.UnitDeathReason.KILLED then
+		-- 非被击杀（如撤退、切换等），不播爆炸特效
 	else
-		local var_29_1 = arg_29_1:GetUnitData():GetDeadFX()
-		local var_29_2, var_29_3 = arg_29_0:GetFXPool():GetFX(var_29_1 or arg_29_0.BOMB_FX_NAME)
+		local deadFXID = character:GetUnitData():GetDeadFX()
+		local fxName, fxTarget = self:GetFXPool():GetFX(deadFXID or self.BOMB_FX_NAME)
 
-		pg.EffectMgr.GetInstance():PlayBattleEffect(var_29_2, var_29_3:Add(arg_29_1:GetPosition()), true)
+		pg.EffectMgr.GetInstance():PlayBattleEffect(fxName, fxTarget:Add(character:GetPosition()), true)
 	end
 
-	arg_29_1:Dispose()
-	arg_29_0:GetFXPool():PushCharacterAttachPoint(arg_29_1:GetAttachPoint())
+	character:Dispose()
+	self:GetFXPool():PushCharacterAttachPoint(character:GetAttachPoint())
 end
 
-function var_0_2.SwitchCharacterSpine(arg_30_0, arg_30_1, arg_30_2)
-	local var_30_0
+--- @class BattleCharacterFactory
+--- @param character BattleCharacter: 角色视觉对象
+--- @param skinID number|nil: 皮肤ID。nil时使用角色默认皮肤模型。
+--- @return nil
+--- 切换角色的Spine动画模型（换肤）。根据皮肤ID获取prefab路径，
+--- 异步加载新模型后调用SwitchModel替换。
+function BattleCharacterFactory.SwitchCharacterSpine(self, character, skinID)
+	local modelID
 
-	if arg_30_2 then
-		var_30_0 = var_0_0.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(arg_30_2).prefab
+	if skinID then
+		modelID = ys.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(skinID).prefab
 	else
-		var_30_0 = arg_30_1:GetModleID()
+		modelID = character:GetModleID()
 	end
 
-	local function var_30_1(arg_31_0)
-		arg_30_1:SwitchModel(arg_31_0, arg_30_2)
-		arg_30_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
+	local function applyNewModel(newModel)
+		character:SwitchModel(newModel, skinID)
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
 	end
 
-	arg_30_0:GetCharacterPool():InstCharacter(var_30_0, function(arg_32_0)
-		var_30_1(arg_32_0)
+	self:GetCharacterPool():InstCharacter(modelID, function(newModel)
+		applyNewModel(newModel)
 	end)
 end

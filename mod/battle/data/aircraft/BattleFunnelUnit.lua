@@ -1,197 +1,266 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleTargetChoise
-local var_0_3 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleFunnelUnit = class("BattleFunnelUnit", var_0_0.Battle.BattleAircraftUnit)
-var_0_0.Battle.BattleFunnelUnit.__name = "BattleFunnelUnit"
+ys.Battle.BattleFunnelUnit = class("BattleFunnelUnit", ys.Battle.BattleAircraftUnit)
+ys.Battle.BattleFunnelUnit.__name = "BattleFunnelUnit"
 
-local var_0_4 = var_0_0.Battle.BattleFunnelUnit
+local BattleFunnelUnit = ys.Battle.BattleFunnelUnit
 
-var_0_4.STOP_STATE = "STOP_STATE"
-var_0_4.MOVE_STATE = "MOVE_STATE"
-var_0_4.CRASH_STATE = "CRASH_STATE"
+BattleFunnelUnit.STOP_STATE = "STOP_STATE"
+BattleFunnelUnit.MOVE_STATE = "MOVE_STATE"
+BattleFunnelUnit.CRASH_STATE = "CRASH_STATE"
 
-function var_0_4.Ctor(arg_1_0, arg_1_1)
-	var_0_4.super.Ctor(arg_1_0, arg_1_1)
+--- @class BattleFunnelUnit
+--- @param UID number: 单位唯一ID
+--- @return nil
+--- 构造函数：设置单位方向为左、类型为FUNNEL_UNIT
+function BattleFunnelUnit.Ctor(self, UID)
+	BattleFunnelUnit.super.Ctor(self, UID)
 
-	arg_1_0._dir = var_0_0.Battle.BattleConst.UnitDir.LEFT
-	arg_1_0._type = var_0_0.Battle.BattleConst.UnitType.FUNNEL_UNIT
+	self._dir = ys.Battle.BattleConst.UnitDir.LEFT
+	self._type = ys.Battle.BattleConst.UnitType.FUNNEL_UNIT
 end
 
-function var_0_4.Update(arg_2_0, arg_2_1)
-	arg_2_0:updateExist()
-	arg_2_0:updatePatrol(arg_2_1)
+--- @class BattleFunnelUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 浮游炮的Update函数：检查存在时间和巡逻状态
+function BattleFunnelUnit.Update(self, timeStamp)
+	self:updateExist()
+	self:updatePatrol(timeStamp)
 end
 
-function var_0_4.updateExist(arg_3_0)
-	if not arg_3_0._existStartTime then
+--- @class BattleFunnelUnit
+--- @return nil
+--- 检查浮游炮是否超过存在时间，超过则进入CRASH(坠毁)状态
+function BattleFunnelUnit.updateExist(self)
+	if not self._existStartTime then
 		return
 	end
 
-	if arg_3_0._existStartTime + arg_3_0._existDuration < pg.TimeMgr.GetInstance():GetCombatTime() then
-		arg_3_0:changePartolState(var_0_4.CRASH_STATE)
+	if self._existStartTime + self._existDuration < pg.TimeMgr.GetInstance():GetCombatTime() then
+		self:changePartolState(BattleFunnelUnit.CRASH_STATE)
 	end
 end
 
-function var_0_4.UpdateWeapon(arg_4_0)
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0:GetWeapon()) do
-		iter_4_1:Update()
+--- @class BattleFunnelUnit
+--- @return nil
+--- 更新所有武器
+function BattleFunnelUnit.UpdateWeapon(self)
+	for _, weapon in ipairs(self:GetWeapon()) do
+		weapon:Update()
 	end
 end
 
-function var_0_4.SetMotherUnit(arg_5_0, arg_5_1)
-	var_0_4.super.SetMotherUnit(arg_5_0, arg_5_1)
+--- @class BattleFunnelUnit
+--- @param mother BattleUnit: 母单位
+--- @return nil
+--- 设置母单位后，根据敌对IFF获取活动边界
+function BattleFunnelUnit.SetMotherUnit(self, mother)
+	BattleFunnelUnit.super.SetMotherUnit(self, mother)
 
-	local var_5_0 = arg_5_0:GetIFF() * -1
+	local hostileIFF = self:GetIFF() * -1
 
-	arg_5_0._upperBound, arg_5_0._lowerBound, arg_5_0._leftBound, arg_5_0._rightBound = var_0_0.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(var_5_0)
+	self._upperBound, self._lowerBound, self._leftBound, self._rightBound = ys.Battle.BattleDataProxy.GetInstance():GetFleetBoundByIFF(hostileIFF)
 end
 
-function var_0_4.SetTemplate(arg_6_0, arg_6_1)
-	var_0_4.super.SetTemplate(arg_6_0, arg_6_1)
+--- @class BattleFunnelUnit
+--- @param tmpData table: 模板数据(aircraft_template)
+--- @return nil
+--- 设置模板数据：读取浮游炮行为参数(exist/stay/front/rear)，调整活动边界
+function BattleFunnelUnit.SetTemplate(self, tmpData)
+	BattleFunnelUnit.super.SetTemplate(self, tmpData)
 
-	arg_6_0._existDuration = arg_6_1.funnel_behavior.exist
-	arg_6_0._stayDuration = arg_6_1.funnel_behavior.stay
-	arg_6_0._frontOffset = arg_6_1.funnel_behavior.front or 0
-	arg_6_0._rearOffset = arg_6_1.funnel_behavior.rear or 0
+	self._existDuration = tmpData.funnel_behavior.exist
+	self._stayDuration = tmpData.funnel_behavior.stay
+	self._frontOffset = tmpData.funnel_behavior.front or 0
+	self._rearOffset = tmpData.funnel_behavior.rear or 0
 
-	if arg_6_0:GetWeapon()[1] then
-		arg_6_0.changeToStopState = var_0_4.stopState
+	-- 根据是否有武器选择stopState的处理函数
+	if self:GetWeapon()[1] then
+		self.changeToStopState = BattleFunnelUnit.stopState
 	else
-		arg_6_0.changeToStopState = var_0_4.nonWeaponStopState
+		self.changeToStopState = BattleFunnelUnit.nonWeaponStopState
 	end
 
-	if arg_6_0:GetIFF() == var_0_1.FRIENDLY_CODE then
-		arg_6_0._leftBound = arg_6_0._leftBound + arg_6_0._rearOffset
-		arg_6_0._rightBound = arg_6_0._rightBound + arg_6_0._frontOffset
+	-- 根据IFF调整活动区域的左右边界(front/rear偏移)
+	if self:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self._leftBound = self._leftBound + self._rearOffset
+		self._rightBound = self._rightBound + self._frontOffset
 	else
-		arg_6_0._leftBound = arg_6_0._leftBound - arg_6_0._frontOffset
-		arg_6_0._rightBound = arg_6_0._rightBound - arg_6_0._rearOffset
+		self._leftBound = self._leftBound - self._frontOffset
+		self._rightBound = self._rightBound - self._rearOffset
 	end
 end
 
-function var_0_4.changePartolState(arg_7_0, arg_7_1)
-	if arg_7_1 == var_0_4.MOVE_STATE then
-		arg_7_0:changeToMoveState()
-	elseif arg_7_1 == var_0_4.STOP_STATE then
-		arg_7_0:changeToStopState()
-	elseif arg_7_1 == var_0_4.CRASH_STATE then
-		arg_7_0:changeToCrashState()
+--- @class BattleFunnelUnit
+--- @param state string: 目标巡逻状态(MOVE_STATE/STOP_STATE/CRASH_STATE)
+--- @return nil
+--- 切换巡逻状态
+function BattleFunnelUnit.changePartolState(self, state)
+	if state == BattleFunnelUnit.MOVE_STATE then
+		self:changeToMoveState()
+	elseif state == BattleFunnelUnit.STOP_STATE then
+		self:changeToStopState()
+	elseif state == BattleFunnelUnit.CRASH_STATE then
+		self:changeToCrashState()
 	end
 
-	arg_7_0._portalState = arg_7_1
+	self._portalState = state
 end
 
-function var_0_4.AddCreateTimer(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_0._currentState = arg_8_0.STATE_CREATE
-	arg_8_0._speedDir = arg_8_1
-	arg_8_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(20)
-	arg_8_2 = arg_8_2 or 1.5
+--- @class BattleFunnelUnit
+--- @param direction Vector3: 创建时的飞行方向
+--- @param delay number: 创建后延迟进入巡逻的时间(默认1.5)
+--- @return nil
+--- 添加创建计时器：初始以20速度飞出，delay秒后进入MOVE巡逻状态
+function BattleFunnelUnit.AddCreateTimer(self, direction, delay)
+	self._currentState = self.STATE_CREATE
+	self._speedDir = direction
+	self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(20)
+	delay = delay or 1.5
 
-	local function var_8_0()
-		arg_8_0._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_8_0._velocity = var_0_0.Battle.BattleFormulas.ConvertAircraftSpeed(arg_8_0._tmpData.speed)
+	local function onTimerEnds()
+		self._existStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._velocity = ys.Battle.BattleFormulas.ConvertAircraftSpeed(self._tmpData.speed)
 
-		arg_8_0:changePartolState(var_0_4.MOVE_STATE)
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_8_0._createTimer)
+		self:changePartolState(BattleFunnelUnit.MOVE_STATE)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._createTimer)
 
-		arg_8_0._createTimer = nil
+		self._createTimer = nil
 	end
 
-	arg_8_0.updatePatrol = arg_8_0._updateCreate
-	arg_8_0._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, arg_8_2, var_8_0)
+	self.updatePatrol = self._updateCreate
+	self._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, delay, onTimerEnds)
 end
 
-function var_0_4.updatePosition(arg_10_0)
-	arg_10_0._pos = arg_10_0._pos + arg_10_0._speed
+--- @class BattleFunnelUnit
+--- @return nil
+--- 位置更新：当前位置 += 当前速度
+function BattleFunnelUnit.updatePosition(self)
+	self._pos = self._pos + self._speed
 end
 
-function var_0_4._updateCreate(arg_11_0)
-	arg_11_0:UpdateSpeed()
-	arg_11_0:updatePosition()
+--- @class BattleFunnelUnit
+--- @return nil
+--- 创建阶段的更新：更新速度和位置
+function BattleFunnelUnit._updateCreate(self)
+	self:UpdateSpeed()
+	self:updatePosition()
 end
 
-function var_0_4.nonWeaponStopState(arg_12_0)
-	arg_12_0._stopStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_12_0.updatePatrol = arg_12_0._updateStop
+--- @class BattleFunnelUnit
+--- @return nil
+--- 无武器时的停止状态：记录停止开始时间，切换到停止更新
+function BattleFunnelUnit.nonWeaponStopState(self)
+	self._stopStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self.updatePatrol = self._updateStop
 end
 
-function var_0_4.stopState(arg_13_0)
-	arg_13_0._stopStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+--- @class BattleFunnelUnit
+--- @return nil
+--- 有武器时的停止状态：寻找最近敌对目标，若目标在射程外则切换为移动状态
+function BattleFunnelUnit.stopState(self)
+	self._stopStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	local var_13_0 = var_0_2.TargetHarmNearest(arg_13_0)[1]
-	local var_13_1 = arg_13_0:GetWeapon()[1]
+	local target = BattleTargetChoise.TargetHarmNearest(self)[1]
+	local weapon = self:GetWeapon()[1]
 
-	var_13_1:updateMovementInfo()
+	weapon:updateMovementInfo()
 
-	if var_13_0 == nil then
-		arg_13_0:changePartolState(var_0_4.CRASH_STATE)
-	elseif var_13_1:IsOutOfFireArea(var_13_0) then
-		arg_13_0:changePartolState(var_0_4.MOVE_STATE)
+	if target == nil then
+		self:changePartolState(BattleFunnelUnit.CRASH_STATE)
+	elseif weapon:IsOutOfFireArea(target) then
+		self:changePartolState(BattleFunnelUnit.MOVE_STATE)
 	else
-		arg_13_0.updatePatrol = arg_13_0._updateStop
+		self.updatePatrol = self._updateStop
 	end
 end
 
-function var_0_4._updateStop(arg_14_0, arg_14_1)
-	if arg_14_0:getStopDuration() < pg.TimeMgr.GetInstance():GetCombatTime() then
-		arg_14_0:changePartolState(var_0_4.MOVE_STATE)
+--- @class BattleFunnelUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 停止状态的每帧更新：若停止时间已到则切换为移动状态，否则更新武器
+function BattleFunnelUnit._updateStop(self, timeStamp)
+	if self:getStopDuration() < pg.TimeMgr.GetInstance():GetCombatTime() then
+		self:changePartolState(BattleFunnelUnit.MOVE_STATE)
 	else
-		arg_14_0:UpdateWeapon()
+		self:UpdateWeapon()
 	end
 end
 
-function var_0_4.getStopDuration(arg_15_0)
-	return arg_15_0._stopStartTime + arg_15_0._stayDuration
+--- @class BattleFunnelUnit
+--- @return number: 停止状态的结束时间戳
+--- 获取停止状态的结束时间点
+function BattleFunnelUnit.getStopDuration(self)
+	return self._stopStartTime + self._stayDuration
 end
 
-function var_0_4.changeToMoveState(arg_16_0)
-	arg_16_0:generateMoveTargetPoint()
+--- @class BattleFunnelUnit
+--- @return nil
+--- 切换到移动状态：生成随机移动目标点
+function BattleFunnelUnit.changeToMoveState(self)
+	self:generateMoveTargetPoint()
 
-	arg_16_0.updatePatrol = arg_16_0._updateMove
+	self.updatePatrol = self._updateMove
 end
 
-function var_0_4._updateMove(arg_17_0, arg_17_1)
-	arg_17_0._speed = arg_17_0._direction * arg_17_0:GetSpeedRatio()
+--- @class BattleFunnelUnit
+--- @param timeStamp number: 当前时间戳
+--- @return nil
+--- 移动状态的每帧更新：按方向乘以速度比移动，到达目标点(距离<1)则切换为停止状态
+function BattleFunnelUnit._updateMove(self, timeStamp)
+	self._speed = self._direction * self:GetSpeedRatio()
 
-	arg_17_0:updatePosition()
+	self:updatePosition()
 
-	if Vector3.Distance(arg_17_0:GetPosition(), arg_17_0._moveTargetPosition) < 1 then
-		arg_17_0:changePartolState(var_0_4.STOP_STATE)
+	if Vector3.Distance(self:GetPosition(), self._moveTargetPosition) < 1 then
+		self:changePartolState(BattleFunnelUnit.STOP_STATE)
 	end
 end
 
-function var_0_4.generateMoveTargetPoint(arg_18_0)
-	local var_18_0 = math.random(arg_18_0._leftBound, arg_18_0._rightBound)
-	local var_18_1 = math.random(arg_18_0._upperBound, arg_18_0._lowerBound)
+--- @class BattleFunnelUnit
+--- @return nil
+--- 生成随机移动目标点：在活动范围内随机选择X和Z坐标
+function BattleFunnelUnit.generateMoveTargetPoint(self)
+	local targetX = math.random(self._leftBound, self._rightBound)
+	local targetZ = math.random(self._upperBound, self._lowerBound)
 
-	arg_18_0._moveTargetPosition = Vector3(var_18_0, arg_18_0:GetPosition().y, var_18_1)
+	self._moveTargetPosition = Vector3(targetX, self:GetPosition().y, targetZ)
 
-	local var_18_2 = (arg_18_0._moveTargetPosition - arg_18_0._pos).normalized
+	-- 计算目标方向的单位向量并乘以速度得到方向速度
+	local direction = (self._moveTargetPosition - self._pos).normalized
 
-	var_18_2.y = 0
+	direction.y = 0
 
-	var_18_2:Mul(arg_18_0._velocity)
+	direction:Mul(self._velocity)
 
-	arg_18_0._direction = var_18_2
+	self._direction = direction
 end
 
-function var_0_4.changeToCrashState(arg_19_0)
-	arg_19_0._existStartTime = nil
+--- @class BattleFunnelUnit
+--- @return nil
+--- 切换到坠毁状态：清除存在起始时间，根据IFF设定飞出方向(左/右)
+function BattleFunnelUnit.changeToCrashState(self)
+	self._existStartTime = nil
 
-	if arg_19_0:GetIFF() == var_0_1.FOE_CODE then
-		arg_19_0._speedDir = Vector3.left
-	elseif arg_19_0:GetIFF() == var_0_1.FRIENDLY_CODE then
-		arg_19_0._speedDir = Vector3.right
+	if self:GetIFF() == BattleConfig.FOE_CODE then
+		self._speedDir = Vector3.left
+	elseif self:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self._speedDir = Vector3.right
 	end
 
-	arg_19_0.updatePatrol = arg_19_0._updateCrash
+	self.updatePatrol = self._updateCrash
 end
 
-function var_0_4._updateCrash(arg_20_0)
-	arg_20_0:UpdateSpeed()
-	arg_20_0:updatePosition()
+--- @class BattleFunnelUnit
+--- @return nil
+--- 坠毁状态的每帧更新：更新速度和位置(飞出屏幕)
+function BattleFunnelUnit._updateCrash(self)
+	self:UpdateSpeed()
+	self:updatePosition()
 end

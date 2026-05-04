@@ -1,44 +1,61 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = var_0_0.Battle.BattleFormulas
-local var_0_4 = var_0_0.Battle.BattleAttr
-local var_0_5 = var_0_0.Battle.BattleConfig
-local var_0_6 = var_0_0.Battle.BattleUnitEvent
-local var_0_7 = class("BattleBossUnit", var_0_0.Battle.BattleEnemyUnit)
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleAttr = ys.Battle.BattleAttr
+local BattleConfig = ys.Battle.BattleConfig
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleBossUnit = class("BattleBossUnit", ys.Battle.BattleEnemyUnit)
 
-var_0_0.Battle.BattleBossUnit = var_0_7
-var_0_7.__name = "BattleBossUnit"
+ys.Battle.BattleBossUnit = BattleBossUnit
+BattleBossUnit.__name = "BattleBossUnit"
 
-function var_0_7.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_7.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleBossUnit
+--- @param uid number: 单位唯一ID
+--- @param iff number: 阵营(FRIENDLY_CODE/FOE_CODE)
+--- @return nil
+--- 构造函数：设置_isBoss标记为true
+function BattleBossUnit.Ctor(self, uid, iff)
+	BattleBossUnit.super.Ctor(self, uid, iff)
 
-	arg_1_0._isBoss = true
+	self._isBoss = true
 end
 
-function var_0_7.IsBoss(arg_2_0)
+--- @class BattleBossUnit
+--- @return boolean: 始终返回true
+--- Boss单位始终是Boss
+function BattleBossUnit.IsBoss(self)
 	return true
 end
 
-function var_0_7.BarrierStateChange(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = {
-		barrierDurability = arg_3_1,
-		barrierDuration = arg_3_2
+--- @class BattleBossUnit
+--- @param barrierDurability number: 护盾耐久
+--- @param barrierDuration number: 护盾持续时间
+--- @return nil
+--- 发送护盾状态变化事件
+function BattleBossUnit.BarrierStateChange(self, barrierDurability, barrierDuration)
+	local args = {
+		barrierDurability = barrierDurability,
+		barrierDuration = barrierDuration
 	}
 
-	arg_3_0:DispatchEvent(var_0_0.Event.New(var_0_6.BARRIER_STATE_CHANGE, var_3_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.BARRIER_STATE_CHANGE, args))
 end
 
-function var_0_7.UpdateHP(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4)
-	local var_4_0 = var_0_7.super.UpdateHP(arg_4_0, arg_4_1, arg_4_2, arg_4_3, arg_4_4) or 0
+--- @class BattleBossUnit
+--- @param dHP number: 血量变化值
+--- @return number: 实际生效的血量变化值
+--- Boss单位的血量更新：在父类逻辑基础上，受伤时通知所有自动武器更新装甲
+function BattleBossUnit.UpdateHP(self, dHP, arg_4_2, arg_4_3, arg_4_4)
+	local dHPResult = BattleBossUnit.super.UpdateHP(self, dHP, arg_4_2, arg_4_3, arg_4_4) or 0
 
-	if var_4_0 < 0 then
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0._autoWeaponList) do
-			iter_4_1:UpdatePrecastArmor(var_4_0)
+	if dHPResult < 0 then
+		for _, weapon in ipairs(self._autoWeaponList) do
+			weapon:UpdatePrecastArmor(dHPResult)
 		end
 	end
 
-	return var_4_0
+	return dHPResult
 end

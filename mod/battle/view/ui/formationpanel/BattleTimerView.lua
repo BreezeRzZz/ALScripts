@@ -1,43 +1,51 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleTimerView = class("BattleTimerView")
-var_0_0.Battle.BattleTimerView.__name = "BattleTimerView"
+ys.Battle.BattleTimerView = class("BattleTimerView")
+ys.Battle.BattleTimerView.__name = "BattleTimerView"
 
-function var_0_0.Battle.BattleTimerView.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._timer = arg_1_0._go.transform:Find("Text")
-	arg_1_0._blinker = arg_1_0._timer:GetComponent(typeof(Animator))
-	arg_1_0._isBlink = false
-	arg_1_0._text = arg_1_0._timer:GetComponent(typeof(Text))
-	arg_1_0.timeStr = ""
+--- 战斗计时器视图
+--- 显示战斗剩余时间，剩余30秒时开始闪烁
+
+function ys.Battle.BattleTimerView.Ctor(self, go)
+	self._go = go
+	self._timer = self._go.transform:Find("Text")
+	self._blinker = self._timer:GetComponent(typeof(Animator))
+	self._isBlink = false
+	self._text = self._timer:GetComponent(typeof(Text))
+	self.timeStr = ""
 end
 
-function var_0_0.Battle.BattleTimerView.SetActive(arg_2_0, arg_2_1)
-	setActive(arg_2_0._go, arg_2_1)
+function ys.Battle.BattleTimerView.SetActive(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_0.Battle.BattleTimerView.SetCountDownText(arg_3_0, arg_3_1)
-	if arg_3_1 <= 30 and not arg_3_0._isBlink then
-		arg_3_0._blinker.enabled = true
-		arg_3_0._isBlink = true
+--- 设置倒计时文本（MM:SS格式）
+--- @param timeLeft number 剩余秒数
+function ys.Battle.BattleTimerView.SetCountDownText(self, timeLeft)
+	-- 剩余30秒时开始闪烁
+	if timeLeft <= 30 and not self._isBlink then
+		self._blinker.enabled = true
+		self._isBlink = true
 	end
 
-	local var_3_0 = arg_3_0.formatTime(math.floor(arg_3_1))
+	local timeStr = self.formatTime(math.floor(timeLeft))
 
-	if var_3_0 == arg_3_0.timeStr then
+	-- 相同文本不重复设置（避免闪烁动画重置）
+	if timeStr == self.timeStr then
 		return
 	end
 
-	arg_3_0.timeStr = var_3_0
-	arg_3_0._text.text = var_3_0
+	self.timeStr = timeStr
+	self._text.text = timeStr
 end
 
-function var_0_0.Battle.BattleTimerView.formatTime(arg_4_0)
-	return string.format("%02u:%02u", math.floor(arg_4_0 / 60), arg_4_0 % 60)
+--- 格式化时间为 MM:SS
+function ys.Battle.BattleTimerView.formatTime(self)
+	return string.format("%02u:%02u", math.floor(self / 60), self % 60)
 end
 
-function var_0_0.Battle.BattleTimerView.Dispose(arg_5_0)
+function ys.Battle.BattleTimerView.Dispose(self)
 	return
 end

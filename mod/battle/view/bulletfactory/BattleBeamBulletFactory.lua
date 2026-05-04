@@ -1,37 +1,47 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.AircraftUnitType
-local var_0_2 = var_0_0.Battle.BattleConst.CharacterUnitType
+local ys = ys
+local AircraftUnitType = ys.Battle.BattleConst.AircraftUnitType
+local CharacterUnitType = ys.Battle.BattleConst.CharacterUnitType
 
-var_0_0.Battle.BattleBeamBulletFactory = singletonClass("BattleBeamBulletFactory", var_0_0.Battle.BattleBulletFactory)
-var_0_0.Battle.BattleBeamBulletFactory.__name = "BattleBeamBulletFactory"
+ys.Battle.BattleBeamBulletFactory = singletonClass("BattleBeamBulletFactory", ys.Battle.BattleBulletFactory)
+ys.Battle.BattleBeamBulletFactory.__name = "BattleBeamBulletFactory"
 
-local var_0_3 = var_0_0.Battle.BattleBeamBulletFactory
+local BattleBeamBulletFactory = ys.Battle.BattleBeamBulletFactory
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleBeamBulletFactory.Ctor(self)
+	BattleBeamBulletFactory.super.Ctor(self)
 end
 
-function var_0_3.CreateBullet(arg_2_0, arg_2_1, arg_2_2, arg_2_3, arg_2_4, arg_2_5)
-	local var_2_0 = arg_2_2:GetDirectHitUnit()
+--- 创建光束子弹（类似直击子弹，无飞行过程）
+--- 光束子弹直接命中目标，在目标身上显示命中特效并结算伤害
+--- 与DirectBullet类似，不创建飞行模型，仅在目标上播放hit_fx
+---
+--- 视觉表现：无弹道，目标身上闪现命中特效
+--- @param tf Transform
+--- @param bullet BattleBulletUnit
+--- @param spawnPos Vector3
+--- @param fireFXID string
+--- @param dir BattleConst.UnitDir
+function BattleBeamBulletFactory.CreateBullet(self, tf, bullet, spawnPos, fireFXID, dir)
+	local directHitUnit = bullet:GetDirectHitUnit()
 
-	if var_2_0 == nil then
+	if directHitUnit == nil then
 		return
 	end
 
-	local var_2_1 = var_2_0:GetUniqueID()
-	local var_2_2 = var_2_0:GetUnitType()
-	local var_2_3
+	local targetUID = directHitUnit:GetUniqueID()
+	local unitType = directHitUnit:GetUnitType()
+	local targetUnit
 
-	if table.contains(var_0_1, var_2_2) then
-		var_2_3 = var_0_3.GetSceneMediator():GetAircraft(var_2_1)
-	elseif table.contains(var_0_2, var_2_2) then
-		var_2_3 = var_0_3.GetSceneMediator():GetCharacter(var_2_1)
+	if table.contains(AircraftUnitType, unitType) then
+		targetUnit = BattleBeamBulletFactory.GetSceneMediator():GetAircraft(targetUID)
+	elseif table.contains(CharacterUnitType, unitType) then
+		targetUnit = BattleBeamBulletFactory.GetSceneMediator():GetCharacter(targetUID)
 	end
 
-	if var_2_3 then
-		var_2_3:AddFX(arg_2_2:GetTemplate().hit_fx)
-		arg_2_0:GetDataProxy():HandleDamage(arg_2_2, var_2_0)
+	if targetUnit then
+		targetUnit:AddFX(bullet:GetTemplate().hit_fx)
+		self:GetDataProxy():HandleDamage(bullet, directHitUnit)
 	end
 end

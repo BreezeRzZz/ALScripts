@@ -1,89 +1,109 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = class("BattleKizunaJammingView")
+local ys = ys
+-- 未在文件中直接使用的引用，可能为下游预留
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleKizunaJammingView = class("BattleKizunaJammingView")
 
-var_0_0.Battle.BattleKizunaJammingView = var_0_2
-var_0_2.__name = "BattleKizunaJammingView"
-var_0_2.COUNT = 3
-var_0_2.EXPAND_DURATION = 5
+ys.Battle.BattleKizunaJammingView = BattleKizunaJammingView
+BattleKizunaJammingView.__name = "BattleKizunaJammingView"
+-- 需要点击的次数才能消除
+BattleKizunaJammingView.COUNT = 3
+-- 扩展动画持续时间基准（秒）
+BattleKizunaJammingView.EXPAND_DURATION = 5
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._hitCount = 0
+--- 绊爱联动活动中的屏幕干扰消除视图
+--- 需要快速点击屏幕指定次数（COUNT）来消除干扰
+--- @param go GameObject 干扰UI的GameObject
+function BattleKizunaJammingView.Ctor(self, go)
+	self._go = go
+	self._tf = go.transform
+	self._hitCount = 0
 end
 
-function var_0_2.ConfigCallback(arg_2_0, arg_2_1)
-	arg_2_0._callback = arg_2_1
+--- 配置消除完成后的回调函数，并初始化事件监听
+--- @param callback function 消除完成后的回调
+function BattleKizunaJammingView.ConfigCallback(self, callback)
+	self._callback = callback
 
-	arg_2_0:init()
+	self:init()
 end
 
-function var_0_2.init(arg_3_0)
-	arg_3_0.eventTriggers = {}
-	arg_3_0._blocker = arg_3_0._tf:Find("KizunaAiBlocker")
+--- 初始化点击事件监听
+function BattleKizunaJammingView.init(self)
+	self.eventTriggers = {}
+	self._blocker = self._tf:Find("KizunaAiBlocker")
 
-	local var_3_0 = GetOrAddComponent(arg_3_0._blocker, "EventTriggerListener")
+	local eventTrigger = GetOrAddComponent(self._blocker, "EventTriggerListener")
 
-	arg_3_0.eventTriggers[var_3_0] = true
+	self.eventTriggers[eventTrigger] = true
 
-	var_3_0:AddPointDownFunc(function()
-		arg_3_0._hitCount = arg_3_0._hitCount + 1
+	-- 按下：记录点击次数，达到COUNT时消除
+	eventTrigger:AddPointDownFunc(function()
+		self._hitCount = self._hitCount + 1
 
-		if arg_3_0._hitCount >= var_0_2.COUNT then
-			arg_3_0:Eliminate(true)
+		if self._hitCount >= BattleKizunaJammingView.COUNT then
+			self:Eliminate(true)
 		else
-			setActive(arg_3_0._blocker:Find("normal"), false)
-			setActive(arg_3_0._blocker:Find("hitted"), true)
-			LeanTween.cancel(go(arg_3_0._blocker))
-			arg_3_0:ClickEase()
+			-- 显示被点击状态
+			setActive(self._blocker:Find("normal"), false)
+			setActive(self._blocker:Find("hitted"), true)
+			LeanTween.cancel(go(self._blocker))
+			self:ClickEase()
 		end
 	end)
-	var_3_0:AddPointUpFunc(function()
-		if arg_3_0._hitCount < var_0_2.COUNT then
-			setActive(arg_3_0._blocker:Find("normal"), true)
-			setActive(arg_3_0._blocker:Find("hitted"), false)
+	-- 抬起：如果未消除，恢复正常状态
+	eventTrigger:AddPointUpFunc(function()
+		if self._hitCount < BattleKizunaJammingView.COUNT then
+			setActive(self._blocker:Find("normal"), true)
+			setActive(self._blocker:Find("hitted"), false)
 		end
 	end)
 end
 
-function var_0_2.Active(arg_6_0)
-	local var_6_0 = (1 - arg_6_0._blocker.localScale.x) * var_0_2.EXPAND_DURATION
+--- 激活扩展动画（逐渐放大直至覆盖屏幕）
+function BattleKizunaJammingView.Active(self)
+	-- 根据当前缩放计算剩余动画时间
+	local remainingDuration = (1 - self._blocker.localScale.x) * BattleKizunaJammingView.EXPAND_DURATION
 
-	LeanTween.scale(arg_6_0._blocker, Vector3(1, 1, 0), var_6_0)
+	LeanTween.scale(self._blocker, Vector3(1, 1, 0), remainingDuration)
 end
 
-function var_0_2.Pause(arg_7_0)
-	LeanTween.cancel(go(arg_7_0._blocker))
+--- 暂停扩展动画
+function BattleKizunaJammingView.Pause(self)
+	LeanTween.cancel(go(self._blocker))
 end
 
-function var_0_2.ClickEase(arg_8_0)
-	local var_8_0 = arg_8_0._blocker.localScale.x - 0.05
+--- 每次点击后的缩小缓动效果
+--- 将缩放减少0.05，然后重新激活扩展动画
+function BattleKizunaJammingView.ClickEase(self)
+	local newScale = self._blocker.localScale.x - 0.05
 
-	LeanTween.scale(arg_8_0._blocker, Vector3(var_8_0, var_8_0, 0), 0.03):setOnComplete(System.Action(function()
-		arg_8_0:Active()
+	LeanTween.scale(self._blocker, Vector3(newScale, newScale, 0), 0.03):setOnComplete(System.Action(function()
+		self:Active()
 	end))
 end
 
-function var_0_2.Eliminate(arg_10_0, arg_10_1)
-	LeanTween.cancel(go(arg_10_0._blocker))
-	setActive(arg_10_0._blocker:Find("normal"), not arg_10_1)
-	setActive(arg_10_0._blocker:Find("hitted"), arg_10_1)
-	LeanTween.scale(arg_10_0._blocker, Vector3(0, 0, 0), 0.1):setOnComplete(System.Action(function()
-		arg_10_0._callback()
+--- 消除干扰（缩到0并触发回调）
+--- @param isHit boolean 是否显示被点击状态
+function BattleKizunaJammingView.Eliminate(self, isHit)
+	LeanTween.cancel(go(self._blocker))
+	setActive(self._blocker:Find("normal"), not isHit)
+	setActive(self._blocker:Find("hitted"), isHit)
+	LeanTween.scale(self._blocker, Vector3(0, 0, 0), 0.1):setOnComplete(System.Action(function()
+		self._callback()
 	end))
 end
 
-function var_0_2.Dispose(arg_12_0)
-	if arg_12_0.eventTriggers then
-		for iter_12_0, iter_12_1 in pairs(arg_12_0.eventTriggers) do
-			ClearEventTrigger(iter_12_0)
+--- 清理事件触发器和缓动动画
+function BattleKizunaJammingView.Dispose(self)
+	if self.eventTriggers then
+		for trigger, _ in pairs(self.eventTriggers) do
+			ClearEventTrigger(trigger)
 		end
 
-		arg_12_0.eventTriggers = nil
+		self.eventTriggers = nil
 	end
 
-	LeanTween.cancel(go(arg_12_0._blocker))
+	LeanTween.cancel(go(self._blocker))
 end

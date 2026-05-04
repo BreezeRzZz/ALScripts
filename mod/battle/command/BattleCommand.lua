@@ -1,31 +1,43 @@
 ys = ys or {}
 
-local var_0_0 = ys
+-- 战斗Command基类，所有具体战斗模式的Command都继承自此类
+-- 负责绑定DataProxy、InitProtocol和InitBattleEvent
+local ys = ys
 
-var_0_0.Battle.BattleCommand = class("BattleCommand", var_0_0.MVC.Command)
-var_0_0.Battle.BattleCommand.__name = "BattleCommand"
+ys.Battle.BattleCommand = class("BattleCommand", ys.MVC.Command)
+ys.Battle.BattleCommand.__name = "BattleCommand"
 
-function var_0_0.Battle.BattleCommand.Ctor(arg_1_0)
-	var_0_0.Battle.BattleCommand.super.Ctor(arg_1_0)
+--- 构造函数
+--- @param self BattleCommand
+function ys.Battle.BattleCommand.Ctor(self)
+	ys.Battle.BattleCommand.super.Ctor(self)
 end
 
-function var_0_0.Battle.BattleCommand.Initialize(arg_2_0)
-	var_0_0.Battle.BattleCommand.super.Initialize(arg_2_0)
+--- 初始化：绑定DataProxy并调用子类的InitProtocol和InitBattleEvent
+--- @param self BattleCommand
+function ys.Battle.BattleCommand.Initialize(self)
+	ys.Battle.BattleCommand.super.Initialize(self)
 
-	arg_2_0._dataProxy = arg_2_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
 
-	arg_2_0:InitProtocol()
-	arg_2_0:InitBattleEvent()
+	self:InitProtocol()
+	self:InitBattleEvent()
 end
 
-function var_0_0.Battle.BattleCommand.StartBattle(arg_3_0)
-	arg_3_0._state:Active()
+--- 激活战斗状态机，正式开始战斗
+--- @param self BattleCommand
+function ys.Battle.BattleCommand.StartBattle(self)
+	self._state:Active()
 end
 
-function var_0_0.Battle.BattleCommand.InitProtocol(arg_4_0)
+--- 初始化通信协议（子类覆盖）
+--- @param self BattleCommand
+function ys.Battle.BattleCommand.InitProtocol(self)
 	return
 end
 
-function var_0_0.Battle.BattleCommand.InitBattleEvent(arg_5_0)
+--- 初始化战斗事件监听（子类覆盖）
+--- @param self BattleCommand
+function ys.Battle.BattleCommand.InitBattleEvent(self)
 	return
 end

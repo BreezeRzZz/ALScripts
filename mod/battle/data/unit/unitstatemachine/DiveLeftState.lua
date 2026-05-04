@@ -1,101 +1,134 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.DiveLeftState = class("DiveLeftState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.DiveLeftState.__name = "DiveLeftState"
+ys.Battle.DiveLeftState = class("DiveLeftState", ys.Battle.IUnitState)
+ys.Battle.DiveLeftState.__name = "DiveLeftState"
 
-local var_0_2 = var_0_0.Battle.DiveLeftState
+local DiveLeftState = ys.Battle.DiveLeftState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class DiveLeftState : IUnitState
+--- 潜水状态（左向）：潜艇/潜水单位在水下向左巡航的状态
+--- 机制说明：
+--- - 与DiveState对称，但方向向左
+--- - 允许Idle、Move、MoveLeft（基本运动能力保留）
+--- - 关键机制：攻击(Attack)被重定向为RaidLeftState（左向水下袭击）
+---   - AddAttackState → OnRaidLeftState：水下向左开火使用RaidLeft动画
+---   - 这是DiveLeftState与DiveState的核心区别（Raid vs RaidLeft）
+--- - 潜水方向切换：Dive → OnDiveState（改回右向潜水）
+--- - 允许：法术(Spell)、胜利(Victory/VictorySwim)、中断(Interrupt)、SkillStart
+--- - 禁止：Skill(互斥)、Stand、DiveLeft(自身)、Diving(过渡动画)
+--- - 缓存武器(CacheWeapon=true)，潜水状态下子弹预生成
+--- - 对应动画名：DIVELEFT
+function DiveLeftState.Ctor(self)
+	DiveLeftState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_1:OnIdleState()
+--- 潜水左向状态下允许Idle
+function DiveLeftState.AddIdleState(self, unitState, inputInfo)
+	unitState:OnIdleState()
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:OnMoveState()
+--- 潜水左向状态下允许Move
+function DiveLeftState.AddMoveState(self, unitState, inputInfo)
+	unitState:OnMoveState()
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:OnMoveLeftState()
+--- 潜水左向状态下允许MoveLeft
+function DiveLeftState.AddMoveLeftState(self, unitState, inputInfo)
+	unitState:OnMoveLeftState()
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_1:OnRaidLeftState(arg_5_2)
+--- 潜水左向状态下的攻击被重定向为RaidLeftState（左向水下袭击）
+--- 与DiveState的关键区别：使用OnRaidLeftState而非OnRaidState
+function DiveLeftState.AddAttackState(self, unitState, inputInfo)
+	unitState:OnRaidLeftState(inputInfo)
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 潜水左向状态下允许死亡
+function DiveLeftState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- 潜水左向状态下禁止Skill
+function DiveLeftState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1:OnSpellState()
+--- 潜水左向状态下允许法术
+function DiveLeftState.AddSpellState(self, unitState, inputInfo)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 潜水左向状态下允许胜利
+function DiveLeftState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 潜水左向状态下允许胜利浮游
+function DiveLeftState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 潜水左向状态下禁止Stand
+function DiveLeftState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
-	arg_12_1:OnDiveState()
+--- 潜水方向切换：DiveLeft → Dive（左向潜水 → 右向潜水）
+function DiveLeftState.AddDiveState(self, unitState, inputInfo)
+	unitState:OnDiveState()
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 已经处于DiveLeft状态，不重复
+function DiveLeftState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- 潜水左向状态下允许中断
+function DiveLeftState.AddInterruptState(self, unitState, inputInfo)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 禁止在潜水状态下再进入Diving（过渡动画）
+function DiveLeftState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- 潜水左向状态下允许SkillStart
+function DiveLeftState.AddSkillStartState(self, unitState, inputInfo)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 潜水左向状态下禁止SkillEnd
+function DiveLeftState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+function DiveLeftState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function DiveLeftState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
+function DiveLeftState.OnEnd(self, unitState)
 	return
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 潜水左向状态需要缓存武器
+function DiveLeftState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 潜水左向状态不刷新ActionKeyOffset
+function DiveLeftState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.DIVELEFT
+--- 获取动画名称：返回DIVELEFT，播放左向潜水中动画
+function DiveLeftState.GetActionName(self, unit)
+	return ActionName.DIVELEFT
 end

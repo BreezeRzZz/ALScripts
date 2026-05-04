@@ -1,113 +1,217 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.DeadState = class("DeadState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.DeadState.__name = "DeadState"
+--- @class DeadState : IUnitState
+--- 死亡状态。单位已死亡，是状态机的终态之一。
+---
+--- 关键机制：
+--- 1. 所有 AddXxxState 均为 no-op（return） —— 死亡后不允许切换到任何其他状态。
+---    Dead 状态是"吸收态"：一旦进入，任何状态切换请求都被忽略。
+--- 2. OnEnd 调用 target:SendDeadEvent() —— 死亡动画播放完毕后，
+---    触发 DYING 事件（BattleUnitEvent.DYING），通知外部系统清理该单位。
+---    DeadAction() 会在此之前通过 DeacActionClear 设置 _aliveState=false。
+--- 3. GetActionName 根据单位当前是否在水下区分动画：
+---    - 水下（OXY_STATE.DIVE） → DEAD_SWIM（水下死亡动画）
+---    - 水面 → DEAD（水面死亡动画，带可选 keyOffset 后缀）
+--- 4. CacheWeapon = true —— 死亡时不需要缓存新子弹，
+---    但返回 true 意味着不会因为进入死亡状态而影响已有的缓存。
+ys.Battle.DeadState = class("DeadState", ys.Battle.IUnitState)
+ys.Battle.DeadState.__name = "DeadState"
 
-local var_0_2 = var_0_0.Battle.DeadState
+local DeadState = ys.Battle.DeadState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class DeadState
+--- @return nil
+--- 构造函数
+function DeadState.Ctor(self)
+	DeadState.super.Ctor()
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许切换 Idle
+function DeadState.AddIdleState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许移动
+function DeadState.AddMoveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许移动
+function DeadState.AddMoveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许攻击
+function DeadState.AddAttackState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 已死亡，不允许再次死亡
+function DeadState.AddDeadState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许使用技能
+function DeadState.AddSkillState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许施法
+function DeadState.AddSpellState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许切换到胜利
+function DeadState.AddVictoryState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许切换到胜利-潜水
+function DeadState.AddVictorySwimState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许站立
+function DeadState.AddStandState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许下潜
+function DeadState.AddDiveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许下潜
+function DeadState.AddDiveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许打断
+function DeadState.AddInterruptState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许下潜过渡
+function DeadState.AddDivingState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许技能开始
+function DeadState.AddSkillStartState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- @class DeadState
+--- @param unitState UnitState
+--- @param args table
+--- 死亡后不允许技能结束
+function DeadState.AddSkillEndState(self, unitState, args)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+--- @class DeadState
+--- @param unitState UnitState
+--- 动画触发点（空实现）
+function DeadState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- @class DeadState
+--- @param unitState UnitState
+--- 动画开始（空实现）
+function DeadState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:GetTarget():SendDeadEvent()
+--- @class DeadState
+--- @param unitState UnitState
+--- 死亡动画播放完毕：发送 DYING 事件，触发外部系统清理
+function DeadState.OnEnd(self, unitState)
+	unitState:GetTarget():SendDeadEvent()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- @class DeadState
+--- @return boolean: true
+--- 死亡状态允许缓存武器（实际上死亡后不会创建新子弹，但返回 true 避免影响现有缓存）
+function DeadState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- @class DeadState
+--- @return boolean: true
+function DeadState.FreshActionKeyOffset(self)
 	return true
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1, arg_23_2)
-	local var_23_0
-	local var_23_1 = arg_23_1:GetTarget():GetOxyState()
-	local var_23_2 = arg_23_1:ActionKeyOffset()
+--- @class DeadState
+--- @param unitState UnitState
+--- @return string: "dead" / "dead_swim"（+ 可选 keyOffset 后缀）
+--- 根据单位是否在水下选择死亡动画：
+--- - 水下状态 → DEAD_SWIM（水下溺亡动画）
+--- - 水面状态 → DEAD + 可选 keyOffset 后缀
+function DeadState.GetActionName(self, unitState, args)
+	local actionName
+	local oxyState = unitState:GetTarget():GetOxyState()
+	local keyOffset = unitState:ActionKeyOffset()
 
-	if var_23_1 and var_23_1:GetCurrentDiveState() == var_0_0.Battle.BattleConst.OXY_STATE.DIVE then
-		var_23_0 = var_0_1.DEAD_SWIM
-	elseif var_23_2 ~= nil then
-		var_23_0 = var_0_1.DEAD .. var_23_2
+	if oxyState and oxyState:GetCurrentDiveState() == ys.Battle.BattleConst.OXY_STATE.DIVE then
+		-- 水下死亡动画
+		actionName = ActionName.DEAD_SWIM
+	elseif keyOffset ~= nil then
+		-- 水面死亡动画 + keyOffset 后缀
+		actionName = ActionName.DEAD .. keyOffset
 	else
-		var_23_0 = var_0_1.DEAD
+		-- 水面死亡动画（无后缀）
+		actionName = ActionName.DEAD
 	end
 
-	return var_23_0
+	return actionName
 end

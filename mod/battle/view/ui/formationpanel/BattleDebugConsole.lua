@@ -1,379 +1,427 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleDebugConsole = class("BattleDebugConsole")
-var_0_0.Battle.BattleDebugConsole.__name = "BattleDebugConsole"
+ys.Battle.BattleDebugConsole = class("BattleDebugConsole")
+ys.Battle.BattleDebugConsole.__name = "BattleDebugConsole"
 
-local var_0_3 = var_0_0.Battle.BattleDebugConsole
+local BattleDebugConsole = ys.Battle.BattleDebugConsole
 
-var_0_3.ProxyUpdateNormal = var_0_0.Battle.BattleDataProxy.Update
-var_0_3.ProxyUpdateAutoComponentNormal = var_0_0.Battle.BattleDataProxy.UpdateAutoComponent
-var_0_3.UPDATE_PLAYER_WEAPON = "updatePlayerWeapon"
-var_0_3.UPDATE_MONSTER_WEAPON = "updateMonsterWeapon"
-var_0_3.UPDATE_MONSTER_AI = "updateMonsterAI"
+-- 保存原始的Proxy方法以便恢复
+BattleDebugConsole.ProxyUpdateNormal = ys.Battle.BattleDataProxy.Update
+BattleDebugConsole.ProxyUpdateAutoComponentNormal = ys.Battle.BattleDataProxy.UpdateAutoComponent
+-- 自动组件功能键名
+BattleDebugConsole.UPDATE_PLAYER_WEAPON = "updatePlayerWeapon"
+BattleDebugConsole.UPDATE_MONSTER_WEAPON = "updateMonsterWeapon"
+BattleDebugConsole.UPDATE_MONSTER_AI = "updateMonsterAI"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._go = arg_1_1
-	arg_1_0._state = arg_1_2
-	arg_1_0._dataProxy = arg_1_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
+--- 战斗调试控制台，仅在SYSTEM_DEBUG或SYSTEM_CARDPUZZLE模式下启用
+--- @param go GameObject 控制台的GameObject
+--- @param state table 战斗状态对象
+function BattleDebugConsole.Ctor(self, go, state)
+	self._go = go
+	self._state = state
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
 
-	arg_1_0:initComponent()
+	self:initComponent()
 
-	if arg_1_0._dataProxy:GetInitData().battleType == SYSTEM_DEBUG or arg_1_0._dataProxy:GetInitData().battleType == SYSTEM_CARDPUZZLE then
-		arg_1_0:initData()
-		arg_1_0:initDebug()
+	-- 只在调试或卡牌战斗模式下启用完整功能
+	if self._dataProxy:GetInitData().battleType == SYSTEM_DEBUG or self._dataProxy:GetInitData().battleType == SYSTEM_CARDPUZZLE then
+		self:initData()
+		self:initDebug()
 	else
-		SetActive(arg_1_0._debug, false)
+		SetActive(self._debug, false)
 	end
 end
 
-function var_0_3.initDebug(arg_2_0)
-	arg_2_0._randomEngage = arg_2_0._debug:Find("spawn_enemy")
+--- 初始化调试按钮面板
+function BattleDebugConsole.initDebug(self)
+	-- 随机生成敌人
+	self._randomEngage = self._debug:Find("spawn_enemy")
 
-	onButton(nil, arg_2_0._randomEngage, function()
-		local var_3_0 = math.random(#arg_2_0._monsterArray)
+	onButton(nil, self._randomEngage, function()
+		local randomIndex = math.random(#self._monsterArray)
 
-		arg_2_0:spawnEnemy(arg_2_0._monsterArray[var_3_0], 15, 25, 25, 65)
+		self:spawnEnemy(self._monsterArray[randomIndex], 15, 25, 25, 65)
 	end, SFX_PANEL)
 
-	arg_2_0._summon = arg_2_0._debug:Find("summon_enemy")
-	arg_2_0._summonID = arg_2_0._debug:Find("model_id"):GetComponent("InputField")
-	arg_2_0._minX = arg_2_0._debug:Find("x_min"):GetComponent("InputField")
-	arg_2_0._manX = arg_2_0._debug:Find("x_max"):GetComponent("InputField")
-	arg_2_0._minZ = arg_2_0._debug:Find("z_min"):GetComponent("InputField")
-	arg_2_0._manZ = arg_2_0._debug:Find("z_max"):GetComponent("InputField")
+	-- 指定ID生成敌人
+	self._summon = self._debug:Find("summon_enemy")
+	self._summonID = self._debug:Find("model_id"):GetComponent("InputField")
+	self._minX = self._debug:Find("x_min"):GetComponent("InputField")
+	self._manX = self._debug:Find("x_max"):GetComponent("InputField")
+	self._minZ = self._debug:Find("z_min"):GetComponent("InputField")
+	self._manZ = self._debug:Find("z_max"):GetComponent("InputField")
 
-	onButton(nil, arg_2_0._summon, function()
-		local var_4_0 = tonumber(arg_2_0._summonID.text)
-		local var_4_1 = tonumber(arg_2_0._minX.text)
-		local var_4_2 = tonumber(arg_2_0._manX.text)
-		local var_4_3 = tonumber(arg_2_0._minZ.text)
-		local var_4_4 = tonumber(arg_2_0._manZ.text)
+	onButton(nil, self._summon, function()
+		local modelID = tonumber(self._summonID.text)
+		local xMin = tonumber(self._minX.text)
+		local xMax = tonumber(self._manX.text)
+		local zMin = tonumber(self._minZ.text)
+		local zMax = tonumber(self._manZ.text)
 
-		arg_2_0:spawnEnemy(var_4_0, var_4_1, var_4_2, var_4_3, var_4_4)
+		self:spawnEnemy(modelID, xMin, xMax, zMin, zMax)
 	end, SFX_PANEL)
 
-	arg_2_0._killAllEnemy = arg_2_0._debug:Find("clear_enemy")
+	-- 清空所有敌人
+	self._killAllEnemy = self._debug:Find("clear_enemy")
 
-	onButton(nil, arg_2_0._killAllEnemy, function()
-		arg_2_0._dataProxy:KillAllEnemy()
+	onButton(nil, self._killAllEnemy, function()
+		self._dataProxy:KillAllEnemy()
 	end, SFX_PANEL)
 
-	arg_2_0._summonStrike = arg_2_0._debug:Find("spawn_strike")
-	arg_2_0._summonStrikeID = arg_2_0._debug:Find("air_model_id"):GetComponent("InputField")
-	arg_2_0._summonStrikeTotal = arg_2_0._debug:Find("total"):GetComponent("InputField")
-	arg_2_0._summonStrikeSingular = arg_2_0._debug:Find("once"):GetComponent("InputField")
-	arg_2_0._summonStrikeInterval = arg_2_0._debug:Find("interval"):GetComponent("InputField")
+	-- 生成空袭
+	self._summonStrike = self._debug:Find("spawn_strike")
+	self._summonStrikeID = self._debug:Find("air_model_id"):GetComponent("InputField")
+	self._summonStrikeTotal = self._debug:Find("total"):GetComponent("InputField")
+	self._summonStrikeSingular = self._debug:Find("once"):GetComponent("InputField")
+	self._summonStrikeInterval = self._debug:Find("interval"):GetComponent("InputField")
 
-	onButton(nil, arg_2_0._summonStrike, function()
-		local var_6_0 = tonumber(arg_2_0._summonStrikeID.text)
-		local var_6_1 = tonumber(arg_2_0._summonStrikeTotal.text)
-		local var_6_2 = tonumber(arg_2_0._summonStrikeSingular.text)
-		local var_6_3 = tonumber(arg_2_0._summonStrikeInterval.text)
+	onButton(nil, self._summonStrike, function()
+		local aircraftID = tonumber(self._summonStrikeID.text)
+		local totalNum = tonumber(self._summonStrikeTotal.text)
+		local onceNum = tonumber(self._summonStrikeSingular.text)
+		local interval = tonumber(self._summonStrikeInterval.text)
 
-		arg_2_0:spawnStrike(var_6_0, var_6_1, var_6_2, var_6_3)
+		self:spawnStrike(aircraftID, totalNum, onceNum, interval)
 	end, SFX_PANEL)
 
-	arg_2_0._killAllStrike = arg_2_0._debug:Find("clear_strike")
+	-- 清空所有空袭飞机
+	self._killAllStrike = self._debug:Find("clear_strike")
 
-	onButton(nil, arg_2_0._killAllStrike, function()
-		arg_2_0._dataProxy:KillAllAirStrike()
+	onButton(nil, self._killAllStrike, function()
+		self._dataProxy:KillAllAirStrike()
 	end, SFX_PANEL)
 
-	arg_2_0._blockCld = arg_2_0._debug:Find("all_cld")
-	arg_2_0._blockPlayerWeapon = arg_2_0._debug:Find("player_weapon")
-	arg_2_0._blockMonsterWeapon = arg_2_0._debug:Find("monster_weapon")
-	arg_2_0._blockMonsterAI = arg_2_0._debug:Find("monster_motion")
+	-- 阻塞/恢复各个更新模块的Toggle
+	self._blockCld = self._debug:Find("all_cld")
+	self._blockPlayerWeapon = self._debug:Find("player_weapon")
+	self._blockMonsterWeapon = self._debug:Find("monster_weapon")
+	self._blockMonsterAI = self._debug:Find("monster_motion")
 
-	onToggle(nil, arg_2_0._blockCld, function(arg_8_0)
-		if arg_8_0 then
-			arg_2_0._dataProxy.Update = var_0_3.ProxyUpdateNormal
+	onToggle(nil, self._blockCld, function(isOn)
+		if isOn then
+			self._dataProxy.Update = BattleDebugConsole.ProxyUpdateNormal
 		else
-			arg_2_0._dataProxy.Update = arg_2_0._dataProxy.__debug__BlockCldUpdate__
+			self._dataProxy.Update = self._dataProxy.__debug__BlockCldUpdate__
 		end
 	end, SFX_PANEL)
-	onToggle(nil, arg_2_0._blockPlayerWeapon, function(arg_9_0)
-		if arg_9_0 then
-			arg_2_0._autoComponentFuncList.updatePlayerWeapon = arg_2_0._updatePlayerWeapon
+	onToggle(nil, self._blockPlayerWeapon, function(isOn)
+		if isOn then
+			self._autoComponentFuncList.updatePlayerWeapon = self._updatePlayerWeapon
 		else
-			arg_2_0._autoComponentFuncList.updatePlayerWeapon = nil
+			self._autoComponentFuncList.updatePlayerWeapon = nil
 		end
 	end, SFX_PANEL)
-	onToggle(nil, arg_2_0._blockMonsterWeapon, function(arg_10_0)
-		if arg_10_0 then
-			arg_2_0._autoComponentFuncList.updateMonsterWeapon = arg_2_0._updateMonsterWeapon
+	onToggle(nil, self._blockMonsterWeapon, function(isOn)
+		if isOn then
+			self._autoComponentFuncList.updateMonsterWeapon = self._updateMonsterWeapon
 		else
-			arg_2_0._autoComponentFuncList.updateMonsterWeapon = nil
+			self._autoComponentFuncList.updateMonsterWeapon = nil
 		end
 	end, SFX_PANEL)
-	onToggle(nil, arg_2_0._blockMonsterAI, function(arg_11_0)
-		if arg_11_0 then
-			arg_2_0._autoComponentFuncList.updateMonsterAI = arg_2_0._updateMonsterAI
+	onToggle(nil, self._blockMonsterAI, function(isOn)
+		if isOn then
+			self._autoComponentFuncList.updateMonsterAI = self._updateMonsterAI
 		else
-			arg_2_0._autoComponentFuncList.updateMonsterAI = nil
+			self._autoComponentFuncList.updateMonsterAI = nil
 		end
 	end, SFX_PANEL)
 
-	arg_2_0._setDungeonLevel = arg_2_0._debug:Find("dungeon_level")
-	arg_2_0._dungeonLevel = arg_2_0._debug:Find("level_input"):GetComponent("InputField")
+	-- 设置关卡等级
+	self._setDungeonLevel = self._debug:Find("dungeon_level")
+	self._dungeonLevel = self._debug:Find("level_input"):GetComponent("InputField")
 
-	onButton(nil, arg_2_0._setDungeonLevel, function()
-		arg_2_0._dataProxy:SetDungeonLevel(tonumber(arg_2_0._dungeonLevel.text))
+	onButton(nil, self._setDungeonLevel, function()
+		self._dataProxy:SetDungeonLevel(tonumber(self._dungeonLevel.text))
 	end, SFX_PANEL)
 
-	arg_2_0._clsBullet = arg_2_0._debug:Find("cls_bullet")
+	-- 清除所有子弹
+	self._clsBullet = self._debug:Find("cls_bullet")
 
-	onButton(nil, arg_2_0._clsBullet, function()
-		arg_2_0._dataProxy:CLSBullet(var_0_2.FRIENDLY_CODE)
-		arg_2_0._dataProxy:CLSBullet(var_0_2.FOE_CODE)
+	onButton(nil, self._clsBullet, function()
+		self._dataProxy:CLSBullet(BattleConfig.FRIENDLY_CODE)
+		self._dataProxy:CLSBullet(BattleConfig.FOE_CODE)
 	end, SFX_PANEL)
 end
 
-function var_0_3.initData(arg_14_0)
-	arg_14_0._fleetList = arg_14_0._dataProxy:GetFleetList()
-	arg_14_0._freeShipList = arg_14_0._dataProxy:GetFreeShipList()
-	arg_14_0._monsterArray = {}
+--- 初始化调试数据（舰队列表、怪物列表、自动更新函数）
+function BattleDebugConsole.initData(self)
+	self._fleetList = self._dataProxy:GetFleetList()
+	self._freeShipList = self._dataProxy:GetFreeShipList()
+	self._monsterArray = {}
 
-	for iter_14_0, iter_14_1 in ipairs(pg.enemy_data_statistics.all) do
-		if type(iter_14_1) == "number" and iter_14_1 <= 10000000 then
-			table.insert(arg_14_0._monsterArray, iter_14_1)
+	-- 收集所有可用敌人模板ID
+	for _, enemyID in ipairs(pg.enemy_data_statistics.all) do
+		if type(enemyID) == "number" and enemyID <= 10000000 then
+			table.insert(self._monsterArray, enemyID)
 		end
 	end
 
-	function arg_14_0._updatePlayerWeapon(arg_15_0)
-		for iter_15_0, iter_15_1 in pairs(arg_14_0._fleetList) do
-			iter_15_1:UpdateAutoComponent(arg_15_0)
+	-- 更新玩家武器自动组件
+	function self._updatePlayerWeapon(timeStamp)
+		for _, fleet in pairs(self._fleetList) do
+			fleet:UpdateAutoComponent(timeStamp)
 		end
 	end
 
-	function arg_14_0._updateMonsterWeapon(arg_16_0)
-		for iter_16_0, iter_16_1 in pairs(arg_14_0._freeShipList) do
-			iter_16_1:UpdateWeapon(arg_16_0)
+	-- 更新怪物武器
+	function self._updateMonsterWeapon(timeStamp)
+		for _, ship in pairs(self._freeShipList) do
+			ship:UpdateWeapon(timeStamp)
 		end
 	end
 
-	function arg_14_0._updateMonsterAI(arg_17_0)
-		for iter_17_0, iter_17_1 in pairs(arg_14_0._dataProxy._teamList) do
-			if iter_17_1:IsFatalDamage() then
-				arg_14_0._dataProxy:KillNPCTeam(iter_17_0)
+	-- 更新怪物AI/运动
+	function self._updateMonsterAI(timeStamp)
+		for teamKey, team in pairs(self._dataProxy._teamList) do
+			if team:IsFatalDamage() then
+				self._dataProxy:KillNPCTeam(teamKey)
 			else
-				iter_17_1:UpdateMotion()
+				team:UpdateMotion()
 			end
 		end
 	end
 
-	arg_14_0._autoComponentFuncList = {}
-	arg_14_0._autoComponentFuncList.updatePlayerWeapon = arg_14_0._updatePlayerWeapon
-	arg_14_0._autoComponentFuncList.updateMonsterWeapon = arg_14_0._updateMonsterWeapon
-	arg_14_0._autoComponentFuncList.updateMonsterAI = arg_14_0._updateMonsterAI
+	-- 将各更新函数注册到自动组件功能表中
+	self._autoComponentFuncList = {}
+	self._autoComponentFuncList.updatePlayerWeapon = self._updatePlayerWeapon
+	self._autoComponentFuncList.updateMonsterWeapon = self._updateMonsterWeapon
+	self._autoComponentFuncList.updateMonsterAI = self._updateMonsterAI
 
-	local function var_14_0(arg_18_0, arg_18_1)
-		for iter_18_0, iter_18_1 in pairs(arg_14_0._autoComponentFuncList) do
-			iter_18_1(arg_18_1)
+	-- 替换DataProxy的UpdateAutoComponent为调试版本（包含所有注册的功能）
+	local function debugUpdateAutoComponent(proxy, timeStamp)
+		for _, func in pairs(self._autoComponentFuncList) do
+			func(timeStamp)
 		end
 	end
 
-	arg_14_0._dataProxy.UpdateAutoComponent = var_14_0
+	self._dataProxy.UpdateAutoComponent = debugUpdateAutoComponent
 end
 
-function var_0_3.initComponent(arg_19_0)
-	arg_19_0._base = arg_19_0._go:Find("bg")
-	arg_19_0._common = arg_19_0._base:Find("common")
-	arg_19_0._debug = arg_19_0._base:Find("debug")
-	arg_19_0._exitBtn = arg_19_0._common:Find("close")
+--- 初始化公共组件面板（伤害锁定、波次触发等）
+function BattleDebugConsole.initComponent(self)
+	self._base = self._go:Find("bg")
+	self._common = self._base:Find("common")
+	self._debug = self._base:Find("debug")
+	self._exitBtn = self._common:Find("close")
 
-	onButton(nil, arg_19_0._exitBtn, function()
-		arg_19_0:SetActive(false)
+	onButton(nil, self._exitBtn, function()
+		self:SetActive(false)
 	end, SFX_PANEL)
 
-	arg_19_0._activeReference = arg_19_0._common:Find("reference_switch")
+	self._activeReference = self._common:Find("reference_switch")
 
-	onButton(nil, arg_19_0._activeReference, function()
-		arg_19_0:activeReference()
+	onButton(nil, self._activeReference, function()
+		self:activeReference()
 	end, SFX_PANEL)
 
-	arg_19_0._lockCommonDMG = arg_19_0._common:Find("common_damage")
-	arg_19_0._lockS2MDMG = arg_19_0._common:Find("ship2main_damage")
-	arg_19_0._lockA2MDMG = arg_19_0._common:Find("aircraft2main_damage")
-	arg_19_0._lockCrushDMG = arg_19_0._common:Find("crush_damage")
+	-- 伤害锁定开关
+	self._lockCommonDMG = self._common:Find("common_damage")
+	self._lockS2MDMG = self._common:Find("ship2main_damage")
+	self._lockA2MDMG = self._common:Find("aircraft2main_damage")
+	self._lockCrushDMG = self._common:Find("crush_damage")
 
-	onToggle(nil, arg_19_0._lockCommonDMG, function(arg_22_0)
-		arg_19_0._dataProxy:SetupCalculateDamage(arg_22_0 and var_0_0.Battle.BattleFormulas.CalcDamageLock or nil)
+	onToggle(nil, self._lockCommonDMG, function(isOn)
+		self._dataProxy:SetupCalculateDamage(isOn and ys.Battle.BattleFormulas.CalcDamageLock or nil)
 	end, SFX_PANEL)
-	onToggle(nil, arg_19_0._lockS2MDMG, function(arg_23_0)
-		arg_19_0._dataProxy:SetupDamageKamikazeAir(arg_23_0 and var_0_0.Battle.BattleFormulas.CalcDamageLockA2M or nil)
+	onToggle(nil, self._lockS2MDMG, function(isOn)
+		self._dataProxy:SetupDamageKamikazeAir(isOn and ys.Battle.BattleFormulas.CalcDamageLockA2M or nil)
 	end, SFX_PANEL)
-	onToggle(nil, arg_19_0._lockA2MDMG, function(arg_24_0)
-		arg_19_0._dataProxy:SetupDamageKamikazeShip(arg_24_0 and var_0_0.Battle.BattleFormulas.CalcDamageLockS2M or nil)
+	onToggle(nil, self._lockA2MDMG, function(isOn)
+		self._dataProxy:SetupDamageKamikazeShip(isOn and ys.Battle.BattleFormulas.CalcDamageLockS2M or nil)
 	end, SFX_PANEL)
-	onToggle(nil, arg_19_0._lockCrushDMG, function(arg_25_0)
-		arg_19_0._dataProxy:SetupDamageCrush(arg_25_0 and var_0_0.Battle.BattleFormulas.CalcDamageLockCrush or nil)
+	onToggle(nil, self._lockCrushDMG, function(isOn)
+		self._dataProxy:SetupDamageCrush(isOn and ys.Battle.BattleFormulas.CalcDamageLockCrush or nil)
 	end, SFX_PANEL)
 
-	arg_19_0._triggerWave = arg_19_0._common:Find("wave_trigger")
-	arg_19_0._waveIndex = arg_19_0._common:Find("wave_input"):GetComponent("InputField")
+	-- 波次触发（仅剧情/日常/活动BOSS模式可用）
+	self._triggerWave = self._common:Find("wave_trigger")
+	self._waveIndex = self._common:Find("wave_input"):GetComponent("InputField")
 
-	if arg_19_0._dataProxy:GetInitData().battleType ~= SYSTEM_SCENARIO and arg_19_0._dataProxy:GetInitData().battleType ~= SYSTEM_ROUTINE and arg_19_0._dataProxy:GetInitData().battleType ~= SYSTEM_ACT_BOSS then
-		SetActive(arg_19_0._triggerWave, false)
-		SetActive(arg_19_0._waveIndex, false)
+	if self._dataProxy:GetInitData().battleType ~= SYSTEM_SCENARIO and self._dataProxy:GetInitData().battleType ~= SYSTEM_ROUTINE and self._dataProxy:GetInitData().battleType ~= SYSTEM_ACT_BOSS then
+		SetActive(self._triggerWave, false)
+		SetActive(self._waveIndex, false)
 	else
-		onButton(nil, arg_19_0._triggerWave, function()
-			arg_19_0:forceTrigger(tonumber(arg_19_0._waveIndex.text))
+		onButton(nil, self._triggerWave, function()
+			self:forceTrigger(tonumber(self._waveIndex.text))
 		end)
 	end
 
-	arg_19_0._triggerWeather = arg_19_0._common:Find("weather_trigger")
-	arg_19_0._weatherInput = arg_19_0._common:Find("weather_input"):GetComponent("InputField")
+	-- 天气触发
+	self._triggerWeather = self._common:Find("weather_trigger")
+	self._weatherInput = self._common:Find("weather_input"):GetComponent("InputField")
 
-	onButton(nil, arg_19_0._triggerWeather, function()
-		arg_19_0._dataProxy:AddWeather(tonumber(arg_19_0._weatherInput.text))
+	onButton(nil, self._triggerWeather, function()
+		self._dataProxy:AddWeather(tonumber(self._weatherInput.text))
 	end)
 
-	arg_19_0._antiSubDetailRange = arg_19_0._common:Find("anti_sub_detail")
+	-- 反潜范围显示
+	self._antiSubDetailRange = self._common:Find("anti_sub_detail")
 
-	onButton(nil, arg_19_0._antiSubDetailRange, function()
-		arg_19_0._state:GetMediatorByName("BattleSceneMediator"):InitDetailAntiSubArea()
+	onButton(nil, self._antiSubDetailRange, function()
+		self._state:GetMediatorByName("BattleSceneMediator"):InitDetailAntiSubArea()
 	end)
 
-	arg_19_0._instantReload = arg_19_0._common:Find("instant_reload")
+	-- 瞬间装填按钮
+	self._instantReload = self._common:Find("instant_reload")
 
-	onButton(nil, arg_19_0._instantReload, function()
-		local var_29_0 = arg_19_0._dataProxy._fleetList[1]
+	onButton(nil, self._instantReload, function()
+		local fleet1 = self._dataProxy._fleetList[1]
 
-		local function var_29_1(arg_30_0)
-			local var_30_0 = arg_30_0:GetWeaponList()
+		-- 对所有武器VO执行快速冷却
+		local function quickCoolAll(weaponVO)
+			local weaponList = weaponVO:GetWeaponList()
 
-			for iter_30_0, iter_30_1 in ipairs(var_30_0) do
-				iter_30_1:QuickCoolDown()
+			for _, weapon in ipairs(weaponList) do
+				weapon:QuickCoolDown()
 			end
 		end
 
-		var_29_1(var_29_0:GetChargeWeaponVO())
-		var_29_1(var_29_0:GetTorpedoWeaponVO())
-		var_29_1(var_29_0:GetAirAssistVO())
+		quickCoolAll(fleet1:GetChargeWeaponVO())
+		quickCoolAll(fleet1:GetTorpedoWeaponVO())
+		quickCoolAll(fleet1:GetAirAssistVO())
 	end)
 
-	arg_19_0._white = arg_19_0._base:Find("white_button")
+	-- 白色按钮（对第一艘船造成20点伤害，用于测试）
+	self._white = self._base:Find("white_button")
 
-	onButton(nil, arg_19_0._white, function()
-		arg_19_0._dataProxy._fleetList[1]._scoutList[1]:UpdateHP(-20, {})
+	onButton(nil, self._white, function()
+		self._dataProxy._fleetList[1]._scoutList[1]:UpdateHP(-20, {})
 	end, SFX_PANEL)
-	SetActive(arg_19_0._white, true)
+	SetActive(self._white, true)
 end
 
-function var_0_3.SetActive(arg_32_0, arg_32_1)
-	SetActive(arg_32_0._go, arg_32_1)
+--- 显示/隐藏调试控制台
+--- @param isActive boolean
+function BattleDebugConsole.SetActive(self, isActive)
+	SetActive(self._go, isActive)
 end
 
-function var_0_3.spawnEnemy(arg_33_0, arg_33_1, arg_33_2, arg_33_3, arg_33_4, arg_33_5)
-	local var_33_0 = {
-		monsterTemplateID = arg_33_1,
+--- 生成一个敌人单位
+--- @param monsterTemplateID number 敌人模板ID
+--- @param xMin number X坐标最小值
+--- @param xMax number X坐标最大值
+--- @param zMin number Z坐标最小值
+--- @param zMax number Z坐标最大值
+function BattleDebugConsole.spawnEnemy(self, monsterTemplateID, xMin, xMax, zMin, zMax)
+	local monsterData = {
+		monsterTemplateID = monsterTemplateID,
 		corrdinate = {
-			math.random(arg_33_2, arg_33_3),
+			math.random(xMin, xMax),
 			0,
-			math.random(arg_33_4, arg_33_5)
+			math.random(zMin, zMax)
 		}
 	}
 
-	var_33_0.delay = 0
-	var_33_0.moveCast = true
-	var_33_0.score = 0
-	var_33_0.buffList = {
+	monsterData.delay = 0
+	monsterData.moveCast = true
+	monsterData.score = 0
+	monsterData.buffList = {
 		8001
 	}
 
-	arg_33_0._dataProxy:SpawnMonster(var_33_0, 1, var_0_1.UnitType.ENEMY_UNIT, var_0_2.FOE_CODE)
+	self._dataProxy:SpawnMonster(monsterData, 1, BattleConst.UnitType.ENEMY_UNIT, BattleConfig.FOE_CODE)
 end
 
-function var_0_3.spawnStrike(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4)
-	local var_34_0 = {
-		templateID = arg_34_1,
+--- 生成空袭飞机编队
+--- @param aircraftID number 飞机模板ID
+--- @param totalNumber number 总数量
+--- @param onceNumber number 每次生成数量
+--- @param interval number 生成间隔（实际传递给SpawnAirFighter时会使用默认值）
+function BattleDebugConsole.spawnStrike(self, aircraftID, totalNumber, onceNumber, interval)
+	local strikeData = {
+		templateID = aircraftID,
 		weaponID = {},
 		attr = {},
-		totalNumber = arg_34_2,
-		onceNumber = arg_34_3
+		totalNumber = totalNumber,
+		onceNumber = onceNumber
 	}
 
-	var_34_0.formation = 10006
-	var_34_0.delay = 0
-	var_34_0.interval = 0.1
-	var_34_0.score = 0
+	strikeData.formation = 10006
+	strikeData.delay = 0
+	strikeData.interval = 0.1
+	strikeData.score = 0
 
-	arg_34_0._dataProxy:SpawnAirFighter(var_34_0)
+	self._dataProxy:SpawnAirFighter(strikeData)
 end
 
-function var_0_3.activeReference(arg_35_0)
-	arg_35_0._state:ActiveReference()
+--- 激活参考面板（速度控制、单位/子弹调试框、属性面板）
+function BattleDebugConsole.activeReference(self)
+	self._state:ActiveReference()
 
-	local var_35_0 = arg_35_0._state:GetMediatorByName(var_0_0.Battle.BattleReferenceBoxMediator.__name) or arg_35_0._state:AddMediator(var_0_0.Battle.BattleReferenceBoxMediator.New())
+	local referenceBox = self._state:GetMediatorByName(ys.Battle.BattleReferenceBoxMediator.__name) or self._state:AddMediator(ys.Battle.BattleReferenceBoxMediator.New())
 
 	pg.TipsMgr.GetInstance():ShowTips("┏━━━━━━━━━━━━━━━━━━━┓")
 	pg.TipsMgr.GetInstance():ShowTips("┃ヽ(•̀ω•́ )ゝ战斗调试模块初始化成功！(ง •̀_•́)ง┃")
 	pg.TipsMgr.GetInstance():ShowTips("┗━━━━━━━━━━━━━━━━━━━┛")
 
-	arg_35_0._activeReference.transform:GetComponent("Button").enabled = false
-	arg_35_0._activeReference:Find("text"):GetComponent(typeof(Text)).text = "(ﾉ･ω･)ﾉﾞ"
-	arg_35_0._referenceConsole = arg_35_0._common:Find("reference_btns")
+	self._activeReference.transform:GetComponent("Button").enabled = false
+	self._activeReference:Find("text"):GetComponent(typeof(Text)).text = "(ﾉ･ω･)ﾉﾞ"
+	self._referenceConsole = self._common:Find("reference_btns")
 
-	SetActive(arg_35_0._referenceConsole, true)
+	SetActive(self._referenceConsole, true)
 
-	arg_35_0._speedUp = arg_35_0._referenceConsole:Find("speed_up")
-	arg_35_0._speedDown = arg_35_0._referenceConsole:Find("speed_down")
-	arg_35_0._speedLevel = arg_35_0._referenceConsole:Find("speed")
+	-- 速度控制按钮
+	self._speedUp = self._referenceConsole:Find("speed_up")
+	self._speedDown = self._referenceConsole:Find("speed_down")
+	self._speedLevel = self._referenceConsole:Find("speed")
 
-	onButton(nil, arg_35_0._speedUp, function()
-		local var_36_0 = var_0_0.Battle.BattleConfig.BASIC_TIME_SCALE
+	onButton(nil, self._speedUp, function()
+		local currentScale = ys.Battle.BattleConfig.BASIC_TIME_SCALE
 
-		if var_36_0 < 1 then
-			var_0_0.Battle.BattleControllerCommand.removeSpeed(2)
-		elseif var_36_0 >= 1 then
-			var_0_0.Battle.BattleControllerCommand.addSpeed(2)
+		if currentScale < 1 then
+			ys.Battle.BattleControllerCommand.removeSpeed(2)
+		elseif currentScale >= 1 then
+			ys.Battle.BattleControllerCommand.addSpeed(2)
 		end
 
-		arg_35_0._speedLevel:GetComponent(typeof(Text)).text = var_0_0.Battle.BattleConfig.BASIC_TIME_SCALE
+		self._speedLevel:GetComponent(typeof(Text)).text = ys.Battle.BattleConfig.BASIC_TIME_SCALE
 
-		arg_35_0._state:ScaleTimer()
+		self._state:ScaleTimer()
 	end, SFX_PANEL)
-	onButton(nil, arg_35_0._speedDown, function()
-		local var_37_0 = var_0_0.Battle.BattleConfig.BASIC_TIME_SCALE
+	onButton(nil, self._speedDown, function()
+		local currentScale = ys.Battle.BattleConfig.BASIC_TIME_SCALE
 
-		if var_37_0 > 1 then
-			var_0_0.Battle.BattleControllerCommand.removeSpeed(0.5)
-		elseif var_37_0 <= 1 then
-			var_0_0.Battle.BattleControllerCommand.addSpeed(0.5)
+		if currentScale > 1 then
+			ys.Battle.BattleControllerCommand.removeSpeed(0.5)
+		elseif currentScale <= 1 then
+			ys.Battle.BattleControllerCommand.addSpeed(0.5)
 		end
 
-		arg_35_0._speedLevel:GetComponent(typeof(Text)).text = var_0_0.Battle.BattleConfig.BASIC_TIME_SCALE
+		self._speedLevel:GetComponent(typeof(Text)).text = ys.Battle.BattleConfig.BASIC_TIME_SCALE
 
-		arg_35_0._state:ScaleTimer()
+		self._state:ScaleTimer()
 	end, SFX_PANEL)
 
-	arg_35_0._shipBox = arg_35_0._referenceConsole:Find("ship_box")
-	arg_35_0._bulletBox = arg_35_0._referenceConsole:Find("bullet_box")
-	arg_35_0._pp = arg_35_0._referenceConsole:Find("property_panel")
+	-- 单位/子弹调试框和属性面板Toggle
+	self._shipBox = self._referenceConsole:Find("ship_box")
+	self._bulletBox = self._referenceConsole:Find("bullet_box")
+	self._pp = self._referenceConsole:Find("property_panel")
 
-	onToggle(nil, arg_35_0._shipBox, function(arg_38_0)
-		var_35_0:ActiveUnitBoxes(arg_38_0)
+	onToggle(nil, self._shipBox, function(isOn)
+		referenceBox:ActiveUnitBoxes(isOn)
 	end, SFX_PANEL)
-	onToggle(nil, arg_35_0._bulletBox, function(arg_39_0)
-		var_35_0:ActiveBulletBoxes(arg_39_0)
+	onToggle(nil, self._bulletBox, function(isOn)
+		referenceBox:ActiveBulletBoxes(isOn)
 	end, SFX_PANEL)
-	onToggle(nil, arg_35_0._pp, function(arg_40_0)
-		var_35_0:ActiveUnitDetail(arg_40_0)
+	onToggle(nil, self._pp, function(isOn)
+		referenceBox:ActiveUnitDetail(isOn)
 	end, SFX_PANEL)
 end
 
-function var_0_3.forceTrigger(arg_41_0, arg_41_1)
-	local var_41_0 = arg_41_0._state:GetCommandByName("BattleSingleDungeonCommand")._waveUpdater._waveInfoList[arg_41_1]
+--- 强制触发指定索引的波次（用于调试跳过波次）
+--- @param waveIndex number 波次索引
+function BattleDebugConsole.forceTrigger(self, waveIndex)
+	local waveInfo = self._state:GetCommandByName("BattleSingleDungeonCommand")._waveUpdater._waveInfoList[waveIndex]
 
-	if var_41_0 == nil then
+	if waveInfo == nil then
 		pg.TipsMgr.GetInstance():ShowTips("查无次波")
-	elseif var_41_0:GetState() ~= var_41_0.STATE_DEACTIVE then
+	elseif waveInfo:GetState() ~= waveInfo.STATE_DEACTIVE then
 		pg.TipsMgr.GetInstance():ShowTips("该触发器已经触发")
 	else
-		var_41_0:DoWave()
+		waveInfo:DoWave()
 	end
 end

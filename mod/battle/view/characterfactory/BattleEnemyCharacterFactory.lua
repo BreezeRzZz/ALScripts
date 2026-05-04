@@ -1,108 +1,157 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleEnemyCharacterFactory", var_0_0.Battle.BattleCharacterFactory)
+local ys = ys
+local BattleEnemyCharacterFactory = singletonClass("BattleEnemyCharacterFactory", ys.Battle.BattleCharacterFactory)
 
-var_0_0.Battle.BattleEnemyCharacterFactory = var_0_1
-var_0_1.__name = "BattleEnemyCharacterFactory"
+ys.Battle.BattleEnemyCharacterFactory = BattleEnemyCharacterFactory
+BattleEnemyCharacterFactory.__name = "BattleEnemyCharacterFactory"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- @class BattleEnemyCharacterFactory
+--- @return nil
+--- 构造函数：设置敌方HP条（enemyBlood）和敌方箭头（EnemyArrow）资源名。
+function BattleEnemyCharacterFactory.Ctor(self)
+	BattleEnemyCharacterFactory.super.Ctor(self)
 
-	arg_1_0.HP_BAR_NAME = var_0_0.Battle.BattleHPBarManager.HP_BAR_FOE
-	arg_1_0.ARROW_BAR_NAME = "EnemyArrowContainer/EnemyArrow"
+	self.HP_BAR_NAME = ys.Battle.BattleHPBarManager.HP_BAR_FOE
+	self.ARROW_BAR_NAME = "EnemyArrowContainer/EnemyArrow"
 end
 
-function var_0_1.MakeCharacter(arg_2_0)
-	return var_0_0.Battle.BattleEnemyCharacter.New()
+--- @class BattleEnemyCharacterFactory
+--- @return BattleEnemyCharacter: 敌方角色视觉对象
+--- 创建BattleEnemyCharacter实例。
+function BattleEnemyCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleEnemyCharacter.New()
 end
 
-function var_0_1.MakeModel(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_1:GetUnitData()
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 创建敌方角色视觉模型：
+--- 1) 加载模型 -> AddModel -> 注册到SceneMediator
+--- 2) 装配UI组件：HP条（含船型图标）、箭头、浪花、烟雾、特效挂点等
+--- 3) 更新潜水隐身、强制索敌、致盲隐身状态
+--- 4) 添加模板配置的出场特效（appear_fx）
+--- 5) 若有AimBias则创建瞄准偏差条
+function BattleEnemyCharacterFactory.MakeModel(self, character)
+	local unitData = character:GetUnitData()
 
-	local function var_3_1(arg_4_0)
-		arg_3_1:AddModel(arg_4_0)
+	local function onModelLoaded(modelObj)
+		character:AddModel(modelObj)
 
-		local var_4_0 = arg_3_0:GetSceneMediator()
+		local mediator = self:GetSceneMediator()
 
-		arg_3_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
-		var_4_0:AddEnemyCharacter(arg_3_1)
-		arg_3_0:MakeUIComponentContainer(arg_3_1)
-		arg_3_0:MakeFXContainer(arg_3_1)
-		arg_3_0:MakePopNumPool(arg_3_1)
-		arg_3_0:MakeBloodBar(arg_3_1)
-		arg_3_0:MakeWaveFX(arg_3_1)
-		arg_3_0:MakeSmokeFX(arg_3_1)
-		arg_3_0:MakeArrowBar(arg_3_1)
-		arg_3_1:UpdateDiveInvisible(true)
-		arg_3_1:UpdateCharacterForceDetected()
-		arg_3_1:UpdateBlindInvisible()
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
+		mediator:AddEnemyCharacter(character)
+		self:MakeUIComponentContainer(character)
+		self:MakeFXContainer(character)
+		self:MakePopNumPool(character)
+		self:MakeBloodBar(character)
+		self:MakeWaveFX(character)
+		self:MakeSmokeFX(character)
+		self:MakeArrowBar(character)
+		character:UpdateDiveInvisible(true)
+		character:UpdateCharacterForceDetected()
+		character:UpdateBlindInvisible()
 
-		local var_4_1 = var_3_0:GetTemplate().appear_fx
+		-- 添加模板中配置的出场特效（如登场光柱等）
+		local appearFXList = unitData:GetTemplate().appear_fx
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_1) do
-			arg_3_1:AddFX(iter_4_1)
+		for _, fxID in ipairs(appearFXList) do
+			character:AddFX(fxID)
 		end
 
-		if arg_3_1:GetUnitData():GetAimBias() then
-			arg_3_0:MakeAimBiasBar(arg_3_1)
+		-- 如果有瞄准偏差系统，创建偏差条
+		if character:GetUnitData():GetAimBias() then
+			self:MakeAimBiasBar(character)
 		end
 	end
 
-	arg_3_0:GetCharacterPool():InstCharacter(arg_3_1:GetModleID(), function(arg_5_0)
-		var_3_1(arg_5_0)
+	self:GetCharacterPool():InstCharacter(character:GetModleID(), function(modelObj)
+		onModelLoaded(modelObj)
 	end)
 end
 
-function var_0_1.MakeArrowBar(arg_6_0, arg_6_1)
-	local var_6_0 = arg_6_0:GetArrowPool():GetArrow()
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 创建敌方箭头：从BattleArrowManager获取箭头并附加。箭头用于指示屏幕外的敌方位置。
+function BattleEnemyCharacterFactory.MakeArrowBar(self, character)
+	local arrow = self:GetArrowPool():GetArrow()
 
-	arg_6_1:AddArrowBar(var_6_0)
-	arg_6_1:UpdateArrowBarPosition()
+	character:AddArrowBar(arrow)
+	character:UpdateArrowBarPosition()
 end
 
-function var_0_1.GetArrowPool(arg_7_0)
-	return var_0_0.Battle.BattleArrowManager.GetInstance()
+--- @class BattleEnemyCharacterFactory
+--- @return BattleArrowManager: 箭头管理器
+--- 获取敌方箭头对象池管理器。
+function BattleEnemyCharacterFactory.GetArrowPool(self)
+	return ys.Battle.BattleArrowManager.GetInstance()
 end
 
-function var_0_1.MakeBloodBar(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_0:GetHPBarPool():GetHPBar(arg_8_0.HP_BAR_NAME)
-	local var_8_1 = arg_8_1:GetUnitData():GetTemplate().icon_type
-	local var_8_2 = findTF(var_8_0, "type")
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 创建敌方HP血条：
+---   1) 从HPBarManager获取敌方HP条
+---   2) 根据模板icon_type设置船型图标（从Atlas加载对应图标）
+---   3) 图标非0时显示船型，0时隐藏type节点
+---   4) 附加HP条后更新位置
+function BattleEnemyCharacterFactory.MakeBloodBar(self, character)
+	local hpBar = self:GetHPBarPool():GetHPBar(self.HP_BAR_NAME)
+	local iconType = character:GetUnitData():GetTemplate().icon_type
+	local typeTf = findTF(hpBar, "type")
 
-	if var_8_1 ~= 0 then
-		local var_8_3 = GetSpriteFromAtlas("shiptype", shipType2print(arg_8_1:GetUnitData():GetTemplate().icon_type))
+	if iconType ~= 0 then
+		-- 有船型图标：从shiptype atlas加载对应图标
+		local typeIcon = GetSpriteFromAtlas("shiptype", shipType2print(character:GetUnitData():GetTemplate().icon_type))
 
-		setImageSprite(var_8_2, var_8_3, true)
+		setImageSprite(typeTf, typeIcon, true)
 
-		local var_8_4 = findTF(var_8_2, "type")
+		-- 内部也设置同样的图标（可能是不同分辨率/比例）
+		local innerType = findTF(typeTf, "type")
 
-		setImageSprite(var_8_4, var_8_3, true)
-		SetActive(var_8_2, true)
+		setImageSprite(innerType, typeIcon, true)
+		SetActive(typeTf, true)
 	else
-		SetActive(var_8_2, false)
+		-- 无船型图标（icon_type=0）：隐藏
+		SetActive(typeTf, false)
 	end
 
-	arg_8_1:AddHPBar(var_8_0)
-	arg_8_1:UpdateHPBarPosition()
+	character:AddHPBar(hpBar)
+	character:UpdateHPBarPosition()
 end
 
-function var_0_1.MakeAimBiasBar(arg_9_0, arg_9_1)
-	local var_9_0 = arg_9_1._HPBarTf:Find("biasBar")
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 创建瞄准偏差条：从HP条容器中查找biasBar子对象，附加迷雾特效。
+function BattleEnemyCharacterFactory.MakeAimBiasBar(self, character)
+	local biasBar = character._HPBarTf:Find("biasBar")
 
-	arg_9_1:AddAimBiasBar(var_9_0)
-	arg_9_1:AddAimBiasFogFX()
+	character:AddAimBiasBar(biasBar)
+	character:AddAimBiasFogFX()
 end
 
-function var_0_1.MakeWaveFX(arg_10_0, arg_10_1)
-	local var_10_0 = arg_10_1:GetUnitData():GetTemplate().wave_fx
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 创建浪花特效：从模板读取wave_fx字段。若为空字符串则不覆盖基类默认浪花。
+--- 非空时使用模板指定的浪花资源名（如某些敌人使用特殊浪花效果）。
+function BattleEnemyCharacterFactory.MakeWaveFX(self, character)
+	local waveFxName = character:GetUnitData():GetTemplate().wave_fx
 
-	if var_10_0 ~= "" then
-		arg_10_1:AddWaveFX(var_10_0)
+	if waveFxName ~= "" then
+		character:AddWaveFX(waveFxName)
 	end
 end
 
-function var_0_1.RemoveCharacter(arg_11_0, arg_11_1)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[var_0_0.Battle.BattleConst.ShakeType.UNIT_DIE])
-	var_0_1.super.RemoveCharacter(arg_11_0, arg_11_1)
+--- @class BattleEnemyCharacterFactory
+--- @param character BattleEnemyCharacter: 角色视觉对象
+--- @return nil
+--- 移除敌方角色：触发屏幕震动后调用基类RemoveCharacter。
+--- 敌方死亡始终触发震动（与玩家角色区分，玩家撤退不震动）。
+function BattleEnemyCharacterFactory.RemoveCharacter(self, character)
+	ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[ys.Battle.BattleConst.ShakeType.UNIT_DIE])
+	BattleEnemyCharacterFactory.super.RemoveCharacter(self, character)
 end

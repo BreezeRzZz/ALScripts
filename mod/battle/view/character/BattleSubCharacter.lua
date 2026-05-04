@@ -1,52 +1,59 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = class("BattleSubCharacter", var_0_0.Battle.BattlePlayerCharacter)
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleConst = ys.Battle.BattleConst
+local BattleSubCharacter = class("BattleSubCharacter", ys.Battle.BattlePlayerCharacter)
 
-var_0_0.Battle.BattleSubCharacter = var_0_4
-var_0_4.__name = "BattleSubCharacter"
+ys.Battle.BattleSubCharacter = BattleSubCharacter
+BattleSubCharacter.__name = "BattleSubCharacter"
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+--- 构造函数：调用父类初始化
+function BattleSubCharacter.Ctor(self)
+	BattleSubCharacter.super.Ctor(self)
 end
 
-function var_0_4.AddArrowBar(arg_2_0, arg_2_1)
-	var_0_4.super.AddArrowBar(arg_2_0, arg_2_1)
+--- 添加箭头条并初始化潜艇专有UI：氧气条和弹药计数
+--- - _vectorOxygenSlider: 箭头上的氧气滑动条
+--- - _vectorAmmoCount: 鱼雷剩余弹药文字
+function BattleSubCharacter.AddArrowBar(self, arrowBarObj)
+	BattleSubCharacter.super.AddArrowBar(self, arrowBarObj)
 
-	arg_2_0._vectorOxygenSlider = arg_2_0._arrowBarTf:Find("submarine/oxygenBar/oxygen"):GetComponent(typeof(Slider))
-	arg_2_0._vectorOxygenSlider.value = 1
-	arg_2_0._vectorAmmoCount = arg_2_0._arrowBarTf:Find("submarine/Count/CountText"):GetComponent(typeof(Text))
+	self._vectorOxygenSlider = self._arrowBarTf:Find("submarine/oxygenBar/oxygen"):GetComponent(typeof(Slider))
+	self._vectorOxygenSlider.value = 1
+	self._vectorAmmoCount = self._arrowBarTf:Find("submarine/Count/CountText"):GetComponent(typeof(Text))
 
-	local var_2_0 = #arg_2_0._unitData:GetTorpedoList()
+	local torpedoCount = #self._unitData:GetTorpedoList()
 
-	arg_2_0._vectorAmmoCount.text = var_2_0 .. "/" .. var_2_0
+	self._vectorAmmoCount.text = torpedoCount .. "/" .. torpedoCount
 end
 
-function var_0_4.Update(arg_3_0)
-	var_0_4.super.Update(arg_3_0)
+--- 每帧Update：视野外时更新氧气指示器
+function BattleSubCharacter.Update(self)
+	BattleSubCharacter.super.Update(self)
 
-	if not arg_3_0._inViewArea then
-		arg_3_0:updateOxygenVector()
+	if not self._inViewArea then
+		self:updateOxygenVector()
 	end
 end
 
-function var_0_4.updateOxygenVector(arg_4_0)
-	arg_4_0._vectorOxygenSlider.value = arg_4_0._unitData:GetOxygenProgress()
+--- 更新箭头上的氧气条进度
+function BattleSubCharacter.updateOxygenVector(self)
+	self._vectorOxygenSlider.value = self._unitData:GetOxygenProgress()
 end
 
-function var_0_4.onTorpedoWeaponFire(arg_5_0, arg_5_1)
-	var_0_4.super.onTorpedoWeaponFire(arg_5_0, arg_5_1)
+--- 鱼雷发射事件：更新箭头上弹药计数
+function BattleSubCharacter.onTorpedoWeaponFire(self, event)
+	BattleSubCharacter.super.onTorpedoWeaponFire(self, event)
 
-	local var_5_0 = 0
+	local readyCount = 0
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0._unitData:GetTorpedoList()) do
-		if iter_5_1:GetCurrentState() == iter_5_1.STATE_READY then
-			var_5_0 = var_5_0 + 1
+	for _, torpedoWeapon in ipairs(self._unitData:GetTorpedoList()) do
+		if torpedoWeapon:GetCurrentState() == torpedoWeapon.STATE_READY then
+			readyCount = readyCount + 1
 		end
 	end
 
-	arg_5_0._vectorAmmoCount.text = var_5_0 .. "/" .. #arg_5_0._unitData:GetTorpedoList()
+	self._vectorAmmoCount.text = readyCount .. "/" .. #self._unitData:GetTorpedoList()
 end

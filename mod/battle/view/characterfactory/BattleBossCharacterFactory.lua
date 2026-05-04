@@ -1,60 +1,92 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleBossCharacterFactory", var_0_0.Battle.BattleEnemyCharacterFactory)
+local ys = ys
+local BossCharacterFactory = singletonClass("BattleBossCharacterFactory", ys.Battle.BattleEnemyCharacterFactory)
 
-var_0_0.Battle.BattleBossCharacterFactory = var_0_1
-var_0_1.__name = "BattleBossCharacterFactory"
-var_0_1.BOMB_FX_NAME = "Bossbomb"
+ys.Battle.BattleBossCharacterFactory = BossCharacterFactory
+--- Boss敌人角色工厂
+BossCharacterFactory.__name = "BattleBossCharacterFactory"
+--- Boss专属爆炸特效资源名
+BossCharacterFactory.BOMB_FX_NAME = "Bossbomb"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- @class BattleBossCharacterFactory
+--- @return nil
+--- 构造函数：设置Boss专用HP条资源名（heroBlood）和双Boss条（ivory/ebony配色）。
+--- Boss的爆炸特效也覆盖为"Bossbomb"。
+function BossCharacterFactory.Ctor(self)
+	BossCharacterFactory.super.Ctor(self)
 
-	arg_1_0.HP_BAR_NAME = "BossBarContainer/heroBlood"
-	arg_1_0.DUAL_BAR_NAME = {
+	self.HP_BAR_NAME = "BossBarContainer/heroBlood"
+	-- 双Boss模式下的两套HP条（象牙白/乌木黑）
+	self.DUAL_BAR_NAME = {
 		"BossBarContainer/heroBlood_ivory",
 		"BossBarContainer/heroBlood_ebony"
 	}
 end
 
-function var_0_1.CreateCharacter(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_1.unit
-	local var_2_1 = arg_2_0:MakeCharacter()
+--- @class BattleBossCharacterFactory
+--- @param data table: 创建数据，包含unit和bossData字段
+--- @return BattleBossCharacter: Boss角色视觉对象
+--- 创建Boss角色：与基类相比，额外设置BossData并添加施法时钟+护盾时钟。
+function BossCharacterFactory.CreateCharacter(self, data)
+	local unit = data.unit
+	local character = self:MakeCharacter()
 
-	var_2_1:SetFactory(arg_2_0)
-	var_2_1:SetUnitData(var_2_0)
-	var_2_1:SetBossData(arg_2_1.bossData)
-	arg_2_0:MakeModel(var_2_1)
-	arg_2_0:MakeCastClock(var_2_1)
-	arg_2_0:MakeBarrierClock(var_2_1)
+	character:SetFactory(self)
+	character:SetUnitData(unit)
+	character:SetBossData(data.bossData)
+	self:MakeModel(character)
+	self:MakeCastClock(character)
+	self:MakeBarrierClock(character)
 
-	return var_2_1
+	return character
 end
 
-function var_0_1.MakeCharacter(arg_3_0)
-	return var_0_0.Battle.BattleBossCharacter:New()
+--- @class BattleBossCharacterFactory
+--- @return BattleBossCharacter: Boss角色视觉对象
+--- 创建BattleBossCharacter实例。
+function BossCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleBossCharacter:New()
 end
 
-function var_0_1.MakeBloodBar(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_0:GetSceneMediator()
-	local var_4_1 = arg_4_1:GetBossIndex()
+--- @class BattleBossCharacterFactory
+--- @param character BattleBossCharacter: 角色视觉对象
+--- @return nil
+--- 创建Boss HP血条：
+---   - 如果Boss有BossIndex（双Boss模式），使用双色HP条（ivory/ebony）
+---   - 否则使用默认Boss条（heroBlood），标记isMain=true
+function BossCharacterFactory.MakeBloodBar(self, character)
+	local mediator = self:GetSceneMediator()
+	local bossIndex = character:GetBossIndex()
 
-	if var_4_1 then
-		arg_4_1:AddHPBar(var_4_0:InstantiateCharacterComponent(arg_4_0.DUAL_BAR_NAME[var_4_1]))
+	if bossIndex then
+		-- 双Boss模式：按索引选择颜色方案
+		character:AddHPBar(mediator:InstantiateCharacterComponent(self.DUAL_BAR_NAME[bossIndex]))
 	else
-		arg_4_1:AddHPBar(var_4_0:InstantiateCharacterComponent(arg_4_0.HP_BAR_NAME), true)
+		-- 单Boss模式：使用默认Boss条
+		character:AddHPBar(mediator:InstantiateCharacterComponent(self.HP_BAR_NAME), true)
 	end
 end
 
-function var_0_1.MakeAimBiasBar(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_0:GetHPBarPool():GetHPBar(var_0_0.Battle.BattleHPBarManager.HP_BAR_FOE).transform
+--- @class BattleBossCharacterFactory
+--- @param character BattleBossCharacter: 角色视觉对象
+--- @return nil
+--- 创建Boss瞄准偏差条：与常规敌人不同，Boss使用敌方HP条的模板但隐藏bg和blood子节点，
+--- 将其改造为纯偏差指示条。
+function BossCharacterFactory.MakeAimBiasBar(self, character)
+	local foeBarTf = self:GetHPBarPool():GetHPBar(ys.Battle.BattleHPBarManager.HP_BAR_FOE).transform
 
-	setActive(var_5_0:Find("bg"), false)
-	setActive(var_5_0:Find("blood"), false)
-	arg_5_1:AddAimBiasBar(var_5_0)
-	arg_5_1:AddAimBiasFogFX()
+	-- 隐藏常规HP条元素，保留框架作为偏差条底板
+	setActive(foeBarTf:Find("bg"), false)
+	setActive(foeBarTf:Find("blood"), false)
+	character:AddAimBiasBar(foeBarTf)
+	character:AddAimBiasFogFX()
 end
 
-function var_0_1.RemoveCharacter(arg_6_0, arg_6_1)
-	var_0_1.super.RemoveCharacter(arg_6_0, arg_6_1)
+--- @class BattleBossCharacterFactory
+--- @param character BattleBossCharacter: 角色视觉对象
+--- @return nil
+--- 移除Boss角色：直接调用父类（BattleEnemyCharacterFactory）的RemoveCharacter。
+function BossCharacterFactory.RemoveCharacter(self, character)
+	BossCharacterFactory.super.RemoveCharacter(self, character)
 end

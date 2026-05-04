@@ -1,31 +1,38 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleDelayWave = class("BattleDelayWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleDelayWave.__name = "BattleDelayWave"
+ys.Battle.BattleDelayWave = class("BattleDelayWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleDelayWave.__name = "BattleDelayWave"
 
-local var_0_1 = var_0_0.Battle.BattleDelayWave
+local BattleDelayWave = ys.Battle.BattleDelayWave
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 波次类型：延迟等待波
+--- 不生成任何单位，仅等待指定时间后自动通过。
+--- 用于关卡中插入固定的等待间隔（如剧情空档、阶段过渡）。
+function BattleDelayWave.Ctor(self)
+	BattleDelayWave.super.Ctor(self)
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
+--- 设置波次数据，从 triggerParams 读取延迟时长
+--- @param waveData table 关卡配置中对应的 wave 数据
+function BattleDelayWave.SetWaveData(self, waveData)
+	BattleDelayWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._duration = arg_2_0._param.timeout
+	self._duration = self._param.timeout
 end
 
-function var_0_1.DoWave(arg_3_0)
-	var_0_1.super.DoWave(arg_3_0)
+--- 执行波次：启动一个倒计时 BattleTimer，到期后调用 doPass()
+--- 定时器的 delay 参数来自 self._duration（即 triggerParams.timeout）
+function BattleDelayWave.DoWave(self)
+	BattleDelayWave.super.DoWave(self)
 
-	local var_3_0
-
-	local function var_3_1()
-		arg_3_0:doPass()
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_3_0)
+	local delayTimer
+	-- 定时器到期回调：延迟结束，标记波次通过
+	local function onTimerEnds()
+		self:doPass()
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(delayTimer)
 	end
 
-	var_3_0 = pg.TimeMgr.GetInstance():AddBattleTimer("delayWave", 1, arg_3_0._duration, var_3_1, true)
+	delayTimer = pg.TimeMgr.GetInstance():AddBattleTimer("delayWave", 1, self._duration, onTimerEnds, true)
 end

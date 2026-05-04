@@ -1,43 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 
-var_0_0.Battle.CardPuzzleDeckPool = class("CardPuzzleDeckPool")
+ys.Battle.CardPuzzleDeckPool = class("CardPuzzleDeckPool")
 
-local var_0_3 = var_0_0.Battle.CardPuzzleDeckPool
+local CardPuzzleDeckPool = ys.Battle.CardPuzzleDeckPool
 
-var_0_3.__name = "CardPuzzleDeckPool"
+CardPuzzleDeckPool.__name = "CardPuzzleDeckPool"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图牌组视图
+--- 显示当前牌组中剩余卡牌数量的UI
 
-	arg_1_0:init()
+function CardPuzzleDeckPool.Ctor(self, go)
+	self._go = go
+
+	self:init()
 end
 
-function var_0_3.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	arg_2_0._cardPuzzleInfo = arg_2_1
-	arg_2_0._deck = arg_2_0._cardPuzzleInfo:GetDeck()
+--- 设置关联的卡牌拼图组件，注册牌组更新事件
+function CardPuzzleDeckPool.SetCardPuzzleComponent(self, cardPuzzleInfo)
+	self._cardPuzzleInfo = cardPuzzleInfo
+	self._deck = self._cardPuzzleInfo:GetDeck()
 
-	arg_2_0._deck:RegisterEventListener(arg_2_0, var_0_2.UPDATE_CARDS, arg_2_0.onUpdateDeckCard)
-	arg_2_0:onUpdateDeckCard()
+	self._deck:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_CARDS, self.onUpdateDeckCard)
+	self:onUpdateDeckCard()
 end
 
-function var_0_3.onUpdateDeckCard(arg_3_0, arg_3_1)
-	setText(arg_3_0._deckCountLabel, arg_3_0._deck:GetLength())
+--- 牌组卡牌更新回调
+function CardPuzzleDeckPool.onUpdateDeckCard(self, event)
+	setText(self._deckCountLabel, self._deck:GetLength())
 end
 
-function var_0_3.init(arg_4_0)
-	var_0_0.EventListener.AttachEventListener(arg_4_0)
+function CardPuzzleDeckPool.init(self)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_4_0._tf = arg_4_0._go.transform
-	arg_4_0._deckCountLabel = arg_4_0._tf:Find("count/text")
+	self._tf = self._go.transform
+	self._deckCountLabel = self._tf:Find("count/text")
 
-	setText(arg_4_0._tf:Find("label"), i18n("card_puzzle_deck"))
+	setText(self._tf:Find("label"), i18n("card_puzzle_deck"))
 end
 
-function var_0_3.Dispose(arg_5_0)
-	arg_5_0._deckCountLabel = nil
-	arg_5_0._tf = nil
+function CardPuzzleDeckPool.Dispose(self)
+	self._deckCountLabel = nil
+	self._tf = nil
 end

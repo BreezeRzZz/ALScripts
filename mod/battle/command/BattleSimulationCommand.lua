@@ -1,302 +1,339 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleSimulationCommand", var_0_0.MVC.Command)
+-- 模拟战（PVP 演习）战斗Command，不继承SingleDungeonCommand而是直接继承MVC.Command
+-- 核心特性：双舰队对战（user vs rival），AI自动操控双方武器/摇杆，HP伤害统计，增益倒计时系统
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleSimulationCommand = class("BattleSimulationCommand", ys.MVC.Command)
 
-var_0_0.Battle.BattleSimulationCommand = var_0_3
-var_0_3.__name = "BattleSimulationCommand"
+ys.Battle.BattleSimulationCommand = BattleSimulationCommand
+BattleSimulationCommand.__name = "BattleSimulationCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleSimulationCommand.Ctor(self)
+	BattleSimulationCommand.super.Ctor(self)
 end
 
-function var_0_3.ConfigBattleData(arg_2_0, arg_2_1)
-	arg_2_0._battleInitData = arg_2_1
+-- 配置战斗初始化数据（由外部调用传入）
+--- @param self BattleSimulationCommand
+--- @param battleInitData table 战斗初始化数据
+function BattleSimulationCommand.ConfigBattleData(self, battleInitData)
+	self._battleInitData = battleInitData
 end
 
-function var_0_3.Initialize(arg_3_0)
-	arg_3_0:Init()
-	var_0_3.super.Initialize(arg_3_0)
+function BattleSimulationCommand.Initialize(self)
+	self:Init()
+	BattleSimulationCommand.super.Initialize(self)
 
-	arg_3_0._dataProxy = arg_3_0._state:GetProxyByName(var_0_0.Battle.BattleDataProxy.__name)
-	arg_3_0._uiMediator = arg_3_0._state:GetMediatorByName(var_0_0.Battle.BattleUIMediator.__name)
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
+	self._uiMediator = self._state:GetMediatorByName(ys.Battle.BattleUIMediator.__name)
 
-	arg_3_0:InitProtocol()
-	arg_3_0:AddEvent()
+	self:InitProtocol()
+	self:AddEvent()
 end
 
-function var_0_3.DoPrologue(arg_4_0)
-	arg_4_0._dataProxy:InitUserShipsData(arg_4_0._battleInitData.RivalMainUnitList, arg_4_0._battleInitData.RivalVanguardUnitList, var_0_0.Battle.BattleConfig.FOE_CODE, {})
-	arg_4_0._userFleet:SnapShot()
-	arg_4_0._rivalFleet:SnapShot()
+-- 入场序幕：初始化敌我双方舰队，设置AI自动Bot，应用buff，开始增益倒计时
+function BattleSimulationCommand.DoPrologue(self)
+	-- 将敌方舰队数据初始化为FOE_CODE部队
+	self._dataProxy:InitUserShipsData(self._battleInitData.RivalMainUnitList, self._battleInitData.RivalVanguardUnitList, ys.Battle.BattleConfig.FOE_CODE, {})
+	self._userFleet:SnapShot()
+	self._rivalFleet:SnapShot()
 
-	arg_4_0._rivalWeaponBot = var_0_0.Battle.BattleManualWeaponAutoBot.New(arg_4_0._rivalFleet)
-	arg_4_0._rivalJoyStickBot = var_0_0.Battle.BattleJoyStickAutoBot.New(arg_4_0._dataProxy, arg_4_0._rivalFleet)
-	arg_4_0._buffView = arg_4_0._uiMediator:InitSimulationBuffCounting()
+	-- 敌方AI：武器自动Bot + 摇杆自动Bot
+	self._rivalWeaponBot = ys.Battle.BattleManualWeaponAutoBot.New(self._rivalFleet)
+	self._rivalJoyStickBot = ys.Battle.BattleJoyStickAutoBot.New(self._dataProxy, self._rivalFleet)
+	-- 增益倒计时UI
+	self._buffView = self._uiMediator:InitSimulationBuffCounting()
 
-	arg_4_0._uiMediator:OpeningEffect(function()
-		arg_4_0._state:ChangeState(var_0_0.Battle.BattleState.BATTLE_STATE_FIGHT)
-		arg_4_0._uiMediator:ShowAutoBtn()
-		arg_4_0._rivalWeaponBot:SetActive(true, false)
-		arg_4_0._rivalJoyStickBot:SetActive(true)
-		arg_4_0._uiMediator:ShowTimer()
-		arg_4_0._uiMediator:ShowSimulationView()
+	self._uiMediator:OpeningEffect(function()
+		self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+		self._uiMediator:ShowAutoBtn()
+		self._rivalWeaponBot:SetActive(true, false)
+		self._rivalJoyStickBot:SetActive(true)
+		self._uiMediator:ShowTimer()
+		self._uiMediator:ShowSimulationView()
 	end)
-	arg_4_0._userFleet:FleetWarcry()
-	arg_4_0._dataProxy:InitAllFleetUnitsWeaponCD()
-	arg_4_0._dataProxy:TriggerBattleStartBuffs()
+	self._userFleet:FleetWarcry()
+	self._dataProxy:InitAllFleetUnitsWeaponCD()
+	self._dataProxy:TirggerBattleStartBuffs()
 
-	local var_4_0 = arg_4_0._userFleet:GetUnitList()
+	-- 给己方所有单位添加平衡buff（演习平衡机制）
+	local unitList = self._userFleet:GetUnitList()
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_0) do
-		local var_4_1 = var_0_0.Battle.BattleBuffUnit.New(var_0_0.Battle.BattleConfig.SIMULATION_BALANCE_BUFF)
+	for _, unit in ipairs(unitList) do
+		local balanceBuff = ys.Battle.BattleBuffUnit.New(ys.Battle.BattleConfig.SIMULATION_BALANCE_BUFF)
 
-		iter_4_1:AddBuff(var_4_1)
+		unit:AddBuff(balanceBuff)
 	end
 
-	local var_4_2 = #arg_4_0._rivalFleet:GetScoutList()
-	local var_4_3 = arg_4_0._rivalFleet:GetMainList()
-	local var_4_4
+	-- 判断敌方前排数量，决定是否进入劣势阶段
+	local scoutCount = #self._rivalFleet:GetScoutList()
+	local mainList = self._rivalFleet:GetMainList()
+	local unusedVar
 
-	if var_4_2 == 0 then
-		arg_4_0:rivalMainUnitPhase()
-	elseif var_4_2 > 0 then
-		local var_4_5 = var_0_0.Battle.BattleConfig.SIMULATION_ADVANTAGE_BUFF
+	if scoutCount == 0 then
+		-- 无前排 → 直接进入主机队阶段
+		self:rivalMainUnitPhase()
+	elseif scoutCount > 0 then
+		-- 有前排 → 给主机队添加优势buff
+		local advantageBuffID = ys.Battle.BattleConfig.SIMULATION_ADVANTAGE_BUFF
 
-		arg_4_0._rivalDisadvatage = false
+		self._rivalDisadvatage = false
 
-		for iter_4_2, iter_4_3 in ipairs(var_4_3) do
-			local var_4_6 = var_0_0.Battle.BattleBuffUnit.New(var_4_5)
+		for _, mainUnit in ipairs(mainList) do
+			local advantageBuff = ys.Battle.BattleBuffUnit.New(advantageBuffID)
 
-			iter_4_3:AddBuff(var_4_6)
+			mainUnit:AddBuff(advantageBuff)
 		end
 	end
 
-	arg_4_0:startBuffCount()
-	arg_4_0._dataProxy:RivalInit(arg_4_0._rivalFleet:GetUnitList())
+	self:startBuffCount()
+	self._dataProxy:RivalInit(self._rivalFleet:GetUnitList())
 end
 
-function var_0_3.Update(arg_6_0)
-	arg_6_0._rivalWeaponBot:Update()
+-- 每帧更新：驱动敌方武器Bot
+function BattleSimulationCommand.Update(self)
+	self._rivalWeaponBot:Update()
 end
 
-function var_0_3.Init(arg_7_0)
-	arg_7_0._unitDataList = {}
+function BattleSimulationCommand.Init(self)
+	self._unitDataList = {}
 end
 
-function var_0_3.Clear(arg_8_0)
-	for iter_8_0, iter_8_1 in pairs(arg_8_0._unitDataList) do
-		arg_8_0:UnregisterUnitEvent(iter_8_1)
+-- 清理所有注册的单位事件
+function BattleSimulationCommand.Clear(self)
+	for uid, unit in pairs(self._unitDataList) do
+		self:UnregisterUnitEvent(unit)
 
-		arg_8_0._unitDataList[iter_8_0] = nil
+		self._unitDataList[uid] = nil
 	end
 end
 
-function var_0_3.Reinitialize(arg_9_0)
-	arg_9_0._state:Deactive()
-	arg_9_0:Clear()
-	arg_9_0:Init()
+function BattleSimulationCommand.Reinitialize(self)
+	self._state:Deactive()
+	self:Clear()
+	self:Init()
 end
 
-function var_0_3.Dispose(arg_10_0)
-	arg_10_0:Clear()
-	arg_10_0:RemoveEvent()
-	var_0_3.super.Dispose(arg_10_0)
+function BattleSimulationCommand.Dispose(self)
+	self:Clear()
+	self:RemoveEvent()
+	BattleSimulationCommand.super.Dispose(self)
 end
 
-function var_0_3.onInitBattle(arg_11_0)
-	arg_11_0._weaponCommand = arg_11_0._state:GetCommandByName(var_0_0.Battle.BattleControllerWeaponCommand.__name)
-	arg_11_0._userFleet = arg_11_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FRIENDLY_CODE)
-	arg_11_0._rivalFleet = arg_11_0._dataProxy:GetFleetByIFF(var_0_0.Battle.BattleConfig.FOE_CODE)
+-- 战斗数据初始化完成后获取舰队引用
+function BattleSimulationCommand.onInitBattle(self)
+	self._weaponCommand = self._state:GetCommandByName(ys.Battle.BattleControllerWeaponCommand.__name)
+	self._userFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+	self._rivalFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FOE_CODE)
 end
 
-function var_0_3.InitProtocol(arg_12_0)
+function BattleSimulationCommand.InitProtocol(self)
 	return
 end
 
-function var_0_3.AddEvent(arg_13_0)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_2.ADD_UNIT, arg_13_0.onAddUnit)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_2.REMOVE_UNIT, arg_13_0.onRemoveUnit)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_2.STAGE_DATA_INIT_FINISH, arg_13_0.onInitBattle)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_2.SHUT_DOWN_PLAYER, arg_13_0.onPlayerShutDown)
-	arg_13_0._dataProxy:RegisterEventListener(arg_13_0, var_0_2.UPDATE_COUNT_DOWN, arg_13_0.onUpdateCountDown)
+-- 注册核心战斗事件：单位添加/移除、数据初始化完毕、玩家沉没、倒计时更新
+function BattleSimulationCommand.AddEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onInitBattle)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER, self.onPlayerShutDown)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN, self.onUpdateCountDown)
 end
 
-function var_0_3.RemoveEvent(arg_14_0)
-	arg_14_0._dataProxy:UnregisterEventListener(arg_14_0, var_0_2.ADD_UNIT)
-	arg_14_0._dataProxy:UnregisterEventListener(arg_14_0, var_0_2.REMOVE_UNIT)
-	arg_14_0._dataProxy:UnregisterEventListener(arg_14_0, var_0_2.STAGE_DATA_INIT_FINISH)
-	arg_14_0._dataProxy:UnregisterEventListener(arg_14_0, var_0_2.SHUT_DOWN_PLAYER)
-	arg_14_0._dataProxy:UnregisterEventListener(arg_14_0, var_0_2.UPDATE_COUNT_DOWN)
+function BattleSimulationCommand.RemoveEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN)
 end
 
-function var_0_3.onAddUnit(arg_15_0, arg_15_1)
-	local var_15_0 = arg_15_1.Data.type
-	local var_15_1 = arg_15_1.Data.unit
+-- 单位添加事件：注册单位事件并记录到unitDataList
+function BattleSimulationCommand.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
 
-	arg_15_0:RegisterUnitEvent(var_15_1)
+	self:RegisterUnitEvent(unit)
 
-	arg_15_0._unitDataList[var_15_1:GetUniqueID()] = var_15_1
+	self._unitDataList[unit:GetUniqueID()] = unit
 end
 
-function var_0_3.RegisterUnitEvent(arg_16_0, arg_16_1)
-	arg_16_1:RegisterEventListener(arg_16_0, var_0_1.DYING, arg_16_0.onUnitDying)
-	arg_16_1:RegisterEventListener(arg_16_0, var_0_1.UPDATE_HP, arg_16_0.onUpdateUnitHP)
+-- 为单位注册事件：DYING（濒死）、UPDATE_HP（血量更新）、PLAYER_UNIT额外注册SHUT_DOWN_PLAYER
+function BattleSimulationCommand.RegisterUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.DYING, self.onUnitDying)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUpdateUnitHP)
 
-	if arg_16_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_16_1:RegisterEventListener(arg_16_0, var_0_1.SHUT_DOWN_PLAYER, arg_16_0.onShutDownPlayer)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER, self.onShutDownPlayer)
 	end
 end
 
-function var_0_3.UnregisterUnitEvent(arg_17_0, arg_17_1)
-	arg_17_1:UnregisterEventListener(arg_17_0, var_0_1.DYING)
-	arg_17_1:UnregisterEventListener(arg_17_0, var_0_1.UPDATE_HP)
+function BattleSimulationCommand.UnregisterUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.DYING)
+	unit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
 
-	if arg_17_1:GetUnitType() == var_0_0.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_17_1:UnregisterEventListener(arg_17_0, var_0_1.SHUT_DOWN_PLAYER)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:UnregisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER)
 	end
 end
 
-function var_0_3.onRemoveUnit(arg_18_0, arg_18_1)
-	local var_18_0 = arg_18_1.Data.UID
-	local var_18_1 = arg_18_0._unitDataList[var_18_0]
+-- 单位移除事件：从waveUpdater和unitDataList中清除
+function BattleSimulationCommand.onRemoveUnit(self, event)
+	local uid = event.Data.UID
+	local unit = self._unitDataList[uid]
 
-	if var_18_1 == nil then
+	if unit == nil then
 		return
 	end
 
-	arg_18_0:UnregisterUnitEvent(var_18_1)
+	self:UnregisterUnitEvent(unit)
 
-	arg_18_0._unitDataList[var_18_0] = nil
+	self._unitDataList[uid] = nil
 end
 
-function var_0_3.onPlayerShutDown(arg_19_0, arg_19_1)
-	if arg_19_0._state:GetState() ~= arg_19_0._state.BATTLE_STATE_FIGHT then
+-- 玩家方有人沉没/全灭的判定逻辑
+-- 包含反作弊验证（Vertify），以及rival劣势阶段切换
+function BattleSimulationCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if arg_19_0._failReason == nil then
-		var_0_0.Battle.BattleState.GenerateVertifyData(1)
+	-- 首轮沉没时执行反作弊校验
+	if self._failReason == nil then
+		ys.Battle.BattleState.GenerateVertifyData(1)
 
-		local var_19_0, var_19_1 = var_0_0.Battle.BattleState.Vertify()
+		local vertifyResult, vertifyCode = ys.Battle.BattleState.Vertify()
 
-		if not var_19_0 then
-			arg_19_0._failReason = 900 + var_19_1
+		if not vertifyResult then
+			self._failReason = 900 + vertifyCode
 		end
 	end
 
-	if #arg_19_0._rivalFleet:GetUnitList() == 0 then
-		arg_19_0._dataProxy:CalcSimulationScoreAtEnd(arg_19_0._userFleet, arg_19_0._rivalFleet)
+	-- 敌方全灭 → 判定胜负
+	if #self._rivalFleet:GetUnitList() == 0 then
+		self._dataProxy:CalcSimulationScoreAtEnd(self._userFleet, self._rivalFleet)
 
-		if arg_19_0._failReason then
+		if self._failReason then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_19_0._failReason
+				reason = self._failReason
 			})
 
 			return
 		end
 
-		arg_19_0._failReason = nil
+		self._failReason = nil
 
-		arg_19_0._dataProxy:TriggerFinishBattle()
-		arg_19_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._state:BattleEnd()
 	end
 
-	if arg_19_1.Data.unit == arg_19_0._userFleet:GetFlagShip() then
-		arg_19_0._dataProxy:TriggerFinishBattle()
-		arg_19_0._dataProxy:CalcSimulationScoreAtEnd(arg_19_0._userFleet, arg_19_0._rivalFleet)
-		arg_19_0._state:BattleEnd()
+	-- 己方旗舰沉没 → 失败
+	if event.Data.unit == self._userFleet:GetFlagShip() then
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcSimulationScoreAtEnd(self._userFleet, self._rivalFleet)
+		self._state:BattleEnd()
 
 		return
 	end
 
-	if #arg_19_0._userFleet:GetScoutList() == 0 then
-		arg_19_0._dataProxy:TriggerFinishBattle()
-		arg_19_0._dataProxy:CalcSimulationScoreAtEnd(arg_19_0._userFleet, arg_19_0._rivalFleet)
-		arg_19_0._state:BattleEnd()
+	-- 己方前排全灭 → 失败
+	if #self._userFleet:GetScoutList() == 0 then
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcSimulationScoreAtEnd(self._userFleet, self._rivalFleet)
+		self._state:BattleEnd()
 	end
 
-	if #arg_19_0._rivalFleet:GetScoutList() == 0 and not arg_19_0._rivalDisadvatage then
-		arg_19_0:rivalMainUnitPhase()
+	-- 敌方前排全灭且当前非劣势阶段 → 切换至rival主机队阶段
+	if #self._rivalFleet:GetScoutList() == 0 and not self._rivalDisadvatage then
+		self:rivalMainUnitPhase()
 	end
 end
 
-function var_0_3.rivalMainUnitPhase(arg_20_0)
-	arg_20_0:startBuffCount()
+-- 敌方主机队阶段：敌方前排被全灭后，主机队获得劣势buff，停止AI移动
+function BattleSimulationCommand.rivalMainUnitPhase(self)
+	self:startBuffCount()
 
-	arg_20_0._rivalDisadvatage = true
+	self._rivalDisadvatage = true
 
-	arg_20_0._rivalJoyStickBot:SetActive(false)
-	arg_20_0._rivalFleet:FreeMainUnit(var_0_0.Battle.BattleConfig.SIMULATION_FREE_BUFF)
+	self._rivalJoyStickBot:SetActive(false)
+	self._rivalFleet:FreeMainUnit(ys.Battle.BattleConfig.SIMULATION_FREE_BUFF)
 
-	local var_20_0 = arg_20_0._rivalFleet:GetMainList()
+	local mainList = self._rivalFleet:GetMainList()
 
-	for iter_20_0, iter_20_1 in ipairs(var_20_0) do
-		for iter_20_2, iter_20_3 in ipairs(var_0_0.Battle.BattleConfig.SIMULATION_ADVANTAGE_CANCEL_LIST) do
-			iter_20_1:RemoveBuff(iter_20_3)
+	for _, mainUnit in ipairs(mainList) do
+		-- 移除之前的优势buff
+		for _, buffID in ipairs(ys.Battle.BattleConfig.SIMULATION_ADVANTAGE_CANCEL_LIST) do
+			mainUnit:RemoveBuff(buffID)
 		end
 
-		local var_20_1 = var_0_0.Battle.BattleBuffUnit.New(var_0_0.Battle.BattleConfig.SIMULATION_DISADVANTAGE_BUFF)
+		-- 添加劣势buff
+		local disadvantageBuff = ys.Battle.BattleBuffUnit.New(ys.Battle.BattleConfig.SIMULATION_DISADVANTAGE_BUFF)
 
-		iter_20_1:AddBuff(var_20_1)
+		mainUnit:AddBuff(disadvantageBuff)
 	end
 end
 
-function var_0_3.onUpdateCountDown(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_0._dataProxy:GetCountDown()
+-- 倒计时更新：驱动增益倒计时UI，倒计时归零则按伤害比判定胜负
+function BattleSimulationCommand.onUpdateCountDown(self, event)
+	local countDown = self._dataProxy:GetCountDown()
 
-	if arg_21_0._buffStartTime then
-		local var_21_1 = var_0_0.Battle.BattleConfig.SIMULATION_RIVAL_RAGE_TOTAL_COUNT - (arg_21_0._buffStartTime - var_21_0)
+	-- 增益倒计时逻辑：到达rage计数后显示"增强中"提示
+	if self._buffStartTime then
+		local remainingCount = ys.Battle.BattleConfig.SIMULATION_RIVAL_RAGE_TOTAL_COUNT - (self._buffStartTime - countDown)
 
-		if var_21_1 <= 0 then
+		if remainingCount <= 0 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("simulation_enhancing"))
 
-			arg_21_0._buffStartTime = nil
+			self._buffStartTime = nil
 
-			arg_21_0._buffView:SetEnhancedText()
+			self._buffView:SetEnhancedText()
 		else
-			arg_21_0._buffView:SetCountDownText(var_21_1)
+			self._buffView:SetCountDownText(remainingCount)
 		end
 	end
 
-	if var_21_0 <= 0 then
-		local var_21_2, var_21_3 = arg_21_0._userFleet:GetDamageRatioResult()
-		local var_21_4, var_21_5 = arg_21_0._rivalFleet:GetDamageRatioResult()
+	-- 主倒计时归零 → 按双方伤害比率结算
+	if countDown <= 0 then
+		local userDmgRatio, userDmgRatioHp = self._userFleet:GetDamageRatioResult()
+		local rivalDmgRatio, rivalDmgRatioHp = self._rivalFleet:GetDamageRatioResult()
 
-		arg_21_0._dataProxy:TriggerFinishBattle()
-		arg_21_0._dataProxy:CalcSimulationScoreAtTimesUp(var_21_2, var_21_4, var_21_3, var_21_5, arg_21_0._rivalFleet)
-		arg_21_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self._dataProxy:CalcSimulationScoreAtTimesUp(userDmgRatio, rivalDmgRatio, userDmgRatioHp, rivalDmgRatioHp, self._rivalFleet)
+		self._state:BattleEnd()
 	end
 end
 
-function var_0_3.onUpdateUnitHP(arg_22_0, arg_22_1)
-	local var_22_0 = arg_22_1.Dispatcher:GetFleetVO()
+-- 单位HP更新 → 将有效伤害累加到对应的FleetVO
+function BattleSimulationCommand.onUpdateUnitHP(self, event)
+	local fleetVO = event.Dispatcher:GetFleetVO()
 
-	if var_22_0 then
-		local var_22_1 = arg_22_1.Data.validDHP
+	if fleetVO then
+		local validDHP = event.Data.validDHP
 
-		var_22_0:UpdateFleetDamage(var_22_1)
+		fleetVO:UpdateFleetDamage(validDHP)
 	end
 end
 
-function var_0_3.onUnitDying(arg_23_0, arg_23_1)
-	local var_23_0 = arg_23_1.Dispatcher
-	local var_23_1 = var_23_0:GetUniqueID()
+-- 单位濒死 → 计算击杀分数并移除单位
+function BattleSimulationCommand.onUnitDying(self, event)
+	local unit = event.Dispatcher
+	local uid = unit:GetUniqueID()
 
-	arg_23_0._dataProxy:CalcBattleScoreWhenDead(var_23_0)
-	arg_23_0._dataProxy:KillUnit(var_23_1)
+	self._dataProxy:CalcBattleScoreWhenDead(unit)
+	self._dataProxy:KillUnit(uid)
 end
 
-function var_0_3.onShutDownPlayer(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_1.Dispatcher
-	local var_24_1 = var_24_0:GetUniqueID()
+-- 玩家单位ShutDown → 计算溢出伤害并移除
+function BattleSimulationCommand.onShutDownPlayer(self, event)
+	local unit = event.Dispatcher
+	local uid = unit:GetUniqueID()
 
-	var_24_0:GetFleetVO():UpdateFleetOverDamage(var_24_0)
-	arg_24_0._dataProxy:ShutdownPlayerUnit(var_24_1)
+	unit:GetFleetVO():UpdateFleetOverDamage(unit)
+	self._dataProxy:ShutdownPlayerUnit(uid)
 end
 
-function var_0_3.startBuffCount(arg_25_0)
-	arg_25_0._buffStartTime = arg_25_0._dataProxy:GetCountDown()
+-- 开始增益倒计时：记录当前剩余时间作为基准
+function BattleSimulationCommand.startBuffCount(self)
+	self._buffStartTime = self._dataProxy:GetCountDown()
 end

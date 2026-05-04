@@ -1,88 +1,101 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.CardPuzzleHandCardButton = class("CardPuzzleHandCardButton")
+ys.Battle.CardPuzzleHandCardButton = class("CardPuzzleHandCardButton")
 
-local var_0_2 = var_0_0.Battle.CardPuzzleHandCardButton
+local CardPuzzleHandCardButton = ys.Battle.CardPuzzleHandCardButton
 
-var_0_2.__name = "CardPuzzleHandCardButton"
+CardPuzzleHandCardButton.__name = "CardPuzzleHandCardButton"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图手牌按钮视图
+--- 用于 HandPool 中显示单张手牌的缩略按钮，包含费用、名称、稀有度、类型等
 
-	arg_1_0:init()
+function CardPuzzleHandCardButton.Ctor(self, go)
+	self._go = go
+
+	self:init()
 end
 
-function var_0_2.SetCardInfo(arg_2_0, arg_2_1)
-	arg_2_0._cardInfo = arg_2_1
+--- 设置卡牌信息并刷新显示
+function CardPuzzleHandCardButton.SetCardInfo(self, cardInfo)
+	self._cardInfo = cardInfo
 
-	arg_2_0:updateCardView()
+	self:updateCardView()
 end
 
-function var_0_2.UpdateTotalCost(arg_3_0)
-	if arg_3_0._cardInfo then
-		setText(arg_3_0._costTxt, arg_3_0._cardInfo:GetTotalCost())
+--- 更新费用文本
+function CardPuzzleHandCardButton.UpdateTotalCost(self)
+	if self._cardInfo then
+		setText(self._costTxt, self._cardInfo:GetTotalCost())
 	end
 end
 
-function var_0_2.ConfigCallback(arg_4_0, arg_4_1)
-	arg_4_0._callback = arg_4_1
+--- 配置点击回调
+function CardPuzzleHandCardButton.ConfigCallback(self, callback)
+	self._callback = callback
 end
 
-function var_0_2.init(arg_5_0)
-	arg_5_0._btnTF = arg_5_0._go.transform
-	arg_5_0._icon = arg_5_0._btnTF:Find("skill_icon/unfill")
-	arg_5_0._costTxt = arg_5_0._btnTF:Find("cost/cost_label")
-	arg_5_0._cardName = arg_5_0._btnTF:Find("name")
-	arg_5_0._cardType = arg_5_0._btnTF:Find("icon_bg")
-	arg_5_0._cardTypeList = {}
+function CardPuzzleHandCardButton.init(self)
+	self._btnTF = self._go.transform
+	self._icon = self._btnTF:Find("skill_icon/unfill")
+	self._costTxt = self._btnTF:Find("cost/cost_label")
+	self._cardName = self._btnTF:Find("name")
+	self._cardType = self._btnTF:Find("icon_bg")
+	self._cardTypeList = {}
 
-	for iter_5_0 = 1, 3 do
-		table.insert(arg_5_0._cardTypeList, arg_5_0._cardType:Find("card_type_" .. iter_5_0))
+	-- 卡牌类型图标列表（1~3）
+	for i = 1, 3 do
+		table.insert(self._cardTypeList, self._cardType:Find("card_type_" .. i))
 	end
 
-	arg_5_0._cardRarity = arg_5_0._btnTF:Find("bg")
-	arg_5_0._cardRarityList = {}
+	self._cardRarity = self._btnTF:Find("bg")
+	self._cardRarityList = {}
 
-	for iter_5_1 = 0, 4 do
-		table.insert(arg_5_0._cardRarityList, arg_5_0._cardRarity:Find("rarity_" .. iter_5_1))
+	-- 稀有度背景列表（0~4 = 白~彩）
+	for i = 0, 4 do
+		table.insert(self._cardRarityList, self._cardRarity:Find("rarity_" .. i))
 	end
 
-	arg_5_0._tag = arg_5_0._btnTF:Find("tag")
+	self._tag = self._btnTF:Find("tag")
 
-	GetComponent(arg_5_0._btnTF, "EventTriggerListener"):AddPointUpFunc(function()
-		if arg_5_0._cardInfo then
-			arg_5_0._callback(arg_5_0._cardInfo)
+	-- 点击触发回调
+	GetComponent(self._btnTF, "EventTriggerListener"):AddPointUpFunc(function()
+		if self._cardInfo then
+			self._callback(self._cardInfo)
 		end
 	end)
 end
 
-function var_0_2.updateCardView(arg_7_0)
-	if arg_7_0._cardInfo then
-		setActive(arg_7_0._btnTF, true)
-		setText(arg_7_0._costTxt, arg_7_0._cardInfo:GetTotalCost())
-		setText(arg_7_0._cardName, arg_7_0._cardInfo:GetCardTemplate().name)
-		setText(arg_7_0._tag, "词缀功能TODO")
+--- 刷新卡牌视图显示
+function CardPuzzleHandCardButton.updateCardView(self)
+	if self._cardInfo then
+		setActive(self._btnTF, true)
+		setText(self._costTxt, self._cardInfo:GetTotalCost())
+		setText(self._cardName, self._cardInfo:GetCardTemplate().name)
+		setText(self._tag, "词缀功能TODO")
 
-		local var_7_0 = arg_7_0._cardInfo:GetRarity()
-		local var_7_1 = arg_7_0._cardInfo:GetCardType()
+		local rarity = self._cardInfo:GetRarity()
+		local cardType = self._cardInfo:GetCardType()
 
-		for iter_7_0, iter_7_1 in ipairs(arg_7_0._cardRarityList) do
-			setActive(iter_7_1, iter_7_0 == var_7_0 + 1)
+		-- 设置稀有度背景
+		for i, rarityTF in ipairs(self._cardRarityList) do
+			setActive(rarityTF, i == rarity + 1)
 		end
 
-		for iter_7_2, iter_7_3 in ipairs(arg_7_0._cardTypeList) do
-			setActive(iter_7_3, iter_7_2 == var_7_1)
+		-- 设置卡牌类型图标
+		for i, typeTF in ipairs(self._cardTypeList) do
+			setActive(typeTF, i == cardType)
 		end
 
-		GetImageSpriteFromAtlasAsync("skillicon/" .. arg_7_0._cardInfo:GetIconID(), "", arg_7_0._icon)
+		-- 异步加载技能图标
+		GetImageSpriteFromAtlasAsync("skillicon/" .. self._cardInfo:GetIconID(), "", self._icon)
 	else
-		setActive(arg_7_0._btnTF, false)
+		setActive(self._btnTF, false)
 	end
 end
 
-function var_0_2.Dispose(arg_8_0)
+function CardPuzzleHandCardButton.Dispose(self)
 	return
 end

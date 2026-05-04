@@ -1,91 +1,99 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleCardPuzzleEvent
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleCardPuzzleEvent = ys.Battle.BattleCardPuzzleEvent
 
-var_0_0.Battle.CardPuzzleFleetHead = class("CardPuzzleFleetHead")
+ys.Battle.CardPuzzleFleetHead = class("CardPuzzleFleetHead")
 
-local var_0_3 = var_0_0.Battle.CardPuzzleFleetHead
+local CardPuzzleFleetHead = ys.Battle.CardPuzzleFleetHead
 
-var_0_3.__name = "CardPuzzleFleetHead"
+CardPuzzleFleetHead.__name = "CardPuzzleFleetHead"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_0._go.transform
-	arg_1_0._mainIcon = arg_1_0._tf:Find("main/icon")
-	arg_1_0._scoutIcon = arg_1_0._tf:Find("scout/icon")
-	arg_1_0._testAttrContainer = arg_1_0._tf:Find("test_attr_list")
-	arg_1_0._testAttrTpl = arg_1_0._tf:Find("test_attr_tpl")
-	arg_1_0._testAttrList = {}
-	arg_1_0._loader = AutoLoader.New()
+--- 卡牌拼图舰队头像视图
+--- 显示舰队旗舰和前锋的立绘头像，以及测试属性面板（开发用）
+
+function CardPuzzleFleetHead.Ctor(self, go)
+	self._go = go
+	self._tf = self._go.transform
+	self._mainIcon = self._tf:Find("main/icon")
+	self._scoutIcon = self._tf:Find("scout/icon")
+	self._testAttrContainer = self._tf:Find("test_attr_list")
+	self._testAttrTpl = self._tf:Find("test_attr_tpl")
+	self._testAttrList = {}
+	self._loader = AutoLoader.New()
 end
 
-function var_0_3.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	var_0_0.EventListener.AttachEventListener(arg_2_0)
+--- 设置关联的卡牌拼图组件
+function CardPuzzleFleetHead.SetCardPuzzleComponent(self, info)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_2_0._info = arg_2_1
+	self._info = info
 
+	-- 测试属性面板（仅在开发模式下显示）
 	if TEST_ATTR_PANEL then
-		arg_2_0._info:RegisterEventListener(arg_2_0, var_0_2.UPDATE_FLEET_ATTR, arg_2_0.onUpdateFleetAttr)
-		arg_2_0:onUpdateFleetAttr()
+		self._info:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_FLEET_ATTR, self.onUpdateFleetAttr)
+		self:onUpdateFleetAttr()
 	end
 end
 
-function var_0_3.Update(arg_3_0)
+function CardPuzzleFleetHead.Update(self)
 	return
 end
 
-function var_0_3.UpdateShipIcon(arg_4_0, arg_4_1)
-	local var_4_0
-	local var_4_1
+--- 更新舰船立绘图标
+--- @param pos number 舰队位置（FLAG_SHIP/LEADER）
+function CardPuzzleFleetHead.UpdateShipIcon(self, pos)
+	local unit
+	local icon
 
-	if arg_4_1 == TeamType.TeamPos.FLAG_SHIP then
-		var_4_0 = arg_4_0._info:GetMainUnit()
-		var_4_1 = arg_4_0._mainIcon
-	elseif arg_4_1 == TeamType.TeamPos.LEADER then
-		var_4_0 = arg_4_0._info:GetScoutUnit()
-		var_4_1 = arg_4_0._scoutIcon
+	if pos == TeamType.TeamPos.FLAG_SHIP then
+		unit = self._info:GetMainUnit()
+		icon = self._mainIcon
+	elseif pos == TeamType.TeamPos.LEADER then
+		unit = self._info:GetScoutUnit()
+		icon = self._scoutIcon
 	end
 
-	local var_4_2 = CardPuzzleShip.getPaintingName(var_4_0:GetTemplate().id)
+	local paintingName = CardPuzzleShip.getPaintingName(unit:GetTemplate().id)
 
-	arg_4_0._loader:GetSprite("cardtowerselectships/" .. var_4_2 .. "_select", "", var_4_1)
+	self._loader:GetSprite("cardtowerselectships/" .. paintingName .. "_select", "", icon)
 end
 
-function var_0_3.UpdateShipBuff(arg_5_0)
+function CardPuzzleFleetHead.UpdateShipBuff(self)
 	return
 end
 
-function var_0_3.onUpdateFleetAttr(arg_6_0)
-	local var_6_0 = arg_6_0._info:GetAttrManager()._attrList
+--- 舰队属性更新回调（测试面板用）
+function CardPuzzleFleetHead.onUpdateFleetAttr(self)
+	local attrList = self._info:GetAttrManager()._attrList
 
-	for iter_6_0, iter_6_1 in pairs(var_6_0) do
-		if arg_6_0._testAttrList[iter_6_0] == nil then
-			local var_6_1 = cloneTplTo(arg_6_0._testAttrTpl, arg_6_0._testAttrContainer)
+	for attrName, attrValue in pairs(attrList) do
+		if self._testAttrList[attrName] == nil then
+			local attrTF = cloneTplTo(self._testAttrTpl, self._testAttrContainer)
 
-			arg_6_0._testAttrList[iter_6_0] = var_6_1
+			self._testAttrList[attrName] = attrTF
 
-			setText(var_6_1:Find("name"), iter_6_0)
+			setText(attrTF:Find("name"), attrName)
 		end
 
-		local var_6_2 = arg_6_0._testAttrList[iter_6_0]
-		local var_6_3 = arg_6_0._info:GetAttrManager():GetCurrent(iter_6_0)
+		local attrTF = self._testAttrList[attrName]
+		local currentValue = self._info:GetAttrManager():GetCurrent(attrName)
 
-		setText(var_6_2:Find("value"), var_6_3)
+		setText(attrTF:Find("value"), currentValue)
 	end
 end
 
-function var_0_3.updateHPBar(arg_7_0)
+function CardPuzzleFleetHead.updateHPBar(self)
 	return
 end
 
-function var_0_3.Dispose(arg_8_0)
-	arg_8_0._mainIcon = nil
-	arg_8_0._scoutIcon = nil
-	arg_8_0._testAttrContainer = nil
-	arg_8_0._testAttrTpl = nil
-	arg_8_0._testAttrList = nil
+function CardPuzzleFleetHead.Dispose(self)
+	self._mainIcon = nil
+	self._scoutIcon = nil
+	self._testAttrContainer = nil
+	self._testAttrTpl = nil
+	self._testAttrList = nil
 
-	arg_8_0._loader:Clear()
+	self._loader:Clear()
 end

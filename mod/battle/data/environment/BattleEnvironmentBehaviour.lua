@@ -1,147 +1,179 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviour")
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviour = class("BattleEnvironmentBehaviour")
 
-var_0_0.Battle.BattleEnvironmentBehaviour = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviour"
-var_0_3.STATE_DELAY = "STATE_DELAY"
-var_0_3.STATE_READY = "STATE_READY"
-var_0_3.STATE_OVERHEAT = "STATE_OVERHEAT"
-var_0_3.STATE_EXPIRE = "STATE_EXPIRE"
+ys.Battle.BattleEnvironmentBehaviour = BattleEnvironmentBehaviour
+BattleEnvironmentBehaviour.__name = "BattleEnvironmentBehaviour"
+BattleEnvironmentBehaviour.STATE_DELAY = "STATE_DELAY"
+BattleEnvironmentBehaviour.STATE_READY = "STATE_READY"
+BattleEnvironmentBehaviour.STATE_OVERHEAT = "STATE_OVERHEAT"
+BattleEnvironmentBehaviour.STATE_EXPIRE = "STATE_EXPIRE"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._cldUnitList = {}
+--- @class BattleEnvironmentBehaviour 战场环境行为基类，管理延迟/冷却/生命周期状态机
+--- @field _cldUnitList table 碰撞单位列表
+--- @field _unit BattleEnvironmentUnit 关联的环境单元
+--- @field _tmpData table 行为模板数据(来自battle_environment_behaviour_template)
+--- @field _state string 当前状态(STATE_DELAY/READY/OVERHEAT/EXPIRE)
+--- @field _delayStartTime number 延迟开始时间戳
+--- @field _liftStartTime number 生命周期开始时间戳
+--- @field _CDstartTime number 冷却开始时间戳
+--- @field _diveFilter table 潜水状态过滤表
+function BattleEnvironmentBehaviour.Ctor(self, _, _)
+	self._cldUnitList = {}
 end
 
-function var_0_3.SetUnitRef(arg_2_0, arg_2_1)
-	assert(arg_2_1, "Shounld Bind A Unit")
+--- 绑定所属环境单元
+--- @param unit BattleEnvironmentUnit
+function BattleEnvironmentBehaviour.SetUnitRef(self, unit)
+	assert(unit, "Shounld Bind A Unit")
 
-	arg_2_0._unit = arg_2_1
+	self._unit = unit
 end
 
-function var_0_3.SetTemplate(arg_3_0, arg_3_1)
-	arg_3_0._tmpData = arg_3_1
+--- 设置行为模板，初始化延迟/生命期/潜水过滤
+--- @param tmpData table 行为配置数据
+function BattleEnvironmentBehaviour.SetTemplate(self, tmpData)
+	self._tmpData = tmpData
 
-	if arg_3_0._tmpData.delay then
-		arg_3_0._delayStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_3_0._state = var_0_3.STATE_DELAY
+	if self._tmpData.delay then
+		self._delayStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._state = BattleEnvironmentBehaviour.STATE_DELAY
 	else
-		arg_3_0._state = var_0_3.STATE_READY
+		self._state = BattleEnvironmentBehaviour.STATE_READY
 	end
 
-	if arg_3_0._tmpData.life_time then
-		arg_3_0._liftStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	if self._tmpData.life_time then
+		self._liftStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 
-	arg_3_0._diveFilter = arg_3_0._tmpData.diveFilter or {}
+	self._diveFilter = self._tmpData.diveFilter or {}
 end
 
-function var_0_3.UpdateCollideUnitList(arg_4_0, arg_4_1)
-	if #arg_4_0._diveFilter ~= 0 then
-		local var_4_0 = #arg_4_1
+--- 更新碰撞单位列表，按 diveFilter 过滤潜水状态不符的单位
+--- @param cldUnitList table 待过滤的碰撞单位列表
+function BattleEnvironmentBehaviour.UpdateCollideUnitList(self, cldUnitList)
+	if #self._diveFilter ~= 0 then
+		local len = #cldUnitList
 
-		while var_4_0 > 0 do
-			local var_4_1 = arg_4_1[var_4_0]:GetCurrentOxyState()
+		while len > 0 do
+			local oxyState = cldUnitList[len]:GetCurrentOxyState()
 
-			for iter_4_0, iter_4_1 in ipairs(arg_4_0._diveFilter) do
-				if var_4_1 == iter_4_1 then
-					table.remove(arg_4_1, var_4_0)
+			for _, filterState in ipairs(self._diveFilter) do
+				if oxyState == filterState then
+					table.remove(cldUnitList, len)
 
 					break
 				end
 			end
 
-			var_4_0 = var_4_0 - 1
+			len = len - 1
 		end
 	end
 
-	arg_4_0._cldUnitList = arg_4_1
+	self._cldUnitList = cldUnitList
 end
 
-function var_0_3.OnUpdate(arg_5_0)
-	arg_5_0:updateDelay()
-	arg_5_0:updateReload()
-	arg_5_0:updateLifeTime()
+--- 每帧更新：依次处理延迟、冷却、生命周期
+function BattleEnvironmentBehaviour.OnUpdate(self)
+	self:updateDelay()
+	self:updateReload()
+	self:updateLifeTime()
 
-	if arg_5_0._state == var_0_3.STATE_READY then
-		arg_5_0:doBehaviour()
+	if self._state == BattleEnvironmentBehaviour.STATE_READY then
+		self:doBehaviour()
 	end
 end
 
-function var_0_3.Dispose(arg_6_0)
-	arg_6_0._cldUnitList = nil
-	arg_6_0._tmpData = nil
-	arg_6_0._CDstartTime = nil
+--- 释放资源
+function BattleEnvironmentBehaviour.Dispose(self)
+	self._cldUnitList = nil
+	self._tmpData = nil
+	self._CDstartTime = nil
 end
 
-function var_0_3.OnCollide(arg_7_0, arg_7_1)
+--- 碰撞回调（子类可重写）
+function BattleEnvironmentBehaviour.OnCollide(self, _)
 	return
 end
 
-function var_0_3.GetCurrentState(arg_8_0)
-	return arg_8_0._state
+--- 获取当前状态
+--- @return string state
+function BattleEnvironmentBehaviour.GetCurrentState(self)
+	return self._state
 end
 
-function var_0_3.updateDelay(arg_9_0)
-	if arg_9_0._delayStartTime and arg_9_0._tmpData.delay + arg_9_0._delayStartTime <= pg.TimeMgr.GetInstance():GetCombatTime() then
-		arg_9_0._delayStartTime = nil
+--- 检查延迟是否完成，完成则进入冷却处理
+function BattleEnvironmentBehaviour.updateDelay(self)
+	if self._delayStartTime and self._tmpData.delay + self._delayStartTime <= pg.TimeMgr.GetInstance():GetCombatTime() then
+		self._delayStartTime = nil
 
-		arg_9_0:handleCoolDown()
+		self:handleCoolDown()
 	end
 end
 
-function var_0_3.updateReload(arg_10_0)
-	if arg_10_0._CDstartTime then
-		if arg_10_0:getReloadFinishTimeStamp() <= pg.TimeMgr.GetInstance():GetCombatTime() then
-			arg_10_0:handleCoolDown()
+--- 检查冷却是否完成，完成则恢复就绪
+function BattleEnvironmentBehaviour.updateReload(self)
+	if self._CDstartTime then
+		if self:getReloadFinishTimeStamp() <= pg.TimeMgr.GetInstance():GetCombatTime() then
+			self:handleCoolDown()
 		else
 			return
 		end
 	end
 end
 
-function var_0_3.updateLifeTime(arg_11_0)
-	if arg_11_0._liftStartTime and arg_11_0._liftStartTime + arg_11_0._tmpData.life_time <= pg.TimeMgr.GetInstance():GetCombatTime() then
-		arg_11_0._state = var_0_3.STATE_EXPIRE
+--- 检查生命周期是否已过，是则标记过期并执行doExpire
+function BattleEnvironmentBehaviour.updateLifeTime(self)
+	if self._liftStartTime and self._liftStartTime + self._tmpData.life_time <= pg.TimeMgr.GetInstance():GetCombatTime() then
+		self._state = BattleEnvironmentBehaviour.STATE_EXPIRE
 
-		arg_11_0:doExpire()
+		self:doExpire()
 	end
 end
 
-function var_0_3.getReloadFinishTimeStamp(arg_12_0)
-	return arg_12_0._tmpData.reload_time + arg_12_0._CDstartTime
+--- 计算冷却完成时间戳
+--- @return number
+function BattleEnvironmentBehaviour.getReloadFinishTimeStamp(self)
+	return self._tmpData.reload_time + self._CDstartTime
 end
 
-function var_0_3.handleCoolDown(arg_13_0)
-	arg_13_0._state = var_0_3.STATE_READY
-	arg_13_0._CDstartTime = nil
+--- 冷却完成，恢复就绪状态
+function BattleEnvironmentBehaviour.handleCoolDown(self)
+	self._state = BattleEnvironmentBehaviour.STATE_READY
+	self._CDstartTime = nil
 end
 
-function var_0_3.doBehaviour(arg_14_0)
-	if arg_14_0._tmpData.reload_time then
-		arg_14_0._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-		arg_14_0._state = var_0_3.STATE_OVERHEAT
+--- 执行行为：若有冷却时间则进入过热状态
+function BattleEnvironmentBehaviour.doBehaviour(self)
+	if self._tmpData.reload_time then
+		self._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+		self._state = BattleEnvironmentBehaviour.STATE_OVERHEAT
 	end
 end
 
-function var_0_3.doExpire(arg_15_0)
-	arg_15_0._state = var_0_3.STATE_EXPIRE
+--- 过期处理
+function BattleEnvironmentBehaviour.doExpire(self)
+	self._state = BattleEnvironmentBehaviour.STATE_EXPIRE
 end
 
-var_0_3.BehaviourClassEnum = {
-	[var_0_1.EnviroumentBehaviour.PLAY_FX] = "BattleEnvironmentBehaviourPlayFX",
-	[var_0_1.EnviroumentBehaviour.DAMAGE] = "BattleEnvironmentBehaviourDamage",
-	[var_0_1.EnviroumentBehaviour.BUFF] = "BattleEnvironmentBehaviourBuff",
-	[var_0_1.EnviroumentBehaviour.MOVEMENT] = "BattleEnvironmentBehaviourMovement",
-	[var_0_1.EnviroumentBehaviour.FORCE] = "BattleEnvironmentBehaviourForce",
-	[var_0_1.EnviroumentBehaviour.SPAWN] = "BattleEnvironmentBehaviourSpawn",
-	[var_0_1.EnviroumentBehaviour.PLAY_SFX] = "BattleEnvironmentBehaviourPlaySFX",
-	[var_0_1.EnviroumentBehaviour.SHAKE_SCREEN] = "BattleEnvironmentBehaviourShakeScreen"
+--- 行为类型枚举到类名的映射表
+BattleEnvironmentBehaviour.BehaviourClassEnum = {
+	[BattleConst.EnviroumentBehaviour.PLAY_FX] = "BattleEnvironmentBehaviourPlayFX",
+	[BattleConst.EnviroumentBehaviour.DAMAGE] = "BattleEnvironmentBehaviourDamage",
+	[BattleConst.EnviroumentBehaviour.BUFF] = "BattleEnvironmentBehaviourBuff",
+	[BattleConst.EnviroumentBehaviour.MOVEMENT] = "BattleEnvironmentBehaviourMovement",
+	[BattleConst.EnviroumentBehaviour.FORCE] = "BattleEnvironmentBehaviourForce",
+	[BattleConst.EnviroumentBehaviour.SPAWN] = "BattleEnvironmentBehaviourSpawn",
+	[BattleConst.EnviroumentBehaviour.PLAY_SFX] = "BattleEnvironmentBehaviourPlaySFX",
+	[BattleConst.EnviroumentBehaviour.SHAKE_SCREEN] = "BattleEnvironmentBehaviourShakeScreen"
 }
 
-function var_0_3.CreateBehaviour(arg_16_0)
-	return var_0_0.Battle[var_0_3.BehaviourClassEnum[arg_16_0.type]].New()
+--- 工厂方法：根据行为模板type字段创建对应子类实例
+--- @param tmpData table 行为模板数据（含type字段）
+--- @return BattleEnvironmentBehaviour
+function BattleEnvironmentBehaviour.CreateBehaviour(tmpData)
+	return ys.Battle[BattleEnvironmentBehaviour.BehaviourClassEnum[tmpData.type]].New()
 end

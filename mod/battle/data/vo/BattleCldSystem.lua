@@ -1,679 +1,837 @@
 ys = ys or {}
--- TODO
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleFormulas
-local var_0_2 = var_0_0.Battle.BattleConst
-local var_0_3 = Vector3.zero
-local var_0_4 = var_0_2.OXY_STATE
-local var_0_5 = var_0_2.BulletType
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = class("BattleCldSystem")
 
-var_0_0.Battle.BattleCldSystem = var_0_7
-var_0_7.__name = "BattleCldSystem"
+local ys = ys
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local VectorZero = Vector3.zero
+local OxyState = BattleConst.OXY_STATE
+local BulletTypeConst = BattleConst.BulletType
+local BattleAttr = ys.Battle.BattleAttr
+local BattleCldSystem = class("BattleCldSystem")
 
-function var_0_7.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._proxy = arg_1_1
+ys.Battle.BattleCldSystem = BattleCldSystem
+BattleCldSystem.__name = "BattleCldSystem"
 
-	arg_1_0:InitCldTree()
+--- @class BattleCldSystem
+--- @param proxy BattleDataProxy 战斗数据代理
+--- @return nil
+--- 碰撞系统，管理所有碰撞树（舰船、子弹、AOE、飞机、墙壁等）
+function BattleCldSystem.Ctor(self, proxy)
+	self._proxy = proxy
 
-	arg_1_0._friendlyCode = arg_1_1:GetFriendlyCode()
-	arg_1_0._foeCode = arg_1_1:GetFoeCode()
+	self:InitCldTree()
+
+	self._friendlyCode = proxy:GetFriendlyCode()
+	self._foeCode = proxy:GetFoeCode()
 end
 
-function var_0_7.Dispose(arg_2_0)
-	arg_2_0._proxy = nil
-	arg_2_0._shipTree = nil
-	arg_2_0._foeShipTree = nil
-	arg_2_0._aircraftTree = nil
-	arg_2_0._surfaceBulletTree = nil
-	arg_2_0._airBulletTree = nil
-	arg_2_0._bulletTreeList = nil
-	arg_2_0._foeSurafceBulletTree = nil
-	arg_2_0._foeAirbulletTree = nil
-	arg_2_0._foeBulleetTreeList = nil
-	arg_2_0._surfaceAOETree = nil
-	arg_2_0._airAOETree = nil
-	arg_2_0._AOETreeList = nil
-	arg_2_0._wallTree = nil
+--- @return nil
+function BattleCldSystem.Dispose(self)
+	self._proxy = nil
+	self._shipTree = nil
+	self._foeShipTree = nil
+	self._aircraftTree = nil
+	self._surfaceBulletTree = nil
+	self._airBulletTree = nil
+	self._bulletTreeList = nil
+	self._foeSurafceBulletTree = nil
+	self._foeAirbulletTree = nil
+	self._foeBulleetTreeList = nil
+	self._surfaceAOETree = nil
+	self._airAOETree = nil
+	self._AOETreeList = nil
+	self._wallTree = nil
 end
 
-function var_0_7.InitCldTree(arg_3_0)
-	local var_3_0, var_3_1, var_3_2, var_3_3 = arg_3_0._proxy:GetTotalBounds()
-	local var_3_4 = Vector3(var_3_2, 0, var_3_1)
-	local var_3_5 = Vector3(var_3_3, 0, var_3_0)
+--- @return nil
+--- 初始化所有碰撞树（舰船、子弹、AOE、飞机、墙壁），使用proxy的TotalBounds作为边界
+function BattleCldSystem.InitCldTree(self)
+	local upperBound, lowerBound, leftBound, rightBound = self._proxy:GetTotalBounds()
+	local minPos = Vector3(leftBound, 0, lowerBound)
+	local maxPos = Vector3(rightBound, 0, upperBound)
 
-	arg_3_0._shipTree = pg.ColliderTree.New("shipTree", var_3_4, var_3_5, 2)
-	arg_3_0._foeShipTree = pg.ColliderTree.New("foeShipTree", var_3_4, var_3_5, 2)
-	arg_3_0._aircraftTree = pg.ColliderTree.New("aircraftTree", var_3_4, var_3_5, 2)
-	arg_3_0._surfaceBulletTree = pg.ColliderTree.New("surfaceBullets", var_3_4, var_3_5, 4)
-	arg_3_0._airBulletTree = pg.ColliderTree.New("airBullets", var_3_4, var_3_5, 3)
-	arg_3_0._bulletTreeList = {}
-	arg_3_0._bulletTreeList[var_0_2.BulletField.SURFACE] = arg_3_0._surfaceBulletTree
-	arg_3_0._bulletTreeList[var_0_2.BulletField.AIR] = arg_3_0._airBulletTree
-	arg_3_0._foeSurafceBulletTree = pg.ColliderTree.New("foeSurfaceBullets", var_3_4, var_3_5, 3)
-	arg_3_0._foeAirbulletTree = pg.ColliderTree.New("foeAirBullets", var_3_4, var_3_5, 3)
-	arg_3_0._foeBulleetTreeList = {}
-	arg_3_0._foeBulleetTreeList[var_0_2.BulletField.SURFACE] = arg_3_0._foeSurafceBulletTree
-	arg_3_0._foeBulleetTreeList[var_0_2.BulletField.AIR] = arg_3_0._foeAirbulletTree
-	arg_3_0._surfaceAOETree = pg.ColliderTree.New("surfaceAOE", var_3_4, var_3_5, 2)
-	arg_3_0._airAOETree = pg.ColliderTree.New("airAOE", var_3_4, var_3_5, 2)
-	arg_3_0._bulletAOETree = pg.ColliderTree.New("bulletAOE", var_3_4, var_3_5, 2)
-	arg_3_0._AOETreeList = {}
-	arg_3_0._AOETreeList[var_0_2.AOEField.SURFACE] = arg_3_0._surfaceAOETree
-	arg_3_0._AOETreeList[var_0_2.AOEField.AIR] = arg_3_0._airAOETree
-	arg_3_0._AOETreeList[var_0_2.AOEField.BULLET] = arg_3_0._bulletAOETree
-	arg_3_0._wallTree = pg.ColliderTree.New("wall", var_3_4, var_3_5, 2)
+	self._shipTree = pg.ColliderTree.New("shipTree", minPos, maxPos, 2)
+	self._foeShipTree = pg.ColliderTree.New("foeShipTree", minPos, maxPos, 2)
+	self._aircraftTree = pg.ColliderTree.New("aircraftTree", minPos, maxPos, 2)
+	self._surfaceBulletTree = pg.ColliderTree.New("surfaceBullets", minPos, maxPos, 4)
+	self._airBulletTree = pg.ColliderTree.New("airBullets", minPos, maxPos, 3)
+	self._bulletTreeList = {}
+	self._bulletTreeList[BattleConst.BulletField.SURFACE] = self._surfaceBulletTree
+	self._bulletTreeList[BattleConst.BulletField.AIR] = self._airBulletTree
+	self._foeSurafceBulletTree = pg.ColliderTree.New("foeSurfaceBullets", minPos, maxPos, 3)
+	self._foeAirbulletTree = pg.ColliderTree.New("foeAirBullets", minPos, maxPos, 3)
+	self._foeBulleetTreeList = {}
+	self._foeBulleetTreeList[BattleConst.BulletField.SURFACE] = self._foeSurafceBulletTree
+	self._foeBulleetTreeList[BattleConst.BulletField.AIR] = self._foeAirbulletTree
+	self._surfaceAOETree = pg.ColliderTree.New("surfaceAOE", minPos, maxPos, 2)
+	self._airAOETree = pg.ColliderTree.New("airAOE", minPos, maxPos, 2)
+	self._bulletAOETree = pg.ColliderTree.New("bulletAOE", minPos, maxPos, 2)
+	self._AOETreeList = {}
+	self._AOETreeList[BattleConst.AOEField.SURFACE] = self._surfaceAOETree
+	self._AOETreeList[BattleConst.AOEField.AIR] = self._airAOETree
+	self._AOETreeList[BattleConst.AOEField.BULLET] = self._bulletAOETree
+	self._wallTree = pg.ColliderTree.New("wall", minPos, maxPos, 2)
 end
--- TODO
-function var_0_7.UpdateShipCldTree(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_1:GetSpeed()
-	local var_4_1 = arg_4_1:GetCldBox()
-	local var_4_2
-	local var_4_3 = not var_0_6.IsUnitCldImmune(arg_4_1)
 
-	if arg_4_1:GetIFF() == arg_4_0._foeCode then
-		if var_4_3 then
-			if arg_4_1:GetCldData().FriendlyCld then
-				local var_4_4 = arg_4_0._foeShipTree:GetCldList(var_4_1, var_4_0)
+--- @param ship BattleUnit
+--- @return nil
+--- 更新舰船碰撞：根据IFF决定使用哪个碰撞树，处理敌方/友方碰撞和减速
+function BattleCldSystem.UpdateShipCldTree(self, ship)
+	local speed = ship:GetSpeed()
+	local cldBox = ship:GetCldBox()
+	local updateTree
+	local isNotCldImmune = not BattleAttr.IsUnitCldImmune(ship)
 
-				arg_4_1:GetCldData().distList = {}
+	if ship:GetIFF() == self._foeCode then
+		if isNotCldImmune then
+			-- 敌方舰船之间的内部碰撞（FriendlyCld标记的敌方单位互相推挤）
+			if ship:GetCldData().FriendlyCld then
+				local foeCldList = self._foeShipTree:GetCldList(ship, speed)
 
-				if #var_4_4 > 1 then
-					arg_4_0:HandleEnemyShipCld(var_4_4, arg_4_1)
+				ship:GetCldData().distList = {}
+
+				if #foeCldList > 1 then
+					self:HandleEnemyShipCld(foeCldList, ship)
 				end
 			end
 
-			local var_4_5 = arg_4_0._shipTree:GetCldList(var_4_1, var_4_0)
-			local var_4_6 = arg_4_0.surfaceFilterCount(arg_4_1, var_4_5)
+			-- 敌方舰船与我方舰船的碰撞
+			local friendlyCldList = self._shipTree:GetCldList(ship, speed)
+			local filteredSelfCount = self.surfaceFilterCount(ship, friendlyCldList)
 
-			arg_4_0._proxy:HandleShipCrashDecelerate(arg_4_1, var_4_6)
-			arg_4_0:HandlePlayerShipCld(var_4_5, arg_4_1)
+			self._proxy:HandleShipCrashDecelerate(ship, filteredSelfCount)
+			self:HandlePlayerShipCld(friendlyCldList, ship)
 		end
 
-		var_4_2 = arg_4_0._foeShipTree
-	elseif arg_4_1:GetIFF() == arg_4_0._friendlyCode then
-		if var_4_3 then
-			local var_4_7 = arg_4_0._foeShipTree:GetCldList(var_4_1, var_4_0)
-			local var_4_8 = arg_4_0.surfaceFilterCount(arg_4_1, var_4_7)
+		updateTree = self._foeShipTree
+	elseif ship:GetIFF() == self._friendlyCode then
+		if isNotCldImmune then
+			local foeCldList = self._foeShipTree:GetCldList(ship, speed)
+			local filteredFoeCount = self.surfaceFilterCount(ship, foeCldList)
 
-			arg_4_0._proxy:HandleShipCrashDecelerate(arg_4_1, var_4_8)
+			self._proxy:HandleShipCrashDecelerate(ship, filteredFoeCount)
 		end
 
-		var_4_2 = arg_4_0._shipTree
+		updateTree = self._shipTree
 	end
 
-	var_4_2:Update(var_4_1)
+	updateTree:Update(cldBox)
 end
 
-function var_0_7.HandlePlayerShipCld(arg_5_0, arg_5_1, arg_5_2)
-	local var_5_0 = arg_5_2:GetCldData()
+--- @param cldList table 碰撞列表
+--- @param ship BattleUnit 当前舰船
+--- @return nil
+--- 处理玩家舰船与敌方舰船的碰撞：收集可造成伤害的敌方单位UID列表
+function BattleCldSystem.HandlePlayerShipCld(self, cldList, ship)
+	local cldData = ship:GetCldData()
 
-	if var_5_0.Active == false or var_5_0.ImmuneCLD == true then
+	if cldData.Active == false or cldData.ImmuneCLD == true then
 		return
 	end
 
-	local var_5_1 = #arg_5_1
-	local var_5_2 = {}
+	local cldCount = #cldList
+	local damageUIDList = {}
 
-	for iter_5_0 = 1, var_5_1 do
-		local var_5_3 = arg_5_1[iter_5_0].data
+	for i = 1, cldCount do
+		local otherCldData = cldList[i].data
 
-		if var_5_3.Active == false or var_5_3.ImmuneCLD == true then
-			-- block empty
-		elseif var_5_3.UID == arg_5_2:GetUniqueID() then
-			-- block empty
-		elseif var_5_0.IFF == var_5_3.IFF then
-			-- block empty
-		elseif var_5_0.Surface ~= var_5_3.Surface then
-			-- block empty
+		if otherCldData.Active == false or otherCldData.ImmuneCLD == true then
+			-- 无效或免疫碰撞的单位跳过
+		elseif otherCldData.UID == ship:GetUniqueID() then
+			-- 自身跳过
+		elseif cldData.IFF == otherCldData.IFF then
+			-- 同阵营跳过
+		elseif cldData.Surface ~= otherCldData.Surface then
+			-- 不同平面（水面/水下）跳过
 		else
-			var_5_2[#var_5_2 + 1] = var_5_3.UID
+			damageUIDList[#damageUIDList + 1] = otherCldData.UID
 		end
 	end
 
-	arg_5_0._proxy:HandleShipCrashDamageList(arg_5_2, var_5_2)
+	self._proxy:HandleShipCrashDamageList(ship, damageUIDList)
 end
 
-function var_0_7.HandleEnemyShipCld(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = arg_6_2:GetCldData()
+--- @param cldList table 碰撞列表
+--- @param ship BattleUnit 当前舰船
+--- @return nil
+--- 处理敌方舰船之间的碰撞：计算与其他敌方单位的距离并记录到distList
+function BattleCldSystem.HandleEnemyShipCld(self, cldList, ship)
+	local cldData = ship:GetCldData()
 
-	if var_6_0.Active == false or var_6_0.ImmuneCLD == true then
+	if cldData.Active == false or cldData.ImmuneCLD == true then
 		return
 	end
 
-	local var_6_1 = arg_6_2:GetPosition()
-	local var_6_2 = {}
-	local var_6_3 = #arg_6_1
+	local shipPos = ship:GetPosition()
+	local distList = {}
+	local cldCount = #cldList
 
-	for iter_6_0 = 1, var_6_3 do
-		local var_6_4 = arg_6_1[iter_6_0].data
+	for i = 1, cldCount do
+		local otherCldData = cldList[i].data
 
-		if var_6_4.Active == false or var_6_4.ImmuneCLD == true then
-			-- block empty
-		elseif var_6_4.UID == arg_6_2:GetUniqueID() then
-			-- block empty
-		elseif var_6_0.IFF ~= var_6_4.IFF then
-			-- block empty
-		elseif not var_6_4.FriendlyCld then
-			-- block empty
-		elseif var_6_0.Surface ~= var_6_4.Surface then
-			-- block empty
+		if otherCldData.Active == false or otherCldData.ImmuneCLD == true then
+			-- 无效或免疫碰撞的单位跳过
+		elseif otherCldData.UID == ship:GetUniqueID() then
+			-- 自身跳过
+		elseif cldData.IFF ~= otherCldData.IFF then
+			-- 不同阵营跳过
+		elseif not otherCldData.FriendlyCld then
+			-- 没有开启友方碰撞的跳过
+		elseif cldData.Surface ~= otherCldData.Surface then
+			-- 不同平面跳过
 		else
-			local var_6_5 = var_6_1 - arg_6_0:GetShip(var_6_4.UID):GetPosition()
+			local distance = shipPos - self:GetShip(otherCldData.UID):GetPosition()
 
-			var_6_2[#var_6_2 + 1] = var_6_5
+			distList[#distList + 1] = distance
 		end
 	end
 
-	var_6_0.distList = var_6_2
+	cldData.distList = distList
 end
 
-function var_0_7.surfaceFilterCount(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_0:GetCldData()
-	local var_7_1 = 0
-	local var_7_2 = #arg_7_1
+--- @param ship BattleUnit
+--- @param cldList table
+--- @return number count
+--- 统计与当前舰船在同一平面、不同阵营且碰撞有效的单位数量
+--- 用于判断挤在一起的单位数量，决定减速程度
+function BattleCldSystem.surfaceFilterCount(ship, cldList)
+	local cldData = ship:GetCldData()
+	local count = 0
+	local cldCount = #cldList
 
-	for iter_7_0 = 1, var_7_2 do
-		local var_7_3 = arg_7_1[iter_7_0].data
+	for i = 1, cldCount do
+		local otherCldData = cldList[i].data
 
-		if var_7_3.Active == true and var_7_3.ImmuneCLD == false and var_7_3.UID ~= arg_7_0:GetUniqueID() and var_7_0.IFF ~= var_7_3.IFF and var_7_0.Surface == var_7_3.Surface then
-			var_7_1 = var_7_1 + 1
+		if otherCldData.Active == true and otherCldData.ImmuneCLD == false and otherCldData.UID ~= ship:GetUniqueID() and cldData.IFF ~= otherCldData.IFF and cldData.Surface == otherCldData.Surface then
+			count = count + 1
 		end
 	end
 
-	return var_7_1
+	return count
 end
 
-function var_0_7.UpdateAircraftCld(arg_8_0, arg_8_1)
-	local var_8_0 = arg_8_1:GetSpeed()
-	local var_8_1 = arg_8_1:GetCldBox()
-	local var_8_2
+--- @param aircraft BattleAircraftUnit
+--- @return nil
+--- 更新飞机的碰撞检测：检测与敌对子弹的碰撞
+function BattleCldSystem.UpdateAircraftCld(self, aircraft)
+	local speed = aircraft:GetSpeed()
+	local cldBox = aircraft:GetCldBox()
+	local bulletTree
 
-	if arg_8_1:GetIFF() == arg_8_0._foeCode then
-		var_8_2 = arg_8_0:GetBulletTree(var_0_2.BulletField.AIR)
-	elseif arg_8_1:GetIFF() == arg_8_0._friendlyCode then
-		var_8_2 = arg_8_0:GetFoeBulletTree(var_0_2.BulletField.AIR)
+	-- 敌机检测友方子弹，友机检测敌方子弹
+	if aircraft:GetIFF() == self._foeCode then
+		bulletTree = self:GetBulletTree(BattleConst.BulletField.AIR)
+	elseif aircraft:GetIFF() == self._friendlyCode then
+		bulletTree = self:GetFoeBulletTree(BattleConst.BulletField.AIR)
 	end
 
-	local var_8_3 = var_8_2:GetCldList(var_8_1, var_8_0)
+	local bulletCldList = bulletTree:GetCldList(cldBox, speed)
 
-	arg_8_0:HandleBulletCldWithAircraft(var_8_3, arg_8_1)
-	arg_8_0._aircraftTree:Update(arg_8_1:GetCldBox())
+	self:HandleBulletCldWithAircraft(bulletCldList, aircraft)
+	self._aircraftTree:Update(aircraft:GetCldBox())
 end
--- TODO
-function var_0_7.HandleBulletCldWithAircraft(arg_9_0, arg_9_1, arg_9_2)
-	local var_9_0 = #arg_9_1
 
-	for iter_9_0 = 1, var_9_0 do
-		local var_9_1 = arg_9_1[iter_9_0].data
+--- @param cldList table
+--- @param aircraft BattleAircraftUnit
+--- @return nil
+--- 处理子弹与飞机的碰撞：过滤BULLET类型的有效碰撞并触发HandleBulletHit
+function BattleCldSystem.HandleBulletCldWithAircraft(self, cldList, aircraft)
+	local cldCount = #cldList
 
-		if var_9_1.type == var_0_2.CldType.BULLET and var_9_1.Active == true and var_9_1.ImmuneCLD == false then
-			local var_9_2 = arg_9_0:GetBullet(var_9_1.UID)
+	for i = 1, cldCount do
+		local cldData = cldList[i].data
 
-			arg_9_0._proxy:HandleBulletHit(var_9_2, arg_9_2)
+		if cldData.type == BattleConst.CldType.BULLET and cldData.Active == true and cldData.ImmuneCLD == false then
+			local bullet = self:GetBullet(cldData.UID)
+
+			self._proxy:HandleBulletHit(bullet, aircraft)
 		end
 	end
 end
 
-function var_0_7.UpdateBulletCld(arg_10_0, arg_10_1)
-	local var_10_0 = arg_10_1:GetEffectField()
-	local var_10_1 = arg_10_1:GetCldBox()
-	local var_10_2 = arg_10_1:GetCldData().IFF
-	local var_10_3
-	local var_10_4
+--- @param bullet BattleBulletUnit
+--- @return nil
+--- 更新子弹的碰撞检测：检测与舰船的碰撞并更新子弹碰撞树
+function BattleCldSystem.UpdateBulletCld(self, bullet)
+	local effectField = bullet:GetEffectField()
+	local cldBox = bullet:GetCldBox()
+	local bulletIFF = bullet:GetCldData().IFF
+	local updateTree
+	local _ -- unused
 
-	if var_10_0 == var_0_2.BulletField.SURFACE then
-		local var_10_5 = var_10_2 == arg_10_0._foeCode and arg_10_0._shipTree or arg_10_0._foeShipTree
-		local var_10_6 = arg_10_0:getBulletCldShipList(arg_10_1, var_10_5)
+	-- 水面子弹与舰船碰撞检测
+	if effectField == BattleConst.BulletField.SURFACE then
+		local shipTree = bulletIFF == self._foeCode and self._shipTree or self._foeShipTree
+		local shipCldList = self:getBulletCldShipList(bullet, shipTree)
 
-		if arg_10_1:IsIndiscriminate() then
-			local var_10_7 = var_10_5 == arg_10_0._shipTree and arg_10_0._foeShipTree or arg_10_0._shipTree
-			local var_10_8 = arg_10_0:getBulletCldShipList(arg_10_1, var_10_7)
+		-- 无差别攻击：检测两个阵营的舰船
+		if bullet:IsIndiscriminate() then
+			local otherShipTree = shipTree == self._shipTree and self._foeShipTree or self._shipTree
+			local otherShipCldList = self:getBulletCldShipList(bullet, otherShipTree)
 
-			for iter_10_0, iter_10_1 in ipairs(var_10_8) do
-				table.insert(var_10_6, iter_10_1)
+			for _, cldItem in ipairs(otherShipCldList) do
+				table.insert(shipCldList, cldItem)
 			end
 		end
 
-		arg_10_0:HandleBulletCldWithShip(var_10_6, arg_10_1)
+		self:HandleBulletCldWithShip(shipCldList, bullet)
 	end
 
-	if var_10_2 == arg_10_0._friendlyCode then
-		var_10_3 = arg_10_0:GetBulletTree(var_10_0)
-	elseif var_10_2 == arg_10_0._foeCode then
-		var_10_3 = arg_10_0:GetFoeBulletTree(var_10_0)
+	-- 根据IFF更新对应子弹碰撞树
+	if bulletIFF == self._friendlyCode then
+		updateTree = self:GetBulletTree(effectField)
+	elseif bulletIFF == self._foeCode then
+		updateTree = self:GetFoeBulletTree(effectField)
 	end
 
-	var_10_3:Update(var_10_1)
+	updateTree:Update(cldBox)
 end
 
-function var_0_7.getBulletCldShipList(arg_11_0, arg_11_1, arg_11_2)
-	local var_11_0 = arg_11_1:GetCldBox()
-	local var_11_1
+--- @param bullet BattleBulletUnit
+--- @param shipTree ColliderTree
+--- @return table cldList
+--- 获取子弹与舰船碰撞树中所有碰撞的舰船列表
+--- SCALE类型子弹使用梯度碰撞检测（支持旋转矩形），其他类型使用普通碰撞检测
+function BattleCldSystem.getBulletCldShipList(self, bullet, shipTree)
+	local cldBox = bullet:GetCldBox()
+	local result
 
-	if arg_11_1:GetType() == var_0_2.BulletType.SCALE then
-		local var_11_2, var_11_3, var_11_4 = arg_11_1:GetRadian()
+	if bullet:GetType() == BulletTypeConst.SCALE then
+		local angle, cosAngle, sinAngle = bullet:GetRadian()
 
-		if math.abs(var_11_3) ~= 1 then
-			if arg_11_1:GetIFF() == -1 then
-				var_11_2 = var_11_2 + math.pi
+		if math.abs(cosAngle) ~= 1 then
+			if bullet:GetIFF() == -1 then
+				angle = angle + math.pi
 			end
 
-			local var_11_5 = arg_11_1:GetBoxSize()
-			local var_11_6 = var_11_5.x * 2
-			local var_11_7 = var_11_5.z * 2
-			local var_11_8 = arg_11_1:GetPosition()
-			local var_11_9 = var_11_5.x
-			local var_11_10 = var_11_9 * var_11_3
-			local var_11_11 = var_11_9 * var_11_4
-			local var_11_12 = Vector3(var_11_8.x + var_11_10, 1, var_11_8.z + var_11_11)
+			local boxSize = bullet:GetBoxSize()
+			local scaleX = boxSize.x * 2
+			local scaleZ = boxSize.z * 2
+			local bulletPos = bullet:GetPosition()
+			local halfX = boxSize.x
+			local offsetX = halfX * cosAngle
+			local offsetZ = halfX * sinAngle
+			local gradientCenter = Vector3(bulletPos.x + offsetX, 1, bulletPos.z + offsetZ)
 
-			var_11_1 = arg_11_2:GetCldListGradient(var_11_2, var_11_7, var_11_6, var_11_12)
+			result = shipTree:GetCldListGradient(angle, scaleZ, scaleX, gradientCenter)
 		else
-			var_11_1 = arg_11_2:GetCldList(var_11_0, var_0_3)
+			result = shipTree:GetCldList(cldBox, VectorZero)
 		end
 	else
-		var_11_1 = arg_11_2:GetCldList(var_11_0, var_0_3)
+		result = shipTree:GetCldList(cldBox, VectorZero)
 	end
 
-	return var_11_1
+	return result
 end
 
-function var_0_7.HandleBulletCldWithShip(arg_12_0, arg_12_1, arg_12_2)
-	local var_12_0 = #arg_12_1
-	local var_12_1 = arg_12_2:GetType()
+--- @param cldList table
+--- @param bullet BattleBulletUnit
+--- @return nil
+--- 处理子弹与舰船的碰撞：过滤SHIP类型的有效碰撞，检查潜艇下潜/免疫状态，触发HandleBulletHit
+function BattleCldSystem.HandleBulletCldWithShip(self, cldList, bullet)
+	local cldCount = #cldList
+	local bulletType = bullet:GetType()
 
-	for iter_12_0 = 1, var_12_0 do
-		local var_12_2 = arg_12_1[iter_12_0].data
+	for i = 1, cldCount do
+		local cldData = cldList[i].data
 
-		if var_12_2.type == var_0_2.CldType.SHIP and var_12_2.Active == true and var_12_2.ImmuneCLD == false then
-			local var_12_3 = arg_12_0:GetShip(var_12_2.UID)
-			local var_12_4 = var_12_3:GetCurrentOxyState()
-			local var_12_5 = var_12_3:IsImmuneCommonBulletCLD()
+		if cldData.type == BattleConst.CldType.SHIP and cldData.Active == true and cldData.ImmuneCLD == false then
+			local ship = self:GetShip(cldData.UID)
+			local oxyState = ship:GetCurrentOxyState()
+			local isImmuneCommonBullet = ship:IsImmuneCommonBulletCLD()
 
-			if var_12_4 == var_0_4.DIVE and arg_12_2:GetCldData().Surface ~= var_0_2.OXY_STATE.DIVE then
-				-- block empty
-			elseif var_12_5 then
-				-- block empty
-			elseif arg_12_0._proxy:HandleBulletHit(arg_12_2, var_12_3) then
+			-- 潜艇下潜中且子弹非深水类型，跳过
+			if oxyState == OxyState.DIVE and bullet:GetCldData().Surface ~= BattleConst.OXY_STATE.DIVE then
+				-- 非深水子弹打不到下潜潜艇
+			elseif isImmuneCommonBullet then
+				-- 免疫普通子弹碰撞
+			elseif self._proxy:HandleBulletHit(bullet, ship) then
+				-- 命中后退出（子弹只命中一个目标）
 				break
 			end
 		end
 	end
 end
 
-function var_0_7.UpdateAOECld(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1:GetCldBox()
-	local var_13_1 = arg_13_1:GetFieldType()
-	local var_13_2 = arg_13_1:OpponentAffected()
-	local var_13_3 = arg_13_1:GetCldData().IFF
-	local var_13_4 = var_13_2 and var_13_3 * -1 or var_13_3
-	local var_13_5
+--- @param aoe BattleAOEObj
+--- @return nil
+--- 更新AOE的碰撞检测：根据AOE类型（水面/AIR/BULLET）检测与舰船、飞机或子弹的碰撞
+function BattleCldSystem.UpdateAOECld(self, aoe)
+	local cldBox = aoe:GetCldBox()
+	local fieldType = aoe:GetFieldType()
+	local opponentAffected = aoe:OpponentAffected()
+	local aoeIFF = aoe:GetCldData().IFF
+	-- 若opponentAffected为true，则反转IFF（即攻击相反的阵营）
+	local targetIFF = opponentAffected and aoeIFF * -1 or aoeIFF
+	local _ -- unused
 
-	if var_13_1 == var_0_2.AOEField.SURFACE then
-		local var_13_6 = arg_13_1:GetCldData().IFF == arg_13_0._foeCode
-		local var_13_7 = arg_13_1:OpponentAffected() == var_13_6 and arg_13_0._shipTree or arg_13_0._foeShipTree
-		local var_13_8 = arg_13_0:getAreaCldShipList(arg_13_1, var_13_7)
+	if fieldType == BattleConst.AOEField.SURFACE then
+		local isFoeAOE = aoe:GetCldData().IFF == self._foeCode
+		local shipTree = aoe:OpponentAffected() == isFoeAOE and self._shipTree or self._foeShipTree
+		local shipCldList = self:getAreaCldShipList(aoe, shipTree)
 
-		if arg_13_1:GetIndiscriminate() then
-			local var_13_9 = var_13_7 == arg_13_0._shipTree and arg_13_0._foeShipTree or arg_13_0._shipTree
-			local var_13_10 = arg_13_0:getAreaCldShipList(arg_13_1, var_13_9)
+		-- 无差别AOE同时检测两个阵营
+		if aoe:GetIndiscriminate() then
+			local otherShipTree = shipTree == self._shipTree and self._foeShipTree or self._shipTree
+			local otherShipCldList = self:getAreaCldShipList(aoe, otherShipTree)
 
-			for iter_13_0, iter_13_1 in ipairs(var_13_10) do
-				table.insert(var_13_8, iter_13_1)
+			for _, cldItem in ipairs(otherShipCldList) do
+				table.insert(shipCldList, cldItem)
 			end
 		end
 
-		arg_13_0:HandleAreaCldWithVehicle(arg_13_1, var_13_8)
-	elseif var_13_1 == var_0_2.AOEField.BULLET then
-		local var_13_11
+		self:HandleAreaCldWithVehicle(aoe, shipCldList)
+	elseif fieldType == BattleConst.AOEField.BULLET then
+		local bulletTree
 
-		if var_13_4 == arg_13_0._foeCode then
-			var_13_11 = arg_13_0._foeSurafceBulletTree
+		if targetIFF == self._foeCode then
+			bulletTree = self._foeSurafceBulletTree
 		else
-			var_13_11 = arg_13_0._surfaceBulletTree
+			bulletTree = self._surfaceBulletTree
 		end
 
-		local var_13_12 = var_13_11:GetCldList(var_13_0, var_0_3)
+		local bulletCldList = bulletTree:GetCldList(cldBox, VectorZero)
 
-		arg_13_1:ClearCLDList()
-		arg_13_0:HandleAreaCldWithBullet(arg_13_1, var_13_12)
+		aoe:ClearCLDList()
+		self:HandleAreaCldWithBullet(aoe, bulletCldList)
 	else
-		local var_13_13 = {}
-		local var_13_14 = arg_13_0._aircraftTree:GetCldList(var_13_0, var_0_3)
+		-- AIR类型AOE：检测飞机碰撞
+		local aircraftCldList = {}
+		local allAircraftCldList = self._aircraftTree:GetCldList(cldBox, VectorZero)
 
-		for iter_13_2, iter_13_3 in ipairs(var_13_14) do
-			if iter_13_3.data.IFF == var_13_4 then
-				table.insert(var_13_13, iter_13_3)
+		for _, aircraftCldItem in ipairs(allAircraftCldList) do
+			if aircraftCldItem.data.IFF == targetIFF then
+				table.insert(aircraftCldList, aircraftCldItem)
 			end
 		end
 
-		arg_13_0:HandleAreaCldWithAircraft(arg_13_1, var_13_13)
+		self:HandleAreaCldWithAircraft(aoe, aircraftCldList)
 	end
 end
 
-function var_0_7.getAreaCldShipList(arg_14_0, arg_14_1, arg_14_2)
-	local var_14_0
-	local var_14_1 = arg_14_1:GetAreaType()
+--- @param aoe BattleAOEObj
+--- @param shipTree ColliderTree
+--- @return table cldList
+--- 获取AOE范围内的舰船碰撞列表，根据AreaType使用不同的碰撞检测方式
+function BattleCldSystem.getAreaCldShipList(self, aoe, shipTree)
+	local result
+	local areaType = aoe:GetAreaType()
 
-	if var_14_1 == var_0_2.AreaType.COLUMN or arg_14_1:GetAnchorPointAlignment() == Vector3.zero then
-		local var_14_2 = arg_14_1:GetCldBox()
+	if areaType == BattleConst.AreaType.COLUMN or aoe:GetAnchorPointAlignment() == Vector3.zero then
+		-- 列形或对齐原点：使用普通box碰撞检测
+		local cldBox = aoe:GetCldBox()
 
-		var_14_0 = arg_14_2:GetCldList(var_14_2, var_0_3)
-	elseif var_14_1 == var_0_2.AreaType.ELLIPSE then
-		local var_14_3 = arg_14_1:GetWidth()
-		local var_14_4 = arg_14_1:GetHeight()
+		result = shipTree:GetCldList(cldBox, VectorZero)
+	elseif areaType == BattleConst.AreaType.ELLIPSE then
+		-- 椭圆区域
+		local width = aoe:GetWidth()
+		local height = aoe:GetHeight()
 
-		var_14_0 = arg_14_2:GetCldListEllipse(var_14_3, var_14_4, pos)
+		result = shipTree:GetCldListEllipse(width, height, pos)
 	else
-		local var_14_5 = arg_14_1:GetCldData().IFF == arg_14_0._foeCode
-		local var_14_6 = arg_14_1:GetAngle() * math.deg2Rad
+		-- 扇形区域
+		local isFoe = aoe:GetCldData().IFF == self._foeCode
+		local angle = aoe:GetAngle() * math.deg2Rad
 
-		if var_14_5 then
-			var_14_6 = var_14_6 + math.pi
+		if isFoe then
+			angle = angle + math.pi
 		end
 
-		local var_14_7 = arg_14_1:GetWidth()
-		local var_14_8 = arg_14_1:GetHeight()
-		local var_14_9 = arg_14_1:GetPosition()
+		local width = aoe:GetWidth()
+		local height = aoe:GetHeight()
+		local aoePos = aoe:GetPosition()
 
-		var_14_0 = arg_14_2:GetCldListGradient(var_14_6, var_14_8, var_14_7, var_14_9)
+		result = shipTree:GetCldListGradient(angle, height, width, aoePos)
 	end
 
-	return var_14_0
+	return result
 end
 
-function var_0_7.HandleAreaCldWithVehicle(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1:ClearCLDList()
+--- @param aoe BattleAOEObj
+--- @param cldList table
+--- @return nil
+--- 处理AOE与舰船/车辆的碰撞：过滤有效碰撞目标，检查潜水面过滤，附加碰撞对象
+function BattleCldSystem.HandleAreaCldWithVehicle(self, aoe, cldList)
+	aoe:ClearCLDList()
 
-	local var_15_0 = arg_15_1:GetCldData()
-	local var_15_1 = arg_15_1:OpponentAffected()
-	local var_15_2 = #arg_15_2
+	local cldData = aoe:GetCldData()
+	local opponentAffected = aoe:OpponentAffected()
+	local cldCount = #cldList
 
-	for iter_15_0 = 1, var_15_2 do
-		local var_15_3 = arg_15_2[iter_15_0].data
+	for i = 1, cldCount do
+		local cldItem = cldList[i].data
 
-		if var_15_3.Active == true and var_15_3.ImmuneCLD == false then
-			local var_15_4 = arg_15_1:GetDiveFilter()
-			local var_15_5 = arg_15_0:GetShip(var_15_3.UID)
-			local var_15_6 = true
+		if cldItem.Active == true and cldItem.ImmuneCLD == false then
+			local diveFilter = aoe:GetDiveFilter()
+			local ship = self:GetShip(cldItem.UID)
+			local canHit = true
 
-			if var_15_4 then
-				local var_15_7 = var_15_5:GetCurrentOxyState()
+			-- 潜水过滤：若在潜水filter中则不可命中
+			if diveFilter then
+				local oxyState = ship:GetCurrentOxyState()
 
-				if table.contains(var_15_4, var_15_7) then
-					var_15_6 = false
+				if table.contains(diveFilter, oxyState) then
+					canHit = false
 				end
 			end
 
-			if var_15_6 and not arg_15_1:IsOutOfAngle(var_15_5) then
-				arg_15_1:AppendCldObj(var_15_3)
+			if canHit and not aoe:IsOutOfAngle(ship) then
+				aoe:AppendCldObj(cldItem)
 			end
 		end
 	end
 end
 
-function var_0_7.HandleAreaCldWithAircraft(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:ClearCLDList()
+--- @param aoe BattleAOEObj
+--- @param cldList table
+--- @return nil
+--- 处理AOE与飞机的碰撞：根据OpponentAffected判断是否应附加到碰撞列表
+function BattleCldSystem.HandleAreaCldWithAircraft(self, aoe, cldList)
+	aoe:ClearCLDList()
 
-	local var_16_0 = arg_16_1:GetCldData()
-	local var_16_1 = arg_16_1:OpponentAffected()
-	local var_16_2 = #arg_16_2
+	local cldData = aoe:GetCldData()
+	local opponentAffected = aoe:OpponentAffected()
+	local cldCount = #cldList
 
-	for iter_16_0 = 1, var_16_2 do
-		local var_16_3 = arg_16_2[iter_16_0].data
+	for i = 1, cldCount do
+		local cldItem = cldList[i].data
 
-		if var_16_1 == (var_16_3.IFF ~= var_16_0.IFF) then
-			arg_16_1:AppendCldObj(var_16_3)
+		-- opponentAffected时，IFF不同则命中；否则IFF相同才命中
+		if opponentAffected == (cldItem.IFF ~= cldData.IFF) then
+			aoe:AppendCldObj(cldItem)
 		end
 	end
 end
 
-function var_0_7.HandleAreaCldWithBullet(arg_17_0, arg_17_1, arg_17_2)
-	local var_17_0 = #arg_17_2
+--- @param aoe BattleAOEObj
+--- @param cldList table
+--- @return nil
+--- 处理AOE与子弹的碰撞：直接附加所有碰撞子弹
+function BattleCldSystem.HandleAreaCldWithBullet(self, aoe, cldList)
+	local cldCount = #cldList
 
-	for iter_17_0 = 1, var_17_0 do
-		local var_17_1 = arg_17_2[iter_17_0].data
+	for i = 1, cldCount do
+		local cldItem = cldList[i].data
 
-		arg_17_1:AppendCldObj(var_17_1)
+		aoe:AppendCldObj(cldItem)
 	end
 end
 
-function var_0_7.UpdateWallCld(arg_18_0, arg_18_1)
-	local var_18_0 = arg_18_1:GetCldBox()
-	local var_18_1 = arg_18_1:GetCldObjType()
+--- @param wall BattleWallUnit
+--- @return nil
+--- 更新墙壁碰撞：检测与敌方子弹或敌方舰船的碰撞
+function BattleCldSystem.UpdateWallCld(self, wall)
+	local cldBox = wall:GetCldBox()
+	local cldObjType = wall:GetCldObjType()
 
-	if var_18_1 == arg_18_1.CLD_OBJ_TYPE_BULLET then
-		local var_18_2
+	if cldObjType == wall.CLD_OBJ_TYPE_BULLET then
+		local bulletCldList
 
-		if arg_18_1:GetIFF() == arg_18_0._friendlyCode then
-			var_18_2 = arg_18_0._foeSurafceBulletTree:GetCldList(var_18_0, var_0_3)
+		-- 我方墙壁阻挡敌方子弹，敌方墙壁阻挡我方子弹
+		if wall:GetIFF() == self._friendlyCode then
+			bulletCldList = self._foeSurafceBulletTree:GetCldList(cldBox, VectorZero)
 		else
-			var_18_2 = arg_18_0._surfaceBulletTree:GetCldList(var_18_0, var_0_3)
+			bulletCldList = self._surfaceBulletTree:GetCldList(cldBox, VectorZero)
 		end
 
-		arg_18_0:HandleWallCldWithBullet(arg_18_1, var_18_2)
-	elseif var_18_1 == arg_18_1.CLD_OBJ_TYPE_SHIP then
-		local var_18_3
+		self:HandleWallCldWithBullet(wall, bulletCldList)
+	elseif cldObjType == wall.CLD_OBJ_TYPE_SHIP then
+		local shipCldList
 
-		if arg_18_1:GetIFF() == arg_18_0._friendlyCode then
-			var_18_3 = arg_18_0._foeShipTree:GetCldList(var_18_0, var_0_3)
+		if wall:GetIFF() == self._friendlyCode then
+			shipCldList = self._foeShipTree:GetCldList(cldBox, VectorZero)
 		else
-			var_18_3 = arg_18_0._shipTree:GetCldList(var_18_0, var_0_3)
+			shipCldList = self._shipTree:GetCldList(cldBox, VectorZero)
 		end
 
-		arg_18_0:HandleWllCldWithShip(arg_18_1, var_18_3)
+		self:HandleWllCldWithShip(wall, shipCldList)
 	end
 end
 
-function var_0_7.HandleWallCldWithBullet(arg_19_0, arg_19_1, arg_19_2)
-	local var_19_0 = #arg_19_2
+--- @param wall BattleWallUnit
+--- @param cldList table
+--- @return nil
+--- 处理墙壁与子弹的碰撞：过滤BULLET类型有效碰撞，触发HandleWallHitByBullet
+function BattleCldSystem.HandleWallCldWithBullet(self, wall, cldList)
+	local cldCount = #cldList
 
-	for iter_19_0 = 1, var_19_0 do
-		local var_19_1 = arg_19_2[iter_19_0].data
+	for i = 1, cldCount do
+		local cldData = cldList[i].data
 
-		if var_19_1.type == var_0_2.CldType.BULLET and var_19_1.Active == true and var_19_1.ImmuneCLD == false then
-			local var_19_2 = arg_19_0:GetBullet(var_19_1.UID)
+		if cldData.type == BattleConst.CldType.BULLET and cldData.Active == true and cldData.ImmuneCLD == false then
+			local bullet = self:GetBullet(cldData.UID)
 
-			if not arg_19_0._proxy:HandleWallHitByBullet(arg_19_1, var_19_2) then
+			if not self._proxy:HandleWallHitByBullet(wall, bullet) then
 				return
 			end
 		end
 	end
 end
 
-function var_0_7.HandleWllCldWithShip(arg_20_0, arg_20_1, arg_20_2)
-	local var_20_0 = #arg_20_2
-	local var_20_1 = {}
+--- @param wall BattleWallUnit
+--- @param cldList table
+--- @return nil
+--- 处理墙壁与舰船的碰撞：过滤SHIP类型有效碰撞，排除下潜潜艇，触发HandleWallHitByShip
+function BattleCldSystem.HandleWllCldWithShip(self, wall, cldList)
+	local cldCount = #cldList
+	local shipList = {}
 
-	for iter_20_0 = 1, var_20_0 do
-		local var_20_2 = arg_20_2[iter_20_0].data
+	for i = 1, cldCount do
+		local cldData = cldList[i].data
 
-		if var_20_2.type == var_0_2.CldType.SHIP and var_20_2.Active == true and var_20_2.ImmuneCLD == false then
-			local var_20_3 = arg_20_0:GetShip(var_20_2.UID)
+		if cldData.type == BattleConst.CldType.SHIP and cldData.Active == true and cldData.ImmuneCLD == false then
+			local ship = self:GetShip(cldData.UID)
 
-			if var_20_3:GetCurrentOxyState() == var_0_4.DIVE then
-				-- block empty
+			if ship:GetCurrentOxyState() == OxyState.DIVE then
+				-- 下潜中的潜艇不碰撞墙壁
 			else
-				table.insert(var_20_1, var_20_3)
+				table.insert(shipList, ship)
 			end
 		end
 	end
 
-	arg_20_0._proxy:HandleWallHitByShip(arg_20_1, var_20_1)
+	self._proxy:HandleWallHitByShip(wall, shipList)
 end
 
-function var_0_7.InsertToBulletCldTree(arg_21_0, arg_21_1, arg_21_2)
-	local var_21_0
-	local var_21_1 = arg_21_2:GetCldData()
+--- @param bulletField number 子弹战场（水面/AIR）
+--- @param bullet BattleBulletUnit
+--- @return nil
+--- 将子弹插入对应的碰撞树（根据IFF选择友方或敌方子弹树）
+function BattleCldSystem.InsertToBulletCldTree(self, bulletField, bullet)
+	local tree
+	local cldData = bullet:GetCldData()
 
-	if var_21_1.IFF == arg_21_0._foeCode then
-		var_21_0 = arg_21_0:GetFoeBulletTree(arg_21_1)
-	elseif var_21_1.IFF == arg_21_0._friendlyCode then
-		var_21_0 = arg_21_0:GetBulletTree(arg_21_1)
+	if cldData.IFF == self._foeCode then
+		tree = self:GetFoeBulletTree(bulletField)
+	elseif cldData.IFF == self._friendlyCode then
+		tree = self:GetBulletTree(bulletField)
 	end
 
-	local var_21_2 = arg_21_2:GetCldBox()
+	local cldBox = bullet:GetCldBox()
 
-	var_21_0:Insert(var_21_2)
+	tree:Insert(cldBox)
 end
 
-function var_0_7.InsertToAOECldTree(arg_22_0, arg_22_1, arg_22_2)
-	local var_22_0 = arg_22_0:GetAOETree(arg_22_1)
-	local var_22_1 = arg_22_2:GetCldBox()
+--- @param fieldType number AOE区域类型
+--- @param aoe BattleAOEObj
+--- @return nil
+--- 将AOE插入对应的碰撞树
+function BattleCldSystem.InsertToAOECldTree(self, fieldType, aoe)
+	local tree = self:GetAOETree(fieldType)
+	local cldBox = aoe:GetCldBox()
 
-	var_22_0:Insert(var_22_1)
+	tree:Insert(cldBox)
 end
 
-function var_0_7.InsertToWallCldTree(arg_23_0, arg_23_1)
-	local var_23_0 = arg_23_0:GetWallTree()
-	local var_23_1 = arg_23_1:GetCldBox()
+--- @param wall BattleWallUnit
+--- @return nil
+--- 将墙壁插入碰撞树
+function BattleCldSystem.InsertToWallCldTree(self, wall)
+	local wallTree = self:GetWallTree()
+	local cldBox = wall:GetCldBox()
 
-	var_23_0:Insert(var_23_1)
+	wallTree:Insert(cldBox)
 end
 
-function var_0_7.InsertToShipCldTree(arg_24_0, arg_24_1)
-	local var_24_0 = arg_24_1:GetCldData()
-	local var_24_1
+--- @param ship BattleUnit
+--- @return nil
+--- 将舰船插入碰撞树（根据IFF选择友方或敌方舰船树）
+function BattleCldSystem.InsertToShipCldTree(self, ship)
+	local cldData = ship:GetCldData()
+	local shipTree
 
-	if var_24_0.IFF == arg_24_0._foeCode then
-		var_24_1 = arg_24_0:GetFoeShipTree()
-	elseif var_24_0.IFF == arg_24_0._friendlyCode then
-		var_24_1 = arg_24_0:GetShipTree()
+	if cldData.IFF == self._foeCode then
+		shipTree = self:GetFoeShipTree()
+	elseif cldData.IFF == self._friendlyCode then
+		shipTree = self:GetShipTree()
 	end
 
-	local var_24_2 = arg_24_1:GetCldBox()
+	local cldBox = ship:GetCldBox()
 
-	var_24_1:Insert(var_24_2)
+	shipTree:Insert(cldBox)
 end
 
-function var_0_7.InsertToAircraftCldTree(arg_25_0, arg_25_1)
-	local var_25_0 = arg_25_1:GetCldBox()
+--- @param aircraft BattleAircraftUnit
+--- @return nil
+--- 将飞机插入飞机碰撞树
+function BattleCldSystem.InsertToAircraftCldTree(self, aircraft)
+	local cldBox = aircraft:GetCldBox()
 
-	arg_25_0._aircraftTree:Insert(var_25_0)
+	self._aircraftTree:Insert(cldBox)
 end
 
-function var_0_7.GetBulletTree(arg_26_0, arg_26_1)
-	return arg_26_0._bulletTreeList[arg_26_1]
+--- @param bulletField number
+--- @return ColliderTree
+function BattleCldSystem.GetBulletTree(self, bulletField)
+	return self._bulletTreeList[bulletField]
 end
 
-function var_0_7.GetFoeBulletTree(arg_27_0, arg_27_1)
-	return arg_27_0._foeBulleetTreeList[arg_27_1]
+--- @param bulletField number
+--- @return ColliderTree
+function BattleCldSystem.GetFoeBulletTree(self, bulletField)
+	return self._foeBulleetTreeList[bulletField]
 end
 
-function var_0_7.GetAOETree(arg_28_0, arg_28_1)
-	return arg_28_0._AOETreeList[arg_28_1]
+--- @param fieldType number
+--- @return ColliderTree
+function BattleCldSystem.GetAOETree(self, fieldType)
+	return self._AOETreeList[fieldType]
 end
 
-function var_0_7.GetWallTree(arg_29_0, arg_29_1)
-	return arg_29_0._wallTree
+--- @param _ any unused
+--- @return ColliderTree
+function BattleCldSystem.GetWallTree(self, _)
+	return self._wallTree
 end
 
-function var_0_7.GetShipTree(arg_30_0)
-	return arg_30_0._shipTree
+--- @return ColliderTree
+function BattleCldSystem.GetShipTree(self)
+	return self._shipTree
 end
 
-function var_0_7.GetFoeShipTree(arg_31_0)
-	return arg_31_0._foeShipTree
+--- @return ColliderTree
+function BattleCldSystem.GetFoeShipTree(self)
+	return self._foeShipTree
 end
 
-function var_0_7.GetAircraftTree(arg_32_0)
-	return arg_32_0._aircraftTree
+--- @return ColliderTree
+function BattleCldSystem.GetAircraftTree(self)
+	return self._aircraftTree
 end
 
-function var_0_7.DeleteShipLeaf(arg_33_0, arg_33_1)
-	local var_33_0 = arg_33_1:GetCldData().IFF
+--- @param ship BattleUnit
+--- @return nil
+--- 从碰撞树中删除舰船的叶子节点
+function BattleCldSystem.DeleteShipLeaf(self, ship)
+	local shipIFF = ship:GetCldData().IFF
 
-	if var_33_0 == arg_33_0._foeCode then
-		arg_33_0.DeleteCldLeaf(arg_33_0:GetFoeShipTree(), arg_33_1)
-	elseif var_33_0 == arg_33_0._friendlyCode then
-		arg_33_0.DeleteCldLeaf(arg_33_0:GetShipTree(), arg_33_1)
+	if shipIFF == self._foeCode then
+		self.DeleteCldLeaf(self:GetFoeShipTree(), ship)
+	elseif shipIFF == self._friendlyCode then
+		self.DeleteCldLeaf(self:GetShipTree(), ship)
 	end
 end
 
-function var_0_7.DeleteBulletLeaf(arg_34_0, arg_34_1)
-	local var_34_0 = arg_34_1:GetCldData().IFF
+--- @param bullet BattleBulletUnit
+--- @return nil
+--- 从碰撞树中删除子弹的叶子节点
+function BattleCldSystem.DeleteBulletLeaf(self, bullet)
+	local bulletIFF = bullet:GetCldData().IFF
 
-	if var_34_0 == arg_34_0._foeCode then
-		arg_34_0.DeleteCldLeaf(arg_34_0:GetFoeBulletTree(arg_34_1:GetEffectField()), arg_34_1)
-	elseif var_34_0 == arg_34_0._friendlyCode then
-		arg_34_0.DeleteCldLeaf(arg_34_0:GetBulletTree(arg_34_1:GetEffectField()), arg_34_1)
+	if bulletIFF == self._foeCode then
+		self.DeleteCldLeaf(self:GetFoeBulletTree(bullet:GetEffectField()), bullet)
+	elseif bulletIFF == self._friendlyCode then
+		self.DeleteCldLeaf(self:GetBulletTree(bullet:GetEffectField()), bullet)
 	end
 end
 
-function var_0_7.DeleteCldLeaf(arg_35_0, arg_35_1)
-	local var_35_0 = arg_35_1:GetCldBox()
+--- @param tree ColliderTree
+--- @param entity BattleUnit|BattleBulletUnit|BattleAOEObj
+--- @return nil
+--- 从指定碰撞树中移除实体的碰撞盒
+function BattleCldSystem.DeleteCldLeaf(tree, entity)
+	local cldBox = entity:GetCldBox()
 
-	arg_35_0:Remove(var_35_0)
+	tree:Remove(cldBox)
 end
 
-function var_0_7.GetShip(arg_36_0, arg_36_1)
-	return arg_36_0._proxy:GetUnitList()[arg_36_1]
+--- @param uid number
+--- @return BattleUnit
+function BattleCldSystem.GetShip(self, uid)
+	return self._proxy:GetUnitList()[uid]
 end
 
-function var_0_7.GetAircraft(arg_37_0, arg_37_1)
-	return arg_37_0._proxy:GetAircraftList()[arg_37_1]
+--- @param uid number
+--- @return BattleAircraftUnit
+function BattleCldSystem.GetAircraft(self, uid)
+	return self._proxy:GetAircraftList()[uid]
 end
 
-function var_0_7.GetBullet(arg_38_0, arg_38_1)
-	return arg_38_0._proxy:GetBulletList()[arg_38_1]
+--- @param uid number
+--- @return BattleBulletUnit
+function BattleCldSystem.GetBullet(self, uid)
+	return self._proxy:GetBulletList()[uid]
 end
 
-function var_0_7.GetAOE(arg_39_0, arg_39_1)
-	return arg_39_0._proxy:GetAOEList()[arg_39_1]
+--- @param uid number
+--- @return BattleAOEObj
+function BattleCldSystem.GetAOE(self, uid)
+	return self._proxy:GetAOEList()[uid]
 end
 
-function var_0_7.InitShipCld(arg_40_0, arg_40_1)
-	arg_40_0:InsertToShipCldTree(arg_40_1)
+--- @param ship BattleUnit
+--- @return nil
+function BattleCldSystem.InitShipCld(self, ship)
+	self:InsertToShipCldTree(ship)
 end
 
-function var_0_7.DeleteShipCld(arg_41_0, arg_41_1)
-	arg_41_1:DeactiveCldBox()
-	arg_41_0:DeleteShipLeaf(arg_41_1)
+--- @param ship BattleUnit
+--- @return nil
+function BattleCldSystem.DeleteShipCld(self, ship)
+	ship:DeactiveCldBox()
+	self:DeleteShipLeaf(ship)
 end
 
-function var_0_7.InitAircraftCld(arg_42_0, arg_42_1)
-	arg_42_0:InsertToAircraftCldTree(arg_42_1)
+--- @param aircraft BattleAircraftUnit
+--- @return nil
+function BattleCldSystem.InitAircraftCld(self, aircraft)
+	self:InsertToAircraftCldTree(aircraft)
 end
 
-function var_0_7.DeleteAircraftCld(arg_43_0, arg_43_1)
-	arg_43_1:DeactiveCldBox()
-	arg_43_0.DeleteCldLeaf(arg_43_0:GetAircraftTree(), arg_43_1)
+--- @param aircraft BattleAircraftUnit
+--- @return nil
+function BattleCldSystem.DeleteAircraftCld(self, aircraft)
+	aircraft:DeactiveCldBox()
+	self.DeleteCldLeaf(self:GetAircraftTree(), aircraft)
 end
 
-function var_0_7.InitBulletCld(arg_44_0, arg_44_1)
-	arg_44_0:InsertToBulletCldTree(arg_44_1:GetEffectField(), arg_44_1)
+--- @param bullet BattleBulletUnit
+--- @return nil
+function BattleCldSystem.InitBulletCld(self, bullet)
+	self:InsertToBulletCldTree(bullet:GetEffectField(), bullet)
 end
 
-function var_0_7.DeleteBulletCld(arg_45_0, arg_45_1)
-	arg_45_1:DeactiveCldBox()
-	arg_45_0:DeleteBulletLeaf(arg_45_1)
+--- @param bullet BattleBulletUnit
+--- @return nil
+function BattleCldSystem.DeleteBulletCld(self, bullet)
+	bullet:DeactiveCldBox()
+	self:DeleteBulletLeaf(bullet)
 end
 
-function var_0_7.ShiftBulletCld(arg_46_0, arg_46_1)
+--- @param bullet BattleBulletUnit
+--- @return nil
+--- 未实现（保留接口）
+function BattleCldSystem.ShiftBulletCld(self, bullet)
 	return
 end
 
-function var_0_7.InitAOECld(arg_47_0, arg_47_1)
-	arg_47_0:InsertToAOECldTree(arg_47_1:GetFieldType(), arg_47_1)
+--- @param aoe BattleAOEObj
+--- @return nil
+function BattleCldSystem.InitAOECld(self, aoe)
+	self:InsertToAOECldTree(aoe:GetFieldType(), aoe)
 end
 
-function var_0_7.DeleteAOECld(arg_48_0, arg_48_1)
-	arg_48_1:DeactiveCldBox()
-	arg_48_0.DeleteCldLeaf(arg_48_0:GetAOETree(arg_48_1:GetFieldType()), arg_48_1)
+--- @param aoe BattleAOEObj
+--- @return nil
+function BattleCldSystem.DeleteAOECld(self, aoe)
+	aoe:DeactiveCldBox()
+	self.DeleteCldLeaf(self:GetAOETree(aoe:GetFieldType()), aoe)
 end
 
-function var_0_7.InitWallCld(arg_49_0, arg_49_1)
-	arg_49_0:InsertToWallCldTree(arg_49_1)
+--- @param wall BattleWallUnit
+--- @return nil
+function BattleCldSystem.InitWallCld(self, wall)
+	self:InsertToWallCldTree(wall)
 end
 
-function var_0_7.DeleteWallCld(arg_50_0, arg_50_1)
-	arg_50_1:DeactiveCldBox()
+--- @param wall BattleWallUnit
+--- @return nil
+function BattleCldSystem.DeleteWallCld(self, wall)
+	wall:DeactiveCldBox()
 
-	local var_50_0 = arg_50_0:GetWallTree()
+	local wallTree = self:GetWallTree()
 
-	if var_50_0 then
-		arg_50_0.DeleteCldLeaf(var_50_0, arg_50_1)
+	if wallTree then
+		self.DeleteCldLeaf(wallTree, wall)
 	end
 end

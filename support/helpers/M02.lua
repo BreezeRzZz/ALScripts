@@ -2540,8 +2540,8 @@ function filterSpecChars(arg_178_0)
 end
 
 function filterEgyUnicode(arg_179_0)
-	arg_179_0 = string.gsub(arg_179_0, "ğ“[€-][€-¿]", "")
-	arg_179_0 = string.gsub(arg_179_0, "ğ“[€-¯]", "")
+	arg_179_0 = string.gsub(arg_179_0, "ï¿½[ï¿½-ï¿½][ï¿½-ï¿½]", "")
+	arg_179_0 = string.gsub(arg_179_0, "ï¿½[ï¿½-ï¿½]", "")
 
 	return arg_179_0
 end
@@ -2782,7 +2782,7 @@ end
 function wordSplit(arg_194_0)
 	local var_194_0 = {}
 
-	for iter_194_0 in arg_194_0.gmatch(arg_194_0, "[\x01-\x7FÂ-ô][€-¿]*") do
+	for iter_194_0 in arg_194_0.gmatch(arg_194_0, "[\x01-\x7Fï¿½-ï¿½][ï¿½-ï¿½]*") do
 		var_194_0[#var_194_0 + 1] = iter_194_0
 	end
 
@@ -4895,6 +4895,7 @@ function checkCullResume(arg_354_0, arg_354_1)
 	return true
 end
 
+-- TODO
 function parseEquipCode(arg_355_0)
 	local var_355_0 = {}
 

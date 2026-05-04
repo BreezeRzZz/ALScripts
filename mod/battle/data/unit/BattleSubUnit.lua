@@ -1,59 +1,75 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleAttr
-local var_0_4 = var_0_0.Battle.BattleConst
-local var_0_5 = var_0_4.EquipmentType
-local var_0_6 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleAttr = ys.Battle.BattleAttr
+local BattleConst = ys.Battle.BattleConst
+local EquipmentType = BattleConst.EquipmentType
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleSubUnit = class("BattleSubUnit", var_0_0.Battle.BattlePlayerUnit)
-var_0_0.Battle.BattleSubUnit.__name = "BattleSubUnit"
+ys.Battle.BattleSubUnit = class("BattleSubUnit", ys.Battle.BattlePlayerUnit)
+ys.Battle.BattleSubUnit.__name = "BattleSubUnit"
 
-local var_0_7 = var_0_0.Battle.BattleSubUnit
+local BattleSubUnit = ys.Battle.BattleSubUnit
 
-function var_0_7.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_7.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleSubUnit
+--- @param uid number: 单位唯一ID
+--- @param iff number: 阵营
+--- @return nil
+--- 构造函数
+function BattleSubUnit.Ctor(self, uid, iff)
+	BattleSubUnit.super.Ctor(self, uid, iff)
 
-	arg_1_0._type = var_0_4.UnitType.PLAYER_UNIT
+	self._type = BattleConst.UnitType.PLAYER_UNIT
 end
 
-function var_0_7.setWeapon(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_0._tmpData.default_equip_list
-	local var_2_1 = arg_2_0._tmpData.base_list
-	local var_2_2 = arg_2_0._proficiencyList
-	local var_2_3 = arg_2_0._tmpData.preload_count
-	local var_2_4 = 0
+--- @class BattleSubUnit
+--- @param equipmentList table: 装备列表
+--- @return nil
+--- 设置武器：潜艇的特殊武器逻辑，处理鱼雷弹药分配
+--- 1. 统计所有装备的鱼雷弹药总量
+--- 2. 创建非鱼雷武器(通过BattlePlayerUnit.AddWeapon)
+--- 3. 将鱼雷武器收集到列表，按弹药分配逐个创建一次性鱼雷(AddDisposableTorpedo)
+function BattleSubUnit.setWeapon(self, equipmentList)
+	local defaultEquipList = self._tmpData.default_equip_list
+	local baseList = self._tmpData.base_list
+	local proficiencyList = self._proficiencyList
+	local preloadCount = self._tmpData.preload_count
+	local torpedoAmmoTotal = 0
 
-	for iter_2_0, iter_2_1 in ipairs(arg_2_1) do
+	-- 统计所有装备提供的鱼雷弹药总量
+	for iter_2_0, iter_2_1 in ipairs(equipmentList) do
 		if iter_2_0 > Ship.WEAPON_COUNT and iter_2_1 then
-			var_2_4 = var_2_4 + iter_2_1.torpedoAmmo
+			torpedoAmmoTotal = torpedoAmmoTotal + iter_2_1.torpedoAmmo
 		end
 	end
 
-	local var_2_5 = {}
+	-- 收集需要一次性创建的鱼雷武器
+	local torpedoWeaponList = {}
 
-	for iter_2_2, iter_2_3 in ipairs(arg_2_1) do
+	for iter_2_2, iter_2_3 in ipairs(equipmentList) do
 		if iter_2_3 and iter_2_3.skin and iter_2_3.skin ~= 0 and Equipment.IsOrbitSkin(iter_2_3.skin) then
-			arg_2_0._orbitSkinIDList = arg_2_0._orbitSkinIDList or {}
+			self._orbitSkinIDList = self._orbitSkinIDList or {}
 
-			table.insert(arg_2_0._orbitSkinIDList, iter_2_3.skin)
+			table.insert(self._orbitSkinIDList, iter_2_3.skin)
 		end
 
 		if iter_2_2 <= Ship.WEAPON_COUNT then
-			local var_2_6 = var_2_2[iter_2_2]
+			local proficiency = proficiencyList[iter_2_2]
 
-			local function var_2_7(arg_3_0, arg_3_1, arg_3_2)
-				local var_3_0 = var_0_1.GetWeaponPropertyDataFromID(arg_3_0)
+			-- 内嵌函数：处理武器创建，返回鱼雷弹药数(如果是鱼雷)或false
+			local function processWeapon(weaponID, label, skin)
+				local weaponProperty = BattleDataFunction.GetWeaponPropertyDataFromID(weaponID)
 
-				if var_3_0.type == var_0_4.EquipmentType.TORPEDO then
-					return var_3_0.torpedo_ammo
+				-- 如果是鱼雷武器，返回弹药数而非创建武器
+				if weaponProperty.type == BattleConst.EquipmentType.TORPEDO then
+					return weaponProperty.torpedo_ammo
 				else
-					local var_3_1 = var_2_1[iter_2_2]
+					local baseCount = baseList[iter_2_2]
 
-					for iter_3_0 = 1, var_3_1 do
-						arg_2_0:AddWeapon(arg_3_0, arg_3_1, arg_3_2, var_2_6, iter_2_2)
+					for iter_3_0 = 1, baseCount do
+						self:AddWeapon(weaponID, label, skin, proficiency, iter_2_2)
 					end
 
 					return false
@@ -61,29 +77,29 @@ function var_0_7.setWeapon(arg_2_0, arg_2_1)
 			end
 
 			if iter_2_3.equipment then
-				local var_2_8 = iter_2_3.equipment.weapon_id
+				local weaponIDs = iter_2_3.equipment.weapon_id
 
-				for iter_2_4, iter_2_5 in ipairs(var_2_8) do
+				for iter_2_4, iter_2_5 in ipairs(weaponIDs) do
 					if iter_2_5 and iter_2_5 ~= -1 then
-						local var_2_9 = var_2_7(iter_2_5, iter_2_3.equipment.label, iter_2_3.skin)
+						local ammo = processWeapon(iter_2_5, iter_2_3.equipment.label, iter_2_3.skin)
 
-						if var_2_9 then
-							table.insert(var_2_5, {
+						if ammo then
+							table.insert(torpedoWeaponList, {
 								id = iter_2_5,
-								ammo = var_2_9,
+								ammo = ammo,
 								index = iter_2_2
 							})
 						end
 					end
 				end
 			else
-				local var_2_10 = var_2_0[iter_2_2]
-				local var_2_11 = var_2_7(var_2_10)
+				local defaultWeaponID = defaultEquipList[iter_2_2]
+				local ammo = processWeapon(defaultWeaponID)
 
-				if var_2_11 then
-					table.insert(var_2_5, {
-						id = var_2_10,
-						ammo = var_2_11,
+				if ammo then
+					table.insert(torpedoWeaponList, {
+						id = defaultWeaponID,
+						ammo = ammo,
 						index = iter_2_2
 					})
 				end
@@ -91,58 +107,69 @@ function var_0_7.setWeapon(arg_2_0, arg_2_1)
 		end
 	end
 
-	local function var_2_12(arg_4_0, arg_4_1)
-		local var_4_0 = arg_2_1[arg_4_1]
-		local var_4_1
-		local var_4_2
+	-- 内嵌函数：添加一次性鱼雷武器
+	local function addTorpedo(weaponID, equipIndex)
+		local equipment = equipmentList[equipIndex]
+		local label
+		local skin
 
-		if var_4_0.equipment then
-			var_4_1 = var_4_0.equipment.label
-			var_4_2 = var_4_0.skin
+		if equipment.equipment then
+			label = equipment.equipment.label
+			skin = equipment.skin
 		end
 
-		local var_4_3 = var_2_2[arg_4_1]
+		local proficiency = proficiencyList[equipIndex]
 
-		arg_2_0:AddDisposableTorpedo(arg_4_0, var_4_1, var_4_2, var_4_3, arg_4_1):SetModifyInitialCD()
+		self:AddDisposableTorpedo(weaponID, label, skin, proficiency, equipIndex):SetModifyInitialCD()
 	end
 
+	-- 循环分配鱼雷弹药：直到所有弹药用完
 	repeat
-		local var_2_13 = 0
+		local remainingAmmo = 0
 
-		for iter_2_6, iter_2_7 in ipairs(var_2_5) do
-			if iter_2_7.ammo <= 0 and var_2_4 > 0 then
+		for iter_2_6, iter_2_7 in ipairs(torpedoWeaponList) do
+			-- 当前武器弹药不足时，从总额外弹药中补充
+			if iter_2_7.ammo <= 0 and torpedoAmmoTotal > 0 then
 				iter_2_7.ammo = iter_2_7.ammo + 1
-				var_2_4 = var_2_4 - 1
+				torpedoAmmoTotal = torpedoAmmoTotal - 1
 			end
 
 			if iter_2_7.ammo > 0 then
-				var_2_12(iter_2_7.id, iter_2_7.index)
+				addTorpedo(iter_2_7.id, iter_2_7.index)
 
 				iter_2_7.ammo = iter_2_7.ammo - 1
 			end
 
-			var_2_13 = var_2_13 + iter_2_7.ammo
+			remainingAmmo = remainingAmmo + iter_2_7.ammo
 		end
-	until var_2_13 == 0 and var_2_4 == 0
+	until remainingAmmo == 0 and torpedoAmmoTotal == 0
 end
 
-function var_0_7.AddDisposableTorpedo(arg_5_0, arg_5_1, arg_5_2, arg_5_3, arg_5_4, arg_5_5)
-	local var_5_0 = var_0_0.Battle.BattleDataFunction.CreateWeaponUnit(arg_5_1, arg_5_0, arg_5_4, arg_5_5, var_0_4.EquipmentType.DISPOSABLE_TORPEDO)
+--- @class BattleSubUnit
+--- @param weaponID number: 武器ID
+--- @param label string: 装备标签
+--- @param skin number: 皮肤ID
+--- @param proficiency number: 武器熟练度
+--- @param equipIndex number: 装备槽位索引
+--- @return BattleWeaponUnit: 创建的武器单位
+--- 添加一次性鱼雷武器：创建DISPOSABLE_TORPEDO类型的WeaponUnit并加入手动鱼雷队列
+function BattleSubUnit.AddDisposableTorpedo(self, weaponID, label, skin, proficiency, equipIndex)
+	local weapon = ys.Battle.BattleDataFunction.CreateWeaponUnit(weaponID, self, proficiency, equipIndex, BattleConst.EquipmentType.DISPOSABLE_TORPEDO)
 
-	arg_5_0._totalWeapon[#arg_5_0._totalWeapon + 1] = var_5_0
+	self._totalWeapon[#self._totalWeapon + 1] = weapon
 
-	if arg_5_2 then
-		var_5_0:SetEquipmentLabel(arg_5_2)
+	if label then
+		weapon:SetEquipmentLabel(label)
 	end
 
-	arg_5_0._manualTorpedoList[#arg_5_0._manualTorpedoList + 1] = var_5_0
+	self._manualTorpedoList[#self._manualTorpedoList + 1] = weapon
 
-	arg_5_0._weaponQueue:AppendManualTorpedo(var_5_0)
+	self._weaponQueue:AppendManualTorpedo(weapon)
 
-	if arg_5_3 and arg_5_3 ~= 0 then
-		var_5_0:SetSkinData(arg_5_3)
-		arg_5_0:SetPriorityWeaponSkin(arg_5_3)
+	if skin and skin ~= 0 then
+		weapon:SetSkinData(skin)
+		self:SetPriorityWeaponSkin(skin)
 	end
 
-	return var_5_0
+	return weapon
 end

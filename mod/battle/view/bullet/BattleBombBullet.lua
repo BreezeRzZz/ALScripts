@@ -1,42 +1,64 @@
+--- 炸弹子弹视图（空投/轰炸类型）
+--- 继承 BattleBullet，新增爆炸事件处理和平滑移动插值。
+---
+--- 特殊视觉效果：
+--- - 爆炸回调：监听数据层 EXPLODE 事件，触发命中特效（不同于普通子弹的 HIT 事件）
+--- - 平滑移动：UpdatePosition 使用 Lerp 插值，使炸弹下落轨迹更平滑自然
+--- - 预警标记：通过 _alert (TorAlert) 在地面显示炸弹落点预警圈
+--- @class BattleBombBullet : BattleBullet
+--- @field _alert TorAlert 地面预警标记（红色圆圈）
+
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBulletEvent
-local var_0_2 = var_0_0.Battle.BattleResourceManager
-local var_0_3 = var_0_0.Battle.BattleConfig
-local var_0_4 = class("BattleBombBullet", var_0_0.Battle.BattleBullet)
+local ys = ys
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleResourceManager = ys.Battle.BattleResourceManager
+local BattleConfig = ys.Battle.BattleConfig
+local BattleBombBullet = class("BattleBombBullet", ys.Battle.BattleBullet)
 
-var_0_0.Battle.BattleBombBullet = var_0_4
-var_0_4.__name = "BattleBombBullet"
+ys.Battle.BattleBombBullet = BattleBombBullet
+BattleBombBullet.__name = "BattleBombBullet"
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+--- 构造函数
+--- 直接调用父类 Ctor
+function BattleBombBullet.Ctor(self)
+    BattleBombBullet.super.Ctor(self)
 end
 
-function var_0_4.Dispose(arg_2_0)
-	if arg_2_0._alert then
-		arg_2_0._alert:Dispose()
-	end
+--- 清理资源
+--- 先销毁预警标记，再调用父类 Dispose
+function BattleBombBullet.Dispose(self)
+    if self._alert then
+        self._alert:Dispose()
+    end
 
-	var_0_4.super.Dispose(arg_2_0)
+    BattleBombBullet.super.Dispose(self)
 end
 
-function var_0_4.AddBulletEvent(arg_3_0)
-	arg_3_0._bulletData:RegisterEventListener(arg_3_0, var_0_1.EXPLODE, arg_3_0.onBulletExplode)
+--- 注册数据层事件监听（覆写父类）
+--- 炸弹额外监听 EXPLODE 事件，爆炸时触发 onBulletExplode
+function BattleBombBullet.AddBulletEvent(self)
+    self._bulletData:RegisterEventListener(self, BattleBulletEvent.EXPLODE, self.onBulletExplode)
 end
 
-function var_0_4.RemoveBulletEvent(arg_4_0)
-	arg_4_0._bulletData:UnregisterEventListener(arg_4_0, var_0_1.EXPLODE)
+--- 移除数据层事件监听（覆写父类）
+function BattleBombBullet.RemoveBulletEvent(self)
+    self._bulletData:UnregisterEventListener(self, BattleBulletEvent.EXPLODE)
 end
 
-function var_0_4.onBulletExplode(arg_5_0, arg_5_1)
-	arg_5_0._bulletHitFunc(arg_5_0)
+--- 炸弹爆炸回调（从数据层 EXPLODE 事件触发）
+--- 直接调用命中回调函数，不同于普通子弹需要传入目标 UID
+function BattleBombBullet.onBulletExplode(self, event)
+    self._bulletHitFunc(self)
 end
 
-function var_0_4.UpdatePosition(arg_6_0)
-	local var_6_0 = Vector3.Lerp(arg_6_0._tf.localPosition, arg_6_0:GetPosition(), var_0_3.BulletMotionRate)
+--- 同步位置到 Transform（覆写父类）
+--- 使用 Lerp 线性插值实现平滑移动，BulletMotionRate 控制插值速率，
+--- 让炸弹下落轨迹比直接 snap 到数据位置更自然。
+function BattleBombBullet.UpdatePosition(self)
+    local lerpedPos = Vector3.Lerp(self._tf.localPosition, self:GetPosition(), BattleConfig.BulletMotionRate)
 
-	arg_6_0._tf.localPosition = var_6_0
+    self._tf.localPosition = lerpedPos
 
-	arg_6_0._cacheTFPos:Set(var_6_0.x, var_6_0.y, var_6_0.z)
+    self._cacheTFPos:Set(lerpedPos.x, lerpedPos.y, lerpedPos.z)
 end

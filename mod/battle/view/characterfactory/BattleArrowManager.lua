@@ -1,50 +1,79 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleArrowManager")
+local ys = ys
+local ArrowManager = singletonClass("BattleArrowManager")
 
-var_0_0.Battle.BattleArrowManager = var_0_1
-var_0_1.__name = "BattleArrowManager"
-var_0_1.ROOT_NAME = "EnemyArrowContainer"
-var_0_1.ARROW_NAME = "EnemyArrow"
+ys.Battle.BattleArrowManager = ArrowManager
+--- 敌方箭头管理器。负责指向屏幕外敌方位置的箭头UI的对象池管理。
+--- 当敌方角色在屏幕边缘之外时，箭头会显示在屏幕边缘，指示敌方方向。
+--- 使用pg.Pool管理箭头对象池。
+ArrowManager.__name = "BattleArrowManager"
+--- 箭头容器根节点名称
+ArrowManager.ROOT_NAME = "EnemyArrowContainer"
+--- 箭头资源名称
+ArrowManager.ARROW_NAME = "EnemyArrow"
 
-function var_0_1.Ctor(arg_1_0)
+--- @class BattleArrowManager
+--- @return nil
+--- 构造函数（空，实际初始化在Init中完成）。
+function ArrowManager.Ctor(self)
 	return
 end
 
-local var_0_2 = Vector3(0, 10000, 0)
+--- 对象池隐藏位置：Y=10000（屏幕外）
+local HIDE_POSITION = Vector3(0, 10000, 0)
 
-function var_0_1.HideBullet(arg_2_0)
-	arg_2_0.transform.position = var_0_2
+--- @class BattleArrowManager
+--- @param obj GameObject: 箭头GameObject
+--- @return nil
+--- 对象池回收函数：将未使用的箭头移动到屏幕外隐藏位置。
+function ArrowManager.HideBullet(self, obj)
+	obj.transform.position = HIDE_POSITION
 end
 
-function var_0_1.Init(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_1:Find(var_0_1.ARROW_NAME).gameObject
+--- @class BattleArrowManager
+--- @param arrowRoot Transform: 箭头容器的Transform（EnemyArrowContainer）
+--- @return nil
+--- 初始化箭头管理器：从场景中查找箭头模板(EnemyArrow)，
+--- 创建pg.Pool对象池（预分配5个，容量10）。
+--- 回收时自动调用HideBullet。
+function ArrowManager.Init(self, arrowRoot)
+	local template = arrowRoot:Find(ArrowManager.ARROW_NAME).gameObject
 
-	var_3_0.transform.position = var_0_2
+	template.transform.position = HIDE_POSITION
 
-	var_3_0:SetActive(true)
+	template:SetActive(true)
 
-	local var_3_1 = pg.Pool.New(arg_3_1, var_3_0, 5, 10, true, true)
+	local pool = pg.Pool.New(arrowRoot, template, 5, 10, true, true)
 
-	var_3_1:SetRecycleFuncs(var_0_1.HideBullet)
-	var_3_1:InitSize()
+	pool:SetRecycleFuncs(ArrowManager.HideBullet)
+	pool:InitSize()
 
-	arg_3_0._arrowPool = var_3_1
+	self._arrowPool = pool
 end
 
-function var_0_1.Clear(arg_4_0)
-	arg_4_0._arrowPool:Dispose()
+--- @class BattleArrowManager
+--- @return nil
+--- 清理所有箭头：释放箭头对象池。
+function ArrowManager.Clear(self)
+	self._arrowPool:Dispose()
 end
 
-function var_0_1.GetArrow(arg_5_0)
-	return (arg_5_0._arrowPool:GetObject())
+--- @class BattleArrowManager
+--- @return GameObject: 箭头GameObject
+--- 从对象池获取一个箭头实例。由BattleEnemyCharacterFactory.MakeArrowBar调用。
+function ArrowManager.GetArrow(self)
+	return (self._arrowPool:GetObject())
 end
 
-function var_0_1.DestroyObj(arg_6_0, arg_6_1)
-	if arg_6_1 == nil then
+--- @class BattleArrowManager
+--- @param obj GameObject|nil: 要回收的箭头GameObject
+--- @return nil
+--- 回收一个箭头到对象池中。
+function ArrowManager.DestroyObj(self, obj)
+	if obj == nil then
 		return
 	end
 
-	arg_6_0._arrowPool:Recycle(arg_6_1)
+	self._arrowPool:Recycle(obj)
 end

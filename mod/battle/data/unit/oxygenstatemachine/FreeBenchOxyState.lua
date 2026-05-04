@@ -1,53 +1,97 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleAttr
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleAttr = ys.Battle.BattleAttr
 
-var_0_0.Battle.FreeBenchOxyState = class("FreeBenchOxyState", var_0_0.Battle.IOxyState)
-var_0_0.Battle.FreeBenchOxyState.__name = "FreeBenchOxyState"
+--- @class FreeBenchOxyState : IOxyState
+--- 自由待机状态：自由模式(Free Mode)下的待机/休息状态。
+--- 介于自由下潜(Dive)和自由上浮(Float)之间的状态。
+--- 此状态下不可见（IsVisible=false），无武器可用，
+--- 碰撞数据为DIVE(免疫)，但GetDiveState返回FLOAT，
+--- 氧气持续恢复(OxyRecover, STATE_FREE_BENCH)。
+--- 特点：产生气泡(GetBubbleFlag=true，暴露位置)但自身不可见。
+---
+--- 【武器可用性】无武器可用（返回空表{}）
+--- 【氧气消耗/恢复】恢复氧气(OxyRecover, STATE_FREE_BENCH)
+--- 【状态转换条件】无主动转换逻辑（RunMode标识自由模式）
+ys.Battle.FreeBenchOxyState = class("FreeBenchOxyState", ys.Battle.IOxyState)
+ys.Battle.FreeBenchOxyState.__name = "FreeBenchOxyState"
 
-local var_0_3 = var_0_0.Battle.FreeBenchOxyState
+local FreeBenchOxyState = ys.Battle.FreeBenchOxyState
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- 构造函数
+--- @param self FreeBenchOxyState
+--- @return nil
+function FreeBenchOxyState.Ctor(self)
+	FreeBenchOxyState.super.Ctor(self)
 end
 
-function var_0_3.GetWeaponUseableList(arg_2_0)
+--- 获取可使用的武器类型列表
+--- 自由待机状态：无武器可用
+--- @param self FreeBenchOxyState
+--- @return table: 空表
+function FreeBenchOxyState.GetWeaponUseableList(self)
 	return {}
 end
 
-function var_0_3.UpdateCldData(arg_3_0, arg_3_1, arg_3_2)
-	local var_3_0 = arg_3_2:GetDiveState()
-	local var_3_1 = arg_3_0:GetDiveState()
+--- 更新碰撞数据
+--- 将单位的碰撞状态设为FLOAT，如果前后状态不同则设为碰撞免疫
+--- 注意：碰撞设为免疫但Surface标记为FLOAT
+--- @param self FreeBenchOxyState: 新状态
+--- @param unit BattleWalkUnit: 潜艇单位
+--- @param prevState IOxyState: 切换前状态
+--- @return nil
+function FreeBenchOxyState.UpdateCldData(self, unit, prevState)
+	local prevDiveState = prevState:GetDiveState()
+	local currentDiveState = self:GetDiveState()
 
-	arg_3_1:GetCldData().Surface = var_3_1
+	unit:GetCldData().Surface = currentDiveState
 
-	if var_3_0 ~= var_3_1 then
-		var_0_2.UnitCldImmune(arg_3_1)
+	if prevDiveState ~= currentDiveState then
+		BattleAttr.UnitCldImmune(unit)
 	end
 end
 
-function var_0_3.GetDiveState(arg_4_0)
-	return var_0_1.OXY_STATE.FLOAT
+--- 获取潜航状态：FLOAT（自由待机时标记为浮航状态）
+--- @param self FreeBenchOxyState
+--- @return number: BattleConst.OXY_STATE.FLOAT
+function FreeBenchOxyState.GetDiveState(self)
+	return BattleConst.OXY_STATE.FLOAT
 end
 
-function var_0_3.GetBubbleFlag(arg_5_0)
+--- 获取气泡标记：自由待机时产生气泡（暴露位置）
+--- @param self FreeBenchOxyState
+--- @return boolean: true
+function FreeBenchOxyState.GetBubbleFlag(self)
 	return true
 end
 
-function var_0_3.DoUpdateOxy(arg_6_0, arg_6_1)
-	arg_6_1:OxyRecover(var_0_0.Battle.OxyState.STATE_FREE_BENCH)
+--- 执行氧气更新：自由待机时恢复氧气（使用STATE_FREE_BENCH速率）
+--- @param self FreeBenchOxyState
+--- @param oxyState OxyState: 氧气状态管理器
+--- @return nil
+function FreeBenchOxyState.DoUpdateOxy(self, oxyState)
+	oxyState:OxyRecover(ys.Battle.OxyState.STATE_FREE_BENCH)
 end
 
-function var_0_3.IsVisible(arg_7_0)
+--- 自由待机状态对敌方不可见
+--- @param self FreeBenchOxyState
+--- @return boolean: false
+function FreeBenchOxyState.IsVisible(self)
 	return false
 end
 
-function var_0_3.GetBarVisible(arg_8_0)
+--- 氧气条可见：自由待机时显示氧气条
+--- @param self FreeBenchOxyState
+--- @return boolean: true
+function FreeBenchOxyState.GetBarVisible(self)
 	return true
 end
 
-function var_0_3.RunMode(arg_9_0)
+--- 自由模式
+--- @param self FreeBenchOxyState
+--- @return boolean: true
+function FreeBenchOxyState.RunMode(self)
 	return true
 end

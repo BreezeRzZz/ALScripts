@@ -1,113 +1,127 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.CardPuzzleEnergyBar = class("CardPuzzleEnergyBar")
+ys.Battle.CardPuzzleEnergyBar = class("CardPuzzleEnergyBar")
 
-local var_0_2 = var_0_0.Battle.CardPuzzleEnergyBar
+local CardPuzzleEnergyBar = ys.Battle.CardPuzzleEnergyBar
 
-var_0_2.__name = "CardPuzzleEnergyBar"
+CardPuzzleEnergyBar.__name = "CardPuzzleEnergyBar"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_0._go.transform
-	arg_1_0._currentLabel = arg_1_0._tf:Find("count_label/count/current")
-	arg_1_0._shadeLabel = arg_1_0._tf:Find("count_label/count/current")
-	arg_1_0._maxLabel = arg_1_0._tf:Find("count_label/max")
-	arg_1_0._recoverBlockList = arg_1_0._tf:Find("block_list")
+--- 卡牌拼图能量条视图
+--- 显示战斗中能量点数的进度条（类似法力水晶），支持恢复动画
+
+function CardPuzzleEnergyBar.Ctor(self, go)
+	self._go = go
+	self._tf = self._go.transform
+	self._currentLabel = self._tf:Find("count_label/count/current")
+	self._shadeLabel = self._tf:Find("count_label/count/current")
+	self._maxLabel = self._tf:Find("count_label/max")
+	self._recoverBlockList = self._tf:Find("block_list")
 end
 
-function var_0_2.SetCardPuzzleComponent(arg_2_0, arg_2_1)
-	arg_2_0._info = arg_2_1
-	arg_2_0._energyInfo = arg_2_0._info:GetEnergy()
-	arg_2_0._blockTFList = {}
-	arg_2_0._max = arg_2_0._energyInfo:GetMaxEnergy()
+--- 设置关联的卡牌拼图组件，初始化能量块列表
+function CardPuzzleEnergyBar.SetCardPuzzleComponent(self, info)
+	self._info = info
+	self._energyInfo = self._info:GetEnergy()
+	self._blockTFList = {}
+	self._max = self._energyInfo:GetMaxEnergy()
 
-	for iter_2_0 = 1, arg_2_0._max do
-		local var_2_0 = arg_2_0._recoverBlockList:Find("block_" .. iter_2_0)
-		local var_2_1 = var_2_0:Find("full")
-		local var_2_2 = var_2_0:Find("recover")
-		local var_2_3 = {
-			full = var_2_1,
-			recover = var_2_2
+	-- 动态创建能量块节点引用
+	for i = 1, self._max do
+		local blockTF = self._recoverBlockList:Find("block_" .. i)
+		local fullTF = blockTF:Find("full")
+		local recoverTF = blockTF:Find("recover")
+		local blockData = {
+			full = fullTF,
+			recover = recoverTF
 		}
 
-		table.insert(arg_2_0._blockTFList, var_2_3)
+		table.insert(self._blockTFList, blockData)
 	end
 
-	arg_2_0._lastPoint = 0
+	self._lastPoint = 0
 
-	local var_2_4 = arg_2_0._blockTFList[arg_2_0._lastPoint + 1]
+	-- 激活第一个能量块的恢复状态
+	local firstBlock = self._blockTFList[self._lastPoint + 1]
 
-	arg_2_0:activeRecoverBlock(var_2_4)
+	self:activeRecoverBlock(firstBlock)
 end
 
-function var_0_2.Update(arg_3_0)
-	arg_3_0:updateEnergyPoint()
-	arg_3_0:updateEnergyProgress()
+--- 每帧更新
+function CardPuzzleEnergyBar.Update(self)
+	self:updateEnergyPoint()
+	self:updateEnergyProgress()
 end
 
-function var_0_2.updateEnergyProgress(arg_4_0)
-	local var_4_0 = arg_4_0._energyInfo:GetCurrentEnergy()
+--- 更新能量块进度显示
+function CardPuzzleEnergyBar.updateEnergyProgress(self)
+	local currentEnergy = self._energyInfo:GetCurrentEnergy()
 
-	if arg_4_0._lastPoint == var_4_0 then
-		if var_4_0 >= arg_4_0._max then
-			-- block empty
+	if self._lastPoint == currentEnergy then
+		-- 能量点数未变化，只需更新当前正在恢复的块
+		if currentEnergy >= self._max then
+			-- 已满，无操作
 		else
-			local var_4_1 = arg_4_0._blockTFList[var_4_0 + 1]
+			local recoveringBlock = self._blockTFList[currentEnergy + 1]
 
-			arg_4_0:updateRecoverBlock(var_4_1)
+			self:updateRecoverBlock(recoveringBlock)
 		end
 	else
-		local var_4_2 = arg_4_0._max
-		local var_4_3 = arg_4_0._blockTFList
+		-- 能量点数发生变化，需要刷新所有块的状态
+		local maxEnergy = self._max
+		local blockTFList = self._blockTFList
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_3) do
-			local var_4_4 = arg_4_0._blockTFList[iter_4_0]
-			local var_4_5 = iter_4_0 - 1
+		for index, blockData in ipairs(blockTFList) do
+			local block = self._blockTFList[index]
+			local energyLevel = index - 1
 
-			if var_4_5 < var_4_0 then
-				arg_4_0:updateSingleBlock(var_4_4, true)
-			elseif var_4_5 == var_4_0 then
-				arg_4_0:activeRecoverBlock(var_4_4)
-				arg_4_0:updateRecoverBlock(var_4_4)
-			elseif var_4_0 < var_4_5 then
-				arg_4_0:updateSingleBlock(var_4_4, false)
+			if energyLevel < currentEnergy then
+				self:updateSingleBlock(block, true)
+			elseif energyLevel == currentEnergy then
+				self:activeRecoverBlock(block)
+				self:updateRecoverBlock(block)
+			elseif currentEnergy < energyLevel then
+				self:updateSingleBlock(block, false)
 			end
 		end
 	end
 
-	arg_4_0._lastPoint = var_4_0
+	self._lastPoint = currentEnergy
 end
 
-function var_0_2.updateEnergyPoint(arg_5_0)
-	setText(arg_5_0._currentLabel, arg_5_0._energyInfo:GetCurrentEnergy())
-	setText(arg_5_0._shadeLabel, arg_5_0._energyInfo:GetCurrentEnergy())
-	setText(arg_5_0._maxLabel, arg_5_0._energyInfo:GetMaxEnergy())
+--- 更新能量数字显示
+function CardPuzzleEnergyBar.updateEnergyPoint(self)
+	setText(self._currentLabel, self._energyInfo:GetCurrentEnergy())
+	setText(self._shadeLabel, self._energyInfo:GetCurrentEnergy())
+	setText(self._maxLabel, self._energyInfo:GetMaxEnergy())
 end
 
-function var_0_2.activeRecoverBlock(arg_6_0, arg_6_1)
-	setActive(arg_6_1.full, false)
-	setActive(arg_6_1.recover, true)
+--- 激活能量块的恢复状态（显示恢复进度条）
+function CardPuzzleEnergyBar.activeRecoverBlock(self, blockData)
+	setActive(blockData.full, false)
+	setActive(blockData.recover, true)
 end
 
-function var_0_2.updateRecoverBlock(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_1.full
+--- 更新恢复块进度（根据生成进度填充）
+function CardPuzzleEnergyBar.updateRecoverBlock(self, blockData)
+	local fullTF = blockData.full
 
-	arg_7_1.recover:GetComponent(typeof(Image)).fillAmount = arg_7_0._energyInfo:GetGeneratingProcess()
+	blockData.recover:GetComponent(typeof(Image)).fillAmount = self._energyInfo:GetGeneratingProcess()
 end
 
-function var_0_2.updateSingleBlock(arg_8_0, arg_8_1, arg_8_2)
-	local var_8_0 = arg_8_1.full
-	local var_8_1 = arg_8_1.recover
+--- 更新单个能量块的状态（满/空）
+function CardPuzzleEnergyBar.updateSingleBlock(self, blockData, isFull)
+	local fullTF = blockData.full
+	local recoverTF = blockData.recover
 
-	setActive(var_8_0, arg_8_2)
-	setActive(var_8_1, false)
+	setActive(fullTF, isFull)
+	setActive(recoverTF, false)
 end
 
-function var_0_2.Dispose(arg_9_0)
-	arg_9_0._currentLabel = nil
-	arg_9_0._maxLabel = nil
-	arg_9_0._recoverBlockList = nil
+function CardPuzzleEnergyBar.Dispose(self)
+	self._currentLabel = nil
+	self._maxLabel = nil
+	self._recoverBlockList = nil
 end

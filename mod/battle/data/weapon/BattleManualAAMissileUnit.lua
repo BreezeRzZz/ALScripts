@@ -1,184 +1,203 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleUnitEvent
-local var_0_3 = var_0_0.Battle.BattleTargetChoise
-local var_0_4 = class("BattleManualAAMissileUnit", var_0_0.Battle.BattleManualTorpedoUnit)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleTargetChoise = ys.Battle.BattleTargetChoise
+local BattleManualAAMissileUnit = class("BattleManualAAMissileUnit", ys.Battle.BattleManualTorpedoUnit)
 
-var_0_0.Battle.BattleManualAAMissileUnit = var_0_4
-var_0_4.__name = "BattleManualAAMissileUnit"
+ys.Battle.BattleManualAAMissileUnit = BattleManualAAMissileUnit
+BattleManualAAMissileUnit.__name = "BattleManualAAMissileUnit"
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+--- @class BattleManualAAMissileUnit : BattleManualTorpedoUnit
+--- 手动防空导弹单元：继承自BattleManualTorpedoUnit，支持瞄准模式(StrikeMode)，可标记目标并追踪发射AA导弹
+function BattleManualAAMissileUnit.Ctor(self)
+	BattleManualAAMissileUnit.super.Ctor(self)
 
-	arg_1_0._strikeMode = nil
-	arg_1_0._strikeModeData = nil
+	self._strikeMode = nil
+	self._strikeModeData = nil
 end
 
-function var_0_4.createMajorEmitter(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	local function var_2_0(arg_3_0, arg_3_1, arg_3_2, arg_3_3, arg_3_4)
-		local var_3_0 = arg_2_0._emitBulletIDList[arg_2_2]
-		local var_3_1 = arg_2_0:Spawn(var_3_0, arg_3_4, var_0_4.INTERNAL)
+--- @param barrageID number 弹幕ID
+--- @param index number 发射器索引
+--- @param emitterType string|nil 发射器类型
+--- @return BattleBulletEmitter 创建的发射器
+function BattleManualAAMissileUnit.createMajorEmitter(self, barrageID, index, emitterType)
+	local function spawnFunc(offsetX, offsetZ, barrageAngle, offsetPriority, target)
+		local bulletID = self._emitBulletIDList[index]
+		local bullet = self:Spawn(bulletID, target, BattleManualAAMissileUnit.INTERNAL)
 
-		var_3_1:SetOffsetPriority(arg_3_3)
-		var_3_1:SetShiftInfo(arg_3_0, arg_3_1)
+		bullet:SetOffsetPriority(offsetPriority)
+		bullet:SetShiftInfo(offsetX, offsetZ)
 
-		if arg_2_0._tmpData.aim_type == var_0_1.WeaponAimType.AIM and arg_3_4 ~= nil then
-			var_3_1:SetRotateInfo(arg_3_4:GetBeenAimedPosition(), arg_2_0:GetBaseAngle(), arg_3_2)
+		if self._tmpData.aim_type == BattleConst.WeaponAimType.AIM and target ~= nil then
+			bullet:SetRotateInfo(target:GetBeenAimedPosition(), self:GetBaseAngle(), barrageAngle)
 		else
-			var_3_1:SetRotateInfo(nil, arg_2_0:GetBaseAngle(), arg_3_2)
+			bullet:SetRotateInfo(nil, self:GetBaseAngle(), barrageAngle)
 		end
 
-		var_3_1:setTrackingTarget(arg_3_4)
+		bullet:setTrackingTarget(target)
 
-		local var_3_2 = {}
+		local strikeData = {}
 
-		for iter_3_0, iter_3_1 in pairs(arg_2_0._strikeModeData) do
-			var_3_2[iter_3_0] = iter_3_1
+		for k, v in pairs(self._strikeModeData) do
+			strikeData[k] = v
 		end
 
-		var_3_1:SetTrackingFXData(var_3_2)
-		arg_2_0:DispatchBulletEvent(var_3_1)
+		bullet:SetTrackingFXData(strikeData)
+		self:DispatchBulletEvent(bullet)
 
-		return var_3_1
+		return bullet
 	end
 
-	local function var_2_1()
-		for iter_4_0, iter_4_1 in ipairs(arg_2_0._majorEmitterList) do
-			if iter_4_1:GetState() ~= iter_4_1.STATE_STOP then
+	local function stopFunc()
+		for _, emitter in ipairs(self._majorEmitterList) do
+			if emitter:GetState() ~= emitter.STATE_STOP then
 				return
 			end
 		end
 
-		arg_2_0:DispatchEvent(var_0_0.Event.New(var_0_2.MANUAL_WEAPON_FIRE, {}))
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.MANUAL_WEAPON_FIRE, {}))
 
-		arg_2_0._strikeModeData = nil
+		self._strikeModeData = nil
 	end
 
-	arg_2_3 = arg_2_3 or var_0_4.EMITTER_NORMAL
+	emitterType = emitterType or BattleManualAAMissileUnit.EMITTER_NORMAL
 
-	local var_2_2 = var_0_0.Battle[arg_2_3].New(var_2_0, var_2_1, arg_2_1)
+	local emitter = ys.Battle[emitterType].New(spawnFunc, stopFunc, barrageID)
 
-	arg_2_0._majorEmitterList[#arg_2_0._majorEmitterList + 1] = var_2_2
+	self._majorEmitterList[#self._majorEmitterList + 1] = emitter
 
-	return var_2_2
+	return emitter
 end
 
-function var_0_4.IsStrikeMode(arg_5_0)
-	return arg_5_0._strikeMode
+--- @return boolean 是否处于打击模式
+function BattleManualAAMissileUnit.IsStrikeMode(self)
+	return self._strikeMode
 end
 
-function var_0_4.IsAttacking(arg_6_0)
-	return arg_6_0._currentState == var_0_4.STATE_ATTACK
+--- @return boolean 是否正在攻击中
+function BattleManualAAMissileUnit.IsAttacking(self)
+	return self._currentState == BattleManualAAMissileUnit.STATE_ATTACK
 end
 
-function var_0_4.Update(arg_7_0)
-	arg_7_0:UpdateReload()
+--- 刷新装填，打击模式下标记目标
+function BattleManualAAMissileUnit.Update(self)
+	self:UpdateReload()
 
-	if arg_7_0:IsStrikeMode() then
-		arg_7_0:MarkTarget()
+	if self:IsStrikeMode() then
+		self:MarkTarget()
 	end
 end
 
-function var_0_4.EnterStrikeMode(arg_8_0)
-	arg_8_0._strikeMode = true
-	arg_8_0._strikeModeData = {}
-	arg_8_0._strikeModeData.fxName = arg_8_0._preCastInfo.fx
+--- 进入打击模式
+function BattleManualAAMissileUnit.EnterStrikeMode(self)
+	self._strikeMode = true
+	self._strikeModeData = {}
+	self._strikeModeData.fxName = self._preCastInfo.fx
 
-	arg_8_0:MarkTarget()
+	self:MarkTarget()
 end
 
-function var_0_4.MarkTarget(arg_9_0)
-	local var_9_0 = arg_9_0._strikeModeData.aimingTarget
+--- 标记目标：追踪权重最高的敌人，在角色身上添加瞄准特效
+function BattleManualAAMissileUnit.MarkTarget(self)
+	local oldTarget = self._strikeModeData.aimingTarget
 
-	arg_9_0:updateMovementInfo()
+	self:updateMovementInfo()
 
-	local var_9_1 = arg_9_0:Tracking()
+	local newTarget = self:Tracking()
 
-	if var_9_0 == var_9_1 then
+	if oldTarget == newTarget then
 		return
 	end
 
-	local var_9_2 = var_0_0.Battle.BattleState.GetInstance():GetSceneMediator()
+	local sceneMediator = ys.Battle.BattleState.GetInstance():GetSceneMediator()
 
-	if arg_9_0._strikeModeData.aimingTarget and arg_9_0._strikeModeData.aimingFX then
-		local var_9_3 = var_9_2:GetCharacter(var_9_0:GetUniqueID())
+	if self._strikeModeData.aimingTarget and self._strikeModeData.aimingFX then
+		local oldCharacter = sceneMediator:GetCharacter(oldTarget:GetUniqueID())
 
-		if var_9_3 then
-			var_9_3:RemoveFX(arg_9_0._strikeModeData.aimingFX)
+		if oldCharacter then
+			oldCharacter:RemoveFX(self._strikeModeData.aimingFX)
 		end
 	end
 
-	table.clear(arg_9_0._strikeModeData)
+	table.clear(self._strikeModeData)
 
-	if not var_9_1 then
+	if not newTarget then
 		return
 	end
 
-	local var_9_4 = var_9_2:GetCharacter(var_9_1:GetUniqueID())
-	local var_9_5
+	local newCharacter = sceneMediator:GetCharacter(newTarget:GetUniqueID())
+	local aimingFX
 
-	if arg_9_0._preCastInfo.fx and #arg_9_0._preCastInfo.fx > 0 then
-		var_9_5 = var_9_4:AddFX(arg_9_0._preCastInfo.fx)
+	if self._preCastInfo.fx and #self._preCastInfo.fx > 0 then
+		aimingFX = newCharacter:AddFX(self._preCastInfo.fx)
 	end
 
-	arg_9_0._strikeModeData.aimingTarget = var_9_1
-	arg_9_0._strikeModeData.aimingFX = var_9_5
+	self._strikeModeData.aimingTarget = newTarget
+	self._strikeModeData.aimingFX = aimingFX
 end
 
-function var_0_4.CancelStrikeMode(arg_10_0)
-	if arg_10_0._strikeModeData.aimingTarget and arg_10_0._strikeModeData.aimingFX then
-		local var_10_0 = var_0_0.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(arg_10_0._strikeModeData.aimingTarget:GetUniqueID())
+--- 取消打击模式
+function BattleManualAAMissileUnit.CancelStrikeMode(self)
+	if self._strikeModeData.aimingTarget and self._strikeModeData.aimingFX then
+		local character = ys.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(self._strikeModeData.aimingTarget:GetUniqueID())
 
-		if var_10_0 then
-			var_10_0:RemoveFX(arg_10_0._strikeModeData.aimingFX)
+		if character then
+			character:RemoveFX(self._strikeModeData.aimingFX)
 		end
 	end
 
-	arg_10_0._strikeMode = nil
-	arg_10_0._strikeModeData = nil
+	self._strikeMode = nil
+	self._strikeModeData = nil
 end
 
-function var_0_4.Tracking(arg_11_0)
-	return var_0_3.TargetWeightiest(arg_11_0, nil, arg_11_0:GetFilteredList())[1]
+--- @return BattleUnit|nil 权重最高的目标
+function BattleManualAAMissileUnit.Tracking(self)
+	return BattleTargetChoise.TargetWeightiest(self, nil, self:GetFilteredList())[1]
 end
 
-function var_0_4.Fire(arg_12_0)
-	arg_12_0._strikeMode = nil
+--- @return boolean
+--- 开火：退出打击模式，向瞄准目标发射
+function BattleManualAAMissileUnit.Fire(self)
+	self._strikeMode = nil
 
-	var_0_0.Battle.BattleWeaponUnit.Fire(arg_12_0, arg_12_0._strikeModeData.aimingTarget)
+	ys.Battle.BattleWeaponUnit.Fire(self, self._strikeModeData.aimingTarget)
 
 	return true
 end
 
-function var_0_4.DoAttack(arg_13_0, arg_13_1, ...)
-	if arg_13_1 == nil or not arg_13_1:IsAlive() or arg_13_0:outOfFireRange(arg_13_1) then
-		arg_13_1 = nil
+--- @param target BattleUnit|nil 攻击目标
+--- 目标无效时清除瞄准数据
+function BattleManualAAMissileUnit.DoAttack(self, target, ...)
+	if target == nil or not target:IsAlive() or self:outOfFireRange(target) then
+		target = nil
 
-		if arg_13_0._strikeModeData.aimingTarget and arg_13_0._strikeModeData.aimingFX then
-			local var_13_0 = var_0_0.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(arg_13_0._strikeModeData.aimingTarget:GetUniqueID())
+		if self._strikeModeData.aimingTarget and self._strikeModeData.aimingFX then
+			local character = ys.Battle.BattleState.GetInstance():GetSceneMediator():GetCharacter(self._strikeModeData.aimingTarget:GetUniqueID())
 
-			if var_13_0 then
-				var_13_0:RemoveFX(arg_13_0._strikeModeData.aimingFX)
+			if character then
+				character:RemoveFX(self._strikeModeData.aimingFX)
 			end
 		end
 
-		arg_13_0._strikeModeData.aimingTarget = nil
-		arg_13_0._strikeModeData.aimingFX = nil
+		self._strikeModeData.aimingTarget = nil
+		self._strikeModeData.aimingFX = nil
 	end
 
-	var_0_0.Battle.BattleWeaponUnit.DoAttack(arg_13_0, arg_13_1, ...)
+	ys.Battle.BattleWeaponUnit.DoAttack(self, target, ...)
 end
 
-function var_0_4.Prepar(arg_14_0)
-	arg_14_0._currentState = arg_14_0.STATE_PRECAST
+--- 准备：进入预施法状态并开启打击模式
+function BattleManualAAMissileUnit.Prepar(self)
+	self._currentState = self.STATE_PRECAST
 
-	arg_14_0:EnterStrikeMode()
+	self:EnterStrikeMode()
 end
 
-function var_0_4.Cancel(arg_15_0)
-	arg_15_0._currentState = arg_15_0.STATE_READY
+--- 取消：回到READY状态
+function BattleManualAAMissileUnit.Cancel(self)
+	self._currentState = self.STATE_READY
 
-	arg_15_0:CancelStrikeMode()
+	self:CancelStrikeMode()
 end

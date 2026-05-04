@@ -1,226 +1,272 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.CardPuzzleCombatCard = class("CardPuzzleCombatCard", CardPuzzleCardView)
+ys.Battle.CardPuzzleCombatCard = class("CardPuzzleCombatCard", CardPuzzleCardView)
 
-local var_0_2 = var_0_0.Battle.CardPuzzleCombatCard
+local CardPuzzleCombatCard = ys.Battle.CardPuzzleCombatCard
 
-var_0_2.__name = "CardPuzzleCombatCard"
-var_0_2.CARD_SCALE = Vector3(0.57, 0.57, 0)
-var_0_2.DRAG_SCALE = Vector3(0.65, 0.65, 0)
-var_0_2.DRAW_SCALE = Vector3(0.2, 0.2, 0)
-var_0_2.SHUFFLE_SCALE = Vector3(0.1, 0.1, 0)
-var_0_2.RECYLE_POS = Vector3(10000, 10000, 0)
-var_0_2.STATE_LOCK = "STATE_LOCK"
-var_0_2.STATE_FREE = "STATE_FREE"
-var_0_2.STATE_DRAG = "STATE_DRAG"
-var_0_2.STATE_LONG_PRESS = "STATE_LONG_PRESS"
-var_0_2.BASE_LERP = 0.2
+CardPuzzleCombatCard.__name = "CardPuzzleCombatCard"
+-- 卡牌各状态下的缩放值
+CardPuzzleCombatCard.CARD_SCALE = Vector3(0.57, 0.57, 0)
+CardPuzzleCombatCard.DRAG_SCALE = Vector3(0.65, 0.65, 0)
+CardPuzzleCombatCard.DRAW_SCALE = Vector3(0.2, 0.2, 0)
+CardPuzzleCombatCard.SHUFFLE_SCALE = Vector3(0.1, 0.1, 0)
+-- 回收位置（移出屏幕）
+CardPuzzleCombatCard.RECYLE_POS = Vector3(10000, 10000, 0)
+-- 卡牌状态枚举
+CardPuzzleCombatCard.STATE_LOCK = "STATE_LOCK"
+CardPuzzleCombatCard.STATE_FREE = "STATE_FREE"
+CardPuzzleCombatCard.STATE_DRAG = "STATE_DRAG"
+CardPuzzleCombatCard.STATE_LONG_PRESS = "STATE_LONG_PRESS"
+-- 默认移动插值系数
+CardPuzzleCombatCard.BASE_LERP = 0.2
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	var_0_2.super.Ctor(arg_1_0, arg_1_1)
+--- 卡牌拼图中的战斗卡牌视图
+--- 继承自 CardPuzzleCardView，管理卡牌在战斗中的显示、拖拽、状态转换等
 
-	arg_1_0._go = arg_1_1.gameObject
-	arg_1_1.localScale = var_0_2.CARD_SCALE
-	arg_1_0._moveLerp = 0.2
-	arg_1_0._pos = Vector3.zero
+function CardPuzzleCombatCard.Ctor(self, tf)
+	CardPuzzleCombatCard.super.Ctor(self, tf)
+
+	self._go = tf.gameObject
+	tf.localScale = CardPuzzleCombatCard.CARD_SCALE
+	self._moveLerp = 0.2
+	self._pos = Vector3.zero
 end
 
-function var_0_2.GetRarityBG(arg_2_0, arg_2_1)
-	return "battle_card_bg_" .. arg_2_1
+--- 根据稀有度获取背景图名称
+function CardPuzzleCombatCard.GetRarityBG(self, rarity)
+	return "battle_card_bg_" .. rarity
 end
 
-function var_0_2.GetCardCost(arg_3_0)
-	return arg_3_0.data:GetTotalCost()
+--- 获取卡牌总费用
+function CardPuzzleCombatCard.GetCardCost(self)
+	return self.data:GetTotalCost()
 end
 
-function var_0_2.UpdateView(arg_4_0)
-	var_0_2.super.UpdateView(arg_4_0)
+--- 更新视图，初始化UI元素引用
+function CardPuzzleCombatCard.UpdateView(self)
+	CardPuzzleCombatCard.super.UpdateView(self)
 
-	arg_4_0._coolDown = arg_4_0._tf:Find("cooldown")
-	arg_4_0._coolDownProgress = arg_4_0._coolDown:GetComponent(typeof(Image))
-	arg_4_0._canvaGroup = arg_4_0._tf:GetComponent(typeof(CanvasGroup))
-	arg_4_0._boostHint = arg_4_0._tf:Find("boost_hint")
+	self._coolDown = self._tf:Find("cooldown")
+	self._coolDownProgress = self._coolDown:GetComponent(typeof(Image))
+	self._canvaGroup = self._tf:GetComponent(typeof(CanvasGroup))
+	self._boostHint = self._tf:Find("boost_hint")
 
-	arg_4_0:UpdateTotalCost()
-	arg_4_0:UpdateBoostHint()
+	self:UpdateTotalCost()
+	self:UpdateBoostHint()
 end
 
-function var_0_2.Update(arg_5_0)
-	arg_5_0:updateCoolDown()
-	arg_5_0:MoveToRefPos()
+--- 每帧更新
+function CardPuzzleCombatCard.Update(self)
+	self:updateCoolDown()
+	self:MoveToRefPos()
 end
 
-function var_0_2.ShowGray(arg_6_0, arg_6_1)
-	setGray(arg_6_0._tf, arg_6_1, true)
+--- 设置灰色遮罩
+function CardPuzzleCombatCard.ShowGray(self, isGray)
+	setGray(self._tf, isGray, true)
 end
 
-function var_0_2.SetCardInfo(arg_7_0, arg_7_1)
-	arg_7_0._cardInfo = arg_7_1
+--- 设置卡牌信息数据
+function CardPuzzleCombatCard.SetCardInfo(self, cardInfo)
+	self._cardInfo = cardInfo
 
-	arg_7_0:SetData(arg_7_0._cardInfo)
+	self:SetData(self._cardInfo)
 end
 
-function var_0_2.GetCardInfo(arg_8_0)
-	return arg_8_0._cardInfo
+--- 获取卡牌信息数据
+function CardPuzzleCombatCard.GetCardInfo(self)
+	return self._cardInfo
 end
 
-function var_0_2.DrawAnima(arg_9_0, arg_9_1)
-	arg_9_0:drawAlphaAndScale()
+--- 抽卡动画：缩放入场
+function CardPuzzleCombatCard.DrawAnima(self, targetPos)
+	self:drawAlphaAndScale()
 
-	arg_9_0._tf.localPosition = arg_9_1
+	self._tf.localPosition = targetPos
 end
 
-function var_0_2.GetUIPos(arg_10_0)
-	return arg_10_0._tf.anchoredPosition
+--- 获取UI位置（用于详情弹窗定位）
+function CardPuzzleCombatCard.GetUIPos(self)
+	return self._tf.anchoredPosition
 end
 
-function var_0_2.SetSibling(arg_11_0, arg_11_1)
-	arg_11_0._tf:SetSiblingIndex(arg_11_1)
+--- 设置同级渲染顺序
+function CardPuzzleCombatCard.SetSibling(self, index)
+	self._tf:SetSiblingIndex(index)
 end
 
-function var_0_2.SetReferencePos(arg_12_0, arg_12_1)
-	arg_12_0._refPos = arg_12_1
+--- 设置目标参考位置（MoveToRefPos的移动目标）
+function CardPuzzleCombatCard.SetReferencePos(self, refPos)
+	self._refPos = refPos
 end
 
-function var_0_2.SetMoveLerp(arg_13_0, arg_13_1)
-	arg_13_0._moveLerp = arg_13_1 or var_0_2.BASE_LERP
+--- 设置移动插值系数
+function CardPuzzleCombatCard.SetMoveLerp(self, lerp)
+	self._moveLerp = lerp or CardPuzzleCombatCard.BASE_LERP
 end
 
-function var_0_2.MoveToRefPos(arg_14_0)
-	if arg_14_0._tf.localPosition:Equals(arg_14_0._refPos) then
-		if arg_14_0._moveToPointCallback then
-			arg_14_0:_moveToPointCallback()
+--- 平滑移动到参考位置
+function CardPuzzleCombatCard.MoveToRefPos(self)
+	if self._tf.localPosition:Equals(self._refPos) then
+		if self._moveToPointCallback then
+			self:_moveToPointCallback()
 
-			arg_14_0._moveToPointCallback = nil
+			self._moveToPointCallback = nil
 		end
 
 		return
 	end
 
-	if arg_14_0._moveLerp == 1 then
-		arg_14_0._pos:Copy(arg_14_0._refPos)
+	if self._moveLerp == 1 then
+		self._pos:Copy(self._refPos)
 	else
-		local var_14_0 = arg_14_0._tf.localPosition
-		local var_14_1 = Vector2.Lerp(var_14_0, arg_14_0._refPos, arg_14_0._moveLerp)
+		local currentPos = self._tf.localPosition
+		local lerpedPos = Vector2.Lerp(currentPos, self._refPos, self._moveLerp)
 
-		arg_14_0._pos:Copy(var_14_1)
+		self._pos:Copy(lerpedPos)
 	end
 
-	arg_14_0._tf.localPosition = arg_14_0._pos
+	self._tf.localPosition = self._pos
 end
 
-function var_0_2.SetToObjPoolRecylePos(arg_15_0)
-	arg_15_0._tf.localPosition = var_0_2.RECYLE_POS
+--- 将卡牌移到对象池回收位置（移出屏幕）
+function CardPuzzleCombatCard.SetToObjPoolRecylePos(self)
+	self._tf.localPosition = CardPuzzleCombatCard.RECYLE_POS
 end
 
-function var_0_2.MoveToDeck(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_0:shuffleBackAlphaAndScale()
-	arg_16_0:SetMoveLerp(0.8)
+--- 移动回牌组
+function CardPuzzleCombatCard.MoveToDeck(self, callback, deckPos)
+	self:shuffleBackAlphaAndScale()
+	self:SetMoveLerp(0.8)
 
-	arg_16_0._refPos = arg_16_2
-	arg_16_0._moveToPointCallback = arg_16_1
+	self._refPos = deckPos
+	self._moveToPointCallback = callback
 end
 
-function var_0_2.GetState(arg_17_0)
-	return arg_17_0._state
+--- 获取当前状态
+function CardPuzzleCombatCard.GetState(self)
+	return self._state
 end
 
-function var_0_2.ChangeState(arg_18_0, arg_18_1)
-	arg_18_0._state = arg_18_1
+--- 切换状态
+function CardPuzzleCombatCard.ChangeState(self, state)
+	self._state = state
 end
 
-function var_0_2.ConfigOP(arg_19_0, arg_19_1, arg_19_2, arg_19_3, arg_19_4, arg_19_5, arg_19_6)
-	arg_19_0._dragDelegate = GetOrAddComponent(arg_19_0._go, "EventTriggerListener")
+--- 配置操作回调（拖拽、长按等交互）
+--- @param dragStartFunc function 拖拽开始回调
+--- @param dragFunc function 拖拽中回调
+--- @param dragEndFunc function 拖拽结束回调
+--- @param longPressFunc function 长按回调
+--- @param clickFunc function 点击回调
+function CardPuzzleCombatCard.ConfigOP(self, dragStartFunc, dragFunc, dragEndFunc, longPressFunc, clickFunc)
+	self._dragDelegate = GetOrAddComponent(self._go, "EventTriggerListener")
 
-	arg_19_0._dragDelegate:AddPointUpFunc(function(arg_20_0, arg_20_1)
-		arg_19_6()
+	-- 配置点击回调
+	self._dragDelegate:AddPointUpFunc(function(eventData, eventGO)
+		clickFunc()
 	end)
-	arg_19_0._dragDelegate:AddBeginDragFunc(function(arg_21_0, arg_21_1)
-		arg_19_0:dragAlphaAndScale()
-		arg_19_2(arg_19_0._cardInfo)
+	-- 配置拖拽开始回调
+	self._dragDelegate:AddBeginDragFunc(function(eventData, eventGO)
+		self:dragAlphaAndScale()
+		dragStartFunc(self._cardInfo)
 	end)
-	arg_19_0._dragDelegate:AddDragFunc(function(arg_22_0, arg_22_1)
-		arg_19_3(arg_22_1.position)
+	-- 配置拖拽中回调
+	self._dragDelegate:AddDragFunc(function(eventData, eventGO)
+		dragFunc(eventData.position)
 	end)
-	arg_19_0._dragDelegate:AddDragEndFunc(function(arg_23_0, arg_23_1)
-		arg_19_0:resetAll()
-		arg_19_4()
+	-- 配置拖拽结束回调
+	self._dragDelegate:AddDragEndFunc(function(eventData, eventGO)
+		self:resetAll()
+		dragEndFunc()
 	end)
 
-	arg_19_0._longPressDelegate = GetOrAddComponent(arg_19_0._go, "UILongPressTrigger")
-	arg_19_0._longPressDelegate.longPressThreshold = 0.5
+	-- 配置长按
+	self._longPressDelegate = GetOrAddComponent(self._go, "UILongPressTrigger")
+	self._longPressDelegate.longPressThreshold = 0.5
 
-	arg_19_0._longPressDelegate.onLongPressed:AddListener(function()
-		arg_19_5()
+	self._longPressDelegate.onLongPressed:AddListener(function()
+		longPressFunc()
 	end)
 end
 
-function var_0_2.updateCoolDown(arg_25_0)
-	if arg_25_0._cardInfo:GetCastRemainRate() > 0 then
-		setActive(arg_25_0._coolDown, true)
+--- 更新冷却进度显示
+function CardPuzzleCombatCard.updateCoolDown(self)
+	if self._cardInfo:GetCastRemainRate() > 0 then
+		setActive(self._coolDown, true)
 
-		arg_25_0._coolDownProgress.fillAmount = arg_25_0._cardInfo:GetCastRemainRate()
+		self._coolDownProgress.fillAmount = self._cardInfo:GetCastRemainRate()
 	else
-		setActive(arg_25_0._coolDown, false)
+		setActive(self._coolDown, false)
 	end
 end
 
-function var_0_2.change2ScrPos(arg_26_0, arg_26_1)
-	local var_26_0 = pg.UIMgr.GetInstance().overlayCameraComp
+--- 将屏幕坐标转换为父容器本地坐标
+function CardPuzzleCombatCard.change2ScrPos(self, screenPos)
+	local overlayCamera = pg.UIMgr.GetInstance().overlayCameraComp
 
-	return (LuaHelper.ScreenToLocal(arg_26_0, arg_26_1, var_26_0))
+	return (LuaHelper.ScreenToLocal(self, screenPos, overlayCamera))
 end
 
-function var_0_2.UpdateDragPosition(arg_27_0, arg_27_1)
-	local var_27_0 = arg_27_0.change2ScrPos(arg_27_0._tf.parent, arg_27_1)
+--- 更新拖拽位置
+--- @param screenPosition Vector3 屏幕坐标
+function CardPuzzleCombatCard.UpdateDragPosition(self, screenPosition)
+	local localPos = self.change2ScrPos(self._tf.parent, screenPosition)
 
-	arg_27_0:SetReferencePos(var_27_0)
+	self:SetReferencePos(localPos)
 end
 
-function var_0_2.BlockRayCast(arg_28_0, arg_28_1)
-	arg_28_0._canvaGroup.blocksRaycasts = arg_28_1
+--- 设置射线阻挡（拖拽时关闭，防止遮挡下方卡牌）
+function CardPuzzleCombatCard.BlockRayCast(self, blocksRaycasts)
+	self._canvaGroup.blocksRaycasts = blocksRaycasts
 end
 
-function var_0_2.UpdateTotalCost(arg_29_0)
-	if arg_29_0._cardInfo then
-		setText(arg_29_0.costTF, arg_29_0.data:GetTotalCost())
+--- 更新费用文本显示
+function CardPuzzleCombatCard.UpdateTotalCost(self)
+	if self._cardInfo then
+		setText(self.costTF, self.data:GetTotalCost())
 	end
 end
 
-function var_0_2.UpdateBoostHint(arg_30_0)
-	if arg_30_0._cardInfo then
-		setActive(arg_30_0._boostHint, arg_30_0._cardInfo:IsBoost())
+--- 更新增益提示显示
+function CardPuzzleCombatCard.UpdateBoostHint(self)
+	if self._cardInfo then
+		setActive(self._boostHint, self._cardInfo:IsBoost())
 	end
 end
 
-function var_0_2.dragAlphaAndScale(arg_31_0)
-	LeanTween.cancel(arg_31_0._go)
-	LeanTween.scale(arg_31_0._go, var_0_2.DRAG_SCALE, 0.1)
-	LeanTween.alphaCanvas(arg_31_0._canvaGroup, 0.7, 0.1)
+--- 拖拽时的缩放和透明度动画
+function CardPuzzleCombatCard.dragAlphaAndScale(self)
+	LeanTween.cancel(self._go)
+	LeanTween.scale(self._go, CardPuzzleCombatCard.DRAG_SCALE, 0.1)
+	LeanTween.alphaCanvas(self._canvaGroup, 0.7, 0.1)
 end
 
-function var_0_2.drawAlphaAndScale(arg_32_0)
-	LeanTween.cancel(arg_32_0._go)
+--- 抽卡出场时的缩放和透明度动画
+function CardPuzzleCombatCard.drawAlphaAndScale(self)
+	LeanTween.cancel(self._go)
 
-	arg_32_0._tf.localScale = var_0_2.DRAW_SCALE
-	arg_32_0._canvaGroup.alpha = 0.2
+	self._tf.localScale = CardPuzzleCombatCard.DRAW_SCALE
+	self._canvaGroup.alpha = 0.2
 
-	LeanTween.scale(arg_32_0._go, var_0_2.CARD_SCALE, 0.2)
-	LeanTween.alphaCanvas(arg_32_0._canvaGroup, 1, 0.2)
+	LeanTween.scale(self._go, CardPuzzleCombatCard.CARD_SCALE, 0.2)
+	LeanTween.alphaCanvas(self._canvaGroup, 1, 0.2)
 end
 
-function var_0_2.shuffleBackAlphaAndScale(arg_33_0)
-	arg_33_0:resetAll()
-	LeanTween.scale(arg_33_0._go, var_0_2.SHUFFLE_SCALE, 0.2)
-	LeanTween.alphaCanvas(arg_33_0._canvaGroup, 0, 0.2)
+--- 洗牌回收时的缩放和透明度动画
+function CardPuzzleCombatCard.shuffleBackAlphaAndScale(self)
+	self:resetAll()
+	LeanTween.scale(self._go, CardPuzzleCombatCard.SHUFFLE_SCALE, 0.2)
+	LeanTween.alphaCanvas(self._canvaGroup, 0, 0.2)
 end
 
-function var_0_2.resetAll(arg_34_0)
-	LeanTween.cancel(arg_34_0._go)
+--- 重置所有动画效果
+function CardPuzzleCombatCard.resetAll(self)
+	LeanTween.cancel(self._go)
 
-	arg_34_0._tf.localScale = var_0_2.CARD_SCALE
-	arg_34_0._canvaGroup.alpha = 1
+	self._tf.localScale = CardPuzzleCombatCard.CARD_SCALE
+	self._canvaGroup.alpha = 1
 end

@@ -1,101 +1,191 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.IdleState = class("IdleState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.IdleState.__name = "IdleState"
+--- @class IdleState : IUnitState
+--- 待机状态。单位的默认状态，初始进入时即为此状态。
+--- 从 Idle 可以切换到大部分其他状态（Move, MoveLeft, Attack, Dead, Spell, Victory 等）。
+--- CacheWeapon = true: 待机时可以缓存武器子弹。
+ys.Battle.IdleState = class("IdleState", ys.Battle.IUnitState)
+ys.Battle.IdleState.__name = "IdleState"
 
-local var_0_2 = var_0_0.Battle.IdleState
+local IdleState = ys.Battle.IdleState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class IdleState
+--- @return nil
+--- 构造函数
+function IdleState.Ctor(self)
+	IdleState.super.Ctor()
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 已是 Idle 状态，无需切换
+function IdleState.AddIdleState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:OnMoveState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到向右移动状态
+function IdleState.AddMoveState(self, unitState, args)
+	unitState:OnMoveState()
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
-	arg_4_1:OnMoveLeftState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到向左移动状态
+function IdleState.AddMoveLeftState(self, unitState, args)
+	unitState:OnMoveLeftState()
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_1:OnAttackState(arg_5_2)
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table: 攻击动作名
+--- 切换到攻击状态(向右)
+function IdleState.AddAttackState(self, unitState, args)
+	unitState:OnAttackState(args)
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到死亡状态
+function IdleState.AddDeadState(self, unitState, args)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能状态
+function IdleState.AddSkillState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1:OnSpellState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到施法状态
+function IdleState.AddSpellState(self, unitState, args)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到胜利状态
+function IdleState.AddVictoryState(self, unitState, args)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到胜利-潜水状态
+function IdleState.AddVictorySwimState(self, unitState, args)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
-	arg_11_1:OnDiveState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到站立状态
+function IdleState.AddStandState(self, unitState, args)
+	unitState:OnDiveState()
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
-	arg_12_1:OnDiveState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜状态(向右)
+function IdleState.AddDiveState(self, unitState, args)
+	unitState:OnDiveState()
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
-	arg_13_1:OnDiveLeftState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜状态(向左)
+function IdleState.AddDiveLeftState(self, unitState, args)
+	unitState:OnDiveLeftState()
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到打断状态
+function IdleState.AddInterruptState(self, unitState, args)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1:OnDivingState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜过渡状态
+function IdleState.AddDivingState(self, unitState, args)
+	unitState:OnDivingState()
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能开始状态
+function IdleState.AddSkillStartState(self, unitState, args)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- @class IdleState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能结束状态
+function IdleState.AddSkillEndState(self, unitState, args)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+--- @class IdleState
+--- @param unitState UnitState
+--- 动画触发点回调（空实现）
+function IdleState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- @class IdleState
+--- @param unitState UnitState
+--- 动画开始回调（空实现）
+function IdleState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
+--- @class IdleState
+--- @param unitState UnitState
+--- 动画结束回调（空实现）
+function IdleState.OnEnd(self, unitState)
 	return
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- @class IdleState
+--- @return boolean: true
+--- 待机状态允许缓存武器子弹
+function IdleState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- @class IdleState
+--- @return boolean: false
+--- 待机状态不需要刷新 ActionKeyOffset
+function IdleState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.IDLE
+--- @class IdleState
+--- @param unitState UnitState
+--- @return string: "idle"
+--- 获取当前状态的 Spine 动作名
+function IdleState.GetActionName(self, unitState)
+	return ActionName.IDLE
 end

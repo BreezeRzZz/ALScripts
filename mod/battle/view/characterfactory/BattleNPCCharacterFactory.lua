@@ -1,87 +1,120 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = singletonClass("BattleNPCCharacterFactory", var_0_0.Battle.BattleEnemyCharacterFactory)
+local ys = ys
+local NPCCharacterFactory = singletonClass("BattleNPCCharacterFactory", ys.Battle.BattleEnemyCharacterFactory)
 
-var_0_0.Battle.BattleNPCCharacterFactory = var_0_1
-var_0_1.__name = "BattleNPCCharacterFactory"
+ys.Battle.BattleNPCCharacterFactory = NPCCharacterFactory
+--- NPC角色工厂（剧情/特殊事件中的中立/友好单位，按敌方逻辑渲染但允许自定义）
+NPCCharacterFactory.__name = "BattleNPCCharacterFactory"
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- @class BattleNPCCharacterFactory
+--- @return nil
+--- 构造函数：使用敌方HP条。NPC按敌方视觉逻辑处理但可为中立。
+function NPCCharacterFactory.Ctor(self)
+	NPCCharacterFactory.super.Ctor(self)
 
-	arg_1_0.HP_BAR_NAME = var_0_0.Battle.BattleHPBarManager.HP_BAR_FOE
+	self.HP_BAR_NAME = ys.Battle.BattleHPBarManager.HP_BAR_FOE
 end
 
-function var_0_1.CreateCharacter(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_1.extraInfo
-	local var_2_1 = arg_2_1.unit
-	local var_2_2 = arg_2_0:MakeCharacter()
+--- @class BattleNPCCharacterFactory
+--- @param data table: 创建数据，包含unit和extraInfo字段
+--- @return BattleNPCCharacter: NPC角色视觉对象
+--- 创建NPC角色：与基类不同的地方在于可以从extraInfo中读取自定义
+--- modleID（模型ID）、HPColor（HP条颜色）、isUnvisible（初始不可见）。
+function NPCCharacterFactory.CreateCharacter(self, data)
+	local extraInfo = data.extraInfo
+	local unit = data.unit
+	local character = self:MakeCharacter()
 
-	var_2_2:SetFactory(arg_2_0)
-	var_2_2:SetUnitData(var_2_1)
+	character:SetFactory(self)
+	character:SetUnitData(unit)
 
-	if var_2_0.modleID then
-		var_2_2:SetModleID(var_2_0.modleID)
+	-- 支持自定义模型ID（如剧情用的特殊模型）
+	if extraInfo.modleID then
+		character:SetModleID(extraInfo.modleID)
 	end
 
-	if var_2_0.HPColor then
-		var_2_2:SetHPColor(var_2_0.HPColor)
+	-- 支持自定义HP条颜色
+	if extraInfo.HPColor then
+		character:SetHPColor(extraInfo.HPColor)
 	end
 
-	if var_2_0.isUnvisible then
-		var_2_2:SetUnvisible()
+	-- 支持初始不可见（如需要触发后才出现的NPC）
+	if extraInfo.isUnvisible then
+		character:SetUnvisible()
 	end
 
-	arg_2_0:MakeModel(var_2_2)
+	self:MakeModel(character)
 
-	return var_2_2
+	return character
 end
 
-function var_0_1.MakeModel(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_1:GetUnitData()
+--- @class BattleNPCCharacterFactory
+--- @param character BattleNPCCharacter: 角色视觉对象
+--- @return nil
+--- 创建NPC视觉模型：
+--- 1) 异步加载模型 -> AddModel
+--- 2) 注册到SceneMediator作为敌方角色（AddEnemyCharacter）
+--- 3) 装配UI组件：含箭头（指示位置）
+--- 4) 添加出场特效
+--- 5) 调用MakeVisible确保可见（覆盖extraInfo.isUnvisible设置）
+--- 注意：NPC不调用UpdateDiveInvisible和UpdateBlindInvisible，因为它不参与常规战斗逻辑。
+function NPCCharacterFactory.MakeModel(self, character)
+	local unitData = character:GetUnitData()
 
-	local function var_3_1(arg_4_0)
-		arg_3_1:AddModel(arg_4_0)
+	local function onModelLoaded(modelObj)
+		character:AddModel(modelObj)
 
-		local var_4_0 = arg_3_0:GetSceneMediator()
+		local mediator = self:GetSceneMediator()
 
-		arg_3_1:CameraOrthogonal(var_0_0.Battle.BattleCameraUtil.GetInstance():GetCamera())
-		var_4_0:AddEnemyCharacter(arg_3_1)
-		arg_3_0:MakeUIComponentContainer(arg_3_1)
-		arg_3_0:MakeFXContainer(arg_3_1)
-		arg_3_0:MakePopNumPool(arg_3_1)
-		arg_3_0:MakeBloodBar(arg_3_1)
-		arg_3_0:MakeWaveFX(arg_3_1)
-		arg_3_0:MakeSmokeFX(arg_3_1)
-		arg_3_0:MakeArrowBar(arg_3_1)
+		character:CameraOrthogonal(ys.Battle.BattleCameraUtil.GetInstance():GetCamera())
+		mediator:AddEnemyCharacter(character)
+		self:MakeUIComponentContainer(character)
+		self:MakeFXContainer(character)
+		self:MakePopNumPool(character)
+		self:MakeBloodBar(character)
+		self:MakeWaveFX(character)
+		self:MakeSmokeFX(character)
+		self:MakeArrowBar(character)
 
-		local var_4_1 = var_3_0:GetTemplate().appear_fx
+		-- 添加出场特效
+		local appearFXList = unitData:GetTemplate().appear_fx
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_1) do
-			arg_3_1:AddFX(iter_4_1)
+		for _, fxID in ipairs(appearFXList) do
+			character:AddFX(fxID)
 		end
 
-		arg_3_1:MakeVisible()
+		-- 确保最终可见（覆盖SetUnvisible的默认隐藏）
+		character:MakeVisible()
 	end
 
-	arg_3_0:GetCharacterPool():InstCharacter(arg_3_1:GetModleID(), function(arg_5_0)
-		var_3_1(arg_5_0)
+	self:GetCharacterPool():InstCharacter(character:GetModleID(), function(modelObj)
+		onModelLoaded(modelObj)
 	end)
 end
 
-function var_0_1.MakeCharacter(arg_6_0)
-	return var_0_0.Battle.BattleNPCCharacter.New()
+--- @class BattleNPCCharacterFactory
+--- @return BattleNPCCharacter: NPC角色视觉对象
+--- 创建BattleNPCCharacter实例。
+function NPCCharacterFactory.MakeCharacter(self)
+	return ys.Battle.BattleNPCCharacter.New()
 end
 
-function var_0_1.MakeBloodBar(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_0:GetHPBarPool():GetHPBar(arg_7_0.HP_BAR_NAME)
-	local var_7_1 = var_7_0.transform
-	local var_7_2 = arg_7_1:GetHPColor()
+--- @class BattleNPCCharacterFactory
+--- @param character BattleNPCCharacter: 角色视觉对象
+--- @return nil
+--- 创建NPC HP血条：使用敌方HP条模板，支持HPColor自定义血条颜色。
+--- 如果角色有HPColor设定，则设置blood Image的颜色。
+function NPCCharacterFactory.MakeBloodBar(self, character)
+	local hpBar = self:GetHPBarPool():GetHPBar(self.HP_BAR_NAME)
+	local hpBarTf = hpBar.transform
+	local hpColor = character:GetHPColor()
 
-	if var_7_2 then
-		var_7_1:Find("blood"):GetComponent(typeof(Image)).color = var_7_2
+	-- 自定义HP条颜色（如剧情NPC使用特殊颜色区分）
+	if hpColor then
+		hpBarTf:Find("blood"):GetComponent(typeof(Image)).color = hpColor
 	end
 
-	arg_7_1:AddHPBar(var_7_0)
-	arg_7_1:UpdateHPBarPosition()
+	character:AddHPBar(hpBar)
+	character:UpdateHPBarPosition()
 end

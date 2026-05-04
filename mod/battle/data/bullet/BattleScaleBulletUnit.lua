@@ -1,66 +1,80 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleBulletEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = Vector3.up
-local var_0_4 = var_0_0.Battle.BattleVariable
-local var_0_5 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleBulletEvent = ys.Battle.BattleBulletEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local vector3Up = Vector3.up
+local BattleVariable = ys.Battle.BattleVariable
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleScaleBulletUnit = class("BattleScaleBulletUnit", var_0_0.Battle.BattleBulletUnit)
-var_0_0.Battle.BattleScaleBulletUnit.__name = "BattleScaleBulletUnit"
+ys.Battle.BattleScaleBulletUnit = class("BattleScaleBulletUnit", ys.Battle.BattleBulletUnit)
+ys.Battle.BattleScaleBulletUnit.__name = "BattleScaleBulletUnit"
 
-local var_0_6 = var_0_0.Battle.BattleScaleBulletUnit
+local BattleScaleBulletUnit = ys.Battle.BattleScaleBulletUnit
 
-function var_0_6.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	var_0_6.super.Ctor(arg_1_0, arg_1_1, arg_1_2)
+--- @class BattleScaleBulletUnit : BattleBulletUnit
+--- @param UID number 子弹唯一ID
+--- @param IFF number 敌我识别码
+--- 可缩放碰撞体的子弹：继承自BattleBulletUnit，碰撞体随时间逐渐变大(scaleX递增)，
+--- 达到上限后不再缩放，开始沿速度方向移动
+function BattleScaleBulletUnit.Ctor(self, UID, IFF)
+	BattleScaleBulletUnit.super.Ctor(self, UID, IFF)
 
-	arg_1_0._scaleX = 0
+	self._scaleX = 0
 end
 
-function var_0_6.Update(arg_2_0, arg_2_1)
-	local var_2_0 = arg_2_0._tempData.cld_box
+--- @param timeStamp number 时间戳
+--- 碰撞体未达上限时继续缩放，否则按速度移动
+function BattleScaleBulletUnit.Update(self, timeStamp)
+	local cldBox = self._tempData.cld_box
 
-	if arg_2_0._scaleX + var_2_0[1] > arg_2_0._scaleLimit then
-		arg_2_0:calcSpeed()
+	if self._scaleX + cldBox[1] > self._scaleLimit then
+		self:calcSpeed()
 	else
-		arg_2_0:UpdateCLDBox()
+		self:UpdateCLDBox()
 	end
 
-	var_0_6.super.Update(arg_2_0, arg_2_1)
+	BattleScaleBulletUnit.super.Update(self, timeStamp)
 end
 
-function var_0_6.SetTemplateData(arg_3_0, arg_3_1)
-	var_0_6.super.SetTemplateData(arg_3_0, arg_3_1)
+--- @param tempData table 子弹模板数据
+function BattleScaleBulletUnit.SetTemplateData(self, tempData)
+	BattleScaleBulletUnit.super.SetTemplateData(self, tempData)
 
-	arg_3_0._scaleSpeed = arg_3_0._tempData.extra_param.scaleSpeed
-	arg_3_0._scaleLimit = arg_3_0._tempData.extra_param.cldMax
+	self._scaleSpeed = self._tempData.extra_param.scaleSpeed
+	self._scaleLimit = self._tempData.extra_param.cldMax
 end
 
-function var_0_6.InitSpeed(arg_4_0, arg_4_1)
-	var_0_6.super.InitSpeed(arg_4_0, arg_4_1)
-	arg_4_0:calcScaleSpeed()
+--- @param angle number 发射角度
+function BattleScaleBulletUnit.InitSpeed(self, angle)
+	BattleScaleBulletUnit.super.InitSpeed(self, angle)
+	self:calcScaleSpeed()
 end
 
-function var_0_6.calcScaleSpeed(arg_5_0)
-	local var_5_0 = arg_5_0._scaleSpeed * 0.5
-	local var_5_1 = math.deg2Rad * arg_5_0._yAngle
+--- 缩放阶段的速度分量：速度大小 = 缩放速度 / 2
+function BattleScaleBulletUnit.calcScaleSpeed(self)
+	local halfScaleSpeed = self._scaleSpeed * 0.5
+	local yAngleRad = math.deg2Rad * self._yAngle
 
-	arg_5_0._speed = Vector3(var_5_0 * math.cos(var_5_1), 0, var_5_0 * math.sin(var_5_1))
+	self._speed = Vector3(halfScaleSpeed * math.cos(yAngleRad), 0, halfScaleSpeed * math.sin(yAngleRad))
 end
 
-function var_0_6.UpdateCLDBox(arg_6_0)
-	local var_6_0 = arg_6_0._tempData.cld_box
+--- 更新碰撞体X轴尺寸
+function BattleScaleBulletUnit.UpdateCLDBox(self)
+	local cldBox = self._tempData.cld_box
 
-	arg_6_0._scaleX = arg_6_0._scaleX + arg_6_0._scaleSpeed
+	self._scaleX = self._scaleX + self._scaleSpeed
 
-	arg_6_0._cldComponent:ResetSize(var_6_0[1] + arg_6_0._scaleX, var_6_0[2], var_6_0[3])
+	self._cldComponent:ResetSize(cldBox[1] + self._scaleX, cldBox[2], cldBox[3])
 end
 
-function var_0_6.GetRadian(arg_7_0)
-	local var_7_0 = arg_7_0._radCache or arg_7_0:GetYAngle() * math.deg2Rad
-	local var_7_1 = arg_7_0._cosCache or math.cos(var_7_0)
-	local var_7_2 = arg_7_0._sinCache or math.sin(var_7_0)
+--- @return number radian 弧度
+--- @return number cos 余弦值（缓存）
+--- @return number sin 正弦值（缓存）
+function BattleScaleBulletUnit.GetRadian(self)
+	local radian = self._radCache or self:GetYAngle() * math.deg2Rad
+	local cosVal = self._cosCache or math.cos(radian)
+	local sinVal = self._sinCache or math.sin(radian)
 
-	return var_7_0, var_7_1, var_7_2
+	return radian, cosVal, sinVal
 end

@@ -1,50 +1,57 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleDataFunction
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleReisalinAPView")
+local ys = ys
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleConfig = ys.Battle.BattleConfig
+local BattleReisalinAPView = class("BattleReisalinAPView")
 
-var_0_0.Battle.BattleReisalinAPView = var_0_3
-var_0_3.__name = "BattleReisalinAPView"
+ys.Battle.BattleReisalinAPView = BattleReisalinAPView
+BattleReisalinAPView.__name = "BattleReisalinAPView"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._tf = arg_1_1
+--- 莱莎琳（Reisalin）AP值UI视图
+--- 显示炼金术士角色的AP点数，满值时显示金色发光特效
 
-	arg_1_0:init()
+function BattleReisalinAPView.Ctor(self, tf)
+	self._tf = tf
+
+	self:init()
 end
 
-function var_0_3.init(arg_2_0)
-	arg_2_0._apCap = var_0_2.FLEET_ATTR_CAP[arg_2_0:GetAttrName()]
-	arg_2_0._count = findTF(arg_2_0._tf, "count")
-	arg_2_0._glow = findTF(arg_2_0._tf, "glow_gizmos")
-	arg_2_0._countText = arg_2_0._count:GetComponent(typeof(Text))
+function BattleReisalinAPView.init(self)
+	self._apCap = BattleConfig.FLEET_ATTR_CAP[self:GetAttrName()]
+	self._count = findTF(self._tf, "count")
+	self._glow = findTF(self._tf, "glow_gizmos")
+	self._countText = self._count:GetComponent(typeof(Text))
 
-	SetActive(arg_2_0._tf, true)
-	arg_2_0:UpdateAP(0)
+	SetActive(self._tf, true)
+	self:UpdateAP(0)
 end
 
-function var_0_3.UpdateAP(arg_3_0, arg_3_1)
-	arg_3_0._countText.text = arg_3_1
+--- 更新AP值显示
+--- @param ap number 当前AP值
+function BattleReisalinAPView.UpdateAP(self, ap)
+	self._countText.text = ap
 
-	if arg_3_1 >= arg_3_0._apCap then
-		arg_3_0._countText.color = Color.ReisalinGold
+	-- AP满值时显示金色和发光特效
+	if ap >= self._apCap then
+		self._countText.color = Color.ReisalinGold
 
-		SetActive(arg_3_0._glow, true)
+		SetActive(self._glow, true)
 	else
-		arg_3_0._countText.color = Color.white
+		self._countText.color = Color.white
 
-		SetActive(arg_3_0._glow, false)
+		SetActive(self._glow, false)
 	end
 end
 
-function var_0_3.GetAttrName(arg_4_0)
-	return var_0_2.ALCHEMIST_AP_NAME
+--- 获取属性名称（ALCHEMIST_AP_NAME）
+function BattleReisalinAPView.GetAttrName(self)
+	return BattleConfig.ALCHEMIST_AP_NAME
 end
 
-function var_0_3.Dispose(arg_5_0)
-	arg_5_0._count = nil
-	arg_5_0._glow = nil
-	arg_5_0._countText = nil
-	arg_5_0._tf = nil
+function BattleReisalinAPView.Dispose(self)
+	self._count = nil
+	self._glow = nil
+	self._countText = nil
+	self._tf = nil
 end

@@ -1,17 +1,21 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.UnitType
+local ys = ys
+local UnitType = ys.Battle.BattleConst.UnitType
 
-var_0_0.Battle.BattleScaleBulletFactory = singletonClass("BattleScaleBulletFactory", var_0_0.Battle.BattleCannonBulletFactory)
-var_0_0.Battle.BattleScaleBulletFactory.__name = "BattleScaleBulletFactory"
+ys.Battle.BattleScaleBulletFactory = singletonClass("BattleScaleBulletFactory", ys.Battle.BattleCannonBulletFactory)
+ys.Battle.BattleScaleBulletFactory.__name = "BattleScaleBulletFactory"
 
-local var_0_2 = var_0_0.Battle.BattleScaleBulletFactory
+local BattleScaleBulletFactory = ys.Battle.BattleScaleBulletFactory
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor(arg_1_0)
+function BattleScaleBulletFactory.Ctor(self)
+	BattleScaleBulletFactory.super.Ctor(self)
 end
 
-function var_0_2.MakeBullet(arg_2_0)
-	return var_0_0.Battle.BattleScaleBullet.New()
+--- 创建伸缩弹的BulletUnit View
+--- 伸缩弹继承自CannonBulletFactory的所有行为（命中/未命中/模型创建），
+--- 仅创建不同的BulletUnit类型，其特殊逻辑（缩放动画等）在BattleScaleBulletUnit内部处理
+--- @return BattleScaleBullet
+function BattleScaleBulletFactory.MakeBullet(self)
+	return ys.Battle.BattleScaleBullet.New()
 end

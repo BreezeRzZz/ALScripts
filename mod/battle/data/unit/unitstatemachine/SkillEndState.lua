@@ -1,101 +1,133 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.SkillEndState = class("SkillEndState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.SkillEndState.__name = "SkillEndState"
+ys.Battle.SkillEndState = class("SkillEndState", ys.Battle.IUnitState)
+ys.Battle.SkillEndState.__name = "SkillEndState"
 
-local var_0_2 = var_0_0.Battle.SkillEndState
+local SkillEndState = ys.Battle.SkillEndState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class SkillEndState : IUnitState
+--- 技能结束状态：技能动画的收尾/后摇阶段
+--- 机制说明：
+--- - 技能释放的收尾阶段，对应SkillState结束后的过渡动画
+--- - 极度受限：禁止攻击、移动、法术等大多数状态切换
+--- - 仅允许：死亡、胜利(Victory/VictorySwim)、中断
+--- - OnEnd时调用ChangeToMoveState()：强制恢复到移动状态
+---   - 不同于SkillState的OnEnd（根据IsMoving决定Idle/Move），SkillEnd总是恢复到Move
+---   - 这确保技能收招后单位立即进入可移动状态
+--- - 不缓存武器(CacheWeapon=false)，后摇阶段不需要生成子弹
+--- - 对应动画名：SKILL_END
+function SkillEndState.Ctor(self)
+	SkillEndState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 技能后摇期间禁止Idle
+function SkillEndState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 技能后摇期间禁止Move
+function SkillEndState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 技能后摇期间禁止MoveLeft
+function SkillEndState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- 技能后摇期间禁止Attack
+function SkillEndState.AddAttackState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 死亡可以打断技能后摇
+function SkillEndState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSpellState(arg_7_0, arg_7_1, arg_7_2)
+--- 技能后摇期间禁止Spell
+function SkillEndState.AddSpellState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillState(arg_8_0, arg_8_1, arg_8_2)
+--- 已经在技能结束状态，不重复
+function SkillEndState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 胜利可以打断技能后摇
+function SkillEndState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 胜利浮游可以打断技能后摇
+function SkillEndState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 技能后摇期间禁止Stand
+function SkillEndState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 技能后摇期间禁止Dive
+function SkillEndState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 技能后摇期间禁止DiveLeft
+function SkillEndState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- 中断可以打断技能后摇
+function SkillEndState.AddInterruptState(self, unitState, inputInfo)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 技能后摇期间禁止Diving
+function SkillEndState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
+--- 技能后摇期间禁止SkillStart
+function SkillEndState.AddSkillStartState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 已经在技能结束状态，不重复
+function SkillEndState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+function SkillEndState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function SkillEndState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:ChangeToMoveState()
+--- 技能后摇结束 → 强制恢复到移动状态
+--- 与SkillState.OnEnd不同：SkillEnd总是回到MoveState，而非根据IsMoving判断
+function SkillEndState.OnEnd(self, unitState)
+	unitState:ChangeToMoveState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 技能后摇期间不缓存武器
+function SkillEndState.CacheWeapon(self)
 	return false
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 技能后摇期间不刷新ActionKeyOffset
+function SkillEndState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.SKILL_END
+--- 获取动画名称：返回SKILL_END，播放技能收招动画
+function SkillEndState.GetActionName(self, unit)
+	return ActionName.SKILL_END
 end

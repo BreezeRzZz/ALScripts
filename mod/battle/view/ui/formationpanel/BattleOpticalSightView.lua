@@ -1,60 +1,76 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
 
-var_0_0.Battle.BattleOpticalSightView = class("BattleOpticalSightView")
+ys.Battle.BattleOpticalSightView = class("BattleOpticalSightView")
 
-local var_0_2 = var_0_0.Battle.BattleOpticalSightView
+local BattleOpticalSightView = ys.Battle.BattleOpticalSightView
 
-var_0_2.__name = "BattleOpticalSightView"
-var_0_2.SIGHT_A = var_0_1.ChargeWeaponConfig.SIGHT_A
-var_0_2.SIGHT_B = var_0_1.ChargeWeaponConfig.SIGHT_B
-var_0_2.SIGHT_C = var_0_1.ChargeWeaponConfig.SIGHT_C
+BattleOpticalSightView.__name = "BattleOpticalSightView"
+-- 跨射瞄准镜的三种常量（来自ChargeWeaponConfig）
+BattleOpticalSightView.SIGHT_A = BattleConfig.ChargeWeaponConfig.SIGHT_A
+BattleOpticalSightView.SIGHT_B = BattleConfig.ChargeWeaponConfig.SIGHT_B
+BattleOpticalSightView.SIGHT_C = BattleConfig.ChargeWeaponConfig.SIGHT_C
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._sightTF = arg_1_1:Find("Sight")
-	arg_1_0._rulerTF = arg_1_1:Find("Ruler")
-	arg_1_0._cornerTF = arg_1_1:Find("Corners")
-	arg_1_0._active = false
+--- 跨射/炮击瞄准镜视图
+--- 显示瞄准镜UI，跟随舰队位置并受边界限制
+--- @param goTF Transform 瞄准镜父物体的Transform
+function BattleOpticalSightView.Ctor(self, goTF)
+	self._sightTF = goTF:Find("Sight")
+	self._rulerTF = goTF:Find("Ruler")
+	self._cornerTF = goTF:Find("Corners")
+	self._active = false
 end
 
-function var_0_2.SetAreaBound(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_0._totalLeftBound = arg_2_1
-	arg_2_0._totalRightBound = arg_2_2
+--- 设置瞄准镜的活动区域边界
+--- @param leftBound number 左边界X
+--- @param rightBound number 右边界X
+function BattleOpticalSightView.SetAreaBound(self, leftBound, rightBound)
+	self._totalLeftBound = leftBound
+	self._totalRightBound = rightBound
 end
 
-function var_0_2.SetActive(arg_3_0, arg_3_1)
-	arg_3_0._active = arg_3_1
+--- 显示/隐藏瞄准镜
+--- @param isActive boolean
+function BattleOpticalSightView.SetActive(self, isActive)
+	self._active = isActive
 
-	SetActive(arg_3_0._sightTF, arg_3_1)
-	SetActive(arg_3_0._rulerTF, arg_3_1)
-	SetActive(arg_3_0._cornerTF, arg_3_1)
+	SetActive(self._sightTF, isActive)
+	SetActive(self._rulerTF, isActive)
+	SetActive(self._cornerTF, isActive)
 end
 
-function var_0_2.Update(arg_4_0)
-	if not arg_4_0._active then
+--- 更新瞄准镜的位置（跟随舰队移动，受边界限制）
+function BattleOpticalSightView.Update(self)
+	if not self._active then
 		return
 	end
 
-	local var_4_0 = arg_4_0._fleetVO:GetMotion():GetPos().x + var_0_2.SIGHT_C
-	local var_4_1 = math.min(var_4_0, arg_4_0._totalRightBound)
-	local var_4_2 = var_0_0.Battle.BattleVariable.CameraPosToUICamera(Vector3.New(var_4_1, 0, 5 + arg_4_0._fleetVO:GetMotion():GetPos().z))
+	-- 基于舰队X位置 + SIGHT_C偏移计算瞄准位置
+	local targetX = self._fleetVO:GetMotion():GetPos().x + BattleOpticalSightView.SIGHT_C
+	local clampedX = math.min(targetX, self._totalRightBound)
+	-- 将3D坐标转换为UI坐标
+	local uiPos = ys.Battle.BattleVariable.CameraPosToUICamera(Vector3.New(clampedX, 0, 5 + self._fleetVO:GetMotion():GetPos().z))
 
-	arg_4_0._sightTF.position = var_4_2
+	self._sightTF.position = uiPos
 
-	local var_4_3 = Vector3.New(0, var_4_2.y)
+	-- 标尺只跟随Y位置
+	local rulerPos = Vector3.New(0, uiPos.y)
 
-	arg_4_0._rulerTF.position = var_4_3
+	self._rulerTF.position = rulerPos
 end
 
-function var_0_2.SetFleetVO(arg_5_0, arg_5_1)
-	arg_5_0._fleetVO = arg_5_1
+--- 设置要跟踪的舰队VO
+--- @param fleetVO table 舰队VO对象
+function BattleOpticalSightView.SetFleetVO(self, fleetVO)
+	self._fleetVO = fleetVO
 end
 
-function var_0_2.Dispose(arg_6_0)
-	arg_6_0._sightTF = nil
-	arg_6_0._rulerTF = nil
-	arg_6_0._cornerTF = nil
-	arg_6_0._fleetVO = nil
+--- 清理引用
+function BattleOpticalSightView.Dispose(self)
+	self._sightTF = nil
+	self._rulerTF = nil
+	self._cornerTF = nil
+	self._fleetVO = nil
 end

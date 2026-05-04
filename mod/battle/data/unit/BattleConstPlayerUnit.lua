@@ -1,67 +1,84 @@
 ys.Battle.BattleConstPlayerUnit = class("BattleConstPlayerUnit", ys.Battle.BattlePlayerUnit)
 ys.Battle.BattleConstPlayerUnit.__name = "BattleConstPlayerUnit"
 
-local var_0_0 = ys.Battle.BattleConstPlayerUnit
-local var_0_1 = ys.Battle.BattleConst.EquipmentType
+local BattleConstPlayerUnit = ys.Battle.BattleConstPlayerUnit
+local EquipmentType = ys.Battle.BattleConst.EquipmentType
 
-function var_0_0.setWeapon(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0._tmpData.default_equip_list
-	local var_1_1 = arg_1_0._tmpData.base_list
+--- @class BattleConstPlayerUnit
+--- @param weaponConfig table: 武器配置列表
+--- @return nil
+--- 设置武器：根据模板的base_list和proficiencyList创建武器
+function BattleConstPlayerUnit.setWeapon(self, weaponConfig)
+	local defaultEquipList = self._tmpData.default_equip_list
+	local baseList = self._tmpData.base_list
 
-	arg_1_0._proficiencyList = {}
+	self._proficiencyList = {}
 
-	for iter_1_0 = 1, #var_1_0 do
-		table.insert(arg_1_0._proficiencyList, arg_1_0._tmpData.equipment_proficiency[iter_1_0] or 1)
+	-- 初始化武器熟练度列表
+	for iter_1_0 = 1, #defaultEquipList do
+		table.insert(self._proficiencyList, self._tmpData.equipment_proficiency[iter_1_0] or 1)
 	end
 
-	local var_1_2 = arg_1_0._proficiencyList
-	local var_1_3 = arg_1_0._tmpData.preload_count
+	local proficiencyList = self._proficiencyList
+	local preloadCount = self._tmpData.preload_count
 
-	for iter_1_1, iter_1_2 in ipairs(var_1_0) do
+	for iter_1_1, iter_1_2 in ipairs(defaultEquipList) do
 		if iter_1_1 <= Ship.WEAPON_COUNT then
-			local var_1_4 = var_1_2[iter_1_1]
-			local var_1_5 = var_1_3[iter_1_1]
+			local proficiency = proficiencyList[iter_1_1]
+			local preloadWeaponCount = preloadCount[iter_1_1]
 
-			;(function(arg_2_0, arg_2_1, arg_2_2)
-				local var_2_0 = var_1_1[iter_1_1]
+			-- 内嵌函数：创建武器组
+			;(function(weaponID, label, skin)
+				local baseCount = baseList[iter_1_1]
 
-				for iter_2_0 = 1, var_2_0 do
-					local var_2_1 = arg_1_0:AddWeapon(arg_2_0, arg_2_1, arg_2_2, var_1_4, iter_1_1)
-					local var_2_2 = var_2_1:GetTemplateData().type
+				for iter_2_0 = 1, baseCount do
+					local weapon = self:AddWeapon(weaponID, label, skin, proficiency, iter_1_1)
+					local equipmentType = weapon:GetTemplateData().type
 
-					if iter_2_0 <= var_1_5 and (var_2_2 == var_0_1.POINT_HIT_AND_LOCK or var_2_2 == var_0_1.MANUAL_TORPEDO or var_2_2 == var_0_1.DISPOSABLE_TORPEDO) then
-						var_2_1:SetModifyInitialCD()
+					if iter_2_0 <= preloadWeaponCount and (equipmentType == EquipmentType.POINT_HIT_AND_LOCK or equipmentType == EquipmentType.MANUAL_TORPEDO or equipmentType == EquipmentType.DISPOSABLE_TORPEDO) then
+						weapon:SetModifyInitialCD()
 					end
 				end
-			end)(arg_1_1[iter_1_1] or var_1_0[iter_1_1])
+			end)(weaponConfig[iter_1_1] or defaultEquipList[iter_1_1])
 		end
 	end
 
-	local var_1_6 = #var_1_0
-	local var_1_7 = arg_1_0._tmpData.fix_equip_list
+	-- 固定装备列表
+	local defaultEquipCount = #defaultEquipList
+	local fixEquipList = self._tmpData.fix_equip_list
 
-	for iter_1_3, iter_1_4 in ipairs(var_1_7) do
+	for iter_1_3, iter_1_4 in ipairs(fixEquipList) do
 		if iter_1_4 and iter_1_4 ~= -1 then
-			local var_1_8 = var_1_2[iter_1_3 + var_1_6] or 1
+			local fixProficiency = proficiencyList[iter_1_3 + defaultEquipCount] or 1
 
-			arg_1_0:AddWeapon(iter_1_4, nil, nil, var_1_8, iter_1_3 + var_1_6)
+			self:AddWeapon(iter_1_4, nil, nil, fixProficiency, iter_1_3 + defaultEquipCount)
 		end
 	end
 end
 
-function var_0_0.IsAlive(arg_3_0)
+--- @class BattleConstPlayerUnit
+--- @return boolean: 始终返回true
+--- 战役模式单位始终存活
+function BattleConstPlayerUnit.IsAlive(self)
 	return true
 end
 
-function var_0_0.HideWaveFx(arg_4_0)
-	arg_4_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.HIDE_WAVE_FX))
+--- @class BattleConstPlayerUnit
+--- @return nil
+--- 隐藏波浪特效
+function BattleConstPlayerUnit.HideWaveFx(self)
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.HIDE_WAVE_FX))
 end
 
-function var_0_0.UpdateHPAction(arg_5_0, arg_5_1, ...)
-	var_0_0.super.UpdateHPAction(arg_5_0, arg_5_1, ...)
+--- @class BattleConstPlayerUnit
+--- @param args table: 血量更新参数
+--- @return nil
+--- 血量更新行动：父类逻辑基础上，受伤时添加闪烁效果
+function BattleConstPlayerUnit.UpdateHPAction(self, args, ...)
+	BattleConstPlayerUnit.super.UpdateHPAction(self, args, ...)
 
-	if arg_5_1.dHP <= 0 then
-		arg_5_0:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_BLINK, {
+	if args.dHP <= 0 then
+		self:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_BLINK, {
 			blink = {
 				blue = 1,
 				peroid = 0.1,

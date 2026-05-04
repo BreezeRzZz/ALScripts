@@ -1,101 +1,135 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.RaidLeftState = class("RaidLeftState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.RaidLeftState.__name = "RaidLeftState"
+ys.Battle.RaidLeftState = class("RaidLeftState", ys.Battle.IUnitState)
+ys.Battle.RaidLeftState.__name = "RaidLeftState"
 
-local var_0_2 = var_0_0.Battle.RaidLeftState
+local RaidLeftState = ys.Battle.RaidLeftState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class RaidLeftState : IUnitState
+--- 袭击状态（左向）：水下单位向左攻击时的状态
+--- 机制说明：
+--- - 与RaidState对称，但方向向左
+--- - 由DiveLeftState.AddAttackState触发：潜水左向时攻击被重定向到此状态
+--- - 禁止Idle、Move、MoveLeft、Attack、Skill、Stand、潜水相关
+--- - 允许：死亡、法术、胜利、中断、SkillStart
+--- - OnTrigger → target:SendAttackTrigger()：在动画触发点发送攻击事件
+---   - 与RaidState.OnTrigger完全相同的逻辑：触发SPAWN_CACHE_BULLET事件
+--- - OnEnd → ChangeToMoveState()：袭击动画完成后恢复到移动状态
+--- - 不缓存武器(CacheWeapon=false)
+--- - 对应动画名：RAIDLEFT
+function RaidLeftState.Ctor(self)
+	RaidLeftState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 袭击左向状态中禁止Idle
+function RaidLeftState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 袭击左向状态中禁止Move
+function RaidLeftState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 袭击左向状态中禁止MoveLeft
+function RaidLeftState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- 已经处于袭击左向状态，禁止重复Attack
+function RaidLeftState.AddAttackState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 死亡可以打断袭击
+function RaidLeftState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- 袭击左向状态中禁止Skill
+function RaidLeftState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1:OnSpellState()
+--- 袭击左向状态中允许法术
+function RaidLeftState.AddSpellState(self, unitState, inputInfo)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 胜利可以打断袭击
+function RaidLeftState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 胜利浮游可以打断袭击
+function RaidLeftState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 袭击左向状态中禁止Stand
+function RaidLeftState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 袭击左向状态中禁止Dive
+function RaidLeftState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 袭击左向状态中禁止DiveLeft
+function RaidLeftState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- 袭击左向状态中允许中断
+function RaidLeftState.AddInterruptState(self, unitState, inputInfo)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 袭击左向状态中禁止Diving
+function RaidLeftState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- 袭击左向状态中允许SkillStart
+function RaidLeftState.AddSkillStartState(self, unitState, inputInfo)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 袭击左向状态中禁止SkillEnd
+function RaidLeftState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
-	arg_18_1:GetTarget():SendAttackTrigger()
+--- 袭击左向动画触发点：发送攻击事件，触发子弹生成
+--- 与RaidState.OnTrigger相同的逻辑
+function RaidLeftState.OnTrigger(self, unitState)
+	unitState:GetTarget():SendAttackTrigger()
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function RaidLeftState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:ChangeToMoveState()
+--- 袭击左向动画结束 → 恢复到移动状态
+function RaidLeftState.OnEnd(self, unitState)
+	unitState:ChangeToMoveState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 袭击左向状态不需要预缓存武器
+function RaidLeftState.CacheWeapon(self)
 	return false
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 袭击左向状态不刷新ActionKeyOffset
+function RaidLeftState.FreshActionKeyOffset(self)
 	return false
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	return var_0_1.RAIDLEFT
+--- 获取动画名称：返回RAIDLEFT，播放左向水下袭击动画
+function RaidLeftState.GetActionName(self, unit)
+	return ActionName.RAIDLEFT
 end

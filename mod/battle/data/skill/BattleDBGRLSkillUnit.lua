@@ -1,132 +1,145 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleSkillUnit = class("BattleSkillUnit")
-var_0_0.Battle.BattleSkillUnit.__name = "BattleSkillUnit"
+ys.Battle.BattleSkillUnit = class("BattleSkillUnit")
+ys.Battle.BattleSkillUnit.__name = "BattleSkillUnit"
 
-local var_0_3 = var_0_0.Battle.BattleSkillUnit
+local BattleSkillUnit = ys.Battle.BattleSkillUnit
 
-function var_0_3.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0._id = arg_1_1
-	arg_1_0._level = arg_1_2
-	arg_1_0._tempData = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(arg_1_1, arg_1_2)
-	arg_1_0._cd = arg_1_0._tempData.cd
-	arg_1_0._effectList = {}
-	arg_1_0._lastEffectTarget = {}
+--- @class BattleSkillUnit
+--- @param skillId number 技能ID
+--- @param skillLevel number 技能等级
+--- DBRGL模式的技能单元构造（覆写BattleSkillUnit.Ctor）
+function BattleSkillUnit.Ctor(self, skillId, skillLevel)
+	self._id = skillId
+	self._level = skillLevel
+	-- 获得skill_*.lua对应等级的技能数据
+	self._tempData = ys.Battle.BattleDataFunction.GetSkillTemplate(skillId, skillLevel)
+	self._cd = self._tempData.cd
+	self._effectList = {}
+	self._lastEffectTarget = {}
 
-	for iter_1_0, iter_1_1 in ipairs(arg_1_0._tempData.effect_list) do
-		local var_1_0 = iter_1_1.type
-
-		arg_1_0._effectList[iter_1_0] = var_0_0.Battle[var_1_0].New(iter_1_1, arg_1_2)
+	for index, effect in ipairs(self._tempData.effect_list) do
+		local effectType = effect.type
+		-- 构建的是BattleSkillEffect的子类实例
+		self._effectList[index] = ys.Battle[effectType].New(effect, skillLevel)
 	end
 
-	arg_1_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
-function var_0_3.GenerateSpell(arg_2_0, arg_2_1, arg_2_2, arg_2_3)
-	local var_2_0 = var_0_0.Battle.BattleSkillUnit.New(arg_2_0, arg_2_1)
+--- 类函数：生成技能实例
+function BattleSkillUnit.GenerateSpell(skillId, skillLevel, owner, attachData)
+	local skill = ys.Battle.BattleSkillUnit.New(skillId, skillLevel)
 
-	var_2_0._attachData = arg_2_3
+	skill._attachData = attachData
 
-	return var_2_0
+	return skill
 end
 
-function var_0_3.GetSkillEffectList(arg_3_0)
-	return arg_3_0._effectList
+--- 获取技能效果列表
+function BattleSkillUnit.GetSkillEffectList(self)
+	return self._effectList
 end
 
-function var_0_3.Cast(arg_4_0, arg_4_1, arg_4_2)
-	local var_4_0 = var_0_0.Battle.BattleState.GetInstance():GetUIMediator()
+--- DBRGL模式技能施放：不同于标准模式，通过UIMediator显示技能立绘
+function BattleSkillUnit.Cast(self, owner, commander)
+	-- DBRGL模式通过UIMediator来管理技能立绘显示
+	local uiMediator = ys.Battle.BattleState.GetInstance():GetUIMediator()
 
-	if arg_4_0._tempData.focus_duration then
-		var_4_0:ShowSkillPainting(arg_4_1, arg_4_0._tempData)
+	if self._tempData.focus_duration then
+		uiMediator:ShowSkillPainting(owner, self._tempData)
 	end
 
-	if arg_4_0._tempData.painting == 1 then
-		if arg_4_2 then
-			arg_4_1:DispatchSkillFloat(arg_4_2:getSkills()[1]:getConfig("name"), arg_4_2:getPainting())
+	if self._tempData.painting == 1 then
+		if commander then
+			owner:DispatchSkillFloat(commander:getSkills()[1]:getConfig("name"), commander:getPainting())
 		else
-			arg_4_1:DispatchSkillFloat(arg_4_0._tempData.name)
+			owner:DispatchSkillFloat(self._tempData.name)
 		end
-	elseif type(arg_4_0._tempData.painting) == "string" then
-		arg_4_1:DispatchSkillFloat(arg_4_0._tempData.name, nil, arg_4_0._tempData.painting)
+	elseif type(self._tempData.painting) == "string" then
+		owner:DispatchSkillFloat(self._tempData.name, nil, self._tempData.painting)
 	end
 
-	local var_4_1 = type(arg_4_0._tempData.castCV)
+	local castCVType = type(self._tempData.castCV)
 
-	if var_4_1 == "string" then
-		arg_4_1:DispatchVoice(arg_4_0._tempData.castCV)
-	elseif var_4_1 == "table" then
-		local var_4_2, var_4_3, var_4_4 = ShipWordHelper.GetWordAndCV(arg_4_0._tempData.castCV.skinID, arg_4_0._tempData.castCV.key)
+	if castCVType == "string" then
+		owner:DispatchVoice(self._tempData.castCV)
+	elseif castCVType == "table" then
+		local _, wordSfx, _ = ShipWordHelper.GetWordAndCV(self._tempData.castCV.skinID, self._tempData.castCV.key)
 
-		pg.CriMgr.GetInstance():PlaySoundEffect_V3(var_4_3)
+		pg.CriMgr.GetInstance():PlaySoundEffect_V3(wordSfx)
 	end
 
-	local var_4_5 = arg_4_0._attachData
+	local attachData = self._attachData
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_0._effectList) do
-		local var_4_6 = iter_4_1:GetTarget(arg_4_1, arg_4_0)
+	--- effect: BattleSkillEffect
+	for _, effect in ipairs(self._effectList) do
+		--- @type BattleUnit | table<BattleUnit>
+		local targetList = effect:GetTarget(owner, self)
 
-		arg_4_0._lastEffectTarget = var_4_6
+		self._lastEffectTarget = targetList
 
-		iter_4_1:SetCommander(arg_4_2)
-		iter_4_1:Effect(arg_4_1, var_4_6, var_4_5)
+		effect:SetCommander(commander)
+		effect:Effect(owner, targetList, attachData)
 	end
 
-	local var_4_7 = arg_4_0._tempData.aniEffect
+	local aniEffect = self._tempData.aniEffect
 
-	if var_4_7 and var_4_7 ~= "" then
-		local var_4_8 = {
-			effect = var_4_7.effect,
-			time = var_4_7.time,
-			offset = var_4_7.offset,
-			posFun = var_4_7.posFun
+	if aniEffect and aniEffect ~= "" then
+		local addEffectArgs = {
+			effect = aniEffect.effect,
+			time = aniEffect.time,
+			offset = aniEffect.offset,
+			posFun = aniEffect.posFun
 		}
 
-		arg_4_1:DispatchEvent(var_0_0.Event.New(var_0_0.Battle.BattleUnitEvent.ADD_EFFECT, var_4_8))
+		owner:DispatchEvent(ys.Event.New(ys.Battle.BattleUnitEvent.ADD_EFFECT, addEffectArgs))
 	end
 end
 
-function var_0_3.SetTarget(arg_5_0, arg_5_1)
-	arg_5_0._lastEffectTarget = arg_5_1
+function BattleSkillUnit.SetTarget(self, target)
+	self._lastEffectTarget = target
 end
 
-function var_0_3.Interrupt(arg_6_0)
-	for iter_6_0, iter_6_1 in ipairs(arg_6_0._effectList) do
-		iter_6_1:Interrupt()
+function BattleSkillUnit.Interrupt(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Interrupt()
 	end
 end
 
-function var_0_3.Clear(arg_7_0)
-	for iter_7_0, iter_7_1 in ipairs(arg_7_0._effectList) do
-		iter_7_1:Clear()
+function BattleSkillUnit.Clear(self)
+	for _, effect in ipairs(self._effectList) do
+		effect:Clear()
 	end
 end
 
-function var_0_3.GetDamageSum(arg_8_0)
-	local var_8_0 = 0
+--- 获取技能累计伤害
+function BattleSkillUnit.GetDamageSum(self)
+	local damageSum = 0
 
-	for iter_8_0, iter_8_1 in ipairs(arg_8_0._effectList) do
-		var_8_0 = iter_8_1:GetDamageSum() + var_8_0
+	for _, effect in ipairs(self._effectList) do
+		damageSum = effect:GetDamageSum() + damageSum
 	end
 
-	return var_8_0
+	return damageSum
 end
 
-function var_0_3.IsFireSkill(arg_9_0, arg_9_1)
-	local var_9_0 = false
-	local var_9_1 = var_0_0.Battle.BattleDataFunction.GetSkillTemplate(arg_9_0, arg_9_1)
+--- 判断技能是否为炮击/支援炮击类
+function BattleSkillUnit.IsFireSkill(self, skillID)
+	local isFireSkill = false
+	local skillTempData = ys.Battle.BattleDataFunction.GetSkillTemplate(self, skillID)
 
-	for iter_9_0, iter_9_1 in ipairs(var_9_1.effect_list) do
-		if iter_9_1.type == var_0_0.Battle.BattleSkillFire.__name or iter_9_1.type == var_0_0.Battle.BattleSkillFireSupport.__name then
-			var_9_0 = true
+	for _, effect in ipairs(skillTempData.effect_list) do
+		if effect.type == ys.Battle.BattleSkillFire.__name or effect.type == ys.Battle.BattleSkillFireSupport.__name then
+			isFireSkill = true
 
 			break
 		end
 	end
 
-	return var_9_0
+	return isFireSkill
 end

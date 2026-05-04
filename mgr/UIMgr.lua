@@ -207,6 +207,7 @@ function var_0_0.SetActive(arg_18_0, arg_18_1)
 	arg_18_0._stickActive = arg_18_1
 end
 
+-- TODO
 function var_0_0.Marching(arg_19_0)
 	local var_19_0 = ys.Battle.BattleConfig
 

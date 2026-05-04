@@ -1,106 +1,120 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourForce", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourForce = class("BattleEnvironmentBehaviourForce", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourForce = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourForce"
+ys.Battle.BattleEnvironmentBehaviourForce = BattleEnvironmentBehaviourForce
+BattleEnvironmentBehaviourForce.__name = "BattleEnvironmentBehaviourForce"
 
-function var_0_3.Ctor(arg_1_0)
-	arg_1_0._moveEndTime = nil
-	arg_1_0._lastSpeed = nil
-	arg_1_0._speed = Vector3.zero
-	arg_1_0._targetIndex = 0
+--- @class BattleEnvironmentBehaviourForce : BattleEnvironmentBehaviour
+--- 环境力场行为：沿预设路线匀速移动AOE区域，边界反弹
+--- @field _route table 移动路线表（每条: {方向Vector3, 速度, 持续时间}）
+--- @field _moveEndTime number 当前段移动结束时间
+--- @field _lastSpeed Vector3 上一段速度
+--- @field _speed Vector3 当前速度向量
+--- @field _targetIndex number 当前路线索引
+--- @field _bounds table 碰撞边界 {bottomZ, topZ, leftX, rightX}
+function BattleEnvironmentBehaviourForce.Ctor(self)
+	self._moveEndTime = nil
+	self._lastSpeed = nil
+	self._speed = Vector3.zero
+	self._targetIndex = 0
 
-	var_0_3.super.Ctor(arg_1_0)
+	BattleEnvironmentBehaviourForce.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取路线和计算边界（含碰撞数据偏移）
+--- @param tmpData table
+function BattleEnvironmentBehaviourForce.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourForce.super.SetTemplate(self, tmpData)
 
-	arg_2_0._route = arg_2_1.route or {}
-	arg_2_0._moveEndTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._route = tmpData.route or {}
+	self._moveEndTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	local var_2_0 = arg_2_0._unit:GetTemplate()
-	local var_2_1
-	local var_2_2
+	local template = self._unit:GetTemplate()
+	local cldX
+	local cldZ
 
-	if #var_2_0.cld_data == 1 then
-		var_2_1 = var_2_0.cld_data[1]
-		var_2_2 = var_2_1
-	elseif #var_2_0.cld_data == 2 then
-		var_2_1, var_2_2 = unpack(var_2_0.cld_data)
+	if #template.cld_data == 1 then
+		cldX = template.cld_data[1]
+		cldZ = cldX
+	elseif #template.cld_data == 2 then
+		cldX, cldZ = unpack(template.cld_data)
 	end
 
-	local var_2_3 = {
-		var_0_0.Battle.BattleDataProxy.GetInstance():GetTotalBounds()
+	local bounds = {
+		ys.Battle.BattleDataProxy.GetInstance():GetTotalBounds()
 	}
 
-	var_2_3[3] = var_2_3[3] + var_2_1
-	var_2_3[4] = var_2_3[4] - var_2_1
-	var_2_3[2] = var_2_3[2] + var_2_2
-	var_2_3[1] = var_2_3[1] - var_2_2
-	arg_2_0._bounds = var_2_3
+	bounds[3] = bounds[3] + cldX
+	bounds[4] = bounds[4] - cldX
+	bounds[2] = bounds[2] + cldZ
+	bounds[1] = bounds[1] - cldZ
+	self._bounds = bounds
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	local var_3_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 每帧推进位置：路线点到达后切换方向和速度，遇边界反弹
+function BattleEnvironmentBehaviourForce.doBehaviour(self)
+	local now = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	if arg_3_0._moveEndTime and var_3_0 >= arg_3_0._moveEndTime then
-		arg_3_0._targetIndex = arg_3_0._targetIndex + 1
-		arg_3_0._moveEndTime = nil
+	if self._moveEndTime and now >= self._moveEndTime then
+		self._targetIndex = self._targetIndex + 1
+		self._moveEndTime = nil
 
-		if arg_3_0._lastSpeed then
-			arg_3_0._speed:Add(arg_3_0._lastSpeed)
+		if self._lastSpeed then
+			self._speed:Add(self._lastSpeed)
 
-			arg_3_0._lastSpeed = nil
+			self._lastSpeed = nil
 		end
 
-		local var_3_1 = arg_3_0._route[arg_3_0._targetIndex]
+		local routeEntry = self._route[self._targetIndex]
 
-		if var_3_1 then
-			arg_3_0._lastSpeed = Vector3(unpack(var_3_1)):Normalize() * var_3_1[4]
-			arg_3_0._moveEndTime = var_3_0 + var_3_1[5]
+		if routeEntry then
+			self._lastSpeed = Vector3(unpack(routeEntry)):Normalize() * routeEntry[4]
+			self._moveEndTime = now + routeEntry[5]
 		end
 	end
 
-	local var_3_2 = arg_3_0._unit._aoeData:GetPosition()
-	local var_3_3 = arg_3_0:UpdateAndRestrictPosition(var_3_2)
+	local position = self._unit._aoeData:GetPosition()
+	local newPos = self:UpdateAndRestrictPosition(position)
 
-	arg_3_0._unit._aoeData:SetPosition(var_3_3)
-	var_0_3.super.doBehaviour(arg_3_0)
+	self._unit._aoeData:SetPosition(newPos)
+	BattleEnvironmentBehaviourForce.super.doBehaviour(self)
 end
 
-function var_0_3.UpdateAndRestrictPosition(arg_4_0, arg_4_1)
-	if arg_4_0._speed:SqrMagnitude() < 0.01 then
-		return arg_4_1
+--- 根据当前速度和边界计算新位置，遇边界则反弹速度方向
+--- @param position Vector3 当前位置
+--- @return Vector3 限制后的新位置
+function BattleEnvironmentBehaviourForce.UpdateAndRestrictPosition(self, position)
+	if self._speed:SqrMagnitude() < 0.01 then
+		return position
 	end
 
-	local var_4_0 = arg_4_0._bounds
-	local var_4_1 = arg_4_1 + arg_4_0._speed
+	local bounds = self._bounds
+	local newPos = position + self._speed
 
-	if var_4_1.x < var_4_0[3] then
-		arg_4_0._speed.x = math.abs(arg_4_0._speed.x)
-		var_4_1.x = var_4_0[3] + math.abs(var_4_1.x - var_4_0[3])
-	elseif var_4_0[4] < var_4_1.x then
-		arg_4_0._speed.x = -math.abs(arg_4_0._speed.x)
-		var_4_1.x = var_4_0[4] - math.abs(var_4_1.x - var_4_0[4])
+	if newPos.x < bounds[3] then
+		self._speed.x = math.abs(self._speed.x)
+		newPos.x = bounds[3] + math.abs(newPos.x - bounds[3])
+	elseif bounds[4] < newPos.x then
+		self._speed.x = -math.abs(self._speed.x)
+		newPos.x = bounds[4] - math.abs(newPos.x - bounds[4])
 	end
 
-	if var_4_1.z < var_4_0[2] then
-		arg_4_0._speed.z = math.abs(arg_4_0._speed.z)
-		var_4_1.z = var_4_0[2] + math.abs(var_4_1.z - var_4_0[2])
-	elseif var_4_0[1] < var_4_1.z then
-		arg_4_0._speed.z = -math.abs(arg_4_0._speed.z)
-		var_4_1.z = var_4_0[1] - math.abs(var_4_1.z - var_4_0[1])
+	if newPos.z < bounds[2] then
+		self._speed.z = math.abs(self._speed.z)
+		newPos.z = bounds[2] + math.abs(newPos.z - bounds[2])
+	elseif bounds[1] < newPos.z then
+		self._speed.z = -math.abs(self._speed.z)
+		newPos.z = bounds[1] - math.abs(newPos.z - bounds[1])
 	end
 
-	return var_4_1
+	return newPos
 end
 
-function var_0_3.Dispose(arg_5_0)
-	var_0_3.super.Dispose(arg_5_0)
-	table.clear(arg_5_0)
+function BattleEnvironmentBehaviourForce.Dispose(self)
+	BattleEnvironmentBehaviourForce.super.Dispose(self)
+	table.clear(self)
 end

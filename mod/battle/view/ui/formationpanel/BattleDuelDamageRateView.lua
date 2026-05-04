@@ -1,56 +1,69 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleDuelDamageRateView")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDuelDamageRateView = class("BattleDuelDamageRateView")
 
-var_0_0.Battle.BattleDuelDamageRateView = var_0_3
-var_0_3.__name = "BattleDuelDamageRateView"
+ys.Battle.BattleDuelDamageRateView = BattleDuelDamageRateView
+BattleDuelDamageRateView.__name = "BattleDuelDamageRateView"
 
-function var_0_3.Ctor(arg_1_0, arg_1_1)
-	var_0_0.EventListener.AttachEventListener(arg_1_0)
+--- 演习/对决中的双方伤害进度条视图
+--- 显示己方和敌方的伤害百分比进度条
+--- @param go GameObject 伤害进度条UI的GameObject
+function BattleDuelDamageRateView.Ctor(self, go)
+	ys.EventListener.AttachEventListener(self)
 
-	arg_1_0._go = arg_1_1
-	arg_1_0._tf = arg_1_1.transform
-	arg_1_0._progressList = {}
-	arg_1_0._rateBarList = {}
-	arg_1_0._fleetList = {}
-	arg_1_0._rateBarList[var_0_2.FRIENDLY_CODE] = arg_1_0._tf:Find("leftDamageBar")
-	arg_1_0._rateBarList[var_0_2.FOE_CODE] = arg_1_0._tf:Find("rightDamageBar")
+	self._go = go
+	self._tf = go.transform
+	self._progressList = {}
+	self._rateBarList = {}
+	self._fleetList = {}
+	-- 左方为己方伤害条，右方为敌方伤害条
+	self._rateBarList[BattleConfig.FRIENDLY_CODE] = self._tf:Find("leftDamageBar")
+	self._rateBarList[BattleConfig.FOE_CODE] = self._tf:Find("rightDamageBar")
 end
 
-function var_0_3.SetActive(arg_2_0, arg_2_1)
-	setActive(arg_2_0._go, arg_2_1)
+--- 显示/隐藏视图
+--- @param isActive boolean
+function BattleDuelDamageRateView.SetActive(self, isActive)
+	setActive(self._go, isActive)
 end
 
-function var_0_3.SetFleetVO(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._fleetList[arg_3_1] = true
+--- 设置要跟踪的舰队VO，显示对应的名称和等级
+--- @param fleetVO table 舰队VO对象
+--- @param fleetData table 舰队数据，含name和level字段
+function BattleDuelDamageRateView.SetFleetVO(self, fleetVO, fleetData)
+	self._fleetList[fleetVO] = true
 
-	local var_3_0 = arg_3_0._rateBarList[arg_3_1:GetIFF()]
+	local rateBar = self._rateBarList[fleetVO:GetIFF()]
 
-	var_3_0:Find("nameText"):GetComponent(typeof(Text)).text = arg_3_2.name
-	var_3_0:Find("LVText"):GetComponent(typeof(Text)).text = "Lv." .. arg_3_2.level
+	rateBar:Find("nameText"):GetComponent(typeof(Text)).text = fleetData.name
+	rateBar:Find("LVText"):GetComponent(typeof(Text)).text = "Lv." .. fleetData.level
 
-	local var_3_1 = var_3_0:Find("bar/progress"):GetComponent(typeof(Image))
+	local progressImage = rateBar:Find("bar/progress"):GetComponent(typeof(Image))
 
-	arg_3_0._progressList[arg_3_1:GetIFF()] = var_3_1
+	self._progressList[fleetVO:GetIFF()] = progressImage
 
-	arg_3_1:RegisterEventListener(arg_3_0, var_0_1.FLEET_DMG_CHANGE, arg_3_0.onDMGChange)
+	-- 监听舰队伤害变化事件
+	fleetVO:RegisterEventListener(self, BattleEvent.FLEET_DMG_CHANGE, self.onDMGChange)
 end
 
-function var_0_3.onDMGChange(arg_4_0, arg_4_1)
-	local var_4_0 = arg_4_1.Dispatcher
-	local var_4_1 = var_4_0:GetIFF()
+--- 舰队伤害变化事件回调，更新进度条
+--- @param event table 事件对象，event.Dispatcher为舰队VO
+function BattleDuelDamageRateView.onDMGChange(self, event)
+	local fleet = event.Dispatcher
+	local iff = fleet:GetIFF()
 
-	arg_4_0._progressList[var_4_1].fillAmount = var_4_0:GetDamageRatio()
+	self._progressList[iff].fillAmount = fleet:GetDamageRatio()
 end
 
-function var_0_3.Dispose(arg_5_0)
-	for iter_5_0, iter_5_1 in pairs(arg_5_0._fleetList) do
-		iter_5_0:UnregisterEventListener(arg_5_0, var_0_1.FLEET_DMG_CHANGE)
+--- 清理事件监听和引用
+function BattleDuelDamageRateView.Dispose(self)
+	for fleetVO, _ in pairs(self._fleetList) do
+		fleetVO:UnregisterEventListener(self, BattleEvent.FLEET_DMG_CHANGE)
 	end
 
-	arg_5_0._rateBarList = nil
-	arg_5_0._progressList = nil
+	self._rateBarList = nil
+	self._progressList = nil
 end

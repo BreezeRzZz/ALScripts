@@ -1,126 +1,150 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = class("CardPuzzleBoardClicker")
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local CardPuzzleBoardClicker = class("CardPuzzleBoardClicker")
 
-var_0_0.Battle.CardPuzzleBoardClicker = var_0_2
-var_0_2.__name = "CardPuzzleBoardClicker"
-var_0_2.CLICK_STATE_CLICK = "CLICK_STATE_CLICK"
-var_0_2.CLICK_STATE_DRAG = "CLICK_STATE_DRAG"
-var_0_2.CLICK_STATE_RELEASE = "CLICK_STATE_RELEASE"
-var_0_2.CLICK_STATE_NONE = "CLICK_STATE_NONE"
+ys.Battle.CardPuzzleBoardClicker = CardPuzzleBoardClicker
+CardPuzzleBoardClicker.__name = "CardPuzzleBoardClicker"
+-- 点击状态枚举
+CardPuzzleBoardClicker.CLICK_STATE_CLICK = "CLICK_STATE_CLICK"
+CardPuzzleBoardClicker.CLICK_STATE_DRAG = "CLICK_STATE_DRAG"
+CardPuzzleBoardClicker.CLICK_STATE_RELEASE = "CLICK_STATE_RELEASE"
+CardPuzzleBoardClicker.CLICK_STATE_NONE = "CLICK_STATE_NONE"
 
-function var_0_2.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = arg_1_1
+--- 卡牌拼图棋盘点击控制器
+--- 管理棋盘上的点击/拖拽输入，通过 Unity StickController 组件监听摇杆输入
+--- 将屏幕坐标转换为标准化偏移量后传递给 CardPuzzleInfo
 
-	arg_1_0:Init()
+function CardPuzzleBoardClicker.Ctor(self, go)
+	self._go = go
+
+	self:Init()
 end
 
-function var_0_2.Init(arg_2_0)
-	SetActive(arg_2_0._go, true)
+function CardPuzzleBoardClicker.Init(self)
+	SetActive(self._go, true)
 
-	arg_2_0._distX, arg_2_0._distY = 0, 0
-	arg_2_0._dirX, arg_2_0._dirY = 0, 0
-	arg_2_0._prePress = false
-	arg_2_0._isPress = false
+	-- 初始化位移和方向变量
+	self._distX, self._distY = 0, 0
+	self._dirX, self._dirY = 0, 0
+	self._prePress = false
+	self._isPress = false
 
-	local var_2_0 = pg.CameraFixMgr.GetInstance()
+	local cameraFixMgr = pg.CameraFixMgr.GetInstance()
 
-	arg_2_0._screenWidth, arg_2_0._screenHeight = var_2_0:GetCurrentWidth(), var_2_0:GetCurrentHeight()
+	self._screenWidth, self._screenHeight = cameraFixMgr:GetCurrentWidth(), cameraFixMgr:GetCurrentHeight()
 
-	arg_2_0._go:GetComponent("StickController"):SetStickFunc(function(arg_3_0, arg_3_1)
-		arg_2_0:updateStick(arg_3_0, arg_3_1)
+	-- 绑定 Unity 摇杆控制器回调
+	self._go:GetComponent("StickController"):SetStickFunc(function(stickData, eventID)
+		self:updateStick(stickData, eventID)
 	end)
 end
 
-function var_0_2.SetCardPuzzleComponent(arg_4_0, arg_4_1)
-	arg_4_0._cardPuzzleInfo = arg_4_1
+--- 设置关联的卡牌拼图组件
+--- @param cardPuzzleInfo CardPuzzleInfo 卡牌拼图信息对象
+function CardPuzzleBoardClicker.SetCardPuzzleComponent(self, cardPuzzleInfo)
+	self._cardPuzzleInfo = cardPuzzleInfo
 end
 
-function var_0_2.updateStick(arg_5_0, arg_5_1, arg_5_2)
-	if not arg_5_0._cardPuzzleInfo:GetClickEnable() then
+--- 摇杆更新回调，处理点击/拖拽/释放状态转换
+--- @param stickData table 摇杆数据（含 x, y 坐标）
+--- @param eventID number 事件ID，-1 表示释放
+function CardPuzzleBoardClicker.updateStick(self, stickData, eventID)
+	if not self._cardPuzzleInfo:GetClickEnable() then
 		return
 	end
 
-	arg_5_0._initX = false
-	arg_5_0._initY = false
+	self._initX = false
+	self._initY = false
 
-	if arg_5_2 == -1 then
-		arg_5_0._startX = nil
-		arg_5_0._startY = nil
-		arg_5_0._isPress = false
+	if eventID == -1 then
+		-- 释放状态
+		self._startX = nil
+		self._startY = nil
+		self._isPress = false
 	else
-		arg_5_0._isPress = true
+		self._isPress = true
 
-		local var_5_0 = arg_5_1.x
-		local var_5_1 = arg_5_1.y
+		local posX = stickData.x
+		local posY = stickData.y
 
-		if arg_5_0._startX == nil then
-			arg_5_0._startX = var_5_0
-			arg_5_0._startY = var_5_1
-			arg_5_0._initX = true
-			arg_5_0._initY = true
+		if self._startX == nil then
+			-- 首次按下，记录起始位置
+			self._startX = posX
+			self._startY = posY
+			self._initX = true
+			self._initY = true
 		else
-			local var_5_2 = var_5_0 - arg_5_0._lastPosX
+			local deltaX = posX - self._lastPosX
 
-			if var_5_2 * arg_5_0._dirX < 0 then
-				arg_5_0._startX = var_5_0
-				arg_5_0._initX = true
+			-- 方向改变时重置起始位置
+			if deltaX * self._dirX < 0 then
+				self._startX = posX
+				self._initX = true
 			end
 
-			if var_5_2 ~= 0 then
-				arg_5_0._dirX = var_5_2
+			if deltaX ~= 0 then
+				self._dirX = deltaX
 			end
 
-			local var_5_3 = var_5_1 - arg_5_0._lastPosY
+			local deltaY = posY - self._lastPosY
 
-			if var_5_3 * arg_5_0._dirY < 0 then
-				arg_5_0._startY = var_5_1
-				arg_5_0._initY = true
+			if deltaY * self._dirY < 0 then
+				self._startY = posY
+				self._initY = true
 			end
 
-			if var_5_3 ~= 0 then
-				arg_5_0._dirY = var_5_3
+			if deltaY ~= 0 then
+				self._dirY = deltaY
 			end
 		end
 
-		arg_5_0._distX = (var_5_0 - arg_5_0._startX) / arg_5_0._screenWidth
-		arg_5_0._distY = (var_5_1 - arg_5_0._startY) / arg_5_0._screenHeight
+		-- 计算标准化位移（0~1 范围）
+		self._distX = (posX - self._startX) / self._screenWidth
+		self._distY = (posY - self._startY) / self._screenHeight
 	end
 
-	arg_5_0._lastPosX = arg_5_1.x
-	arg_5_0._lastPosY = arg_5_1.y
+	self._lastPosX = stickData.x
+	self._lastPosY = stickData.y
 
-	local var_5_4
+	-- 判断当前点击状态
+	local clickState
 
-	if not arg_5_0._prePress and arg_5_0._isPress then
-		var_5_4 = var_0_2.CLICK_STATE_CLICK
-	elseif arg_5_0._prePress and arg_5_0._isPress then
-		var_5_4 = var_0_2.CLICK_STATE_DRAG
-	elseif arg_5_0._prePress and not arg_5_0._isPress then
-		var_5_4 = var_0_2.CLICK_STATE_RELEASE
+	if not self._prePress and self._isPress then
+		clickState = CardPuzzleBoardClicker.CLICK_STATE_CLICK
+	elseif self._prePress and self._isPress then
+		clickState = CardPuzzleBoardClicker.CLICK_STATE_DRAG
+	elseif self._prePress and not self._isPress then
+		clickState = CardPuzzleBoardClicker.CLICK_STATE_RELEASE
 	else
-		var_5_4 = var_0_2.CLICK_STATE_NONE
+		clickState = CardPuzzleBoardClicker.CLICK_STATE_NONE
 	end
 
-	arg_5_0._cardPuzzleInfo:UpdateClickPos(arg_5_0._lastPosX, arg_5_0._lastPosY, var_5_4)
+	self._cardPuzzleInfo:UpdateClickPos(self._lastPosX, self._lastPosY, clickState)
 
-	arg_5_0._prePress = arg_5_0._isPress
+	self._prePress = self._isPress
 end
 
-function var_0_2.GetDistance(arg_6_0)
-	return arg_6_0._distX, arg_6_0._distY
+--- 获取当前拖拽距离
+--- @return number distX X方向偏移量（标准化）
+--- @return number distY Y方向偏移量（标准化）
+function CardPuzzleBoardClicker.GetDistance(self)
+	return self._distX, self._distY
 end
 
-function var_0_2.IsFirstPress(arg_7_0)
-	return arg_7_0._initX, arg_7_0._initY
+--- 是否首次按下
+--- @return boolean initX X方向首次按下
+--- @return boolean initY Y方向首次按下
+function CardPuzzleBoardClicker.IsFirstPress(self)
+	return self._initX, self._initY
 end
 
-function var_0_2.IsPress(arg_8_0)
-	return arg_8_0._isPress
+--- 是否正在按下
+function CardPuzzleBoardClicker.IsPress(self)
+	return self._isPress
 end
 
-function var_0_2.Dispose(arg_9_0)
+function CardPuzzleBoardClicker.Dispose(self)
 	return
 end

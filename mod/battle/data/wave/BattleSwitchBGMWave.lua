@@ -1,24 +1,29 @@
 ys = ys or {}
 
-local var_0_0 = ys
+local ys = ys
 
-var_0_0.Battle.BattleSwitchBGMWave = class("BattleSwitchBGMWave", var_0_0.Battle.BattleWaveInfo)
-var_0_0.Battle.BattleSwitchBGMWave.__name = "BattleSwitchBGMWave"
+ys.Battle.BattleSwitchBGMWave = class("BattleSwitchBGMWave", ys.Battle.BattleWaveInfo)
+ys.Battle.BattleSwitchBGMWave.__name = "BattleSwitchBGMWave"
 
-local var_0_1 = var_0_0.Battle.BattleSwitchBGMWave
+local BattleSwitchBGMWave = ys.Battle.BattleSwitchBGMWave
 
-function var_0_1.Ctor(arg_1_0)
-	var_0_1.super.Ctor(arg_1_0)
+--- 波次类型：BGM 切换波
+--- 切换当前战斗场景的背景音乐。不阻塞战斗，执行后立即通过。
+function BattleSwitchBGMWave.Ctor(self)
+	BattleSwitchBGMWave.super.Ctor(self)
 end
 
-function var_0_1.SetWaveData(arg_2_0, arg_2_1)
-	var_0_1.super.SetWaveData(arg_2_0, arg_2_1)
+--- 设置波次数据，从 triggerParams.bgm 读取 BGM 名称
+--- @param waveData table 关卡配置中对应的 wave 数据
+function BattleSwitchBGMWave.SetWaveData(self, waveData)
+	BattleSwitchBGMWave.super.SetWaveData(self, waveData)
 
-	arg_2_0._bgmName = arg_2_0._param.bgm
+	self._bgmName = self._param.bgm
 end
 
-function var_0_1.DoWave(arg_3_0)
-	var_0_1.super.DoWave(arg_3_0)
-	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, arg_3_0._bgmName)
-	arg_3_0:doPass()
+--- 执行波次：向 BgmMgr 压入新 BGM -> doPass
+function BattleSwitchBGMWave.DoWave(self)
+	BattleSwitchBGMWave.super.DoWave(self)
+	pg.BgmMgr.GetInstance():Push(BattleScene.__cname, self._bgmName)
+	self:doPass()
 end

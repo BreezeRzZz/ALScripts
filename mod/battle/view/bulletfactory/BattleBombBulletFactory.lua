@@ -11,36 +11,45 @@ function BattleBombBulletFactory.Ctor(self)
 	BattleBombBulletFactory.super.Ctor(self)
 end
 
--- Important: 炸弹类子弹的伤害结算流程
+--- 炸弹超出范围回调（炸弹触地/到达目标爆炸点）
+--- 炸弹的伤害结算主要在此完成，支持两种爆炸模式：
+--- 1. directDMG 模式（持续区域伤害）：生成持续区域，进入区域的单位
+---    被添加Buff并受到直伤；离开区域移除Buff；区域结束时清理
+--- 2. 普通爆炸模式（一次性范围伤害）：圆形区域伤害 + 距离衰减，
+---    可选友军伤害（friendlyFire）和无差别伤害（indiscriminate）
+--- @param bullet BattleBombBullet 炸弹子弹数据
 function BattleBombBulletFactory.OutRangeFunc(bullet)
-	local bulletTmpData = bullet:GetTemplate()
-	local hit_type = bulletTmpData.hit_type
-	local battleDataProxy = BattleBombBulletFactory.GetDataProxy()
-	local extra_param = bulletTmpData.extra_param
+	local bulletTemplate = bullet:GetTemplate()
+	local hitType = bulletTemplate.hit_type
+	local dataProxy = BattleBombBulletFactory.GetDataProxy()
+	local extraParam = bulletTemplate.extra_param
 	local diveFilter = bullet:GetDiveFilter()
-	local args = {
+	local triggerData = {
 		_bullet = bullet,
 		equipIndex = bullet:GetWeapon():GetEquipmentIndex(),
 		bulletTag = bullet:GetExtraTag()
 	}
 
-	bullet:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG, args)
+	-- 炸弹爆炸Buff触发
+	bullet:BuffTrigger(ys.Battle.BattleConst.BuffEffectType.ON_BOMB_BULLET_BANG, triggerData)
 
-	if extra_param.directDMG then
-		local buff_id = extra_param.buff_id
-		local buff_level = extra_param.buff_level or 1
-		local fx = extra_param.area_FX or bulletTmpData.hit_fx
+	if extraParam.directDMG then
+		-- === 直接伤害模式：持续区域 + Buff ===
+		local buffID = extraParam.buff_id
+		local buffLevel = extraParam.buff_level or 1
+		local areaFX = extraParam.area_FX or bulletTemplate.hit_fx
 
-		local function var_2_9(arg_3_0)
+		-- 单位进入持续区域时：添加Buff并造成直伤
+		local function onEnterArea(unitList)
 			if bullet:CanDealDamage() then
-				for iter_3_0, iter_3_1 in ipairs(arg_3_0) do
-					if iter_3_1.Active then
-						local var_3_0 = iter_3_1.UID
-						local var_3_1 = BattleBombBulletFactory.GetSceneMediator():GetCharacter(var_3_0):GetUnitData()
-						local var_3_2 = ys.Battle.BattleBuffUnit.New(buff_id, buff_level)
+				for index, unitEntry in ipairs(unitList) do
+					if unitEntry.Active then
+						local uid = unitEntry.UID
+						local unitData = BattleBombBulletFactory.GetSceneMediator():GetCharacter(uid):GetUnitData()
+						local buffUnit = ys.Battle.BattleBuffUnit.New(buffID, buffLevel)
 
-						var_3_1:AddBuff(var_3_2)
-						battleDataProxy:HandleDirectDamage(var_3_1, extra_param.directDMG, bullet)
+						unitData:AddBuff(buffUnit)
+						dataProxy:HandleDirectDamage(unitData, extraParam.directDMG, bullet)
 					end
 				end
 
@@ -48,131 +57,154 @@ function BattleBombBulletFactory.OutRangeFunc(bullet)
 			end
 		end
 
-		local function var_2_10(arg_4_0)
-			if arg_4_0.Active then
-				BattleBombBulletFactory:GetSceneMediator():GetCharacter(arg_4_0.UID):GetUnitData():RemoveBuff(buff_id)
+		-- 单位离开持续区域时：移除Buff
+		local function onExitArea(unitEntry)
+			if unitEntry.Active then
+				BattleBombBulletFactory:GetSceneMediator():GetCharacter(unitEntry.UID):GetUnitData():RemoveBuff(buffID)
 			end
 		end
 
-		local function var_2_11(arg_5_0)
-			for iter_5_0, iter_5_1 in ipairs(arg_5_0) do
-				if iter_5_1.Active then
-					local var_5_0 = BattleBombBulletFactory:GetSceneMediator():GetCharacter(iter_5_1.UID):GetUnitData()
+		-- 持续区域消失时：清理还存活单位的Buff并移除子弹
+		local function onAreaEnd(unitList)
+			for index, unitEntry in ipairs(unitList) do
+				if unitEntry.Active then
+					local unitData = BattleBombBulletFactory:GetSceneMediator():GetCharacter(unitEntry.UID):GetUnitData()
 
-					if var_5_0:IsAlive() then
-						var_5_0:RemoveBuff(buff_id)
+					if unitData:IsAlive() then
+						unitData:RemoveBuff(buffID)
 					end
 				end
 			end
 
-			battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+			dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 		end
 
-		battleDataProxy:SpawnLastingColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_9, var_2_10, false, fx, var_2_11, true):SetDiveFilter(diveFilter)
+		dataProxy:SpawnLastingColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hitType.range, hitType.time, onEnterArea, onExitArea, false, areaFX, onAreaEnd, true):SetDiveFilter(diveFilter)
 		bullet:HideBullet()
 	else
-		local var_2_12
+		-- === 普通爆炸模式：一次性范围伤害 ===
+		local areaInfo
 
-		local function var_2_13(arg_6_0)
-			local var_6_0 = hit_type.decay
+		-- 爆炸区域内每帧伤害处理（支持距离衰减）
+		local function onAreaTick(unitList)
+			local decay = hitType.decay
 
-			if var_6_0 then
-				var_2_12:UpdateDistanceInfo()
+			if decay then
+				areaInfo:UpdateDistanceInfo()
 			end
 
-			for iter_6_0, iter_6_1 in ipairs(arg_6_0) do
-				if iter_6_1.Active then
-					local var_6_1 = iter_6_1.UID
-					local var_6_2 = 0
+			for index, unitEntry in ipairs(unitList) do
+				if unitEntry.Active then
+					local uid = unitEntry.UID
+					local decayFactor = 0
 
-					if var_6_0 then
-						var_6_2 = var_2_12:GetDistance(var_6_1) / (hit_type.range * 0.5) * var_6_0
+					if decay then
+						decayFactor = areaInfo:GetDistance(uid) / (hitType.range * 0.5) * decay
 					end
 
-					local var_6_3 = BattleBombBulletFactory.GetSceneMediator():GetCharacter(var_6_1):GetUnitData()
+					local unitData = BattleBombBulletFactory.GetSceneMediator():GetCharacter(uid):GetUnitData()
 
-					battleDataProxy:HandleDamage(bullet, var_6_3, var_6_2)
+					dataProxy:HandleDamage(bullet, unitData, decayFactor)
 				end
 			end
 		end
 
-		var_2_12 = battleDataProxy:SpawnColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_13)
+		areaInfo = dataProxy:SpawnColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hitType.range, hitType.time, onAreaTick)
 
-		var_2_12:SetDiveFilter(diveFilter)
+		areaInfo:SetDiveFilter(diveFilter)
 
-		if extra_param.friendlyFire then
-			battleDataProxy:SpawnColumnArea(bullet:GetEffectField(), battleDataProxy.GetOppoSideCode(bullet:GetIFF()), bullet:GetExplodePostion(), hit_type.range, hit_type.time, var_2_13):SetDiveFilter(diveFilter)
+		-- 友军伤害：对敌方阵营也生成爆炸区域
+		if extraParam.friendlyFire then
+			dataProxy:SpawnColumnArea(bullet:GetEffectField(), dataProxy.GetOppoSideCode(bullet:GetIFF()), bullet:GetExplodePostion(), hitType.range, hitType.time, onAreaTick):SetDiveFilter(diveFilter)
 		end
 
-		var_2_12:SetIndiscriminate(extra_param.indiscriminate)
-		battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+		areaInfo:SetIndiscriminate(extraParam.indiscriminate)
+		dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 	end
 end
 
-function BattleBombBulletFactory.MakeBullet(arg_7_0)
+--- 创建炸弹类型的BulletUnit View
+--- @return BattleBombBullet
+function BattleBombBulletFactory.MakeBullet(self)
 	return ys.Battle.BattleBombBullet.New()
 end
 
-function BattleBombBulletFactory.onBulletHitFunc(arg_8_0, arg_8_1, arg_8_2)
-	local var_8_0 = arg_8_0:GetBulletData()
-	local var_8_1 = var_8_0:GetTemplate()
+--- 炸弹碰撞命中回调
+--- 仅播放命中特效和音效，实际爆炸伤害逻辑在 OutRangeFunc 中
+--- @param targetUID number
+--- @param unitType number
+function BattleBombBulletFactory.onBulletHitFunc(self, targetUID, unitType)
+	local bulletData = self:GetBulletData()
+	local bulletTemplate = bulletData:GetTemplate()
 
-	ys.Battle.PlayBattleSFX(var_8_0:GetHitSFX())
+	ys.Battle.PlayBattleSFX(bulletData:GetHitSFX())
 
-	local var_8_2, var_8_3 = BattleBombBulletFactory.GetFXPool():GetFX(arg_8_0:GetFXID())
-	local var_8_4 = pg.Tool.FilterY(var_8_0:GetPosition())
+	local hitFX, hitOffset = BattleBombBulletFactory.GetFXPool():GetFX(self:GetFXID())
+	local hitPos = pg.Tool.FilterY(bulletData:GetPosition())
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_8_2, var_8_4:Add(var_8_3), true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(hitFX, hitPos:Add(hitOffset), true)
 end
 
+--- 炸弹未命中回调（空实现，炸弹在OutRangeFunc中处理一切）
 function BattleBombBulletFactory.onBulletMissFunc()
 	return
 end
--- TODO
+
+--- 创建炸弹的视觉模型
+--- 额外检查：爆炸位置超出战场前方边界（maxZ + 3）则直接移除
+--- 敌方炸弹首次出现时创建预警圈特效
+--- @param bulletView BattleBulletUnit View层子弹
+--- @param position Vector3 生成位置
 function BattleBombBulletFactory.MakeModel(self, bulletView, position)
-	local bullet = bulletView:GetBulletData()
-	local explodePosition = bullet:GetExplodePostion()
-	local totalUpperBound, _, _, _ = self:GetDataProxy():GetTotalBounds()
-	-- 爆炸点过高，直接移除子弹
-	-- 这一步在实际创建子弹的视觉模型前进行，可以避免不必要的资源开销
-	if explodePosition.z > totalUpperBound + 3 then
-		self:GetDataProxy():RemoveBulletUnit(bullet:GetUniqueID())
+	local bulletData = bulletView:GetBulletData()
+	local explodePos = bulletData:GetExplodePostion()
+	local minZ, maxZ, minX, maxX = self:GetDataProxy():GetTotalBounds()
+
+	-- 爆炸位置超出战场前方边界则不移除（避免在不可见位置生成无效子弹）
+	if explodePos.z > maxZ + 3 then
+		self:GetDataProxy():RemoveBulletUnit(bulletData:GetUniqueID())
 
 		return
 	end
 
-	local bulletTemplate = bullet:GetTemplate()
+	local bulletTemplate = bulletData:GetTemplate()
 
-	if not self:GetBulletPool():InstBullet(bulletView:GetModleID(), function(go)
-		bulletView:AddModel(go)
+	if not self:GetBulletPool():InstBullet(bulletData:GetModleID(), function(instGO)
+		bulletView:AddModel(instGO)
 	end) then
 		bulletView:AddTempModel(self:GetTempGOPool():GetObject())
 	end
-	-- TODO
+
 	bulletView:SetSpawn(position)
 
-	if bullet:GetIFF() ~= self:GetDataProxy():GetFriendlyCode() and bullet:GetExist() and bulletTemplate.alert_fx ~= "" then
-		BattleBombBulletFactory.CreateBulletAlert(bullet)
+	-- 敌方炸弹首次出现且未生成过预警圈时，创建预警圈
+	if bulletData:GetIFF() ~= self:GetDataProxy():GetFriendlyCode() and bulletData:GetExist() and bulletTemplate.alert_fx ~= "" then
+		BattleBombBulletFactory.CreateBulletAlert(bulletData)
 	end
 
-	bullet:SetExist(true)
+	bulletData:SetExist(true)
 	bulletView:SetFXFunc(self.onBulletHitFunc, self.onBulletMissFunc)
 	self:GetSceneMediator():AddBullet(bulletView)
 end
 
-function BattleBombBulletFactory.CreateBulletAlert(arg_12_0)
-	local var_12_0 = arg_12_0:GetTemplate().hit_type.range
-	local var_12_1 = arg_12_0:GetTemplate().alert_fx
-	local var_12_2 = ys.Battle.BattleFXPool.GetInstance():GetFX(var_12_1)
-	local var_12_3 = var_12_2.transform
-	local var_12_4 = 0
-	local var_12_5 = pg.effect_offset
+--- 创建炸弹预警圈特效（地面红色/黄色圆圈）
+--- 根据 hit_type.range 缩放预警圈大小
+--- 支持 pg.effect_offset 配置中的 y_scale 选项（用于全屏特效的Y轴缩放）
+--- @param bulletData BattleBombBullet 炸弹子弹数据
+function BattleBombBulletFactory.CreateBulletAlert(bulletData)
+	local alertRange = bulletData:GetTemplate().hit_type.range
+	local alertFXID = bulletData:GetTemplate().alert_fx
+	local alertFX = ys.Battle.BattleFXPool.GetInstance():GetFX(alertFXID)
+	local alertTF = alertFX.transform
+	local yScale = 0
+	local effectOffsetConfig = pg.effect_offset
 
-	if var_12_5[var_12_1] and var_12_5[var_12_1].y_scale == true then
-		var_12_4 = var_12_0
+	-- 某些预警特效需要Y轴也参与缩放（如全屏覆盖型预警）
+	if effectOffsetConfig[alertFXID] and effectOffsetConfig[alertFXID].y_scale == true then
+		yScale = alertRange
 	end
 
-	var_12_3.localScale = Vector3(var_12_0, var_12_4, var_12_0)
+	alertTF.localScale = Vector3(alertRange, yScale, alertRange)
 
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_12_2, arg_12_0:GetExplodePostion())
+	pg.EffectMgr.GetInstance():PlayBattleEffect(alertFX, bulletData:GetExplodePostion())
 end

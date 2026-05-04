@@ -1,97 +1,113 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleUnitEvent
-local var_0_2 = var_0_0.Battle.BattleEvent
-local var_0_3 = class("BattleGuildBossCommand", var_0_0.Battle.BattleSingleDungeonCommand)
+--- @class BattleGuildBossCommand : BattleSingleDungeonCommand
+--- 公会 Boss 战斗指令。继承自 BattleSingleDungeonCommand，
+--- 在通用 SingleDungeon 基础上增加了特定敌人统计和公会 Boss 伤害数据的计算。
+--- 与普通关卡的差异：战斗结束时必须调用 calcDamageData 将伤害计入公会 Boss 总血量。
+local ys = ys
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
+local BattleEvent = ys.Battle.BattleEvent
+local BattleGuildBossCommand = class("BattleGuildBossCommand", ys.Battle.BattleSingleDungeonCommand)
 
-var_0_0.Battle.BattleGuildBossCommand = var_0_3
-var_0_3.__name = "BattleGuildBossCommand"
+ys.Battle.BattleGuildBossCommand = BattleGuildBossCommand
+BattleGuildBossCommand.__name = "BattleGuildBossCommand"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+function BattleGuildBossCommand.Ctor(self)
+	BattleGuildBossCommand.super.Ctor(self)
 end
 
-function var_0_3.initWaveModule(arg_2_0)
-	local function var_2_0(arg_3_0, arg_3_1, arg_3_2)
-		arg_2_0._dataProxy:SpawnMonster(arg_3_0, arg_3_1, arg_3_2, var_0_0.Battle.BattleConfig.FOE_CODE)
+--- 初始化波次模块。重写父类方法，在战斗结束时额外调用 calcDamageData。
+--- 内部闭包定义：
+---   spawnFunc: 生成敌方怪物
+---   airFighterFunc: 生成敌方飞机
+---   clearFunc: 波次结束时的清理和结算（含验证 + 伤害计算）
+---   spawnAreaFunc: 生成区域效果
+function BattleGuildBossCommand.initWaveModule(self)
+	local function spawnFunc(spawnItem, waveIndex, enemyType)
+		self._dataProxy:SpawnMonster(spawnItem, waveIndex, enemyType, ys.Battle.BattleConfig.FOE_CODE)
 	end
 
-	local function var_2_1(arg_4_0)
-		arg_2_0._dataProxy:SpawnAirFighter(arg_4_0)
+	local function airFighterFunc(tmpData)
+		self._dataProxy:SpawnAirFighter(tmpData)
 	end
 
-	local function var_2_2()
-		if arg_2_0._vertifyFail then
+	local function clearFunc()
+		if self._vertifyFail then
 			pg.m02:sendNotification(GAME.CHEATER_MARK, {
-				reason = arg_2_0._vertifyFail
+				reason = self._vertifyFail
 			})
 
 			return
 		end
 
-		arg_2_0._dataProxy:TriggerFinishBattle()
-		arg_2_0:CalcStatistic()
-		arg_2_0:calcDamageData()
-		arg_2_0._state:BattleEnd()
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 	end
 
-	local function var_2_3(arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
-		arg_2_0._dataProxy:SpawnCubeArea(var_0_0.Battle.BattleConst.AOEField.SURFACE, -1, arg_6_0, arg_6_1, arg_6_2, arg_6_3, arg_6_4)
+	local function spawnAreaFunc(x, y, z, width, height)
+		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, x, y, z, width, height)
 	end
 
-	arg_2_0._waveUpdater = var_0_0.Battle.BattleWaveUpdater.New(var_2_0, var_2_1, var_2_2, var_2_3)
+	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)
 end
 
-function var_0_3.onInitBattle(arg_7_0)
-	var_0_3.super.onInitBattle(arg_7_0)
+--- 战斗数据初始化完成回调。获取特定公会 Boss 敌人列表。
+function BattleGuildBossCommand.onInitBattle(self)
+	BattleGuildBossCommand.super.onInitBattle(self)
 
-	local var_7_0 = arg_7_0._dataProxy:GetInitData()
+	local initData = self._dataProxy:GetInitData()
 
-	arg_7_0._specificEnemyList = var_0_0.Battle.BattleDataFunction.GetSpecificGuildBossEnemyList(var_7_0.ActID, var_7_0.StageTmpId)
+	self._specificEnemyList = ys.Battle.BattleDataFunction.GetSpecificGuildBossEnemyList(initData.ActID, initData.StageTmpId)
 end
 
-function var_0_3.onAddUnit(arg_8_0, arg_8_1)
-	var_0_3.super.onAddUnit(arg_8_0, arg_8_1)
+--- 单位添加回调。重写父类方法，若该单位在特定敌人列表中则初始化其统计信息。
+function BattleGuildBossCommand.onAddUnit(self, event)
+	BattleGuildBossCommand.super.onAddUnit(self, event)
 
-	local var_8_0 = arg_8_1.Data.unit
+	local unit = event.Data.unit
 
-	if table.contains(arg_8_0._specificEnemyList, var_8_0:GetTemplateID()) then
-		arg_8_0._dataProxy:InitSpecificEnemyStatistics(var_8_0)
+	if table.contains(self._specificEnemyList, unit:GetTemplateID()) then
+		self._dataProxy:InitSpecificEnemyStatistics(unit)
 	end
 end
 
-function var_0_3.onPlayerShutDown(arg_9_0, arg_9_1)
-	if arg_9_0._state:GetState() ~= arg_9_0._state.BATTLE_STATE_FIGHT then
+--- 玩家单位沉没问题。旗舰或前卫全灭时触发 calcDamageData 再进行战斗结束。
+function BattleGuildBossCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if arg_9_1.Data.unit == arg_9_0._userFleet:GetFlagShip() and arg_9_0._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and arg_9_0._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
-		arg_9_0:CalcStatistic()
-		arg_9_0:calcDamageData()
-		arg_9_0._state:BattleEnd()
+	if event.Data.unit == self._userFleet:GetFlagShip() and self._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and self._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 
 		return
 	end
 
-	if #arg_9_0._userFleet:GetScoutList() == 0 then
-		arg_9_0:CalcStatistic()
-		arg_9_0:calcDamageData()
-		arg_9_0._state:BattleEnd()
+	if #self._userFleet:GetScoutList() == 0 then
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleEnd()
 	end
 end
 
-function var_0_3.onUpdateCountDown(arg_10_0, arg_10_1)
-	if arg_10_0._dataProxy:GetCountDown() <= 0 then
-		arg_10_0._dataProxy:EnemyEscape()
-		arg_10_0:CalcStatistic()
-		arg_10_0:calcDamageData()
-		arg_10_0._state:BattleTimeUp()
+--- 倒计时归零时的超时结算。
+function BattleGuildBossCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		self._dataProxy:EnemyEscape()
+		self:CalcStatistic()
+		self:calcDamageData()
+		self._state:BattleTimeUp()
 	end
 end
 
-function var_0_3.calcDamageData(arg_11_0)
-	local var_11_0 = arg_11_0._dataProxy:GetInitData()
+--- 计算公会 Boss 伤害数据。调用 CalcGuildBossEnemyInfo 将战斗中的伤害
+--- 汇总到公会 Boss 总伤害。
+function BattleGuildBossCommand.calcDamageData(self)
+	local initData = self._dataProxy:GetInitData()
 
-	arg_11_0._dataProxy:CalcGuildBossEnemyInfo(var_11_0.ActID)
+	self._dataProxy:CalcGuildBossEnemyInfo(initData.ActID)
 end

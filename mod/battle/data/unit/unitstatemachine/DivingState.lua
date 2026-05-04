@@ -1,98 +1,134 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.DivingState = class("DivingState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.DivingState.__name = "DivingState"
+ys.Battle.DivingState = class("DivingState", ys.Battle.IUnitState)
+ys.Battle.DivingState.__name = "DivingState"
 
-local var_0_2 = var_0_0.Battle.DivingState
+local DivingState = ys.Battle.DivingState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class DivingState : IUnitState
+--- 潜水过渡状态：单位从水面进入水下时的过渡动画状态
+--- 机制说明：
+--- - 这是水面→水下的过渡状态，对应潜水动画的播放
+--- - 极度受限：禁止攻击、移动、法术、中断等几乎所有操作
+--- - 仅允许：死亡(OnDeadState)、胜利(Victory/VictorySwim)、SkillStart
+--- - 注意：中断(Interrupt)在此状态被忽略！潜水过渡不能被中断打断
+--- - OnEnd执行两个关键操作：
+---   1. ChangeOxyState(OxyState.STATE_DIVE)：将氧气状态设为潜水
+---   2. ChangeToMoveState()：切换到移动状态
+---   - 这意味着潜水过渡动画结束后，单位正式进入水下状态(DiveState/DiveLeftState)
+--- - 不缓存武器(CacheWeapon=false)，过渡动画期间不需要生成子弹
+--- - 没有GetActionName（不需要特定动画名，由调用方决定）
+function DivingState.Ctor(self)
+	DivingState.super.Ctor(self)
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- 潜水过渡期间禁止Idle
+function DivingState.AddIdleState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- 潜水过渡期间禁止Move
+function DivingState.AddMoveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- 潜水过渡期间禁止MoveLeft
+function DivingState.AddMoveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- 潜水过渡期间禁止Attack
+function DivingState.AddAttackState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- 死亡可以打断潜水过渡
+function DivingState.AddDeadState(self, unitState, inputInfo)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- 潜水过渡期间禁止Skill
+function DivingState.AddSkillState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
+--- 潜水过渡期间禁止Spell
+function DivingState.AddSpellState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- 胜利可以打断潜水过渡
+function DivingState.AddVictoryState(self, unitState, inputInfo)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- 胜利浮游可以打断潜水过渡
+function DivingState.AddVictorySwimState(self, unitState, inputInfo)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- 潜水过渡期间禁止Stand
+function DivingState.AddStandState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- 已经在潜水过渡状态中，禁止重复Dive
+function DivingState.AddDiveState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- 潜水过渡期间禁止DiveLeft
+function DivingState.AddDiveLeftState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
+--- 潜水过渡期间禁止中断：这是DivingState的关键行为
+--- 潜水过渡动画不能被中断打断
+function DivingState.AddInterruptState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
+--- 已经处于潜水过渡状态，不重复
+function DivingState.AddDivingState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- 潜水过渡期间允许SkillStart
+function DivingState.AddSkillStartState(self, unitState, inputInfo)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- 潜水过渡期间禁止SkillEnd
+function DivingState.AddSkillEndState(self, unitState, inputInfo)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+function DivingState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+function DivingState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:ChangeOxyState(var_0_0.Battle.OxyState.STATE_DIVE)
-	arg_20_1:ChangeToMoveState()
+--- 潜水过渡动画结束：设置氧气状态为DIVE，然后切换到移动状态
+--- 1. ChangeOxyState(OxyState.STATE_DIVE)：标记正式进入潜水状态
+--- 2. ChangeToMoveState()：恢复移动能力（根据方向进入DiveState或DiveLeftState）
+--- 这是潜水流程的最后一个步骤：过渡→正式潜水
+function DivingState.OnEnd(self, unitState)
+	unitState:ChangeOxyState(ys.Battle.OxyState.STATE_DIVE)
+	unitState:ChangeToMoveState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- 潜水过渡期间不缓存武器
+function DivingState.CacheWeapon(self)
 	return false
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- 潜水过渡期间不刷新ActionKeyOffset
+function DivingState.FreshActionKeyOffset(self)
 	return false
 end

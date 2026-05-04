@@ -1,110 +1,211 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.AttackLeftState = class("AttackLeftState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.AttackLeftState.__name = "AttackLeftState"
+--- @class AttackLeftState : IUnitState
+--- 攻击状态（向左）。单位正在向左侧播放攻击动画。
+---
+--- 与 AttackState 几乎相同，唯一区别在 GetActionName：
+--- AttackState 直接返回传入的 actionName + keyOffset，
+--- AttackLeftState 返回 actionName .. "_left" + keyOffset。
+--- 这是"方向镜像"模式：向左攻击的动画名自动加上 "_left" 后缀，
+--- Spine 系统中会寻找对应的向左动画资源（如 "attack_left"）。
+---
+--- 其他机制完全同 AttackState：
+--- - CacheWeapon = false（攻击时子弹不缓存）
+--- - OnTrigger → SendAttackTrigger
+--- - OnEnd → ChangeToMoveState
+--- - 中断/下潜过渡前会先触发 OnTrigger 发射子弹
+ys.Battle.AttackLeftState = class("AttackLeftState", ys.Battle.IUnitState)
+ys.Battle.AttackLeftState.__name = "AttackLeftState"
 
-local var_0_2 = var_0_0.Battle.AttackLeftState
+local AttackLeftState = ys.Battle.AttackLeftState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class AttackLeftState
+--- @return nil
+--- 构造函数
+function AttackLeftState.Ctor(self)
+	AttackLeftState.super.Ctor()
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换回 Idle
+function AttackLeftState.AddIdleState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换移动状态
+function AttackLeftState.AddMoveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换向左移动
+function AttackLeftState.AddMoveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 已在攻击状态，不允许叠加
+function AttackLeftState.AddAttackState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间允许死亡
+function AttackLeftState.AddDeadState(self, unitState, args)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换技能状态
+function AttackLeftState.AddSkillState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1:OnSpellState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间允许切换到施法状态
+function AttackLeftState.AddSpellState(self, unitState, args)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间允许切换到胜利状态
+function AttackLeftState.AddVictoryState(self, unitState, args)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间允许切换到胜利-潜水状态
+function AttackLeftState.AddVictorySwimState(self, unitState, args)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换站立状态
+function AttackLeftState.AddStandState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许下潜
+function AttackLeftState.AddDiveState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许下潜(向左)
+function AttackLeftState.AddDiveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_0:OnTrigger(arg_14_1)
-	arg_14_1:OnInterruptState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击被打断：先触发 OnTrigger（确保子弹已发射），再进入打断状态
+function AttackLeftState.AddInterruptState(self, unitState, args)
+	self:OnTrigger(unitState)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_0:OnTrigger(arg_15_1)
-	arg_15_1:OnDivingState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击中下潜过渡：先触发 OnTrigger（发射子弹），再进入下潜过渡
+function AttackLeftState.AddDivingState(self, unitState, args)
+	self:OnTrigger(unitState)
+	unitState:OnDivingState()
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间允许切换到技能开始状态
+function AttackLeftState.AddSkillStartState(self, unitState, args)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 攻击期间不允许切换到技能结束状态
+function AttackLeftState.AddSkillEndState(self, unitState, args)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
-	arg_18_1:GetTarget():SendAttackTrigger()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- 攻击动画触发点：生成缓存子弹
+function AttackLeftState.OnTrigger(self, unitState)
+	unitState:GetTarget():SendAttackTrigger()
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- 攻击动画开始（空实现）
+function AttackLeftState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
-	arg_20_1:ChangeToMoveState()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- 攻击动画结束：自动切换回移动状态
+function AttackLeftState.OnEnd(self, unitState)
+	unitState:ChangeToMoveState()
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- @class AttackLeftState
+--- @return boolean: false
+--- 攻击状态不缓存武器子弹
+function AttackLeftState.CacheWeapon(self)
 	return false
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- @class AttackLeftState
+--- @return boolean: true
+--- 攻击状态需要刷新 ActionKeyOffset
+function AttackLeftState.FreshActionKeyOffset(self)
 	return true
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1, arg_23_2)
-	local var_23_0 = arg_23_2 .. "_left"
-	local var_23_1 = arg_23_1:ActionKeyOffset()
+--- @class AttackLeftState
+--- @param unitState UnitState
+--- @param actionName string: 调用方传入的攻击动作名
+--- @return string: 完整的 Spine 攻击动作名（actionName + "_left" + keyOffset 后缀）
+--- 与 AttackState 的区别：自动追加 "_left" 后缀以使用左侧攻击的 Spine 动画
+function AttackLeftState.GetActionName(self, unitState, actionName)
+	local fullActionName = actionName .. "_left"
+	local keyOffset = unitState:ActionKeyOffset()
 
-	if var_23_1 then
-		var_23_0 = var_23_0 .. var_23_1
+	if keyOffset then
+		fullActionName = fullActionName .. keyOffset
 	end
 
-	return var_23_0
+	return fullActionName
 end

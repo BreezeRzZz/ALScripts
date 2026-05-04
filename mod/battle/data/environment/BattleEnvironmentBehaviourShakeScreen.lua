@@ -1,29 +1,34 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = class("BattleEnvironmentBehaviourShakeScreen", var_0_0.Battle.BattleEnvironmentBehaviour)
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleEnvironmentBehaviourShakeScreen = class("BattleEnvironmentBehaviourShakeScreen", ys.Battle.BattleEnvironmentBehaviour)
 
-var_0_0.Battle.BattleEnvironmentBehaviourShakeScreen = var_0_3
-var_0_3.__name = "BattleEnvironmentBehaviourShakeScreen"
+ys.Battle.BattleEnvironmentBehaviourShakeScreen = BattleEnvironmentBehaviourShakeScreen
+BattleEnvironmentBehaviourShakeScreen.__name = "BattleEnvironmentBehaviourShakeScreen"
 
-function var_0_3.Ctor(arg_1_0)
-	var_0_3.super.Ctor(arg_1_0)
+--- @class BattleEnvironmentBehaviourShakeScreen : BattleEnvironmentBehaviour
+--- 环境震屏行为：触发屏幕震动效果
+function BattleEnvironmentBehaviourShakeScreen.Ctor(self)
+	BattleEnvironmentBehaviourShakeScreen.super.Ctor(self)
 end
 
-function var_0_3.SetTemplate(arg_2_0, arg_2_1)
-	var_0_3.super.SetTemplate(arg_2_0, arg_2_1)
+--- 读取shake_ID
+--- @param tmpData table
+function BattleEnvironmentBehaviourShakeScreen.SetTemplate(self, tmpData)
+	BattleEnvironmentBehaviourShakeScreen.super.SetTemplate(self, tmpData)
 
-	arg_2_0._shakeID = arg_2_0._tmpData.shake_ID
+	self._shakeID = self._tmpData.shake_ID
 end
 
-function var_0_3.doBehaviour(arg_3_0)
-	var_0_0.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[arg_3_0._shakeID])
+--- 根据震动模板启动震屏；进入过热状态等待冷却
+function BattleEnvironmentBehaviourShakeScreen.doBehaviour(self)
+	ys.Battle.BattleCameraUtil.GetInstance():StartShake(pg.shake_template[self._shakeID])
 
-	arg_3_0._state = var_0_3.STATE_OVERHEAT
+	self._state = BattleEnvironmentBehaviourShakeScreen.STATE_OVERHEAT
 
-	if arg_3_0._tmpData.reload_time then
-		arg_3_0._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	if self._tmpData.reload_time then
+		self._CDstartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 	end
 end

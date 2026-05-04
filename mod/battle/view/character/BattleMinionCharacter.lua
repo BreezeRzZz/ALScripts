@@ -1,127 +1,147 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst
-local var_0_2 = var_0_0.Battle.BattleConfig
-local var_0_3 = var_0_0.Battle.BattleUnitEvent
+local ys = ys
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleUnitEvent = ys.Battle.BattleUnitEvent
 
-var_0_0.Battle.BattleMinionCharacter = class("BattleMinionCharacter", var_0_0.Battle.BattleCharacter)
-var_0_0.Battle.BattleMinionCharacter.__name = "BattleMinionCharacter"
+ys.Battle.BattleMinionCharacter = class("BattleMinionCharacter", ys.Battle.BattleCharacter)
+ys.Battle.BattleMinionCharacter.__name = "BattleMinionCharacter"
 
-local var_0_4 = var_0_0.Battle.BattleMinionCharacter
+local BattleMinionCharacter = ys.Battle.BattleMinionCharacter
 
-function var_0_4.Ctor(arg_1_0)
-	var_0_4.super.Ctor(arg_1_0)
+--- 构造函数：初始化前摇绑定标志
+function BattleMinionCharacter.Ctor(self)
+	BattleMinionCharacter.super.Ctor(self)
 
-	arg_1_0._preCastBound = false
+	self._preCastBound = false
 end
 
-function var_0_4.RegisterWeaponListener(arg_2_0, arg_2_1)
-	var_0_4.super.RegisterWeaponListener(arg_2_0, arg_2_1)
-	arg_2_1:RegisterEventListener(arg_2_0, var_0_3.WEAPON_PRE_CAST, arg_2_0.onWeaponPreCast)
-	arg_2_1:RegisterEventListener(arg_2_0, var_0_3.WEAPON_PRE_CAST_FINISH, arg_2_0.onWeaponPrecastFinish)
+--- 武器注册时额外绑定前摇事件
+--- @param weapon BattleWeaponUnit 武器实例
+function BattleMinionCharacter.RegisterWeaponListener(self, weapon)
+	BattleMinionCharacter.super.RegisterWeaponListener(self, weapon)
+	weapon:RegisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST, self.onWeaponPreCast)
+	weapon:RegisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST_FINISH, self.onWeaponPrecastFinish)
 end
 
-function var_0_4.UnregisterWeaponListener(arg_3_0, arg_3_1)
-	var_0_4.super.UnregisterWeaponListener(arg_3_0, arg_3_1)
-	arg_3_1:UnregisterEventListener(arg_3_0, var_0_3.WEAPON_PRE_CAST)
-	arg_3_1:UnregisterEventListener(arg_3_0, var_0_3.WEAPON_PRE_CAST_FINISH)
+--- 取消武器前摇事件
+function BattleMinionCharacter.UnregisterWeaponListener(self, weapon)
+	BattleMinionCharacter.super.UnregisterWeaponListener(self, weapon)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST)
+	weapon:UnregisterEventListener(self, BattleUnitEvent.WEAPON_PRE_CAST_FINISH)
 end
 
-function var_0_4.Update(arg_4_0)
-	var_0_4.super.Update(arg_4_0)
-	arg_4_0:UpdatePosition()
-	arg_4_0:UpdateMatrix()
+--- 每帧Update：位置、矩阵（不更新箭头，召唤物在屏幕内）
+function BattleMinionCharacter.Update(self)
+	BattleMinionCharacter.super.Update(self)
+	self:UpdatePosition()
+	self:UpdateMatrix()
 end
 
-function var_0_4.updateComponentVisible(arg_5_0)
-	if arg_5_0._unitData:GetIFF() ~= var_0_2.FOE_CODE then
+--- 更新组件可见性：仅对敌方召唤物生效
+function BattleMinionCharacter.updateComponentVisible(self)
+	if self._unitData:GetIFF() ~= BattleConfig.FOE_CODE then
 		return
 	end
 
-	local var_5_0 = arg_5_0._unitData:GetExposed()
-	local var_5_1 = arg_5_0._unitData:GetDiveDetected()
-	local var_5_2 = arg_5_0._unitData:GetDiveInvisible()
-	local var_5_3 = var_5_0 and (not var_5_2 or not not var_5_1)
+	local exposed = self._unitData:GetExposed()
+	local diveDetected = self._unitData:GetDiveDetected()
+	local diveInvisible = self._unitData:GetDiveInvisible()
+	local isVisible = exposed and (not diveInvisible or not not diveDetected)
 
-	SetActive(arg_5_0._HPBarTf, var_5_3)
-	SetActive(arg_5_0._FXAttachPoint, var_5_3)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
 end
 
-function var_0_4.updateComponentDiveInvisible(arg_6_0)
-	local var_6_0 = arg_6_0._unitData:GetDiveDetected() and arg_6_0._unitData:GetIFF() == var_0_2.FOE_CODE
-	local var_6_1 = arg_6_0._unitData:GetDiveInvisible()
-	local var_6_2
-	local var_6_3 = (var_6_0 or not var_6_1) and true or false
+--- 更新潜入隐身时组件可见性
+function BattleMinionCharacter.updateComponentDiveInvisible(self)
+	local isDetected = self._unitData:GetDiveDetected() and self._unitData:GetIFF() == BattleConfig.FOE_CODE
+	local isDiveInvisible = self._unitData:GetDiveInvisible()
+	local isVisible = (isDetected or not isDiveInvisible) and true or false
 
-	SetActive(arg_6_0._HPBarTf, var_6_3)
-	SetActive(arg_6_0._FXAttachPoint, var_6_3)
+	SetActive(self._HPBarTf, isVisible)
+	SetActive(self._FXAttachPoint, isVisible)
 end
 
-function var_0_4.Dispose(arg_7_0)
-	arg_7_0:AddShaderColor()
-	var_0_4.super.Dispose(arg_7_0)
+--- 销毁：恢复Shader颜色
+function BattleMinionCharacter.Dispose(self)
+	self:AddShaderColor()
+	BattleMinionCharacter.super.Dispose(self)
 end
 
-function var_0_4.GetModleID(arg_8_0)
-	return arg_8_0._unitData:GetTemplate().prefab
+--- @return string 模型prefab名称
+function BattleMinionCharacter.GetModleID(self)
+	return self._unitData:GetTemplate().prefab
 end
 
-function var_0_4.onWeaponPreCast(arg_9_0, arg_9_1)
-	local var_9_0 = arg_9_1.Data
-	local var_9_1 = var_9_0.fx
+--- 武器前摇开始：播放前摇特效
+--- @param event table {Data = {fx, isBound}}
+function BattleMinionCharacter.onWeaponPreCast(self, event)
+	local precastData = event.Data
+	local fxName = precastData.fx
 
-	arg_9_0:AddFX(var_9_1, true)
+	self:AddFX(fxName, true)
 
-	arg_9_0._preCastBound = var_9_0.isBound
+	self._preCastBound = precastData.isBound
 end
 
-function var_0_4.onWeaponPrecastFinish(arg_10_0, arg_10_1)
-	local var_10_0 = arg_10_1.Data.fx
+--- 武器前摇结束：移除缓存的特效
+function BattleMinionCharacter.onWeaponPrecastFinish(self, event)
+	local fxName = event.Data.fx
 
-	arg_10_0:RemoveCacheFX(var_10_0)
+	self:RemoveCacheFX(fxName)
 
-	arg_10_0._preCastBound = false
+	self._preCastBound = false
 end
 
-function var_0_4.OnUpdateHP(arg_11_0, arg_11_1)
-	var_0_4.super.OnUpdateHP(arg_11_0, arg_11_1)
+--- HP更新：受伤时添加白色闪烁
+--- @param event table {Data = {dHP}}
+function BattleMinionCharacter.OnUpdateHP(self, event)
+	BattleMinionCharacter.super.OnUpdateHP(self, event)
 
-	if arg_11_1.Data.dHP <= 0 then
-		arg_11_0:AddBlink(1, 1, 1, 0.1, 0.1, true)
+	if event.Data.dHP <= 0 then
+		self:AddBlink(1, 1, 1, 0.1, 0.1, true)
 	end
 end
 
-function var_0_4.AddModel(arg_12_0, arg_12_1)
-	var_0_4.super.AddModel(arg_12_0, arg_12_1)
+--- 添加模型并设置HP条偏移（使用模板的hp_bar[2]）
+function BattleMinionCharacter.AddModel(self, modelGO)
+	BattleMinionCharacter.super.AddModel(self, modelGO)
 
-	local var_12_0 = arg_12_0._unitData:GetTemplate().hp_bar[2]
+	local hpBarHeight = self._unitData:GetTemplate().hp_bar[2]
 
-	arg_12_0._hpBarOffset = Vector3(0, var_12_0, 0)
+	self._hpBarOffset = Vector3(0, hpBarHeight, 0)
 end
 
-function var_0_4.GetSpecificFXScale(arg_13_0)
-	return arg_13_0._unitData:GetTemplate().specific_fx_scale
+--- 获取特定FX缩放
+--- @return table FX缩放表
+function BattleMinionCharacter.GetSpecificFXScale(self)
+	return self._unitData:GetTemplate().specific_fx_scale
 end
 
-function var_0_4.OnAnimatorTrigger(arg_14_0)
-	arg_14_0._unitData:CharacterActionTriggerCallback()
+--- 动画触发回调
+function BattleMinionCharacter.OnAnimatorTrigger(self)
+	self._unitData:CharacterActionTriggerCallback()
 end
 
-function var_0_4.OnAnimatorEnd(arg_15_0)
-	arg_15_0._unitData:CharacterActionEndCallback()
+--- 动画结束回调
+function BattleMinionCharacter.OnAnimatorEnd(self)
+	self._unitData:CharacterActionEndCallback()
 end
 
-function var_0_4.OnAnimatorStart(arg_16_0)
-	arg_16_0._unitData:CharacterActionStartCallback()
+--- 动画开始回调
+function BattleMinionCharacter.OnAnimatorStart(self)
+	self._unitData:CharacterActionStartCallback()
 end
 
-function var_0_4.UpdateAimBiasBar(arg_17_0)
-	var_0_4.super.UpdateAimBiasBar(arg_17_0)
+--- 更新瞄准偏斜条：同时缩放迷雾特效
+function BattleMinionCharacter.UpdateAimBiasBar(self)
+	BattleMinionCharacter.super.UpdateAimBiasBar(self)
 
-	if arg_17_0._fogFx then
-		local var_17_0 = arg_17_0:GetUnitData():GetAimBias():GetCurrentRate()
+	if self._fogFx then
+		local aimBiasRate = self:GetUnitData():GetAimBias():GetCurrentRate()
 
-		arg_17_0._fogFx.transform.localScale = Vector3(var_17_0, var_17_0, 1)
+		self._fogFx.transform.localScale = Vector3(aimBiasRate, aimBiasRate, 1)
 	end
 end

@@ -1,184 +1,214 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleEvent
-local var_0_2 = var_0_0.Battle.BattleFormulas
-local var_0_3 = var_0_0.Battle.BattleConst
-local var_0_4 = var_0_0.Battle.BattleConfig
-local var_0_5 = var_0_0.Battle.BattleDataFunction
-local var_0_6 = var_0_0.Battle.BattleAttr
-local var_0_7 = var_0_0.Battle.BattleVariable
-local var_0_8 = class("BattleFleetCardPuzzleAntiAirUnit")
+local ys = ys
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
+local BattleDataFunction = ys.Battle.BattleDataFunction
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
+local BattleFleetCardPuzzleAntiAirUnit = class("BattleFleetCardPuzzleAntiAirUnit")
 
-var_0_0.Battle.BattleFleetCardPuzzleAntiAirUnit = var_0_8
-var_0_8.__name = "BattleFleetCardPuzzleAntiAirUnit"
-var_0_8.STATE_DISABLE = "DISABLE"
-var_0_8.STATE_READY = "READY"
-var_0_8.STATE_PRECAST = "PRECAST"
-var_0_8.STATE_PRECAST_FINISH = "STATE_PRECAST_FINISH"
-var_0_8.STATE_ATTACK = "ATTACK"
-var_0_8.STATE_OVER_HEAT = "OVER_HEAT"
+ys.Battle.BattleFleetCardPuzzleAntiAirUnit = BattleFleetCardPuzzleAntiAirUnit
+BattleFleetCardPuzzleAntiAirUnit.__name = "BattleFleetCardPuzzleAntiAirUnit"
+BattleFleetCardPuzzleAntiAirUnit.STATE_DISABLE = "DISABLE"
+BattleFleetCardPuzzleAntiAirUnit.STATE_READY = "READY"
+BattleFleetCardPuzzleAntiAirUnit.STATE_PRECAST = "PRECAST"
+BattleFleetCardPuzzleAntiAirUnit.STATE_PRECAST_FINISH = "STATE_PRECAST_FINISH"
+BattleFleetCardPuzzleAntiAirUnit.STATE_ATTACK = "ATTACK"
+BattleFleetCardPuzzleAntiAirUnit.STATE_OVER_HEAT = "OVER_HEAT"
 
-function var_0_8.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._client = arg_1_1
+--- @class BattleFleetCardPuzzleAntiAirUnit
+--- @param client table 舰队客户端对象
+--- 卡牌谜题防空单元：由多个船员单元(CrewUnit)组成，累计计算防空射程和间隔，选择最近目标进行防空射击
+function BattleFleetCardPuzzleAntiAirUnit.Ctor(self, client)
+	self._client = client
 
-	arg_1_0:init()
+	self:init()
 end
 
-function var_0_8.init(arg_2_0)
-	arg_2_0._crewUnitList = {}
-	arg_2_0._hitFXResIDList = {}
-	arg_2_0._currentState = var_0_8.STATE_DISABLE
-	arg_2_0._dataProxy = var_0_0.Battle.BattleDataProxy.GetInstance()
-	arg_2_0._range = 0
+function BattleFleetCardPuzzleAntiAirUnit.init(self)
+	self._crewUnitList = {}
+	self._hitFXResIDList = {}
+	self._currentState = BattleFleetCardPuzzleAntiAirUnit.STATE_DISABLE
+	self._dataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	self._range = 0
 end
 
-function var_0_8.AppendCrewUnit(arg_3_0, arg_3_1)
-	arg_3_0._crewUnitList[arg_3_1] = true
-	arg_3_0._currentState = var_0_8.STATE_READY
+--- @param crewUnit CrewUnit 加入的船员单元
+--- 添加船员单元并刷新防空属性
+function BattleFleetCardPuzzleAntiAirUnit.AppendCrewUnit(self, crewUnit)
+	self._crewUnitList[crewUnit] = true
+	self._currentState = BattleFleetCardPuzzleAntiAirUnit.STATE_READY
 
-	arg_3_0:flush()
+	self:flush()
 end
 
-function var_0_8.RemoveCrewUnit(arg_4_0, arg_4_1)
-	arg_4_0._crewUnitList[arg_4_1] = nil
+--- @param crewUnit CrewUnit 移除的船员单元
+--- 移除船员单元并刷新防空属性
+function BattleFleetCardPuzzleAntiAirUnit.RemoveCrewUnit(self, crewUnit)
+	self._crewUnitList[crewUnit] = nil
 
-	arg_4_0:flush()
+	self:flush()
 end
 
-function var_0_8.SwitchHost(arg_5_0, arg_5_1)
-	arg_5_0._host = arg_5_1
+--- @param host BattleUnit 切换宿主
+function BattleFleetCardPuzzleAntiAirUnit.SwitchHost(self, host)
+	self._host = host
 end
 
-function var_0_8.GetCrewUnitList(arg_6_0)
-	return arg_6_0._crewUnitList
+--- @return table<CrewUnit, boolean>
+function BattleFleetCardPuzzleAntiAirUnit.GetCrewUnitList(self)
+	return self._crewUnitList
 end
 
-function var_0_8.GetRange(arg_7_0)
-	return arg_7_0._range
+--- @return number 防空射程
+function BattleFleetCardPuzzleAntiAirUnit.GetRange(self)
+	return self._range
 end
 
-function var_0_8.flush(arg_8_0)
-	arg_8_0._range = 0
-	arg_8_0._interval = 0
+--- 刷新防空属性：根据所有船员单元的平均值重新计算射程和间隔
+function BattleFleetCardPuzzleAntiAirUnit.flush(self)
+	self._range = 0
+	self._interval = 0
 
-	local var_8_0 = 0
+	local count = 0
 
-	for iter_8_0, iter_8_1 in pairs(arg_8_0._crewUnitList) do
-		arg_8_0._range = arg_8_0._range + iter_8_0:GetTemplate().AA_range
-		arg_8_0._interval = arg_8_0._interval + iter_8_0:GetTemplate().AA_CD
-		var_8_0 = var_8_0 + 1
+	for crewUnit, _ in pairs(self._crewUnitList) do
+		self._range = self._range + crewUnit:GetTemplate().AA_range
+		self._interval = self._interval + crewUnit:GetTemplate().AA_CD
+		count = count + 1
 	end
 
-	arg_8_0._range = arg_8_0._range / var_8_0
-	arg_8_0._interval = arg_8_0._interval / var_8_0
+	self._range = self._range / count
+	self._interval = self._interval / count
 end
 
-function var_0_8.Update(arg_9_0)
-	if arg_9_0._client:IsAAActive() and arg_9_0._currentState == var_0_8.STATE_READY then
-		local var_9_0 = arg_9_0:FilterTarget()
-		local var_9_1 = arg_9_0:FilterRange(var_9_0)
-		local var_9_2 = arg_9_0:CompareDistance(var_9_1)
+--- 每帧更新：检查防空是否激活，筛选目标并开火
+function BattleFleetCardPuzzleAntiAirUnit.Update(self)
+	if self._client:IsAAActive() and self._currentState == BattleFleetCardPuzzleAntiAirUnit.STATE_READY then
+		local filteredTargets = self:FilterTarget()
+		local filteredByRange = self:FilterRange(filteredTargets)
+		local target = self:CompareDistance(filteredByRange)
 
-		if var_9_2 then
-			arg_9_0:Fire(var_9_2)
+		if target then
+			self:Fire(target)
 		end
 	end
 end
 
-function var_0_8.FilterTarget(arg_10_0)
-	local var_10_0 = arg_10_0._dataProxy:GetAircraftList()
-	local var_10_1 = {}
-	local var_10_2 = arg_10_0._host:GetIFF()
-	local var_10_3 = 1
+--- @return table<number, BattleUnit> 筛选后的敌对飞机列表
+--- 筛选出敌方可见飞机
+function BattleFleetCardPuzzleAntiAirUnit.FilterTarget(self)
+	local aircraftList = self._dataProxy:GetAircraftList()
+	local result = {}
+	local hostIFF = self._host:GetIFF()
+	local index = 1
 
-	for iter_10_0, iter_10_1 in pairs(var_10_0) do
-		if iter_10_1:GetIFF() ~= var_10_2 and iter_10_1:IsVisitable() then
-			var_10_1[var_10_3] = iter_10_1
-			var_10_3 = var_10_3 + 1
+	for _, aircraft in pairs(aircraftList) do
+		if aircraft:GetIFF() ~= hostIFF and aircraft:IsVisitable() then
+			result[index] = aircraft
+			index = index + 1
 		end
 	end
 
-	return var_10_1
+	return result
 end
 
-function var_0_8.FilterRange(arg_11_0, arg_11_1)
-	for iter_11_0 = #arg_11_1, 1, -1 do
-		if arg_11_0:IsOutOfRange(arg_11_1[iter_11_0]) then
-			table.remove(arg_11_1, iter_11_0)
+--- @param targets table<number, BattleUnit> 候选目标列表
+--- @return table<number, BattleUnit> 在射程内的目标列表
+--- 反向遍历在射程外移除目标
+function BattleFleetCardPuzzleAntiAirUnit.FilterRange(self, targets)
+	for iter_11_0 = #targets, 1, -1 do
+		if self:IsOutOfRange(targets[iter_11_0]) then
+			table.remove(targets, iter_11_0)
 		end
 	end
 
-	return arg_11_1
+	return targets
 end
 
-function var_0_8.IsOutOfRange(arg_12_0, arg_12_1)
-	return arg_12_0:getTrackingHost():GetDistance(arg_12_1) > arg_12_0._range
+--- @param target BattleUnit
+--- @return boolean 是否超出防空射程
+function BattleFleetCardPuzzleAntiAirUnit.IsOutOfRange(self, target)
+	return self:getTrackingHost():GetDistance(target) > self._range
 end
 
-function var_0_8.CompareDistance(arg_13_0, arg_13_1)
-	local var_13_0 = 999999
-	local var_13_1
+--- @param targets table<number, BattleUnit>
+--- @return BattleUnit|nil 最近的目标（按X坐标最小）
+--- 选择X坐标最小的敌机作为最近目标
+function BattleFleetCardPuzzleAntiAirUnit.CompareDistance(self, targets)
+	local minX = 999999
+	local nearestTarget
 
-	for iter_13_0, iter_13_1 in ipairs(arg_13_1) do
-		if var_13_0 > iter_13_1:GetPosition().x then
-			var_13_1 = iter_13_1
-			var_13_0 = iter_13_1:GetPosition().x
+	for _, target in ipairs(targets) do
+		if minX > target:GetPosition().x then
+			nearestTarget = target
+			minX = target:GetPosition().x
 		end
 	end
 
-	return var_13_1
+	return nearestTarget
 end
 
-function var_0_8.getTrackingHost(arg_14_0)
-	return arg_14_0._host
+--- @return BattleUnit 追踪宿主
+function BattleFleetCardPuzzleAntiAirUnit.getTrackingHost(self)
+	return self._host
 end
 
-function var_0_8.Fire(arg_15_0, arg_15_1)
-	if arg_15_0._currentState == arg_15_0.DISABLE then
+--- @param target BattleUnit 被击中的目标飞机
+--- 开火击落飞机，进入冷却并消耗AA计数
+function BattleFleetCardPuzzleAntiAirUnit.Fire(self, target)
+	if self._currentState == self.DISABLE then
 		return
 	end
 
-	local var_15_0 = arg_15_1:GetUniqueID()
+	local targetUID = target:GetUniqueID()
 
-	arg_15_0._dataProxy:KillAircraft(var_15_0)
-	arg_15_0:EnterCoolDown()
-	arg_15_0._client:ConsumeAACounter()
+	self._dataProxy:KillAircraft(targetUID)
+	self:EnterCoolDown()
+	self._client:ConsumeAACounter()
 end
 
-function var_0_8.EnterCoolDown(arg_16_0)
-	arg_16_0._currentState = arg_16_0.STATE_OVER_HEAT
+--- 进入冷却状态，添加CD定时器
+function BattleFleetCardPuzzleAntiAirUnit.EnterCoolDown(self)
+	self._currentState = self.STATE_OVER_HEAT
 
-	arg_16_0:AddCDTimer(arg_16_0._interval)
+	self:AddCDTimer(self._interval)
 end
 
-function var_0_8.GetCurrentState(arg_17_0)
-	return arg_17_0._currentState
+--- @return string 当前状态
+function BattleFleetCardPuzzleAntiAirUnit.GetCurrentState(self)
+	return self._currentState
 end
 
-function var_0_8.AddCDTimer(arg_18_0, arg_18_1)
-	local function var_18_0()
-		arg_18_0._currentState = arg_18_0.STATE_READY
+--- @param interval number CD间隔时间
+--- 添加CD定时器，到期后恢复到READY状态
+function BattleFleetCardPuzzleAntiAirUnit.AddCDTimer(self, interval)
+	local function cdCallback()
+		self._currentState = self.STATE_READY
 
-		arg_18_0:RemoveCDTimer()
+		self:RemoveCDTimer()
 	end
 
-	arg_18_0:RemoveCDTimer()
+	self:RemoveCDTimer()
 
-	arg_18_0._cdTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponTimer", -1, arg_18_1, var_18_0, true)
+	self._cdTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponTimer", -1, interval, cdCallback, true)
 end
 
-function var_0_8.RemoveCDTimer(arg_20_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_20_0._cdTimer)
+function BattleFleetCardPuzzleAntiAirUnit.RemoveCDTimer(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._cdTimer)
 
-	arg_20_0._cdTimer = nil
+	self._cdTimer = nil
 end
 
-function var_0_8.Dispose(arg_21_0)
-	arg_21_0:RemoveCDTimer()
+--- 清理所有引用
+function BattleFleetCardPuzzleAntiAirUnit.Dispose(self)
+	self:RemoveCDTimer()
 
-	arg_21_0._crewUnitList = nil
-	arg_21_0._hitFXResIDList = nil
-	arg_21_0._dataProxy = nil
-	arg_21_0._SFXID = nil
+	self._crewUnitList = nil
+	self._hitFXResIDList = nil
+	self._dataProxy = nil
+	self._SFXID = nil
 end

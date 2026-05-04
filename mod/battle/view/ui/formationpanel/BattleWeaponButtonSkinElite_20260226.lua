@@ -1,83 +1,91 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = class("BattleWeaponButtonSkinElite_20260226", var_0_0.Battle.BattleWeaponButtonSkinElite_20250520)
+local ys = ys
+local BattleWeaponButtonSkinElite_20260226 = class("BattleWeaponButtonSkinElite_20260226", ys.Battle.BattleWeaponButtonSkinElite_20250520)
 
-var_0_0.Battle.BattleWeaponButtonSkinElite_20260226 = var_0_1
-var_0_1.__name = "BattleWeaponButtonSkinElite_20260226"
+ys.Battle.BattleWeaponButtonSkinElite_20260226 = BattleWeaponButtonSkinElite_20260226
+BattleWeaponButtonSkinElite_20260226.__name = "BattleWeaponButtonSkinElite_20260226"
 
-function var_0_1.ConfigSkin(arg_1_0, arg_1_1)
-	var_0_1.super.ConfigSkin(arg_1_0, arg_1_1)
+--- 2026年2月26日精英武器按钮皮肤
+--- 继承自 BattleWeaponButtonSkinElite_20250520，增加了书本随机动画效果
 
-	arg_1_0._books = arg_1_0._selected:Find("usdfx/fx/up/book/book/book1")
-	arg_1_0._bookList = {}
+function BattleWeaponButtonSkinElite_20260226.ConfigSkin(self, skin)
+	BattleWeaponButtonSkinElite_20260226.super.ConfigSkin(self, skin)
 
-	for iter_1_0 = 1, 4 do
-		table.insert(arg_1_0._bookList, arg_1_0._books:Find("text_" .. iter_1_0))
+	-- 查找书本动画节点，用于技能释放时的随机书本特效
+	self._books = self._selected:Find("usdfx/fx/up/book/book/book1")
+	self._bookList = {}
+
+	for i = 1, 4 do
+		table.insert(self._bookList, self._books:Find("text_" .. i))
 	end
 end
 
-function var_0_1.OnCountChange(arg_2_0)
-	var_0_1.super.OnCountChange(arg_2_0)
-	SetActive(arg_2_0._gizmos1, arg_2_0._progressInfo:GetCount() > 0)
-	SetActive(arg_2_0._gizmosXue, arg_2_0._progressInfo:GetCount() > 0)
+function BattleWeaponButtonSkinElite_20260226.OnCountChange(self)
+	BattleWeaponButtonSkinElite_20260226.super.OnCountChange(self)
+	SetActive(self._gizmos1, self._progressInfo:GetCount() > 0)
+	SetActive(self._gizmosXue, self._progressInfo:GetCount() > 0)
 end
 
-function var_0_1.SetToCombatUIPreview(arg_3_0, arg_3_1)
-	if arg_3_1 then
-		SetActive(arg_3_0._filled, true)
-		SetActive(arg_3_0._unfill, false)
+--- 设置战斗UI预览模式
+function BattleWeaponButtonSkinElite_20260226.SetToCombatUIPreview(self, isActive)
+	if isActive then
+		SetActive(self._filled, true)
+		SetActive(self._unfill, false)
 
-		arg_3_0._progressBar.fillAmount = 1
-		arg_3_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
-		arg_3_0._countTxt.text = "1/1"
+		self._progressBar.fillAmount = 1
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+		self._countTxt.text = "1/1"
 
-		if arg_3_0._gizmos1 then
-			SetActive(arg_3_0._gizmos1, true)
-			SetActive(arg_3_0._gizmosXue, true)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, true)
+			SetActive(self._gizmosXue, true)
 		end
 
-		SetActive(arg_3_0._glowEff, true)
-		quickCheckAndPlayAnimator(arg_3_0._skin, "weapon_button_progress_filled")
+		SetActive(self._glowEff, true)
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
 	else
-		SetActive(arg_3_0._unfill, true)
-		SetActive(arg_3_0._filled, false)
+		SetActive(self._unfill, true)
+		SetActive(self._filled, false)
 
-		arg_3_0._progressBar.fillAmount = 0
-		arg_3_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
-		arg_3_0._countTxt.text = "0/0"
+		self._progressBar.fillAmount = 0
+		self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+		self._countTxt.text = "0/0"
 
-		SetActive(arg_3_0._glowEff, false)
+		SetActive(self._glowEff, false)
 
-		if arg_3_0._gizmos1 then
-			SetActive(arg_3_0._gizmos1, false)
-			SetActive(arg_3_0._gizmosXue, false)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, false)
+			SetActive(self._gizmosXue, false)
 		end
 	end
 end
 
-function var_0_1.OnOverLoadChange(arg_4_0, arg_4_1)
-	if arg_4_1 and arg_4_1.Data and arg_4_1.Data.postCast then
-		local var_4_0 = math.random(4)
+--- 过载状态变化处理，增加了技能释放时的随机书本动画
+function BattleWeaponButtonSkinElite_20260226.OnOverLoadChange(self, event)
+	-- 后装填（技能释放）时，随机显示一本不同的书
+	if event and event.Data and event.Data.postCast then
+		local randomIndex = math.random(4)
 
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0._bookList) do
-			SetActive(iter_4_1, iter_4_0 == var_4_0)
+		for i, book in ipairs(self._bookList) do
+			SetActive(book, i == randomIndex)
 		end
 	end
 
-	var_0_1.super.OnOverLoadChange(arg_4_0, arg_4_1)
+	BattleWeaponButtonSkinElite_20260226.super.OnOverLoadChange(self, event)
 end
 
-function var_0_1.updateProgressBar(arg_5_0)
-	local var_5_0 = arg_5_0._progressInfo:GetCurrent() / arg_5_0._progressInfo:GetMax()
+--- 更新进度条填充量
+function BattleWeaponButtonSkinElite_20260226.updateProgressBar(self)
+	local ratio = self._progressInfo:GetCurrent() / self._progressInfo:GetMax()
 
-	arg_5_0._progressBar.fillAmount = var_5_0
+	self._progressBar.fillAmount = ratio
 
-	if arg_5_0._bgEff then
-		if arg_5_0._progressInfo.GetCount and arg_5_0._progressInfo:GetCount() > 0 then
-			arg_5_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
+	if self._bgEff then
+		if self._progressInfo.GetCount and self._progressInfo:GetCount() > 0 then
+			self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 0
 		else
-			arg_5_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1 - var_5_0
+			self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1 - ratio
 		end
 	end
 end

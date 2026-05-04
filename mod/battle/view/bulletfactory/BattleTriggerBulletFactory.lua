@@ -7,39 +7,48 @@ ys.Battle.BattleTriggerBulletFactory.__name = "BattleTriggerBulletFactory"
 
 local BattleTriggerBulletFactory = ys.Battle.BattleTriggerBulletFactory
 
-function BattleTriggerBulletFactory.Ctor(arg_1_0)
-	BattleTriggerBulletFactory.super.Ctor(arg_1_0)
+function BattleTriggerBulletFactory.Ctor(self)
+	BattleTriggerBulletFactory.super.Ctor(self)
 end
 
+--- 触发炸弹超出范围回调
+--- 与普通炸弹不同，触发炸弹使用 SpawnTriggerColumnArea（触发型区域）
+--- 而非 SpawnColumnArea（持续伤害区域）
+--- 额外特性：multy 参数控制每个单位受到多少次伤害判定
+---   - 通过 while 循环重复造成伤害，直到目标死亡或达到 multy 次数
+---
+--- @param bullet BattleBulletUnit 炸弹子弹数据
 function BattleTriggerBulletFactory.OutRangeFunc(bullet)
 	local bulletTemplate = bullet:GetTemplate()
-	local hit_type = bulletTemplate.hit_type
+	local hitType = bulletTemplate.hit_type
 	local multy = bulletTemplate.extra_param.multy or 1
-	local battleDataProxy = BattleTriggerBulletFactory.GetDataProxy()
+	local dataProxy = BattleTriggerBulletFactory.GetDataProxy()
 	local diveFilter = bullet:GetDiveFilter()
-	local aoeData
+	local areaData
 
-	local function cldFunc(cldObjList)
-		local decay = hit_type.decay
+	-- 触发区域碰撞回调：每个进入区域的单位受到 multy 次伤害
+	local function onAreaTrigger(unitList)
+		local decay = hitType.decay
 
 		if decay then
-			aoeData:UpdateDistanceInfo()
+			areaData:UpdateDistanceInfo()
 		end
 
-		for _, cldObject in ipairs(cldObjList) do
-			if cldObject.Active then
-				local cldObjectUID = cldObject.UID
-				local distanceReduce = 0
+		for index, unitEntry in ipairs(unitList) do
+			if unitEntry.Active then
+				local uid = unitEntry.UID
+				local decayFactor = 0
 
 				if decay then
-					distanceReduce = aoeData:GetDistance(cldObjectUID) / (hit_type.range * 0.5) * decay
+					decayFactor = areaData:GetDistance(uid) / (hitType.range * 0.5) * decay
 				end
 
-				local target = BattleTriggerBulletFactory.GetSceneMediator():GetCharacter(cldObjectUID):GetUnitData()
+				local unitData = BattleTriggerBulletFactory.GetSceneMediator():GetCharacter(uid):GetUnitData()
 				local damageCount = 0
 
-				while target:IsAlive() and damageCount < multy do
-					battleDataProxy:HandleDamage(bullet, target, distanceReduce)
+				-- 重复造成伤害直到目标死亡或达到multy次数
+				while unitData:IsAlive() and damageCount < multy do
+					dataProxy:HandleDamage(bullet, unitData, decayFactor)
 
 					damageCount = damageCount + 1
 				end
@@ -47,19 +56,21 @@ function BattleTriggerBulletFactory.OutRangeFunc(bullet)
 		end
 
 		ys.Battle.PlayBattleSFX(bullet:GetHitSFX())
-		battleDataProxy:SpawnEffect(bulletTemplate.hit_fx, bullet:GetExplodePostion())
+		dataProxy:SpawnEffect(bulletTemplate.hit_fx, bullet:GetExplodePostion())
 	end
 
-	aoeData = battleDataProxy:SpawnTriggerColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hit_type.range, hit_type.time, false, bulletTemplate.miss_fx, cldFunc)
+	areaData = dataProxy:SpawnTriggerColumnArea(bullet:GetEffectField(), bullet:GetIFF(), bullet:GetExplodePostion(), hitType.range, hitType.time, false, bulletTemplate.miss_fx, onAreaTrigger)
 
-	aoeData:SetDiveFilter(diveFilter)
-	battleDataProxy:RemoveBulletUnit(bullet:GetUniqueID())
+	areaData:SetDiveFilter(diveFilter)
+	dataProxy:RemoveBulletUnit(bullet:GetUniqueID())
 end
 
-function BattleTriggerBulletFactory.onBulletHitFunc(arg_4_0, arg_4_1, arg_4_2)
+--- 触发炸弹命中回调（空实现，伤害逻辑在OutRangeFunc）
+function BattleTriggerBulletFactory.onBulletHitFunc(self, targetUID, unitType)
 	return
 end
 
-function BattleTriggerBulletFactory.CreateBulletAlert(arg_5_0)
+--- 触发炸弹预警圈（空实现，触发炸弹不需要预警圈）
+function BattleTriggerBulletFactory.CreateBulletAlert(self)
 	return
 end

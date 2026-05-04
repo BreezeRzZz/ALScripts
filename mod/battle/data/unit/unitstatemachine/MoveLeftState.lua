@@ -1,108 +1,201 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConst.ActionName
+local ys = ys
+local ActionName = ys.Battle.BattleConst.ActionName
 
-var_0_0.Battle.MoveLeftState = class("MoveLeftState", var_0_0.Battle.IUnitState)
-var_0_0.Battle.MoveLeftState.__name = "MoveLeftState"
+--- @class MoveLeftState : IUnitState
+--- 移动状态（向左）。单位正在向左侧移动（面向左边）。
+--- 与 MoveState 的关键区别：
+--- 1. GetActionName 返回 MOVELEFT（而非 MOVE）
+--- 2. AddAttackState 切换到 OnAttackLeftState（而非 OnAttackState）
+---    —— 向左移动时攻击，动画名会自动加上 "_left" 后缀
+--- CacheWeapon = true: 移动中仍可缓存武器子弹。
+ys.Battle.MoveLeftState = class("MoveLeftState", ys.Battle.IUnitState)
+ys.Battle.MoveLeftState.__name = "MoveLeftState"
 
-local var_0_2 = var_0_0.Battle.MoveLeftState
+local MoveLeftState = ys.Battle.MoveLeftState
 
-function var_0_2.Ctor(arg_1_0)
-	var_0_2.super.Ctor()
+--- @class MoveLeftState
+--- @return nil
+--- 构造函数
+function MoveLeftState.Ctor(self)
+	MoveLeftState.super.Ctor()
 end
 
-function var_0_2.AddIdleState(arg_2_0, arg_2_1, arg_2_2)
-	arg_2_1:OnIdleState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 停止移动，进入待机
+function MoveLeftState.AddIdleState(self, unitState, args)
+	unitState:OnIdleState()
 end
 
-function var_0_2.AddMoveState(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_1:OnMoveState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 转向，切成向右移动
+function MoveLeftState.AddMoveState(self, unitState, args)
+	unitState:OnMoveState()
 end
 
-function var_0_2.AddMoveLeftState(arg_4_0, arg_4_1, arg_4_2)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 已在 MoveLeft 状态，无需切换
+function MoveLeftState.AddMoveLeftState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddAttackState(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_1:OnAttackLeftState(arg_5_2)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table: 攻击动作名
+--- 切换到攻击状态(向左) —— 与 MoveState 不同，这里调用 OnAttackLeftState
+function MoveLeftState.AddAttackState(self, unitState, args)
+	unitState:OnAttackLeftState(args)
 end
 
-function var_0_2.AddDeadState(arg_6_0, arg_6_1, arg_6_2)
-	arg_6_1:OnDeadState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到死亡状态
+function MoveLeftState.AddDeadState(self, unitState, args)
+	unitState:OnDeadState()
 end
 
-function var_0_2.AddSkillState(arg_7_0, arg_7_1, arg_7_2)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能状态
+function MoveLeftState.AddSkillState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddSpellState(arg_8_0, arg_8_1, arg_8_2)
-	arg_8_1:OnSpellState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到施法状态
+function MoveLeftState.AddSpellState(self, unitState, args)
+	unitState:OnSpellState()
 end
 
-function var_0_2.AddVictoryState(arg_9_0, arg_9_1, arg_9_2)
-	arg_9_1:OnVictoryState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到胜利状态
+function MoveLeftState.AddVictoryState(self, unitState, args)
+	unitState:OnVictoryState()
 end
 
-function var_0_2.AddVictorySwimState(arg_10_0, arg_10_1, arg_10_2)
-	arg_10_1:OnVictorySwimState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到胜利-潜水状态
+function MoveLeftState.AddVictorySwimState(self, unitState, args)
+	unitState:OnVictorySwimState()
 end
 
-function var_0_2.AddStandState(arg_11_0, arg_11_1, arg_11_2)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到站立状态
+function MoveLeftState.AddStandState(self, unitState, args)
 	return
 end
 
-function var_0_2.AddDiveState(arg_12_0, arg_12_1, arg_12_2)
-	arg_12_1:OnDiveState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜状态(向右)
+function MoveLeftState.AddDiveState(self, unitState, args)
+	unitState:OnDiveState()
 end
 
-function var_0_2.AddDiveLeftState(arg_13_0, arg_13_1, arg_13_2)
-	arg_13_1:OnDiveLeftState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜状态(向左)
+function MoveLeftState.AddDiveLeftState(self, unitState, args)
+	unitState:OnDiveLeftState()
 end
 
-function var_0_2.AddInterruptState(arg_14_0, arg_14_1, arg_14_2)
-	arg_14_1:OnInterruptState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到打断状态
+function MoveLeftState.AddInterruptState(self, unitState, args)
+	unitState:OnInterruptState()
 end
 
-function var_0_2.AddDivingState(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1:OnDivingState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到下潜过渡状态
+function MoveLeftState.AddDivingState(self, unitState, args)
+	unitState:OnDivingState()
 end
 
-function var_0_2.AddSkillStartState(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1:OnSkillStartState()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能开始状态
+function MoveLeftState.AddSkillStartState(self, unitState, args)
+	unitState:OnSkillStartState()
 end
 
-function var_0_2.AddSkillEndState(arg_17_0, arg_17_1, arg_17_2)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @param args table
+--- 切换到技能结束状态
+function MoveLeftState.AddSkillEndState(self, unitState, args)
 	return
 end
 
-function var_0_2.OnTrigger(arg_18_0, arg_18_1)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- 动画触发点回调（空实现）
+function MoveLeftState.OnTrigger(self, unitState)
 	return
 end
 
-function var_0_2.OnStart(arg_19_0, arg_19_1)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- 动画开始回调（空实现）
+function MoveLeftState.OnStart(self, unitState)
 	return
 end
 
-function var_0_2.OnEnd(arg_20_0, arg_20_1)
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- 动画结束回调（空实现）
+function MoveLeftState.OnEnd(self, unitState)
 	return
 end
 
-function var_0_2.CacheWeapon(arg_21_0)
+--- @class MoveLeftState
+--- @return boolean: true
+--- 移动状态允许缓存武器子弹
+function MoveLeftState.CacheWeapon(self)
 	return true
 end
 
-function var_0_2.FreshActionKeyOffset(arg_22_0)
+--- @class MoveLeftState
+--- @return boolean: true
+--- 移动状态需要刷新 ActionKeyOffset
+function MoveLeftState.FreshActionKeyOffset(self)
 	return true
 end
 
-function var_0_2.GetActionName(arg_23_0, arg_23_1)
-	local var_23_0 = var_0_1.MOVELEFT
-	local var_23_1 = arg_23_1:ActionKeyOffset()
+--- @class MoveLeftState
+--- @param unitState UnitState
+--- @return string: "moveleft" (+ keyOffset 后缀)
+--- 获取向左移动的 Spine 动作名
+function MoveLeftState.GetActionName(self, unitState)
+	local actionName = ActionName.MOVELEFT
+	local keyOffset = unitState:ActionKeyOffset()
 
-	if var_23_1 then
-		var_23_0 = var_23_0 .. var_23_1
+	if keyOffset then
+		actionName = actionName .. keyOffset
 	end
 
-	return var_23_0
+	return actionName
 end

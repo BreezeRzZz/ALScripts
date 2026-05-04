@@ -1,31 +1,48 @@
 ys = ys or {}
 
-local var_0_0 = ys
-local var_0_1 = var_0_0.Battle.BattleConfig
-local var_0_2 = var_0_0.Battle.BattleVariable
+local ys = ys
+local BattleConfig = ys.Battle.BattleConfig
+local BattleVariable = ys.Battle.BattleVariable
 
-var_0_0.Battle.BattleCameraFocusBulet = class("BattleCameraFocusBulet")
-var_0_0.Battle.BattleCameraFocusBulet.__name = "BattleCameraFocusBulet"
+ys.Battle.BattleCameraFocusBullet = class("BattleCameraFocusBullet")
+ys.Battle.BattleCameraFocusBullet.__name = "BattleCameraFocusBullet"
 
-local var_0_3 = var_0_0.Battle.BattleCameraFocusBulet
+local BattleCameraFocusBullet = ys.Battle.BattleCameraFocusBullet
 
-function var_0_3.Ctor(arg_1_0)
+--- @class BattleCameraFocusBullet
+--- 摄像机枪弹聚焦
+--- 用于将摄像机焦点锁定在某颗子弹上，计算跟随子弹的摄像机位置。
+--- 与 BattleCameraFocusChar 类似，但针对子弹进行了简化：不做敌我偏移。
+
+--- @return nil
+--- 构造函数
+function BattleCameraFocusBullet.Ctor(self)
 	return
 end
 
-function var_0_3.SetUnit(arg_2_0, arg_2_1)
-	arg_2_0._unit = arg_2_1
+--- @param bullet BattleBulletUnit 要聚焦的子弹单位
+--- @return nil
+--- 设置要聚焦的子弹单位
+function BattleCameraFocusBullet.SetUnit(self, bullet)
+	self._unit = bullet
 end
 
-function var_0_3.GetCameraPos(arg_3_0)
-	local var_3_0 = arg_3_0._unit:GetPosition():Clone()
+--- @return Vector3 聚焦点的世界坐标
+--- 获取聚焦子弹时的摄像机位置
+--- 取子弹位置并加上 CameraFocusHeight 高度偏移，再根据透视修正 z 轴
+function BattleCameraFocusBullet.GetCameraPos(self)
+	local bulletPos = self._unit:GetPosition():Clone()
 
-	var_3_0.y = var_3_0.y + var_0_2.CameraFocusHeight
-	var_3_0.z = var_3_0.z - var_3_0.y / var_0_2._camera_radian_x_tan
+	-- 向上抬高，使摄像机能从上方俯瞰子弹
+	bulletPos.y = bulletPos.y + BattleVariable.CameraFocusHeight
+	-- 根据高度进行透视修正：z 轴后退
+	bulletPos.z = bulletPos.z - bulletPos.y / BattleVariable._camera_radian_x_tan
 
-	return var_3_0
+	return bulletPos
 end
 
-function var_0_3.Dispose(arg_4_0)
-	arg_4_0._unit = nil
+--- @return nil
+--- 清理函数
+function BattleCameraFocusBullet.Dispose(self)
+	self._unit = nil
 end
