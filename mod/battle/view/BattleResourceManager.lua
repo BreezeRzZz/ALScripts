@@ -1696,251 +1696,262 @@ function BattleResourceManager.GetStageResource(dungeonID)
 	return resList, skinIDList
 end
 
---- 获取环境效果资源（递归处理 BUFF/SPAWN/PLAY_FX 行为）
---- @param resList table 结果列表（被修改）
---- @param envData table 环境效果配置
-function BattleResourceManager.GetEnvironmentRes(resList, envData)
-	table.insert(resList, envData.prefab and BattleResourceManager.GetFXPath(envData.prefab))
+function var_0_5.GetStageBGM(arg_86_0)
+	local var_86_0 = var_0_0.Battle.BattleDataFunction.GetDungeonTmpDataByID(arg_86_0)
+	local var_86_1 = {}
 
-	local behaviourID = envData.behaviours
-	local behaviourList = ys.Battle.BattleDataFunction.GetEnvironmentBehaviour(behaviourID).behaviour_list
+	for iter_86_0, iter_86_1 in ipairs(var_86_0.stages) do
+		for iter_86_2, iter_86_3 in ipairs(iter_86_1.waves) do
+			if iter_86_3.triggerType == var_0_0.Battle.BattleConst.WaveTriggerType.BGM then
+				local var_86_2 = iter_86_3.triggerParams.bgm
 
-	for _, behaviour in ipairs(behaviourList) do
-		local behaviourType = behaviour.type
-
-		if behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.BUFF then
-			local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(behaviour.buff_id, 1, {})
-			for _, res in ipairs(buffRes) do
-				resList[#resList + 1] = res
+				if var_86_2 then
+					table.insert(var_86_1, "cue/bgm-" .. var_86_2 .. ".b")
+				end
 			end
-		elseif behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.SPAWN then
-			local alertFX = behaviour.content and behaviour.content.alert and behaviour.content.alert.alert_fx
-			table.insert(resList, alertFX and BattleResourceManager.GetFXPath(alertFX))
+		end
+	end
 
-			local childPrefab = behaviour.content and behaviour.content.child_prefab
-			if childPrefab then
-				BattleResourceManager.GetEnvironmentRes(resList, childPrefab)
+	return var_86_1
+end
+
+function var_0_5.GetEnvironmentRes(arg_87_0, arg_87_1)
+	table.insert(arg_87_0, arg_87_1.prefab and var_0_5.GetFXPath(arg_87_1.prefab))
+
+	local var_87_0 = arg_87_1.behaviours
+	local var_87_1 = var_0_0.Battle.BattleDataFunction.GetEnvironmentBehaviour(var_87_0).behaviour_list
+
+	for iter_87_0, iter_87_1 in ipairs(var_87_1) do
+		local var_87_2 = iter_87_1.type
+
+		if var_87_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.BUFF then
+			local var_87_3 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_87_1.buff_id, 1, {})
+
+			for iter_87_2, iter_87_3 in ipairs(var_87_3) do
+				arg_87_0[#arg_87_0 + 1] = iter_87_3
 			end
-		elseif behaviourType == ys.Battle.BattleConst.EnviroumentBehaviour.PLAY_FX then
-			resList[#resList + 1] = BattleResourceManager.GetFXPath(behaviour.FX_ID)
+		elseif var_87_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.SPAWN then
+			local var_87_4 = iter_87_1.content and iter_87_1.content.alert and iter_87_1.content.alert.alert_fx
+
+			table.insert(arg_87_0, var_87_4 and var_0_5.GetFXPath(var_87_4))
+
+			local var_87_5 = iter_87_1.content and iter_87_1.content.child_prefab
+
+			if var_87_5 then
+				var_0_5.GetEnvironmentRes(arg_87_0, var_87_5)
+			end
+		elseif var_87_2 == var_0_0.Battle.BattleConst.EnviroumentBehaviour.PLAY_FX then
+			arg_87_0[#arg_87_0 + 1] = var_0_5.GetFXPath(iter_87_1.FX_ID)
 		end
 	end
 end
 
---- 获取单个怪物（含武器、Buff、阶段武器/阶段Buff）的完整资源清单
---- @param spawnData table 生成数据
---- @return table 资源路径列表
-function BattleResourceManager.GetMonsterRes(spawnData)
-	local resList = {}
-	local enemyRes = BattleResourceManager.GetEnemyResource(spawnData)
+function var_0_5.GetMonsterRes(arg_88_0)
+	local var_88_0 = {}
+	local var_88_1 = var_0_5.GetEnemyResource(arg_88_0)
 
-	for _, res in ipairs(enemyRes) do
-		resList[#resList + 1] = res
+	for iter_88_0, iter_88_1 in ipairs(var_88_1) do
+		var_88_0[#var_88_0 + 1] = iter_88_1
 	end
 
-	local monsterTmp = ys.Battle.BattleDataFunction.GetMonsterTmpDataFromID(spawnData.monsterTemplateID)
-	local equipmentList = Clone(monsterTmp.equipment_list)
-	local buffList = monsterTmp.buff_list
-	local spawnBuffList = Clone(spawnData.buffList) or {}
+	local var_88_2 = var_0_0.Battle.BattleDataFunction.GetMonsterTmpDataFromID(arg_88_0.monsterTemplateID)
+	local var_88_3 = Clone(var_88_2.equipment_list)
+	local var_88_4 = var_88_2.buff_list
+	local var_88_5 = Clone(arg_88_0.buffList) or {}
 
-	-- 阶段（phase）可能添加额外武器和Buff
-	if spawnData.phase then
-		for _, phaseData in ipairs(spawnData.phase) do
-			if phaseData.addWeapon then
-				for _, weaponId in ipairs(phaseData.addWeapon) do
-					equipmentList[#equipmentList + 1] = weaponId
+	if arg_88_0.phase then
+		for iter_88_2, iter_88_3 in ipairs(arg_88_0.phase) do
+			if iter_88_3.addWeapon then
+				for iter_88_4, iter_88_5 in ipairs(iter_88_3.addWeapon) do
+					var_88_3[#var_88_3 + 1] = iter_88_5
 				end
 			end
 
-			if phaseData.addRandomWeapon then
-				for _, randomWeaponList in ipairs(phaseData.addRandomWeapon) do
-					for _, weaponId in ipairs(randomWeaponList) do
-						equipmentList[#equipmentList + 1] = weaponId
+			if iter_88_3.addRandomWeapon then
+				for iter_88_6, iter_88_7 in ipairs(iter_88_3.addRandomWeapon) do
+					for iter_88_8, iter_88_9 in ipairs(iter_88_7) do
+						var_88_3[#var_88_3 + 1] = iter_88_9
 					end
 				end
 			end
 
-			if phaseData.addBuff then
-				for _, buffId in ipairs(phaseData.addBuff) do
-					spawnBuffList[#spawnBuffList + 1] = buffId
+			if iter_88_3.addBuff then
+				for iter_88_10, iter_88_11 in ipairs(iter_88_3.addBuff) do
+					var_88_5[#var_88_5 + 1] = iter_88_11
 				end
 			end
 		end
 	end
 
-	-- 模板Buff资源
-	for _, buffInfo in ipairs(buffList) do
-		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(buffInfo.ID, buffInfo.LV, {})
-		for _, res in ipairs(buffRes) do
-			resList[#resList + 1] = res
+	for iter_88_12, iter_88_13 in ipairs(var_88_4) do
+		local var_88_6 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_88_13.ID, iter_88_13.LV, {})
+
+		for iter_88_14, iter_88_15 in ipairs(var_88_6) do
+			var_88_0[#var_88_0 + 1] = iter_88_15
 		end
 	end
 
-	-- 生成时附加的Buff资源
-	for _, buffID in ipairs(spawnBuffList) do
-		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(buffID, 1, {})
-		for _, res in ipairs(buffRes) do
-			resList[#resList + 1] = res
+	for iter_88_16, iter_88_17 in ipairs(var_88_5) do
+		local var_88_7 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(iter_88_17, 1, {})
+
+		for iter_88_18, iter_88_19 in ipairs(var_88_7) do
+			var_88_0[#var_88_0 + 1] = iter_88_19
 		end
 
-		-- 检查是否需要技能立绘
-		local buffTemplate = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID, 1)
-		for _, effectItem in pairs(buffTemplate.effect_list) do
-			local skillId = effectItem.arg_list.skill_id
-			if skillId and ys.Battle.BattleDataFunction.NeedSkillPainting(skillId) then
-				resList[#resList + 1] = BattleResourceManager.GetPaintingPath(BattleDataFunction.GetMonsterTmpDataFromID(spawnData.monsterTemplateID).icon)
+		local var_88_8 = var_0_0.Battle.BattleDataFunction.GetBuffTemplate(iter_88_17, 1)
+
+		for iter_88_20, iter_88_21 in pairs(var_88_8.effect_list) do
+			local var_88_9 = iter_88_21.arg_list.skill_id
+
+			if var_88_9 and var_0_0.Battle.BattleDataFunction.NeedSkillPainting(var_88_9) then
+				var_88_0[#var_88_0 + 1] = var_0_5.GetPaintingPath(var_0_1.GetMonsterTmpDataFromID(arg_88_0.monsterTemplateID).icon)
+
 				break
 			end
 		end
 	end
 
-	-- 武器资源
-	for _, weaponId in ipairs(equipmentList) do
-		local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
-		for _, res in ipairs(weaponRes) do
-			resList[#resList + 1] = res
+	for iter_88_22, iter_88_23 in ipairs(var_88_3) do
+		local var_88_10 = var_0_5.GetWeaponResource(iter_88_23)
+
+		for iter_88_24, iter_88_25 in ipairs(var_88_10) do
+			var_88_0[#var_88_0 + 1] = iter_88_25
 		end
 	end
 
-	return resList
+	return var_88_0
 end
 
---- 获取装备皮肤预览资源（用于装备皮肤展示界面）
-function BattleResourceManager.GetEquipSkinPreviewRes(skinID)
-	local resList = {}
-	local equipSkinData = BattleDataFunction.GetEquipSkinDataFromID(skinID)
+function var_0_5.GetEquipSkinPreviewRes(arg_89_0)
+	local var_89_0 = {}
+	local var_89_1 = var_0_1.GetEquipSkinDataFromID(arg_89_0)
 
-	-- 皮肤关联的武器资源
-	for _, weaponId in ipairs(equipSkinData.weapon_ids) do
-		local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
-		for _, res in ipairs(weaponRes) do
-			resList[#resList + 1] = res
+	for iter_89_0, iter_89_1 in ipairs(var_89_1.weapon_ids) do
+		local var_89_2 = var_0_5.GetWeaponResource(iter_89_1)
+
+		for iter_89_2, iter_89_3 in ipairs(var_89_2) do
+			var_89_0[#var_89_0 + 1] = iter_89_3
 		end
 	end
 
-	-- 辅助函数：不为空则加入子弹路径
-	local function addBulletIfNotEmpty(path)
-		if path ~= "" then
-			resList[#resList + 1] = BattleResourceManager.GetBulletPath(path)
+	local function var_89_3(arg_90_0)
+		if arg_90_0 ~= "" then
+			var_89_0[#var_89_0 + 1] = var_0_5.GetBulletPath(arg_90_0)
 		end
 	end
 
-	-- GetEquipSkin 返回: modelID, bullet1, bullet2, bullet3, fireFX, hitFX
-	local modelID, bullet1, bullet2, bullet3, fireFX, hitFX = BattleDataFunction.GetEquipSkin(skinID)
+	local var_89_4, var_89_5, var_89_6, var_89_7, var_89_8, var_89_9 = var_0_1.GetEquipSkin(arg_89_0)
 
-	-- 飞机类装备使用chargo路径，子弹类使用Item路径
-	if _.any(EquipType.AirProtoEquipTypes, function(equipType)
-		return table.contains(equipSkinData.equip_type, equipType)
+	if _.any(EquipType.AirProtoEquipTypes, function(arg_91_0)
+		return table.contains(var_89_1.equip_type, arg_91_0)
 	end) then
-		resList[#resList + 1] = BattleResourceManager.GetCharacterGoPath(modelID)
+		var_89_0[#var_89_0 + 1] = var_0_5.GetCharacterGoPath(var_89_4)
 	else
-		resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelID)
+		var_89_0[#var_89_0 + 1] = var_0_5.GetBulletPath(var_89_4)
 	end
 
-	addBulletIfNotEmpty(bullet1)
-	addBulletIfNotEmpty(bullet2)
-	addBulletIfNotEmpty(bullet3)
+	var_89_3(var_89_5)
+	var_89_3(var_89_6)
+	var_89_3(var_89_7)
 
-	if fireFX and fireFX ~= "" then
-		resList[#resList + 1] = BattleResourceManager.GetFXPath(fireFX)
+	if var_89_8 and var_89_8 ~= "" then
+		var_89_0[#var_89_0 + 1] = var_0_5.GetFXPath(var_89_8)
 	end
 
-	if hitFX and hitFX ~= "" then
-		resList[#resList + 1] = BattleResourceManager.GetFXPath(hitFX)
+	if var_89_9 and var_89_9 ~= "" then
+		var_89_0[#var_89_0 + 1] = var_0_5.GetFXPath(var_89_9)
 	end
 
-	return resList
+	return var_89_0
 end
 
---- 获取装备皮肤子弹资源清单
-function BattleResourceManager.GetEquipSkinBulletRes(skinID)
-	local resList = {}
-	local modelID, bullet1, bullet2, bullet3 = BattleDataFunction.GetEquipSkin(skinID)
+function var_0_5.GetEquipSkinBulletRes(arg_92_0)
+	local var_92_0 = {}
+	local var_92_1, var_92_2, var_92_3, var_92_4 = var_0_1.GetEquipSkin(arg_92_0)
 
-	local function addBulletIfNotEmpty(path)
-		if path ~= "" then
-			resList[#resList + 1] = BattleResourceManager.GetBulletPath(path)
+	local function var_92_5(arg_93_0)
+		if arg_93_0 ~= "" then
+			var_92_0[#var_92_0 + 1] = var_0_5.GetBulletPath(arg_93_0)
 		end
 	end
 
-	local equipSkinData = BattleDataFunction.GetEquipSkinDataFromID(skinID)
-	local isAircraftSkin = false
+	local var_92_6 = var_0_1.GetEquipSkinDataFromID(arg_92_0)
+	local var_92_7 = false
 
-	for _, equipType in ipairs(equipSkinData.equip_type) do
-		if table.contains(EquipType.AircraftSkinType, equipType) then
-			isAircraftSkin = true
+	for iter_92_0, iter_92_1 in ipairs(var_92_6.equip_type) do
+		if table.contains(EquipType.AircraftSkinType, iter_92_1) then
+			var_92_7 = true
 		end
 	end
 
-	if isAircraftSkin then
-		if modelID ~= "" then
-			resList[#resList + 1] = BattleResourceManager.GetCharacterGoPath(modelID)
+	if var_92_7 then
+		if var_92_1 ~= "" then
+			var_92_0[#var_92_0 + 1] = var_0_5.GetCharacterGoPath(var_92_1)
 		end
 	else
-		addBulletIfNotEmpty(modelID)
+		var_92_5(var_92_1)
 
-		if BattleDataFunction.GetEquipSkinDataFromID(skinID).mirror == 1 then
-			resList[#resList + 1] = BattleResourceManager.GetBulletPath(modelID .. ys.Battle.BattleBulletUnit.MIRROR_RES)
+		if var_0_1.GetEquipSkinDataFromID(arg_92_0).mirror == 1 then
+			var_92_0[#var_92_0 + 1] = var_0_5.GetBulletPath(var_92_1 .. var_0_0.Battle.BattleBulletUnit.MIRROR_RES)
 		end
 	end
 
-	addBulletIfNotEmpty(bullet1)
-	addBulletIfNotEmpty(bullet2)
-	addBulletIfNotEmpty(bullet3)
+	var_92_5(var_92_2)
+	var_92_5(var_92_3)
+	var_92_5(var_92_4)
 
-	return resList
+	return var_92_0
 end
 
---- 获取支援舰队单位的资源清单
-function BattleResourceManager.GetAidUnitsRes(unitList)
-	local resList = {}
+function var_0_5.GetAidUnitsRes(arg_94_0)
+	local var_94_0 = {}
 
-	for _, unitData in ipairs(unitList) do
-		local aidRes = BattleResourceManager.GetShipResource(unitData.tmpID, nil, true)
+	for iter_94_0, iter_94_1 in ipairs(arg_94_0) do
+		local var_94_1 = var_0_5.GetShipResource(iter_94_1.tmpID, nil, true)
 
-		for _, equipId in ipairs(unitData.equipment) do
-			if equipId ~= 0 then
-				if equipIdx <= Ship.WEAPON_COUNT then
-					local weaponIds = BattleDataFunction.GetWeaponDataFromID(equipId).weapon_id
-					for _, weaponId in ipairs(weaponIds) do
-						local weaponRes = BattleResourceManager.GetWeaponResource(weaponId)
-						for _, res in ipairs(weaponRes) do
-							table.insert(aidRes, res)
+		for iter_94_2, iter_94_3 in ipairs(iter_94_1.equipment) do
+			if iter_94_3 ~= 0 then
+				if iter_94_2 <= Ship.WEAPON_COUNT then
+					local var_94_2 = var_0_1.GetWeaponDataFromID(iter_94_3).weapon_id
+
+					for iter_94_4, iter_94_5 in ipairs(var_94_2) do
+						local var_94_3 = var_0_5.GetWeaponResource(iter_94_5)
+
+						for iter_94_6, iter_94_7 in ipairs(var_94_3) do
+							table.insert(var_94_1, iter_94_7)
 						end
 					end
 				else
-					local equipRes = BattleResourceManager.GetEquipResource(equipId)
-					for _, res in ipairs(equipRes) do
-						table.insert(aidRes, res)
+					local var_94_4 = var_0_5.GetEquipResource(iter_94_3)
+
+					for iter_94_8, iter_94_9 in ipairs(var_94_4) do
+						table.insert(var_94_1, iter_94_9)
 					end
 				end
 			end
 		end
 
-		for _, res in ipairs(aidRes) do
-			table.insert(resList, res)
+		for iter_94_10, iter_94_11 in ipairs(var_94_1) do
+			table.insert(var_94_0, iter_94_11)
 		end
 	end
 
-	return resList
+	return var_94_0
 end
 
---- 获取专武（SpWeapon）资源清单
---- @param spWeaponID number 专武配置ID
---- @param battleType number 战斗类型
---- @return table 资源路径列表
-function BattleResourceManager.GetSpWeaponResource(spWeaponID, battleType)
-	local resList = {}
-	local effectId = ys.Battle.BattleDataFunction.GetSpWeaponDataFromID(spWeaponID).effect_id
+function var_0_5.GetSpWeaponResource(arg_95_0, arg_95_1)
+	local var_95_0 = {}
+	local var_95_1 = var_0_0.Battle.BattleDataFunction.GetSpWeaponDataFromID(arg_95_0).effect_id
 
-	if effectId ~= 0 then
-		effectId = battleType and ys.Battle.BattleDataFunction.SkillTranform(battleType, effectId) or effectId
+	if var_95_1 ~= 0 then
+		var_95_1 = arg_95_1 and var_0_0.Battle.BattleDataFunction.SkillTranform(arg_95_1, var_95_1) or var_95_1
 
-		local buffRes = ys.Battle.BattleDataFunction.GetResFromBuff(effectId, 1, {})
-		for _, res in ipairs(buffRes) do
-			resList[#resList + 1] = res
+		local var_95_2 = var_0_0.Battle.BattleDataFunction.GetResFromBuff(var_95_1, 1, {})
+
+		for iter_95_0, iter_95_1 in ipairs(var_95_2) do
+			var_95_0[#var_95_0 + 1] = iter_95_1
 		end
 	end
 
-	return resList
+	return var_95_0
 end
