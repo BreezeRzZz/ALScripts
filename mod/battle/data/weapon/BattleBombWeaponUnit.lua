@@ -7,6 +7,7 @@ local BattleBombWeaponUnit = class("BattleBombWeaponUnit", ys.Battle.BattleWeapo
 ys.Battle.BattleBombWeaponUnit = BattleBombWeaponUnit
 BattleBombWeaponUnit.__name = "BattleBombWeaponUnit"
 
+--- 构造函数：初始化预警缓存
 function BattleBombWeaponUnit.Ctor(self)
 	BattleBombWeaponUnit.super.Ctor(self)
 
@@ -14,6 +15,7 @@ function BattleBombWeaponUnit.Ctor(self)
 	self._cacheList = {}
 end
 
+--- 清理：移除预警计时器，销毁缓存发射器
 function BattleBombWeaponUnit.Clear(self)
 	if self._alertTimer then
 		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._alertTimer)
@@ -30,6 +32,7 @@ function BattleBombWeaponUnit.Clear(self)
 	BattleBombWeaponUnit.super.Clear(self)
 end
 
+--- 宿主瞄准敌人时：有alertTime则先显示预警再开火
 function BattleBombWeaponUnit.HostOnEnemy(self)
 	BattleBombWeaponUnit.super.HostOnEnemy(self)
 	-- 如果有alertTime，则会等待alertTime(这段时间先显示预警特效)后再真正开火
@@ -45,6 +48,8 @@ function BattleBombWeaponUnit.HostOnEnemy(self)
 	end
 end
 
+--- 每帧更新：装填进度 + 追踪目标 + 发射逻辑
+--- @param timeStamp number: 时间戳
 function BattleBombWeaponUnit.Update(self, timeStamp)
 	self:UpdateReload()
 
@@ -82,6 +87,8 @@ function BattleBombWeaponUnit.Update(self, timeStamp)
 	end
 end
 
+--- 预警阶段：缓存子弹ID，发射后启动预警计时器
+--- @param target BattleUnit: 目标
 function BattleBombWeaponUnit.PreCast(self, target)
 	self:cacheBulletID()
 
@@ -97,6 +104,7 @@ function BattleBombWeaponUnit.PreCast(self, target)
 	self._alertTimer:Start()
 end
 
+--- 添加预警计时器
 function BattleBombWeaponUnit.AddPreCastTimer(self)
 	local function onPrecastTimerEnds()
 		self._currentState = self.STATE_OVER_HEAT
@@ -113,15 +121,21 @@ function BattleBombWeaponUnit.AddPreCastTimer(self)
 	self._precastTimer = pg.TimeMgr.GetInstance():AddBattleTimer("weaponPrecastTimer", 0, self._preCastInfo.time, onPrecastTimerEnds, true)
 end
 
+--- 创建主发射器（重载父类）：使用缓存发射器实现延迟发射
+--- @param barrageID number: 弹幕ID
+--- @param index number: 发射器索引
+--- @param emitter any: 未使用（nil）
+--- @param paramSpawnFunc function: 未使用
+--- @param paramStopFunc function: 未使用
 function BattleBombWeaponUnit.createMajorEmitter(self, barrageID, index, emitter, paramSpawnFunc, paramStopFunc)
 	local cachedBulletList = {}
-	local var_9_1
+	local cachedEmitter
 
 	local function cachedSpawnFunc()
 		self:DispatchBulletEvent(table.remove(cachedBulletList, 1))
 	end
 
-	local var_9_3
+	local cachedStopFunc
 
 	local function cachedStopFunc()
 		for _, cachedEmitter in ipairs(self._cacheList) do
@@ -133,7 +147,7 @@ function BattleBombWeaponUnit.createMajorEmitter(self, barrageID, index, emitter
 		self:EnterCoolDown()
 	end
 
-	local cachedEmitter = ys.Battle.BattleBulletEmitter.New(cachedSpawnFunc, cachedStopFunc, barrageID)
+	cachedEmitter = ys.Battle.BattleBulletEmitter.New(cachedSpawnFunc, cachedStopFunc, barrageID)
 
 	self._cacheList[cachedEmitter] = cachedEmitter
 
@@ -161,6 +175,7 @@ function BattleBombWeaponUnit.createMajorEmitter(self, barrageID, index, emitter
 	BattleBombWeaponUnit.super.createMajorEmitter(self, barrageID, index, nil, spawnFunc, stopFunc)
 end
 
+--- 执行攻击：触发Buff并发射所有缓存子弹
 function BattleBombWeaponUnit.DoAttack(self)
 	self:TriggerBuffOnSteday()
 
@@ -177,6 +192,8 @@ function BattleBombWeaponUnit.DoAttack(self)
 	self:CheckAndShake()
 end
 
+--- 显示炸弹预警特效
+--- @param bullet BattleBulletUnit: 子弹
 function BattleBombWeaponUnit.showBombAlert(self, bullet)
 	bullet:SetExist(false)
 

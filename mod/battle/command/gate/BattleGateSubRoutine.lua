@@ -1,10 +1,14 @@
-local var_0_0 = class("BattleGateSubRoutine")
+--- @class BattleGateSubRoutine : 潜艇日常副本Gate
+local BattleGateSubRoutine = class("BattleGateSubRoutine")
 
-ys.Battle.BattleGateSubRoutine = var_0_0
-var_0_0.__name = "BattleGateSubRoutine"
+ys.Battle.BattleGateSubRoutine = BattleGateSubRoutine
+BattleGateSubRoutine.__name = "BattleGateSubRoutine"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	if not arg_1_1.LegalFleet(arg_1_0.mainFleetId) then
+--- 进入潜艇日常副本
+--- @param self BattleGateSubRoutine
+--- @param sendData table 发送数据
+function BattleGateSubRoutine.Entrance(self, sendData)
+	if not sendData.LegalFleet(self.mainFleetId) then
 		return
 	end
 
@@ -12,125 +16,131 @@ function var_0_0.Entrance(arg_1_0, arg_1_1)
 		return
 	end
 
-	local var_1_0 = getProxy(PlayerProxy)
-	local var_1_1 = getProxy(BayProxy)
-	local var_1_2 = getProxy(FleetProxy)
-	local var_1_3 = pg.battle_cost_template[SYSTEM_SUB_ROUTINE]
-	local var_1_4 = var_1_3.oil_cost > 0
-	local var_1_5 = {}
-	local var_1_6 = 0
-	local var_1_7 = 0
-	local var_1_8 = 0
-	local var_1_9 = 0
-	local var_1_10 = var_1_2:getFleetById(arg_1_0.mainFleetId)
-	local var_1_11 = var_1_1:getShipByTeam(var_1_10, TeamType.Submarine)
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local fleetProxy = getProxy(FleetProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_SUB_ROUTINE]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local shipIdList = {}
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local fleet = fleetProxy:getFleetById(self.mainFleetId)
+	local subShips = bayProxy:getShipByTeam(fleet, TeamType.Submarine)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_11) do
-		var_1_5[#var_1_5 + 1] = iter_1_1.id
+	for _, ship in ipairs(subShips) do
+		shipIdList[#shipIdList + 1] = ship.id
 	end
 
-	local var_1_12 = var_1_10:getStartCost().oil
-	local var_1_13 = var_1_10:GetCostSum().oil
-	local var_1_14 = var_1_0:getData()
+	local startCost = fleet:getStartCost().oil
+	local costSum = fleet:GetCostSum().oil
+	local playerData = playerProxy:getData()
 
-	if var_1_4 and var_1_13 > var_1_14.oil then
+	if hasOilCost and costSum > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_15 = arg_1_0.mainFleetId
-	local var_1_16 = arg_1_0.stageId
-	local var_1_17 = pg.expedition_data_template[var_1_16].dungeon_id
-	local var_1_18 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_17).fleet_prefab
+	local mainFleetId = self.mainFleetId
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_19(arg_2_0)
-		if var_1_4 then
-			var_1_14:consume({
+	--- 请求成功回调
+	local function onSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_12
+				oil = startCost
 			})
 		end
 
-		if var_1_3.enter_energy_cost > 0 and not exFlag then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 and not exFlag then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_11) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_1:updateShip(iter_2_1)
+			for _, ship in ipairs(subShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		var_1_0:updatePlayer(var_1_14)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = {
-			mainFleetId = var_1_15,
-			prefabFleet = var_1_18,
-			stageId = var_1_16,
+		local stageData = {
+			mainFleetId = mainFleetId,
+			prefabFleet = fleetPrefab,
+			stageId = stageId,
 			system = SYSTEM_SUB_ROUTINE,
-			token = arg_2_0.key
+			token = tokenData.key
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_1)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_20(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 请求失败回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_SUB_ROUTINE, var_1_5, {
-		var_1_16
-	}, var_1_19, var_1_20)
+	BeginStageCommand.SendRequest(SYSTEM_SUB_ROUTINE, shipIdList, {
+		stageId
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = pg.battle_cost_template[SYSTEM_SUB_ROUTINE]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(BayProxy)
-	local var_4_3 = arg_4_0.statistics._battleScore
-	local var_4_4 = 0
-	local var_4_5 = {}
-	local var_4_6 = var_4_1:getFleetById(arg_4_0.mainFleetId)
-	local var_4_7 = var_4_2:getSortShipsByFleet(var_4_6)
-	local var_4_8 = var_4_6:getEndCost().oil
-	local var_4_9 = arg_4_1.GeneralPackage(arg_4_0, var_4_7)
+--- 退出潜艇日常副本
+--- @param self BattleGateSubRoutine
+--- @param callback table 回调对象
+function BattleGateSubRoutine.Exit(self, callback)
+	local costTemplate = pg.battle_cost_template[SYSTEM_SUB_ROUTINE]
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local battleScore = self.statistics._battleScore
+	local oilUsed = 0
+	local shipList = {}
+	local fleet = fleetProxy:getFleetById(self.mainFleetId)
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
+	local endOilCost = fleet:getEndCost().oil
+	local generalPackage = callback.GeneralPackage(self, sortShips)
 
-	local function var_4_10(arg_5_0)
-		arg_4_1.addShipsExp(arg_5_0.ship_exp_list, arg_4_0.statistics, true)
+	--- 结算成功回调
+	local function onSuccess(result)
+		callback.addShipsExp(result.ship_exp_list, self.statistics, true)
 
-		arg_4_0.statistics.mvpShipID = arg_5_0.mvp
+		self.statistics.mvpShipID = result.mvp
 
-		local var_5_0, var_5_1 = arg_4_1:GeneralLoot(arg_5_0)
-		local var_5_2 = var_4_3 > ys.Battle.BattleConst.BattleScore.C
+		local drops, extraDrops = callback:GeneralLoot(result)
+		local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
 
-		arg_4_1.GeneralPlayerCosume(SYSTEM_SUB_ROUTINE, var_5_2, var_4_8, arg_5_0.player_exp, exFlag)
+		callback.GeneralPlayerCosume(SYSTEM_SUB_ROUTINE, isWin, endOilCost, result.player_exp, exFlag)
 
-		local var_5_3 = getProxy(DailyLevelProxy)
+		local dailyLevelProxy = getProxy(DailyLevelProxy)
 
-		if var_5_2 then
-			var_5_3.data[var_5_3.dailyLevelId] = (var_5_3.data[var_5_3.dailyLevelId] or 0) + 1
+		if isWin then
+			dailyLevelProxy.data[dailyLevelProxy.dailyLevelId] = (dailyLevelProxy.data[dailyLevelProxy.dailyLevelId] or 0) + 1
 		end
 
-		if var_4_3 == ys.Battle.BattleConst.BattleScore.S then
-			var_5_3:AddQuickStage(arg_4_0.stageId)
+		if battleScore == ys.Battle.BattleConst.BattleScore.S then
+			dailyLevelProxy:AddQuickStage(self.stageId)
 		end
 
-		local var_5_4 = {
+		local finishData = {
 			system = SYSTEM_SUB_ROUTINE,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
-			drops = var_5_0,
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
 			commanderExps = {},
-			result = arg_5_0.result,
-			extraDrops = var_5_1
+			result = result.result,
+			extraDrops = extraDrops
 		}
 
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_4)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 	end
 
-	arg_4_1:SendRequest(var_4_9, var_4_10)
+	callback:SendRequest(generalPackage, onSuccess)
 end
 
-return var_0_0
+return BattleGateSubRoutine

@@ -12,1143 +12,1317 @@ local BattleUIMediator = class("BattleUIMediator", ys.MVC.Mediator)
 ys.Battle.BattleUIMediator = BattleUIMediator
 BattleUIMediator.__name = "BattleUIMediator"
 
-function BattleUIMediator.Ctor(arg_1_0)
-	BattleUIMediator.super.Ctor(arg_1_0)
+--- 构造函数
+function BattleUIMediator.Ctor(self)
+	BattleUIMediator.super.Ctor(self)
 end
 
-function BattleUIMediator.SetBattleUI(arg_2_0)
-	arg_2_0._ui = arg_2_0._state:GetUI()
+--- 设置战斗UI引用
+function BattleUIMediator.SetBattleUI(self)
+	self._ui = self._state:GetUI()
 end
 
-function BattleUIMediator.Initialize(arg_3_0)
-	BattleUIMediator.super.Initialize(arg_3_0)
+--- 初始化中介者
+function BattleUIMediator.Initialize(self)
+	BattleUIMediator.super.Initialize(self)
 
-	arg_3_0._dataProxy = arg_3_0._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
-	arg_3_0._uiMGR = pg.UIMgr.GetInstance()
-	arg_3_0._fxPool = ys.Battle.BattleFXPool.GetInstance()
-	arg_3_0._updateViewList = {}
+	self._dataProxy = self._state:GetProxyByName(ys.Battle.BattleDataProxy.__name)
+	self._uiMGR = pg.UIMgr.GetInstance()
+	self._fxPool = ys.Battle.BattleFXPool.GetInstance()
+	self._updateViewList = {}
 
-	arg_3_0:SetBattleUI()
-	arg_3_0:AddUIEvent()
-	arg_3_0:InitCamera()
-	arg_3_0:InitGuide()
+	self:SetBattleUI()
+	self:AddUIEvent()
+	self:InitCamera()
+	self:InitGuide()
 end
 
-function BattleUIMediator.Reinitialize(arg_4_0)
-	arg_4_0._skillView:Dispose()
+--- 重新初始化
+function BattleUIMediator.Reinitialize(self)
+	self._skillView:Dispose()
 end
 
-function BattleUIMediator.EnableComponent(arg_5_0, arg_5_1)
-	arg_5_0._ui._tf:Find("PauseBtn"):GetComponent(typeof(Button)).enabled = arg_5_1
+--- 启用/禁用组件
+--- @param enable boolean 是否启用
+function BattleUIMediator.EnableComponent(self, enable)
+	self._ui._tf:Find("PauseBtn"):GetComponent(typeof(Button)).enabled = enable
 
-	arg_5_0._skillView:EnableWeaponButton(arg_5_1)
+	self._skillView:EnableWeaponButton(enable)
 end
 
-function BattleUIMediator.EnableJoystick(arg_6_0, arg_6_1)
-	arg_6_0._stickController.enabled = arg_6_1
+--- 启用/禁用摇杆
+--- @param enable boolean 是否启用
+function BattleUIMediator.EnableJoystick(self, enable)
+	self._stickController.enabled = enable
 
-	local var_6_0 = arg_6_0._joystick:GetComponent(typeof(Animation))
+	local animComp = self._joystick:GetComponent(typeof(Animation))
 
-	if var_6_0 then
-		var_6_0.enabled = arg_6_1
+	if animComp then
+		animComp.enabled = enable
 	end
 
-	local var_6_1 = arg_6_0._joystick:GetComponent(typeof(Animator))
+	local animatorComp = self._joystick:GetComponent(typeof(Animator))
 
-	if var_6_1 then
-		var_6_1.enabled = arg_6_1
+	if animatorComp then
+		animatorComp.enabled = enable
 	end
 
-	setActive(arg_6_0._joystick, arg_6_1)
+	setActive(self._joystick, enable)
 
-	local var_6_2 = arg_6_0._joystick:Find("Area/BG/spine")
+	local spineTF = self._joystick:Find("Area/BG/spine")
 
-	if var_6_2 then
-		local var_6_3 = var_6_2:GetComponent(typeof(SpineAnimUI))
+	if spineTF then
+		local spineAnim = spineTF:GetComponent(typeof(SpineAnimUI))
 
-		if arg_6_1 then
-			var_6_3:SetAction("cut_in", 0)
+		if enable then
+			spineAnim:SetAction("cut_in", 0)
 		end
 	end
 end
 
-function BattleUIMediator.EnableWeaponButton(arg_7_0, arg_7_1)
-	arg_7_0._skillView:EnableWeaponButton(arg_7_1)
+--- 启用/禁用武器按钮
+--- @param enable boolean 是否启用
+function BattleUIMediator.EnableWeaponButton(self, enable)
+	self._skillView:EnableWeaponButton(enable)
 end
 
-function BattleUIMediator.EnableSkillFloat(arg_8_0, arg_8_1)
-	arg_8_0._ui:EnableSkillFloat(arg_8_1)
+--- 启用/禁用技能浮窗
+--- @param enable boolean 是否启用
+function BattleUIMediator.EnableSkillFloat(self, enable)
+	self._ui:EnableSkillFloat(enable)
 end
 
-function BattleUIMediator.GetAppearFX(arg_9_0)
-	return arg_9_0._appearEffect
+--- 获取Boss出场特效
+--- @return GameObject|nil
+function BattleUIMediator.GetAppearFX(self)
+	return self._appearEffect
 end
 
-function BattleUIMediator.DisableComponent(arg_10_0)
-	arg_10_0._ui._tf:Find("PauseBtn"):GetComponent(typeof(Button)).enabled = false
+--- 禁用所有交互组件
+function BattleUIMediator.DisableComponent(self)
+	self._ui._tf:Find("PauseBtn"):GetComponent(typeof(Button)).enabled = false
 
-	arg_10_0._skillView:DisableWeapnButton()
-	SetActive(arg_10_0._ui._tf:Find("HPBarContainer"), false)
-	SetActive(arg_10_0._ui._tf:Find("flagShipMark"), false)
+	self._skillView:DisableWeapnButton()
+	SetActive(self._ui._tf:Find("HPBarContainer"), false)
+	SetActive(self._ui._tf:Find("flagShipMark"), false)
 
-	if arg_10_0._jammingView then
-		arg_10_0._jammingView:Eliminate(false)
+	if self._jammingView then
+		self._jammingView:Eliminate(false)
 	end
 
-	if arg_10_0._inkView then
-		arg_10_0._inkView:SetActive(false)
+	if self._inkView then
+		self._inkView:SetActive(false)
 	end
 end
 
-function BattleUIMediator.ActiveDebugConsole(arg_11_0)
-	arg_11_0._debugConsoleView:SetActive(true)
+--- 激活调试控制台
+function BattleUIMediator.ActiveDebugConsole(self)
+	self._debugConsoleView:SetActive(true)
 end
 
--- TODO
-function BattleUIMediator.OpeningEffect(arg_12_0, arg_12_1, arg_12_2)
-	arg_12_0._uiMGR:SetActive(false)
+--- 开场效果，根据不同战斗系统类型配置UI按钮布局
+--- @param callback function 开场效果完成后的回调
+--- @param systemType number 战斗系统类型常量
+function BattleUIMediator.OpeningEffect(self, callback, systemType)
+	self._uiMGR:SetActive(false)
 
-	if arg_12_2 == SYSTEM_SUBMARINE_RUN then
-		arg_12_0._skillView:SubmarineButton()
+	if systemType == SYSTEM_SUBMARINE_RUN then
+		self._skillView:SubmarineButton()
 
-		local var_12_0 = BattleConfig.JOY_STICK_DEFAULT_PREFERENCE
+		local defaultPref = BattleConfig.JOY_STICK_DEFAULT_PREFERENCE
 
-		arg_12_0._joystick.anchorMin = Vector2(var_12_0.x, var_12_0.y)
-		arg_12_0._joystick.anchorMax = Vector2(var_12_0.x, var_12_0.y)
-	elseif arg_12_2 == SYSTEM_SUB_ROUTINE then
-		arg_12_0._skillView:SubRoutineButton()
-	elseif arg_12_2 == SYSTEM_AIRFIGHT then
-		arg_12_0._skillView:AirFightButton()
-	elseif arg_12_2 == SYSTEM_DEBUG then
-		arg_12_0._skillView:NormalButton()
-	elseif arg_12_2 == SYSTEM_CARDPUZZLE then
-		arg_12_0._skillView:CardPuzzleButton()
+		self._joystick.anchorMin = Vector2(defaultPref.x, defaultPref.y)
+		self._joystick.anchorMax = Vector2(defaultPref.x, defaultPref.y)
+	elseif systemType == SYSTEM_SUB_ROUTINE then
+		self._skillView:SubRoutineButton()
+	elseif systemType == SYSTEM_AIRFIGHT then
+		self._skillView:AirFightButton()
+	elseif systemType == SYSTEM_DEBUG then
+		self._skillView:NormalButton()
+	elseif systemType == SYSTEM_CARDPUZZLE then
+		self._skillView:CardPuzzleButton()
 	else
-		local var_12_1 = pg.SeriesGuideMgr.GetInstance()
+		local guideMgr = pg.SeriesGuideMgr.GetInstance()
 
-		if var_12_1.currIndex and var_12_1:isEnd() then
-			arg_12_0._skillView:NormalButton()
+		if guideMgr.currIndex and guideMgr:isEnd() then
+			self._skillView:NormalButton()
 		else
-			local var_12_2 = arg_12_0._dataProxy:GetDungeonData().skill_hide or {}
+			local hiddenSkills = self._dataProxy:GetDungeonData().skill_hide or {}
 
-			arg_12_0._skillView:CustomButton(var_12_2)
+			self._skillView:CustomButton(hiddenSkills)
 		end
 	end
 
 	LeanTween.delayedCall(BattleConfig.COMBAT_DELAY_ACTIVE, System.Action(function()
-		arg_12_0._uiMGR:SetActive(true)
-		arg_12_0:EnableComponent(true)
+		self._uiMGR:SetActive(true)
+		self:EnableComponent(true)
 
-		if arg_12_1 then
-			arg_12_1()
+		if callback then
+			callback()
 		end
 	end))
-	SetActive(arg_12_0._ui._go, true)
-	arg_12_0._skillView:ButtonInitialAnima()
+	SetActive(self._ui._go, true)
+	self._skillView:ButtonInitialAnima()
 end
 
-function BattleUIMediator.InitScene(arg_14_0)
-	arg_14_0._mapId = arg_14_0._dataProxy._mapId
-	arg_14_0._seaView = ys.Battle.BattleMap.New(arg_14_0._mapId)
+--- 初始化战斗场景（海域背景）
+function BattleUIMediator.InitScene(self)
+	self._mapId = self._dataProxy._mapId
+	self._seaView = ys.Battle.BattleMap.New(self._mapId)
 end
 
-function BattleUIMediator.InitJoystick(arg_15_0)
-	arg_15_0._joystick = arg_15_0._ui._tf:Find("Stick")
+--- 初始化摇杆
+function BattleUIMediator.InitJoystick(self)
+	self._joystick = self._ui._tf:Find("Stick")
 
-	local var_15_0 = BattleConfig.JOY_STICK_DEFAULT_PREFERENCE
-	local var_15_1 = arg_15_0._joystick
-	local var_15_2 = 1
-	local var_15_3 = PlayerPrefs.GetFloat("joystick_scale", var_15_0.scale)
-	local var_15_4 = PlayerPrefs.GetFloat("joystick_anchorX", var_15_0.x)
-	local var_15_5 = PlayerPrefs.GetFloat("joystick_anchorY", var_15_0.y)
-	local var_15_6 = var_15_2 * var_15_3
+	local defaultPref = BattleConfig.JOY_STICK_DEFAULT_PREFERENCE
+	local joystick = self._joystick
+	local baseScale = 1
+	local savedScale = PlayerPrefs.GetFloat("joystick_scale", defaultPref.scale)
+	local savedAnchorX = PlayerPrefs.GetFloat("joystick_anchorX", defaultPref.x)
+	local savedAnchorY = PlayerPrefs.GetFloat("joystick_anchorY", defaultPref.y)
+	local finalScale = baseScale * savedScale
 
-	arg_15_0._joystick.localScale = Vector3(var_15_6, var_15_6, 1)
+	self._joystick.localScale = Vector3(finalScale, finalScale, 1)
 
-	originalPrint("scale: ", arg_15_0._joystick.localScale)
+	originalPrint("scale: ", self._joystick.localScale)
 
-	var_15_1.anchoredPosition = var_15_1.anchoredPosition * var_15_6
-	arg_15_0._joystick.anchorMin = Vector2(var_15_4, var_15_5)
-	arg_15_0._joystick.anchorMax = Vector2(var_15_4, var_15_5)
-	arg_15_0._stickController = arg_15_0._joystick:GetComponent("StickController")
+	joystick.anchoredPosition = joystick.anchoredPosition * finalScale
+	self._joystick.anchorMin = Vector2(savedAnchorX, savedAnchorY)
+	self._joystick.anchorMax = Vector2(savedAnchorX, savedAnchorY)
+	self._stickController = self._joystick:GetComponent("StickController")
 
-	arg_15_0._uiMGR:AttachStickOb(arg_15_0._joystick)
+	self._uiMGR:AttachStickOb(self._joystick)
 
-	local var_15_7 = arg_15_0._joystick:Find("Area/BG/spine")
+	local spineTF = self._joystick:Find("Area/BG/spine")
 
-	if var_15_7 then
-		local var_15_8 = var_15_7:GetComponent(typeof(SpineAnimUI))
+	if spineTF then
+		local spineAnim = spineTF:GetComponent(typeof(SpineAnimUI))
 
-		var_15_8:SetActionCallBack(function(arg_16_0)
-			if arg_16_0 == "finish" then
-				if arg_15_0._stickController.enabled then
-					var_15_8:SetAction("normal", 0)
+		spineAnim:SetActionCallBack(function(event)
+			if event == "finish" then
+				if self._stickController.enabled then
+					spineAnim:SetAction("normal", 0)
 				else
-					SetActive(arg_15_0._joystick, false)
+					SetActive(self._joystick, false)
 				end
 			end
 		end)
 	end
 end
 
-function BattleUIMediator.InitTimer(arg_17_0)
-	if arg_17_0._dataProxy:GetInitData().battleType == SYSTEM_DUEL then
-		arg_17_0._timerView = ys.Battle.BattleTimerView.New(arg_17_0._ui._tf:Find("DuelTimer"))
+--- 初始化计时器
+function BattleUIMediator.InitTimer(self)
+	if self._dataProxy:GetInitData().battleType == SYSTEM_DUEL then
+		self._timerView = ys.Battle.BattleTimerView.New(self._ui._tf:Find("DuelTimer"))
 	else
-		arg_17_0._timerView = ys.Battle.BattleTimerView.New(arg_17_0._ui._tf:Find("Timer"))
+		self._timerView = ys.Battle.BattleTimerView.New(self._ui._tf:Find("Timer"))
 	end
 end
 
-function BattleUIMediator.InitEnemyHpBar(arg_18_0)
-	arg_18_0._enemyHpBar = ys.Battle.BattleEnmeyHpBarView.New(arg_18_0._ui._tf:Find("EnemyHPBar"))
+--- 初始化敌方血条
+function BattleUIMediator.InitEnemyHpBar(self)
+	self._enemyHpBar = ys.Battle.BattleEnmeyHpBarView.New(self._ui._tf:Find("EnemyHPBar"))
 end
 
-function BattleUIMediator.InitAirStrikeIcon(arg_19_0)
-	arg_19_0._airStrikeView = ys.Battle.BattleAirStrikeIconView.New(arg_19_0._ui._tf:Find("AirFighterContainer/AirStrikeIcon"))
-	arg_19_0._airSupportTF = arg_19_0._ui._tf:Find("AirSupportLabel")
+--- 初始化空袭图标
+function BattleUIMediator.InitAirStrikeIcon(self)
+	self._airStrikeView = ys.Battle.BattleAirStrikeIconView.New(self._ui._tf:Find("AirFighterContainer/AirStrikeIcon"))
+	self._airSupportTF = self._ui._tf:Find("AirSupportLabel")
 end
 
-function BattleUIMediator.InitCommonWarning(arg_20_0)
-	arg_20_0._warningView = ys.Battle.BattleCommonWarningView.New(arg_20_0._ui._tf:Find("WarningView"))
-	arg_20_0._updateViewList[arg_20_0._warningView] = true
+--- 初始化通用警告视图
+function BattleUIMediator.InitCommonWarning(self)
+	self._warningView = ys.Battle.BattleCommonWarningView.New(self._ui._tf:Find("WarningView"))
+	self._updateViewList[self._warningView] = true
 end
 
-function BattleUIMediator.InitScoreBar(arg_21_0)
-	arg_21_0._scoreBarView = ys.Battle.BattleScoreBarView.New(arg_21_0._ui._tf:Find("DodgemCountBar"))
+--- 初始化闪避计分条
+function BattleUIMediator.InitScoreBar(self)
+	self._scoreBarView = ys.Battle.BattleScoreBarView.New(self._ui._tf:Find("DodgemCountBar"))
 end
 
-function BattleUIMediator.InitAirFightScoreBar(arg_22_0)
-	arg_22_0._scoreBarView = ys.Battle.BattleScoreBarView.New(arg_22_0._ui._tf:Find("AirFightCountBar"))
+--- 初始化空战计分条
+function BattleUIMediator.InitAirFightScoreBar(self)
+	self._scoreBarView = ys.Battle.BattleScoreBarView.New(self._ui._tf:Find("AirFightCountBar"))
 end
 
-function BattleUIMediator.InitAutoBtn(arg_23_0)
-	arg_23_0._autoBtn = arg_23_0._ui._tf:Find("AutoBtn")
+--- 初始化自动按钮
+function BattleUIMediator.InitAutoBtn(self)
+	self._autoBtn = self._ui._tf:Find("AutoBtn")
 
-	local var_23_0 = BattleConfig.AUTO_DEFAULT_PREFERENCE
-	local var_23_1 = PlayerPrefs.GetFloat("auto_scale", var_23_0.scale)
-	local var_23_2 = PlayerPrefs.GetFloat("auto_anchorX", var_23_0.x)
-	local var_23_3 = PlayerPrefs.GetFloat("auto_anchorY", var_23_0.y)
+	local defaultPref = BattleConfig.AUTO_DEFAULT_PREFERENCE
+	local savedScale = PlayerPrefs.GetFloat("auto_scale", defaultPref.scale)
+	local savedAnchorX = PlayerPrefs.GetFloat("auto_anchorX", defaultPref.x)
+	local savedAnchorY = PlayerPrefs.GetFloat("auto_anchorY", defaultPref.y)
 
-	arg_23_0._autoBtn.localScale = Vector3(var_23_1, var_23_1, 1)
-	arg_23_0._autoBtn.anchorMin = Vector2(var_23_2, var_23_3)
-	arg_23_0._autoBtn.anchorMax = Vector2(var_23_2, var_23_3)
+	self._autoBtn.localScale = Vector3(savedScale, savedScale, 1)
+	self._autoBtn.anchorMin = Vector2(savedAnchorX, savedAnchorY)
+	self._autoBtn.anchorMax = Vector2(savedAnchorX, savedAnchorY)
 end
 
-function BattleUIMediator.InitDuelRateBar(arg_24_0)
-	arg_24_0._duelRateBar = ys.Battle.BattleDuelDamageRateView.New(arg_24_0._ui._tf:Find("DuelDamageRate"))
+--- 初始化擂台伤害率条
+function BattleUIMediator.InitDuelRateBar(self)
+	self._duelRateBar = ys.Battle.BattleDuelDamageRateView.New(self._ui._tf:Find("DuelDamageRate"))
 
-	return arg_24_0._duelRateBar
+	return self._duelRateBar
 end
 
-function BattleUIMediator.InitSimulationBuffCounting(arg_25_0)
-	arg_25_0._simulationBuffCountView = ys.Battle.BattleSimulationBuffCountView.New(arg_25_0._ui._tf:Find("SimulationWarning"))
+--- 初始化模拟战buff计数
+function BattleUIMediator.InitSimulationBuffCounting(self)
+	self._simulationBuffCountView = ys.Battle.BattleSimulationBuffCountView.New(self._ui._tf:Find("SimulationWarning"))
 
-	return arg_25_0._simulationBuffCountView
+	return self._simulationBuffCountView
 end
 
-function BattleUIMediator.InitMainDamagedView(arg_26_0)
-	arg_26_0._mainDamagedView = ys.Battle.BattleMainDamagedView.New(arg_26_0._ui._tf:Find("HPWarning"))
+--- 初始化主舰受损视图
+function BattleUIMediator.InitMainDamagedView(self)
+	self._mainDamagedView = ys.Battle.BattleMainDamagedView.New(self._ui._tf:Find("HPWarning"))
 end
 
-function BattleUIMediator.InitInkView(arg_27_0, arg_27_1)
-	arg_27_0._inkView = ys.Battle.BattleInkView.New(arg_27_0._ui._tf:Find("InkContainer"))
+--- 初始化墨水（致盲）视图
+--- @param fleet 舰队VO，用于注册视野更新事件
+function BattleUIMediator.InitInkView(self, fleet)
+	self._inkView = ys.Battle.BattleInkView.New(self._ui._tf:Find("InkContainer"))
 
-	arg_27_1:RegisterEventListener(arg_27_0, BattleEvent.FLEET_HORIZON_UPDATE, arg_27_0.onFleetHorizonUpdate)
+	fleet:RegisterEventListener(self, BattleEvent.FLEET_HORIZON_UPDATE, self.onFleetHorizonUpdate)
 end
 
-function BattleUIMediator.InitDebugConsole(arg_28_0)
-	arg_28_0._debugConsoleView = arg_28_0._debugConsoleView or ys.Battle.BattleDebugConsole.New(arg_28_0._ui._tf:Find("Debug_Console"), arg_28_0._state)
+--- 初始化调试控制台
+function BattleUIMediator.InitDebugConsole(self)
+	self._debugConsoleView = self._debugConsoleView or ys.Battle.BattleDebugConsole.New(self._ui._tf:Find("Debug_Console"), self._state)
 end
 
-function BattleUIMediator.InitCameraGestureSlider(arg_29_0)
-	arg_29_0._gesture = ys.Battle.BattleCameraSlider.New(arg_29_0._ui._tf:Find("CameraController"))
+--- 初始化摄像机手势滑块
+function BattleUIMediator.InitCameraGestureSlider(self)
+	self._gesture = ys.Battle.BattleCameraSlider.New(self._ui._tf:Find("CameraController"))
 
-	ys.Battle.BattleCameraUtil.GetInstance():SetCameraSilder(arg_29_0._gesture)
-	arg_29_0._cameraUtil:SwitchCameraPos("FOLLOW_GESTURE")
+	ys.Battle.BattleCameraUtil.GetInstance():SetCameraSilder(self._gesture)
+	self._cameraUtil:SwitchCameraPos("FOLLOW_GESTURE")
 end
 
-function BattleUIMediator.InitAlchemistAPView(arg_30_0)
-	if not arg_30_0._alchemistAP then
-		local var_30_0 = ys.Battle.BattleResourceManager.GetInstance():InstReisalinAPUI()
+--- 初始化莱莎AP视图
+function BattleUIMediator.InitAlchemistAPView(self)
+	if not self._alchemistAP then
+		local apPanel = ys.Battle.BattleResourceManager.GetInstance():InstReisalinAPUI()
 
-		setParent(var_30_0, arg_30_0._ui.uiCanvas, false)
+		setParent(apPanel, self._ui.uiCanvas, false)
 
-		arg_30_0._alchemistAP = ys.Battle.BattleReisalinAPView.New(var_30_0.transform:Find("APPanel"))
+		self._alchemistAP = ys.Battle.BattleReisalinAPView.New(apPanel.transform:Find("APPanel"))
 	end
 end
 
-function BattleUIMediator.InitAlchemistManaView(arg_31_0)
-	if not arg_31_0._alchemistMana then
-		local var_31_0 = ys.Battle.BattleResourceManager.GetInstance():InstYumiaManaUI()
+--- 初始化优米雅Mana视图
+function BattleUIMediator.InitAlchemistManaView(self)
+	if not self._alchemistMana then
+		local manaPanel = ys.Battle.BattleResourceManager.GetInstance():InstYumiaManaUI()
 
-		setParent(var_31_0, arg_31_0._ui.uiCanvas, false)
+		setParent(manaPanel, self._ui.uiCanvas, false)
 
-		arg_31_0._alchemistMana = ys.Battle.BattleYumiaManaView.New(var_31_0.transform:Find("ManaPanel"))
+		self._alchemistMana = ys.Battle.BattleYumiaManaView.New(manaPanel.transform:Find("ManaPanel"))
 	end
 end
 
-function BattleUIMediator.InitGuide(arg_32_0)
+--- 初始化引导（暂未实现）
+function BattleUIMediator.InitGuide(self)
 	return
 end
 
-function BattleUIMediator.InitCamera(arg_33_0)
-	arg_33_0._camera = pg.UIMgr.GetInstance():GetMainCamera():GetComponent(typeof(Camera))
-	arg_33_0._uiCamera = GameObject.Find("UICamera"):GetComponent(typeof(Camera))
-	arg_33_0._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
+--- 初始化摄像机
+function BattleUIMediator.InitCamera(self)
+	self._camera = pg.UIMgr.GetInstance():GetMainCamera():GetComponent(typeof(Camera))
+	self._uiCamera = GameObject.Find("UICamera"):GetComponent(typeof(Camera))
+	self._cameraUtil = ys.Battle.BattleCameraUtil.GetInstance()
 
-	arg_33_0._cameraUtil:RegisterEventListener(arg_33_0, BattleEvent.CAMERA_FOCUS, arg_33_0.onCameraFocus)
-	arg_33_0._cameraUtil:RegisterEventListener(arg_33_0, BattleEvent.SHOW_PAINTING, arg_33_0.onShowPainting)
-	arg_33_0._cameraUtil:RegisterEventListener(arg_33_0, BattleEvent.BULLET_TIME, arg_33_0.onBulletTime)
+	self._cameraUtil:RegisterEventListener(self, BattleEvent.CAMERA_FOCUS, self.onCameraFocus)
+	self._cameraUtil:RegisterEventListener(self, BattleEvent.SHOW_PAINTING, self.onShowPainting)
+	self._cameraUtil:RegisterEventListener(self, BattleEvent.BULLET_TIME, self.onBulletTime)
 end
 
-function BattleUIMediator.Update(arg_34_0)
-	for iter_34_0, iter_34_1 in pairs(arg_34_0._updateViewList) do
-		iter_34_0:Update()
+--- 每帧更新，驱动所有注册的更新视图
+function BattleUIMediator.Update(self)
+	for view, _ in pairs(self._updateViewList) do
+		view:Update()
 	end
 end
 
-function BattleUIMediator.AddUIEvent(arg_35_0)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.STAGE_DATA_INIT_FINISH, arg_35_0.onStageInit)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.COMMON_DATA_INIT_FINISH, arg_35_0.onCommonInit)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.ADD_FLEET, arg_35_0.onAddFleet)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.ADD_UNIT, arg_35_0.onAddUnit)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.REMOVE_UNIT, arg_35_0.onRemoveUnit)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.HIT_ENEMY, arg_35_0.onEnemyHit)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.ADD_AIR_FIGHTER_ICON, arg_35_0.onAddAirStrike)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.REMOVE_AIR_FIGHTER_ICON, arg_35_0.onRemoveAirStrike)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.UPDATE_AIR_SUPPORT_LABEL, arg_35_0.onUpdateAirSupportLabel)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.UPDATE_HOSTILE_SUBMARINE, arg_35_0.onUpdateHostileSubmarine)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.UPDATE_ENVIRONMENT_WARNING, arg_35_0.onUpdateEnvironmentWarning)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.UPDATE_COUNT_DOWN, arg_35_0.onUpdateCountDown)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.HIDE_INTERACTABLE_BUTTONS, arg_35_0.OnHideButtons)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.ADD_UI_FX, arg_35_0.OnAddUIFX)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.EDIT_CUSTOM_WARNING_LABEL, arg_35_0.onEditCustomWarning)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleEvent.GRIDMAN_SKILL_FLOAT, arg_35_0.onGridmanSkillFloat)
-	arg_35_0._dataProxy:RegisterEventListener(arg_35_0, BattleCardPuzzleEvent.CARD_PUZZLE_INIT, arg_35_0.OnCardPuzzleInit)
+--- 注册所有UI事件监听
+function BattleUIMediator.AddUIEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onStageInit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH, self.onCommonInit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_FLEET, self.onAddFleet)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.HIT_ENEMY, self.onEnemyHit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_AIR_FIGHTER_ICON, self.onAddAirStrike)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_AIR_FIGHTER_ICON, self.onRemoveAirStrike)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_AIR_SUPPORT_LABEL, self.onUpdateAirSupportLabel)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_HOSTILE_SUBMARINE, self.onUpdateHostileSubmarine)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_ENVIRONMENT_WARNING, self.onUpdateEnvironmentWarning)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN, self.onUpdateCountDown)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.HIDE_INTERACTABLE_BUTTONS, self.OnHideButtons)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UI_FX, self.OnAddUIFX)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.EDIT_CUSTOM_WARNING_LABEL, self.onEditCustomWarning)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.GRIDMAN_SKILL_FLOAT, self.onGridmanSkillFloat)
+	self._dataProxy:RegisterEventListener(self, BattleCardPuzzleEvent.CARD_PUZZLE_INIT, self.OnCardPuzzleInit)
 end
 
-function BattleUIMediator.RemoveUIEvent(arg_36_0)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.COMMON_DATA_INIT_FINISH)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.STAGE_DATA_INIT_FINISH)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.ADD_FLEET)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.ADD_UNIT)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.REMOVE_UNIT)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.HIT_ENEMY)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_COUNT_DOWN)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.ADD_AIR_FIGHTER_ICON)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.REMOVE_AIR_FIGHTER_ICON)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_AIR_SUPPORT_LABEL)
-	arg_36_0._cameraUtil:UnregisterEventListener(arg_36_0, BattleEvent.SHOW_PAINTING)
-	arg_36_0._cameraUtil:UnregisterEventListener(arg_36_0, BattleEvent.CAMERA_FOCUS)
-	arg_36_0._cameraUtil:UnregisterEventListener(arg_36_0, BattleEvent.BULLET_TIME)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.ADD_SUBMARINE_WARINING)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.REMOVE_SUBMARINE_WARINING)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_DODGEM_SCORE)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_DODGEM_COMBO)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleEvent.SHOW_BUFFER)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleUnitEvent.POINT_HIT_CHARGE)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleUnitEvent.POINT_HIT_CANCEL)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleEvent.MANUAL_SUBMARINE_SHIFT)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleEvent.FLEET_BLIND)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleEvent.FLEET_HORIZON_UPDATE)
-	arg_36_0._userFleet:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_FLEET_ATTR)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_HOSTILE_SUBMARINE)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.UPDATE_ENVIRONMENT_WARNING)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.HIDE_INTERACTABLE_BUTTONS)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.ADD_UI_FX)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.EDIT_CUSTOM_WARNING_LABEL)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleEvent.GRIDMAN_SKILL_FLOAT)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleCardPuzzleEvent.CARD_PUZZLE_INIT)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleCardPuzzleEvent.UPDATE_FLEET_SHIP)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleCardPuzzleEvent.COMMON_BUTTON_ENABLE)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleCardPuzzleEvent.LONG_PRESS_BULLET_TIME)
-	arg_36_0._dataProxy:UnregisterEventListener(arg_36_0, BattleCardPuzzleEvent.SHOW_CARD_DETAIL)
+--- 移除所有UI事件监听
+function BattleUIMediator.RemoveUIEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_FLEET)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.HIT_ENEMY)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_AIR_FIGHTER_ICON)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_AIR_FIGHTER_ICON)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_AIR_SUPPORT_LABEL)
+	self._cameraUtil:UnregisterEventListener(self, BattleEvent.SHOW_PAINTING)
+	self._cameraUtil:UnregisterEventListener(self, BattleEvent.CAMERA_FOCUS)
+	self._cameraUtil:UnregisterEventListener(self, BattleEvent.BULLET_TIME)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_SUBMARINE_WARINING)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_SUBMARINE_WARINING)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_DODGEM_SCORE)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_DODGEM_COMBO)
+	self._userFleet:UnregisterEventListener(self, BattleEvent.SHOW_BUFFER)
+	self._userFleet:UnregisterEventListener(self, BattleUnitEvent.POINT_HIT_CHARGE)
+	self._userFleet:UnregisterEventListener(self, BattleUnitEvent.POINT_HIT_CANCEL)
+	self._userFleet:UnregisterEventListener(self, BattleEvent.MANUAL_SUBMARINE_SHIFT)
+	self._userFleet:UnregisterEventListener(self, BattleEvent.FLEET_BLIND)
+	self._userFleet:UnregisterEventListener(self, BattleEvent.FLEET_HORIZON_UPDATE)
+	self._userFleet:UnregisterEventListener(self, BattleEvent.UPDATE_FLEET_ATTR)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_HOSTILE_SUBMARINE)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_ENVIRONMENT_WARNING)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.HIDE_INTERACTABLE_BUTTONS)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UI_FX)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.EDIT_CUSTOM_WARNING_LABEL)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.GRIDMAN_SKILL_FLOAT)
+	self._dataProxy:UnregisterEventListener(self, BattleCardPuzzleEvent.CARD_PUZZLE_INIT)
+	self._dataProxy:UnregisterEventListener(self, BattleCardPuzzleEvent.UPDATE_FLEET_SHIP)
+	self._dataProxy:UnregisterEventListener(self, BattleCardPuzzleEvent.COMMON_BUTTON_ENABLE)
+	self._dataProxy:UnregisterEventListener(self, BattleCardPuzzleEvent.LONG_PRESS_BULLET_TIME)
+	self._dataProxy:UnregisterEventListener(self, BattleCardPuzzleEvent.SHOW_CARD_DETAIL)
 end
 
-function BattleUIMediator.ShowSkillPainting(arg_37_0, arg_37_1, arg_37_2, arg_37_3)
-	arg_37_3 = arg_37_3 or 1
+--- 显示技能立绘
+--- @param caster BattleUnit 技能释放者
+--- @param skillData table|nil 技能数据（含cutin_cover/cutin_cover_DAL）
+--- @param speed number 播放速度，默认1
+function BattleUIMediator.ShowSkillPainting(self, caster, skillData, speed)
+	speed = speed or 1
 
-	local var_37_0
+	local cutinCover
 
-	if arg_37_2 then
-		if arg_37_2.cutin_cover then
-			var_37_0 = arg_37_2.cutin_cover
-		elseif arg_37_2.cutin_cover_DAL then
-			arg_37_0._ui:CutInPaintingDAL(arg_37_1:GetTemplate(), arg_37_3, arg_37_1:GetIFF(), arg_37_2)
+	if skillData then
+		if skillData.cutin_cover then
+			cutinCover = skillData.cutin_cover
+		elseif skillData.cutin_cover_DAL then
+			self._ui:CutInPaintingDAL(caster:GetTemplate(), speed, caster:GetIFF(), skillData)
 
 			return
 		end
 	end
 
-	arg_37_0._ui:CutInPainting(arg_37_1:GetTemplate(), arg_37_3, arg_37_1:GetIFF(), var_37_0)
+	self._ui:CutInPainting(caster:GetTemplate(), speed, caster:GetIFF(), cutinCover)
 end
 
-function BattleUIMediator.ShowSkillFloat(arg_38_0, arg_38_1, arg_38_2, arg_38_3)
-	arg_38_0._ui:SkillHrzPop(arg_38_2, arg_38_1, arg_38_3)
+--- 显示技能浮窗
+--- @param commander number 指挥官ID
+--- @param skillIcon string|number 技能图标资源
+--- @param forceOrNot boolean 是否强制显示
+function BattleUIMediator.ShowSkillFloat(self, commander, skillIcon, forceOrNot)
+	self._ui:SkillHrzPop(skillIcon, commander, forceOrNot)
 end
 
-function BattleUIMediator.ShowSkillFloatCover(arg_39_0, arg_39_1, arg_39_2, arg_39_3)
-	arg_39_0._ui:SkillHrzPopCover(arg_39_2, arg_39_1, arg_39_3)
+--- 显示技能浮窗（覆盖版）
+--- @param commander number 指挥官ID
+--- @param coverIcon string 覆盖图标资源
+--- @param forceOrNot boolean 是否强制显示
+function BattleUIMediator.ShowSkillFloatCover(self, commander, coverIcon, forceOrNot)
+	self._ui:SkillHrzPopCover(coverIcon, commander, forceOrNot)
 end
 
---- @class BattleUIMediator
---- @param countStart number
---- @param countEnd number
---- @param interval number|nil
---- @param callback function|nil
---- @return nil
 --- 进行海面位移
+--- @param countStart number 起始偏移量
+--- @param countEnd number 目标偏移量
+--- @param interval number|nil 移动间隔，默认使用BattleConfig.calcInterval
+--- @param callback function|nil 完成回调
 function BattleUIMediator.SeaSurfaceShift(self, countStart, countEnd, interval, callback)
-	local _interval = interval or ys.Battle.BattleConfig.calcInterval
+	local finalInterval = interval or ys.Battle.BattleConfig.calcInterval
 
-	self._seaView:ShiftSurface(countStart, countEnd, _interval, callback)
+	self._seaView:ShiftSurface(countStart, countEnd, finalInterval, callback)
 end
 
-function BattleUIMediator.ShowAutoBtn(arg_41_0)
-	SetActive(arg_41_0._autoBtn.transform, true)
+--- 显示自动按钮
+function BattleUIMediator.ShowAutoBtn(self)
+	SetActive(self._autoBtn.transform, true)
 
-	local var_41_0 = arg_41_0:GetState():GetBattleType()
+	local battleType = self:GetState():GetBattleType()
 
-	triggerToggle(arg_41_0._autoBtn, ys.Battle.BattleState.IsAutoBotActive(var_41_0))
+	triggerToggle(self._autoBtn, ys.Battle.BattleState.IsAutoBotActive(battleType))
 end
 
-function BattleUIMediator.ShowTimer(arg_42_0)
-	arg_42_0._timerView:SetActive(true)
+--- 显示计时器
+function BattleUIMediator.ShowTimer(self)
+	self._timerView:SetActive(true)
 end
 
-function BattleUIMediator.ShowDuelBar(arg_43_0)
-	arg_43_0._duelRateBar:SetActive(true)
+--- 显示擂台伤害率条
+function BattleUIMediator.ShowDuelBar(self)
+	self._duelRateBar:SetActive(true)
 end
 
-function BattleUIMediator.ShowSimulationView(arg_44_0)
-	arg_44_0._simulationBuffCountView:SetActive(true)
+--- 显示模拟战buff计数
+function BattleUIMediator.ShowSimulationView(self)
+	self._simulationBuffCountView:SetActive(true)
 end
 
-function BattleUIMediator.ShowPauseButton(arg_45_0, arg_45_1)
-	setActive(arg_45_0._ui._tf:Find("PauseBtn"), arg_45_1)
+--- 显示/隐藏暂停按钮
+--- @param visible boolean 是否可见
+function BattleUIMediator.ShowPauseButton(self, visible)
+	setActive(self._ui._tf:Find("PauseBtn"), visible)
 end
 
-function BattleUIMediator.ShowDodgemScoreBar(arg_46_0)
-	arg_46_0:InitScoreBar()
-	arg_46_0._dataProxy:RegisterEventListener(arg_46_0, BattleEvent.UPDATE_DODGEM_SCORE, arg_46_0.onUpdateDodgemScore)
-	arg_46_0._dataProxy:RegisterEventListener(arg_46_0, BattleEvent.UPDATE_DODGEM_COMBO, arg_46_0.onUpdateDodgemCombo)
-	arg_46_0._scoreBarView:UpdateScore(0)
-	arg_46_0._scoreBarView:SetActive(true)
+--- 显示闪避计分条
+function BattleUIMediator.ShowDodgemScoreBar(self)
+	self:InitScoreBar()
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_DODGEM_SCORE, self.onUpdateDodgemScore)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_DODGEM_COMBO, self.onUpdateDodgemCombo)
+	self._scoreBarView:UpdateScore(0)
+	self._scoreBarView:SetActive(true)
 end
 
-function BattleUIMediator.ShowAirFightScoreBar(arg_47_0)
-	arg_47_0:InitAirFightScoreBar()
-	arg_47_0._dataProxy:RegisterEventListener(arg_47_0, BattleEvent.UPDATE_DODGEM_SCORE, arg_47_0.onUpdateDodgemScore)
-	arg_47_0._dataProxy:RegisterEventListener(arg_47_0, BattleEvent.UPDATE_DODGEM_COMBO, arg_47_0.onUpdateDodgemCombo)
-	arg_47_0._scoreBarView:UpdateScore(0)
-	arg_47_0._scoreBarView:SetActive(true)
+--- 显示空战计分条
+function BattleUIMediator.ShowAirFightScoreBar(self)
+	self:InitAirFightScoreBar()
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_DODGEM_SCORE, self.onUpdateDodgemScore)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_DODGEM_COMBO, self.onUpdateDodgemCombo)
+	self._scoreBarView:UpdateScore(0)
+	self._scoreBarView:SetActive(true)
 end
 
-function BattleUIMediator.ScaleUISpeed(arg_48_0, arg_48_1)
-	local var_48_0 = arg_48_0._ui._tf:Find("AutoBtn/on"):GetComponent(typeof(Animation))
+--- 缩放UI动画速度
+--- @param speedScale number 目标速度倍率
+function BattleUIMediator.ScaleUISpeed(self, speedScale)
+	local onAnim = self._ui._tf:Find("AutoBtn/on"):GetComponent(typeof(Animation))
 
-	if var_48_0 then
-		var_48_0:get_Item("autobtn_toOn").speed = arg_48_1
+	if onAnim then
+		onAnim:get_Item("autobtn_toOn").speed = speedScale
 	end
 
-	local var_48_1 = arg_48_0._ui._tf:Find("AutoBtn/off"):GetComponent(typeof(Animation))
+	local offAnim = self._ui._tf:Find("AutoBtn/off"):GetComponent(typeof(Animation))
 
-	if var_48_1 then
-		var_48_1:get_Item("autobtn_toOff").speed = arg_48_1
+	if offAnim then
+		offAnim:get_Item("autobtn_toOff").speed = speedScale
 	end
 end
 
-function BattleUIMediator.onStageInit(arg_49_0, arg_49_1)
-	arg_49_0:InitJoystick()
-	arg_49_0:InitScene()
-	arg_49_0:InitTimer()
-	arg_49_0:InitEnemyHpBar()
-	arg_49_0:InitAirStrikeIcon()
-	arg_49_0:InitCommonWarning()
-	arg_49_0:InitAutoBtn()
-	arg_49_0:InitMainDamagedView()
+--- 关卡数据初始化完成事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onStageInit(self, event)
+	self:InitJoystick()
+	self:InitScene()
+	self:InitTimer()
+	self:InitEnemyHpBar()
+	self:InitAirStrikeIcon()
+	self:InitCommonWarning()
+	self:InitAutoBtn()
+	self:InitMainDamagedView()
 end
 
-function BattleUIMediator.onEnemyHit(arg_50_0, arg_50_1)
-	local var_50_0 = arg_50_1.Data
+--- 命中敌人事件，切换敌人血条显示
+--- @param event BattleEvent 事件对象（Data为被命中的敌方单位）
+function BattleUIMediator.onEnemyHit(self, event)
+	local hitEnemy = event.Data
 
-	if var_50_0:GetDiveInvisible() and not var_50_0:GetDiveDetected() then
+	if hitEnemy:GetDiveInvisible() and not hitEnemy:GetDiveDetected() then
 		return
 	end
 
-	local var_50_1 = arg_50_0._enemyHpBar:GetCurrentTarget()
+	local currentTarget = self._enemyHpBar:GetCurrentTarget()
 
-	if var_50_1 then
-		if var_50_1 ~= var_50_0 then
-			arg_50_0._enemyHpBar:SwitchTarget(var_50_0, arg_50_0._dataProxy:GetUnitList())
+	if currentTarget then
+		if currentTarget ~= hitEnemy then
+			self._enemyHpBar:SwitchTarget(hitEnemy, self._dataProxy:GetUnitList())
 		end
 	else
-		arg_50_0._enemyHpBar:SwitchTarget(var_50_0, arg_50_0._dataProxy:GetUnitList())
+		self._enemyHpBar:SwitchTarget(hitEnemy, self._dataProxy:GetUnitList())
 	end
 end
 
-function BattleUIMediator.onEnemyHpUpdate(arg_51_0, arg_51_1)
-	local var_51_0 = arg_51_1.Dispatcher
+--- 敌方血量更新事件
+--- @param event BattleUnitEvent 事件对象（Dispatcher为触发单位）
+function BattleUIMediator.onEnemyHpUpdate(self, event)
+	local unit = event.Dispatcher
 
-	if var_51_0 == arg_51_0._enemyHpBar:GetCurrentTarget() and (not var_51_0:GetDiveInvisible() or var_51_0:GetDiveDetected()) then
-		arg_51_0._enemyHpBar:UpdateHpBar()
+	if unit == self._enemyHpBar:GetCurrentTarget() and (not unit:GetDiveInvisible() or unit:GetDiveDetected()) then
+		self._enemyHpBar:UpdateHpBar()
 	end
 end
 
-function BattleUIMediator.onPlayerMainUnitHpUpdate(arg_52_0, arg_52_1)
-	if arg_52_1.Data.dHP < 0 then
-		arg_52_0._mainDamagedView:Play()
+--- 玩家主力舰血量更新事件，扣血时播放受损提示
+--- @param event BattleUnitEvent 事件对象
+function BattleUIMediator.onPlayerMainUnitHpUpdate(self, event)
+	if event.Data.dHP < 0 then
+		self._mainDamagedView:Play()
 	end
 end
 
-function BattleUIMediator.onSkillFloat(arg_53_0, arg_53_1)
-	local var_53_0 = arg_53_1.Data
-	local var_53_1 = var_53_0.coverHrzIcon
-	local var_53_2 = var_53_0.commander
-	local var_53_3 = var_53_0.skillName
-	local var_53_4 = arg_53_1.Dispatcher
+--- 技能浮窗事件
+--- @param event BattleUnitEvent 事件对象
+function BattleUIMediator.onSkillFloat(self, event)
+	local skillData = event.Data
+	local coverIcon = skillData.coverHrzIcon
+	local commander = skillData.commander
+	local skillName = skillData.skillName
+	local casterUnit = event.Dispatcher
 
-	if var_53_1 then
-		arg_53_0:ShowSkillFloatCover(var_53_4, var_53_3, var_53_1)
+	if coverIcon then
+		self:ShowSkillFloatCover(casterUnit, skillName, coverIcon)
 	else
-		arg_53_0:ShowSkillFloat(var_53_4, var_53_3, var_53_2)
+		self:ShowSkillFloat(casterUnit, skillName, commander)
 	end
 end
 
-function BattleUIMediator.onCommonInit(arg_54_0, arg_54_1)
-	arg_54_0._skillView = ys.Battle.BattleSkillView.New(arg_54_0, arg_54_1.Data)
-	arg_54_0._updateViewList[arg_54_0._skillView] = true
-	arg_54_0._userFleet = arg_54_0._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE)
+--- 通用数据初始化完成事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onCommonInit(self, event)
+	self._skillView = ys.Battle.BattleSkillView.New(self, event.Data)
+	self._updateViewList[self._skillView] = true
+	self._userFleet = self._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE)
 
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleEvent.SHOW_BUFFER, arg_54_0.onShowBuffer)
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleUnitEvent.POINT_HIT_CHARGE, arg_54_0.onPointHitSight)
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleUnitEvent.POINT_HIT_CANCEL, arg_54_0.onPointHitSight)
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleEvent.MANUAL_SUBMARINE_SHIFT, arg_54_0.onManualSubShift)
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleEvent.FLEET_BLIND, arg_54_0.onFleetBlind)
-	arg_54_0._userFleet:RegisterEventListener(arg_54_0, BattleEvent.UPDATE_FLEET_ATTR, arg_54_0.onFleetAttrUpdate)
+	self._userFleet:RegisterEventListener(self, BattleEvent.SHOW_BUFFER, self.onShowBuffer)
+	self._userFleet:RegisterEventListener(self, BattleUnitEvent.POINT_HIT_CHARGE, self.onPointHitSight)
+	self._userFleet:RegisterEventListener(self, BattleUnitEvent.POINT_HIT_CANCEL, self.onPointHitSight)
+	self._userFleet:RegisterEventListener(self, BattleEvent.MANUAL_SUBMARINE_SHIFT, self.onManualSubShift)
+	self._userFleet:RegisterEventListener(self, BattleEvent.FLEET_BLIND, self.onFleetBlind)
+	self._userFleet:RegisterEventListener(self, BattleEvent.UPDATE_FLEET_ATTR, self.onFleetAttrUpdate)
 
-	arg_54_0._sightView = ys.Battle.BattleOpticalSightView.New(arg_54_0._ui._tf:Find("ChargeAreaContainer"))
+	self._sightView = ys.Battle.BattleOpticalSightView.New(self._ui._tf:Find("ChargeAreaContainer"))
 
-	arg_54_0._sightView:SetFleetVO(arg_54_0._userFleet)
+	self._sightView:SetFleetVO(self._userFleet)
 
-	local var_54_0, var_54_1, var_54_2, var_54_3 = arg_54_0._dataProxy:GetTotalBounds()
+	local leftBound, rightBound, bottomBound, topBound = self._dataProxy:GetTotalBounds()
 
-	arg_54_0._sightView:SetAreaBound(var_54_2, var_54_3)
+	self._sightView:SetAreaBound(bottomBound, topBound)
 
-	local var_54_4
-	local var_54_5
+	local hasEnemyAdvantageBuff
+	local hasSupportUnits
 
-	if arg_54_0._dataProxy:GetInitData().ChapterBuffIDs then
-		for iter_54_0, iter_54_1 in ipairs(arg_54_0._dataProxy:GetInitData().ChapterBuffIDs) do
-			if iter_54_1 == 9727 then
-				var_54_4 = true
+	if self._dataProxy:GetInitData().ChapterBuffIDs then
+		for _, buffID in ipairs(self._dataProxy:GetInitData().ChapterBuffIDs) do
+			if buffID == 9727 then
+				hasEnemyAdvantageBuff = true
 
 				break
 			end
 		end
 	end
 
-	if #arg_54_0._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetSupportUnitList() > 0 then
-		var_54_5 = true
+	if #self._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetSupportUnitList() > 0 then
+		hasSupportUnits = true
 	end
 
-	if var_54_5 and not var_54_4 then
-		arg_54_0._airAdavantageTF = arg_54_0._airSupportTF:Find("player_advantage")
-	elseif var_54_4 and not var_54_5 then
-		arg_54_0._airAdavantageTF = arg_54_0._airSupportTF:Find("enemy_advantage")
-	elseif var_54_4 and var_54_5 then
-		arg_54_0._airAdavantageTF = arg_54_0._airSupportTF:Find("draw")
+	-- 根据制空状态和支援情况决定空中支援标签显示
+	if hasSupportUnits and not hasEnemyAdvantageBuff then
+		self._airAdavantageTF = self._airSupportTF:Find("player_advantage")
+	elseif hasEnemyAdvantageBuff and not hasSupportUnits then
+		self._airAdavantageTF = self._airSupportTF:Find("enemy_advantage")
+	elseif hasEnemyAdvantageBuff and hasSupportUnits then
+		self._airAdavantageTF = self._airSupportTF:Find("draw")
 	end
 end
 
-function BattleUIMediator.onAddFleet(arg_55_0, arg_55_1)
-	local var_55_0 = arg_55_1.Data.fleetVO
+--- 添加舰队事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onAddFleet(self, event)
+	local fleetVO = event.Data.fleetVO
 
 	if PlayerPrefs.GetInt(BATTLE_EXPOSE_LINE, 1) == 1 then
-		arg_55_0:SetFleetCloakLine(var_55_0)
+		self:SetFleetCloakLine(fleetVO)
 	end
 end
 
-function BattleUIMediator.SetFleetCloakLine(arg_56_0, arg_56_1)
-	if #arg_56_1:GetCloakList() > 0 then
-		local var_56_0 = arg_56_1:GetIFF()
-		local var_56_1 = arg_56_1:GetFleetVisionLine()
-		local var_56_2 = arg_56_1:GetFleetExposeLine()
+--- 设置舰队隐身/暴露线
+--- @param fleetVO BattleFleetVO 舰队视图对象
+function BattleUIMediator.SetFleetCloakLine(self, fleetVO)
+	if #fleetVO:GetCloakList() > 0 then
+		local iff = fleetVO:GetIFF()
+		local visionLine = fleetVO:GetFleetVisionLine()
+		local exposeLine = fleetVO:GetFleetExposeLine()
 
-		arg_56_0._seaView:SetExposeLine(var_56_0, var_56_1, var_56_2)
+		self._seaView:SetExposeLine(iff, visionLine, exposeLine)
 	end
 end
 
-function BattleUIMediator.onAddUnit(arg_57_0, arg_57_1)
-	local var_57_0 = arg_57_1.Data.type
-	local var_57_1 = arg_57_1.Data.unit
+--- 添加单位事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
 
-	if var_57_0 == BattleConst.UnitType.PLAYER_UNIT or var_57_0 == BattleConst.UnitType.ENEMY_UNIT or var_57_0 == BattleConst.UnitType.BOSS_UNIT then
-		arg_57_0:registerUnitEvent(var_57_1)
+	if unitType == BattleConst.UnitType.PLAYER_UNIT or unitType == BattleConst.UnitType.ENEMY_UNIT or unitType == BattleConst.UnitType.BOSS_UNIT then
+		self:registerUnitEvent(unit)
 	end
 
-	if var_57_1:IsBoss() and arg_57_0._dataProxy:GetActiveBossCount() == 1 then
-		arg_57_0:AddBossWarningUI()
-	elseif var_57_0 == BattleConst.UnitType.ENEMY_UNIT then
-		arg_57_0:registerNPCUnitEvent(var_57_1)
-	elseif var_57_0 == BattleConst.UnitType.PLAYER_UNIT and var_57_1:IsMainFleetUnit() and var_57_1:GetIFF() == BattleConfig.FRIENDLY_CODE then
-		arg_57_0:registerPlayerMainUnitEvent(var_57_1)
+	if unit:IsBoss() and self._dataProxy:GetActiveBossCount() == 1 then
+		self:AddBossWarningUI()
+	elseif unitType == BattleConst.UnitType.ENEMY_UNIT then
+		self:registerNPCUnitEvent(unit)
+	elseif unitType == BattleConst.UnitType.PLAYER_UNIT and unit:IsMainFleetUnit() and unit:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self:registerPlayerMainUnitEvent(unit)
 	end
 
-	local var_57_2 = var_57_1:GetTemplate().nationality
+	-- 根据单位国籍决定是否显示特殊资源面板（AP/Mana）
+	local nationality = unit:GetTemplate().nationality
 
-	if table.contains(BattleConfig.ALCHEMIST_AP_UI, var_57_2) and var_57_1:GetIFF() == BattleConfig.FRIENDLY_CODE then
-		arg_57_0:InitAlchemistAPView()
+	if table.contains(BattleConfig.ALCHEMIST_AP_UI, nationality) and unit:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self:InitAlchemistAPView()
 	end
 
-	if table.contains(BattleConfig.YUMIA_MANA_UI, var_57_2) and var_57_1:GetIFF() == BattleConfig.FRIENDLY_CODE then
-		arg_57_0:InitAlchemistManaView()
-	end
-end
-
-function BattleUIMediator.onSubmarineDetected(arg_58_0, arg_58_1)
-	local var_58_0 = arg_58_1.Dispatcher
-
-	if arg_58_0._enemyHpBar:GetCurrentTarget() and arg_58_0._enemyHpBar:GetCurrentTarget() == var_58_0 and var_58_0:GetDiveDetected() == false then
-		arg_58_0._enemyHpBar:RemoveUnit()
+	if table.contains(BattleConfig.YUMIA_MANA_UI, nationality) and unit:GetIFF() == BattleConfig.FRIENDLY_CODE then
+		self:InitAlchemistManaView()
 	end
 end
 
-function BattleUIMediator.onRemoveUnit(arg_59_0, arg_59_1)
-	local var_59_0 = arg_59_1.Data.unit
-	local var_59_1 = arg_59_1.Data.type
+--- 潜艇被侦测事件
+--- @param event BattleUnitEvent 事件对象
+function BattleUIMediator.onSubmarineDetected(self, event)
+	local submarine = event.Dispatcher
 
-	if var_59_1 == BattleConst.UnitType.PLAYER_UNIT or var_59_1 == BattleConst.UnitType.ENEMY_UNIT or var_59_1 == BattleConst.UnitType.BOSS_UNIT then
-		arg_59_0:unregisterUnitEvent(var_59_0)
-	end
-
-	if var_59_1 == BattleConst.UnitType.ENEMY_UNIT and not var_59_0:IsBoss() then
-		arg_59_0:unregisterNPCUnitEvent(var_59_0)
-	elseif var_59_0:GetIFF() == BattleConfig.FRIENDLY_CODE and var_59_0:IsMainFleetUnit() then
-		arg_59_0:unregisterPlayerMainUnitEvent(var_59_0)
-	end
-
-	if arg_59_1.Data.deadReason == BattleConst.UnitDeathReason.LEAVE and arg_59_0._enemyHpBar:GetCurrentTarget() and arg_59_0._enemyHpBar:GetCurrentTarget() == arg_59_1.Data.unit then
-		arg_59_0._enemyHpBar:RemoveUnit(arg_59_1.Data.deadReason)
+	if self._enemyHpBar:GetCurrentTarget() and self._enemyHpBar:GetCurrentTarget() == submarine and submarine:GetDiveDetected() == false then
+		self._enemyHpBar:RemoveUnit()
 	end
 end
 
-function BattleUIMediator.onUpdateCountDown(arg_60_0, arg_60_1)
-	arg_60_0._timerView:SetCountDownText(arg_60_0._dataProxy:GetCountDown())
-end
+--- 移除单位事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onRemoveUnit(self, event)
+	local unit = event.Data.unit
+	local unitType = event.Data.type
 
-function BattleUIMediator.onUpdateDodgemScore(arg_61_0, arg_61_1)
-	local var_61_0 = arg_61_1.Data.totalScore
-
-	arg_61_0._scoreBarView:UpdateScore(var_61_0)
-end
-
-function BattleUIMediator.onUpdateDodgemCombo(arg_62_0, arg_62_1)
-	local var_62_0 = arg_62_1.Data.combo
-
-	arg_62_0._scoreBarView:UpdateCombo(var_62_0)
-end
-
-function BattleUIMediator.onAddAirStrike(arg_63_0, arg_63_1)
-	local var_63_0 = arg_63_1.Data.index
-	local var_63_1 = arg_63_0._dataProxy:GetAirFighterInfo(var_63_0)
-
-	arg_63_0._airStrikeView:AppendIcon(var_63_0, var_63_1)
-end
-
-function BattleUIMediator.onRemoveAirStrike(arg_64_0, arg_64_1)
-	local var_64_0 = arg_64_1.Data.index
-	local var_64_1 = arg_64_0._dataProxy:GetAirFighterInfo(var_64_0)
-
-	arg_64_0._airStrikeView:RemoveIcon(var_64_0, var_64_1)
-end
-
-function BattleUIMediator.onUpdateAirSupportLabel(arg_65_0, arg_65_1)
-	local var_65_0 = arg_65_0._dataProxy:GetAirFighterList()
-	local var_65_1 = 0
-
-	for iter_65_0, iter_65_1 in ipairs(var_65_0) do
-		var_65_1 = var_65_1 + iter_65_1.totalNumber
+	if unitType == BattleConst.UnitType.PLAYER_UNIT or unitType == BattleConst.UnitType.ENEMY_UNIT or unitType == BattleConst.UnitType.BOSS_UNIT then
+		self:unregisterUnitEvent(unit)
 	end
 
-	if var_65_1 == 0 or arg_65_0._warningView:GetCount() > 0 then
-		eachChild(arg_65_0._airSupportTF, function(arg_66_0)
-			setActive(arg_66_0, false)
+	if unitType == BattleConst.UnitType.ENEMY_UNIT and not unit:IsBoss() then
+		self:unregisterNPCUnitEvent(unit)
+	elseif unit:GetIFF() == BattleConfig.FRIENDLY_CODE and unit:IsMainFleetUnit() then
+		self:unregisterPlayerMainUnitEvent(unit)
+	end
+
+	-- 如果当前血条目标因离开而移除，清除血条
+	if event.Data.deadReason == BattleConst.UnitDeathReason.LEAVE and self._enemyHpBar:GetCurrentTarget() and self._enemyHpBar:GetCurrentTarget() == event.Data.unit then
+		self._enemyHpBar:RemoveUnit(event.Data.deadReason)
+	end
+end
+
+--- 倒计时更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateCountDown(self, event)
+	self._timerView:SetCountDownText(self._dataProxy:GetCountDown())
+end
+
+--- 闪避计分更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateDodgemScore(self, event)
+	local totalScore = event.Data.totalScore
+
+	self._scoreBarView:UpdateScore(totalScore)
+end
+
+--- 闪避连击更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateDodgemCombo(self, event)
+	local combo = event.Data.combo
+
+	self._scoreBarView:UpdateCombo(combo)
+end
+
+--- 添加空袭图标事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onAddAirStrike(self, event)
+	local index = event.Data.index
+	local info = self._dataProxy:GetAirFighterInfo(index)
+
+	self._airStrikeView:AppendIcon(index, info)
+end
+
+--- 移除空袭图标事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onRemoveAirStrike(self, event)
+	local index = event.Data.index
+	local info = self._dataProxy:GetAirFighterInfo(index)
+
+	self._airStrikeView:RemoveIcon(index, info)
+end
+
+--- 空中支援标签更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateAirSupportLabel(self, event)
+	local airFighterList = self._dataProxy:GetAirFighterList()
+	local totalCount = 0
+
+	for _, fighterInfo in ipairs(airFighterList) do
+		totalCount = totalCount + fighterInfo.totalNumber
+	end
+
+	-- 没有飞机或有警告时隐藏空中支援标签，否则显示制空状态
+	if totalCount == 0 or self._warningView:GetCount() > 0 then
+		eachChild(self._airSupportTF, function(child)
+			setActive(child, false)
 		end)
-	elseif arg_65_0._airAdavantageTF then
-		setActive(arg_65_0._airAdavantageTF, true)
+	elseif self._airAdavantageTF then
+		setActive(self._airAdavantageTF, true)
 	end
 end
 
-function BattleUIMediator.onUpdateHostileSubmarine(arg_67_0, arg_67_1)
-	local var_67_0 = arg_67_0._dataProxy:GetEnemySubmarineCount()
+--- 敌方潜艇数量更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateHostileSubmarine(self, event)
+	local count = self._dataProxy:GetEnemySubmarineCount()
 
-	arg_67_0._warningView:UpdateHostileSubmarineCount(var_67_0)
-	arg_67_0:onUpdateAirSupportLabel()
+	self._warningView:UpdateHostileSubmarineCount(count)
+	self:onUpdateAirSupportLabel()
 end
 
-function BattleUIMediator.onUpdateEnvironmentWarning(arg_68_0, arg_68_1)
-	if arg_68_1.Data.isActive then
-		arg_68_0._warningView:ActiveWarning(arg_68_0._warningView.WARNING_TYPE_ARTILLERY)
+--- 环境警告更新事件（炮击支援等）
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onUpdateEnvironmentWarning(self, event)
+	if event.Data.isActive then
+		self._warningView:ActiveWarning(self._warningView.WARNING_TYPE_ARTILLERY)
 	else
-		arg_68_0._warningView:DeactiveWarning(arg_68_0._warningView.WARNING_TYPE_ARTILLERY)
+		self._warningView:DeactiveWarning(self._warningView.WARNING_TYPE_ARTILLERY)
 	end
 end
 
-function BattleUIMediator.onCameraFocus(arg_69_0, arg_69_1)
-	local var_69_0 = arg_69_1.Data
+--- 摄像机聚焦事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onCameraFocus(self, event)
+	local focusData = event.Data
 
-	if var_69_0.unit ~= nil then
-		local var_69_1 = var_69_0.skill or false
+	if focusData.unit ~= nil then
+		-- 聚焦到某个单位时，禁用UI组件并可能禁用技能浮窗
+		local hasSkill = focusData.skill or false
 
-		arg_69_0:EnableComponent(false)
-		arg_69_0:EnableSkillFloat(var_69_1)
+		self:EnableComponent(false)
+		self:EnableSkillFloat(hasSkill)
 	else
-		local var_69_2 = var_69_0.duration + var_69_0.extraBulletTime
+		-- 延迟后恢复组件
+		local totalDuration = focusData.duration + focusData.extraBulletTime
 
-		LeanTween.delayedCall(arg_69_0._ui._go, var_69_2, System.Action(function()
-			arg_69_0:EnableComponent(true)
-			arg_69_0:EnableSkillFloat(true)
+		LeanTween.delayedCall(self._ui._go, totalDuration, System.Action(function()
+			self:EnableComponent(true)
+			self:EnableSkillFloat(true)
 		end))
 	end
 end
 
-function BattleUIMediator.onShowPainting(arg_71_0, arg_71_1)
-	local var_71_0 = arg_71_1.Data
+--- 显示立绘事件（CutIn）
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onShowPainting(self, event)
+	local paintingData = event.Data
 
-	arg_71_0:ShowSkillPainting(var_71_0.caster, var_71_0.skill, var_71_0.speed)
+	self:ShowSkillPainting(paintingData.caster, paintingData.skill, paintingData.speed)
 end
 
-function BattleUIMediator.onBulletTime(arg_72_0, arg_72_1)
-	local var_72_0 = arg_72_1.Data
-	local var_72_1 = var_72_0.key
-	local var_72_2 = var_72_0.rate
+--- 子弹时间事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onBulletTime(self, event)
+	local bulletTimeData = event.Data
+	local key = bulletTimeData.key
+	local rate = bulletTimeData.rate
 
-	if var_72_2 then
-		BattleVariable.AppendMapFactor(var_72_1, var_72_2)
+	if rate then
+		BattleVariable.AppendMapFactor(key, rate)
 	else
-		BattleVariable.RemoveMapFactor(var_72_1)
+		BattleVariable.RemoveMapFactor(key)
 	end
 
-	arg_72_0._seaView:UpdateSpeedScaler()
+	self._seaView:UpdateSpeedScaler()
 end
 
-function BattleUIMediator.onShowBuffer(arg_73_0, arg_73_1)
-	local var_73_0 = arg_73_1.Data.dist
+--- 显示缓冲区事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onShowBuffer(self, event)
+	local dist = event.Data.dist
 
-	arg_73_0._seaView:UpdateBufferAlpha(var_73_0)
+	self._seaView:UpdateBufferAlpha(dist)
 end
 
-function BattleUIMediator.onManualSubShift(arg_74_0, arg_74_1)
-	local var_74_0 = arg_74_1.Data.state
+--- 手动潜艇切换事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onManualSubShift(self, event)
+	local state = event.Data.state
 
-	arg_74_0._skillView:ShiftSubmarineManualButton(var_74_0)
+	self._skillView:ShiftSubmarineManualButton(state)
 end
 
-function BattleUIMediator.onPointHitSight(arg_75_0, arg_75_1)
-	local var_75_0 = arg_75_1.ID
+--- 瞄准触点命中/取消事件
+--- @param event BattleUnitEvent 事件对象
+function BattleUIMediator.onPointHitSight(self, event)
+	local eventID = event.ID
 
-	if var_75_0 == BattleUnitEvent.POINT_HIT_CHARGE then
-		arg_75_0._sightView:SetActive(true)
+	if eventID == BattleUnitEvent.POINT_HIT_CHARGE then
+		self._sightView:SetActive(true)
 
-		arg_75_0._updateViewList[arg_75_0._sightView] = true
-	elseif var_75_0 == BattleUnitEvent.POINT_HIT_CANCEL then
-		arg_75_0._sightView:SetActive(false)
+		self._updateViewList[self._sightView] = true
+	elseif eventID == BattleUnitEvent.POINT_HIT_CANCEL then
+		self._sightView:SetActive(false)
 
-		arg_75_0._updateViewList[arg_75_0._sightView] = nil
+		self._updateViewList[self._sightView] = nil
 	end
 end
 
-function BattleUIMediator.onFleetBlind(arg_76_0, arg_76_1)
-	local var_76_0 = arg_76_1.Data.isBlind
-	local var_76_1 = arg_76_1.Dispatcher
+--- 舰队致盲事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onFleetBlind(self, event)
+	local isBlind = event.Data.isBlind
+	local fleet = event.Dispatcher
 
-	if not arg_76_0._inkView then
-		arg_76_0:InitInkView(var_76_1)
+	if not self._inkView then
+		self:InitInkView(fleet)
 	end
 
-	if var_76_0 then
-		local var_76_2 = var_76_1:GetUnitList()
+	if isBlind then
+		local unitList = fleet:GetUnitList()
 
-		arg_76_0._inkView:SetActive(true, var_76_2)
-		arg_76_0._skillView:HideSkillButton(true)
+		self._inkView:SetActive(true, unitList)
+		self._skillView:HideSkillButton(true)
 
-		arg_76_0._updateViewList[arg_76_0._inkView] = true
+		self._updateViewList[self._inkView] = true
 	else
-		arg_76_0._inkView:SetActive(false)
-		arg_76_0._skillView:HideSkillButton(false)
+		self._inkView:SetActive(false)
+		self._skillView:HideSkillButton(false)
 
-		arg_76_0._updateViewList[arg_76_0._inkView] = nil
+		self._updateViewList[self._inkView] = nil
 	end
 end
 
-function BattleUIMediator.onFleetHorizonUpdate(arg_77_0, arg_77_1)
-	if not arg_77_0._inkView then
+--- 舰队视野更新事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onFleetHorizonUpdate(self, event)
+	if not self._inkView then
 		return
 	end
 
-	local var_77_0 = arg_77_1.Dispatcher:GetUnitList()
+	local unitList = event.Dispatcher:GetUnitList()
 
-	arg_77_0._inkView:UpdateHollow(var_77_0)
+	self._inkView:UpdateHollow(unitList)
 end
 
-function BattleUIMediator.onFleetAttrUpdate(arg_78_0, arg_78_1)
-	if arg_78_0._alchemistAP and arg_78_1.Data.attr == arg_78_0._alchemistAP:GetAttrName() then
-		arg_78_0._alchemistAP:UpdateAP(arg_78_1.Data.value)
+--- 舰队属性更新事件（AP/Mana等特殊资源）
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onFleetAttrUpdate(self, event)
+	if self._alchemistAP and event.Data.attr == self._alchemistAP:GetAttrName() then
+		self._alchemistAP:UpdateAP(event.Data.value)
 	end
 
-	if arg_78_0._alchemistMana and arg_78_1.Data.attr == arg_78_0._alchemistMana:GetAttrName() then
-		arg_78_0._alchemistMana:UpdateMana(arg_78_1.Data.value)
+	if self._alchemistMana and event.Data.attr == self._alchemistMana:GetAttrName() then
+		self._alchemistMana:UpdateMana(event.Data.value)
 	end
 end
 
-function BattleUIMediator.OnAddUIFX(arg_79_0, arg_79_1)
-	local var_79_0 = arg_79_1.Data.FXID
-	local var_79_1 = arg_79_1.Data.position
-	local var_79_2 = arg_79_1.Data.localScale
-	local var_79_3 = arg_79_1.Data.orderDiff
+--- 添加UI特效事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.OnAddUIFX(self, event)
+	local fxID = event.Data.FXID
+	local position = event.Data.position
+	local localScale = event.Data.localScale
+	local orderDiff = event.Data.orderDiff
 
-	arg_79_0:AddUIFX(var_79_3, var_79_0, var_79_1, var_79_2)
+	self:AddUIFX(orderDiff, fxID, position, localScale)
 end
 
-function BattleUIMediator.AddUIFX(arg_80_0, arg_80_1, arg_80_2, arg_80_3, arg_80_4)
-	local var_80_0 = arg_80_0._fxPool:GetFX(arg_80_2)
+--- 添加UI特效到指定位置
+--- @param orderDiff number 层级偏移（>0为前景层）
+--- @param fxID string 特效ID
+--- @param position Vector3 世界坐标位置
+--- @param localScale number|nil 本地缩放比例
+function BattleUIMediator.AddUIFX(self, orderDiff, fxID, position, localScale)
+	local fx = self._fxPool:GetFX(fxID)
 
-	arg_80_1 = arg_80_1 or 1
+	orderDiff = orderDiff or 1
 
-	local var_80_1
+	-- 判断是否为前景层
+	local isFrontLayer = orderDiff > 0
 
-	var_80_1 = arg_80_1 > 0
+	local canvasScale = self._ui:AddUIFX(fx, orderDiff)
 
-	local var_80_2 = arg_80_0._ui:AddUIFX(var_80_0, arg_80_1)
+	localScale = localScale or 1
+	fx.transform.localScale = Vector3(localScale / canvasScale.x, localScale / canvasScale.y, localScale / canvasScale.z)
 
-	arg_80_4 = arg_80_4 or 1
-	var_80_0.transform.localScale = Vector3(arg_80_4 / var_80_2.x, arg_80_4 / var_80_2.y, arg_80_4 / var_80_2.z)
-
-	pg.EffectMgr.GetInstance():PlayBattleEffect(var_80_0, arg_80_3, true)
+	pg.EffectMgr.GetInstance():PlayBattleEffect(fx, position, true)
 end
 
-function BattleUIMediator.AddBossWarningUI(arg_81_0)
-	arg_81_0._dataProxy:BlockManualCast(true)
+--- 添加Boss出场警告UI（含暂停动画控制）
+function BattleUIMediator.AddBossWarningUI(self)
+	self._dataProxy:BlockManualCast(true)
 
-	local var_81_0 = ys.Battle.BattleResourceManager.GetInstance()
+	local resourceMgr = ys.Battle.BattleResourceManager.GetInstance()
 
-	arg_81_0._appearEffect = var_81_0:InstBossWarningUI()
+	self._appearEffect = resourceMgr:InstBossWarningUI()
 
-	local var_81_1 = arg_81_0._appearEffect:GetComponent(typeof(Animator))
-	local var_81_2 = {
+	local animator = self._appearEffect:GetComponent(typeof(Animator))
+	local takeoverProcess = {
 		Pause = function()
-			var_81_1.speed = 0
+			animator.speed = 0
 		end,
 		Resume = function()
-			var_81_1.speed = 1
+			animator.speed = 1
 		end
 	}
 
-	arg_81_0._state:SetTakeoverProcess(var_81_2)
+	self._state:SetTakeoverProcess(takeoverProcess)
 
-	var_81_1.speed = 1 / arg_81_0._state:GetTimeScaleRate()
+	animator.speed = 1 / self._state:GetTimeScaleRate()
 
-	setParent(arg_81_0._appearEffect, arg_81_0._ui.uiCanvas, false)
-	arg_81_0._appearEffect:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(arg_84_0)
-		arg_81_0._userFleet:CoupleEncourage()
-		arg_81_0._dataProxy:BlockManualCast(false)
-		arg_81_0._state:ClearTakeoverProcess()
-		var_81_0:DestroyOb(arg_81_0._appearEffect)
+	setParent(self._appearEffect, self._ui.uiCanvas, false)
+	self._appearEffect:GetComponent(typeof(DftAniEvent)):SetEndEvent(function(animFinished)
+		self._userFleet:CoupleEncourage()
+		self._dataProxy:BlockManualCast(false)
+		self._state:ClearTakeoverProcess()
+		resourceMgr:DestroyOb(self._appearEffect)
 
-		arg_81_0._appearEffect = nil
+		self._appearEffect = nil
 	end)
-	SetActive(arg_81_0._appearEffect, true)
+	SetActive(self._appearEffect, true)
 end
 
-function BattleUIMediator.OnHideButtons(arg_85_0, arg_85_1)
-	local var_85_0 = arg_85_1.Data.isActive
+--- 隐藏/显示交互按钮事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.OnHideButtons(self, event)
+	local isActive = event.Data.isActive
 
-	arg_85_0._skillView:HideSkillButton(not var_85_0)
-	SetActive(arg_85_0._autoBtn.transform, var_85_0)
+	self._skillView:HideSkillButton(not isActive)
+	SetActive(self._autoBtn.transform, isActive)
 end
 
-function BattleUIMediator.onEditCustomWarning(arg_86_0, arg_86_1)
-	local var_86_0 = arg_86_1.Data.labelData
+--- 编辑自定义警告标签事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onEditCustomWarning(self, event)
+	local labelData = event.Data.labelData
 
-	arg_86_0._warningView:EditCustomWarning(var_86_0)
+	self._warningView:EditCustomWarning(labelData)
 end
 
-function BattleUIMediator.onGridmanSkillFloat(arg_87_0, arg_87_1)
-	if not arg_87_0._gridmanSkillFloat then
-		local var_87_0 = ys.Battle.BattleResourceManager.GetInstance():InstGridmanSkillUI()
+--- Gridman技能浮窗事件
+--- @param event BattleEvent 事件对象
+function BattleUIMediator.onGridmanSkillFloat(self, event)
+	if not self._gridmanSkillFloat then
+		local gridmanGo = ys.Battle.BattleResourceManager.GetInstance():InstGridmanSkillUI()
 
-		arg_87_0._gridmanSkillFloat = ys.Battle.BattleGridmanSkillFloatView.New(var_87_0)
+		self._gridmanSkillFloat = ys.Battle.BattleGridmanSkillFloatView.New(gridmanGo)
 
-		setParent(var_87_0, arg_87_0._ui.uiCanvas, false)
+		setParent(gridmanGo, self._ui.uiCanvas, false)
 	end
 
-	local var_87_1 = arg_87_1.Data
-	local var_87_2 = var_87_1.type
-	local var_87_3 = var_87_1.IFF
+	local gridmanData = event.Data
+	local floatType = gridmanData.type
+	local IFF = gridmanData.IFF
 
-	if var_87_2 == 5 then
-		arg_87_0._gridmanSkillFloat:DoFusionFloat(var_87_3)
+	-- type=5 为融合浮窗，其他为普通技能浮窗
+	if floatType == 5 then
+		self._gridmanSkillFloat:DoFusionFloat(IFF)
 	else
-		arg_87_0._gridmanSkillFloat:DoSkillFloat(var_87_2, var_87_3)
+		self._gridmanSkillFloat:DoSkillFloat(floatType, IFF)
 	end
 end
 
-function BattleUIMediator.registerUnitEvent(arg_88_0, arg_88_1)
-	arg_88_1:RegisterEventListener(arg_88_0, BattleUnitEvent.SKILL_FLOAT, arg_88_0.onSkillFloat)
-	arg_88_1:RegisterEventListener(arg_88_0, BattleUnitEvent.CUT_INT, arg_88_0.onShowPainting)
+--- 为单位注册技能浮窗和CutIn事件
+--- @param unit BattleUnit 战斗单位
+function BattleUIMediator.registerUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.SKILL_FLOAT, self.onSkillFloat)
+	unit:RegisterEventListener(self, BattleUnitEvent.CUT_INT, self.onShowPainting)
 end
 
-function BattleUIMediator.registerNPCUnitEvent(arg_89_0, arg_89_1)
-	arg_89_1:RegisterEventListener(arg_89_0, BattleUnitEvent.UPDATE_HP, arg_89_0.onEnemyHpUpdate)
+--- 为NPC单位注册HP更新和潜艇侦测事件
+--- @param unit BattleUnit 敌方单位
+function BattleUIMediator.registerNPCUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onEnemyHpUpdate)
 
-	local var_89_0 = arg_89_1:GetTemplate().type
+	local shipType = unit:GetTemplate().type
 
-	if table.contains(ShipType.SubShipType, var_89_0) then
-		arg_89_1:RegisterEventListener(arg_89_0, BattleUnitEvent.SUBMARINE_DETECTED, arg_89_0.onSubmarineDetected)
+	if table.contains(ShipType.SubShipType, shipType) then
+		unit:RegisterEventListener(self, BattleUnitEvent.SUBMARINE_DETECTED, self.onSubmarineDetected)
 	end
 end
 
-function BattleUIMediator.registerPlayerMainUnitEvent(arg_90_0, arg_90_1)
-	arg_90_1:RegisterEventListener(arg_90_0, BattleUnitEvent.UPDATE_HP, arg_90_0.onPlayerMainUnitHpUpdate)
+--- 为玩家主力舰注册HP更新事件
+--- @param unit BattleUnit 玩家主力单位
+function BattleUIMediator.registerPlayerMainUnitEvent(self, unit)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onPlayerMainUnitHpUpdate)
 end
 
-function BattleUIMediator.unregisterUnitEvent(arg_91_0, arg_91_1)
-	arg_91_1:UnregisterEventListener(arg_91_0, BattleUnitEvent.SKILL_FLOAT)
-	arg_91_1:UnregisterEventListener(arg_91_0, BattleUnitEvent.CUT_INT)
+--- 取消单位的技能浮窗和CutIn事件
+--- @param unit BattleUnit 战斗单位
+function BattleUIMediator.unregisterUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.SKILL_FLOAT)
+	unit:UnregisterEventListener(self, BattleUnitEvent.CUT_INT)
 end
 
-function BattleUIMediator.unregisterNPCUnitEvent(arg_92_0, arg_92_1)
-	arg_92_1:UnregisterEventListener(arg_92_0, BattleUnitEvent.SKILL_FLOAT)
-	arg_92_1:UnregisterEventListener(arg_92_0, BattleUnitEvent.CUT_INT)
-	arg_92_1:UnregisterEventListener(arg_92_0, BattleUnitEvent.UPDATE_HP)
+--- 取消NPC单位的所有事件注册
+--- @param unit BattleUnit 敌方单位
+function BattleUIMediator.unregisterNPCUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.SKILL_FLOAT)
+	unit:UnregisterEventListener(self, BattleUnitEvent.CUT_INT)
+	unit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
 
-	local var_92_0 = arg_92_1:GetTemplate().type
+	local shipType = unit:GetTemplate().type
 
-	if table.contains(ShipType.SubShipType, var_92_0) then
-		arg_92_1:UnregisterEventListener(arg_92_0, BattleUnitEvent.SUBMARINE_DETECTED)
+	if table.contains(ShipType.SubShipType, shipType) then
+		unit:UnregisterEventListener(self, BattleUnitEvent.SUBMARINE_DETECTED)
 	end
 end
 
-function BattleUIMediator.unregisterPlayerMainUnitEvent(arg_93_0, arg_93_1)
-	arg_93_1:UnregisterEventListener(arg_93_0, BattleUnitEvent.UPDATE_HP)
+--- 取消玩家主力舰的HP更新事件
+--- @param unit BattleUnit 玩家主力单位
+function BattleUIMediator.unregisterPlayerMainUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
 end
 
-function BattleUIMediator.Dispose(arg_94_0)
-	LeanTween.cancel(arg_94_0._ui._go)
-	arg_94_0._uiMGR:ClearStick()
+--- 销毁中介者，清理所有UI和事件
+function BattleUIMediator.Dispose(self)
+	LeanTween.cancel(self._ui._go)
+	self._uiMGR:ClearStick()
 
-	arg_94_0._uiMGR = nil
+	self._uiMGR = nil
 
-	if arg_94_0._appearEffect then
-		Destroy(arg_94_0._appearEffect)
+	if self._appearEffect then
+		Destroy(self._appearEffect)
 	end
 
-	arg_94_0:RemoveUIEvent()
+	self:RemoveUIEvent()
 
-	arg_94_0._updateViewList = nil
+	self._updateViewList = nil
 
-	arg_94_0._timerView:Dispose()
-	arg_94_0._enemyHpBar:Dispose()
-	arg_94_0._skillView:Dispose()
-	arg_94_0._seaView:Dispose()
-	arg_94_0._airStrikeView:Dispose()
-	arg_94_0._sightView:Dispose()
-	arg_94_0._mainDamagedView:Dispose()
-	arg_94_0._warningView:Dispose()
+	self._timerView:Dispose()
+	self._enemyHpBar:Dispose()
+	self._skillView:Dispose()
+	self._seaView:Dispose()
+	self._airStrikeView:Dispose()
+	self._sightView:Dispose()
+	self._mainDamagedView:Dispose()
+	self._warningView:Dispose()
 
-	arg_94_0._seaView = nil
-	arg_94_0._enemyHpBar = nil
-	arg_94_0._skillView = nil
-	arg_94_0._timerView = nil
-	arg_94_0._joystick = nil
-	arg_94_0._airStrikeView = nil
-	arg_94_0._warningView = nil
-	arg_94_0._mainDamagedView = nil
+	self._seaView = nil
+	self._enemyHpBar = nil
+	self._skillView = nil
+	self._timerView = nil
+	self._joystick = nil
+	self._airStrikeView = nil
+	self._warningView = nil
+	self._mainDamagedView = nil
 
-	if arg_94_0._duelRateBar then
-		arg_94_0._duelRateBar:Dispose()
+	if self._duelRateBar then
+		self._duelRateBar:Dispose()
 
-		arg_94_0._duelRateBar = nil
+		self._duelRateBar = nil
 	end
 
-	if arg_94_0._simulationBuffCountView then
-		arg_94_0._simulationBuffCountView:Dispose()
+	if self._simulationBuffCountView then
+		self._simulationBuffCountView:Dispose()
 
-		arg_94_0._simulationBuffCountView = nil
+		self._simulationBuffCountView = nil
 	end
 
-	if arg_94_0._jammingView then
-		arg_94_0._jammingView:Dispose()
+	if self._jammingView then
+		self._jammingView:Dispose()
 
-		arg_94_0._jammingView = nil
+		self._jammingView = nil
 	end
 
-	if arg_94_0._inkView then
-		arg_94_0._inkView:Dispose()
+	if self._inkView then
+		self._inkView:Dispose()
 
-		arg_94_0._inkView = nil
+		self._inkView = nil
 	end
 
-	if arg_94_0._alchemistAP then
-		arg_94_0._alchemistAP:Dispose()
+	if self._alchemistAP then
+		self._alchemistAP:Dispose()
 
-		arg_94_0._alchemistAP = nil
+		self._alchemistAP = nil
 	end
 
-	if arg_94_0._alchemistMana then
-		arg_94_0._alchemistMana:Dispose()
+	if self._alchemistMana then
+		self._alchemistMana:Dispose()
 
-		arg_94_0._alchemistMana = nil
+		self._alchemistMana = nil
 	end
 
-	if arg_94_0._gridmanSkillFloat then
-		arg_94_0._gridmanSkillFloat:Dispose()
+	if self._gridmanSkillFloat then
+		self._gridmanSkillFloat:Dispose()
 	end
 
-	if go(arg_94_0._ui._tf:Find("CardPuzzleConsole")).activeSelf then
-		arg_94_0:DisposeCardPuzzleComponent()
+	if go(self._ui._tf:Find("CardPuzzleConsole")).activeSelf then
+		self:DisposeCardPuzzleComponent()
 	end
 
-	BattleUIMediator.super.Dispose(arg_94_0)
+	BattleUIMediator.super.Dispose(self)
 end
 
-function BattleUIMediator.OnCardPuzzleInit(arg_95_0, arg_95_1)
-	arg_95_0._cardPuzzleComponent = arg_95_0._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetCardPuzzleComponent()
+--- 卡牌战斗初始化事件
+--- @param event BattleCardPuzzleEvent 事件对象
+function BattleUIMediator.OnCardPuzzleInit(self, event)
+	self._cardPuzzleComponent = self._dataProxy:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetCardPuzzleComponent()
 
-	arg_95_0:ShowCardPuzzleComponent()
-	arg_95_0:RegisterCardPuzzleEvent()
+	self:ShowCardPuzzleComponent()
+	self:RegisterCardPuzzleEvent()
 end
 
-function BattleUIMediator.RegisterCardPuzzleEvent(arg_96_0)
-	arg_96_0._cardPuzzleComponent:RegisterEventListener(arg_96_0, BattleCardPuzzleEvent.UPDATE_FLEET_SHIP, arg_96_0.onUpdateFleetShip)
-	arg_96_0._cardPuzzleComponent:RegisterEventListener(arg_96_0, BattleCardPuzzleEvent.COMMON_BUTTON_ENABLE, arg_96_0.onBlockCommonButton)
-	arg_96_0._cardPuzzleComponent:RegisterEventListener(arg_96_0, BattleCardPuzzleEvent.LONG_PRESS_BULLET_TIME, arg_96_0.onLongPressBulletTime)
-	arg_96_0._cardPuzzleComponent:RegisterEventListener(arg_96_0, BattleCardPuzzleEvent.SHOW_CARD_DETAIL, arg_96_0.onShowCardDetail)
+--- 注册卡牌战斗相关事件
+function BattleUIMediator.RegisterCardPuzzleEvent(self)
+	self._cardPuzzleComponent:RegisterEventListener(self, BattleCardPuzzleEvent.UPDATE_FLEET_SHIP, self.onUpdateFleetShip)
+	self._cardPuzzleComponent:RegisterEventListener(self, BattleCardPuzzleEvent.COMMON_BUTTON_ENABLE, self.onBlockCommonButton)
+	self._cardPuzzleComponent:RegisterEventListener(self, BattleCardPuzzleEvent.LONG_PRESS_BULLET_TIME, self.onLongPressBulletTime)
+	self._cardPuzzleComponent:RegisterEventListener(self, BattleCardPuzzleEvent.SHOW_CARD_DETAIL, self.onShowCardDetail)
 end
 
-function BattleUIMediator.ShowCardPuzzleComponent(arg_97_0)
-	setActive(arg_97_0._ui._tf:Find("CardPuzzleConsole"), true)
-	arg_97_0:InitCardPuzzleCommonHPBar()
-	arg_97_0:InitCardPuzzleEnergyBar()
-	arg_97_0:IntCardPuzzleFleetHead()
-	arg_97_0:InitCameraCardBoardClicker()
-	arg_97_0:InitCardPuzzleMovePile()
-	arg_97_0:InitCardPuzzleDeckPile()
-	arg_97_0:InitCardPuzzleIconList()
-	arg_97_0:InitCardPuzzleHandBoard()
-	arg_97_0:InitCardPuzzleCardDetail()
-	arg_97_0:InitCardPuzzleGoalRemind()
+--- 显示卡牌战斗所有UI组件
+function BattleUIMediator.ShowCardPuzzleComponent(self)
+	setActive(self._ui._tf:Find("CardPuzzleConsole"), true)
+	self:InitCardPuzzleCommonHPBar()
+	self:InitCardPuzzleEnergyBar()
+	self:IntCardPuzzleFleetHead()
+	self:InitCameraCardBoardClicker()
+	self:InitCardPuzzleMovePile()
+	self:InitCardPuzzleDeckPile()
+	self:InitCardPuzzleIconList()
+	self:InitCardPuzzleHandBoard()
+	self:InitCardPuzzleCardDetail()
+	self:InitCardPuzzleGoalRemind()
 end
 
-function BattleUIMediator.InitCardPuzzleCommonHPBar(arg_98_0)
-	arg_98_0._cardPuzzleHPBar = ys.Battle.CardPuzzleCommonHPBar.New(arg_98_0._ui._tf:Find("CardPuzzleConsole/commonHP"))
+--- 初始化卡牌战斗通用HP条
+function BattleUIMediator.InitCardPuzzleCommonHPBar(self)
+	self._cardPuzzleHPBar = ys.Battle.CardPuzzleCommonHPBar.New(self._ui._tf:Find("CardPuzzleConsole/commonHP"))
 
-	arg_98_0._cardPuzzleHPBar:SetCardPuzzleComponent(arg_98_0._cardPuzzleComponent)
+	self._cardPuzzleHPBar:SetCardPuzzleComponent(self._cardPuzzleComponent)
 
-	arg_98_0._updateViewList[arg_98_0._cardPuzzleHPBar] = true
+	self._updateViewList[self._cardPuzzleHPBar] = true
 end
 
-function BattleUIMediator.InitCardPuzzleEnergyBar(arg_99_0)
-	arg_99_0._cardPuzzleEnergyBar = ys.Battle.CardPuzzleEnergyBar.New(arg_99_0._ui._tf:Find("CardPuzzleConsole/energy_block"))
+--- 初始化卡牌战斗能量条
+function BattleUIMediator.InitCardPuzzleEnergyBar(self)
+	self._cardPuzzleEnergyBar = ys.Battle.CardPuzzleEnergyBar.New(self._ui._tf:Find("CardPuzzleConsole/energy_block"))
 
-	arg_99_0._cardPuzzleEnergyBar:SetCardPuzzleComponent(arg_99_0._cardPuzzleComponent)
+	self._cardPuzzleEnergyBar:SetCardPuzzleComponent(self._cardPuzzleComponent)
 
-	arg_99_0._updateViewList[arg_99_0._cardPuzzleEnergyBar] = true
+	self._updateViewList[self._cardPuzzleEnergyBar] = true
 end
 
-function BattleUIMediator.InitCameraCardBoardClicker(arg_100_0)
-	arg_100_0._cardPuzzleBoardClicker = ys.Battle.CardPuzzleBoardClicker.New(arg_100_0._ui._tf:Find("CardBoardController"))
+--- 初始化卡牌棋盘点击控制器
+function BattleUIMediator.InitCameraCardBoardClicker(self)
+	self._cardPuzzleBoardClicker = ys.Battle.CardPuzzleBoardClicker.New(self._ui._tf:Find("CardBoardController"))
 
-	arg_100_0._cardPuzzleBoardClicker:SetCardPuzzleComponent(arg_100_0._cardPuzzleComponent)
+	self._cardPuzzleBoardClicker:SetCardPuzzleComponent(self._cardPuzzleComponent)
 end
 
-function BattleUIMediator.IntCardPuzzleFleetHead(arg_101_0)
-	arg_101_0._cardPuzzleFleetHead = ys.Battle.CardPuzzleFleetHead.New(arg_101_0._ui._tf:Find("CardPuzzleConsole/fleet"))
+--- 初始化卡牌战斗舰队头像
+function BattleUIMediator.IntCardPuzzleFleetHead(self)
+	self._cardPuzzleFleetHead = ys.Battle.CardPuzzleFleetHead.New(self._ui._tf:Find("CardPuzzleConsole/fleet"))
 
-	arg_101_0._cardPuzzleFleetHead:SetCardPuzzleComponent(arg_101_0._cardPuzzleComponent)
+	self._cardPuzzleFleetHead:SetCardPuzzleComponent(self._cardPuzzleComponent)
 end
 
-function BattleUIMediator.InitCardPuzzleMovePile(arg_102_0)
-	arg_102_0._cardPuzzleMovePile = ys.Battle.CardPuzzleMovePile.New(arg_102_0._ui._tf:Find("CardPuzzleConsole/movedeck"))
+--- 初始化卡牌战斗移动牌堆
+function BattleUIMediator.InitCardPuzzleMovePile(self)
+	self._cardPuzzleMovePile = ys.Battle.CardPuzzleMovePile.New(self._ui._tf:Find("CardPuzzleConsole/movedeck"))
 
-	arg_102_0._cardPuzzleMovePile:SetCardPuzzleComponent(arg_102_0._cardPuzzleComponent)
+	self._cardPuzzleMovePile:SetCardPuzzleComponent(self._cardPuzzleComponent)
 
-	arg_102_0._updateViewList[arg_102_0._cardPuzzleMovePile] = true
+	self._updateViewList[self._cardPuzzleMovePile] = true
 end
 
-function BattleUIMediator.InitCardPuzzleDeckPile(arg_103_0)
-	arg_103_0._cardPuzzleDeckPile = ys.Battle.CardPuzzleDeckPool.New(arg_103_0._ui._tf:Find("CardPuzzleConsole/deck"))
+--- 初始化卡牌战斗牌库
+function BattleUIMediator.InitCardPuzzleDeckPile(self)
+	self._cardPuzzleDeckPile = ys.Battle.CardPuzzleDeckPool.New(self._ui._tf:Find("CardPuzzleConsole/deck"))
 
-	arg_103_0._cardPuzzleDeckPile:SetCardPuzzleComponent(arg_103_0._cardPuzzleComponent)
+	self._cardPuzzleDeckPile:SetCardPuzzleComponent(self._cardPuzzleComponent)
 end
 
-function BattleUIMediator.InitCardPuzzleIconList(arg_104_0)
-	arg_104_0._cardPuzzleStatusIcon = ys.Battle.CardPuzzleFleetIconList.New(arg_104_0._ui._tf:Find("CardPuzzleConsole/statusIcon"))
+--- 初始化卡牌战斗状态图标列表
+function BattleUIMediator.InitCardPuzzleIconList(self)
+	self._cardPuzzleStatusIcon = ys.Battle.CardPuzzleFleetIconList.New(self._ui._tf:Find("CardPuzzleConsole/statusIcon"))
 
-	arg_104_0._cardPuzzleStatusIcon:SetCardPuzzleComponent(arg_104_0._cardPuzzleComponent)
+	self._cardPuzzleStatusIcon:SetCardPuzzleComponent(self._cardPuzzleComponent)
 
-	arg_104_0._updateViewList[arg_104_0._cardPuzzleStatusIcon] = true
+	self._updateViewList[self._cardPuzzleStatusIcon] = true
 end
 
-function BattleUIMediator.InitCardPuzzleHandBoard(arg_105_0)
-	arg_105_0._cardPuzzleHandBoard = ys.Battle.CardPuzzleHandBoard.New(arg_105_0._ui._tf:Find("CardPuzzleConsole/cardboard"), arg_105_0._ui._tf:Find("CardPuzzleConsole/hand"))
+--- 初始化卡牌战斗手牌面板
+function BattleUIMediator.InitCardPuzzleHandBoard(self)
+	self._cardPuzzleHandBoard = ys.Battle.CardPuzzleHandBoard.New(self._ui._tf:Find("CardPuzzleConsole/cardboard"), self._ui._tf:Find("CardPuzzleConsole/hand"))
 
-	arg_105_0._cardPuzzleHandBoard:SetCardPuzzleComponent(arg_105_0._cardPuzzleComponent)
+	self._cardPuzzleHandBoard:SetCardPuzzleComponent(self._cardPuzzleComponent)
 
-	arg_105_0._updateViewList[arg_105_0._cardPuzzleHandBoard] = true
+	self._updateViewList[self._cardPuzzleHandBoard] = true
 end
 
-function BattleUIMediator.InitCardPuzzleGoalRemind(arg_106_0)
-	arg_106_0._cardPuzzleGoalRemind = ys.Battle.CardPuzzleGoalRemind.New(arg_106_0._ui._tf:Find("CardPuzzleConsole/goal"))
+--- 初始化卡牌战斗目标提示
+function BattleUIMediator.InitCardPuzzleGoalRemind(self)
+	self._cardPuzzleGoalRemind = ys.Battle.CardPuzzleGoalRemind.New(self._ui._tf:Find("CardPuzzleConsole/goal"))
 
-	arg_106_0._cardPuzzleGoalRemind:SetCardPuzzleComponent(arg_106_0._cardPuzzleComponent)
+	self._cardPuzzleGoalRemind:SetCardPuzzleComponent(self._cardPuzzleComponent)
 end
 
-function BattleUIMediator.InitCardPuzzleCardDetail(arg_107_0)
-	arg_107_0._cardPuzzleCardDetail = ys.Battle.CardPuzzleCardDetail.New(arg_107_0._ui._tf:Find("CardPuzzleConsole/cardDetail"))
+--- 初始化卡牌详情面板
+function BattleUIMediator.InitCardPuzzleCardDetail(self)
+	self._cardPuzzleCardDetail = ys.Battle.CardPuzzleCardDetail.New(self._ui._tf:Find("CardPuzzleConsole/cardDetail"))
 end
 
-function BattleUIMediator.DisposeCardPuzzleComponent(arg_108_0)
-	arg_108_0._cardPuzzleHPBar:Dispose()
-	arg_108_0._cardPuzzleEnergyBar:Dispose()
-	arg_108_0._cardPuzzleBoardClicker:Dispose()
-	arg_108_0._cardPuzzleFleetHead:Dispose()
-	arg_108_0._cardPuzzleMovePile:Dispose()
-	arg_108_0._cardPuzzleDeckPile:Dispose()
-	arg_108_0._cardPuzzleStatusIcon:Dispose()
-	arg_108_0._cardPuzzleHandBoard:Dispose()
-	arg_108_0._cardPuzzleGoalRemind:Dispose()
-	arg_108_0._cardPuzzleCardDetail:Dispose()
+--- 销毁所有卡牌战斗UI组件
+function BattleUIMediator.DisposeCardPuzzleComponent(self)
+	self._cardPuzzleHPBar:Dispose()
+	self._cardPuzzleEnergyBar:Dispose()
+	self._cardPuzzleBoardClicker:Dispose()
+	self._cardPuzzleFleetHead:Dispose()
+	self._cardPuzzleMovePile:Dispose()
+	self._cardPuzzleDeckPile:Dispose()
+	self._cardPuzzleStatusIcon:Dispose()
+	self._cardPuzzleHandBoard:Dispose()
+	self._cardPuzzleGoalRemind:Dispose()
+	self._cardPuzzleCardDetail:Dispose()
 end
 
-function BattleUIMediator.onUpdateFleetBuff(arg_109_0)
+--- 舰队buff更新（暂未实现）
+function BattleUIMediator.onUpdateFleetBuff(self)
 	return
 end
 
-function BattleUIMediator.onUpdateFleetShip(arg_110_0, arg_110_1)
-	arg_110_0._cardPuzzleFleetHead:UpdateShipIcon(arg_110_1.Data.teamType)
+--- 舰队舰船更新事件
+--- @param event BattleCardPuzzleEvent 事件对象
+function BattleUIMediator.onUpdateFleetShip(self, event)
+	self._cardPuzzleFleetHead:UpdateShipIcon(event.Data.teamType)
 end
 
-function BattleUIMediator.onBlockCommonButton(arg_111_0, arg_111_1)
-	local var_111_0 = arg_111_1.Data.flag
+--- 屏蔽/启用通用按钮事件
+--- @param event BattleCardPuzzleEvent 事件对象
+function BattleUIMediator.onBlockCommonButton(self, event)
+	local flag = event.Data.flag
 
-	arg_111_0:EnableComponent(var_111_0)
+	self:EnableComponent(flag)
 end
 
-function BattleUIMediator.onLongPressBulletTime(arg_112_0, arg_112_1)
-	local var_112_0 = arg_112_1.Data.timeScale
+--- 长按子弹时间事件
+--- @param event BattleCardPuzzleEvent 事件对象
+function BattleUIMediator.onLongPressBulletTime(self, event)
+	local timeScale = event.Data.timeScale
 
-	arg_112_0._state:ScaleTimer(var_112_0)
+	self._state:ScaleTimer(timeScale)
 end
 
-function BattleUIMediator.onShowCardDetail(arg_113_0, arg_113_1)
-	local var_113_0 = arg_113_1.Data.card
+--- 显示卡牌详情事件
+--- @param event BattleCardPuzzleEvent 事件对象
+function BattleUIMediator.onShowCardDetail(self, event)
+	local card = event.Data.card
 
-	if var_113_0 then
-		arg_113_0._cardPuzzleCardDetail:Active(true)
-		arg_113_0._cardPuzzleCardDetail:SetReferenceCard(var_113_0)
+	if card then
+		self._cardPuzzleCardDetail:Active(true)
+		self._cardPuzzleCardDetail:SetReferenceCard(card)
 	else
-		arg_113_0._cardPuzzleCardDetail:Active(false)
+		self._cardPuzzleCardDetail:Active(false)
 	end
 end

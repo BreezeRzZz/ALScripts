@@ -1,25 +1,32 @@
-local var_0_0 = class("BattleGatePrologue")
+--- @class BattleGatePrologue : 序章战斗Gate，直接使用PROLOGUE_DUNGEON进入
+local BattleGatePrologue = class("BattleGatePrologue")
 
-ys.Battle.BattleGatePrologue = var_0_0
-var_0_0.__name = "BattleGatePrologue"
+ys.Battle.BattleGatePrologue = BattleGatePrologue
+BattleGatePrologue.__name = "BattleGatePrologue"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = PROLOGUE_DUNGEON
-	local var_1_1 = pg.expedition_data_template[var_1_0].dungeon_id
-	local var_1_2 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_1).fleet_prefab
-	local var_1_3 = {
-		prefabFleet = var_1_2,
-		stageId = var_1_0,
+--- 进入序章战斗
+--- @param self BattleGatePrologue
+--- @param sendData table 发送数据
+function BattleGatePrologue.Entrance(self, sendData)
+	local dungeonID = PROLOGUE_DUNGEON
+	local dungeonTemplateID = pg.expedition_data_template[dungeonID].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
+	local stageData = {
+		prefabFleet = fleetPrefab,
+		stageId = dungeonID,
 		system = SYSTEM_PROLOGUE
 	}
 
-	arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_3)
+	sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 end
 
-function var_0_0.Exit(arg_2_0, arg_2_1)
-	arg_2_1:sendNotification(GAME.FINISH_STAGE_DONE, {
+--- 退出序章战斗
+--- @param self BattleGatePrologue
+--- @param callback table 回调对象
+function BattleGatePrologue.Exit(self, callback)
+	callback:sendNotification(GAME.FINISH_STAGE_DONE, {
 		system = SYSTEM_PROLOGUE
 	})
 end
 
-return var_0_0
+return BattleGatePrologue

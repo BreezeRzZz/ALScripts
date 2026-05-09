@@ -1,183 +1,197 @@
-local var_0_0 = class("BattleGateChallenge")
+--- @class BattleGateChallenge : 挑战模式Gate
+local BattleGateChallenge = class("BattleGateChallenge")
 
-ys.Battle.BattleGateChallenge = var_0_0
-var_0_0.__name = "BattleGateChallenge"
+ys.Battle.BattleGateChallenge = BattleGateChallenge
+BattleGateChallenge.__name = "BattleGateChallenge"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.mode
-	local var_1_1 = arg_1_0.actId
-	local var_1_2 = getProxy(PlayerProxy)
-	local var_1_3 = getProxy(BayProxy)
-	local var_1_4 = getProxy(ChallengeProxy)
-	local var_1_5 = pg.battle_cost_template[SYSTEM_CHALLENGE]
-	local var_1_6 = var_1_5.oil_cost > 0
-	local var_1_7 = {}
-	local var_1_8 = 0
-	local var_1_9 = 0
-	local var_1_10 = 0
-	local var_1_11 = 0
-	local var_1_12 = var_1_4:getUserChallengeInfo(var_1_0)
-	local var_1_13 = var_1_12:getRegularFleet():getShips(false)
+--- 进入挑战模式战斗
+--- @param self BattleGateChallenge
+--- @param sendData table 发送数据
+function BattleGateChallenge.Entrance(self, sendData)
+	local mode = self.mode
+	local actId = self.actId
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local challengeProxy = getProxy(ChallengeProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_CHALLENGE]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local shipIdList = {}
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local challengeInfo = challengeProxy:getUserChallengeInfo(mode)
+	local regularFleetShips = challengeInfo:getRegularFleet():getShips(false)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_13) do
-		var_1_7[#var_1_7 + 1] = iter_1_1.id
+	for _, ship in ipairs(regularFleetShips) do
+		shipIdList[#shipIdList + 1] = ship.id
 	end
 
-	local var_1_14 = var_1_2:getData()
+	local playerData = playerProxy:getData()
 
-	if var_1_6 and var_1_11 > var_1_14.oil then
+	if hasOilCost and endOil > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_15 = var_1_12:getLevel()
-	local var_1_16 = var_1_12:getNextStageID()
-	local var_1_17 = {
-		var_1_15,
-		var_1_0
+	local level = challengeInfo:getLevel()
+	local nextStageID = challengeInfo:getNextStageID()
+	local extraData = {
+		level,
+		mode
 	}
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_18(arg_2_0)
-		if var_1_6 then
-			var_1_14:consume({
+	--- 请求成功回调
+	local function onSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_9
+				oil = startOil
 			})
 		end
 
-		if var_1_5.enter_energy_cost > 0 then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_13) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_3:updateShip(iter_2_1)
+			for _, ship in ipairs(regularFleetShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		var_1_2:updatePlayer(var_1_14)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = {
+		local stageData = {
 			prefabFleet = {},
-			stageId = var_1_16,
+			stageId = nextStageID,
 			system = SYSTEM_CHALLENGE,
-			actId = var_1_1,
-			token = arg_2_0.key,
-			mode = var_1_0
+			actId = actId,
+			token = tokenData.key,
+			mode = mode
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_1)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_19(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 请求失败回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_CHALLENGE, var_1_7, {
-		var_1_16,
-		var_1_17
-	}, var_1_18, var_1_19)
+	BeginStageCommand.SendRequest(SYSTEM_CHALLENGE, shipIdList, {
+		nextStageID,
+		extraData
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = pg.battle_cost_template[SYSTEM_CHALLENGE]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(ChallengeProxy)
-	local var_4_3 = arg_4_0.statistics._battleScore
-	local var_4_4 = 0
-	local var_4_5 = {}
-	local var_4_6 = {}
-	local var_4_7 = arg_4_0.mode
-	local var_4_8 = var_4_2:getUserChallengeInfo(var_4_7)
-	local var_4_9 = var_4_8:getRegularFleet():getShips(true)
+--- 退出挑战模式
+--- @param self BattleGateChallenge
+--- @param callback table 回调对象
+function BattleGateChallenge.Exit(self, callback)
+	local costTemplate = pg.battle_cost_template[SYSTEM_CHALLENGE]
+	local fleetProxy = getProxy(FleetProxy)
+	local challengeProxy = getProxy(ChallengeProxy)
+	local battleScore = self.statistics._battleScore
+	local oilUsed = 0
+	local shipList = {}
+	local commanderList = {}
+	local mode = self.mode
+	local challengeInfo = challengeProxy:getUserChallengeInfo(mode)
+	local regularFleet = challengeInfo:getRegularFleet():getShips(true)
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_9) do
-		table.insert(var_4_6, iter_4_1)
+	for _, ship in ipairs(regularFleet) do
+		table.insert(commanderList, ship)
 	end
 
-	local var_4_10 = {
-		var_4_8:getLevel(),
-		var_4_7
+	local extraData = {
+		challengeInfo:getLevel(),
+		mode
 	}
-	local var_4_11 = 0
-	local var_4_12 = arg_4_1.GeneralPackage(arg_4_0, var_4_6)
+	local oilCost = 0
+	local generalPackage = callback.GeneralPackage(self, commanderList)
 
-	var_4_12.data2 = var_4_10
+	generalPackage.data2 = extraData
 
-	local function var_4_13(arg_5_0)
-		arg_4_1.addShipsExp(arg_5_0.ship_exp_list, arg_4_0.statistics)
+	--- 结算成功回调
+	local function onSuccess(result)
+		callback.addShipsExp(result.ship_exp_list, self.statistics)
 
-		arg_4_0.statistics.mvpShipID = arg_5_0.mvp
+		self.statistics.mvpShipID = result.mvp
 
-		local var_5_0, var_5_1 = arg_4_1:GeneralLoot(arg_5_0)
-		local var_5_2 = var_4_3 > ys.Battle.BattleConst.BattleScore.C
+		local drops, extraDrops = callback:GeneralLoot(result)
+		local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
 
-		arg_4_1.GeneralPlayerCosume(SYSTEM_CHALLENGE, var_5_2, var_4_11, arg_5_0.player_exp, exFlag)
+		callback.GeneralPlayerCosume(SYSTEM_CHALLENGE, isWin, oilCost, result.player_exp, exFlag)
 
-		local var_5_3 = {
+		local finishData = {
 			system = SYSTEM_CHALLENGE,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
-			drops = var_5_0,
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
 			commanderExps = {},
-			result = arg_5_0.result,
-			extraDrops = var_5_1
+			result = result.result,
+			extraDrops = extraDrops
 		}
 
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_3)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 
-		local var_5_4 = var_4_8:getShipUIDList()
+		-- 更新挑战模式中每艘船的HP
+		local shipUIDList = challengeInfo:getShipUIDList()
 
-		local function var_5_5(arg_6_0)
-			local var_6_0 = arg_4_0.statistics[arg_6_0]
+		local function updateShipHP(uid)
+			local shipStat = self.statistics[uid]
 
-			if var_6_0 then
-				var_4_8:updateShipHP(arg_6_0, var_6_0.bp)
+			if shipStat then
+				challengeInfo:updateShipHP(uid, shipStat.bp)
 			end
 		end
 
-		for iter_5_0, iter_5_1 in pairs(var_5_4) do
-			var_5_5(iter_5_1)
+		for uid, _ in pairs(shipUIDList) do
+			updateShipHP(uid)
 		end
 	end
 
-	arg_4_1:SendRequest(var_4_12, var_4_13)
+	callback:SendRequest(generalPackage, onSuccess)
 end
 
-function var_0_0.GetPreloadList(arg_7_0)
-	local var_7_0 = {}
-	local var_7_1
-	local var_7_2 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_7_3 = getProxy(ChallengeProxy):getUserChallengeInfo(arg_7_0.mode)
-	local var_7_4 = var_7_3:getRegularFleet()
-	local var_7_5 = var_7_4:getShips(false)
+--- 获取预加载资源列表
+--- @param self BattleGateChallenge
+--- @return table shipResources, table skinResources
+function BattleGateChallenge.GetPreloadList(self)
+	local shipList = {}
+	local buffList
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local challengeInfo = getProxy(ChallengeProxy):getUserChallengeInfo(self.mode)
+	local regularFleet = challengeInfo:getRegularFleet()
+	local regularShips = regularFleet:getShips(false)
 
-	for iter_7_0, iter_7_1 in ipairs(var_7_5) do
-		table.insert(var_7_0, iter_7_1)
+	for _, ship in ipairs(regularShips) do
+		table.insert(shipList, ship)
 	end
 
-	local var_7_6 = var_7_4:buildBattleBuffList()
-	local var_7_7 = var_7_3:getSubmarineFleet()
-	local var_7_8 = var_7_7:getShips(false)
+	local regularBuffs = regularFleet:buildBattleBuffList()
+	local subFleet = challengeInfo:getSubmarineFleet()
+	local subShips = subFleet:getShips(false)
 
-	for iter_7_2, iter_7_3 in ipairs(var_7_8) do
-		table.insert(var_7_0, iter_7_3)
+	for _, ship in ipairs(subShips) do
+		table.insert(shipList, ship)
 	end
 
-	for iter_7_4, iter_7_5 in ipairs(var_7_7:buildBattleBuffList()) do
-		table.insert(var_7_6, iter_7_5)
+	for _, buff in ipairs(subFleet:buildBattleBuffList()) do
+		table.insert(regularBuffs, buff)
 	end
 
-	local var_7_9, var_7_10 = var_7_2.GetPlayerShipResource(var_7_0, arg_7_0.system)
-	local var_7_11 = var_7_2.GetCommanderBuffRes(var_7_6)
+	local shipResources, skinResources = resMgr.GetPlayerShipResource(shipList, self.system)
+	local commanderBuffs = resMgr.GetCommanderBuffRes(regularBuffs)
 
-	for iter_7_6, iter_7_7 in ipairs(var_7_11) do
-		table.insert(var_7_9, iter_7_7)
+	for _, res in ipairs(commanderBuffs) do
+		table.insert(shipResources, res)
 	end
 
-	return var_7_9, var_7_10
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateChallenge

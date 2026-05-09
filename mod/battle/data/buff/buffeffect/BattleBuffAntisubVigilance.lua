@@ -38,7 +38,7 @@ function BattleBuffAntiSubVigilance.onUpdate(self)
 		self._vigilantState:VigilantAreaEngage()
 	end
 
-	local var_4_0 = #self:getTargetList(self._vigilantUnit, "TargetHarmNearest", {
+	local checkCount = #self:getTargetList(self._vigilantUnit, "TargetHarmNearest", {
 		range = 200
 	})
 	local targetList = #self:getTargetList(self._vigilantUnit, {
@@ -49,7 +49,7 @@ function BattleBuffAntiSubVigilance.onUpdate(self)
 		range = self._sonarRange
 	})
 
-	self._vigilantState:Update(var_4_0, targetList)
+	self._vigilantState:Update(checkCount, targetList)
 
 	local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 

@@ -1,147 +1,162 @@
-local var_0_0 = class("BattleGateGuild")
+--- @class BattleGateGuild : 公会Boss战斗Gate，包含自定义的SendRequest和结算逻辑
+local BattleGateGuild = class("BattleGateGuild")
 
-ys.Battle.BattleGateGuild = var_0_0
-var_0_0.__name = "BattleGateGuild"
+ys.Battle.BattleGateGuild = BattleGateGuild
+BattleGateGuild.__name = "BattleGateGuild"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = pg.guildset.use_oil.key_value
-	local var_1_1 = getProxy(PlayerProxy):getRawData()
+--- 进入公会Boss战斗
+--- @param self BattleGateGuild
+--- @param sendData table BeginStageCommand实例
+function BattleGateGuild.Entrance(self, sendData)
+	local oilCost = pg.guildset.use_oil.key_value
+	local playerData = getProxy(PlayerProxy):getRawData()
 
-	if var_1_0 > var_1_1.oil then
+	if oilCost > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_2 = var_0_0.GetGuildBossMission()
-	local var_1_3 = var_1_2:GetMyShipIds()
-	local var_1_4 = var_1_2:GetShipsSplitByUserID()
-	local var_1_5 = {}
+	local bossMission = BattleGateGuild.GetGuildBossMission()
+	local myShipIds = bossMission:GetMyShipIds()
+	local shipsSplitByUser = bossMission:GetShipsSplitByUserID()
+	local shipUserMap = {}
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_4) do
-		table.insert(var_1_5, {
-			ship_id = iter_1_1.shipID,
-			user_id = iter_1_1.userID
+	for _, splitInfo in ipairs(shipsSplitByUser) do
+		table.insert(shipUserMap, {
+			ship_id = splitInfo.shipID,
+			user_id = splitInfo.userID
 		})
 	end
 
-	local var_1_6 = var_1_2:GetStageID()
+	local stageId = bossMission:GetStageID()
 
-	local function var_1_7(arg_2_0)
-		local var_2_0 = {
+	--- 服务器验证成功回调
+	local function onServerSuccess(tokenData)
+		local stageData = {
 			prefabFleet = {},
-			bossId = var_1_2.id,
-			actId = var_1_2.id,
-			stageId = var_1_6,
+			bossId = bossMission.id,
+			actId = bossMission.id,
+			stageId = stageId,
 			system = SYSTEM_GUILD,
-			token = arg_2_0.key
+			token = tokenData.key
 		}
-		local var_2_1 = getProxy(GuildProxy)
-		local var_2_2 = var_2_1:getData()
-		local var_2_3 = pg.guildset.operation_boss_guild_active.key_value
+		local guildProxy = getProxy(GuildProxy)
+		local guildData = guildProxy:getData()
+		local livenessValue = pg.guildset.operation_boss_guild_active.key_value
 
-		var_2_2:getMemberById(var_1_1.id):AddLiveness(var_2_3)
-		var_2_1:updateGuild(var_2_2)
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_0)
+		guildData:getMemberById(playerData.id):AddLiveness(livenessValue)
+		guildProxy:updateGuild(guildData)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_8(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 服务器验证失败回调
+	local function onServerFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_GUILD, var_1_3, {
-		var_1_6
-	}, var_1_7, var_1_8, var_1_5)
+	BeginStageCommand.SendRequest(SYSTEM_GUILD, myShipIds, {
+		stageId
+	}, onServerSuccess, onServerFail, shipUserMap)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = getProxy(FleetProxy)
-	local var_4_1 = arg_4_0.statistics._battleScore
-	local var_4_2 = pg.guildset.use_oil.key_value
-	local var_4_3 = {}
-	local var_4_4 = var_0_0.GetGuildBossMission()
-	local var_4_5 = var_4_4:GetMainFleet()
-	local var_4_6 = {}
+--- 退出公会Boss，处理伤害统计、指挥官经验和结算
+--- @param self BattleGateGuild
+--- @param callback table 回调对象
+function BattleGateGuild.Exit(self, callback)
+	local fleetProxy = getProxy(FleetProxy)
+	local battleScore = self.statistics._battleScore
+	local oilCost = pg.guildset.use_oil.key_value
+	local shipList = {}
+	local bossMission = BattleGateGuild.GetGuildBossMission()
+	local mainFleet = bossMission:GetMainFleet()
+	local commanderIdList = {}
 
-	for iter_4_0, iter_4_1 in pairs(var_4_5:getCommanders()) do
-		table.insert(var_4_6, iter_4_1.id)
+	for _, commander in pairs(mainFleet:getCommanders()) do
+		table.insert(commanderIdList, commander.id)
 	end
 
-	local var_4_7 = var_4_5:GetShips()
+	local mainShips = mainFleet:GetShips()
 
-	for iter_4_2, iter_4_3 in ipairs(var_4_7) do
-		table.insert(var_4_3, iter_4_3.ship)
+	for _, shipEntry in ipairs(mainShips) do
+		table.insert(shipList, shipEntry.ship)
 	end
 
-	if arg_4_0.statistics.submarineAid then
-		local var_4_8 = var_4_4:GetSubFleet()
+	if self.statistics.submarineAid then
+		local subFleet = bossMission:GetSubFleet()
 
-		if var_4_8 then
-			local var_4_9 = var_4_8:GetShips()
+		if subFleet then
+			local subShips = subFleet:GetShips()
 
-			for iter_4_4, iter_4_5 in ipairs(var_4_9) do
-				local var_4_10 = iter_4_5.ship
+			for _, shipEntry in ipairs(subShips) do
+				local ship = shipEntry.ship
 
-				if arg_4_0.statistics[var_4_10.id] then
-					table.insert(var_4_3, var_4_10)
+				if self.statistics[ship.id] then
+					table.insert(shipList, ship)
 				end
 			end
 
-			for iter_4_6, iter_4_7 in pairs(var_4_8:getCommanders()) do
-				table.insert(var_4_6, iter_4_7.id)
+			for _, commander in pairs(subFleet:getCommanders()) do
+				table.insert(commanderIdList, commander.id)
 			end
 		else
 			originalPrint("finish stage error: can not find submarin fleet.")
 		end
 	end
 
-	local var_4_11 = 0
-	local var_4_12 = 0
+	-- 计算MVP（最高输出）
+	local maxOutput = 0
+	local mvpShipId = 0
 
-	for iter_4_8, iter_4_9 in ipairs(var_4_3) do
-		local var_4_13 = arg_4_0.statistics[iter_4_9.id]
+	for _, ship in ipairs(shipList) do
+		local shipStat = self.statistics[ship.id]
 
-		if var_4_11 < var_4_13.output then
-			var_4_12 = iter_4_9.id
-			var_4_11 = var_4_13.output
+		if maxOutput < shipStat.output then
+			mvpShipId = ship.id
+			maxOutput = shipStat.output
 		end
 	end
 
-	local var_4_14 = var_0_0.GeneralPackage(arg_4_0, var_4_3)
+	local generalPackage = BattleGateGuild.GeneralPackage(self, shipList)
 
-	var_4_14.commander_id_list = var_4_6
+	generalPackage.commander_id_list = commanderIdList
 
-	local function var_4_15(arg_5_0)
-		arg_4_0.statistics.mvpShipID = var_4_12
+	--- 结算成功回调
+	local function onFinishSuccess(serverResult)
+		self.statistics.mvpShipID = mvpShipId
 
-		local var_5_0, var_5_1 = arg_4_1:GeneralLoot(arg_5_0)
-		local var_5_2 = var_4_1 > ys.Battle.BattleConst.BattleScore.C
-		local var_5_3 = arg_4_1.GenerateCommanderExp(arg_5_0, var_4_5, var_4_4:GetSubFleet())
+		local drops, extraDrops = callback:GeneralLoot(serverResult)
+		local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
+		local commanderExp = callback.GenerateCommanderExp(serverResult, mainFleet, bossMission:GetSubFleet())
 
-		var_0_0.GeneralPlayerCosume(SYSTEM_GUILD, var_5_2, var_4_2, arg_5_0.player_exp, exFlag)
+		BattleGateGuild.GeneralPlayerCosume(SYSTEM_GUILD, isWin, oilCost, serverResult.player_exp, exFlag)
 
-		local var_5_4 = {
+		local finishData = {
 			system = SYSTEM_GUILD,
-			statistics = arg_4_0.statistics,
-			score = var_4_1,
-			drops = var_5_0,
-			commanderExps = var_5_3,
-			result = arg_5_0.result,
-			extraDrops = var_5_1
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
+			commanderExps = commanderExp,
+			result = serverResult.result,
+			extraDrops = extraDrops
 		}
 
-		var_0_0.UpdateGuildBossMission()
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_4)
+		BattleGateGuild.UpdateGuildBossMission()
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 	end
 
-	var_0_0.SendRequest(arg_4_1, var_4_14, var_4_15)
+	BattleGateGuild.SendRequest(callback, generalPackage, onFinishSuccess)
 end
 
-function var_0_0.SendRequest(arg_6_0, arg_6_1, arg_6_2)
-	pg.ConnectionMgr.GetInstance():Send(40003, arg_6_1, 40004, function(arg_7_0)
-		if arg_7_0.result == 0 or arg_7_0.result == 1030 then
-			arg_6_2(arg_7_0)
-		elseif arg_7_0.result == 20 then
+--- 发送公会战斗请求（自定义协议 40003/40004）
+--- @param self BattleGateGuild
+--- @param sendData table 数据包
+--- @param callbackFn function 成功回调
+function BattleGateGuild.SendRequest(self, sendData, callbackFn)
+	pg.ConnectionMgr.GetInstance():Send(40003, sendData, 40004, function(response)
+		if response.result == 0 or response.result == 1030 then
+			callbackFn(response)
+		elseif response.result == 20 then
 			pg.MsgboxMgr.GetInstance():ShowMsgBox({
 				hideNo = true,
 				content = i18n("guild_battle_result_boss_is_death"),
@@ -149,164 +164,180 @@ function var_0_0.SendRequest(arg_6_0, arg_6_1, arg_6_2)
 					pg.m02:sendNotification(GAME.QUIT_BATTLE)
 				end
 			})
-		elseif arg_7_0.result == 4 then
+		elseif response.result == 4 then
 			pg.m02:sendNotification(GAME.QUIT_BATTLE)
 		else
-			arg_6_0:RequestFailStandardProcess(arg_7_0)
+			self:RequestFailStandardProcess(response)
 		end
 	end)
 end
 
-function var_0_0.GetGuildBossMission()
-	local var_9_0 = getProxy(GuildProxy):getData():GetActiveEvent()
+--- 获取当前公会Boss任务
+--- @return table bossMission
+function BattleGateGuild.GetGuildBossMission()
+	local activeEvent = getProxy(GuildProxy):getData():GetActiveEvent()
 
-	assert(var_9_0)
+	assert(activeEvent)
 
-	local var_9_1 = var_9_0:GetBossMission()
+	local bossMission = activeEvent:GetBossMission()
 
-	assert(var_9_1)
+	assert(bossMission)
 
-	return var_9_1
+	return bossMission
 end
 
-function var_0_0.UpdateGuildBossMission()
-	local var_10_0 = getProxy(GuildProxy)
-	local var_10_1 = var_10_0:getData()
-	local var_10_2 = var_10_1:GetActiveEvent()
+--- 更新公会Boss任务状态（减少次数等）
+function BattleGateGuild.UpdateGuildBossMission()
+	local guildProxy = getProxy(GuildProxy)
+	local guildData = guildProxy:getData()
+	local activeEvent = guildData:GetActiveEvent()
 
-	assert(var_10_2)
+	assert(activeEvent)
 
-	local var_10_3 = var_10_2:GetBossMission()
+	local bossMission = activeEvent:GetBossMission()
 
-	assert(var_10_3)
-	var_10_3:ReduceDailyCnt()
-	var_10_0:ResetBossRankTime()
-	var_10_0:ResetRefreshBossTime()
-	var_10_0:updateGuild(var_10_1)
+	assert(bossMission)
+	bossMission:ReduceDailyCnt()
+	guildProxy:ResetBossRankTime()
+	guildProxy:ResetRefreshBossTime()
+	guildProxy:updateGuild(guildData)
 end
 
-function var_0_0.GeneralPlayerCosume(arg_11_0, arg_11_1, arg_11_2, arg_11_3, arg_11_4)
-	local var_11_0 = getProxy(PlayerProxy)
-	local var_11_1 = var_11_0:getData()
+--- 通用玩家消耗处理（公会专用）
+--- @param system number 战斗系统类型
+--- @param isWin boolean 是否胜利
+--- @param oilCost number 油耗
+--- @param playerExp number 玩家经验
+--- @param exFlag boolean 额外标记
+function BattleGateGuild.GeneralPlayerCosume(system, isWin, oilCost, playerExp, exFlag)
+	local playerProxy = getProxy(PlayerProxy)
+	local playerData = playerProxy:getData()
 
-	var_11_1:addExp(arg_11_3)
-	var_11_1:consume({
+	playerData:addExp(playerExp)
+	playerData:consume({
 		gold = 0,
-		oil = arg_11_2
+		oil = oilCost
 	})
-	var_11_0:updatePlayer(var_11_1)
+	playerProxy:updatePlayer(playerData)
 end
 
-function var_0_0.GeneralPackage(arg_12_0, arg_12_1)
-	local var_12_0 = 0
-	local var_12_1 = {}
-	local var_12_2 = {}
-	local var_12_3 = arg_12_0.system
-	local var_12_4 = arg_12_0.stageId
-	local var_12_5 = arg_12_0.statistics._battleScore
-	local var_12_6 = var_12_3 + var_12_4 + var_12_5
-	local var_12_7 = getProxy(PlayerProxy):getRawData().id
+--- 生成通用结算数据包（公会专用，含校验）
+--- @param self BattleGateGuild
+--- @param shipList table 舰船列表
+--- @return table generalPackage
+function BattleGateGuild.GeneralPackage(self, shipList)
+	local combatPower = 0
+	local selfShipStats = {}
+	local otherShipStats = {}
+	local system = self.system
+	local stageId = self.stageId
+	local battleScore = self.statistics._battleScore
+	local checkSeed = system + stageId + battleScore
+	local playerId = getProxy(PlayerProxy):getRawData().id
 
-	for iter_12_0, iter_12_1 in ipairs(arg_12_1) do
-		local var_12_8 = arg_12_0.statistics[iter_12_1.id]
+	for _, ship in ipairs(shipList) do
+		local shipStat = self.statistics[ship.id]
 
-		if var_12_8 then
-			local var_12_9 = GuildAssaultFleet.GetRealId(var_12_8.id)
-			local var_12_10 = GuildAssaultFleet.GetUserId(var_12_8.id)
-			local var_12_11 = math.floor(var_12_8.bp)
-			local var_12_12 = math.floor(var_12_8.output)
-			local var_12_13 = math.max(0, math.floor(var_12_8.damage))
-			local var_12_14 = math.floor(var_12_8.maxDamageOnce)
-			local var_12_15 = math.floor(var_12_8.gearScore)
-			local var_12_16 = var_12_10 ~= var_12_7 and var_12_2 or var_12_1
+		if shipStat then
+			local realShipId = GuildAssaultFleet.GetRealId(shipStat.id)
+			local userId = GuildAssaultFleet.GetUserId(shipStat.id)
+			local hpRest = math.floor(shipStat.bp)
+			local damageOutput = math.floor(shipStat.output)
+			local damageCaused = math.max(0, math.floor(shipStat.damage))
+			local maxDamageOnce = math.floor(shipStat.maxDamageOnce)
+			local gearScore = math.floor(shipStat.gearScore)
+			local targetList = userId ~= playerId and otherShipStats or selfShipStats
 
-			table.insert(var_12_16, {
-				ship_id = var_12_9,
-				hp_rest = var_12_11,
-				damage_cause = var_12_12,
-				damage_caused = var_12_13,
-				max_damage_once = var_12_14,
-				ship_gear_score = var_12_15
+			table.insert(targetList, {
+				ship_id = realShipId,
+				hp_rest = hpRest,
+				damage_cause = damageOutput,
+				damage_caused = damageCaused,
+				max_damage_once = maxDamageOnce,
+				ship_gear_score = gearScore
 			})
 
-			var_12_6 = var_12_6 + var_12_9 + var_12_11 + var_12_12 + var_12_14
-			var_12_0 = var_12_0 + iter_12_1:getShipCombatPower()
+			checkSeed = checkSeed + realShipId + hpRest + damageOutput + maxDamageOnce
+			combatPower = combatPower + ship:getShipCombatPower()
 		end
 	end
 
-	local var_12_17, var_12_18 = GetBattleCheckResult(var_12_6, arg_12_0.token, arg_12_0.statistics._totalTime)
-	local var_12_19 = {}
+	local checkKey, fileCheck = GetBattleCheckResult(checkSeed, self.token, self.statistics._totalTime)
+	local enemyInfoList = {}
 
-	for iter_12_2, iter_12_3 in ipairs(arg_12_0.statistics._enemyInfoList) do
-		table.insert(var_12_19, {
-			enemy_id = iter_12_3.id,
-			damage_taken = iter_12_3.damage,
-			total_hp = iter_12_3.totalHp
+	for _, enemy in ipairs(self.statistics._enemyInfoList) do
+		table.insert(enemyInfoList, {
+			enemy_id = enemy.id,
+			damage_taken = enemy.damage,
+			total_hp = enemy.totalHp
 		})
 	end
 
-	local var_12_20 = math.fmod(arg_12_0.statistics._autoCount, 2)
-	local var_12_21 = math.fmod(var_12_20 + arg_12_0.statistics._autoInit, 2)
+	local autoMod = math.fmod(self.statistics._autoCount, 2)
+	local autoAfterMod = math.fmod(autoMod + self.statistics._autoInit, 2)
 
 	return {
-		system = var_12_3,
-		data = var_12_4,
-		score = var_12_5,
-		key = var_12_17,
-		statistics = var_12_1,
-		otherstatistics = var_12_2,
-		kill_id_list = arg_12_0.statistics.kill_id_list,
-		total_time = arg_12_0.statistics._totalTime,
-		bot_percentage = arg_12_0.statistics._botPercentage,
-		extra_param = var_12_0,
-		file_check = var_12_18,
-		enemy_info = var_12_19,
+		system = system,
+		data = stageId,
+		score = battleScore,
+		key = checkKey,
+		statistics = selfShipStats,
+		otherstatistics = otherShipStats,
+		kill_id_list = self.statistics.kill_id_list,
+		total_time = self.statistics._totalTime,
+		bot_percentage = self.statistics._botPercentage,
+		extra_param = combatPower,
+		file_check = fileCheck,
+		enemy_info = enemyInfoList,
 		data2 = {},
-		auto_before = arg_12_0.statistics._autoInit,
-		auto_switch_time = arg_12_0.statistics._autoCount,
-		auto_after = var_12_21
+		auto_before = self.statistics._autoInit,
+		auto_switch_time = self.statistics._autoCount,
+		auto_after = autoAfterMod
 	}
 end
 
-function var_0_0.GetPreloadList(arg_13_0)
-	local var_13_0 = {}
-	local var_13_1 = {}
-	local var_13_2
-	local var_13_3 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_13_4 = getProxy(GuildProxy):getRawData():GetActiveEvent():GetBossMission()
-	local var_13_5 = var_13_4:GetMainFleet()
-	local var_13_6 = var_13_5:GetShips()
+--- 获取预加载资源列表
+--- @param self BattleGateGuild
+--- @return table shipResources, table skinResources
+function BattleGateGuild.GetPreloadList(self)
+	local shipList = {}
+	local buffList = {}
+	local skinList
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local bossMission = getProxy(GuildProxy):getRawData():GetActiveEvent():GetBossMission()
+	local mainFleet = bossMission:GetMainFleet()
+	local mainShips = mainFleet:GetShips()
 
-	for iter_13_0, iter_13_1 in ipairs(var_13_6) do
-		if iter_13_1 and iter_13_1.ship then
-			table.insert(var_13_0, iter_13_1.ship)
+	for _, shipEntry in ipairs(mainShips) do
+		if shipEntry and shipEntry.ship then
+			table.insert(shipList, shipEntry.ship)
 		end
 	end
 
-	local var_13_7 = var_13_5:BuildBattleBuffList()
-	local var_13_8 = var_13_4:GetSubFleet()
-	local var_13_9 = var_13_8:GetShips()
+	local mainBuffs = mainFleet:BuildBattleBuffList()
+	local subFleet = bossMission:GetSubFleet()
+	local subShips = subFleet:GetShips()
 
-	for iter_13_2, iter_13_3 in ipairs(var_13_9) do
-		if iter_13_3 and iter_13_3.ship then
-			table.insert(var_13_0, iter_13_3.ship)
+	for _, shipEntry in ipairs(subShips) do
+		if shipEntry and shipEntry.ship then
+			table.insert(shipList, shipEntry.ship)
 		end
 	end
 
-	local var_13_10 = var_13_8:BuildBattleBuffList()
+	local subBuffs = subFleet:BuildBattleBuffList()
 
-	for iter_13_4, iter_13_5 in ipairs(var_13_10) do
-		table.insert(var_13_7, iter_13_5)
+	for _, buff in ipairs(subBuffs) do
+		table.insert(mainBuffs, buff)
 	end
 
-	local var_13_11, var_13_12 = var_13_3.GetPlayerShipResource(var_13_0, arg_13_0.system)
-	local var_13_13 = var_13_3.GetCommanderBuffRes(var_13_7)
+	local shipResources, skinResources = resMgr.GetPlayerShipResource(shipList, self.system)
+	local commanderBuffs = resMgr.GetCommanderBuffRes(mainBuffs)
 
-	for iter_13_6, iter_13_7 in ipairs(var_13_13) do
-		table.insert(var_13_11, iter_13_7)
+	for _, res in ipairs(commanderBuffs) do
+		table.insert(shipResources, res)
 	end
 
-	return var_13_11, var_13_12
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateGuild

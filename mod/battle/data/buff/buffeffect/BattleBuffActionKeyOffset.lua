@@ -11,7 +11,7 @@ function BattleBuffActionKeyOffset.Ctor(self, effectData)
 	BattleBuffActionKeyOffset.super.Ctor(self, effectData)
 end
 
-function BattleBuffActionKeyOffset.SetArgs(self, arg_2_1, arg_2_2)
+function BattleBuffActionKeyOffset.SetArgs(self, owner, buff)
 	self._actionKey = self._tempData.arg_list.key
 end
 

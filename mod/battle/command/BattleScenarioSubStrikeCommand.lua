@@ -1,40 +1,43 @@
 ys = ys or {}
-
+-- 关卡潜艇打击Command，继承自BattleSingleDungeonCommand，重写DoPrologue和部分事件处理
 local ys = ys
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleEvent = ys.Battle.BattleEvent
+--- @class BattleScenarioSubStrikeCommand : 关卡潜艇打击Command
 local BattleScenarioSubStrikeCommand = class("BattleScenarioSubStrikeCommand", ys.Battle.BattleSingleDungeonCommand)
 
 ys.Battle.BattleScenarioSubStrikeCommand = BattleScenarioSubStrikeCommand
 BattleScenarioSubStrikeCommand.__name = "BattleScenarioSubStrikeCommand"
 
-function BattleScenarioSubStrikeCommand.Ctor(arg_1_0)
-	BattleScenarioSubStrikeCommand.super.Ctor(arg_1_0)
+function BattleScenarioSubStrikeCommand.Ctor(self)
+	BattleScenarioSubStrikeCommand.super.Ctor(self)
 end
 
-function BattleScenarioSubStrikeCommand.DoPrologue(arg_2_0)
+--- 重写开场逻辑：禁用摇杆和武器按钮，启用相机手势
+function BattleScenarioSubStrikeCommand.DoPrologue(self)
 	pg.UIMgr.GetInstance():Marching()
 
-	local function var_2_0()
-		arg_2_0._uiMediator:OpeningEffect(function()
-			arg_2_0._uiMediator:ShowTimer()
-			arg_2_0._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
-			arg_2_0._waveUpdater:Start()
+	--- 海面切换完成后的回调
+	local function afterShift()
+		self._uiMediator:OpeningEffect(function()
+			self._uiMediator:ShowTimer()
+			self._state:ChangeState(ys.Battle.BattleState.BATTLE_STATE_FIGHT)
+			self._waveUpdater:Start()
 
-			if arg_2_0._dataProxy:GetInitData().hideAllButtons then
-				arg_2_0._dataProxy:DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.HIDE_INTERACTABLE_BUTTONS, {
+			if self._dataProxy:GetInitData().hideAllButtons then
+				self._dataProxy:DispatchEvent(ys.Event.New(ys.Battle.BattleEvent.HIDE_INTERACTABLE_BUTTONS, {
 					isActive = false
 				}))
 			end
 
-			arg_2_0._uiMediator:InitCameraGestureSlider()
-			arg_2_0._uiMediator:EnableJoystick(false)
-			arg_2_0._uiMediator:EnableWeaponButton(false)
+			self._uiMediator:InitCameraGestureSlider()
+			self._uiMediator:EnableJoystick(false)
+			self._uiMediator:EnableWeaponButton(false)
 		end)
-		arg_2_0._dataProxy:SubmarineStrike(ys.Battle.BattleConfig.FRIENDLY_CODE)
+		self._dataProxy:SubmarineStrike(ys.Battle.BattleConfig.FRIENDLY_CODE)
 	end
 
-	arg_2_0._uiMediator:SeaSurfaceShift(45, 0, nil, var_2_0)
+	self._uiMediator:SeaSurfaceShift(45, 0, nil, afterShift)
 end
 
 function BattleScenarioSubStrikeCommand.initWaveModule(self)
@@ -60,68 +63,74 @@ function BattleScenarioSubStrikeCommand.initWaveModule(self)
 		self._state:BattleEnd()
 	end
 
-	local function spawnAreaFunc(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4)
-		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4)
+	--- 区域生成回调
+	local function spawnAreaFunc(areaID, arg2, arg3, arg4, arg5)
+		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, areaID, arg2, arg3, arg4, arg5)
 	end
 
 	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)
 end
 
-function BattleScenarioSubStrikeCommand.onAddUnit(arg_10_0, arg_10_1)
-	BattleScenarioSubStrikeCommand.super.onAddUnit(arg_10_0, arg_10_1)
+--- 重写添加单位逻辑，Boss单位加入潜艇打击Boss列表
+function BattleScenarioSubStrikeCommand.onAddUnit(self, event)
+	BattleScenarioSubStrikeCommand.super.onAddUnit(self, event)
 
-	if arg_10_1.Data.type == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
-		local var_10_0 = arg_10_1.Data.unit
+	if event.Data.type == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
+		local unit = event.Data.unit
 
-		arg_10_0._dataProxy:AddScenarioSubStrikeBoss(var_10_0)
+		self._dataProxy:AddScenarioSubStrikeBoss(unit)
 	end
 end
 
-function BattleScenarioSubStrikeCommand.onPlayerShutDown(arg_11_0, arg_11_1)
-	if arg_11_0._state:GetState() ~= arg_11_0._state.BATTLE_STATE_FIGHT then
+--- 潜艇打击模式下，潜艇全灭则战斗结束
+function BattleScenarioSubStrikeCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if #arg_11_0._userFleet:GetSubList() == 0 then
-		arg_11_0._dataProxy:TriggerFinishBattle()
-		arg_11_0:CalcStatistic()
-		arg_11_0._state:BattleEnd()
+	if #self._userFleet:GetSubList() == 0 then
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self._state:BattleEnd()
 	end
 end
 
-function BattleScenarioSubStrikeCommand.onUpdateCountDown(arg_12_0, arg_12_1)
-	if arg_12_0._dataProxy:GetCountDown() <= 0 then
-		arg_12_0._dataProxy:EnemyEscape()
-		arg_12_0:CalcStatistic()
-		arg_12_0._state:BattleTimeUp()
+function BattleScenarioSubStrikeCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		self._dataProxy:EnemyEscape()
+		self:CalcStatistic()
+		self._state:BattleTimeUp()
 	end
 end
 
-function BattleScenarioSubStrikeCommand.onWillDie(arg_13_0, arg_13_1)
-	local var_13_0 = arg_13_1.Dispatcher
-	local var_13_1 = ys.Battle.BattleConst.UnitDeathReason
+--- 重写单位死亡逻辑，精简了评分计算
+function BattleScenarioSubStrikeCommand.onWillDie(self, event)
+	local unit = event.Dispatcher
+	local deathReason = ys.Battle.BattleConst.UnitDeathReason
 
-	if var_13_0:GetDeathReason() == var_13_1.LEAVE then
-		if var_13_0:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
-			arg_13_0._dataProxy:CalcBPWhenPlayerLeave(var_13_0)
+	if unit:GetDeathReason() == deathReason.LEAVE then
+		if unit:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
+			self._dataProxy:CalcBPWhenPlayerLeave(unit)
 		end
 	else
-		arg_13_0._dataProxy:CalcBattleScoreWhenDead(var_13_0)
+		self._dataProxy:CalcBattleScoreWhenDead(unit)
 	end
 
-	local var_13_2 = arg_13_0._dataProxy:IsThereBoss()
+	local hasBoss = self._dataProxy:IsThereBoss()
 
-	if var_13_0:IsBoss() and not var_13_2 then
-		arg_13_0._dataProxy:KillAllEnemy()
+	if unit:IsBoss() and not hasBoss then
+		self._dataProxy:KillAllEnemy()
 	end
 end
 
-function BattleScenarioSubStrikeCommand.CalcBattleEnd(arg_14_0)
-	arg_14_0._dataProxy:TriggerFinishBattle()
-	arg_14_0:CalcStatistic()
-	arg_14_0._state:BattleEnd()
+--- 强制结束战斗
+function BattleScenarioSubStrikeCommand.CalcBattleEnd(self)
+	self._dataProxy:TriggerFinishBattle()
+	self:CalcStatistic()
+	self._state:BattleEnd()
 end
 
-function BattleScenarioSubStrikeCommand.CalcStatistic(arg_15_0)
-	arg_15_0._dataProxy:CalcScenarioSubStrikeScoreAtEnd()
+--- 重写统计计算，使用ScenarioSubStrike专用方法
+function BattleScenarioSubStrikeCommand.CalcStatistic(self)
+	self._dataProxy:CalcScenarioSubStrikeScoreAtEnd()
 end

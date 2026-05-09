@@ -13,100 +13,124 @@ local BattlePopNumBundle = ys.Battle.BattlePopNumBundle
 BattlePopNumBundle.PRO = 0
 BattlePopNumBundle.SLIM = 1
 
-function BattlePopNumBundle.Ctor(arg_1_0, arg_1_1, arg_1_2)
-	arg_1_0.pool = arg_1_1
-	arg_1_0._container = cloneTplTo(arg_1_2.containerTpl, arg_1_2.containerTpl.parent)
-	arg_1_0._bundleType = arg_1_2.type
-	arg_1_0._score = arg_1_2.score
+--- @class BattlePopNumBundle
+--- @param pool pg.LuaObPool 所属对象池
+--- @param cfg table { containerTpl, type, score }
+function BattlePopNumBundle.Ctor(self, pool, cfg)
+	self.pool = pool
+	self._container = cloneTplTo(cfg.containerTpl, cfg.containerTpl.parent)
+	self._bundleType = cfg.type
+	self._score = cfg.score
 
-	arg_1_0:init()
+	self:init()
 end
 
-function BattlePopNumBundle.InitPopScore(arg_2_0, arg_2_1)
-	arg_2_0._allPool[BattlePopNumManager.POP_SCORE] = arg_2_0:generateTempPool(BattlePopNumManager.POP_SCORE, arg_2_0._container, arg_2_1, 1)
+--- 初始化分数弹出模板池
+--- @param skinGO GameObject 弹出分数皮肤模板
+function BattlePopNumBundle.InitPopScore(self, skinGO)
+	self._allPool[BattlePopNumManager.POP_SCORE] = self:generateTempPool(BattlePopNumManager.POP_SCORE, self._container, skinGO, 1)
 end
 
-function BattlePopNumBundle.GetContainer(arg_3_0)
-	return arg_3_0._container
+--- 获取容器Transform
+function BattlePopNumBundle.GetContainer(self)
+	return self._container
 end
 
-function BattlePopNumBundle.init(arg_4_0)
-	arg_4_0._allPool = {}
+--- 初始化所有弹出数字的模板池
+function BattlePopNumBundle.init(self)
+	self._allPool = {}
 
-	local var_4_0 = BattlePopNumManager.GetInstance():GetPopSkin()
+	local popSkin = BattlePopNumManager.GetInstance():GetPopSkin()
 
-	if arg_4_0._score then
-		arg_4_0._allPool[BattlePopNumManager.POP_SCORE] = arg_4_0:generateTempPool(BattlePopNumManager.POP_SCORE, arg_4_0._container, var_4_0, 1)
+	if self._score then
+		self._allPool[BattlePopNumManager.POP_SCORE] = self:generateTempPool(BattlePopNumManager.POP_SCORE, self._container, popSkin, 1)
 	else
-		arg_4_0._allPool[BattlePopNumManager.POP_COMMON] = arg_4_0:generateTempPool(BattlePopNumManager.POP_COMMON, arg_4_0._container, var_4_0, 1)
-		arg_4_0._allPool[BattlePopNumManager.POP_CT_EXPLO] = arg_4_0:generateTempPool(BattlePopNumManager.POP_CT_EXPLO, arg_4_0._container, var_4_0, 0)
-		arg_4_0._allPool[BattlePopNumManager.POP_MISS] = arg_4_0:generateTempPool(BattlePopNumManager.POP_MISS, arg_4_0._container, var_4_0, 0)
-		arg_4_0._allPool[BattlePopNumManager.POP_NORMAL] = arg_4_0:generateTempPool(BattlePopNumManager.POP_NORMAL, arg_4_0._container, var_4_0, 0)
-		arg_4_0._allPool[BattlePopNumManager.POP_CT_NORMAL] = arg_4_0:generateTempPool(BattlePopNumManager.POP_CT_NORMAL, arg_4_0._container, var_4_0, 0)
+		self._allPool[BattlePopNumManager.POP_COMMON] = self:generateTempPool(BattlePopNumManager.POP_COMMON, self._container, popSkin, 1)
+		self._allPool[BattlePopNumManager.POP_CT_EXPLO] = self:generateTempPool(BattlePopNumManager.POP_CT_EXPLO, self._container, popSkin, 0)
+		self._allPool[BattlePopNumManager.POP_MISS] = self:generateTempPool(BattlePopNumManager.POP_MISS, self._container, popSkin, 0)
+		self._allPool[BattlePopNumManager.POP_NORMAL] = self:generateTempPool(BattlePopNumManager.POP_NORMAL, self._container, popSkin, 0)
+		self._allPool[BattlePopNumManager.POP_CT_NORMAL] = self:generateTempPool(BattlePopNumManager.POP_CT_NORMAL, self._container, popSkin, 0)
 
-		if arg_4_0._bundleType == BattlePopNumBundle.PRO then
-			arg_4_0._allPool[BattlePopNumManager.POP_UNBREAK] = arg_4_0:generateTempPool(BattlePopNumManager.POP_UNBREAK, arg_4_0._container, var_4_0, 1)
-			arg_4_0._allPool[BattlePopNumManager.POP_HEAL] = arg_4_0:generateTempPool(BattlePopNumManager.POP_HEAL, arg_4_0._container, var_4_0, 1)
-			arg_4_0._allPool[BattlePopNumManager.POP_EXPLO] = arg_4_0:generateTempPool(BattlePopNumManager.POP_EXPLO, arg_4_0._container, var_4_0, 0)
-			arg_4_0._allPool[BattlePopNumManager.POP_PIERCE] = arg_4_0:generateTempPool(BattlePopNumManager.POP_PIERCE, arg_4_0._container, var_4_0, 0)
-			arg_4_0._allPool[BattlePopNumManager.POP_CT_PIERCE] = arg_4_0:generateTempPool(BattlePopNumManager.POP_CT_PIERCE, arg_4_0._container, var_4_0, 0)
+		if self._bundleType == BattlePopNumBundle.PRO then
+			self._allPool[BattlePopNumManager.POP_UNBREAK] = self:generateTempPool(BattlePopNumManager.POP_UNBREAK, self._container, popSkin, 1)
+			self._allPool[BattlePopNumManager.POP_HEAL] = self:generateTempPool(BattlePopNumManager.POP_HEAL, self._container, popSkin, 1)
+			self._allPool[BattlePopNumManager.POP_EXPLO] = self:generateTempPool(BattlePopNumManager.POP_EXPLO, self._container, popSkin, 0)
+			self._allPool[BattlePopNumManager.POP_PIERCE] = self:generateTempPool(BattlePopNumManager.POP_PIERCE, self._container, popSkin, 0)
+			self._allPool[BattlePopNumManager.POP_CT_PIERCE] = self:generateTempPool(BattlePopNumManager.POP_CT_PIERCE, self._container, popSkin, 0)
 		end
 	end
 end
 
-function BattlePopNumBundle.Clear(arg_5_0)
-	arg_5_0.pool:Recycle(arg_5_0)
+--- 清除并回收到池
+function BattlePopNumBundle.Clear(self)
+	self.pool:Recycle(self)
 end
--- TODO
-function BattlePopNumBundle.GetPop(self, isHeal, isCri, isMiss, dHP, font)
-	local var_6_0, var_6_1 = BattlePopNumManager.getType(isHeal, isCri, isMiss, font)
-	local var_6_2 = self._allPool[var_6_0]:GetObject()
 
-	if var_6_0 ~= BattlePopNumManager.POP_MISS then
-		var_6_2:SetText(dHP)
+--- 获取弹出数字对象
+--- @param numType number 数字类型（伤害/暴击/治疗等）
+--- @param isCritical boolean 是否暴击
+--- @param isCld boolean 是否CLD
+--- @param text string 要显示的文本
+--- @param shieldWall boolean 是否盾墙
+function BattlePopNumBundle.GetPop(self, numType, isCritical, isCld, text, shieldWall)
+	local popType, scaleType = BattlePopNumManager.getType(numType, isCritical, isCld, shieldWall)
+	local popNum = self._allPool[popType]:GetObject()
+
+	-- MISS类型不设置文本
+	if popType ~= BattlePopNumManager.POP_MISS then
+		popNum:SetText(text)
 	end
 
-	var_6_2:SetScale(var_6_1)
+	popNum:SetScale(scaleType)
 
-	return var_6_2
+	return popNum
 end
 
-function BattlePopNumBundle.GetScorePop(arg_7_0, arg_7_1)
-	local var_7_0 = arg_7_0._allPool[BattlePopNumManager.POP_SCORE]:GetObject()
+--- 获取分数弹出数字
+--- @param scoreText string 分数文本
+function BattlePopNumBundle.GetScorePop(self, scoreText)
+	local popNum = self._allPool[BattlePopNumManager.POP_SCORE]:GetObject()
 
-	var_7_0:SetText(arg_7_1)
+	popNum:SetText(scoreText)
 
-	return var_7_0
+	return popNum
 end
 
-function BattlePopNumBundle.generateTempPool(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
+--- 生成临时Lua对象池
+--- @param poolKey string 池键名（如 "POP_NORMAL"）
+--- @param parentTF Transform 父Transform
+--- @param popSkin GameObject 弹出数字皮肤
+--- @param initSize number 初始池大小
+function BattlePopNumBundle.generateTempPool(self, poolKey, parentTF, popSkin, initSize)
 	return pg.LuaObPool.New(ys.Battle.BattlePopNum, {
-		template = arg_8_3.transform:Find(arg_8_1).gameObject,
-		parentTF = arg_8_2,
-		mgr = arg_8_0
-	}, arg_8_4)
+		template = popSkin.transform:Find(poolKey).gameObject,
+		parentTF = parentTF,
+		mgr = self
+	}, initSize)
 end
 
-function BattlePopNumBundle.Init(arg_9_0)
+function BattlePopNumBundle.Init(self)
 	return
 end
 
-function BattlePopNumBundle.Recycle(arg_10_0)
+function BattlePopNumBundle.Recycle(self)
 	return
 end
 
-function BattlePopNumBundle.IsScorePop(arg_11_0)
-	return arg_11_0._score
+--- 是否分数弹出bundle
+function BattlePopNumBundle.IsScorePop(self)
+	return self._score
 end
 
-function BattlePopNumBundle.Dispose(arg_12_0)
-	for iter_12_0, iter_12_1 in pairs(arg_12_0._allPool) do
-		iter_12_1:Dispose()
+--- 销毁并清理所有子池
+function BattlePopNumBundle.Dispose(self)
+	for _, pool in pairs(self._allPool) do
+		pool:Dispose()
 	end
 
-	arg_12_0._allPool = nil
+	self._allPool = nil
 
-	Object.Destroy(arg_12_0._container.gameObject)
+	Object.Destroy(self._container.gameObject)
 
-	arg_12_0._container = nil
+	self._container = nil
 end

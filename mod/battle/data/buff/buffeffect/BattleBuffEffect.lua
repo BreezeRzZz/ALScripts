@@ -19,8 +19,10 @@ BattleBuffEffect.FX_TTPE_MOD_BATTLE_UNIT_TYPE = 6
 BattleBuffEffect.FX_TYPE_COUNTER = 7
 BattleBuffEffect.FX_TYPE_MOD_MODEL_SCALE = 8
 
--- 核心BuffEffect之一
--- 这是所有BuffEffect的基类. 如果子类没重写, 请参考这个类的实现
+--- @class BattleBuffEffect
+--- @param effectData table BuffEffect配置数据（来自skill_data_template的effect列表项）
+--- 核心BuffEffect之一
+--- 这是所有BuffEffect的基类. 如果子类没重写, 请参考这个类的实现
 function BattleBuffEffect.Ctor(self, effectData)
 	self._tempData = Clone(effectData)
 	self._type = self._tempData.type
@@ -50,14 +52,21 @@ function BattleBuffEffect.Ctor(self, effectData)
 	self:SetActive()
 end
 
+--- @class BattleBuffEffect
+--- @return number FX_TYPE_NOR(0)
+--- 返回BuffEffect的类型，默认返回FX_TYPE_NOR
 function BattleBuffEffect.GetEffectType(self)
 	return BattleBuffEffect.FX_TYPE_NOR
 end
 
+--- @class BattleBuffEffect
+--- @return table|nil pop配置表
 function BattleBuffEffect.GetPopConfig(self)
 	return self._tempData.pop
 end
 
+--- @class BattleBuffEffect
+--- @return boolean 是否还有剩余触发次数
 function BattleBuffEffect.HaveQuota(self)
 	if self._quota == 0 then
 		return false
@@ -66,10 +75,14 @@ function BattleBuffEffect.HaveQuota(self)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @return nil 基类默认无附加数据
 function BattleBuffEffect.GetEffectAttachData(self)
 	return nil
 end
 
+--- 配置HP触发条件
+--- 从arg_list读取hpUpperBound、hpLowerBound、hpSigned、dhpGreater、dhpSmaller等字段
 function BattleBuffEffect.ConfigHPTrigger(self)
 	local arg_list = self._tempData.arg_list
 
@@ -92,6 +105,7 @@ function BattleBuffEffect.ConfigHPTrigger(self)
 	self._dhpSmallerMaxhp = arg_list.dhpSmallerMaxhp
 end
 
+--- 配置属性触发条件
 function BattleBuffEffect.ConfigAttrTrigger(self)
 	local arg_list = self._tempData.arg_list
 
@@ -101,34 +115,40 @@ function BattleBuffEffect.ConfigAttrTrigger(self)
 end
 
 --- @class BattleBuffEffect
---- @param caster BattleUnit
---- @return nil
+--- @param caster BattleUnit 施法者单位
 function BattleBuffEffect.SetCaster(self, caster)
 	self._caster = caster
 end
 
+--- @class BattleBuffEffect
+--- @param commander table 指挥官数据
 function BattleBuffEffect.SetCommander(self, commander)
 	self._commander = commander
 end
 
+--- @class BattleBuffEffect
+--- @param bullet BattleBulletUnit 子弹单位
 function BattleBuffEffect.SetBullet(self, bullet)
 	return
 end
 
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @param buff BattleBuffUnit Buff实例
 function BattleBuffEffect.SetArgs(self, owner, buff)
 	return
 end
 
+--- @class BattleBuffEffect
 function BattleBuffEffect.SetOrb(self)
 	return
 end
 
 --- @class BattleBuffEffect
---- @param effectType string
---- @param owner BattleUnit
---- @param buff BattleBuffUnit
---- @param args table<string, any>
---- @return nil
+--- @param effectType string 触发类型（对应onAttach/onRemove等方法名）
+--- @param owner BattleUnit Buff持有者
+--- @param buff BattleBuffUnit Buff实例
+--- @param args table<string, any> 事件附加参数
 --- BuffEffect的触发接口
 function BattleBuffEffect.Trigger(self, effectType, owner, buff, args)
 	-- effectType跟这些函数名是一样的
@@ -141,14 +161,17 @@ function BattleBuffEffect.Trigger(self, effectType, owner, buff, args)
 	self[effectType](self, owner, buff, args)
 end
 
+--- Buff挂载时触发
 function BattleBuffEffect.onAttach(self, owner, buff)
 	self:onTrigger(owner, buff)
 end
 
+--- Buff移除时触发
 function BattleBuffEffect.onRemove(self, owner, buff)
 	self:onTrigger(owner, buff)
 end
 
+--- 有新Buff添加时触发
 function BattleBuffEffect.onBuffAdded(self, owner, buff, args)
 	if not self:buffStateRequire(args.buffID) then
 		return
@@ -157,6 +180,7 @@ function BattleBuffEffect.onBuffAdded(self, owner, buff, args)
 	self:onTrigger(owner, buff)
 end
 
+--- Buff移除时触发
 function BattleBuffEffect.onBuffRemoved(self, owner, buff, args)
 	if not self:buffStateRequire(args.buffID) then
 		return
@@ -165,68 +189,78 @@ function BattleBuffEffect.onBuffRemoved(self, owner, buff, args)
 	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onUpdate(self, arg_18_1, arg_18_2, arg_18_3)
-	self:onTrigger(arg_18_1, arg_18_2, arg_18_3)
+--- 每帧更新时触发
+function BattleBuffEffect.onUpdate(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onStack(self, arg_19_1, arg_19_2)
-	self:onTrigger(arg_19_1, arg_19_2)
+--- Buff层数变化时触发
+function BattleBuffEffect.onStack(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBulletHit(self, arg_20_1, arg_20_2, arg_20_3)
-	if not self:equipIndexRequire(arg_20_3.equipIndex) then
+--- 子弹命中时触发（需满足indexRequire/bulletTagRequire/victimRequire）
+function BattleBuffEffect.onBulletHit(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	if not self:bulletTagRequire(arg_20_3.bulletTag) then
+	if not self:bulletTagRequire(args.bulletTag) then
 		return
 	end
 
-	if not self:victimRequire(arg_20_3.target, arg_20_1) then
+	if not self:victimRequire(args.target, owner) then
 		return
 	end
 
-	self:onTrigger(arg_20_1, arg_20_2, arg_20_3)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onTeammateBulletHit(self, arg_21_1, arg_21_2, arg_21_3)
-	self:onBulletHit(arg_21_1, arg_21_2, arg_21_3)
+--- 队友子弹命中时触发
+function BattleBuffEffect.onTeammateBulletHit(self, owner, buff, args)
+	self:onBulletHit(owner, buff, args)
 end
 
-function BattleBuffEffect.onBeHit(self, arg_22_1, arg_22_2, arg_22_3)
+--- 被命中时触发
+function BattleBuffEffect.onBeHit(self, owner, buff, args)
 	if self._behit then
-		if self._behit.damage_type == arg_22_3.weaponType and self._behit.bullet_type == arg_22_3.bulletType then
-			self:onTrigger(arg_22_1, arg_22_2)
+		if self._behit.damage_type == args.weaponType and self._behit.bullet_type == args.bulletType then
+			self:onTrigger(owner, buff)
 		end
 	else
-		self:onTrigger(arg_22_1, arg_22_2)
+		self:onTrigger(owner, buff)
 	end
 end
 
-function BattleBuffEffect.onFire(self, arg_23_1, arg_23_2, arg_23_3)
-	if not self:equipIndexRequire(arg_23_3.equipIndex) then
+--- 开火时触发
+function BattleBuffEffect.onFire(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_23_1, arg_23_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onCombo(self, arg_24_1, arg_24_2, arg_24_3)
-	if not self:equipIndexRequire(arg_24_3.equipIndex) then
+--- 连击时触发（需满足上下界条件）
+function BattleBuffEffect.onCombo(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	local var_24_0 = arg_24_3.matchUnitCount
-	local var_24_1 = self._tempData.arg_list.upperBound
-	local var_24_2 = self._tempData.arg_list.lowerBound
+	local matchUnitCount = args.matchUnitCount
+	local upperBound = self._tempData.arg_list.upperBound
+	local lowerBound = self._tempData.arg_list.lowerBound
 
-	if var_24_1 and var_24_0 <= var_24_1 then
-		self:onTrigger(arg_24_1, arg_24_2)
-	elseif var_24_2 and var_24_2 <= var_24_0 then
-		self:onTrigger(arg_24_1, arg_24_2)
+	if upperBound and matchUnitCount <= upperBound then
+		self:onTrigger(owner, buff)
+	elseif lowerBound and lowerBound <= matchUnitCount then
+		self:onTrigger(owner, buff)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param buff BattleBuffUnit Buff实例
+--- @return boolean 堆叠数是否满足要求
 function BattleBuffEffect.stackRequire(self, buff)
 	if self._stackRequire then
 		local stack = buff:GetStack()
@@ -237,6 +271,11 @@ function BattleBuffEffect.stackRequire(self, buff)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @param attr string 要比较的属性名
+--- @return boolean 舰队属性是否满足要求
+--- 检查舰队属性条件，支持解析比较运算符
 function BattleBuffEffect.fleetAttrRequire(self, owner, attr)
 	if self._fleetAttrRequire then
 		local opStart, opEnd = string.find(self._fleetAttrRequire, "%p+")
@@ -246,7 +285,7 @@ function BattleBuffEffect.fleetAttrRequire(self, owner, attr)
 			return false
 		elseif owner:GetFleetVO() then
 			local fleetAttr = owner:GetFleetVO():GetFleetAttr()
-			
+
 			return BattleFormulas.parseCompare(self._fleetAttrRequire, fleetAttr)
 		else
 			return false
@@ -256,6 +295,9 @@ function BattleBuffEffect.fleetAttrRequire(self, owner, attr)
 	return true
 end
 
+--- @class BattleBuffEffect
+--- @param delta number 属性变化量
+--- @return boolean 舰队属性变化值是否满足要求
 function BattleBuffEffect.fleetAttrDelatRequire(self, delta)
 	if self._fleetAttrDeltaRequire then
 		return delta and BattleFormulas.simpleCompare(self._fleetAttrDeltaRequire, delta)
@@ -264,6 +306,10 @@ function BattleBuffEffect.fleetAttrDelatRequire(self, delta)
 	return true
 end
 
+--- @class BattleBuffEffect
+--- @param attrConsumeRepeat table {attrName, value, repeatCeil}
+--- @return number 可消耗的层数
+--- 消耗舰队属性值来触发重复效果，返回可触发的次数
 function BattleBuffEffect.fleetAttrRepeatConsume(self, attrConsumeRepeat)
 	local fleetAttr = self._caster:GetFleetVO():GetFleetAttr()
 	local attrValue = fleetAttr:GetCurrent(attrConsumeRepeat.attrName)
@@ -280,6 +326,10 @@ function BattleBuffEffect.fleetAttrRepeatConsume(self, attrConsumeRepeat)
 	return consumedStacks
 end
 
+--- @class BattleBuffEffect
+--- @param repeatCount number|string 重复次数或属性表达式
+--- @return number 解析后的重复次数
+--- 解析repeat_count字段，支持number直接返回，string则从fleetAttr或attr取值
 function BattleBuffEffect.repeatCountParse(self, repeatCount)
 	local countType = type(repeatCount)
 
@@ -299,6 +349,9 @@ function BattleBuffEffect.repeatCountParse(self, repeatCount)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param equipIndex number 装备索引
+--- @return boolean 装备索引是否匹配
 function BattleBuffEffect.equipIndexRequire(self, equipIndex)
 	if not self._indexRequire then
 		return true
@@ -313,6 +366,9 @@ function BattleBuffEffect.equipIndexRequire(self, equipIndex)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 弹药类型和装备位置是否满足要求
 function BattleBuffEffect.ammoRequire(self, owner)
 	if not self._ammoTypeRequire then
 		return true
@@ -328,12 +384,15 @@ function BattleBuffEffect.ammoRequire(self, owner)
 	end
 end
 
-function BattleBuffEffect.bulletTagRequire(arg_32_0, arg_32_1)
-	if not arg_32_0._bulletTagRequire then
+--- @class BattleBuffEffect
+--- @param bulletTags table<string> 子弹标签列表
+--- @return boolean 子弹标签是否匹配
+function BattleBuffEffect.bulletTagRequire(self, bulletTags)
+	if not self._bulletTagRequire then
 		return true
 	else
-		for iter_32_0, iter_32_1 in ipairs(arg_32_0._bulletTagRequire) do
-			if table.contains(arg_32_1, iter_32_1) then
+		for _, tag in ipairs(self._bulletTagRequire) do
+			if table.contains(bulletTags, tag) then
 				return true
 			else
 				return false
@@ -342,124 +401,151 @@ function BattleBuffEffect.bulletTagRequire(arg_32_0, arg_32_1)
 	end
 end
 
-function BattleBuffEffect.buffStateRequire(arg_33_0, arg_33_1)
-	if not arg_33_0._buffStateIDRequire then
+--- @class BattleBuffEffect
+--- @param buffID number Buff ID
+--- @return boolean Buff状态ID是否匹配
+function BattleBuffEffect.buffStateRequire(self, buffID)
+	if not self._buffStateIDRequire then
 		return true
 	else
-		return arg_33_1 == arg_33_0._buffStateIDRequire
+		return buffID == self._buffStateIDRequire
 	end
 end
 
-function BattleBuffEffect.onWeaponSteday(self, arg_34_1, arg_34_2, arg_34_3)
-	self:onFire(arg_34_1, arg_34_2, arg_34_3)
+--- 武器准备就绪时触发（委托给onFire）
+function BattleBuffEffect.onWeaponSteday(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onChargeWeaponFire(self, arg_35_1, arg_35_2, arg_35_3)
-	self:onFire(arg_35_1, arg_35_2, arg_35_3)
+--- 蓄力武器开火时触发
+function BattleBuffEffect.onChargeWeaponFire(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onTorpedoWeaponFire(self, arg_36_1, arg_36_2, arg_36_3)
-	self:onFire(arg_36_1, arg_36_2, arg_36_3)
+--- 鱼雷武器开火时触发
+function BattleBuffEffect.onTorpedoWeaponFire(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onAntiAirWeaponFireFar(self, arg_37_1, arg_37_2, arg_37_3)
-	self:onFire(arg_37_1, arg_37_2, arg_37_3)
+--- 防空炮远程开火时触发
+function BattleBuffEffect.onAntiAirWeaponFireFar(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onAntiAirWeaponFireNear(self, arg_38_1, arg_38_2, arg_38_3)
-	self:onFire(arg_38_1, arg_38_2, arg_38_3)
+--- 防空炮近程开火时触发
+function BattleBuffEffect.onAntiAirWeaponFireNear(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onManualMissileFire(self, arg_39_1, arg_39_2, arg_39_3)
-	self:onFire(arg_39_1, arg_39_2, arg_39_3)
+--- 手动导弹开火时触发
+function BattleBuffEffect.onManualMissileFire(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onAllInStrike(self, arg_40_1, arg_40_2, arg_40_3)
-	self:onFire(arg_40_1, arg_40_2, arg_40_3)
+--- 全弹发射时触发
+function BattleBuffEffect.onAllInStrike(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onAllInStrikeSteady(self, arg_41_1, arg_41_2, arg_41_3)
-	self:onFire(arg_41_1, arg_41_2, arg_41_3)
+--- 全弹发射准备时触发
+function BattleBuffEffect.onAllInStrikeSteady(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onPointStrikeReady(self, arg_42_1, arg_42_2, arg_42_3)
-	self:onFire(arg_42_1, arg_42_2, arg_42_3)
+--- 定点打击准备时触发
+function BattleBuffEffect.onPointStrikeReady(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onPointStrikeSteady(self, arg_43_1, arg_43_2, arg_43_3)
-	self:onFire(arg_43_1, arg_43_2, arg_43_3)
+--- 定点打击准备就绪时触发
+function BattleBuffEffect.onPointStrikeSteady(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onPointStrike(self, arg_44_1, arg_44_2, arg_44_3)
-	self:onFire(arg_44_1, arg_44_2, arg_44_3)
+--- 定点打击时触发
+function BattleBuffEffect.onPointStrike(self, owner, buff, args)
+	self:onFire(owner, buff, args)
 end
 
-function BattleBuffEffect.onWeaonInterrupt(self, arg_45_1, arg_45_2, arg_45_3)
-	self:onTrigger(arg_45_1, arg_45_2)
+--- 武器中断时触发
+function BattleBuffEffect.onWeaonInterrupt(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onWeaponSuccess(self, arg_46_1, arg_46_2, arg_46_3)
-	self:onTrigger(arg_46_1, arg_46_2)
+--- 武器成功开火时触发
+function BattleBuffEffect.onWeaponSuccess(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onChargeWeaponReady(self, arg_47_1, arg_47_2, arg_47_3)
-	self:onTrigger(arg_47_1, arg_47_2)
+--- 蓄力武器准备就绪时触发
+function BattleBuffEffect.onChargeWeaponReady(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onManualTorpedoReady(self, arg_48_1, arg_48_2, arg_48_3)
-	self:onTrigger(arg_48_1, arg_48_2)
+--- 手动鱼雷准备就绪时触发
+function BattleBuffEffect.onManualTorpedoReady(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onAirAssistReady(self, arg_49_1, arg_49_2, arg_49_3)
-	self:onTrigger(arg_49_1, arg_49_2)
+--- 空袭支援准备就绪时触发
+function BattleBuffEffect.onAirAssistReady(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onManualMissileReady(self, arg_50_1, arg_50_2, arg_50_3)
-	self:onTrigger(arg_50_1, arg_50_2)
+--- 手动导弹准备就绪时触发
+function BattleBuffEffect.onManualMissileReady(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onTorpedoButtonPush(self, arg_51_1, arg_51_2, arg_51_3)
-	self:onTrigger(arg_51_1, arg_51_2)
+--- 鱼雷按钮按下时触发
+function BattleBuffEffect.onTorpedoButtonPush(self, owner, buff, args)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBeforeFatalDamage(self, arg_52_1, arg_52_2)
-	self:onTrigger(arg_52_1, arg_52_2)
+--- 受到致命伤害前触发
+function BattleBuffEffect.onBeforeFatalDamage(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onAircraftCreate(self, arg_53_1, arg_53_2, arg_53_3)
-	self:onTrigger(arg_53_1, arg_53_2, arg_53_3)
+--- 舰载机创建时触发
+function BattleBuffEffect.onAircraftCreate(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onFriendlyAircraftDying(self, arg_54_1, arg_54_2, arg_54_3)
+--- 友方舰载机被击落时触发
+function BattleBuffEffect.onFriendlyAircraftDying(self, owner, buff, args)
 	if self._tempData.arg_list.templateID then
-		if arg_54_3.unit:GetTemplateID() == self._tempData.arg_list.templateID then
-			self:onTrigger(arg_54_1, arg_54_2)
+		if args.unit:GetTemplateID() == self._tempData.arg_list.templateID then
+			self:onTrigger(owner, buff)
 		end
 	else
-		self:onTrigger(arg_54_1, arg_54_2)
+		self:onTrigger(owner, buff)
 	end
 end
 
-function BattleBuffEffect.onTeammateShipDying(self, arg_55_1, arg_55_2)
-	self:onTrigger(arg_55_1, arg_55_2)
+--- 友方舰船沉没时触发
+function BattleBuffEffect.onTeammateShipDying(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onFoeAircraftDying(self, arg_56_1, arg_56_2, arg_56_3)
+--- 敌方舰载机被击落时触发
+function BattleBuffEffect.onFoeAircraftDying(self, owner, buff, args)
 	if self._tempData.arg_list.inside then
-		local var_56_0 = arg_56_3.unit
+		local unit = args.unit
 
-		if not arg_56_1:GetFleetVO():GetFleetAntiAirWeapon():IsOutOfRange(var_56_0) then
-			self:onTrigger(arg_56_1, arg_56_2)
+		if not owner:GetFleetVO():GetFleetAntiAirWeapon():IsOutOfRange(unit) then
+			self:onTrigger(owner, buff)
 		end
 	elseif self._tempData.arg_list.killer then
-		if self:killerRequire(self._tempData.arg_list.killer, arg_56_3.killer, arg_56_1) then
-			self:onTrigger(arg_56_1, arg_56_2)
+		if self:killerRequire(self._tempData.arg_list.killer, args.killer, owner) then
+			self:onTrigger(owner, buff)
 		end
 	else
-		self:onTrigger(arg_56_1, arg_56_2)
+		self:onTrigger(owner, buff)
 	end
 end
 
+--- 敌方单位被击沉时触发
 function BattleBuffEffect.onFoeDying(self, owner, buff, args)
 	if self._tempData.arg_list.killer then
 		if self:killerRequire(self._tempData.arg_list.killer, args.killer, owner) then
@@ -472,23 +558,32 @@ function BattleBuffEffect.onFoeDying(self, owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onSink(self, arg_58_1, arg_58_2)
-	if self:deathCauseRequire(arg_58_1) then
-		self:onTrigger(arg_58_1, arg_58_2)
+--- 自身被击沉时触发
+function BattleBuffEffect.onSink(self, owner, buff)
+	if self:deathCauseRequire(owner) then
+		self:onTrigger(owner, buff)
 	end
 end
 
-function BattleBuffEffect.deathCauseRequire(arg_59_0, arg_59_1)
-	if not arg_59_0._deathCauseRequire then
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 死亡原因是否匹配
+function BattleBuffEffect.deathCauseRequire(self, owner)
+	if not self._deathCauseRequire then
 		return true
 	end
 
-	local var_59_0 = arg_59_1:GetDeathReason()
+	local deathReason = owner:GetDeathReason()
 
-	return table.contains(arg_59_0._deathCauseRequire, var_59_0)
+	return table.contains(self._deathCauseRequire, deathReason)
 end
 
-
+--- @class BattleBuffEffect
+--- @param requiredKiller string 要求的击杀者类型（"self"/"child"）
+--- @param killer BattleUnit 击杀者单位
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 击杀者是否匹配要求
+--- 检查击杀者身份：killer可能是子弹的Host，需要向上追溯
 function BattleBuffEffect.killerRequire(self, requiredKiller, killer, owner)
 	if not killer then
 		return false
@@ -498,6 +593,7 @@ function BattleBuffEffect.killerRequire(self, requiredKiller, killer, owner)
 	local killerMother
 	local killerName = killer.__name
 
+	-- 如果killer是主要舰船类型，直接用；否则获取Host（可能是子弹的发射者）
 	if killerName == ys.Battle.BattlePlayerUnit.__name or killerName == ys.Battle.BattleNPCUnit.__name or killerName == ys.Battle.BattleMinionUnit.__name or killerName == ys.Battle.BattleEnemyUnit.__name or killerName == ys.Battle.BattleAircraftUnit.__name or killerName == ys.Battle.BattleAirFighterUnit.__name then
 		actualKiller = killer
 	else
@@ -530,47 +626,60 @@ function BattleBuffEffect.killerRequire(self, requiredKiller, killer, owner)
 	return false
 end
 
-function BattleBuffEffect.victimRequire(arg_61_0, arg_61_1, arg_61_2)
-	if not arg_61_0._victimTagRequire then
+--- @class BattleBuffEffect
+--- @param victim BattleUnit 受害者单位
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 受害者标签是否匹配
+function BattleBuffEffect.victimRequire(self, victim, owner)
+	if not self._victimTagRequire then
 		return true
-	elseif arg_61_1:ContainsLabelTag(arg_61_0._victimTagRequire) then
+	elseif victim:ContainsLabelTag(self._victimTagRequire) then
 		return true
 	else
 		return false
 	end
 end
 
-function BattleBuffEffect.killerWeaponRequire(arg_62_0, arg_62_1, arg_62_2, arg_62_3)
-	if not arg_62_2 then
+--- @class BattleBuffEffect
+--- @param weaponIDList table<number> 要求的武器ID列表
+--- @param killer BattleUnit 击杀者
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 击杀者的武器ID是否在列表中
+function BattleBuffEffect.killerWeaponRequire(self, weaponIDList, killer, owner)
+	if not killer then
 		return false
 	end
 
-	if not arg_62_2.GetWeapon then
+	if not killer.GetWeapon then
 		return false
 	end
 
-	local var_62_0 = arg_62_2:GetWeapon():GetWeaponId()
+	local weaponId = killer:GetWeapon():GetWeaponId()
 
-	if table.contains(arg_62_1, var_62_0) then
+	if table.contains(weaponIDList, weaponId) then
 		return true
 	end
 end
 
-function BattleBuffEffect.DamageSourceRequire(arg_63_0, arg_63_1, arg_63_2)
-	if not arg_63_0._damageSrcTagRequire then
+--- @class BattleBuffEffect
+--- @param sourceID number 伤害来源ID
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 伤害来源标签是否匹配
+function BattleBuffEffect.DamageSourceRequire(self, sourceID, owner)
+	if not self._damageSrcTagRequire then
 		return true
 	else
-		if not arg_63_1 then
+		if not sourceID then
 			return false
 		end
 
-		local var_63_0 = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()[arg_63_1]
+		local sourceUnit = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()[sourceID]
 
-		if not var_63_0 then
+		if not sourceUnit then
 			return false
 		end
 
-		if var_63_0:ContainsLabelTag(arg_63_0._damageSrcTagRequire) then
+		if sourceUnit:ContainsLabelTag(self._damageSrcTagRequire) then
 			return true
 		else
 			return false
@@ -578,180 +687,219 @@ function BattleBuffEffect.DamageSourceRequire(arg_63_0, arg_63_1, arg_63_2)
 	end
 end
 
-function BattleBuffEffect.onInitGame(self, arg_64_1, arg_64_2)
-	self:onTrigger(arg_64_1, arg_64_2)
+--- 游戏初始化时触发
+function BattleBuffEffect.onInitGame(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onStartGame(self, arg_65_1, arg_65_2)
-	self:onTrigger(arg_65_1, arg_65_2)
+--- 游戏开始时触发
+function BattleBuffEffect.onStartGame(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onFinishGame(self, arg_66_1, arg_66_2)
-	self:onTrigger(arg_66_1, arg_66_2)
+--- 游戏结束时触发
+function BattleBuffEffect.onFinishGame(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onManual(self, arg_67_1, arg_67_2)
-	self:onTrigger(arg_67_1, arg_67_2)
+--- 切换手动操作时触发
+function BattleBuffEffect.onManual(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onAutoBot(self, arg_68_1, arg_68_2)
-	self:onTrigger(arg_68_1, arg_68_2)
+--- 切换自动战斗时触发
+function BattleBuffEffect.onAutoBot(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onFlagShip(self, arg_69_1, arg_69_2)
-	self:onTrigger(arg_69_1, arg_69_2)
+--- 旗舰位触发
+function BattleBuffEffect.onFlagShip(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onDALCollabFlagShip(self, arg_70_1, arg_70_2)
-	self:onTrigger(arg_70_1, arg_70_2)
+--- DAL联动旗舰位触发
+function BattleBuffEffect.onDALCollabFlagShip(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onUpperConsort(self, arg_71_1, arg_71_2)
-	self:onTrigger(arg_71_1, arg_71_2)
+--- 上位僚舰触发
+function BattleBuffEffect.onUpperConsort(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onLowerConsort(self, arg_72_1, arg_72_2)
-	self:onTrigger(arg_72_1, arg_72_2)
+--- 下位僚舰触发
+function BattleBuffEffect.onLowerConsort(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onLeader(self, arg_73_1, arg_73_2)
-	self:onTrigger(arg_73_1, arg_73_2)
+--- 领舰触发
+function BattleBuffEffect.onLeader(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onCenter(self, arg_74_1, arg_74_2)
-	self:onTrigger(arg_74_1, arg_74_2)
+--- 中位触发
+function BattleBuffEffect.onCenter(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onRear(self, arg_75_1, arg_75_2)
-	self:onTrigger(arg_75_1, arg_75_2)
+--- 后排触发
+function BattleBuffEffect.onRear(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onSubLeader(self, arg_76_1, arg_76_2)
-	self:onTrigger(arg_76_1, arg_76_2)
+--- 潜艇领舰触发
+function BattleBuffEffect.onSubLeader(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onUpperSubConsort(self, arg_77_1, arg_77_2)
-	self:onTrigger(arg_77_1, arg_77_2)
+--- 潜艇上位僚舰触发
+function BattleBuffEffect.onUpperSubConsort(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onLowerSubConsort(self, arg_78_1, arg_78_2)
-	self:onTrigger(arg_78_1, arg_78_2)
+--- 潜艇下位僚舰触发
+function BattleBuffEffect.onLowerSubConsort(self, owner, buff)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBulletCollide(self, arg_79_1, arg_79_2, arg_79_3)
-	if not self:equipIndexRequire(arg_79_3.equipIndex) then
+--- 子弹碰撞时触发
+function BattleBuffEffect.onBulletCollide(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_79_1, arg_79_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBulletCollideBefore(self, arg_80_1, arg_80_2, arg_80_3)
-	if not self:equipIndexRequire(arg_80_3.equipIndex) then
+--- 子弹碰撞前触发
+function BattleBuffEffect.onBulletCollideBefore(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_80_1, arg_80_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBombBulletBang(self, arg_81_1, arg_81_2, arg_81_3)
-	if not self:equipIndexRequire(arg_81_3.equipIndex) then
+--- 航弹爆炸时触发
+function BattleBuffEffect.onBombBulletBang(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_81_1, arg_81_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onTorpedoBulletBang(self, arg_82_1, arg_82_2, arg_82_3)
-	if not self:equipIndexRequire(arg_82_3.equipIndex) then
+--- 鱼雷爆炸时触发
+function BattleBuffEffect.onTorpedoBulletBang(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_82_1, arg_82_2)
+	self:onTrigger(owner, buff)
 end
 
-function BattleBuffEffect.onBulletHitBefore(self, arg_83_1, arg_83_2, arg_83_3)
+--- 子弹命中前触发（受behit条件限制）
+function BattleBuffEffect.onBulletHitBefore(self, owner, buff, args)
 	if self._behit then
-		if self._behit.damage_type == arg_83_3.weaponType and self._behit.bullet_type == arg_83_3.bulletType then
-			self:onTrigger(arg_83_1, arg_83_2)
+		if self._behit.damage_type == args.weaponType and self._behit.bullet_type == args.bulletType then
+			self:onTrigger(owner, buff)
 		end
 	else
-		self:onTrigger(arg_83_1, arg_83_2)
+		self:onTrigger(owner, buff)
 	end
 end
 
-function BattleBuffEffect.onBulletCreate(self, arg_84_1, arg_84_2, arg_84_3)
-	if not self:equipIndexRequire(arg_84_3.equipIndex) then
+--- 子弹创建时触发
+function BattleBuffEffect.onBulletCreate(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_84_1, arg_84_2, arg_84_3)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onChargeWeaponBulletCreate(self, arg_85_1, arg_85_2, arg_85_3)
-	self:onBulletCreate(arg_85_1, arg_85_2, arg_85_3)
+--- 蓄力武器子弹创建时触发
+function BattleBuffEffect.onChargeWeaponBulletCreate(self, owner, buff, args)
+	self:onBulletCreate(owner, buff, args)
 end
 
-function BattleBuffEffect.onTorpedoWeaponBulletCreate(self, arg_86_1, arg_86_2, arg_86_3)
-	self:onBulletCreate(arg_86_1, arg_86_2, arg_86_3)
+--- 鱼雷武器子弹创建时触发
+function BattleBuffEffect.onTorpedoWeaponBulletCreate(self, owner, buff, args)
+	self:onBulletCreate(owner, buff, args)
 end
 
-function BattleBuffEffect.onInternalBulletCreate(self, arg_87_1, arg_87_2, arg_87_3)
-	if not self:equipIndexRequire(arg_87_3.equipIndex) then
+--- 内置子弹创建时触发
+function BattleBuffEffect.onInternalBulletCreate(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_87_1, arg_87_2, arg_87_3)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onManualBulletCreate(self, arg_88_1, arg_88_2, arg_88_3)
-	if not self:equipIndexRequire(arg_88_3.equipIndex) then
+--- 手动发射子弹创建时触发
+function BattleBuffEffect.onManualBulletCreate(self, owner, buff, args)
+	if not self:equipIndexRequire(args.equipIndex) then
 		return
 	end
 
-	self:onTrigger(arg_88_1, arg_88_2, arg_88_3)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onBeforeTakeDamage(self, arg_89_1, arg_89_2, arg_89_3)
-	if self:damageCheck(arg_89_3) then
-		self:onTrigger(arg_89_1, arg_89_2, arg_89_3)
+--- 受到伤害前触发（需damageCheck）
+function BattleBuffEffect.onBeforeTakeDamage(self, owner, buff, args)
+	if self:damageCheck(args) then
+		self:onTrigger(owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onTakeDamage(self, arg_90_1, arg_90_2, arg_90_3)
-	if self:damageCheck(arg_90_3) then
-		self:onTrigger(arg_90_1, arg_90_2, arg_90_3)
+--- 受到伤害时触发（需damageCheck）
+function BattleBuffEffect.onTakeDamage(self, owner, buff, args)
+	if self:damageCheck(args) then
+		self:onTrigger(owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onTakeHealing(self, arg_91_1, arg_91_2, arg_91_3)
-	self:onTrigger(arg_91_1, arg_91_2, arg_91_3)
+--- 受到治疗时触发
+function BattleBuffEffect.onTakeHealing(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onShieldAbsorb(self, arg_92_1, arg_92_2, arg_92_3)
-	self:onTrigger(arg_92_1, arg_92_2, arg_92_3)
+--- 护盾吸收伤害时触发
+function BattleBuffEffect.onShieldAbsorb(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onDamageFix(self, arg_93_1, arg_93_2, arg_93_3)
-	self:onTrigger(arg_93_1, arg_93_2, arg_93_3)
+--- 伤害修正时触发
+function BattleBuffEffect.onDamageFix(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onDamageConclude(self, arg_94_1, arg_94_2, arg_94_3)
-	self:onTrigger(arg_94_1, arg_94_2, arg_94_3)
+--- 伤害结算完成时触发
+function BattleBuffEffect.onDamageConclude(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onOverHealing(self, arg_95_1, arg_95_2, arg_95_3)
-	self:onTrigger(arg_95_1, arg_95_2, arg_95_3)
+--- 过量治疗时触发
+function BattleBuffEffect.onOverHealing(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onFleetAttrUpdate(self, arg_96_1, arg_96_2, arg_96_3)
-	self:onTrigger(arg_96_1, arg_96_2, arg_96_3)
+--- 舰队属性更新时触发
+function BattleBuffEffect.onFleetAttrUpdate(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
+--- @class BattleBuffEffect
+--- @param args table {damageAttr, damageReason}
+--- @return boolean 伤害属性与原因是否都满足
 function BattleBuffEffect.damageCheck(self, args)
 	return self:damageAttrRequire(args.damageAttr) and self:damageReasonRequire(args.damageReason)
 end
 
+--- @class BattleBuffEffect
+--- @param damageAttr number 伤害属性
+--- @return boolean 伤害属性是否匹配
 function BattleBuffEffect.damageAttrRequire(self, damageAttr)
 	if not self._damageAttrRequire or table.contains(self._damageAttrRequire, damageAttr) then
 		return true
@@ -760,6 +908,9 @@ function BattleBuffEffect.damageAttrRequire(self, damageAttr)
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param damageReason number 伤害原因
+--- @return boolean 伤害原因是否匹配
 function BattleBuffEffect.damageReasonRequire(self, damageReason)
 	if not self._damageReasonRequire or table.contains(self._damageReasonRequire, damageReason) then
 		return true
@@ -768,14 +919,19 @@ function BattleBuffEffect.damageReasonRequire(self, damageReason)
 	end
 end
 
-function BattleBuffEffect.hpIntervalRequire(self, hpRate, arg_100_2)
+--- @class BattleBuffEffect
+--- @param hpRate number 当前HP比例
+--- @param dHP number HP变化量
+--- @return boolean HP比例区间是否满足要求
+--- 检查HP比例是否在指定区间内（或区间外），考虑方向符号
+function BattleBuffEffect.hpIntervalRequire(self, hpRate, dHP)
 	if self._hpUpperBound == nil and self._hpLowerBound == nil then
 		return true
 	end
 
-	if not arg_100_2 or self._hpSigned == 0 then
+	if not dHP or self._hpSigned == 0 then
 		-- block empty
-	elseif arg_100_2 * self._hpSigned < 0 then
+	elseif dHP * self._hpSigned < 0 then
 		return false
 	end
 
@@ -793,28 +949,36 @@ function BattleBuffEffect.hpIntervalRequire(self, hpRate, arg_100_2)
 	return satisfied
 end
 
-function BattleBuffEffect.dhpRequire(arg_101_0, arg_101_1, arg_101_2)
-	if arg_101_0._dHPGreater then
-		return arg_101_2 * arg_101_0._dHPGreater > 0 and math.abs(arg_101_2) > math.abs(arg_101_0._dHPGreater)
-	elseif arg_101_0._dHPGreaterMaxHP then
-		local var_101_0 = arg_101_0._dHPGreaterMaxHP * arg_101_1
+--- @class BattleBuffEffect
+--- @param maxHP number 最大HP
+--- @param dHP number HP变化量
+--- @return boolean HP变化量是否满足要求
+--- 检查dHP的绝对值和符号是否满足条件
+function BattleBuffEffect.dhpRequire(self, maxHP, dHP)
+	if self._dHPGreater then
+		return dHP * self._dHPGreater > 0 and math.abs(dHP) > math.abs(self._dHPGreater)
+	elseif self._dHPGreaterMaxHP then
+		local threshold = self._dHPGreaterMaxHP * maxHP
 
-		return arg_101_2 * var_101_0 > 0 and math.abs(arg_101_2) > math.abs(var_101_0)
-	elseif arg_101_0._dhpSmaller then
-		return arg_101_2 * arg_101_0._dhpSmaller > 0 and math.abs(arg_101_2) < math.abs(arg_101_0._dhpSmaller)
-	elseif arg_101_0._dhpSmallerMaxhp then
-		local var_101_1 = arg_101_0._dhpSmallerMaxhp * arg_101_1
+		return dHP * threshold > 0 and math.abs(dHP) > math.abs(threshold)
+	elseif self._dhpSmaller then
+		return dHP * self._dhpSmaller > 0 and math.abs(dHP) < math.abs(self._dhpSmaller)
+	elseif self._dhpSmallerMaxhp then
+		local threshold = self._dhpSmallerMaxhp * maxHP
 
-		return arg_101_2 * var_101_1 > 0 and math.abs(arg_101_2) < math.abs(var_101_1)
+		return dHP * threshold > 0 and math.abs(dHP) < math.abs(threshold)
 	else
 		return true
 	end
 end
 
+--- @class BattleBuffEffect
+--- @param attrIntervalValue number 属性值
+--- @return boolean 属性值是否在开区间内
+--- 注意: 这个检查略有不同，实际上满足要求的是开区间(lowerBound, upperBound)
 function BattleBuffEffect.attrIntervalRequire(self, attrIntervalValue)
 	local satisfied = true
-	-- 注意: 这个检查略有不同，实际上满足要求的是开区间
-	-- 即(lowerBound, upperBound)，与其他的闭区间不同
+
 	if self._attrUpperBound and attrIntervalValue >= self._attrUpperBound then
 		satisfied = false
 	end
@@ -826,39 +990,49 @@ function BattleBuffEffect.attrIntervalRequire(self, attrIntervalValue)
 	return satisfied
 end
 
-function BattleBuffEffect.onHPRatioUpdate(self, arg_103_1, arg_103_2, arg_103_3)
-	local var_103_0 = arg_103_1:GetHPRate()
-	local var_103_1 = arg_103_3.dHP
+--- 自身HP比例更新时触发
+function BattleBuffEffect.onHPRatioUpdate(self, owner, buff, args)
+	local hpRate = owner:GetHPRate()
+	local dHP = args.dHP
 
-	if self:hpIntervalRequire(var_103_0, var_103_1) and self:dhpRequire(arg_103_1:GetMaxHP(), var_103_1) then
-		self:doOnHPRatioUpdate(arg_103_1, arg_103_2, arg_103_3)
+	if self:hpIntervalRequire(hpRate, dHP) and self:dhpRequire(owner:GetMaxHP(), dHP) then
+		self:doOnHPRatioUpdate(owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onFriendlyHpRatioUpdate(self, arg_104_1, arg_104_2, arg_104_3)
-	local var_104_0 = arg_104_3.unit
-	local var_104_1 = arg_104_3.dHP
-	local var_104_2 = var_104_0:GetHPRate()
+--- 友方HP比例更新时触发
+function BattleBuffEffect.onFriendlyHpRatioUpdate(self, owner, buff, args)
+	local unit = args.unit
+	local dHP = args.dHP
+	local hpRate = unit:GetHPRate()
 
-	if self:hpIntervalRequire(var_104_2, var_104_1) and self:dhpRequire(var_104_0:GetMaxHP(), var_104_1) then
-		self:doOnHPRatioUpdate(arg_104_1, arg_104_2, arg_104_3)
+	if self:hpIntervalRequire(hpRate, dHP) and self:dhpRequire(unit:GetMaxHP(), dHP) then
+		self:doOnHPRatioUpdate(owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onTeammateHpRatioUpdate(self, arg_105_1, arg_105_2, arg_105_3)
-	self:onFriendlyHpRatioUpdate(arg_105_1, arg_105_2, arg_105_3)
+--- 队友HP比例更新时触发
+function BattleBuffEffect.onTeammateHpRatioUpdate(self, owner, buff, args)
+	self:onFriendlyHpRatioUpdate(owner, buff, args)
 end
 
-function BattleBuffEffect.onBulletKill(self, arg_106_1, arg_106_2, arg_106_3)
+--- 子弹击杀时触发
+function BattleBuffEffect.onBulletKill(self, owner, buff, args)
 	if self._tempData.arg_list.killer_weapon_id then
-		if self:killerWeaponRequire(self._tempData.arg_list.killer_weapon_id, arg_106_3.killer, arg_106_1) then
-			self:onTrigger(arg_106_1, arg_106_2)
+		if self:killerWeaponRequire(self._tempData.arg_list.killer_weapon_id, args.killer, owner) then
+			self:onTrigger(owner, buff)
 		end
 	else
-		self:onTrigger(arg_106_1, arg_106_2)
+		self:onTrigger(owner, buff)
 	end
 end
--- 用于处理那些依赖buffEffect计数器的效果
+
+--- 用于处理那些依赖buffEffect计数器的效果
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @param buff BattleBuffUnit Buff实例
+--- @param args table {buffFX: BattleBuffEffect}
+--- 当buffEffect计数器变化时触发，支持Repeater模式（累计消耗）和一次性模式
 function BattleBuffEffect.onBattleBuffCount(self, owner, buff, args)
 	local buffEffect = args.buffFX
 	-- 检查countType是否匹配
@@ -876,9 +1050,10 @@ function BattleBuffEffect.onBattleBuffCount(self, owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onShieldBroken(self, arg_108_1, arg_108_2, arg_108_3)
-	if arg_108_3.shieldBuffID == self._tempData.arg_list.shieldBuffID then
-		self:onTrigger(arg_108_1, arg_108_2)
+--- 护盾被击破时触发
+function BattleBuffEffect.onShieldBroken(self, owner, buff, args)
+	if args.shieldBuffID == self._tempData.arg_list.shieldBuffID then
+		self:onTrigger(owner, buff)
 	end
 end
 
@@ -886,7 +1061,6 @@ end
 --- @param owner BattleUnit
 --- @param buff BattleBuffUnit
 --- @param args table<string, any>
---- @return nil
 --- BuffEffect通用触发函数
 --- - quota -= 1
 function BattleBuffEffect.onTrigger(self, owner, buff, args)
@@ -895,96 +1069,117 @@ function BattleBuffEffect.onTrigger(self, owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.doOnHPRatioUpdate(self, arg_110_1, arg_110_2, arg_110_3)
-	self:onTrigger(arg_110_1, arg_110_2, arg_110_3)
+--- HP比例更新后的实际操作（供子类重载）
+function BattleBuffEffect.doOnHPRatioUpdate(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.doOnFriendlyHPRatioUpdate(self, arg_111_1, arg_111_2, arg_111_3)
-	self:onTrigger(arg_111_1, arg_111_2, arg_111_3)
+--- 友方HP比例更新后的实际操作
+function BattleBuffEffect.doOnFriendlyHPRatioUpdate(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineDive(self, arg_112_1, arg_112_2, arg_112_3)
-	self:onTrigger(arg_112_1, arg_112_2, arg_112_3)
+--- 潜艇下潜时触发
+function BattleBuffEffect.onSubmarineDive(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineRaid(self, arg_113_1, arg_113_2, arg_113_3)
-	self:onTrigger(arg_113_1, arg_113_2, arg_113_3)
+--- 潜艇突袭时触发
+function BattleBuffEffect.onSubmarineRaid(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineFloat(self, arg_114_1, arg_114_2, arg_114_3)
-	self:onTrigger(arg_114_1, arg_114_2, arg_114_3)
+--- 潜艇上浮时触发
+function BattleBuffEffect.onSubmarineFloat(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineRetreat(self, arg_115_1, arg_115_2, arg_115_3)
-	self:onTrigger(arg_115_1, arg_115_2, arg_115_3)
+--- 潜艇撤退时触发
+function BattleBuffEffect.onSubmarineRetreat(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineAid(self, arg_116_1, arg_116_2, arg_116_3)
-	self:onTrigger(arg_116_1, arg_116_2, arg_116_3)
+--- 潜艇支援时触发
+function BattleBuffEffect.onSubmarineAid(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarinFreeDive(self, arg_117_1, arg_117_2, arg_117_3)
-	self:onTrigger(arg_117_1, arg_117_2, arg_117_3)
+--- 潜艇自由下潜时触发
+function BattleBuffEffect.onSubmarinFreeDive(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarinFreeFloat(self, arg_118_1, arg_118_2, arg_118_3)
-	self:onTrigger(arg_118_1, arg_118_2, arg_118_3)
+--- 潜艇自由上浮时触发
+function BattleBuffEffect.onSubmarinFreeFloat(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubmarineFreeSpecial(self, arg_119_1, arg_119_2, arg_119_3)
-	self:onTrigger(arg_119_1, arg_119_2, arg_119_3)
+--- 潜艇自由特殊行动时触发
+function BattleBuffEffect.onSubmarineFreeSpecial(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubDetected(self, arg_120_1, arg_120_2, arg_120_3)
-	self:onTrigger(arg_120_1, arg_120_2, arg_120_3)
+--- 潜艇被侦测到时触发
+function BattleBuffEffect.onSubDetected(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onSubUnDetected(self, arg_121_1, arg_121_2, arg_121_3)
-	self:onTrigger(arg_121_1, arg_121_2, arg_121_3)
+--- 潜艇脱离侦测时触发
+function BattleBuffEffect.onSubUnDetected(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onAntiSubHateChain(self, arg_122_1, arg_122_2, arg_122_3)
-	self:onTrigger(arg_122_1, arg_122_2, attach)
+--- 反潜仇恨链时触发
+function BattleBuffEffect.onAntiSubHateChain(self, owner, buff, args)
+	self:onTrigger(owner, buff, attach)
 end
 
-function BattleBuffEffect.onRetreat(self, arg_123_1, arg_123_2, arg_123_3)
-	self:onTrigger(arg_123_1, arg_123_2, arg_123_3)
+--- 撤退时触发
+function BattleBuffEffect.onRetreat(self, owner, buff, args)
+	self:onTrigger(owner, buff, args)
 end
 
-function BattleBuffEffect.onCloakUpdate(self, arg_124_1, arg_124_2, arg_124_3)
-	if self:cloakStateRequire(arg_124_3.cloakState) then
-		self:onTrigger(arg_124_1, arg_124_2, arg_124_3)
+--- 隐身状态变化时触发
+function BattleBuffEffect.onCloakUpdate(self, owner, buff, args)
+	if self:cloakStateRequire(args.cloakState) then
+		self:onTrigger(owner, buff, args)
 	end
 end
 
-function BattleBuffEffect.onTeammateCloakUpdate(self, arg_125_1, arg_125_2, arg_125_3)
-	if self:cloakStateRequire(arg_125_3.cloakState) then
-		self:onTrigger(arg_125_1, arg_125_2, arg_125_3)
+--- 队友隐身状态变化时触发
+function BattleBuffEffect.onTeammateCloakUpdate(self, owner, buff, args)
+	if self:cloakStateRequire(args.cloakState) then
+		self:onTrigger(owner, buff, args)
 	end
-end
-
-function BattleBuffEffect.cloakStateRequire(arg_126_0, arg_126_1)
-	if not arg_126_0._cloakRequire then
-		return true
-	else
-		return arg_126_0._cloakRequire == arg_126_1
-	end
-end
-
-function BattleBuffEffect.Interrupt(arg_127_0)
-	return
-end
-
-function BattleBuffEffect.Clear(arg_128_0)
-	arg_128_0._commander = nil
 end
 
 --- @class BattleBuffEffect
---- @param owner BattleUnit
---- @param targetTypeList string|table<string>
---- @param arg_list table<string, any>
---- @param extraArgs table<string, any>
---- @return table<BattleUnit>
+--- @param cloakState number 隐身状态
+--- @return boolean 隐身状态是否匹配
+function BattleBuffEffect.cloakStateRequire(self, cloakState)
+	if not self._cloakRequire then
+		return true
+	else
+		return self._cloakRequire == cloakState
+	end
+end
+
+--- 中断BuffEffect
+function BattleBuffEffect.Interrupt(self)
+	return
+end
+
+--- 清除BuffEffect状态
+function BattleBuffEffect.Clear(self)
+	self._commander = nil
+end
+
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @param targetTypeList string|table<string> 目标筛选类型列表
+--- @param arg_list table<string, any> Buff配置参数
+--- @param extraArgs table<string, any> 额外参数（如damageSrc）
+--- @return table<BattleUnit> 目标列表
 --- 获取目标列表的通用函数
 function BattleBuffEffect.getTargetList(self, owner, targetTypeList, arg_list, extraArgs)
 	if type(targetTypeList) == "string" then
@@ -1013,6 +1208,9 @@ function BattleBuffEffect.getTargetList(self, owner, targetTypeList, arg_list, e
 	return targetList
 end
 
+--- @class BattleBuffEffect
+--- @param owner BattleUnit Buff持有者
+--- @return boolean 指挥喵Buff条件是否满足
 function BattleBuffEffect.commanderRequire(self, owner)
 	if self._tempData.arg_list.CMDBuff_id then
 		local commanderBuff, subCommanderBuff = ys.Battle.BattleDataProxy.GetInstance():GetCommanderBuff()
@@ -1041,30 +1239,39 @@ function BattleBuffEffect.commanderRequire(self, owner)
 	end
 end
 
-function BattleBuffEffect.IsActive(arg_131_0)
-	return arg_131_0._isActive
+--- @class BattleBuffEffect
+--- @return boolean 是否激活
+function BattleBuffEffect.IsActive(self)
+	return self._isActive
 end
 
-function BattleBuffEffect.SetActive(arg_132_0)
-	arg_132_0._isActive = true
+--- 设置为激活状态
+function BattleBuffEffect.SetActive(self)
+	self._isActive = true
 end
 
-function BattleBuffEffect.NotActive(arg_133_0)
-	arg_133_0._isActive = false
+--- 设置为非激活状态
+function BattleBuffEffect.NotActive(self)
+	self._isActive = false
 end
 
-function BattleBuffEffect.IsLock(arg_134_0)
-	return arg_134_0._isLock
+--- @class BattleBuffEffect
+--- @return boolean 是否锁定
+function BattleBuffEffect.IsLock(self)
+	return self._isLock
 end
 
-function BattleBuffEffect.SetLock(arg_135_0)
-	arg_135_0._isLock = true
+--- 设置为锁定状态
+function BattleBuffEffect.SetLock(self)
+	self._isLock = true
 end
 
-function BattleBuffEffect.NotLock(arg_136_0)
-	arg_136_0._isLock = false
+--- 设置为非锁定状态
+function BattleBuffEffect.NotLock(self)
+	self._isLock = false
 end
 
-function BattleBuffEffect.Dispose(arg_137_0)
+--- 销毁BuffEffect
+function BattleBuffEffect.Dispose(self)
 	return
 end

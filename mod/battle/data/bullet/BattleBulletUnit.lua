@@ -764,7 +764,7 @@ function BattleBulletUnit.generateAttachBuffList(self)
 	local attachBuffList = {}
 
 	if not self:GetTemplate().attach_buff then
-		local var_83_1 = {}
+		local buffEntries = {}
 	end
 
 	for _, attachBuff in ipairs(self:GetTemplate().attach_buff) do
@@ -1032,6 +1032,6 @@ function BattleBulletUnit.SetImmuneCLS(self, immuneCLS)
 	self._immuneCLS = immuneCLS
 end
 
-function var_0_10.IsSpectreBullet(arg_115_0)
-	return arg_115_0:GetTemplate().extra_param.spectre
+function BattleBulletUnit.IsSpectreBullet(self)
+	return self:GetTemplate().extra_param.spectre
 end

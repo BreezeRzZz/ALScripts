@@ -1,227 +1,240 @@
-local var_0_0 = class("BattleGateWorld")
+--- @class BattleGateWorld : 大世界战斗Gate
+local BattleGateWorld = class("BattleGateWorld")
 
-ys.Battle.BattleGateWorld = var_0_0
-var_0_0.__name = "BattleGateWorld"
+ys.Battle.BattleGateWorld = BattleGateWorld
+BattleGateWorld.__name = "BattleGateWorld"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = nowWorld()
+--- 进入大世界战斗
+--- @param self BattleGateWorld
+--- @param sendData table BeginStageCommand实例
+function BattleGateWorld.Entrance(self, sendData)
+	local world = nowWorld()
 
 	if BeginStageCommand.DockOverload() then
-		var_1_0:TriggerAutoFight(false)
+		world:TriggerAutoFight(false)
 
 		return
 	end
 
-	local var_1_1 = getProxy(PlayerProxy)
-	local var_1_2 = getProxy(BayProxy)
-	local var_1_3 = pg.battle_cost_template[SYSTEM_WORLD]
-	local var_1_4 = var_1_3.oil_cost > 0
-	local var_1_5 = {}
-	local var_1_6 = 0
-	local var_1_7 = 0
-	local var_1_8 = 0
-	local var_1_9 = 0
-	local var_1_10 = var_1_0:GetActiveMap():GetFleet()
-	local var_1_11 = var_1_10:GetShipVOs(false)
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_WORLD]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local shipIdList = {}
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local fleet = world:GetActiveMap():GetFleet()
+	local fleetShipVOs = fleet:GetShipVOs(false)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_11) do
-		var_1_5[#var_1_5 + 1] = iter_1_1.id
+	for _, shipVO in ipairs(fleetShipVOs) do
+		shipIdList[#shipIdList + 1] = shipVO.id
 	end
 
-	local var_1_12, var_1_13 = var_1_10:GetCost()
-	local var_1_14 = var_1_12.gold
-	local var_1_15 = var_1_12.oil
-	local var_1_16 = var_1_12.gold + var_1_13.gold
-	local var_1_17 = var_1_12.oil + var_1_13.oil
-	local var_1_18 = var_1_1:getData()
+	local startCost, endCost = fleet:GetCost()
+	local startGold = startCost.gold
+	local startOil = startCost.oil
+	local totalGold = startCost.gold + endCost.gold
+	local totalOil = startCost.oil + endCost.oil
+	local playerData = playerProxy:getData()
 
-	if var_1_4 and var_1_17 > var_1_18.oil then
+	if hasOilCost and totalOil > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_19 = arg_1_0.stageId
-	local var_1_20 = pg.expedition_data_template[var_1_19].dungeon_id
-	local var_1_21 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_20).fleet_prefab
-	local var_1_22 = arg_1_0.hpRate
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
+	local hpRate = self.hpRate
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_23(arg_2_0)
-		if var_1_4 then
-			var_1_18:consume({
+	--- 服务器验证成功回调
+	local function onServerSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_15
+				oil = startOil
 			})
 		end
 
-		if var_1_3.enter_energy_cost > 0 and not exFlag then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 and not exFlag then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_11) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_2:updateShip(iter_2_1)
+			for _, shipVO in ipairs(fleetShipVOs) do
+				shipVO:cosumeEnergy(energyCost)
+				bayProxy:updateShip(shipVO)
 			end
 		end
 
-		var_1_1:updatePlayer(var_1_18)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = {
-			prefabFleet = var_1_21,
-			stageId = var_1_19,
+		local stageData = {
+			prefabFleet = fleetPrefab,
+			stageId = stageId,
 			system = SYSTEM_WORLD,
-			token = arg_2_0.key,
-			hpRate = var_1_22
+			token = tokenData.key,
+			hpRate = hpRate
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_1)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_24(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 服务器验证失败回调
+	local function onServerFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_WORLD, var_1_5, {
-		var_1_19
-	}, var_1_23, var_1_24)
+	BeginStageCommand.SendRequest(SYSTEM_WORLD, shipIdList, {
+		stageId
+	}, onServerSuccess, onServerFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	if arg_4_1.CheaterVertify() then
+--- 退出大世界战斗，处理WriteBack和结算
+--- @param self BattleGateWorld
+--- @param callback table 回调对象
+function BattleGateWorld.Exit(self, callback)
+	if callback.CheaterVertify() then
 		return
 	end
 
-	local var_4_0 = pg.battle_cost_template[SYSTEM_WORLD]
-	local var_4_1 = arg_4_0.statistics._battleScore
-	local var_4_2 = 0
-	local var_4_3 = {}
-	local var_4_4 = nowWorld():GetActiveMap()
-	local var_4_5 = var_4_4:GetFleet()
-	local var_4_6 = var_4_5:GetShipVOs(true)
-	local var_4_7, var_4_8 = var_4_5:GetCost()
-	local var_4_9 = var_4_8.oil
+	local costTemplate = pg.battle_cost_template[SYSTEM_WORLD]
+	local battleScore = self.statistics._battleScore
+	local extraGold = 0
+	local shipList = {}
+	local activeMap = nowWorld():GetActiveMap()
+	local fleet = activeMap:GetFleet()
+	local shipVOs = fleet:GetShipVOs(true)
+	local startCost, endCost = fleet:GetCost()
+	local endOil = endCost.oil
 
-	if arg_4_0.statistics.submarineAid then
-		local var_4_10 = var_4_4:GetSubmarineFleet()
+	if self.statistics.submarineAid then
+		local subFleet = activeMap:GetSubmarineFleet()
 
-		assert(var_4_10, "submarine fleet not exist.")
+		assert(subFleet, "submarine fleet not exist.")
 
-		local var_4_11 = var_4_10:GetTeamShipVOs(TeamType.Submarine, true)
+		local subShipVOs = subFleet:GetTeamShipVOs(TeamType.Submarine, true)
 
-		for iter_4_0, iter_4_1 in ipairs(var_4_11) do
-			if arg_4_0.statistics[iter_4_1.id] then
-				table.insert(var_4_6, iter_4_1)
+		for _, shipVO in ipairs(subShipVOs) do
+			if self.statistics[shipVO.id] then
+				table.insert(shipVOs, shipVO)
 			end
 		end
 
-		local var_4_12, var_4_13 = var_4_10:GetCost()
+		local subStartCost, subEndCost = subFleet:GetCost()
 
-		var_4_9 = var_4_9 + var_4_13.oil
+		endOil = endOil + subEndCost.oil
 	end
 
-	local var_4_14 = arg_4_1.GeneralPackage(arg_4_0, var_4_6)
+	local generalPackage = callback.GeneralPackage(self, shipVOs)
 
-	local function var_4_15(arg_5_0)
-		arg_4_1.addShipsExp(arg_5_0.ship_exp_list, arg_4_0.statistics, true)
+	--- 结算成功回调
+	local function onSuccess(serverResult)
+		callback.addShipsExp(serverResult.ship_exp_list, self.statistics, true)
 
-		local var_5_0 = arg_4_1.GenerateCommanderExp(arg_5_0, var_4_5, var_4_4:GetSubmarineFleet())
+		local commanderExp = callback.GenerateCommanderExp(serverResult, fleet, activeMap:GetSubmarineFleet())
 
-		arg_4_0.statistics.mvpShipID = arg_5_0.mvp
+		self.statistics.mvpShipID = serverResult.mvp
 
-		local var_5_1, var_5_2 = arg_4_1:GeneralLoot(arg_5_0)
-		local var_5_3 = var_4_1 > ys.Battle.BattleConst.BattleScore.C
+		local drops, extraDrops = callback:GeneralLoot(serverResult)
+		local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
 
-		arg_4_1.GeneralPlayerCosume(SYSTEM_WORLD, var_5_3, var_4_9, arg_5_0.player_exp, exFlag)
+		callback.GeneralPlayerCosume(SYSTEM_WORLD, isWin, endOil, serverResult.player_exp, exFlag)
 
-		arg_4_0.hpDropInfo = arg_5_0.hp_drop_info
+		self.hpDropInfo = serverResult.hp_drop_info
 
-		local var_5_4 = {
+		local finishData = {
 			system = SYSTEM_WORLD,
-			statistics = arg_4_0.statistics,
-			score = var_4_1,
-			drops = var_5_1,
-			commanderExps = var_5_0,
-			result = arg_5_0.result,
-			extraDrops = var_5_2
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
+			commanderExps = commanderExp,
+			result = serverResult.result,
+			extraDrops = extraDrops
 		}
 
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_4)
-		var_4_4:WriteBack(var_5_3, arg_4_0)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
+		activeMap:WriteBack(isWin, self)
 	end
 
-	arg_4_1:SendRequest(var_4_14, var_4_15)
+	callback:SendRequest(generalPackage, onSuccess)
 end
 
-function var_0_0.GetPreloadList(arg_6_0)
-	local var_6_0 = {}
-	local var_6_1
-	local var_6_2 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_6_3 = nowWorld()
-	local var_6_4 = var_6_3:GetActiveMap()
-	local var_6_5 = var_6_4:GetFleet()
+--- 获取预加载资源列表
+--- @param self BattleGateWorld
+--- @return table shipResources, table skinResources
+function BattleGateWorld.GetPreloadList(self)
+	local shipList = {}
+	local skinList
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local world = nowWorld()
+	local activeMap = world:GetActiveMap()
+	local fleet = activeMap:GetFleet()
 
-	for iter_6_0, iter_6_1 in ipairs(var_6_5:GetShipVOs(true)) do
-		table.insert(var_6_0, iter_6_1)
+	for _, shipVO in ipairs(fleet:GetShipVOs(true)) do
+		table.insert(shipList, shipVO)
 	end
 
-	local var_6_6, var_6_7 = var_6_4:getFleetBattleBuffs(var_6_5)
+	local buffIdList, buffResList = activeMap:getFleetBattleBuffs(fleet)
 
-	if var_6_3:GetSubAidFlag() == true then
-		local var_6_8 = var_6_4:GetSubmarineFleet()
-		local var_6_9 = var_6_8:GetTeamShipVOs(TeamType.Submarine, false)
+	if world:GetSubAidFlag() == true then
+		local subFleet = activeMap:GetSubmarineFleet()
+		local subShipVOs = subFleet:GetTeamShipVOs(TeamType.Submarine, false)
 
-		for iter_6_2, iter_6_3 in ipairs(var_6_9) do
-			table.insert(var_6_0, iter_6_3)
+		for _, shipVO in ipairs(subShipVOs) do
+			table.insert(shipList, shipVO)
 		end
 
-		local var_6_10, var_6_11 = var_6_4:getFleetBattleBuffs(var_6_8)
+		local subBuffs, subBuffsRes = activeMap:getFleetBattleBuffs(subFleet)
 
-		for iter_6_4, iter_6_5 in ipairs(var_6_10) do
-			table.insert(var_6_6, iter_6_5)
+		for _, buff in ipairs(subBuffs) do
+			table.insert(buffIdList, buff)
 		end
 
-		for iter_6_6, iter_6_7 in ipairs(var_6_11) do
-			table.insert(var_6_7, iter_6_7)
-		end
-	end
-
-	local var_6_12, var_6_13 = var_6_2.GetPlayerShipResource(var_6_0, arg_6_0.system)
-	local var_6_14 = var_6_4:GetChapterAuraBuffs()
-	local var_6_15 = var_6_4:GetChapterAidBuffs()
-
-	for iter_6_8, iter_6_9 in pairs(var_6_15) do
-		for iter_6_10, iter_6_11 in ipairs(iter_6_9) do
-			table.insert(var_6_14, iter_6_11)
+		for _, res in ipairs(subBuffsRes) do
+			table.insert(buffResList, res)
 		end
 	end
 
-	local var_6_16 = var_6_2.GetResFromBuffList(var_6_14)
+	local shipResources, skinResources = resMgr.GetPlayerShipResource(shipList, self.system)
+	local auraBuffs = activeMap:GetChapterAuraBuffs()
+	local aidBuffs = activeMap:GetChapterAidBuffs()
 
-	for iter_6_12, iter_6_13 in ipairs(var_6_16) do
-		table.insert(var_6_12, iter_6_13)
+	for _, buffGroup in pairs(aidBuffs) do
+		for _, buff in ipairs(buffGroup) do
+			table.insert(auraBuffs, buff)
+		end
 	end
 
-	local var_6_17 = var_6_4:GetCell(var_6_5.row, var_6_5.column):GetStageEnemy()
-	local var_6_18 = table.mergeArray(var_6_17:GetBattleLuaBuffs(), var_6_4:GetBattleLuaBuffs(WorldMap.FactionEnemy, var_6_17))
+	local auraBuffRes = resMgr.GetResFromBuffList(auraBuffs)
 
-	for iter_6_14, iter_6_15 in ipairs(var_6_18) do
-		table.insert(var_6_6, iter_6_15)
+	for _, res in ipairs(auraBuffRes) do
+		table.insert(shipResources, res)
 	end
 
-	local var_6_19 = var_6_2.GetResFromBuffIDList(var_6_6)
+	local stageEnemy = activeMap:GetCell(fleet.row, fleet.column):GetStageEnemy()
+	local enemyBuffs = table.mergeArray(stageEnemy:GetBattleLuaBuffs(), activeMap:GetBattleLuaBuffs(WorldMap.FactionEnemy, stageEnemy))
 
-	for iter_6_16, iter_6_17 in ipairs(var_6_19) do
-		table.insert(var_6_12, iter_6_17)
+	for _, buff in ipairs(enemyBuffs) do
+		table.insert(buffIdList, buff)
 	end
 
-	local var_6_20 = var_6_2.GetCommanderBuffRes(var_6_7)
+	local buffIdRes = resMgr.GetResFromBuffIDList(buffIdList)
 
-	for iter_6_18, iter_6_19 in ipairs(var_6_20) do
-		table.insert(var_6_12, iter_6_19)
+	for _, res in ipairs(buffIdRes) do
+		table.insert(shipResources, res)
 	end
 
-	return var_6_12, var_6_13
+	local commanderBuffs = resMgr.GetCommanderBuffRes(buffResList)
+
+	for _, res in ipairs(commanderBuffs) do
+		table.insert(shipResources, res)
+	end
+
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateWorld

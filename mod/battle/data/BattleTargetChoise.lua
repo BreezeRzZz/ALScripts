@@ -1,4 +1,13 @@
 ys = ys or {}
+
+--- @class BattleTargetChoise : 战斗目标筛选系统，提供所有武器/技能选择目标时的筛选函数
+--- 每个筛选函数的统一签名为 function(caster, argList, candidateList)
+---   caster: 施法者/武器持有者单位
+---   argList: 参数表（来自武器/技能配置的 target_choice 字段）
+---   candidateList: 可选候选列表，不传则由函数内部获取默认候选
+--- @field BattleConfig BattleConfig
+--- @field BattleAttr BattleAttr
+--- @field BattleFormulas BattleFormulas
 local BattleConfig = ys.Battle.BattleConfig
 local BattleAttr = ys.Battle.BattleAttr
 local BattleFormulas = ys.Battle.BattleFormulas
@@ -6,18 +15,28 @@ local BattleTargetChoise = {}
 
 ys.Battle.BattleTargetChoise = BattleTargetChoise
 
+--- 目标为空（无目标）
+--- @param caster BattleUnit
+--- @return nil
 function BattleTargetChoise.TargetNil()
 	return nil
 end
 
+--- 目标为空表（无目标但返回空列表）
+--- @param caster BattleUnit
+--- @return table
 function BattleTargetChoise.TargetNull()
 	return {}
 end
 
+--- 目标为所有单位（不分敌我）
+--- @return table 所有单位列表
 function BattleTargetChoise.TargetAll()
 	return ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
 end
 
+--- 目标为所有非幽灵实体单位
+--- @return table 实体单位列表（排除幽灵/幻影单位）
 function BattleTargetChoise.TargetEntityUnit()
 	local entityUnits = {}
 	local allUnits = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
@@ -32,6 +51,11 @@ function BattleTargetChoise.TargetEntityUnit()
 	return entityUnits
 end
 
+--- 目标为所有幽灵单位
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表（未使用）
+--- @return table 幽灵单位列表
 function BattleTargetChoise.TargetSpectreUnit(caster, argList, candidateList)
 	local targetList = {}
 	local spectreList = ys.Battle.BattleDataProxy.GetInstance():GetSpectreShipList()
@@ -43,6 +67,11 @@ function BattleTargetChoise.TargetSpectreUnit(caster, argList, candidateList)
 	return targetList
 end
 
+--- 按模板ID筛选同阵营目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 targetTemplateIDList（或 targetTemplateID）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配的模板ID且同阵营的单位列表
 function BattleTargetChoise.TargetTemplate(caster, argList, candidateList)
 	local targetTemplateIDList = argList.targetTemplateIDList or {
 		argList.targetTemplateID
@@ -64,6 +93,11 @@ function BattleTargetChoise.TargetTemplate(caster, argList, candidateList)
 	return targetList
 end
 
+--- 按国籍筛选目标（可以是单个国家或国家列表）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 nationality（number 或 table）
+--- @param candidateList table|nil 候选列表，默认从所有单位获取
+--- @return table 匹配国籍的单位列表
 function BattleTargetChoise.TargetNationality(caster, argList, candidateList)
 	if not argList.targetTemplateIDList then
 		({})[1] = argList.targetTemplateID
@@ -87,6 +121,11 @@ function BattleTargetChoise.TargetNationality(caster, argList, candidateList)
 	return targetList
 end
 
+--- 按舰船类型筛选目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 ship_type_list
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配舰船类型的单位列表
 function BattleTargetChoise.TargetShipType(caster, argList, candidateList)
 	-- 无传参，则默认从所有实体单位中选取
 	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
@@ -104,6 +143,11 @@ function BattleTargetChoise.TargetShipType(caster, argList, candidateList)
 	return targetList
 end
 
+--- 按舰船标签筛选目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 ship_tag_list
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配标签的单位列表
 function BattleTargetChoise.TargetShipTag(caster, argList, candidateList)
 	-- 无传参，则默认从所有实体单位中选取
 	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
@@ -119,6 +163,11 @@ function BattleTargetChoise.TargetShipTag(caster, argList, candidateList)
 	return targetList
 end
 
+--- 按装甲类型筛选目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 armor_type
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配装甲类型的单位列表
 function BattleTargetChoise.TargetShipArmor(caster, argList, candidateList)
 	-- 无传参，则默认从所有实体单位中选取
 	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
@@ -134,14 +183,17 @@ function BattleTargetChoise.TargetShipArmor(caster, argList, candidateList)
 	return targetList
 end
 
+--- 根据 IFF 获取对应阵营的舰船列表
+--- 友方召唤物不属于 friendlyShipList；潜艇也属于 friendShipList
+--- 敌方召唤物属于 foeShipList
+--- 我方幽灵单位不属于 friendlyShipList（只有支援舰队这类才是幽灵）
+--- 敌方幽灵单位不属于 foeShipList
+--- @param IFF number 阵营标识（BattleConfig.FRIENDLY_CODE 或 BattleConfig.FOE_CODE）
+--- @return table|nil 对应阵营的舰船列表
 function BattleTargetChoise.getShipListByIFF(IFF)
 	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 	local candidateList
-	-- 友方召唤物不属于friendlyShipList
-	-- 潜艇也属于friendShipList
-	-- 敌方召唤物属于foeShipList
-	-- 我方幽灵单位不属于friendlyShipList(也只有支援舰队这类才会是幽灵单位)
-	-- 敌方幽灵单位不属于foeShipList
+
 	if IFF == BattleConfig.FRIENDLY_CODE then
 		candidateList = battleDataProxy:GetFriendlyShipList()
 	elseif IFF == BattleConfig.FOE_CODE then
@@ -151,6 +203,11 @@ function BattleTargetChoise.getShipListByIFF(IFF)
 	return candidateList
 end
 
+--- 目标为所有友方单位（同阵营存活单位）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，可选 exceptCaster 排除施法者自身
+--- @param candidateList table|nil 候选列表，默认根据 caster 阵营获取
+--- @return table 友方存活单位列表
 function BattleTargetChoise.TargetAllHelp(caster, argList, candidateList)
 	local targetList = {}
 
@@ -164,7 +221,7 @@ function BattleTargetChoise.TargetAllHelp(caster, argList, candidateList)
 
 		for _, candidate in pairs(_candidateList) do
 			local candidateUID = candidate:GetUniqueID()
-			-- 如果exceptCaster为true，则排除施法者自己
+			-- 如果 exceptCaster 为 true，则排除施法者自己
 			if candidate:IsAlive() and candidate:GetIFF() == casterIFF and (not exceptCaster or candidateUID ~= casterUID) then
 				targetList[#targetList + 1] = candidate
 			end
@@ -174,29 +231,40 @@ function BattleTargetChoise.TargetAllHelp(caster, argList, candidateList)
 	return targetList
 end
 
-function BattleTargetChoise.TargetHelpLeastHP(arg_13_0, arg_13_1, arg_13_2)
-	arg_13_1 = arg_13_1 or {}
+--- 目标为友方当前HP最低的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，可选 targetMaxHPRatio 作为HP比例上限
+--- @param candidateList table|nil 候选列表，默认根据 caster 阵营获取
+--- @return table 包含最低HP单位的单元素表
+function BattleTargetChoise.TargetHelpLeastHP(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_13_0
-	local var_13_1 = arg_13_1.targetMaxHPRatio
+	local target
+	local targetMaxHPRatio = argList.targetMaxHPRatio
 
-	if arg_13_0 then
-		local var_13_2 = arg_13_2 or BattleTargetChoise.getShipListByIFF(arg_13_0:GetIFF())
-		local var_13_3 = 9999999999
+	if caster then
+		local _candidateList = candidateList or BattleTargetChoise.getShipListByIFF(caster:GetIFF())
+		local minHP = 9999999999
 
-		for iter_13_0, iter_13_1 in pairs(var_13_2) do
-			if iter_13_1:IsAlive() and var_13_3 > iter_13_1:GetCurrentHP() and (not var_13_1 or var_13_1 >= iter_13_1:GetHPRate()) then
-				var_13_0 = iter_13_1
-				var_13_3 = iter_13_1:GetCurrentHP()
+		for _, candidate in pairs(_candidateList) do
+			-- 存活、HP更低，且（无HP比例限制 或 HP比例不超过上限）
+			if candidate:IsAlive() and minHP > candidate:GetCurrentHP() and (not targetMaxHPRatio or targetMaxHPRatio >= candidate:GetHPRate()) then
+				target = candidate
+				minHP = candidate:GetCurrentHP()
 			end
 		end
 	end
 
 	return {
-		var_13_0
+		target
 	}
 end
 
+--- 目标为友方HP比例最低的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认根据 caster 阵营获取
+--- @return table 包含最低HP比例单位的单元素表
 function BattleTargetChoise.TargetHelpLeastHPRatio(caster, argList, candidateList)
 	argList = argList or {}
 
@@ -207,7 +275,7 @@ function BattleTargetChoise.TargetHelpLeastHPRatio(caster, argList, candidateLis
 		local _candidateList = candidateList or BattleTargetChoise.getShipListByIFF(caster:GetIFF())
 
 		for _, candidate in pairs(_candidateList) do
-			-- GetHPRate返回的是当前耐久与最大耐久之比，因此最大值为1
+			-- GetHPRate 返回的是当前耐久与最大耐久之比，因此最大值为1
 			if candidate:IsAlive() and leastHPRatio > candidate:GetHPRate() then
 				target = candidate
 				leastHPRatio = candidate:GetHPRate()
@@ -220,102 +288,132 @@ function BattleTargetChoise.TargetHelpLeastHPRatio(caster, argList, candidateLis
 	}
 end
 
-function BattleTargetChoise.TargetHighestHP(arg_15_0, arg_15_1, arg_15_2)
-	arg_15_1 = arg_15_1 or {}
+--- 目标为当前HP最高的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含最高HP单位的单元素表
+function BattleTargetChoise.TargetHighestHP(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_15_0
+	local target
 
-	if arg_15_0 then
-		local var_15_1 = arg_15_2 or BattleTargetChoise.TargetEntityUnit()
-		local var_15_2 = 1
+	if caster then
+		local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+		local maxHP = 1
 
-		for iter_15_0, iter_15_1 in pairs(var_15_1) do
-			if iter_15_1:IsAlive() and var_15_2 < iter_15_1:GetCurrentHP() then
-				var_15_0 = iter_15_1
-				var_15_2 = iter_15_1:GetCurrentHP()
+		for _, candidate in pairs(_candidateList) do
+			if candidate:IsAlive() and maxHP < candidate:GetCurrentHP() then
+				target = candidate
+				maxHP = candidate:GetCurrentHP()
 			end
 		end
 	end
 
 	return {
-		var_15_0
+		target
 	}
 end
 
-function BattleTargetChoise.TargetLowestHPRatio(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_1 = arg_16_1 or {}
+--- 目标为HP比例最低的单位（排除已死亡单位）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含最低HP比例单位的单元素表
+function BattleTargetChoise.TargetLowestHPRatio(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_16_0
-	local var_16_1 = arg_16_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_16_2 = 1
+	local target
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local minHPRatio = 1
 
-	for iter_16_0, iter_16_1 in pairs(var_16_1) do
-		local var_16_3 = iter_16_1:GetHPRate()
+	for _, candidate in pairs(_candidateList) do
+		local hpRatio = candidate:GetHPRate()
 
-		if iter_16_1:IsAlive() and var_16_3 < var_16_2 and var_16_3 > 0 then
-			var_16_0 = iter_16_1
-			var_16_2 = var_16_3
+		if candidate:IsAlive() and hpRatio < minHPRatio and hpRatio > 0 then
+			target = candidate
+			minHPRatio = hpRatio
 		end
 	end
 
 	return {
-		var_16_0
+		target
 	}
 end
 
-function BattleTargetChoise.TargetLowestHP(arg_17_0, arg_17_1, arg_17_2)
-	arg_17_1 = arg_17_1 or {}
+--- 目标为当前HP最低的单位（排除已死亡单位）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含最低HP单位的单元素表
+function BattleTargetChoise.TargetLowestHP(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_17_0
-	local var_17_1 = arg_17_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_17_2 = 9999999999
+	local target
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local minHP = 9999999999
 
-	for iter_17_0, iter_17_1 in pairs(var_17_1) do
-		local var_17_3 = iter_17_1:GetCurrentHP()
+	for _, candidate in pairs(_candidateList) do
+		local currentHP = candidate:GetCurrentHP()
 
-		if iter_17_1:IsAlive() and var_17_3 < var_17_2 and var_17_3 > 0 then
-			var_17_0 = iter_17_1
-			var_17_2 = var_17_3
+		if candidate:IsAlive() and currentHP < minHP and currentHP > 0 then
+			target = candidate
+			minHP = currentHP
 		end
 	end
 
 	return {
-		var_17_0
+		target
 	}
 end
 
-function BattleTargetChoise.TargetHighestHPRatio(arg_18_0, arg_18_1, arg_18_2)
-	arg_18_1 = arg_18_1 or {}
+--- 目标为HP比例最高的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含最高HP比例单位的单元素表
+function BattleTargetChoise.TargetHighestHPRatio(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_18_0
-	local var_18_1 = arg_18_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_18_2 = 0
+	local target
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local maxHPRatio = 0
 
-	for iter_18_0, iter_18_1 in pairs(var_18_1) do
-		if iter_18_1:IsAlive() and var_18_2 < iter_18_1:GetHPRate() then
-			var_18_0 = iter_18_1
-			var_18_2 = iter_18_1:GetHPRate()
+	for _, candidate in pairs(_candidateList) do
+		if candidate:IsAlive() and maxHPRatio < candidate:GetHPRate() then
+			target = candidate
+			maxHPRatio = candidate:GetHPRate()
 		end
 	end
 
 	return {
-		var_18_0
+		target
 	}
 end
 
-function BattleTargetChoise.TargetAttrCompare(arg_19_0, arg_19_1, arg_19_2)
-	local var_19_0 = {}
-	local var_19_1 = arg_19_2 or BattleTargetChoise.TargetEntityUnit()
+--- 按属性比较条件筛选目标（使用 BattleFormulas.parseCompareUnitAttr）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 attrCompare
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 满足属性比较条件的单位列表
+function BattleTargetChoise.TargetAttrCompare(caster, argList, candidateList)
+	local targetList = {}
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	for iter_19_0, iter_19_1 in pairs(var_19_1) do
-		if iter_19_1:IsAlive() and BattleFormulas.parseCompareUnitAttr(arg_19_1.attrCompare, iter_19_1, arg_19_0) then
-			table.insert(var_19_0, iter_19_1)
+	for _, candidate in pairs(_candidateList) do
+		if candidate:IsAlive() and BattleFormulas.parseCompareUnitAttr(argList.attrCompare, candidate, caster) then
+			table.insert(targetList, candidate)
 		end
 	end
 
-	return var_19_0
+	return targetList
 end
 
+--- 目标为指定属性值最大的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 ceilAttr（属性名）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含属性值最大单位的单元素表
 function BattleTargetChoise.TargetAttrCeil(caster, argList, candidateList)
 	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 	local ceilAttr = argList.ceilAttr
@@ -336,130 +434,213 @@ function BattleTargetChoise.TargetAttrCeil(caster, argList, candidateList)
 	}
 end
 
-function BattleTargetChoise.TargetAttrFloor(arg_21_0, arg_21_1, arg_21_2)
-	local var_21_0 = arg_21_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_21_1 = arg_21_1.floorAttr
-	local var_21_2 = Mathf.Infinity
-	local var_21_3
+--- 目标为指定属性值最小的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 floorAttr（属性名）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 包含属性值最小单位的单元素表
+function BattleTargetChoise.TargetAttrFloor(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local floorAttr = argList.floorAttr
+	local minValue = Mathf.Infinity
+	local minCand
 
-	for iter_21_0, iter_21_1 in ipairs(var_21_0) do
-		local var_21_4 = iter_21_1:GetAttrByName(var_21_1)
+	for _, candidate in ipairs(_candidateList) do
+		local attrValue = candidate:GetAttrByName(floorAttr)
 
-		if var_21_4 <= var_21_2 then
-			var_21_2 = var_21_4
-			var_21_3 = iter_21_1
+		if attrValue <= minValue then
+			minValue = attrValue
+			minCand = candidate
 		end
 	end
 
 	return {
-		var_21_3
+		minCand
 	}
 end
 
-function BattleTargetChoise.TargetTempCompare(arg_22_0, arg_22_1, arg_22_2)
-	local var_22_0 = {}
-	local var_22_1 = arg_22_2 or BattleTargetChoise.TargetEntityUnit()
+--- 按模板比较条件筛选目标（使用 BattleFormulas.parseCompareUnitTemplate）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 tempCompare
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 满足模板比较条件的单位列表
+function BattleTargetChoise.TargetTempCompare(caster, argList, candidateList)
+	local targetList = {}
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	for iter_22_0, iter_22_1 in pairs(var_22_1) do
-		if iter_22_1:IsAlive() and var_0_2.parseCompareUnitTemplate(arg_22_1.tempCompare, iter_22_1, arg_22_0) then
-			table.insert(var_22_0, iter_22_1)
+	for _, candidate in pairs(_candidateList) do
+		if candidate:IsAlive() and BattleFormulas.parseCompareUnitTemplate(argList.tempCompare, candidate, caster) then
+			table.insert(targetList, candidate)
 		end
 	end
 
-	return var_22_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetHPCompare(arg_23_0, arg_23_1, arg_23_2)
-	local var_23_0 = {}
-	local var_23_1 = arg_23_2 or BattleTargetChoise.TargetEntityUnit()
+--- 目标为HP比施法者低的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table HP低于施法者的单位列表
+function BattleTargetChoise.TargetHPCompare(caster, argList, candidateList)
+	local targetList = {}
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	if arg_23_0 then
-		local var_23_2 = arg_23_0:GetHP()
+	if caster then
+		local casterHP = caster:GetHP()
 
-		for iter_23_0, iter_23_1 in ipairs(var_23_1) do
-			if var_23_2 > iter_23_1:GetHP() then
-				var_23_0[#var_23_0 + 1] = iter_23_1
+		for _, candidate in ipairs(_candidateList) do
+			if casterHP > candidate:GetHP() then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
 
-	return var_23_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetHPRatioLowerThan(arg_24_0, arg_24_1, arg_24_2)
-	local var_24_0 = {}
-	local var_24_1 = arg_24_1.hpRatioList[1]
-	local var_24_2 = arg_24_2 or BattleTargetChoise.TargetEntityUnit()
+--- 目标为HP低于指定比例阈值的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 hpRatioList（取第一个值作为阈值）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table HP低于阈值的单位列表
+function BattleTargetChoise.TargetHPRatioLowerThan(caster, argList, candidateList)
+	local targetList = {}
+	local hpRatioThreshold = argList.hpRatioList[1]
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	for iter_24_0, iter_24_1 in ipairs(var_24_2) do
-		if var_24_1 > iter_24_1:GetHP() then
-			var_24_0[#var_24_0 + 1] = iter_24_1
+	for _, candidate in ipairs(_candidateList) do
+		if hpRatioThreshold > candidate:GetHP() then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_24_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetNationalityFriendly(arg_25_0, arg_25_1, arg_25_2)
-	local var_25_0 = {}
+--- 目标为友方中指定国籍的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 nationality
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHelp 获取
+--- @return table 友方中匹配国籍的单位列表
+function BattleTargetChoise.TargetNationalityFriendly(caster, argList, candidateList)
+	local targetList = {}
 
-	if arg_25_0 then
-		local var_25_1 = arg_25_1.nationality
-		local var_25_2 = arg_25_2 or BattleTargetChoise.TargetAllHelp(arg_25_0, arg_25_1)
+	if caster then
+		local nationality = argList.nationality
+		local _candidateList = candidateList or BattleTargetChoise.TargetAllHelp(caster, argList)
 
-		for iter_25_0, iter_25_1 in pairs(var_25_2) do
-			if iter_25_1:GetTemplate().nationality == var_25_1 then
-				var_25_0[#var_25_0 + 1] = iter_25_1
+		for _, candidate in pairs(_candidateList) do
+			if candidate:GetTemplate().nationality == nationality then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
 
-	return var_25_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetNationalityFoe(arg_26_0, arg_26_1, arg_26_2)
-	local var_26_0 = {}
+--- 目标为敌方中指定国籍的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 nationality
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHarm 获取
+--- @return table 敌方中匹配国籍的单位列表
+function BattleTargetChoise.TargetNationalityFoe(caster, argList, candidateList)
+	local targetList = {}
 
-	if arg_26_0 then
-		local var_26_1 = arg_26_1.nationality
-		local var_26_2 = arg_26_2 or BattleTargetChoise.TargetAllHarm(arg_26_0, arg_26_1)
+	if caster then
+		local nationality = argList.nationality
+		local _candidateList = candidateList or BattleTargetChoise.TargetAllHarm(caster, argList)
 
-		for iter_26_0, iter_26_1 in pairs(var_26_2) do
-			if iter_26_1:GetTemplate().nationality == var_26_1 then
-				var_26_0[#var_26_0 + 1] = iter_26_1
+		for _, candidate in pairs(_candidateList) do
+			if candidate:GetTemplate().nationality == nationality then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
 
-	return var_26_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetShipTypeFriendly(arg_27_0, arg_27_1, arg_27_2)
-	local var_27_0 = {}
+--- 目标为友方中指定舰船类型的单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 ship_type_list
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHelp 获取
+--- @return table 友方中匹配舰船类型的单位列表
+function BattleTargetChoise.TargetShipTypeFriendly(caster, argList, candidateList)
+	local targetList = {}
 
-	if arg_27_0 then
-		local var_27_1 = arg_27_1.ship_type_list
-		local var_27_2 = arg_27_2 or BattleTargetChoise.TargetAllHelp(arg_27_0, arg_27_1)
+	if caster then
+		local shipTypeList = argList.ship_type_list
+		local _candidateList = candidateList or BattleTargetChoise.TargetAllHelp(caster, argList)
 
-		for iter_27_0, iter_27_1 in pairs(var_27_2) do
-			local var_27_3 = iter_27_1:GetTemplate().type
+		for _, candidate in pairs(_candidateList) do
+			local candidateType = candidate:GetTemplate().type
 
-			if table.contains(var_27_1, var_27_3) then
-				var_27_0[#var_27_0 + 1] = iter_27_1
+			if table.contains(shipTypeList, candidateType) then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
 
-	return var_27_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetSelf(arg_28_0)
+--- 目标为施法者自身
+--- @param caster BattleUnit 施法者
+--- @return table 包含施法者自身的单元素表
+function BattleTargetChoise.TargetSelf(caster)
 	return {
-		arg_28_0
+		caster
 	}
 end
 
+--- 目标为所有敌方单位（取反IFF），包含场界和潜水状态校验
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，若传入则从中筛选敌方
+--- @return table 敌方存活、在场界内、非潜水状态的单位列表
 function BattleTargetChoise.TargetAllHarm(caster, argList, candidateList)
+	local targetList = {}
+	local _candidateList
+	local casterIFF = caster:GetIFF()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+
+	if candidateList then
+		_candidateList = {}
+
+		for _, candidate in ipairs(candidateList) do
+			-- IFF 乘积为 -1 表示不同阵营
+			if candidate:GetIFF() * casterIFF == -1 then
+				table.insert(_candidateList, candidate)
+			end
+		end
+	elseif casterIFF == BattleConfig.FRIENDLY_CODE then
+		_candidateList = battleDataProxy:GetFoeShipList()
+	elseif casterIFF == BattleConfig.FOE_CODE then
+		_candidateList = battleDataProxy:GetFriendlyShipList()
+	end
+
+	local _, _, _, rightFieldBound = battleDataProxy:GetFieldBound()
+
+	if _candidateList then
+		for _, candidate in pairs(_candidateList) do
+			-- 存活、在场界右侧之内、非潜水状态
+			if candidate:IsAlive() and rightFieldBound > candidate:GetPosition().x and candidate:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
+				targetList[#targetList + 1] = candidate
+			end
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为所有敌方单位（取反IFF），含场界校验，不校验潜水状态
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，若传入则从中筛选敌方
+--- @return table 敌方存活、在场界内的单位列表
+function BattleTargetChoise.TargetAllFoe(caster, argList, candidateList)
 	local targetList = {}
 	local _candidateList
 	local casterIFF = caster:GetIFF()
@@ -483,7 +664,8 @@ function BattleTargetChoise.TargetAllHarm(caster, argList, candidateList)
 
 	if _candidateList then
 		for _, candidate in pairs(_candidateList) do
-			if candidate:IsAlive() and rightFieldBound > candidate:GetPosition().x and candidate:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
+			-- 与 TargetAllHarm 的区别：不校验潜水状态
+			if candidate:IsAlive() and rightFieldBound > candidate:GetPosition().x then
 				targetList[#targetList + 1] = candidate
 			end
 		end
@@ -492,32 +674,38 @@ function BattleTargetChoise.TargetAllHarm(caster, argList, candidateList)
 	return targetList
 end
 
-function BattleTargetChoise.TargetAllFoe(arg_30_0, arg_30_1, arg_30_2)
-	local var_30_0 = {}
-	local var_30_1
-	local var_30_2 = arg_30_0:GetIFF()
-	local var_30_3 = ys.Battle.BattleDataProxy.GetInstance()
+--- 目标为未隐身的敌方单位（排除隐身和潜水单位）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，若传入则从中筛选敌方
+--- @return table 敌方存活、在场界内、非隐身、非潜水的单位列表
+function BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList)
+	local targetList = {}
+	local _candidateList
+	local casterIFF = caster:GetIFF()
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
 
-	if arg_30_2 then
-		var_30_1 = {}
+	if candidateList then
+		_candidateList = {}
 
-		for iter_30_0, iter_30_1 in ipairs(arg_30_2) do
-			if iter_30_1:GetIFF() * var_30_2 == -1 then
-				table.insert(var_30_1, iter_30_1)
+		for _, candidate in ipairs(candidateList) do
+			if candidate:GetIFF() * casterIFF == -1 then
+				table.insert(_candidateList, candidate)
 			end
 		end
-	elseif var_30_2 == var_0_0.FRIENDLY_CODE then
-		var_30_1 = var_30_3:GetFoeShipList()
-	elseif var_30_2 == var_0_0.FOE_CODE then
-		var_30_1 = var_30_3:GetFriendlyShipList()
+	elseif casterIFF == BattleConfig.FRIENDLY_CODE then
+		_candidateList = battleDataProxy:GetFoeShipList()
+	elseif casterIFF == BattleConfig.FOE_CODE then
+		_candidateList = battleDataProxy:GetFriendlyShipList()
 	end
 
-	local var_30_4, var_30_5, var_30_6, var_30_7 = var_30_3:GetFieldBound()
+	local _, _, _, rightFieldBound = battleDataProxy:GetFieldBound()
 
-	if var_30_1 then
-		for iter_30_2, iter_30_3 in pairs(var_30_1) do
-			if iter_30_3:IsAlive() and var_30_7 > iter_30_3:GetPosition().x then
-				var_30_0[#var_30_0 + 1] = iter_30_3
+	if _candidateList then
+		for _, candidate in pairs(_candidateList) do
+			-- 与 TargetAllHarm 的区别：额外排除隐身单位
+			if candidate:IsAlive() and rightFieldBound > candidate:GetPosition().x and not BattleAttr.IsCloak(candidate) and candidate:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
+				targetList[#targetList + 1] = candidate
 			end
 		end
 	end
@@ -525,620 +713,741 @@ function BattleTargetChoise.TargetAllFoe(arg_30_0, arg_30_1, arg_30_2)
 	return targetList
 end
 
-function BattleTargetChoise.TargetFoeUncloak(arg_31_0, arg_31_1, arg_31_2)
-	local var_31_0 = {}
-	local var_31_1
-	local var_31_2 = arg_31_0:GetIFF()
-	local var_31_3 = ys.Battle.BattleDataProxy.GetInstance()
+--- 按隐身状态筛选目标
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table 参数表，可选 cloak（1=隐身, 0=非隐身，默认1）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配隐身状态的单位列表
+function BattleTargetChoise.TargetCloakState(caster, argList, candidateList)
+	local targetList = {}
+	local cloakState = argList.cloak or 1
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	if arg_31_2 then
-		var_31_1 = {}
-
-		for iter_31_0, iter_31_1 in ipairs(arg_31_2) do
-			if iter_31_1:GetIFF() * var_31_2 == -1 then
-				table.insert(var_31_1, iter_31_1)
-			end
-		end
-	elseif var_31_2 == var_0_0.FRIENDLY_CODE then
-		var_31_1 = var_31_3:GetFoeShipList()
-	elseif var_31_2 == var_0_0.FOE_CODE then
-		var_31_1 = var_31_3:GetFriendlyShipList()
-	end
-
-	local var_31_4, var_31_5, var_31_6, var_31_7 = var_31_3:GetFieldBound()
-
-	if var_31_1 then
-		for iter_31_2, iter_31_3 in pairs(var_31_1) do
-			if iter_31_3:IsAlive() and var_31_7 > iter_31_3:GetPosition().x and not var_0_1.IsCloak(iter_31_3) and iter_31_3:GetCurrentOxyState() ~= ys.Battle.BattleConst.OXY_STATE.DIVE then
-				var_31_0[#var_31_0 + 1] = iter_31_3
-			end
+	for _, candidate in ipairs(_candidateList) do
+		if BattleAttr.GetCurrent(candidate, "isCloak") == cloakState then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_31_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetCloakState(arg_32_0, arg_32_1, arg_32_2)
-	local var_32_0 = {}
-	local var_32_1 = arg_32_1.cloak or 1
-	local var_32_2 = arg_32_2 or BattleTargetChoise.TargetEntityUnit()
+--- 按假寐（Faint）状态筛选目标
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table 参数表，可选 faint（1=假寐中, 0=非假寐，默认1）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配假寐状态的单位列表
+function BattleTargetChoise.TargetFaintState(caster, argList, candidateList)
+	local targetList = {}
+	local faintState = argList.faint or 1
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
 
-	for iter_32_0, iter_32_1 in ipairs(var_32_2) do
-		if var_0_1.GetCurrent(iter_32_1, "isCloak") == var_32_1 then
-			var_32_0[#var_32_0 + 1] = iter_32_1
-		end
-	end
+	for _, candidate in ipairs(_candidateList) do
+		local aimBias = candidate:GetAimBias()
 
-	return var_32_0
-end
-
-function BattleTargetChoise.TargetFaintState(arg_33_0, arg_33_1, arg_33_2)
-	local var_33_0 = {}
-	local var_33_1 = arg_33_1.faint or 1
-	local var_33_2 = arg_33_2 or BattleTargetChoise.TargetEntityUnit()
-
-	for iter_33_0, iter_33_1 in ipairs(var_33_2) do
-		local var_33_3 = iter_33_1:GetAimBias()
-
-		if var_33_1 == 1 then
-			if var_33_3 and var_33_3:IsFaint() then
-				var_33_0[#var_33_0 + 1] = iter_33_1
+		if faintState == 1 then
+			-- 筛选处于假寐状态的单位
+			if aimBias and aimBias:IsFaint() then
+				targetList[#targetList + 1] = candidate
 			end
-		elseif var_33_1 == 0 and (not var_33_3 or not var_33_3:IsFaint()) then
-			var_33_0[#var_33_0 + 1] = iter_33_1
+		elseif faintState == 0 and (not aimBias or not aimBias:IsFaint()) then
+			-- 筛选非假寐状态的单位
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_33_0
+	return targetList
 end
 
-function BattleTargetChoise.TargetNearest(arg_34_0, arg_34_1, arg_34_2)
-	arg_34_1 = arg_34_1 or {}
+--- 目标为最近的单位（按距离排序取最近）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，可选 range（最大搜索距离，默认 9999999999）
+--- @param candidateList table 候选列表
+--- @return table 包含最近单位的单元素表
+function BattleTargetChoise.TargetNearest(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_34_0 = arg_34_1.range or 9999999999
-	local var_34_1
-	local var_34_2 = arg_34_2
+	local nearestDist = argList.range or 9999999999
+	local nearest
+	local _candidateList = candidateList
 
-	for iter_34_0, iter_34_1 in ipairs(var_34_2) do
-		local var_34_3 = arg_34_0:GetDistance(iter_34_1)
+	for _, candidate in ipairs(_candidateList) do
+		local distance = caster:GetDistance(candidate)
 
-		if var_34_3 < var_34_0 then
-			var_34_0 = var_34_3
-			var_34_1 = iter_34_1
+		if distance < nearestDist then
+			nearestDist = distance
+			nearest = candidate
 		end
 	end
 
 	return {
-		var_34_1
+		nearest
 	}
 end
 
-function BattleTargetChoise.TargetHarmNearest(arg_35_0, arg_35_1, arg_35_2)
-	arg_35_1 = arg_35_1 or {}
+--- 目标为最近的敌方非隐身单位（在 TargetFoeUncloak 基础上取最近）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，可选 range（最大搜索距离，默认 9999999999）
+--- @param candidateList table|nil 候选列表，传给 TargetFoeUncloak
+--- @return table 包含最近敌方非隐身单位的单元素表
+function BattleTargetChoise.TargetHarmNearest(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_35_0 = arg_35_1.range or 9999999999
-	local var_35_1
-	local var_35_2 = arg_35_2 and BattleTargetChoise.TargetFoeUncloak(arg_35_0, arg_35_1, arg_35_2) or BattleTargetChoise.TargetFoeUncloak(arg_35_0)
+	local nearestDist = argList.range or 9999999999
+	local nearest
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 
-	for iter_35_0, iter_35_1 in ipairs(var_35_2) do
-		local var_35_3 = arg_35_0:GetDistance(iter_35_1)
+	for _, candidate in ipairs(_candidateList) do
+		local distance = caster:GetDistance(candidate)
 
-		if var_35_3 < var_35_0 then
-			var_35_0 = var_35_3
-			var_35_1 = iter_35_1
+		if distance < nearestDist then
+			nearestDist = distance
+			nearest = candidate
 		end
 	end
 
 	return {
-		var_35_1
+		nearest
 	}
 end
 
-function BattleTargetChoise.TargetHarmFarthest(arg_36_0, arg_36_1, arg_36_2)
-	local var_36_0 = 0
-	local var_36_1
+--- 目标为最远的敌方非隐身单位（在 TargetFoeUncloak 基础上取最远）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，传给 TargetFoeUncloak
+--- @return table 包含最远敌方非隐身单位的单元素表
+function BattleTargetChoise.TargetHarmFarthest(caster, argList, candidateList)
+	local farthestDist = 0
+	local farthest
 
-	arg_36_1 = arg_36_1 or {}
+	argList = argList or {}
 
-	local var_36_2 = arg_36_2 and BattleTargetChoise.TargetFoeUncloak(arg_36_0, arg_36_1, arg_36_2) or BattleTargetChoise.TargetFoeUncloak(arg_36_0)
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 
-	for iter_36_0, iter_36_1 in ipairs(var_36_2) do
-		local var_36_3 = arg_36_0:GetDistance(iter_36_1)
+	for _, candidate in ipairs(_candidateList) do
+		local distance = caster:GetDistance(candidate)
 
-		if var_36_0 < var_36_3 then
-			var_36_0 = var_36_3
-			var_36_1 = iter_36_1
+		if farthestDist < distance then
+			farthestDist = distance
+			farthest = candidate
 		end
 	end
 
 	return {
-		var_36_1
+		farthest
 	}
 end
 
-function BattleTargetChoise.TargetHarmRandom(arg_37_0, arg_37_1, arg_37_2)
-	arg_37_1 = arg_37_1 or {}
+--- 目标为随机一个敌方非隐身单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，传给 TargetFoeUncloak
+--- @return table 包含随机一个敌方非隐身单位的单元素表，无候选时返回空表
+function BattleTargetChoise.TargetHarmRandom(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_37_0 = arg_37_2 and BattleTargetChoise.TargetFoeUncloak(arg_37_0, arg_37_1, arg_37_2) or BattleTargetChoise.TargetFoeUncloak(arg_37_0)
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
 
-	if #var_37_0 > 0 then
-		local var_37_1 = math.random(#var_37_0)
+	if #_candidateList > 0 then
+		local randomIndex = math.random(#_candidateList)
 
 		return {
-			var_37_0[var_37_1]
+			_candidateList[randomIndex]
 		}
 	else
 		return {}
 	end
 end
 
-function BattleTargetChoise.TargetHarmRandomByWeight(arg_38_0, arg_38_1, arg_38_2)
-	arg_38_1 = arg_38_1 or {}
+--- 目标为按被锁定权重随机选择的敌方非隐身单位
+--- 先筛选出 GetTargetedPriority 值最高的单位组，再从中随机取一个
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，传给 TargetFoeUncloak
+--- @return table 包含随机选中单位的单元素表，无候选时返回空表
+function BattleTargetChoise.TargetHarmRandomByWeight(caster, argList, candidateList)
+	argList = argList or {}
 
-	local var_38_0 = arg_38_2 and BattleTargetChoise.TargetFoeUncloak(arg_38_0, arg_38_1, arg_38_2) or BattleTargetChoise.TargetFoeUncloak(arg_38_0)
-	local var_38_1 = {}
-	local var_38_2 = -9999
+	local _candidateList = candidateList and BattleTargetChoise.TargetFoeUncloak(caster, argList, candidateList) or BattleTargetChoise.TargetFoeUncloak(caster)
+	local topPriorityList = {}
+	local topPriority = -9999
 
-	for iter_38_0, iter_38_1 in ipairs(var_38_0) do
-		local var_38_3 = iter_38_1:GetTargetedPriority() or 0
+	for _, candidate in ipairs(_candidateList) do
+		local priority = candidate:GetTargetedPriority() or 0
 
-		if var_38_3 == var_38_2 then
-			var_38_1[#var_38_1 + 1] = iter_38_1
-		elseif var_38_2 < var_38_3 then
-			var_38_1 = {
-				iter_38_1
+		if priority == topPriority then
+			topPriorityList[#topPriorityList + 1] = candidate
+		elseif topPriority < priority then
+			topPriorityList = {
+				candidate
 			}
-			var_38_2 = var_38_3
+			topPriority = priority
 		end
 	end
 
-	if #var_38_1 > 0 then
-		local var_38_4 = math.random(#var_38_1)
+	if #topPriorityList > 0 then
+		local randomIndex = math.random(#topPriorityList)
 
 		return {
-			var_38_1[var_38_4]
+			topPriorityList[randomIndex]
 		}
 	else
 		return {}
 	end
 end
 
-function BattleTargetChoise.TargetWeightiest(arg_39_0, arg_39_1, arg_39_2)
-	local var_39_0 = arg_39_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_39_1 = {}
-	local var_39_2 = -9999
+--- 目标为被锁定权重最高的所有单位（不随机）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表（未使用额外字段）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 权重最高的单位列表
+function BattleTargetChoise.TargetWeightiest(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local topPriorityList = {}
+	local topPriority = -9999
 
-	for iter_39_0, iter_39_1 in ipairs(var_39_0) do
-		local var_39_3 = iter_39_1:GetTargetedPriority() or 0
+	for _, candidate in ipairs(_candidateList) do
+		local priority = candidate:GetTargetedPriority() or 0
 
-		if var_39_3 == var_39_2 then
-			var_39_1[#var_39_1 + 1] = iter_39_1
-		elseif var_39_2 < var_39_3 then
-			var_39_1 = {
-				iter_39_1
+		if priority == topPriority then
+			topPriorityList[#topPriorityList + 1] = candidate
+		elseif topPriority < priority then
+			topPriorityList = {
+				candidate
 			}
-			var_39_2 = var_39_3
+			topPriority = priority
 		end
 	end
 
-	return var_39_1
+	return topPriorityList
 end
 
-function BattleTargetChoise.TargetRandom(arg_40_0, arg_40_1, arg_40_2)
-	local var_40_0 = arg_40_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_40_1 = arg_40_1.randomCount or 1
+--- 目标为随机N个单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，可选 randomCount（随机数量，默认1）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 随机选中的单位列表
+function BattleTargetChoise.TargetRandom(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local randomCount = argList.randomCount or 1
 
-	return (Mathf.MultiRandom(var_40_0, var_40_1))
+	return (Mathf.MultiRandom(_candidateList, randomCount))
 end
 
-function BattleTargetChoise.TargetInsideArea(arg_41_0, arg_41_1, arg_41_2)
-	local var_41_0 = arg_41_2 or BattleTargetChoise.TargetAllHarm(arg_41_0)
-	local var_41_1 = arg_41_1.dir or ys.Battle.BattleConst.UnitDir.RIGHT
-	local var_41_2 = arg_41_1.lineX
-	local var_41_3 = {}
+--- 目标为在场内指定方向一侧的所有敌方单位
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 lineX（分界线X坐标），可选 dir（方向，默认 RIGHT）
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHarm 获取
+--- @return table 在场内指定侧的单位列表
+function BattleTargetChoise.TargetInsideArea(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetAllHarm(caster)
+	local dir = argList.dir or ys.Battle.BattleConst.UnitDir.RIGHT
+	local lineX = argList.lineX
+	local targetList = {}
 
-	if var_41_1 == ys.Battle.BattleConst.UnitDir.RIGHT then
-		for iter_41_0, iter_41_1 in ipairs(var_41_0) do
-			if var_41_2 <= iter_41_1:GetPosition().x then
-				table.insert(var_41_3, iter_41_1)
+	if dir == ys.Battle.BattleConst.UnitDir.RIGHT then
+		for _, candidate in ipairs(_candidateList) do
+			if lineX <= candidate:GetPosition().x then
+				table.insert(targetList, candidate)
 			end
 		end
-	elseif var_41_1 == ys.Battle.BattleConst.UnitDir.LEFT then
-		for iter_41_2, iter_41_3 in ipairs(var_41_0) do
-			if var_41_2 >= iter_41_3:GetPosition().x then
-				table.insert(var_41_3, iter_41_3)
-			end
-		end
-	end
-
-	return var_41_3
-end
-
-function BattleTargetChoise.TargetAircraftHelp(arg_42_0)
-	local var_42_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_42_1 = {}
-	local var_42_2 = arg_42_0:GetIFF()
-
-	for iter_42_0, iter_42_1 in pairs(var_42_0:GetAircraftList()) do
-		if var_42_2 == iter_42_1:GetIFF() then
-			var_42_1[#var_42_1 + 1] = iter_42_1
-		end
-	end
-
-	return candidateList
-end
-
-function BattleTargetChoise.TargetAircraftHarm(arg_43_0)
-	local var_43_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_43_1 = {}
-	local var_43_2 = arg_43_0:GetIFF()
-
-	for iter_43_0, iter_43_1 in pairs(var_43_0:GetAircraftList()) do
-		if var_43_2 ~= iter_43_1:GetIFF() and iter_43_1:IsVisitable() then
-			var_43_1[#var_43_1 + 1] = iter_43_1
-		end
-	end
-
-	return var_43_1
-end
-
-function BattleTargetChoise.TargetAircraftGB(arg_44_0)
-	local var_44_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_44_1 = {}
-	local var_44_2 = arg_44_0:GetIFF()
-
-	for iter_44_0, iter_44_1 in pairs(var_44_0:GetAircraftList()) do
-		if var_44_2 ~= iter_44_1:GetIFF() and iter_44_1:IsVisitable() and iter_44_1:GetMotherUnit() == nil then
-			var_44_1[#var_44_1 + 1] = iter_44_1
-		end
-	end
-
-	return var_44_1
-end
-
-function BattleTargetChoise.TargetDiveState(arg_45_0, arg_45_1, arg_45_2)
-	local var_45_0 = arg_45_1 and arg_45_1.diveState or ys.Battle.BattleConst.OXY_STATE.DIVE
-	local var_45_1 = arg_45_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_45_2 = {}
-
-	for iter_45_0, iter_45_1 in pairs(var_45_1) do
-		if var_45_0 == iter_45_1:GetCurrentOxyState() then
-			var_45_2[#var_45_2 + 1] = iter_45_1
-		end
-	end
-
-	return var_45_2
-end
-
-function BattleTargetChoise.TargetDetectedUnit(arg_46_0, arg_46_1, arg_46_2)
-	local var_46_0 = arg_46_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_46_1 = {}
-
-	for iter_46_0, iter_46_1 in pairs(var_46_0) do
-		if iter_46_1:GetDiveDetected() then
-			var_46_1[#var_46_1 + 1] = iter_46_1
-		end
-	end
-
-	return var_46_1
-end
-
-function BattleTargetChoise.TargetFatalDamageSrc(arg_47_0, arg_47_1, arg_47_2)
-	local var_47_0 = arg_47_2 or BattleTargetChoise.TargetEntityUnit()
-	local var_47_1 = arg_47_0:GetDeathSrcID()
-	local var_47_2 = {}
-
-	if var_47_1 then
-		for iter_47_0, iter_47_1 in pairs(var_47_0) do
-			if var_47_1 == iter_47_1:GetUniqueID() and iter_47_1:IsAlive() then
-				var_47_2[#var_47_2 + 1] = iter_47_1
+	elseif dir == ys.Battle.BattleConst.UnitDir.LEFT then
+		for _, candidate in ipairs(_candidateList) do
+			if lineX >= candidate:GetPosition().x then
+				table.insert(targetList, candidate)
 			end
 		end
 	end
 
-	return var_47_2
+	return targetList
 end
 
-function BattleTargetChoise.TargetAllHarmBullet(arg_48_0)
-	local var_48_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_48_1 = {}
-	local var_48_2 = arg_48_0:GetIFF()
+--- 目标为所有友方飞机
+--- @param caster BattleUnit 施法者
+--- @return table 同阵营的飞机列表
+function BattleTargetChoise.TargetAircraftHelp(caster)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
 
-	for iter_48_0, iter_48_1 in pairs(var_48_0:GetBulletList()) do
-		if var_48_2 ~= iter_48_1:GetIFF() then
-			var_48_1[#var_48_1 + 1] = iter_48_1
+	for _, aircraft in pairs(battleDataProxy:GetAircraftList()) do
+		if casterIFF == aircraft:GetIFF() then
+			targetList[#targetList + 1] = aircraft
 		end
 	end
 
-	return var_48_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetAllHarmBulletByType(arg_49_0, arg_49_1)
-	local var_49_0 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_49_1 = {}
-	local var_49_2 = arg_49_0:GetIFF()
+--- 目标为所有敌方飞机
+--- @param caster BattleUnit 施法者
+--- @return table 敌方可被访问的飞机列表
+function BattleTargetChoise.TargetAircraftHarm(caster)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
 
-	for iter_49_0, iter_49_1 in pairs(var_49_0:GetBulletList()) do
-		if var_49_2 ~= iter_49_1:GetIFF() and iter_49_1:GetType() == arg_49_1 then
-			var_49_1[#var_49_1 + 1] = iter_49_1
+	for _, aircraft in pairs(battleDataProxy:GetAircraftList()) do
+		if casterIFF ~= aircraft:GetIFF() and aircraft:IsVisitable() then
+			targetList[#targetList + 1] = aircraft
 		end
 	end
 
-	return var_49_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetAllHarmTorpedoBullet(arg_50_0)
-	return BattleTargetChoise.TargetAllHarmBulletByType(arg_50_0, ys.Battle.BattleConst.BulletType.TORPEDO)
+--- 目标为所有敌方陆基飞机（无母舰的敌方飞机）
+--- @param caster BattleUnit 施法者
+--- @return table 敌方陆基飞机列表
+function BattleTargetChoise.TargetAircraftGB(caster)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
+
+	for _, aircraft in pairs(battleDataProxy:GetAircraftList()) do
+		-- 不同阵营、可访问、且没有母舰（即陆基飞机）
+		if casterIFF ~= aircraft:GetIFF() and aircraft:IsVisitable() and aircraft:GetMotherUnit() == nil then
+			targetList[#targetList + 1] = aircraft
+		end
+	end
+
+	return targetList
 end
 
-function BattleTargetChoise.TargetFleetIndex(arg_51_0, arg_51_1)
-	local var_51_0
+--- 按潜水/浮上状态筛选目标
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table 参数表，可选 diveState（潜水状态，默认 OXY_STATE.DIVE）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 匹配潜水状态的单位列表
+function BattleTargetChoise.TargetDiveState(caster, argList, candidateList)
+	local diveState = argList and argList.diveState or ys.Battle.BattleConst.OXY_STATE.DIVE
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
 
-	if arg_51_0 then
-		var_51_0 = arg_51_0:GetIFF()
+	for _, candidate in pairs(_candidateList) do
+		if diveState == candidate:GetCurrentOxyState() then
+			targetList[#targetList + 1] = candidate
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为被探测到的潜水单位
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 被声呐等探测到的单位列表
+function BattleTargetChoise.TargetDetectedUnit(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local targetList = {}
+
+	for _, candidate in pairs(_candidateList) do
+		if candidate:GetDiveDetected() then
+			targetList[#targetList + 1] = candidate
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为对施法者造成致命伤害的来源单位
+--- @param caster BattleUnit 施法者（通常为死亡单位）
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表，默认从 TargetEntityUnit 获取
+--- @return table 致命伤害来源单位列表（存活且匹配 deathSrcID）
+function BattleTargetChoise.TargetFatalDamageSrc(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetEntityUnit()
+	local deathSrcID = caster:GetDeathSrcID()
+	local targetList = {}
+
+	if deathSrcID then
+		for _, candidate in pairs(_candidateList) do
+			if deathSrcID == candidate:GetUniqueID() and candidate:IsAlive() then
+				targetList[#targetList + 1] = candidate
+			end
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为所有敌方子弹
+--- @param caster BattleUnit 施法者
+--- @return table 敌方子弹列表
+function BattleTargetChoise.TargetAllHarmBullet(caster)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
+
+	for _, bullet in pairs(battleDataProxy:GetBulletList()) do
+		if casterIFF ~= bullet:GetIFF() then
+			targetList[#targetList + 1] = bullet
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为所有敌方指定类型的子弹
+--- @param caster BattleUnit 施法者
+--- @param bulletType number 子弹类型（如 BattleConst.BulletType.TORPEDO）
+--- @return table 敌方指定类型子弹列表
+function BattleTargetChoise.TargetAllHarmBulletByType(caster, bulletType)
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
+
+	for _, bullet in pairs(battleDataProxy:GetBulletList()) do
+		if casterIFF ~= bullet:GetIFF() and bullet:GetType() == bulletType then
+			targetList[#targetList + 1] = bullet
+		end
+	end
+
+	return targetList
+end
+
+--- 目标为所有敌方鱼雷子弹
+--- @param caster BattleUnit 施法者
+--- @return table 敌方鱼雷列表
+function BattleTargetChoise.TargetAllHarmTorpedoBullet(caster)
+	return BattleTargetChoise.TargetAllHarmBulletByType(caster, ys.Battle.BattleConst.BulletType.TORPEDO)
+end
+
+--- 按舰队位置（旗舰/领舰/中位/后位/上僚/下僚/潜艇领舰/潜艇僚舰）筛选目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 fleetPos，可选 exceptCaster
+--- @return table 匹配舰队位置的单位列表
+function BattleTargetChoise.TargetFleetIndex(caster, argList)
+	local casterIFF
+
+	if caster then
+		casterIFF = caster:GetIFF()
 	else
-		var_51_0 = var_0_0.FRIENDLY_CODE
+		casterIFF = BattleConfig.FRIENDLY_CODE
 	end
 
-	local var_51_1 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(var_51_0)
-	local var_51_2 = TeamType.TeamPos
-	local var_51_3 = arg_51_1.fleetPos
-	local var_51_4 = {}
-	local var_51_5 = var_51_1:GetUnitList()
-	local var_51_6 = var_51_1:GetScoutList()
-	local var_51_7 = arg_51_1.exceptCaster
+	local fleet = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(casterIFF)
+	local TeamPos = TeamType.TeamPos
+	local fleetPos = argList.fleetPos
+	local targetList = {}
+	local unitList = fleet:GetUnitList()
+	local scoutList = fleet:GetScoutList()
+	local exceptCaster = argList.exceptCaster
 
-	if var_51_7 then
-		local var_51_8 = arg_51_0:GetUniqueID()
+	if exceptCaster then
+		local casterUID = caster:GetUniqueID()
 	end
 
-	for iter_51_0, iter_51_1 in ipairs(var_51_5) do
-		local var_51_9 = iter_51_1:GetUniqueID()
+	for _, unit in ipairs(unitList) do
+		local candidateUID = unit:GetUniqueID()
 
-		if var_51_7 and var_51_9 == casterID then
+		if exceptCaster and candidateUID == casterID then
 			-- block empty
-		elseif iter_51_1 == var_51_1:GetFlagShip() then
-			if var_51_3 == var_51_2.FLAG_SHIP then
-				table.insert(var_51_4, iter_51_1)
+		elseif unit == fleet:GetFlagShip() then
+			if fleetPos == TeamPos.FLAG_SHIP then
+				table.insert(targetList, unit)
 			end
-		elseif iter_51_1 == var_51_6[1] then
-			if var_51_3 == var_51_2.LEADER then
-				table.insert(var_51_4, iter_51_1)
+		elseif unit == scoutList[1] then
+			if fleetPos == TeamPos.LEADER then
+				table.insert(targetList, unit)
 			end
-		elseif #var_51_6 == 3 and iter_51_1 == var_51_6[2] then
-			if var_51_3 == var_51_2.CENTER then
-				table.insert(var_51_4, iter_51_1)
+		elseif #scoutList == 3 and unit == scoutList[2] then
+			if fleetPos == TeamPos.CENTER then
+				table.insert(targetList, unit)
 			end
-		elseif iter_51_1 == var_51_6[#var_51_6] then
-			if var_51_3 == var_51_2.REAR then
-				table.insert(var_51_4, iter_51_1)
+		elseif unit == scoutList[#scoutList] then
+			if fleetPos == TeamPos.REAR then
+				table.insert(targetList, unit)
 			end
-		elseif iter_51_1:IsMainFleetUnit() and iter_51_1:GetMainUnitIndex() == 2 then
-			if var_51_3 == var_51_2.UPPER_CONSORT then
-				table.insert(var_51_4, iter_51_1)
+		elseif unit:IsMainFleetUnit() and unit:GetMainUnitIndex() == 2 then
+			if fleetPos == TeamPos.UPPER_CONSORT then
+				table.insert(targetList, unit)
 			end
-		elseif iter_51_1:IsMainFleetUnit() and iter_51_1:GetMainUnitIndex() == 3 and var_51_3 == var_51_2.LOWER_CONSORT then
-			table.insert(var_51_4, iter_51_1)
+		elseif unit:IsMainFleetUnit() and unit:GetMainUnitIndex() == 3 and fleetPos == TeamPos.LOWER_CONSORT then
+			table.insert(targetList, unit)
 		end
 	end
 
-	local var_51_10 = var_51_1:GetSubList()
+	local subList = fleet:GetSubList()
 
-	for iter_51_2, iter_51_3 in ipairs(var_51_5) do
-		if iter_51_2 == 1 then
-			if var_51_3 == var_51_2.SUB_LEADER then
-				table.insert(var_51_4, iter_51_3)
+	for _, sub in ipairs(unitList) do
+		if _ == 1 then
+			if fleetPos == TeamPos.SUB_LEADER then
+				table.insert(targetList, sub)
 			end
-		elseif var_51_3 == var_51_2.SUB_CONSORT then
-			table.insert(var_51_4, iter_51_3)
+		elseif fleetPos == TeamPos.SUB_CONSORT then
+			table.insert(targetList, sub)
 		end
 	end
 
-	return var_51_4
+	return targetList
 end
 
-function BattleTargetChoise.TargetPlayerVanguardFleet(arg_52_0, arg_52_1, arg_52_2)
-	local var_52_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_52_0:GetIFF()):GetScoutList()
+--- 目标为玩家先锋舰队（前排队列），若已有候选列表则取交集
+--- @param caster BattleUnit 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表，若传入则过滤出其中属于先锋舰队的单位
+--- @return table 先锋舰队单位列表
+function BattleTargetChoise.TargetPlayerVanguardFleet(caster, argList, candidateList)
+	local scoutList = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF()):GetScoutList()
 
-	if not arg_52_2 then
-		return var_52_0
+	if not candidateList then
+		return scoutList
 	else
-		local var_52_1 = #arg_52_2
+		local index = #candidateList
 
-		while var_52_1 > 0 do
-			if not table.contains(var_52_0, arg_52_2[var_52_1]) then
-				table.remove(arg_52_2, var_52_1)
+		while index > 0 do
+			if not table.contains(scoutList, candidateList[index]) then
+				table.remove(candidateList, index)
 			end
 
-			var_52_1 = var_52_1 - 1
+			index = index - 1
 		end
 
-		return arg_52_2
+		return candidateList
 	end
 end
 
-function BattleTargetChoise.TargetPlayerMainFleet(arg_53_0, arg_53_1, arg_53_2)
-	local var_53_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_53_0:GetIFF()):GetMainList()
+--- 目标为玩家主力舰队（后排），若已有候选列表则取交集
+--- @param caster BattleUnit 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表，若传入则过滤出其中属于主力舰队的单位
+--- @return table 主力舰队单位列表
+function BattleTargetChoise.TargetPlayerMainFleet(caster, argList, candidateList)
+	local mainList = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF()):GetMainList()
 
-	if not arg_53_2 then
-		return var_53_0
+	if not candidateList then
+		return mainList
 	else
-		local var_53_1 = #arg_53_2
+		local index = #candidateList
 
-		while var_53_1 > 0 do
-			if not table.contains(var_53_0, arg_53_2[var_53_1]) then
-				table.remove(arg_53_2, var_53_1)
+		while index > 0 do
+			if not table.contains(mainList, candidateList[index]) then
+				table.remove(candidateList, index)
 			end
 
-			var_53_1 = var_53_1 - 1
+			index = index - 1
 		end
 
-		return arg_53_2
+		return candidateList
 	end
 end
 
-function BattleTargetChoise.TargetPlayerFlagShip(arg_54_0, arg_54_1, arg_54_2)
-	local var_54_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_54_0:GetIFF())
+--- 目标为玩家旗舰
+--- @param caster BattleUnit 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表（未使用）
+--- @return table 包含旗舰的单元素表
+function BattleTargetChoise.TargetPlayerFlagShip(caster, argList, candidateList)
+	local fleet = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF())
 
 	return {
-		var_54_0:GetFlagShip()
+		fleet:GetFlagShip()
 	}
 end
 
-function BattleTargetChoise.TargetPlayerLeaderShip(arg_55_0, arg_55_1, arg_55_2)
-	local var_55_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_55_0:GetIFF())
+--- 目标为玩家领舰（先锋第一位）
+--- @param caster BattleUnit 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表（未使用）
+--- @return table 包含领舰的单元素表
+function BattleTargetChoise.TargetPlayerLeaderShip(caster, argList, candidateList)
+	local fleet = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF())
 
 	return {
-		var_55_0:GetLeaderShip()
+		fleet:GetLeaderShip()
 	}
 end
 
-function BattleTargetChoise.TargetEnemyLeaderShip(arg_56_0, arg_56_1, arg_56_2)
-	local var_56_0 = arg_56_0:GetIFF() * -1
-	local var_56_1 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(var_56_0)
+--- 目标为敌方领舰
+--- @param caster BattleUnit 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @param candidateList table|nil 候选列表（未使用）
+--- @return table 包含敌方领舰的单元素表
+function BattleTargetChoise.TargetEnemyLeaderShip(caster, argList, candidateList)
+	local enemyIFF = caster:GetIFF() * -1
+	local fleet = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(enemyIFF)
 
 	return {
-		var_56_1:GetLeaderShip()
+		fleet:GetLeaderShip()
 	}
 end
 
-function BattleTargetChoise.TargetPlayerByType(arg_57_0, arg_57_1)
-	local var_57_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_57_0:GetIFF()):GetUnitList()
-	local var_57_1 = {}
-	local var_57_2 = arg_57_1.shipType
+--- 按舰船类型筛选玩家单位（同一阵营的舰队中）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 shipType
+--- @return table 匹配舰船类型的玩家单位列表
+function BattleTargetChoise.TargetPlayerByType(caster, argList)
+	local unitList = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF()):GetUnitList()
+	local targetList = {}
+	local shipType = argList.shipType
 
-	for iter_57_0, iter_57_1 in ipairs(var_57_0) do
-		if iter_57_1:GetTemplate().type == var_57_2 then
-			var_57_1[#var_57_1 + 1] = iter_57_1
+	for _, unit in ipairs(unitList) do
+		if unit:GetTemplate().type == shipType then
+			targetList[#targetList + 1] = unit
 		end
 	end
 
-	return var_57_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetPlayerAidUnit(arg_58_0, arg_58_1)
-	local var_58_0 = ys.Battle.BattleDataProxy.GetInstance():GetAidUnit()
-	local var_58_1 = {}
+--- 目标为所有友方增援单位
+--- @param caster BattleUnit|nil 施法者
+--- @param argList table|nil 参数表（未使用）
+--- @return table 友方增援单位列表
+function BattleTargetChoise.TargetPlayerAidUnit(caster, argList)
+	local aidUnits = ys.Battle.BattleDataProxy.GetInstance():GetAidUnit()
+	local targetList = {}
 
-	for iter_58_0, iter_58_1 in pairs(var_58_0) do
-		table.insert(var_58_1, iter_58_1)
+	for _, unit in pairs(aidUnits) do
+		table.insert(targetList, unit)
 	end
 
-	return var_58_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetDamageSource(arg_59_0, arg_59_1, arg_59_2)
-	local var_59_0 = arg_59_2 or BattleTargetChoise.TargetAllFoe(arg_59_0)
-	local var_59_1 = {}
+--- 按伤害来源ID筛选目标（通常用于反击类技能）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 damageSourceID
+--- @param candidateList table|nil 候选列表，默认从 TargetAllFoe 获取
+--- @return table 匹配伤害来源ID的单位列表（找到即停止）
+function BattleTargetChoise.TargetDamageSource(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetAllFoe(caster)
+	local targetList = {}
 
-	for iter_59_0, iter_59_1 in pairs(var_59_0) do
-		if iter_59_1:GetUniqueID() == arg_59_1.damageSourceID then
-			table.insert(var_59_1, iter_59_1)
+	for _, candidate in pairs(_candidateList) do
+		if candidate:GetUniqueID() == argList.damageSourceID then
+			table.insert(targetList, candidate)
 
 			break
 		end
 	end
 
-	return var_59_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetRarity(arg_60_0, arg_60_1, arg_60_2)
-	local var_60_0 = arg_60_2 or BattleTargetChoise.TargetAllHelp(arg_60_0)
-	local var_60_1 = {}
+--- 按稀有度筛选友方目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 rarity
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHelp 获取
+--- @return table 匹配稀有度的友方单位列表
+function BattleTargetChoise.TargetRarity(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetAllHelp(caster)
+	local targetList = {}
 
-	for iter_60_0, iter_60_1 in ipairs(var_60_0) do
-		if iter_60_1:GetRarity() == arg_60_1.rarity then
-			table.insert(var_60_1, iter_60_1)
+	for _, candidate in ipairs(_candidateList) do
+		if candidate:GetRarity() == argList.rarity then
+			table.insert(targetList, candidate)
 		end
 	end
 
-	return var_60_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetIllustrator(arg_61_0, arg_61_1, arg_61_2)
-	local var_61_0 = arg_61_2 or BattleTargetChoise.TargetAllHelp(arg_61_0)
-	local var_61_1 = {}
+--- 按画师筛选友方目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 illustrator
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHelp 获取
+--- @return table 匹配画师的友方单位列表
+function BattleTargetChoise.TargetIllustrator(caster, argList, candidateList)
+	local _candidateList = candidateList or BattleTargetChoise.TargetAllHelp(caster)
+	local targetList = {}
 
-	for iter_61_0, iter_61_1 in ipairs(var_61_0) do
-		if ys.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(iter_61_1:GetSkinID()).illustrator == arg_61_1.illustrator then
-			table.insert(var_61_1, iter_61_1)
+	for _, candidate in ipairs(_candidateList) do
+		if ys.Battle.BattleDataFunction.GetPlayerShipSkinDataFromID(candidate:GetSkinID()).illustrator == argList.illustrator then
+			table.insert(targetList, candidate)
 		end
 	end
 
-	return var_61_1
+	return targetList
 end
 
-function BattleTargetChoise.TargetTeam(arg_62_0, arg_62_1, arg_62_2)
-	local var_62_0 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(arg_62_0:GetIFF())
-	local var_62_1 = {}
-	local var_62_2 = TeamType.TeamTypeIndex[arg_62_1.teamIndex]
+--- 按编队类型筛选目标（先锋/主力/潜艇）
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 teamIndex
+--- @param candidateList table|nil 候选列表，若传入则进一步过滤
+--- @return table 匹配编队类型且（若传入候选列表）在候选中的单位
+function BattleTargetChoise.TargetTeam(caster, argList, candidateList)
+	local fleet = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(caster:GetIFF())
+	local teamList = {}
+	local teamType = TeamType.TeamTypeIndex[argList.teamIndex]
 
-	if var_62_2 == TeamType.Vanguard then
-		var_62_1 = var_62_0:GetScoutList()
-	elseif var_62_2 == TeamType.Main then
-		var_62_1 = var_62_0:GetMainList()
-	elseif var_62_2 == TeamType.Submarine then
-		var_62_1 = var_62_0:GetSubList()
+	if teamType == TeamType.Vanguard then
+		teamList = fleet:GetScoutList()
+	elseif teamType == TeamType.Main then
+		teamList = fleet:GetMainList()
+	elseif teamType == TeamType.Submarine then
+		teamList = fleet:GetSubList()
 	end
 
-	local var_62_3 = {}
+	local targetList = {}
 
-	for iter_62_0, iter_62_1 in ipairs(var_62_1) do
-		if not arg_62_2 or table.contains(arg_62_2, iter_62_1) then
-			table.insert(var_62_3, iter_62_1)
+	for _, unit in ipairs(teamList) do
+		if not candidateList or table.contains(candidateList, unit) then
+			table.insert(targetList, unit)
 		end
 	end
 
-	return var_62_3
+	return targetList
 end
 
-function BattleTargetChoise.TargetGroup(arg_63_0, arg_63_1, arg_63_2)
-	local var_63_0 = arg_63_1.groupIDList
-	local var_63_1 = arg_63_2 or BattleTargetChoise.TargetAllHelp(arg_63_0)
-	local var_63_2 = {}
-	local var_63_3 = arg_63_0:GetIFF()
+--- 按组别（group_type）筛选同阵营友方目标
+--- @param caster BattleUnit 施法者
+--- @param argList table 参数表，需含 groupIDList
+--- @param candidateList table|nil 候选列表，默认从 TargetAllHelp 获取
+--- @return table 匹配组别且同阵营的单位列表
+function BattleTargetChoise.TargetGroup(caster, argList, candidateList)
+	local groupIDList = argList.groupIDList
+	local _candidateList = candidateList or BattleTargetChoise.TargetAllHelp(caster)
+	local targetList = {}
+	local casterIFF = caster:GetIFF()
 
-	for iter_63_0, iter_63_1 in ipairs(var_63_1) do
-		local var_63_4 = iter_63_1:GetTemplateID()
-		local var_63_5 = ys.Battle.BattleDataFunction.GetPlayerShipModelFromID(var_63_4).group_type
-		local var_63_6 = iter_63_1:GetIFF()
+	for _, candidate in ipairs(_candidateList) do
+		local templateID = candidate:GetTemplateID()
+		local groupType = ys.Battle.BattleDataFunction.GetPlayerShipModelFromID(templateID).group_type
+		local candidateIFF = candidate:GetIFF()
 
-		if table.contains(var_63_0, var_63_5) and var_63_3 == var_63_6 then
-			var_63_2[#var_63_2 + 1] = iter_63_1
+		if table.contains(groupIDList, groupType) and casterIFF == candidateIFF then
+			targetList[#targetList + 1] = candidate
 		end
 	end
 
-	return var_63_2
+	return targetList
 end
 
-function BattleTargetChoise.LegalTarget(arg_64_0)
-	local var_64_0 = {}
-	local var_64_1
-	local var_64_2 = ys.Battle.BattleDataProxy.GetInstance()
-	local var_64_3, var_64_4, var_64_5, var_64_6 = var_64_2:GetFieldBound()
-	local var_64_7 = var_64_2:GetUnitList()
-	local var_64_8 = arg_64_0:GetIFF()
+--- 目标为所有合法敌方单位（存活、不同阵营、在场界内、非幽灵）
+--- @param caster BattleUnit 施法者
+--- @return table 合法敌方单位列表
+function BattleTargetChoise.LegalTarget(caster)
+	local targetList = {}
+	local battleDataProxy = ys.Battle.BattleDataProxy.GetInstance()
+	local _, _, _, rightFieldBound = battleDataProxy:GetFieldBound()
+	local allUnits = battleDataProxy:GetUnitList()
+	local casterIFF = caster:GetIFF()
 
-	for iter_64_0, iter_64_1 in pairs(var_64_7) do
-		if iter_64_1:IsAlive() and iter_64_1:GetIFF() ~= var_64_8 and var_64_6 > iter_64_1:GetPosition().x and not iter_64_1:IsSpectre() then
-			var_64_0[#var_64_0 + 1] = iter_64_1
+	for _, unit in pairs(allUnits) do
+		if unit:IsAlive() and unit:GetIFF() ~= casterIFF and rightFieldBound > unit:GetPosition().x and not unit:IsSpectre() then
+			targetList[#targetList + 1] = unit
 		end
 	end
 
-	return var_64_0
+	return targetList
 end
 
-function BattleTargetChoise.LegalWeaponTarget(arg_65_0)
-	local var_65_0 = {}
-	local var_65_1
-	local var_65_2 = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
-	local var_65_3 = arg_65_0:GetIFF()
+--- 目标为所有合法敌方武器目标（不同阵营、非幽灵，不校验存活和场界）
+--- @param caster BattleUnit 施法者
+--- @return table 合法敌方武器目标列表
+function BattleTargetChoise.LegalWeaponTarget(caster)
+	local targetList = {}
+	local allUnits = ys.Battle.BattleDataProxy.GetInstance():GetUnitList()
+	local casterIFF = caster:GetIFF()
 
-	for iter_65_0, iter_65_1 in pairs(var_65_2) do
-		if iter_65_1:GetIFF() ~= var_65_3 and not iter_65_1:IsSpectre() then
-			var_65_0[#var_65_0 + 1] = iter_65_1
+	for _, unit in pairs(allUnits) do
+		if unit:GetIFF() ~= casterIFF and not unit:IsSpectre() then
+			targetList[#targetList + 1] = unit
 		end
 	end
 
-	return var_65_0
+	return targetList
 end

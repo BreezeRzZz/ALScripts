@@ -1,93 +1,106 @@
-local var_0_0 = class("BattleGateCardPuzzle")
+--- @class BattleGateCardPuzzle : 卡牌谜题Gate
+local BattleGateCardPuzzle = class("BattleGateCardPuzzle")
 
-ys.Battle.BattleGateCardPuzzle = var_0_0
-var_0_0.__name = "BattleGateCardPuzzle"
+ys.Battle.BattleGateCardPuzzle = BattleGateCardPuzzle
+BattleGateCardPuzzle.__name = "BattleGateCardPuzzle"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.combatID
-	local var_1_1 = ys.Battle.BattleDataFunction.GetPuzzleDungeonTemplate(var_1_0)
-	local var_1_2 = var_1_1.dungeon_id
-	local var_1_3 = {
+--- 进入卡牌谜题战斗
+--- @param self BattleGateCardPuzzle
+--- @param sendData table 发送数据
+function BattleGateCardPuzzle.Entrance(self, sendData)
+	local combatID = self.combatID
+	local dungeonTemplate = ys.Battle.BattleDataFunction.GetPuzzleDungeonTemplate(combatID)
+	local dungeonId = dungeonTemplate.dungeon_id
+	local fleetData = {
 		CardPuzzleShip.New({
-			configId = var_1_1.scout_id
+			configId = dungeonTemplate.scout_id
 		}),
 		CardPuzzleShip.New({
-			configId = var_1_1.main_id
+			configId = dungeonTemplate.main_id
 		})
 	}
-	local var_1_4 = var_1_1.deck
-	local var_1_5 = {}
+	local deckCards = dungeonTemplate.deck
+	local relicList = {}
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_1.relic) do
-		table.insert(var_1_5, CardPuzzleGift.New({
-			configId = iter_1_1
+	for _, relicId in ipairs(dungeonTemplate.relic) do
+		table.insert(relicList, CardPuzzleGift.New({
+			configId = relicId
 		}))
 	end
 
-	;(function(arg_2_0)
-		local var_2_0 = {
+	-- 立即构造并发送战斗数据
+	;(function()
+		local stageData = {
 			hp = 1,
-			cardPuzzleFleet = var_1_3,
+			cardPuzzleFleet = fleetData,
 			prefabFleet = {},
-			cards = var_1_4,
-			relics = var_1_5,
-			stageId = var_1_2,
+			cards = deckCards,
+			relics = relicList,
+			stageId = dungeonId,
 			system = SYSTEM_CARDPUZZLE,
-			puzzleCombatID = var_1_0
+			puzzleCombatID = combatID
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_0)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end)()
 end
 
-function var_0_0.Exit(arg_3_0, arg_3_1)
-	local var_3_0 = arg_3_0.statistics._battleScore
+--- 退出卡牌谜题，S评分以上触发活动卡片谜题通知
+--- @param self BattleGateCardPuzzle
+--- @param callback table 回调对象
+function BattleGateCardPuzzle.Exit(self, callback)
+	local score = self.statistics._battleScore
 
-	if var_3_0 >= ys.Battle.BattleConst.BattleScore.S then
-		local var_3_1 = getProxy(ActivityProxy):getActivityByType(ActivityConst.ACTIVITY_TYPE_CARD_PUZZLE)
+	if score >= ys.Battle.BattleConst.BattleScore.S then
+		local cardPuzzleActivity = getProxy(ActivityProxy):getActivityByType(ActivityConst.ACTIVITY_TYPE_CARD_PUZZLE)
 
-		arg_3_1:sendNotification(GAME.ACT_CARD_PUZZLE, {
+		callback:sendNotification(GAME.ACT_CARD_PUZZLE, {
 			cmd = 1,
-			activity_id = var_3_1 and var_3_1.id,
-			arg1 = arg_3_0.puzzleCombatID
+			activity_id = cardPuzzleActivity and cardPuzzleActivity.id,
+			arg1 = self.puzzleCombatID
 		})
 	end
 
-	local var_3_2 = {
+	local result = {
 		system = SYSTEM_CARDPUZZLE,
-		score = var_3_0
+		score = score
 	}
 
-	arg_3_1:sendNotification(GAME.FINISH_STAGE_DONE, var_3_2)
+	callback:sendNotification(GAME.FINISH_STAGE_DONE, result)
 end
 
-function var_0_0.GetPreloadList(arg_4_0)
-	local var_4_0 = {}
-	local var_4_1 = {}
-	local var_4_2 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_4_3 = arg_4_0.cards
+--- 获取预加载资源列表
+--- @param self BattleGateCardPuzzle
+--- @return table shipResources, table skinResources
+function BattleGateCardPuzzle.GetPreloadList(self)
+	local resList = {}
+	local skinList = {}
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local cards = self.cards
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_3) do
-		local var_4_4 = ys.Battle.BattleDataFunction.GetPuzzleCardDataTemplate(iter_4_1).effect[1]
-		local var_4_5 = ys.Battle.BattleDataFunction.GetCardRes(var_4_4)
+	-- 加载卡牌效果资源
+	for _, cardId in ipairs(cards) do
+		local effectId = ys.Battle.BattleDataFunction.GetPuzzleCardDataTemplate(cardId).effect[1]
+		local cardResList = ys.Battle.BattleDataFunction.GetCardRes(effectId)
 
-		for iter_4_2, iter_4_3 in ipairs(var_4_5) do
-			table.insert(var_4_5, iter_4_3)
+		for _, res in ipairs(cardResList) do
+			table.insert(cardResList, res)
 		end
 	end
 
-	for iter_4_4, iter_4_5 in ipairs(arg_4_0.cardPuzzleFleet) do
-		local var_4_6 = iter_4_5:getConfig("id")
-		local var_4_7 = ys.Battle.BattleDataFunction.GetPuzzleShipDataTemplate(var_4_6)
+	-- 加载舰船资源
+	for _, shipData in ipairs(self.cardPuzzleFleet) do
+		local shipConfigId = shipData:getConfig("id")
+		local shipTemplate = ys.Battle.BattleDataFunction.GetPuzzleShipDataTemplate(shipConfigId)
 
-		table.insert(var_4_1, var_4_7.skin_id)
-		table.insert(var_4_0, var_4_2.GetShipResource(var_4_7.id, var_4_7.skin_id, true))
+		table.insert(skinList, shipTemplate.skin_id)
+		table.insert(resList, resMgr.GetShipResource(shipTemplate.id, shipTemplate.skin_id, true))
 	end
 
-	table.insert(var_4_0, var_4_2.GetUIPath("CardTowerCardCombat"))
-	table.insert(var_4_0, var_4_2.GetFXPath("kapai_weizhi"))
+	table.insert(resList, resMgr.GetUIPath("CardTowerCardCombat"))
+	table.insert(resList, resMgr.GetFXPath("kapai_weizhi"))
 
-	return var_4_0, var_4_1
+	return resList, skinList
 end
 
-return var_0_0
+return BattleGateCardPuzzle

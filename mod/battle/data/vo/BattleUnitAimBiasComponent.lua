@@ -183,7 +183,7 @@ function BattleUnitAimBiasComponent.AppendCrew(self, crew)
 end
 
 function BattleUnitAimBiasComponent.RemoveCrew(self, crew)
-	local var_20_0
+	local removedIndex
 
 	for index, _crew in ipairs(self._crewList) do
 		if _crew == crew then

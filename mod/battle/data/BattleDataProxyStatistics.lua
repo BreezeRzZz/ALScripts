@@ -1,113 +1,135 @@
 local BattleDataProxy = ys.Battle.BattleDataProxy
-local var_0_1 = ys.Battle.BattleEvent
-local var_0_2 = ys.Battle.BattleFormulas
-local var_0_3 = ys.Battle.BattleConst
-local var_0_4 = ys.Battle.BattleConfig
+local BattleEvent = ys.Battle.BattleEvent
+local BattleFormulas = ys.Battle.BattleFormulas
+local BattleConst = ys.Battle.BattleConst
+local BattleConfig = ys.Battle.BattleConfig
 local BattleDataFunction = ys.Battle.BattleDataFunction
-local var_0_6 = ys.Battle.BattleAttr
-local var_0_7 = ys.Battle.BattleVariable
--- TODO
-function BattleDataProxy.StatisticsInit(arg_1_0, arg_1_1)
-	arg_1_0._statistics = {}
-	arg_1_0._statistics._battleScore = var_0_3.BattleScore.D
-	arg_1_0._statistics.kill_id_list = {}
-	arg_1_0._statistics._totalTime = 0
-	arg_1_0._statistics._deadCount = 0
-	arg_1_0._statistics._boss_destruct = 0
-	arg_1_0._statistics._botPercentage = 0
-	arg_1_0._statistics._maxBossHP = 0
-	arg_1_0._statistics._enemyInfoList = {}
+local BattleAttr = ys.Battle.BattleAttr
+local BattleVariable = ys.Battle.BattleVariable
 
-	for iter_1_0, iter_1_1 in ipairs(arg_1_1) do
-		local var_1_0 = {
-			id = iter_1_1:GetAttrByName("id")
+--- 战斗统计初始化：为友方舰队创建统计数据表
+--- 包含每个单位的基础信息（id, damage, output, kill_count等）
+--- @param self BattleDataProxy
+--- @param unitList table: 友方单位列表
+function BattleDataProxy.StatisticsInit(self, unitList)
+	self._statistics = {}
+	self._statistics._battleScore = BattleConst.BattleScore.D
+	self._statistics.kill_id_list = {}
+	self._statistics._totalTime = 0
+	self._statistics._deadCount = 0
+	self._statistics._boss_destruct = 0
+	self._statistics._botPercentage = 0
+	self._statistics._maxBossHP = 0
+	self._statistics._enemyInfoList = {}
+
+	for index, unit in ipairs(unitList) do
+		local unitStats = {
+			id = unit:GetAttrByName("id")
 		}
 
-		var_1_0.damage = 0
-		var_1_0.output = 0
-		var_1_0.kill_count = 0
-		var_1_0.bp = 0
-		var_1_0.max_hp = iter_1_1:GetAttrByName("maxHP")
-		var_1_0.maxDamageOnce = 0
-		var_1_0.gearScore = iter_1_1:GetGearScore()
-		arg_1_0._statistics[var_1_0.id] = var_1_0
+		unitStats.damage = 0
+		unitStats.output = 0
+		unitStats.kill_count = 0
+		unitStats.bp = 0
+		unitStats.max_hp = unit:GetAttrByName("maxHP")
+		unitStats.maxDamageOnce = 0
+		unitStats.gearScore = unit:GetGearScore()
+		self._statistics[unitStats.id] = unitStats
 	end
 
-	arg_1_0._statistics._autoCount = 0
+	self._statistics._autoCount = 0
 end
 
-function BattleDataProxy.InitAidUnitStatistics(arg_2_0, arg_2_1)
-	local var_2_0 = {
-		id = arg_2_1:GetAttrByName("id")
+--- 初始化支援单位统计数据
+--- @param self BattleDataProxy
+--- @param aidUnit BattleUnit: 支援单位
+function BattleDataProxy.InitAidUnitStatistics(self, aidUnit)
+	local unitStats = {
+		id = aidUnit:GetAttrByName("id")
 	}
 
-	var_2_0.damage = 0
-	var_2_0.output = 0
-	var_2_0.kill_count = 0
-	var_2_0.bp = 0
-	var_2_0.max_hp = arg_2_1:GetAttrByName("maxHP")
-	var_2_0.maxDamageOnce = 0
-	var_2_0.gearScore = arg_2_1:GetGearScore()
-	arg_2_0._statistics[var_2_0.id] = var_2_0
-	arg_2_0._statistics.submarineAid = true
+	unitStats.damage = 0
+	unitStats.output = 0
+	unitStats.kill_count = 0
+	unitStats.bp = 0
+	unitStats.max_hp = aidUnit:GetAttrByName("maxHP")
+	unitStats.maxDamageOnce = 0
+	unitStats.gearScore = aidUnit:GetGearScore()
+	self._statistics[unitStats.id] = unitStats
+	self._statistics.submarineAid = true
 end
 
-function BattleDataProxy.InitSpecificEnemyStatistics(arg_3_0, arg_3_1)
-	local var_3_0 = {
-		id = arg_3_1:GetAttrByName("id")
+--- 初始化特定敌人统计数据（如boss、精英等）
+--- @param self BattleDataProxy
+--- @param specificEnemy BattleEnemyUnit: 特定敌人单位
+function BattleDataProxy.InitSpecificEnemyStatistics(self, specificEnemy)
+	local unitStats = {
+		id = specificEnemy:GetAttrByName("id")
 	}
 
-	var_3_0.damage = 0
-	var_3_0.output = 0
-	var_3_0.kill_count = 0
-	var_3_0.bp = 0
-	var_3_0.max_hp = arg_3_1:GetAttrByName("maxHP")
-	var_3_0.init_hp = arg_3_1:GetCurrentHP()
-	var_3_0.maxDamageOnce = 0
-	var_3_0.gearScore = arg_3_1:GetGearScore()
-	arg_3_0._statistics[var_3_0.id] = var_3_0
+	unitStats.damage = 0
+	unitStats.output = 0
+	unitStats.kill_count = 0
+	unitStats.bp = 0
+	unitStats.max_hp = specificEnemy:GetAttrByName("maxHP")
+	unitStats.init_hp = specificEnemy:GetCurrentHP()
+	unitStats.maxDamageOnce = 0
+	unitStats.gearScore = specificEnemy:GetGearScore()
+	self._statistics[unitStats.id] = unitStats
 end
 
-function BattleDataProxy.RivalInit(arg_4_0, arg_4_1)
-	arg_4_0._statistics._rivalInfo = {}
+--- 初始化对手信息（用于对决等模式）
+--- @param self BattleDataProxy
+--- @param rivalList table: 对手单位列表
+function BattleDataProxy.RivalInit(self, rivalList)
+	self._statistics._rivalInfo = {}
 
-	for iter_4_0, iter_4_1 in ipairs(arg_4_1) do
-		local var_4_0 = iter_4_1:GetAttrByName("id")
+	for index, rivalUnit in ipairs(rivalList) do
+		local rivalID = rivalUnit:GetAttrByName("id")
 
-		arg_4_0._statistics._rivalInfo[var_4_0] = {}
-		arg_4_0._statistics._rivalInfo[var_4_0].id = var_4_0
+		self._statistics._rivalInfo[rivalID] = {}
+		self._statistics._rivalInfo[rivalID].id = rivalID
 	end
 end
 
-function BattleDataProxy.DodgemCountInit(arg_5_0)
-	arg_5_0._dodgemStatistics = {}
-	arg_5_0._dodgemStatistics.kill = 0
-	arg_5_0._dodgemStatistics.combo = 0
-	arg_5_0._dodgemStatistics.miss = 0
-	arg_5_0._dodgemStatistics.fail = 0
-	arg_5_0._dodgemStatistics.score = 0
-	arg_5_0._dodgemStatistics.maxCombo = 0
+--- 初始化躲避计数统计
+--- @param self BattleDataProxy
+function BattleDataProxy.DodgemCountInit(self)
+	self._dodgemStatistics = {}
+	self._dodgemStatistics.kill = 0
+	self._dodgemStatistics.combo = 0
+	self._dodgemStatistics.miss = 0
+	self._dodgemStatistics.fail = 0
+	self._dodgemStatistics.score = 0
+	self._dodgemStatistics.maxCombo = 0
 end
 
-function BattleDataProxy.SubmarineRunInit(arg_6_0)
-	arg_6_0._subRunStatistics = {}
-	arg_6_0._subRunStatistics.score = 0
+--- 初始化潜艇突袭统计
+--- @param self BattleDataProxy
+function BattleDataProxy.SubmarineRunInit(self)
+	self._subRunStatistics = {}
+	self._subRunStatistics.score = 0
 end
 
-function BattleDataProxy.SetFlagShipID(arg_7_0, arg_7_1)
-	if arg_7_1 then
-		arg_7_0._statistics._flagShipID = arg_7_1:GetAttrByName("id")
+--- 设置旗舰ID用于统计
+--- @param self BattleDataProxy
+--- @param flagShip BattleUnit: 旗舰单位
+function BattleDataProxy.SetFlagShipID(self, flagShip)
+	if flagShip then
+		self._statistics._flagShipID = flagShip:GetAttrByName("id")
 	end
 end
 
--- TODO
--- 更新伤害统计核心
--- 关于调用点：HandleDamage/HandleDirectDamage中，以dHP为准
+--- 更新伤害统计核心
+--- 关于调用点：HandleDamage/HandleDirectDamage中，以dHP为准
+--- output: 造成的伤害
+--- damage: 受到的伤害
+--- DOT这类没有Caster的，不会计入造成伤害统计，但在受到伤害统计中正常计入
+--- @param self BattleDataProxy
+--- @param srcID number: 伤害来源ID
+--- @param targetID number: 受伤目标ID
+--- @param damage number: 伤害值
 function BattleDataProxy.DamageStatistics(self, srcID, targetID, damage)
-	-- output: 造成的伤害
-	-- damage: 受到的伤害
-
-	-- DOT这类没有Caster的，不会计入造成伤害统计，但在受到伤害统计中正常计入
 	if self._statistics[srcID] then
 		self._statistics[srcID].output = self._statistics[srcID].output + damage
 		self._statistics[srcID].maxDamageOnce = math.max(self._statistics[srcID].maxDamageOnce, damage)
@@ -118,359 +140,443 @@ function BattleDataProxy.DamageStatistics(self, srcID, targetID, damage)
 	end
 end
 
-function BattleDataProxy.KillCountStatistics(arg_9_0, arg_9_1, arg_9_2)
-	if arg_9_0._statistics[arg_9_1] then
-		arg_9_0._statistics[arg_9_1].kill_count = arg_9_0._statistics[arg_9_1].kill_count + 1
+--- 更新击杀统计
+--- @param self BattleDataProxy
+--- @param srcID number: 击杀者ID
+--- @param _ number: 未使用
+function BattleDataProxy.KillCountStatistics(self, srcID, _)
+	if self._statistics[srcID] then
+		self._statistics[srcID].kill_count = self._statistics[srcID].kill_count + 1
 	end
 end
 
-function BattleDataProxy.HPRatioStatistics(arg_10_0)
-	for iter_10_0, iter_10_1 in pairs(arg_10_0._fleetList) do
-		iter_10_1:UndoFusion()
+--- 计算血量比例统计（用于结算BP）
+--- @param self BattleDataProxy
+function BattleDataProxy.HPRatioStatistics(self)
+	for _, fleet in pairs(self._fleetList) do
+		fleet:UndoFusion()
 	end
 
-	local var_10_0 = arg_10_0._fleetList[1]:GetUnitList()
+	local unitList = self._fleetList[1]:GetUnitList()
 
-	for iter_10_2, iter_10_3 in ipairs(var_10_0) do
-		arg_10_0._statistics[iter_10_3:GetAttrByName("id")].bp = math.ceil(iter_10_3:GetHPRate() * 10000)
+	for index, unit in ipairs(unitList) do
+		self._statistics[unit:GetAttrByName("id")].bp = math.ceil(unit:GetHPRate() * 10000)
 	end
 end
 
-function BattleDataProxy.BotPercentage(arg_11_0, arg_11_1)
-	local var_11_0 = arg_11_0._currentStageData.timeCount - arg_11_0._countDown
+--- 计算Bot百分比
+--- @param self BattleDataProxy
+--- @param _ number: 未使用
+function BattleDataProxy.BotPercentage(self, _)
+	local totalTime = self._currentStageData.timeCount - self._countDown
 
-	arg_11_0._statistics._botPercentage = Mathf.Clamp(math.floor(arg_11_1 / var_11_0 * 100), 0, 100)
+	self._statistics._botPercentage = Mathf.Clamp(math.floor(_ / totalTime * 100), 0, 100)
 end
 
-function BattleDataProxy.CalcBattleScoreWhenDead(arg_12_0, arg_12_1)
-	local var_12_0 = arg_12_1:GetIFF()
+--- 单位死亡时计算战斗评分
+--- @param self BattleDataProxy
+--- @param deadUnit BattleUnit: 死亡的单位
+function BattleDataProxy.CalcBattleScoreWhenDead(self, deadUnit)
+	local deadUnitIFF = deadUnit:GetIFF()
 
-	if var_12_0 == var_0_4.FRIENDLY_CODE then
-		if not table.contains(ShipType.SubShipType, arg_12_1:GetTemplate().type) then
-			arg_12_0:DelScoreWhenPlayerDead(arg_12_1)
+	if deadUnitIFF == BattleConfig.FRIENDLY_CODE then
+		if not table.contains(ShipType.SubShipType, deadUnit:GetTemplate().type) then
+			self:DelScoreWhenPlayerDead(deadUnit)
 		end
-	elseif var_12_0 == var_0_4.FOE_CODE then
-		arg_12_0:AddScoreWhenEnemyDead(arg_12_1)
+	elseif deadUnitIFF == BattleConfig.FOE_CODE then
+		self:AddScoreWhenEnemyDead(deadUnit)
 	end
 end
 
-function BattleDataProxy.AddScoreWhenBossDestruct(arg_13_0)
-	arg_13_0._statistics._boss_destruct = arg_13_0._statistics._boss_destruct + 1
+--- Boss被击破时加分
+--- @param self BattleDataProxy
+function BattleDataProxy.AddScoreWhenBossDestruct(self)
+	self._statistics._boss_destruct = self._statistics._boss_destruct + 1
 end
 
-function BattleDataProxy.AddScoreWhenEnemyDead(arg_14_0, arg_14_1)
-	if arg_14_1:GetDeathReason() == var_0_3.UnitDeathReason.KILLED then
-		arg_14_0._statistics.kill_id_list[#arg_14_0._statistics.kill_id_list + 1] = arg_14_1:GetTemplateID()
+--- 敌人死亡时加分（记录击杀ID）
+--- @param self BattleDataProxy
+--- @param enemy BattleEnemyUnit: 被击杀的敌人
+function BattleDataProxy.AddScoreWhenEnemyDead(self, enemy)
+	if enemy:GetDeathReason() == BattleConst.UnitDeathReason.KILLED then
+		self._statistics.kill_id_list[#self._statistics.kill_id_list + 1] = enemy:GetTemplateID()
 	end
 end
 
-function BattleDataProxy.DelScoreWhenPlayerDead(arg_15_0, arg_15_1)
-	arg_15_0._statistics._deadCount = arg_15_0._statistics._deadCount + 1
+--- 友方死亡时扣分
+--- @param self BattleDataProxy
+--- @param deadUnit BattlePlayerUnit: 死亡的友方单位
+function BattleDataProxy.DelScoreWhenPlayerDead(self, deadUnit)
+	self._statistics._deadCount = self._statistics._deadCount + 1
 end
 
-function BattleDataProxy.CalcBPWhenPlayerLeave(arg_16_0, arg_16_1)
-	arg_16_0._statistics[arg_16_1:GetAttrByName("id")].bp = math.ceil(arg_16_1:GetHPRate() * 10000)
+--- 友方离场时计算BP（剩余血量百分比）
+--- @param self BattleDataProxy
+--- @param unit BattlePlayerUnit: 离场的单位
+function BattleDataProxy.CalcBPWhenPlayerLeave(self, unit)
+	self._statistics[unit:GetAttrByName("id")].bp = math.ceil(unit:GetHPRate() * 10000)
 end
 
-function BattleDataProxy.isTimeOut(arg_17_0)
-	return arg_17_0._currentStageData.timeCount - arg_17_0._countDown >= 180
+--- 判定是否超时
+--- @param self BattleDataProxy
+--- @return boolean: 是否超时
+function BattleDataProxy.isTimeOut(self)
+	return self._currentStageData.timeCount - self._countDown >= 180
 end
 
-function BattleDataProxy.CalcCardPuzzleScoreAtEnd(arg_18_0, arg_18_1)
-	arg_18_0._statistics._deadUnit = true
-	arg_18_0._statistics._badTime = true
+--- 计算卡牌模式最终评分
+--- @param self BattleDataProxy
+--- @param fleet BattleFleetVO: 舰队
+function BattleDataProxy.CalcCardPuzzleScoreAtEnd(self, fleet)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
 
-	local var_18_0 = arg_18_1:GetCardPuzzleComponent():GetCurrentCommonHP()
+	local commonHP = fleet:GetCardPuzzleComponent():GetCurrentCommonHP()
 
-	arg_18_0._statistics._battleScore = var_18_0 > 0 and var_0_3.BattleScore.S or var_0_3.BattleScore.D
-	arg_18_0._statistics._cardPuzzleStatistics = {}
-	arg_18_0._statistics._cardPuzzleStatistics.common_hp_rest = var_18_0
+	self._statistics._battleScore = commonHP > 0 and BattleConst.BattleScore.S or BattleConst.BattleScore.D
+	self._statistics._cardPuzzleStatistics = {}
+	self._statistics._cardPuzzleStatistics.common_hp_rest = commonHP
 
-	local var_18_1 = arg_18_0._currentStageData.timeCount - arg_18_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_18_0._statistics._totalTime = var_18_1
+	self._statistics._totalTime = timePassed
 
-	arg_18_0:AirFightInit()
+	self:AirFightInit()
 end
 
-function BattleDataProxy.CalcSingleDungeonScoreAtEnd(arg_19_0, arg_19_1)
-	arg_19_0._statistics._deadUnit = true
-	arg_19_0._statistics._badTime = true
+--- 计算单人副本最终评分
+--- @param self BattleDataProxy
+--- @param fleet BattleFleetVO: 敌方舰队
+function BattleDataProxy.CalcSingleDungeonScoreAtEnd(self, fleet)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
 
-	local var_19_0 = arg_19_0._currentStageData.timeCount - arg_19_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_19_0._statistics._totalTime = var_19_0
+	self._statistics._totalTime = timePassed
 
-	local var_19_1 = arg_19_0._expeditionTmp.limit_type
-	local var_19_2 = arg_19_0._expeditionTmp.sink_limit
-	local var_19_3 = arg_19_0._expeditionTmp.time_limit
+	local limitType = self._expeditionTmp.limit_type
+	local sinkLimit = self._expeditionTmp.sink_limit
+	local timeLimit = self._expeditionTmp.time_limit
 
-	if var_19_2 > arg_19_0._statistics._deadCount then
-		arg_19_0._statistics._deadUnit = false
+	if sinkLimit > self._statistics._deadCount then
+		self._statistics._deadUnit = false
 	end
 
-	local var_19_4 = arg_19_1:GetFlagShip()
-	local var_19_5 = arg_19_1:GetScoutList()
+	local flagShip = fleet:GetFlagShip()
+	local scoutList = fleet:GetScoutList()
 
-	if var_19_1 == 2 then
-		if not var_19_4:IsAlive() or #var_19_5 <= 0 then
-			arg_19_0._statistics._battleScore = var_0_3.BattleScore.D
-			arg_19_0._statistics._boss_destruct = 1
+	if limitType == 2 then
+		if not flagShip:IsAlive() or #scoutList <= 0 then
+			self._statistics._battleScore = BattleConst.BattleScore.D
+			self._statistics._boss_destruct = 1
 		else
-			arg_19_0._statistics._battleScore = var_0_3.BattleScore.S
+			self._statistics._battleScore = BattleConst.BattleScore.S
 		end
-	elseif arg_19_0._countDown <= 0 then
-		arg_19_0._statistics._battleScore = var_0_3.BattleScore.C
-		arg_19_0._statistics._boss_destruct = 1
-	elseif var_19_4 and not var_19_4:IsAlive() then
-		arg_19_0._statistics._battleScore = var_0_3.BattleScore.D
-		arg_19_0._statistics._boss_destruct = 1
-		arg_19_0._statistics._scoreMark = var_0_3.DEAD_FLAG
-	elseif #var_19_5 <= 0 then
-		arg_19_0._statistics._battleScore = var_0_3.BattleScore.D
-		arg_19_0._statistics._boss_destruct = 1
+	elseif self._countDown <= 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.C
+		self._statistics._boss_destruct = 1
+	elseif flagShip and not flagShip:IsAlive() then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+		self._statistics._boss_destruct = 1
+		self._statistics._scoreMark = BattleConst.DEAD_FLAG
+	elseif #scoutList <= 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+		self._statistics._boss_destruct = 1
 	else
-		local var_19_6 = 0
+		local failCount = 0
 
-		if arg_19_0._statistics._deadUnit then
-			var_19_6 = var_19_6 + 1
+		if self._statistics._deadUnit then
+			failCount = failCount + 1
 		end
 
-		if var_19_3 < var_19_0 then
-			var_19_6 = var_19_6 + 1
+		if timeLimit < timePassed then
+			failCount = failCount + 1
 		else
-			arg_19_0._statistics._badTime = false
+			self._statistics._badTime = false
 		end
 
-		if arg_19_0._statistics._boss_destruct > 0 then
-			var_19_6 = var_19_6 + 1
+		if self._statistics._boss_destruct > 0 then
+			failCount = failCount + 1
 		end
 
-		if var_19_6 >= 2 then
-			arg_19_0._statistics._battleScore = var_0_3.BattleScore.B
-		elseif var_19_6 == 1 then
-			arg_19_0._statistics._battleScore = var_0_3.BattleScore.A
-		elseif var_19_6 == 0 then
-			arg_19_0._statistics._battleScore = var_0_3.BattleScore.S
+		if failCount >= 2 then
+			self._statistics._battleScore = BattleConst.BattleScore.B
+		elseif failCount == 1 then
+			self._statistics._battleScore = BattleConst.BattleScore.A
+		elseif failCount == 0 then
+			self._statistics._battleScore = BattleConst.BattleScore.S
 		end
 	end
 
-	arg_19_0._statistics._timeout = arg_19_0:isTimeOut()
+	self._statistics._timeout = self:isTimeOut()
 
-	if arg_19_0._battleInitData.CMDArgs then
-		arg_19_0:CalcSpecificEnemyInfo({
-			arg_19_0._battleInitData.CMDArgs
+	if self._battleInitData.CMDArgs then
+		self:CalcSpecificEnemyInfo({
+			self._battleInitData.CMDArgs
 		})
 	end
 end
 
+--- 记录Boss最大剩余血量百分比
+--- @param self BattleDataProxy
+--- @param maxRestHPRateBossRate number: Boss最大剩余血量百分比
 function BattleDataProxy.CalcMaxRestHPRateBossRate(self, maxRestHPRateBossRate)
 	self._statistics._maxBossHP = maxRestHPRateBossRate
 end
 
-function BattleDataProxy.CalcDuelScoreAtTimesUp(arg_21_0, arg_21_1, arg_21_2, arg_21_3, arg_21_4)
-	arg_21_0._statistics._deadUnit = true
-	arg_21_0._statistics._badTime = true
-	arg_21_0._statistics._timeout = false
+--- 计算对决模式超时时的评分
+--- @param self BattleDataProxy
+--- @param ourHPRate number: 己方血量百分比
+--- @param enemyHPRate number: 敌方血量百分比
+--- @param ourDeadCount number: 己方死亡数
+--- @param enemyDeadCount number: 敌方死亡数
+function BattleDataProxy.CalcDuelScoreAtTimesUp(self, ourHPRate, enemyHPRate, ourDeadCount, enemyDeadCount)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
+	self._statistics._timeout = false
 
-	local var_21_0 = arg_21_0._currentStageData.timeCount - arg_21_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_21_0._statistics._totalTime = var_21_0
+	self._statistics._totalTime = timePassed
 
-	if arg_21_0._expeditionTmp.sink_limit > arg_21_0._statistics._deadCount then
-		arg_21_0._statistics._deadUnit = false
+	if self._expeditionTmp.sink_limit > self._statistics._deadCount then
+		self._statistics._deadUnit = false
 	end
 
-	if arg_21_2 < arg_21_1 then
-		arg_21_0._statistics._battleScore = var_0_3.BattleScore.S
-	elseif arg_21_1 < arg_21_2 then
-		arg_21_0._statistics._battleScore = var_0_3.BattleScore.D
-	elseif arg_21_4 <= arg_21_3 then
-		arg_21_0._statistics._battleScore = var_0_3.BattleScore.S
-	elseif arg_21_3 < arg_21_4 then
-		arg_21_0._statistics._battleScore = var_0_3.BattleScore.D
+	if enemyHPRate < ourHPRate then
+		self._statistics._battleScore = BattleConst.BattleScore.S
+	elseif ourHPRate < enemyHPRate then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+	elseif enemyDeadCount <= ourDeadCount then
+		self._statistics._battleScore = BattleConst.BattleScore.S
+	elseif ourDeadCount < enemyDeadCount then
+		self._statistics._battleScore = BattleConst.BattleScore.D
 	end
 end
 
-function BattleDataProxy.CalcDuelScoreAtEnd(arg_22_0, arg_22_1, arg_22_2)
-	arg_22_0._statistics._deadUnit = true
-	arg_22_0._statistics._badTime = true
+--- 计算对决模式结束时的评分
+--- @param self BattleDataProxy
+--- @param ourFleet BattleFleetVO: 己方舰队
+--- @param enemyFleet BattleFleetVO: 敌方舰队
+function BattleDataProxy.CalcDuelScoreAtEnd(self, ourFleet, enemyFleet)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
 
-	local var_22_0 = arg_22_0._currentStageData.timeCount - arg_22_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_22_0._statistics._totalTime = var_22_0
+	self._statistics._totalTime = timePassed
 
-	local var_22_1 = #arg_22_1:GetUnitList()
-	local var_22_2 = #arg_22_2:GetUnitList()
-	local var_22_3 = arg_22_0._expeditionTmp.sink_limit
-	local var_22_4 = arg_22_0._expeditionTmp.time_limit
+	local ourUnitCount = #ourFleet:GetUnitList()
+	local enemyUnitCount = #enemyFleet:GetUnitList()
+	local sinkLimit = self._expeditionTmp.sink_limit
+	local timeLimit = self._expeditionTmp.time_limit
 
-	if var_22_3 > arg_22_0._statistics._deadCount then
-		arg_22_0._statistics._deadUnit = false
+	if sinkLimit > self._statistics._deadCount then
+		self._statistics._deadUnit = false
 	end
 
-	if var_22_1 == 0 then
-		arg_22_0._statistics._battleScore = var_0_3.BattleScore.D
-	elseif var_22_2 == 0 then
-		arg_22_0._statistics._battleScore = var_0_3.BattleScore.S
+	if ourUnitCount == 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+	elseif enemyUnitCount == 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.S
 	end
 
-	arg_22_0._statistics._timeout = arg_22_0:isTimeOut()
+	self._statistics._timeout = self:isTimeOut()
 end
 
-function BattleDataProxy.CalcSimulationScoreAtEnd(arg_23_0, arg_23_1, arg_23_2)
-	arg_23_0._statistics._deadUnit = true
-	arg_23_0._statistics._badTime = true
+--- 计算演习模式评分
+--- @param self BattleDataProxy
+--- @param ourFleet BattleFleetVO: 己方舰队
+--- @param enemyFleet BattleFleetVO: 敌方舰队
+function BattleDataProxy.CalcSimulationScoreAtEnd(self, ourFleet, enemyFleet)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
 
-	local var_23_0 = arg_23_0._currentStageData.timeCount - arg_23_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_23_0._statistics._totalTime = var_23_0
+	self._statistics._totalTime = timePassed
 
-	local var_23_1 = #arg_23_1:GetUnitList()
-	local var_23_2 = arg_23_1:GetMaxCount()
-	local var_23_3 = #arg_23_1:GetScoutList()
-	local var_23_4 = #arg_23_2:GetUnitList()
-	local var_23_5 = arg_23_0._expeditionTmp.sink_limit
-	local var_23_6 = arg_23_0._expeditionTmp.time_limit
+	local ourUnitCount = #ourFleet:GetUnitList()
+	local ourMaxCount = ourFleet:GetMaxCount()
+	local ourScoutCount = #ourFleet:GetScoutList()
+	local enemyUnitCount = #enemyFleet:GetUnitList()
+	local sinkLimit = self._expeditionTmp.sink_limit
+	local timeLimit = self._expeditionTmp.time_limit
 
-	if arg_23_0._statistics._deadCount <= 0 then
-		arg_23_0._statistics._deadUnit = false
+	if self._statistics._deadCount <= 0 then
+		self._statistics._deadUnit = false
 	end
 
-	if not arg_23_1:GetFlagShip():IsAlive() then
-		arg_23_0._statistics._battleScore = var_0_3.BattleScore.D
-		arg_23_0._statistics._scoreMark = var_0_3.DEAD_FLAG
-	elseif var_23_3 == 0 then
-		arg_23_0._statistics._battleScore = var_0_3.BattleScore.D
-	elseif var_23_4 == 0 then
-		arg_23_0._statistics._battleScore = var_0_3.BattleScore.S
+	if not ourFleet:GetFlagShip():IsAlive() then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+		self._statistics._scoreMark = BattleConst.DEAD_FLAG
+	elseif ourScoutCount == 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.D
+	elseif enemyUnitCount == 0 then
+		self._statistics._battleScore = BattleConst.BattleScore.S
 	end
 
-	arg_23_0._statistics._timeout = arg_23_0:isTimeOut()
+	self._statistics._timeout = self:isTimeOut()
 
-	arg_23_0:overwriteRivalStatistics(arg_23_2)
+	self:overwriteRivalStatistics(enemyFleet)
 end
 
-function BattleDataProxy.CalcSimulationScoreAtTimesUp(arg_24_0, arg_24_1, arg_24_2, arg_24_3, arg_24_4, arg_24_5)
-	arg_24_0._statistics._deadUnit = true
-	arg_24_0._statistics._badTime = true
-	arg_24_0._statistics._timeout = false
+--- 计算演习模式超时评分
+--- @param self BattleDataProxy
+--- @param result1 number: 结果1（未使用）
+--- @param result2 number: 结果2（未使用）
+--- @param result3 number: 结果3（未使用）
+--- @param result4 number: 结果4（未使用）
+--- @param enemyFleet BattleFleetVO: 敌方舰队
+function BattleDataProxy.CalcSimulationScoreAtTimesUp(self, result1, result2, result3, result4, enemyFleet)
+	self._statistics._deadUnit = true
+	self._statistics._badTime = true
+	self._statistics._timeout = false
 
-	local var_24_0 = arg_24_0._currentStageData.timeCount - arg_24_0._countDown
+	local timePassed = self._currentStageData.timeCount - self._countDown
 
-	arg_24_0._statistics._totalTime = var_24_0
+	self._statistics._totalTime = timePassed
 
-	if arg_24_0._statistics._deadCount <= 0 then
-		arg_24_0._statistics._deadUnit = false
+	if self._statistics._deadCount <= 0 then
+		self._statistics._deadUnit = false
 	end
 
-	arg_24_0._statistics._battleScore = var_0_3.BattleScore.D
+	self._statistics._battleScore = BattleConst.BattleScore.D
 
-	arg_24_0:overwriteRivalStatistics(arg_24_5)
+	self:overwriteRivalStatistics(enemyFleet)
 end
 
-function BattleDataProxy.overwriteRivalStatistics(arg_25_0, arg_25_1)
-	for iter_25_0, iter_25_1 in pairs(arg_25_0._statistics._rivalInfo) do
-		local var_25_0 = false
+--- 覆写对手统计数据（更新BP值）
+--- @param self BattleDataProxy
+--- @param rivalFleet BattleFleetVO: 对手舰队
+function BattleDataProxy.overwriteRivalStatistics(self, rivalFleet)
+	for rivalID, rivalInfo in pairs(self._statistics._rivalInfo) do
+		local unitFound = false
 
-		for iter_25_2, iter_25_3 in ipairs(arg_25_1:GetUnitList()) do
-			if iter_25_3:GetAttrByName("id") == iter_25_0 then
-				iter_25_1.bp = math.ceil(iter_25_3:GetHPRate() * 10000)
-				var_25_0 = true
+		for index, unit in ipairs(rivalFleet:GetUnitList()) do
+			if unit:GetAttrByName("id") == rivalID then
+				rivalInfo.bp = math.ceil(unit:GetHPRate() * 10000)
+				unitFound = true
 
 				break
 			end
 		end
 
-		if not var_25_0 then
-			iter_25_1.bp = 0
+		if not unitFound then
+			rivalInfo.bp = 0
 		end
 	end
 end
 
-function BattleDataProxy.CalcChallengeScore(arg_26_0, arg_26_1)
-	if arg_26_1 then
-		arg_26_0._statistics._battleScore = var_0_3.BattleScore.S
+--- 计算挑战模式评分
+--- @param self BattleDataProxy
+--- @param isWin boolean: 是否胜利
+function BattleDataProxy.CalcChallengeScore(self, isWin)
+	if isWin then
+		self._statistics._battleScore = BattleConst.BattleScore.S
 	else
-		arg_26_0._statistics._battleScore = var_0_3.BattleScore.D
+		self._statistics._battleScore = BattleConst.BattleScore.D
 	end
 
-	arg_26_0._statistics._totalTime = arg_26_0._totalTime
+	self._statistics._totalTime = self._totalTime
 end
 
-function BattleDataProxy.CalcDodgemCount(arg_27_0, arg_27_1)
-	local var_27_0 = arg_27_1:GetDeathReason()
-	local var_27_1 = arg_27_1:GetTemplate().type
+--- 计算躲避模式计数
+--- @param self BattleDataProxy
+--- @param dodgemUnit BattleUnit: 被击中的躲避单位
+function BattleDataProxy.CalcDodgemCount(self, dodgemUnit)
+	local deathReason = dodgemUnit:GetDeathReason()
+	local shipType = dodgemUnit:GetTemplate().type
 
-	if var_27_0 == ys.Battle.BattleConst.UnitDeathReason.CRUSH then
-		arg_27_0._dodgemStatistics.kill = arg_27_0._dodgemStatistics.kill + 1
+	if deathReason == ys.Battle.BattleConst.UnitDeathReason.CRUSH then
+		self._dodgemStatistics.kill = self._dodgemStatistics.kill + 1
 
-		if var_27_1 == ShipType.JinBi then
-			arg_27_0._dodgemStatistics.combo = arg_27_0._dodgemStatistics.combo + 1
-			arg_27_0._dodgemStatistics.maxCombo = math.max(arg_27_0._dodgemStatistics.maxCombo, arg_27_0._dodgemStatistics.combo)
+		if shipType == ShipType.JinBi then
+			self._dodgemStatistics.combo = self._dodgemStatistics.combo + 1
+			self._dodgemStatistics.maxCombo = math.max(self._dodgemStatistics.maxCombo, self._dodgemStatistics.combo)
 
-			local var_27_2 = arg_27_0._dodgemStatistics.score + arg_27_0:GetScorePoint()
+			local newScore = self._dodgemStatistics.score + self:GetScorePoint()
 
-			arg_27_0._dodgemStatistics.score = var_27_2
+			self._dodgemStatistics.score = newScore
 
-			arg_27_0:DispatchEvent(ys.Event.New(var_0_1.UPDATE_DODGEM_SCORE, {
-				totalScore = var_27_2
+			self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_DODGEM_SCORE, {
+				totalScore = newScore
 			}))
-		elseif var_27_1 == ShipType.ZiBao then
-			arg_27_0._dodgemStatistics.fail = arg_27_0._dodgemStatistics.fail + 1
-			arg_27_0._dodgemStatistics.combo = 0
+		elseif shipType == ShipType.ZiBao then
+			self._dodgemStatistics.fail = self._dodgemStatistics.fail + 1
+			self._dodgemStatistics.combo = 0
 		end
 
-		arg_27_0:DispatchEvent(ys.Event.New(var_0_1.UPDATE_DODGEM_COMBO, {
-			combo = arg_27_0._dodgemStatistics.combo
+		self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_DODGEM_COMBO, {
+			combo = self._dodgemStatistics.combo
 		}))
-	elseif var_27_1 == ShipType.JinBi then
-		arg_27_0._dodgemStatistics.miss = arg_27_0._dodgemStatistics.miss + 1
+	elseif shipType == ShipType.JinBi then
+		self._dodgemStatistics.miss = self._dodgemStatistics.miss + 1
 	end
 end
 
-function BattleDataProxy.GetScorePoint(arg_28_0)
-	local var_28_0
+--- 获取躲避模式的得分点数
+--- @param self BattleDataProxy
+--- @return number: 得分点数
+function BattleDataProxy.GetScorePoint(self)
+	local scorePoint
 
-	if arg_28_0._dodgemStatistics.combo == 1 then
-		var_28_0 = 1
-	elseif arg_28_0._dodgemStatistics.combo == 2 then
-		var_28_0 = 2
-	elseif arg_28_0._dodgemStatistics.combo > 2 then
-		var_28_0 = 3
+	if self._dodgemStatistics.combo == 1 then
+		scorePoint = 1
+	elseif self._dodgemStatistics.combo == 2 then
+		scorePoint = 2
+	elseif self._dodgemStatistics.combo > 2 then
+		scorePoint = 3
 	end
 
-	return var_28_0
+	return scorePoint
 end
 
-function BattleDataProxy.CalcDodgemScore(arg_29_0)
-	if arg_29_0._dodgemStatistics.score >= var_0_4.BATTLE_DODGEM_PASS_SCORE then
-		arg_29_0._statistics._battleScore = var_0_3.BattleScore.S
+--- 计算躲避模式最终评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcDodgemScore(self)
+	if self._dodgemStatistics.score >= BattleConfig.BATTLE_DODGEM_PASS_SCORE then
+		self._statistics._battleScore = BattleConst.BattleScore.S
 	else
-		arg_29_0._statistics._battleScore = var_0_3.BattleScore.B
+		self._statistics._battleScore = BattleConst.BattleScore.B
 	end
 
-	arg_29_0._statistics.dodgemResult = arg_29_0._dodgemStatistics
+	self._statistics.dodgemResult = self._dodgemStatistics
 end
 
-function BattleDataProxy.CalcActBossDamageInfo(arg_30_0, arg_30_1)
-	local var_30_0 = BattleDataFunction.GetSpecificEnemyList(arg_30_1, arg_30_0._expeditionID)
+--- 计算活动Boss伤害信息
+--- @param self BattleDataProxy
+--- @param actID number: 活动ID
+function BattleDataProxy.CalcActBossDamageInfo(self, actID)
+	local enemyIDList = BattleDataFunction.GetSpecificEnemyList(actID, self._expeditionID)
 
-	arg_30_0:CalcSpecificEnemyInfo(var_30_0)
+	self:CalcSpecificEnemyInfo(enemyIDList)
 end
 
+--- 计算大世界Boss伤害信息
+--- @param self BattleDataProxy
+--- @param actID number: 活动ID
+--- @param bossConfigID number: Boss配置ID
+--- @param bossLevel number: Boss等级
 function BattleDataProxy.CalcWorldBossDamageInfo(self, actID, bossConfigID, bossLevel)
 	local enemyID = BattleDataFunction.GetSpecificWorldJointEnemyList(actID, bossConfigID, bossLevel)
 
 	self:CalcSpecificEnemyInfo(enemyID)
 end
 
-function BattleDataProxy.CalcGuildBossEnemyInfo(arg_32_0, arg_32_1)
-	local var_32_0 = BattleDataFunction.GetSpecificGuildBossEnemyList(arg_32_1, arg_32_0._expeditionID)
+--- 计算公会Boss敌人信息
+--- @param self BattleDataProxy
+--- @param actID number: 活动ID
+function BattleDataProxy.CalcGuildBossEnemyInfo(self, actID)
+	local enemyIDList = BattleDataFunction.GetSpecificGuildBossEnemyList(actID, self._expeditionID)
 
-	arg_32_0:CalcSpecificEnemyInfo(var_32_0)
+	self:CalcSpecificEnemyInfo(enemyIDList)
 end
 
+--- 计算特定敌人的伤害信息
+--- @param self BattleDataProxy
+--- @param enemyID table: 敌人ID列表
 function BattleDataProxy.CalcSpecificEnemyInfo(self, enemyID)
 	self._statistics.specificDamage = 0
 
@@ -495,145 +601,173 @@ function BattleDataProxy.CalcSpecificEnemyInfo(self, enemyID)
 	end
 end
 
-function BattleDataProxy.CalcKillingSupplyShip(arg_34_0)
-	arg_34_0._subRunStatistics.score = arg_34_0._subRunStatistics.score + 1
+--- 计算击杀补给船（潜艇突袭模式）
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcKillingSupplyShip(self)
+	self._subRunStatistics.score = self._subRunStatistics.score + 1
 end
 
-function BattleDataProxy.CalcSubRunTimeUp(arg_35_0)
-	arg_35_0._statistics._battleScore = var_0_3.BattleScore.B
-	arg_35_0._statistics.subRunResult = arg_35_0._subRunStatistics
+--- 潜艇突袭超时计算评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRunTimeUp(self)
+	self._statistics._battleScore = BattleConst.BattleScore.B
+	self._statistics.subRunResult = self._subRunStatistics
 end
 
-function BattleDataProxy.CalcSubRunScore(arg_36_0)
-	arg_36_0._statistics._battleScore = var_0_3.BattleScore.S
-	arg_36_0._statistics.subRunResult = arg_36_0._subRunStatistics
+--- 潜艇突袭完成计算评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRunScore(self)
+	self._statistics._battleScore = BattleConst.BattleScore.S
+	self._statistics.subRunResult = self._subRunStatistics
 end
 
-function BattleDataProxy.CalcSubRunDead(arg_37_0)
-	arg_37_0._statistics._battleScore = var_0_3.BattleScore.D
-	arg_37_0._statistics.subRunResult = arg_37_0._subRunStatistics
+--- 潜艇突袭死亡计算评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRunDead(self)
+	self._statistics._battleScore = BattleConst.BattleScore.D
+	self._statistics.subRunResult = self._subRunStatistics
 end
 
-function BattleDataProxy.CalcKillingSupplyShip(arg_38_0)
-	arg_38_0._subRunStatistics.score = arg_38_0._subRunStatistics.score + 1
+--- 潜艇日常超时计算评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRountineTimeUp(self)
+	self._statistics._badTime = true
+
+	self:CalcSubRoutineScore()
+
+	self._statistics._battleScore = BattleConst.BattleScore.C
 end
 
-function BattleDataProxy.CalcSubRountineTimeUp(arg_39_0)
-	arg_39_0._statistics._badTime = true
+--- 潜艇日常被消灭计算评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRountineElimate(self)
+	self._statistics._elimated = true
 
-	arg_39_0:CalcSubRoutineScore()
+	self:CalcSubRoutineScore()
 
-	arg_39_0._statistics._battleScore = var_0_3.BattleScore.C
+	self._statistics._battleScore = BattleConst.BattleScore.D
 end
 
-function BattleDataProxy.CalcSubRountineElimate(arg_40_0)
-	arg_40_0._statistics._elimated = true
+--- 计算潜艇日常模式评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcSubRoutineScore(self)
+	local deadPointCost = self._statistics._deadCount * BattleConfig.SR_CONFIG.DEAD_POINT
+	local pointsEarned = self._subRunStatistics.score * BattleConfig.SR_CONFIG.POINT
+	local baseScore = (self._statistics._badTime or self._statistics._elimated) and 0 or BattleConfig.SR_CONFIG.BASE_POINT
+	local totalScore = baseScore + pointsEarned - deadPointCost
 
-	arg_40_0:CalcSubRoutineScore()
-
-	arg_40_0._statistics._battleScore = var_0_3.BattleScore.D
-end
-
-function BattleDataProxy.CalcSubRoutineScore(arg_41_0)
-	local var_41_0 = arg_41_0._statistics._deadCount * var_0_4.SR_CONFIG.DEAD_POINT
-	local var_41_1 = arg_41_0._subRunStatistics.score * var_0_4.SR_CONFIG.POINT
-	local var_41_2 = (arg_41_0._statistics._badTime or arg_41_0._statistics._elimated) and 0 or var_0_4.SR_CONFIG.BASE_POINT
-	local var_41_3 = var_41_2 + var_41_1 - var_41_0
-
-	if var_41_3 >= var_0_4.SR_CONFIG.BASE_POINT + var_0_4.SR_CONFIG.M * var_0_4.SR_CONFIG.POINT then
-		arg_41_0._statistics._battleScore = var_0_3.BattleScore.S
-	elseif var_41_3 >= var_0_4.SR_CONFIG.BASE_POINT then
-		arg_41_0._statistics._battleScore = var_0_3.BattleScore.A
-	elseif var_41_3 >= var_0_4.SR_CONFIG.BASE_POINT - 2 * var_0_4.SR_CONFIG.DEAD_POINT then
-		arg_41_0._statistics._battleScore = var_0_3.BattleScore.B
+	if totalScore >= BattleConfig.SR_CONFIG.BASE_POINT + BattleConfig.SR_CONFIG.M * BattleConfig.SR_CONFIG.POINT then
+		self._statistics._battleScore = BattleConst.BattleScore.S
+	elseif totalScore >= BattleConfig.SR_CONFIG.BASE_POINT then
+		self._statistics._battleScore = BattleConst.BattleScore.A
+	elseif totalScore >= BattleConfig.SR_CONFIG.BASE_POINT - 2 * BattleConfig.SR_CONFIG.DEAD_POINT then
+		self._statistics._battleScore = BattleConst.BattleScore.B
 	else
-		arg_41_0._statistics._battleScore = var_0_3.BattleScore.D
+		self._statistics._battleScore = BattleConst.BattleScore.D
 	end
 
-	arg_41_0._subRunStatistics.basePoint = var_41_2
-	arg_41_0._subRunStatistics.deadCount = arg_41_0._statistics._deadCount
-	arg_41_0._subRunStatistics.losePoint = var_41_0
-	arg_41_0._subRunStatistics.point = var_41_1
-	arg_41_0._subRunStatistics.total = var_41_3
-	arg_41_0._statistics.subRunResult = arg_41_0._subRunStatistics
+	self._subRunStatistics.basePoint = baseScore
+	self._subRunStatistics.deadCount = self._statistics._deadCount
+	self._subRunStatistics.losePoint = deadPointCost
+	self._subRunStatistics.point = pointsEarned
+	self._subRunStatistics.total = totalScore
+	self._statistics.subRunResult = self._subRunStatistics
 end
 
-function BattleDataProxy.AirFightInit(arg_42_0)
-	arg_42_0._statistics._airFightStatistics = {}
-	arg_42_0._statistics._airFightStatistics.kill = 0
-	arg_42_0._statistics._airFightStatistics.score = 0
-	arg_42_0._statistics._airFightStatistics.hit = 0
-	arg_42_0._statistics._airFightStatistics.lose = 0
-	arg_42_0._statistics._airFightStatistics.total = 0
+--- 初始化空战统计
+--- @param self BattleDataProxy
+function BattleDataProxy.AirFightInit(self)
+	self._statistics._airFightStatistics = {}
+	self._statistics._airFightStatistics.kill = 0
+	self._statistics._airFightStatistics.score = 0
+	self._statistics._airFightStatistics.hit = 0
+	self._statistics._airFightStatistics.lose = 0
+	self._statistics._airFightStatistics.total = 0
 end
 
-function BattleDataProxy.AddAirFightScore(arg_43_0, arg_43_1)
-	arg_43_0._statistics._airFightStatistics.score = arg_43_0._statistics._airFightStatistics.score + arg_43_1
-	arg_43_0._statistics._airFightStatistics.kill = arg_43_0._statistics._airFightStatistics.kill + 1
-	arg_43_0._statistics._airFightStatistics.total = math.max(arg_43_0._statistics._airFightStatistics.score - arg_43_0._statistics._airFightStatistics.lose, 0)
+--- 增加空战分数（击杀敌机）
+--- @param self BattleDataProxy
+--- @param score number: 得分
+function BattleDataProxy.AddAirFightScore(self, score)
+	self._statistics._airFightStatistics.score = self._statistics._airFightStatistics.score + score
+	self._statistics._airFightStatistics.kill = self._statistics._airFightStatistics.kill + 1
+	self._statistics._airFightStatistics.total = math.max(self._statistics._airFightStatistics.score - self._statistics._airFightStatistics.lose, 0)
 
-	arg_43_0:DispatchEvent(ys.Event.New(var_0_1.UPDATE_DODGEM_SCORE, {
-		totalScore = arg_43_0._statistics._airFightStatistics.total
+	self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_DODGEM_SCORE, {
+		totalScore = self._statistics._airFightStatistics.total
 	}))
 end
 
-function BattleDataProxy.DecreaseAirFightScore(arg_44_0, arg_44_1)
-	arg_44_0._statistics._airFightStatistics.lose = arg_44_0._statistics._airFightStatistics.lose + arg_44_1
-	arg_44_0._statistics._airFightStatistics.hit = arg_44_0._statistics._airFightStatistics.hit + 1
-	arg_44_0._statistics._airFightStatistics.total = math.max(arg_44_0._statistics._airFightStatistics.score - arg_44_0._statistics._airFightStatistics.lose, 0)
+--- 减少空战分数（被击中）
+--- @param self BattleDataProxy
+--- @param loseScore number: 失去的分数
+function BattleDataProxy.DecreaseAirFightScore(self, loseScore)
+	self._statistics._airFightStatistics.lose = self._statistics._airFightStatistics.lose + loseScore
+	self._statistics._airFightStatistics.hit = self._statistics._airFightStatistics.hit + 1
+	self._statistics._airFightStatistics.total = math.max(self._statistics._airFightStatistics.score - self._statistics._airFightStatistics.lose, 0)
 
-	arg_44_0:DispatchEvent(ys.Event.New(var_0_1.UPDATE_DODGEM_SCORE, {
-		totalScore = arg_44_0._statistics._airFightStatistics.total
+	self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_DODGEM_SCORE, {
+		totalScore = self._statistics._airFightStatistics.total
 	}))
 end
 
-function BattleDataProxy.CalcAirFightScore(arg_45_0)
-	arg_45_0._statistics._battleScore = var_0_3.BattleScore.S
+--- 计算空战最终评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcAirFightScore(self)
+	self._statistics._battleScore = BattleConst.BattleScore.S
 end
 
-function BattleDataProxy.AddScenarioSubStrikeBoss(arg_46_0, arg_46_1)
-	arg_46_0._statistics._scenarioSubStrikebossUnit = arg_46_1
+--- 添加特殊剧情中的潜艇突袭Boss单位
+--- @param self BattleDataProxy
+--- @param bossUnit BattleUnit: Boss单位
+function BattleDataProxy.AddScenarioSubStrikeBoss(self, bossUnit)
+	self._statistics._scenarioSubStrikebossUnit = bossUnit
 end
 
-function BattleDataProxy.CalcScenarioSubStrikeScoreAtEnd(arg_47_0)
-	local var_47_0 = arg_47_0._statistics._scenarioSubStrikebossUnit
+--- 计算特殊剧情潜艇突袭最终评分
+--- @param self BattleDataProxy
+function BattleDataProxy.CalcScenarioSubStrikeScoreAtEnd(self)
+	local bossUnit = self._statistics._scenarioSubStrikebossUnit
 
-	if not var_47_0 then
-		arg_47_0._statistics._bossHP = 1
-		arg_47_0._statistics._battleScore = var_0_3.BattleScore.C
-	elseif not var_47_0:IsAlive() then
-		arg_47_0._statistics._battleScore = var_0_3.BattleScore.S
-		arg_47_0._statistics._bossHP = 0
+	if not bossUnit then
+		self._statistics._bossHP = 1
+		self._statistics._battleScore = BattleConst.BattleScore.C
+	elseif not bossUnit:IsAlive() then
+		self._statistics._battleScore = BattleConst.BattleScore.S
+		self._statistics._bossHP = 0
 	else
-		local var_47_1 = var_47_0:GetHPRate()
-		local var_47_2 = arg_47_0._expeditionTmp.objective_2[2] * 0.01
-		local var_47_3 = arg_47_0._expeditionTmp.objective_3[2] * 0.01
+		local bossHPRate = bossUnit:GetHPRate()
+		local objective2Threshold = self._expeditionTmp.objective_2[2] * 0.01
+		local objective3Threshold = self._expeditionTmp.objective_3[2] * 0.01
 
-		if var_47_1 < var_47_2 then
-			arg_47_0._statistics._battleScore = var_0_3.BattleScore.A
-		elseif var_47_2 <= var_47_1 and var_47_1 < var_47_3 then
-			arg_47_0._statistics._battleScore = var_0_3.BattleScore.B
-		elseif var_47_3 <= var_47_1 then
-			arg_47_0._statistics._battleScore = var_0_3.BattleScore.C
+		if bossHPRate < objective2Threshold then
+			self._statistics._battleScore = BattleConst.BattleScore.A
+		elseif objective2Threshold <= bossHPRate and bossHPRate < objective3Threshold then
+			self._statistics._battleScore = BattleConst.BattleScore.B
+		elseif objective3Threshold <= bossHPRate then
+			self._statistics._battleScore = BattleConst.BattleScore.C
 		end
 
-		arg_47_0._statistics._bossHP = var_47_1
+		self._statistics._bossHP = bossHPRate
 	end
 
-	local var_47_4 = 0
+	local maxDamage = 0
 
-	for iter_47_0, iter_47_1 in pairs(arg_47_0._statistics) do
-		if type(iter_47_1) == "table" and iter_47_1.id and iter_47_1.damage and var_47_4 < iter_47_1.damage then
-			var_47_4 = iter_47_1.damage
-			arg_47_0._statistics.mvpShipID = iter_47_1.id
+	for key, value in pairs(self._statistics) do
+		if type(value) == "table" and value.id and value.damage and maxDamage < value.damage then
+			maxDamage = value.damage
+			self._statistics.mvpShipID = value.id
 		end
 	end
 end
 
-function BattleDataProxy.AutoStatistics(arg_48_0, arg_48_1)
-	if not arg_48_0._statistics._autoInit then
-		arg_48_0._statistics._autoInit = not arg_48_1 and 1 or 0
+--- 自动模式统计
+--- @param self BattleDataProxy
+--- @param isAuto boolean: 是否为自动模式
+function BattleDataProxy.AutoStatistics(self, isAuto)
+	if not self._statistics._autoInit then
+		self._statistics._autoInit = not isAuto and 1 or 0
 	else
-		arg_48_0._statistics._autoCount = arg_48_0._statistics._autoCount + 1
+		self._statistics._autoCount = self._statistics._autoCount + 1
 	end
 end

@@ -13,6 +13,9 @@ ys.Battle.BattleSupportUnit.__name = "BattleSupportUnit"
 
 local BattleSupportUnit = ys.Battle.BattleSupportUnit
 
+--- 构造函数：设置单位类型为SUPPORT_UNIT
+--- @param uid number: 单位唯一ID
+--- @param iff number: 阵营
 function BattleSupportUnit.Ctor(self, uid, iff)
 	BattleSupportUnit.super.Ctor(self, uid, iff)
 
@@ -20,12 +23,13 @@ function BattleSupportUnit.Ctor(self, uid, iff)
 end
 
 -- 在祖宗BattleUnit.SetEquipment中被调用
+--- @param equipmentList table<number, table<string, any>>: 装备列表
 function BattleSupportUnit.setWeapon(self, equipmentList)
 	local default_equip_list = self._tmpData.default_equip_list
 	local base_list = self._tmpData.base_list
 	local proficiencyList = self._proficiencyList
 	local preload_count = self._tmpData.preload_count
-	--- equipmentList: table<number, table<string, any>>
+
 	for equipIndex, equipmentInfo in ipairs(equipmentList) do
 		if equipmentInfo and equipmentInfo.skin and equipmentInfo.skin ~= 0 and Equipment.IsOrbitSkin(equipmentInfo.skin) then
 			self._orbitSkinIDList = self._orbitSkinIDList or {}
@@ -57,7 +61,7 @@ function BattleSupportUnit.setWeapon(self, equipmentList)
 
 			if equipmentInfo.equipment and #equipmentInfo.equipment.weapon_id > 0 then
 				if equipmentInfo.equipment.type == EquipType.FighterAircraft or equipmentInfo.equipment.type == EquipType.SubmarineTorpedo then
-					local _ = equipmentInfo.equipment.weapon_id
+					local weaponIDList = equipmentInfo.equipment.weapon_id
 
 					for _, weaponID in ipairs(weaponIDList) do
 						-- 从weapon_property里拿
@@ -105,7 +109,14 @@ function BattleSupportUnit.setWeapon(self, equipmentList)
 	end
 end
 
-function BattleSupportUnit.AddWeapon(self, weaponID, equipLabels, equipSkin, potential, index, arg_4_6)
+--- @param weaponID number: 武器ID
+--- @param equipLabels string: 装备标签
+--- @param equipSkin number: 皮肤ID
+--- @param potential number: 武器熟练度
+--- @param index number: 装备槽位索引
+--- @param _ any: 未使用
+--- @return BattleSupportHiveUnit: 创建的武器单位
+function BattleSupportUnit.AddWeapon(self, weaponID, equipLabels, equipSkin, potential, index, _)
 	--- @type BattleSupportHiveUnit
 	local weapon = BattleDataFunction.CreateWeaponUnit(weaponID, self, potential, index)
 

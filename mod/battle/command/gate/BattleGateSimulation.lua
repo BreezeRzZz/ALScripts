@@ -1,28 +1,35 @@
-local var_0_0 = class("BattleGateSimulation")
+--- @class BattleGateSimulation : 模拟战Gate（皮肤体验等）
+local BattleGateSimulation = class("BattleGateSimulation")
 
-ys.Battle.BattleGateSimulation = var_0_0
-var_0_0.__name = "BattleGateSimulation"
+ys.Battle.BattleGateSimulation = BattleGateSimulation
+BattleGateSimulation.__name = "BattleGateSimulation"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.stageId
-	local var_1_1 = pg.expedition_data_template[var_1_0].dungeon_id
-	local var_1_2 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_1).fleet_prefab
-	local var_1_3 = {
-		prefabFleet = var_1_2,
-		stageId = var_1_0,
+--- 进入模拟战斗
+--- @param self BattleGateSimulation
+--- @param sendData table 发送数据
+function BattleGateSimulation.Entrance(self, sendData)
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
+	local stageData = {
+		prefabFleet = fleetPrefab,
+		stageId = stageId,
 		system = SYSTEM_SIMULATION,
-		exitCallback = arg_1_0.exitCallback,
-		warnMsg = arg_1_0.warnMsg
+		exitCallback = self.exitCallback,
+		warnMsg = self.warnMsg
 	}
 
-	arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_3)
+	sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 end
 
-function var_0_0.Exit(arg_2_0, arg_2_1)
-	arg_2_1:sendNotification(GAME.FINISH_STAGE_DONE, {
+--- 退出模拟战斗
+--- @param self BattleGateSimulation
+--- @param callback table 回调对象
+function BattleGateSimulation.Exit(self, callback)
+	callback:sendNotification(GAME.FINISH_STAGE_DONE, {
 		system = SYSTEM_SIMULATION,
-		exitCallback = arg_2_0.exitCallback
+		exitCallback = self.exitCallback
 	})
 end
 
-return var_0_0
+return BattleGateSimulation

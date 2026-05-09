@@ -7,22 +7,36 @@ local BattleDataFunction = ys.Battle.BattleDataFunction
 local BattleAttr = ys.Battle.BattleAttr
 local BattleVariable = ys.Battle.BattleVariable
 
+--- 设置伤害计算公式
+--- @param self BattleDataProxy
+--- @param calculateFunc function: 伤害计算函数
 function BattleDataProxy.SetupCalculateDamage(self, calculateFunc)
 	self._calculateDamage = calculateFunc or BattleFormulas.CreateContextCalculateDamage()
 end
 
+--- 设置舰载机触底伤害公式
+--- @param self BattleDataProxy
+--- @param calculateFunc function: 舰载机触底伤害计算函数
 function BattleDataProxy.SetupDamageKamikazeAir(self, calculateFunc)
 	self._calculateDamageKamikazeAir = calculateFunc or BattleFormulas.CalculateDamageFromAircraftToMainShip
 end
 
+--- 设置舰船触底伤害公式
+--- @param self BattleDataProxy
+--- @param calculateFunc function: 舰船触底伤害计算函数
 function BattleDataProxy.SetupDamageKamikazeShip(self, calculateFunc)
 	self._calculateDamageKamikazeShip = calculateFunc or BattleFormulas.CalculateDamageFromShipToMainShip
 end
 
+--- 设置碰撞伤害公式
+--- @param self BattleDataProxy
+--- @param calculateFunc function: 碰撞伤害计算函数
 function BattleDataProxy.SetupDamageCrush(self, calculateFunc)
 	self._calculateDamageCrush = calculateFunc or BattleFormulas.CalculateCrashDamage
 end
 
+--- 清除所有公式引用
+--- @param self BattleDataProxy
 function BattleDataProxy.ClearFormulas(self)
 	self._calculateDamage = nil
 	self._calculateDamageKamikazeAir = nil
@@ -32,6 +46,10 @@ end
 
 -- 处理子弹命中(仅碰撞系统相关)
 -- 被BattleCldSystem.HandleBulletCldWithAircraft和BattleCldSystem.HandleBulletCldWithShip调用
+--- @param self BattleDataProxy
+--- @param bullet BattleBulletUnit: 子弹
+--- @param ship BattleUnit: 被击中的舰船/舰载机
+--- @return boolean: 是否命中
 function BattleDataProxy.HandleBulletHit(self, bullet, ship)
 	if not ship then
 		assert(false, "HandleBulletHit, but no vehicleData")
@@ -74,6 +92,12 @@ end
 	-- 与之相对的就是下面的HandleDirectDamage，不需要子弹实体参与计算
 -- 举例：在BattleDataProxy.updateLoop中被调用，在各子弹工厂的onBulletHitFunc中也有调用
 -- 被很多地方调用，主要的调用点是各个BulletFactory的onBulletHitFunc(典型的cannonBulletFactory/TorpedoBulletFactory)或OutRangeFunc(典型的BombBulletFactory)
+--- @param self BattleDataProxy
+--- @param bullet BattleBulletUnit: 子弹
+--- @param target BattleUnit: 目标
+--- @param damageReduceDistance number: 伤害衰减距离
+--- @param meteoDamageRatio number: 防空伤害分配比例
+--- @return boolean, boolean: isMiss, isCri
 function BattleDataProxy.HandleDamage(self, bullet, target, damageReduceDistance, meteoDamageRatio)
 	-- isShowHPBar的本质是BattleEnemyUnit.IsShowHPBar, 只需要IFF不为友方
 	if target:GetIFF() == BattleConfig.FOE_CODE and target:IsShowHPBar() then
@@ -186,6 +210,9 @@ end
 -- 处理防空伤害(分配)
 -- 主要是AntiAirBulletFactory调用
 -- 值得注意的是本质是依赖子弹的HandleDamage，尽管这类子弹全是隐形的，总之逻辑上是常规伤害
+--- @param self BattleDataProxy
+--- @param bullet BattleBulletUnit: 防空子弹
+--- @param candidateList table: 候选目标列表
 function BattleDataProxy.HandleMeteoDamage(self, bullet, candidateList)
 	local meteoDamageRatio = BattleFormulas.GetMeteoDamageRatio(#candidateList)
 
@@ -196,6 +223,12 @@ end
 
 -- DOT、防空伤害等使用，不需要子弹. 此外, 也不需要经过伤害计算公式, 直接对目标造成伤害
 -- 如下面的各种ShipMissDamage和AircraftMissDamage也是DirectDamage
+--- @param self BattleDataProxy
+--- @param target BattleUnit: 目标
+--- @param damage number: 伤害值
+--- @param caster BattleUnit: 施法者（可为nil）
+--- @param damageReason number: 伤害原因
+--- @param isReflect boolean: 是否为反射伤害
 function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect)
 	local srcID
 
@@ -234,6 +267,10 @@ function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damage
 end
 
 -- 亡语，主要是触发各种死亡时的BuffEffect
+--- @param self BattleDataProxy
+--- @param unit BattleUnit: 死亡的单位
+--- @param isAircraft boolean: 是否为舰载机
+--- @param caster BattleUnit|BattleBulletUnit: 击杀者
 function BattleDataProxy.obituary(self, unit, isAircraft, caster)
 	for _, _unit in pairs(self._unitList) do
 		-- 对于每个不是unit本身的单位，都触发相应的BuffEffect
@@ -269,7 +306,6 @@ end
 --- @class BattleDataProxy
 --- @param aircraft BattleAircraftUnit
 --- @param fleet BattleFleetVO
---- @return nil
 --- 舰载机触底伤害主逻辑
 function BattleDataProxy.HandleAircraftMissDamage(self, aircraft, fleet)
 	if fleet == nil then
@@ -303,6 +339,9 @@ end
 
 -- 舰船触底伤害主逻辑(又可细分为潜艇和水面舰船)
 -- 被BattleDataProxy.updateLoop调用
+--- @param self BattleDataProxy
+--- @param ship BattleUnit: 触底的舰船
+--- @param fleet BattleFleetVO: 目标舰队
 function BattleDataProxy.HandleShipMissDamage(self, ship, fleet)
 	if fleet == nil then
 		return
@@ -351,6 +390,9 @@ function BattleDataProxy.HandleShipMissDamage(self, ship, fleet)
 end
 
 -- 处理舰船碰撞伤害的核心逻辑
+--- @param self BattleDataProxy
+--- @param ship1 BattleUnit: 碰撞方1
+--- @param ship2 BattleUnit: 碰撞方2
 function BattleDataProxy.HandleCrashDamage(self, ship1, ship2)
 	local ship1CrashDamage, ship2CrashDamage = self._calculateDamageCrush(ship1, ship2)
 
@@ -363,6 +405,9 @@ end
 -- 注意点是，附加Buff是在伤害结算之后
 -- 所以这颗上Buff的子弹自己吃不到附加Buff的效果
 -- 另外，这是个类静态函数(从调用方式上看)，不依赖于BattleDataProxy实例
+--- @param attachBuff table: 附加Buff数据
+--- @param bullet BattleBulletUnit: 子弹
+--- @param target BattleUnit: 目标
 function BattleDataProxy.HandleBuffPlacer(attachBuff, bullet, target)
 	local buffEffectList = BattleDataFunction.GetBuffTemplate(attachBuff.buff_id).effect_list
 	local rantHappened = false
@@ -386,67 +431,91 @@ function BattleDataProxy.HandleBuffPlacer(attachBuff, bullet, target)
 end
 
 -- 这个函数没用过，应该是BattleFormulas.CaclulateDOTPlace的旧版，不管了
-function BattleDataProxy.HandleDOTPlace(arg_15_0, arg_15_1, arg_15_2)
-	local var_15_0 = arg_15_0.arg_list
-	local var_15_1 = BattleConfig.DOT_CONFIG[var_15_0.dotType]
-	local var_15_2 = arg_15_1:GetAttrByName(var_15_1.hit)
+--- @param self BattleDataProxy
+--- @param dotEffect table: DOT效果数据
+--- @param bullet BattleBulletUnit: 子弹
+--- @param target BattleUnit: 目标
+--- @return boolean: 是否触发DOT
+function BattleDataProxy.HandleDOTPlace(self, dotEffect, bullet, target)
+	local argList = dotEffect.arg_list
+	local dotConfig = BattleConfig.DOT_CONFIG[argList.dotType]
+	local hitValue = bullet:GetAttrByName(dotConfig.hit)
 
-	if BattleFormulas.IsHappen(var_15_0.ACC + arg_15_1:GetAttrByName(var_15_1.hit) - arg_15_2:GetAttrByName(var_15_1.resist)) then
+	if BattleFormulas.IsHappen(argList.ACC + bullet:GetAttrByName(dotConfig.hit) - target:GetAttrByName(dotConfig.resist)) then
 		return true
 	end
 
 	return false
 end
 
--- TODO
 -- 处理舰船碰撞的伤害分配
 -- 被BattleCldSystem.HandlePlayerShipCld调用
-function BattleDataProxy.HandleShipCrashDamageList(arg_16_0, arg_16_1, arg_16_2)
-	local var_16_0 = arg_16_1:GetHostileCldList()
+--- @param self BattleDataProxy
+--- @param ship BattleUnit: 舰船
+--- @param hostileIDList table: 敌对碰撞ID列表
+function BattleDataProxy.HandleShipCrashDamageList(self, ship, hostileIDList)
+	local hostileCldList = ship:GetHostileCldList()
 
-	for iter_16_0, iter_16_1 in pairs(var_16_0) do
-		if not table.contains(arg_16_2, iter_16_0) then
-			arg_16_1:RemoveHostileCld(iter_16_0)
+	for id, _ in pairs(hostileCldList) do
+		if not table.contains(hostileIDList, id) then
+			ship:RemoveHostileCld(id)
 		end
 	end
 
-	for iter_16_2, iter_16_3 in ipairs(arg_16_2) do
-		if var_16_0[iter_16_3] == nil then
-			local var_16_1
+	for _, hostiID in ipairs(hostileIDList) do
+		if hostileCldList[hostiID] == nil then
+			local crashTimer
 
-			local function var_16_2()
-				arg_16_0:HandleCrashDamage(arg_16_0._unitList[iter_16_3], arg_16_1)
+			local function doCrashDamage()
+				self:HandleCrashDamage(self._unitList[hostiID], ship)
 			end
 
-			local var_16_3 = pg.TimeMgr.GetInstance():AddBattleTimer("shipCld", nil, BattleConfig.SHIP_CLD_INTERVAL, var_16_2, true)
+			local timer = pg.TimeMgr.GetInstance():AddBattleTimer("shipCld", nil, BattleConfig.SHIP_CLD_INTERVAL, doCrashDamage, true)
 
-			arg_16_1:AppendHostileCld(iter_16_3, var_16_3)
-			var_16_2()
+			ship:AppendHostileCld(hostiID, timer)
+			doCrashDamage()
 
-			if not arg_16_1:IsAlive() then
+			if not ship:IsAlive() then
 				break
 			end
 		end
 	end
 end
 
-function BattleDataProxy.HandleShipCrashDecelerate(arg_18_0, arg_18_1, arg_18_2)
-	if arg_18_2 == 0 and arg_18_1:IsCrash() then
-		arg_18_1:SetCrash(false)
-	elseif arg_18_2 > 0 and not arg_18_1:IsCrash() then
-		arg_18_1:SetCrash(true)
+--- 处理舰船碰撞减速
+--- @param self BattleDataProxy
+--- @param ship BattleUnit: 舰船
+--- @param crashCount number: 当前碰撞次数
+function BattleDataProxy.HandleShipCrashDecelerate(self, ship, crashCount)
+	if crashCount == 0 and ship:IsCrash() then
+		ship:SetCrash(false)
+	elseif crashCount > 0 and not ship:IsCrash() then
+		ship:SetCrash(true)
 	end
 end
 
-function BattleDataProxy.HandleWallHitByBullet(arg_19_0, arg_19_1, arg_19_2)
-	return (arg_19_1:GetCldFunc()(arg_19_2))
+--- 处理子弹对墙壁的碰撞
+--- @param self BattleDataProxy
+--- @param wall table: 墙壁数据
+--- @param bullet BattleBulletUnit: 子弹
+--- @return boolean: 碰撞结果
+function BattleDataProxy.HandleWallHitByBullet(self, wall, bullet)
+	return (wall:GetCldFunc()(bullet))
 end
 
-function BattleDataProxy.HandleWallHitByShip(arg_20_0, arg_20_1, arg_20_2)
-	arg_20_1:GetCldFunc()(arg_20_2)
+--- 处理舰船对墙壁的碰撞
+--- @param self BattleDataProxy
+--- @param wall table: 墙壁数据
+--- @param ship BattleUnit: 舰船
+function BattleDataProxy.HandleWallHitByShip(self, wall, ship)
+	wall:GetCldFunc()(ship)
 end
 
 -- 被BattleBuffDamageWall调用，处理伤害墙对单位的伤害
+--- @param self BattleDataProxy
+--- @param damageWall BattleDamageWallUnit: 伤害墙
+--- @param target BattleUnit: 目标
+--- @return boolean, boolean: isMiss, isCri
 function BattleDataProxy.HandleWallDamage(self, damageWall, target)
 	if target:GetIFF() == BattleConfig.FOE_CODE and target:IsShowHPBar() then
 		self:DispatchEvent(ys.Event.New(BattleEvent.HIT_ENEMY, target))

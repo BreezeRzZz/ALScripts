@@ -25,8 +25,8 @@ function BattleNPCUnit.SetTemplate(self, templateID, extraData)
 	})
 
 	if extraData.template then
-		for iter_1_0, iter_1_1 in pairs(extraData.template) do
-			self._tmpData[iter_1_0] = iter_1_1
+		for key, value in pairs(extraData.template) do
+			self._tmpData[key] = value
 		end
 
 		self._tmpData.id = templateID

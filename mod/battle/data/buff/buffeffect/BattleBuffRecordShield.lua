@@ -12,8 +12,8 @@ BattleBuffRecordShield.MODE_SHIELD = "shield"
 
 -- 此类BuffEffect会先进入记录模式，记录满足条件的伤害，持续时间结束后转换为护盾，护盾持续时间结束或者护盾值耗尽后再次转换为记录模式，如此循环
 -- 使用例: 莫加多尔2技能
-function BattleBuffRecordShield.Ctor(self, arg_1_1)
-	BattleBuffRecordShield.super.Ctor(self, arg_1_1)
+function BattleBuffRecordShield.Ctor(self, effectData)
+	BattleBuffRecordShield.super.Ctor(self, effectData)
 end
 
 function BattleBuffRecordShield.GetEffectAttachData(self)

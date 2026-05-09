@@ -103,9 +103,9 @@ function BattleTrackingAAMissileUnit.FilterRange(self, targets)
 		return targets
 	end
 
-	for iter_5_0 = #targets, 1, -1 do
-		if self:IsOutOfRange(targets[iter_5_0]) then
-			table.remove(targets, iter_5_0)
+	for i = #targets, 1, -1 do
+		if self:IsOutOfRange(targets[i]) then
+			table.remove(targets, i)
 		end
 	end
 
@@ -129,9 +129,9 @@ function BattleTrackingAAMissileUnit.FilterAngle(self, targets)
 		return targets
 	end
 
-	for iter_7_0 = #targets, 1, -1 do
-		if self:IsOutOfAngle(targets[iter_7_0]) then
-			table.remove(targets, iter_7_0)
+	for i = #targets, 1, -1 do
+		if self:IsOutOfAngle(targets[i]) then
+			table.remove(targets, i)
 		end
 	end
 
@@ -174,9 +174,9 @@ function BattleTrackingAAMissileUnit.InitSpeed(self, angle)
 
 	local speedFuncs = {}
 
-	local function updateSpeedWrapper(arg_11_0, arg_11_1)
+	local function updateSpeedWrapper(self, timeStamp)
 		for _, func in ipairs(speedFuncs) do
-			func(arg_11_0, arg_11_1)
+			func(self, timeStamp)
 		end
 
 		local trackingTarget = self:getTrackingTarget()
@@ -206,12 +206,12 @@ function BattleTrackingAAMissileUnit.InitSpeed(self, angle)
 		self._speedNormal = self._speed / self._speedLength
 		self._speedCross = Vector3.Cross(self._speedNormal, vector3Up)
 
-		table.insert(speedFuncs, function(arg_12_0, ...)
+		table.insert(speedFuncs, function(self, ...)
 			self._speedLength = self._speed:Magnitude()
 			self._speedNormal = self._speed / self._speedLength
 			self._speedCross = Vector3.Cross(self._speedNormal, vector3Up)
 
-			self.doAccelerate(arg_12_0, ...)
+			self.doAccelerate(self, ...)
 		end)
 	end
 

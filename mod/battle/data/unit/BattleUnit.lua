@@ -518,44 +518,44 @@ function BattleUnit.SetTemplate(self, templateID, templateData)
 	self._tmpID = templateID
 end
 
-function BattleUnit.GetTemplateID(arg_34_0)
-	return arg_34_0._tmpID
+function BattleUnit.GetTemplateID(self)
+	return self._tmpID
 end
 
-function BattleUnit.SetOverrideLevel(arg_35_0, arg_35_1)
-	arg_35_0._overrideLevel = arg_35_1
+function BattleUnit.SetOverrideLevel(self, level)
+	self._overrideLevel = level
 end
 
-function BattleUnit.SetSkinId(arg_36_0)
+function BattleUnit.SetSkinId(self)
 	return
 end
 -- 被BattleDataProxy.generatePlayerUnit调用
-function BattleUnit.SetGearScore(arg_37_0, arg_37_1)
-	arg_37_0._GS = arg_37_1
+function BattleUnit.SetGearScore(self, gs)
+	self._GS = gs
 end
 
 function BattleUnit.GetGearScore(self)
 	return self._GS or 0
 end
 
-function BattleUnit.GetSkinID(arg_39_0)
-	return arg_39_0._tmpID
+function BattleUnit.GetSkinID(self)
+	return self._tmpID
 end
 
-function BattleUnit.GetDefaultSkinID(arg_40_0)
-	return arg_40_0._tmpID
+function BattleUnit.GetDefaultSkinID(self)
+	return self._tmpID
 end
 
-function BattleUnit.GetSkinAttachmentInfo(arg_41_0)
-	return arg_41_0._orbitSkinIDList
+function BattleUnit.GetSkinAttachmentInfo(self)
+	return self._orbitSkinIDList
 end
 
 -- 获取武器绑定点信息: 影响子弹的生成点
-function BattleUnit.GetWeaponBoundBone(arg_42_0)
-	return arg_42_0._tmpData.bound_bone
+function BattleUnit.GetWeaponBoundBone(self)
+	return self._tmpData.bound_bone
 end
 
-function BattleUnit.ActionKeyOffsetUseable(arg_43_0)
+function BattleUnit.ActionKeyOffsetUseable(self)
 	return true
 end
 
@@ -598,17 +598,17 @@ function BattleUnit.GetRemoteBoundBone(self, spawnBound)
 	end
 end
 
-function BattleUnit.GetLabelTag(arg_47_0)
-	return arg_47_0._labelTagList
+function BattleUnit.GetLabelTag(self)
+	return self._labelTagList
 end
 
-function BattleUnit.ContainsLabelTag(arg_48_0, arg_48_1)
-	if arg_48_0._labelTagList == nil then
+function BattleUnit.ContainsLabelTag(self, tags)
+	if self._labelTagList == nil then
 		return false
 	end
 
-	for iter_48_0, iter_48_1 in ipairs(arg_48_1) do
-		if table.contains(arg_48_0._labelTagList, iter_48_1) then
+	for _, tag in ipairs(tags) do
+		if table.contains(self._labelTagList, tag) then
 			return true
 		end
 	end
@@ -626,9 +626,9 @@ function BattleUnit.AddLabelTag(self, tag)
 end
 
 function BattleUnit.RemoveLabelTag(self, tag)
-	for iter_50_0, iter_50_1 in ipairs(self._labelTagList) do
-		if iter_50_1 == tag then
-			table.remove(self._labelTagList, iter_50_0)
+	for index, labelTag in ipairs(self._labelTagList) do
+		if labelTag == tag then
+			table.remove(self._labelTagList, index)
 
 			local currentLabelTag = BattleAttr.GetCurrent(self, "labelTag")
 
@@ -648,160 +648,160 @@ function BattleUnit.setStandardLabelTag(self)
 	self:AddLabelTag(typeTag)
 end
 
-function BattleUnit.GetRarity(arg_52_0)
+function BattleUnit.GetRarity(self)
 	return
 end
 
-function BattleUnit.GetIntimacy(arg_53_0)
+function BattleUnit.GetIntimacy(self)
 	return 0
 end
 
-function BattleUnit.IsBoss(arg_54_0)
+function BattleUnit.IsBoss(self)
 	return false
 end
 
-function BattleUnit.GetSpeedRatio(arg_55_0)
-	return BattleVariable.GetSpeedRatio(arg_55_0:GetSpeedExemptKey(), arg_55_0._IFF)
+function BattleUnit.GetSpeedRatio(self)
+	return BattleVariable.GetSpeedRatio(self:GetSpeedExemptKey(), self._IFF)
 end
 
-function BattleUnit.GetSpeedExemptKey(arg_56_0)
-	return arg_56_0._speedExemptKey
+function BattleUnit.GetSpeedExemptKey(self)
+	return self._speedExemptKey
 end
 
-function BattleUnit.SetMoveCast(arg_57_0, arg_57_1)
-	arg_57_0._moveCast = arg_57_1
+function BattleUnit.SetMoveCast(self, moveCast)
+	self._moveCast = moveCast
 end
 
-function BattleUnit.IsMoveCast(arg_58_0)
-	return arg_58_0._moveCast
+function BattleUnit.IsMoveCast(self)
+	return self._moveCast
 end
 
 -- TODO: 舰船碰撞时的处理逻辑
-function BattleUnit.SetCrash(arg_59_0, arg_59_1)
-	arg_59_0._isCrash = arg_59_1
+function BattleUnit.SetCrash(self, crash)
+	self._isCrash = crash
 
-	if arg_59_1 then
-		local var_59_0 = ys.Battle.BattleBuffUnit.New(BattleConfig.SHIP_CLD_BUFF)
+	if crash then
+		local crashBuff = ys.Battle.BattleBuffUnit.New(BattleConfig.SHIP_CLD_BUFF)
 
-		arg_59_0:AddBuff(var_59_0)
+		self:AddBuff(crashBuff)
 	else
-		arg_59_0:RemoveBuff(BattleConfig.SHIP_CLD_BUFF)
+		self:RemoveBuff(BattleConfig.SHIP_CLD_BUFF)
 	end
 end
 
-function BattleUnit.IsCrash(arg_60_0)
-	return arg_60_0._isCrash
+function BattleUnit.IsCrash(self)
+	return self._isCrash
 end
 
-function BattleUnit.OverrideDeadFX(arg_61_0, arg_61_1)
-	arg_61_0._deadFX = arg_61_1
+function BattleUnit.OverrideDeadFX(self, deadFX)
+	self._deadFX = deadFX
 end
 
-function BattleUnit.GetDeadFX(arg_62_0)
-	return arg_62_0._deadFX
+function BattleUnit.GetDeadFX(self)
+	return self._deadFX
 end
 
 -- TODO
 -- 被BattleDataFunction.CreateBattleUnitData调用
-function BattleUnit.SetEquipment(arg_63_0, arg_63_1)
-	arg_63_0._equipmentList = arg_63_1
-	arg_63_0._autoWeaponList = {}
-	arg_63_0._manualTorpedoList = {}
-	arg_63_0._chargeList = {}
-	arg_63_0._AAList = {}
-	arg_63_0._fleetAAList = {}
-	arg_63_0._fleetRangeAAList = {}
-	arg_63_0._hiveList = {}
-	arg_63_0._totalWeapon = {}
+function BattleUnit.SetEquipment(self, equipmentList)
+	self._equipmentList = equipmentList
+	self._autoWeaponList = {}
+	self._manualTorpedoList = {}
+	self._chargeList = {}
+	self._AAList = {}
+	self._fleetAAList = {}
+	self._fleetRangeAAList = {}
+	self._hiveList = {}
+	self._totalWeapon = {}
 
-	arg_63_0:setWeapon(arg_63_1)
+	self:setWeapon(equipmentList)
 end
 
-function BattleUnit.GetEquipment(arg_64_0)
-	return arg_64_0._equipmentList
+function BattleUnit.GetEquipment(self)
+	return self._equipmentList
 end
 
-function BattleUnit.SetProficiencyList(arg_65_0, arg_65_1)
-	arg_65_0._proficiencyList = arg_65_1
+function BattleUnit.SetProficiencyList(self, proficiencyList)
+	self._proficiencyList = proficiencyList
 end
 
-function BattleUnit.SetSpWeapon(arg_66_0, arg_66_1)
-	arg_66_0._spWeapon = arg_66_1
+function BattleUnit.SetSpWeapon(self, spWeapon)
+	self._spWeapon = spWeapon
 end
 
-function BattleUnit.GetSpWeapon(arg_67_0)
-	return arg_67_0._spWeapon
+function BattleUnit.GetSpWeapon(self)
+	return self._spWeapon
 end
 -- TODO
-function BattleUnit.setWeapon(arg_68_0, arg_68_1)
-	for iter_68_0, iter_68_1 in ipairs(arg_68_1) do
-		local var_68_0 = iter_68_1.equipment.weapon_id
+function BattleUnit.setWeapon(self, equipmentList)
+	for equipIndex, equipData in ipairs(equipmentList) do
+		local weaponIDs = equipData.equipment.weapon_id
 
-		for iter_68_2, iter_68_3 in ipairs(var_68_0) do
-			if iter_68_3 ~= -1 then
-				local var_68_1 = ys.Battle.BattleDataFunction.CreateWeaponUnit(iter_68_3, arg_68_0, nil, iter_68_0)
+		for _, weaponID in ipairs(weaponIDs) do
+			if weaponID ~= -1 then
+				local weapon = ys.Battle.BattleDataFunction.CreateWeaponUnit(weaponID, self, nil, equipIndex)
 
-				arg_68_0._totalWeapon[#arg_68_0._totalWeapon + 1] = var_68_1
+				self._totalWeapon[#self._totalWeapon + 1] = weapon
 
-				local var_68_2 = var_68_1:GetTemplateData().type
+				local weaponType = weapon:GetTemplateData().type
 
-				if var_68_2 == BattleConst.EquipmentType.MANUAL_TORPEDO then
-					arg_68_0._manualTorpedoList[#arg_68_0._manualTorpedoList + 1] = var_68_1
+				if weaponType == BattleConst.EquipmentType.MANUAL_TORPEDO then
+					self._manualTorpedoList[#self._manualTorpedoList + 1] = weapon
 
-					arg_68_0._weaponQueue:AppendWeapon(var_68_1)
-				elseif var_68_2 == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+					self._weaponQueue:AppendWeapon(weapon)
+				elseif weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
 					-- block empty
 				else
-					assert(#var_68_0 < 2, "自动武器一组不允许配置多个")
-					arg_68_0:AddAutoWeapon(var_68_1)
+					assert(#weaponIDs < 2, "自动武器一组不允许配置多个")
+					self:AddAutoWeapon(weapon)
 				end
 
-				if var_68_2 == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or var_68_2 == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
-					arg_68_0._hiveList[#arg_68_0._hiveList + 1] = var_68_1
+				if weaponType == BattleConst.EquipmentType.INTERCEPT_AIRCRAFT or weaponType == BattleConst.EquipmentType.STRIKE_AIRCRAFT then
+					self._hiveList[#self._hiveList + 1] = weapon
 				end
 
-				if var_68_2 == BattleConst.EquipmentType.ANTI_AIR then
-					arg_68_0._AAList[#arg_68_0._AAList + 1] = var_68_1
+				if weaponType == BattleConst.EquipmentType.ANTI_AIR then
+					self._AAList[#self._AAList + 1] = weapon
 				end
 			end
 		end
 	end
 end
 
-function BattleUnit.CheckWeaponInitial(arg_69_0)
-	arg_69_0._weaponQueue:CheckWeaponInitalCD()
+function BattleUnit.CheckWeaponInitial(self)
+	self._weaponQueue:CheckWeaponInitalCD()
 
-	if arg_69_0._airAssistQueue then
-		arg_69_0._airAssistQueue:CheckWeaponInitalCD()
+	if self._airAssistQueue then
+		self._airAssistQueue:CheckWeaponInitalCD()
 	end
 
-	arg_69_0:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_COOL_DOWN, {}))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_COOL_DOWN, {}))
 end
 
-function BattleUnit.FlushReloadingWeapon(arg_70_0)
-	arg_70_0._weaponQueue:FlushWeaponReloadRequire()
+function BattleUnit.FlushReloadingWeapon(self)
+	self._weaponQueue:FlushWeaponReloadRequire()
 
-	if arg_70_0._airAssistQueue then
-		arg_70_0._airAssistQueue:FlushWeaponReloadRequire()
+	if self._airAssistQueue then
+		self._airAssistQueue:FlushWeaponReloadRequire()
 	end
 end
 
 -- BattleBuffNewWeapon
-function BattleUnit.AddNewAutoWeapon(arg_71_0, arg_71_1)
-	local var_71_0 = BattleDataFunction.CreateWeaponUnit(arg_71_1, arg_71_0)
+function BattleUnit.AddNewAutoWeapon(self, weaponID)
+	local weapon = BattleDataFunction.CreateWeaponUnit(weaponID, self)
 
-	arg_71_0:AddAutoWeapon(var_71_0)
-	arg_71_0:DispatchEvent(ys.Event.New(ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, {
-		weapon = var_71_0
+	self:AddAutoWeapon(weapon)
+	self:DispatchEvent(ys.Event.New(ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, {
+		weapon = weapon
 	}))
 
-	return var_71_0
+	return weapon
 end
 
-function BattleUnit.AddAutoWeapon(arg_72_0, arg_72_1)
-	arg_72_0._autoWeaponList[#arg_72_0._autoWeaponList + 1] = arg_72_1
+function BattleUnit.AddAutoWeapon(self, weapon)
+	self._autoWeaponList[#self._autoWeaponList + 1] = weapon
 
-	arg_72_0._weaponQueue:AppendWeapon(arg_72_1)
+	self._weaponQueue:AppendWeapon(weapon)
 end
 
 function BattleUnit.RemoveAutoWeapon(self, autoWeapon)
@@ -824,11 +824,11 @@ function BattleUnit.RemoveAutoWeapon(self, autoWeapon)
 	end
 end
 
-function BattleUnit.RemoveAutoWeaponByWeaponID(arg_74_0, arg_74_1)
-	for iter_74_0, iter_74_1 in ipairs(arg_74_0._autoWeaponList) do
-		if iter_74_1:GetWeaponId() == arg_74_1 then
-			iter_74_1:Clear()
-			arg_74_0:RemoveAutoWeapon(iter_74_1)
+function BattleUnit.RemoveAutoWeaponByWeaponID(self, weaponID)
+	for _, weapon in ipairs(self._autoWeaponList) do
+		if weapon:GetWeaponId() == weaponID then
+			weapon:Clear()
+			self:RemoveAutoWeapon(weapon)
 
 			break
 		end
@@ -849,52 +849,52 @@ function BattleUnit.RemoveAllAutoWeapon(self)
 	end
 end
 
-function BattleUnit.AddFleetAntiAirWeapon(arg_76_0, arg_76_1)
+function BattleUnit.AddFleetAntiAirWeapon(self, weapon)
 	return
 end
 
-function BattleUnit.RemoveFleetAntiAirWeapon(arg_77_0, arg_77_1)
+function BattleUnit.RemoveFleetAntiAirWeapon(self, weapon)
 	return
 end
 
-function BattleUnit.AttachFleetRangeAAWeapon(arg_78_0, arg_78_1)
-	arg_78_0._fleetRangeAA = arg_78_1
+function BattleUnit.AttachFleetRangeAAWeapon(self, weapon)
+	self._fleetRangeAA = weapon
 
-	arg_78_0:DispatchEvent(ys.Event.New(BattleUnitEvent.CREATE_TEMPORARY_WEAPON, {
-		weapon = arg_78_1
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.CREATE_TEMPORARY_WEAPON, {
+		weapon = weapon
 	}))
 end
 
-function BattleUnit.DetachFleetRangeAAWeapon(arg_79_0)
-	arg_79_0:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_WEAPON, {
-		weapon = arg_79_0._fleetRangeAA
+function BattleUnit.DetachFleetRangeAAWeapon(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_WEAPON, {
+		weapon = self._fleetRangeAA
 	}))
 
-	arg_79_0._fleetRangeAA = nil
+	self._fleetRangeAA = nil
 end
 
-function BattleUnit.GetFleetRangeAAWeapon(arg_80_0)
-	return arg_80_0._fleetRangeAA
+function BattleUnit.GetFleetRangeAAWeapon(self)
+	return self._fleetRangeAA
 end
 
-function BattleUnit.ShiftWeapon(arg_81_0, arg_81_1, arg_81_2)
-	for iter_81_0, iter_81_1 in ipairs(arg_81_1) do
-		arg_81_0:RemoveAutoWeaponByWeaponID(iter_81_1)
+function BattleUnit.ShiftWeapon(self, removeWeaponIDs, addWeaponIDs)
+	for _, wID in ipairs(removeWeaponIDs) do
+		self:RemoveAutoWeaponByWeaponID(wID)
 	end
 
-	for iter_81_2, iter_81_3 in ipairs(arg_81_2) do
-		arg_81_0:AddNewAutoWeapon(iter_81_3):InitialCD()
+	for _, wID in ipairs(addWeaponIDs) do
+		self:AddNewAutoWeapon(wID):InitialCD()
 	end
 end
 
 -- 被BattleBuffMountExpand调用
-function BattleUnit.ExpandWeaponMount(arg_82_0, arg_82_1)
-	if arg_82_1 == "airAssist" then
-		BattleDataFunction.ExpandAllinStrike(arg_82_0)
+function BattleUnit.ExpandWeaponMount(self, mountType)
+	if mountType == "airAssist" then
+		BattleDataFunction.ExpandAllinStrike(self)
 	end
 end
 
-function BattleUnit.ReduceWeaponMount(arg_83_0, arg_83_1)
+function BattleUnit.ReduceWeaponMount(self, mountType)
 	return
 end
 
@@ -906,76 +906,76 @@ function BattleUnit.IsCease(self)
 	return self._ceaseFire
 end
 
-function BattleUnit.GetAllWeapon(arg_86_0)
-	return arg_86_0._totalWeapon
+function BattleUnit.GetAllWeapon(self)
+	return self._totalWeapon
 end
 
-function BattleUnit.GetTotalWeapon(arg_87_0)
-	return arg_87_0._weaponQueue:GetTotalWeaponUnit()
+function BattleUnit.GetTotalWeapon(self)
+	return self._weaponQueue:GetTotalWeaponUnit()
 end
 
-function BattleUnit.GetAutoWeapons(arg_88_0)
-	return arg_88_0._autoWeaponList
+function BattleUnit.GetAutoWeapons(self)
+	return self._autoWeaponList
 end
 
-function BattleUnit.GetChargeList(arg_89_0)
-	return arg_89_0._chargeList
+function BattleUnit.GetChargeList(self)
+	return self._chargeList
 end
 
-function BattleUnit.GetChargeQueue(arg_90_0)
-	return arg_90_0._weaponQueue:GetChargeWeaponQueue()
+function BattleUnit.GetChargeQueue(self)
+	return self._weaponQueue:GetChargeWeaponQueue()
 end
 
-function BattleUnit.GetAntiAirWeapon(arg_91_0)
-	return arg_91_0._AAList
+function BattleUnit.GetAntiAirWeapon(self)
+	return self._AAList
 end
 
-function BattleUnit.GetFleetAntiAirList(arg_92_0)
-	return arg_92_0._fleetAAList
+function BattleUnit.GetFleetAntiAirList(self)
+	return self._fleetAAList
 end
 
-function BattleUnit.GetFleetRangeAntiAirList(arg_93_0)
-	return arg_93_0._fleetRangeAAList
+function BattleUnit.GetFleetRangeAntiAirList(self)
+	return self._fleetRangeAAList
 end
 
-function BattleUnit.GetTorpedoList(arg_94_0)
-	return arg_94_0._manualTorpedoList
+function BattleUnit.GetTorpedoList(self)
+	return self._manualTorpedoList
 end
 
-function BattleUnit.GetTorpedoQueue(arg_95_0)
-	return arg_95_0._weaponQueue:GetManualTorpedoQueue()
+function BattleUnit.GetTorpedoQueue(self)
+	return self._weaponQueue:GetManualTorpedoQueue()
 end
 
-function BattleUnit.GetWeaponByIndex(arg_96_0, arg_96_1)
-	for iter_96_0, iter_96_1 in ipairs(arg_96_0._totalWeapon) do
-		if iter_96_1:GetEquipmentIndex() == arg_96_1 then
-			return iter_96_1
+function BattleUnit.GetWeaponByIndex(self, equipmentIndex)
+	for _, weapon in ipairs(self._totalWeapon) do
+		if weapon:GetEquipmentIndex() == equipmentIndex then
+			return weapon
 		end
 	end
 end
 
-function BattleUnit.GetHiveList(arg_97_0)
-	return arg_97_0._hiveList
+function BattleUnit.GetHiveList(self)
+	return self._hiveList
 end
 -- TODO
-function BattleUnit.SetAirAssistList(arg_98_0, arg_98_1)
-	arg_98_0._airAssistList = arg_98_1
-	arg_98_0._airAssistQueue = ys.Battle.ManualWeaponQueue.New(arg_98_0:GetManualWeaponParallel()[BattleConst.ManualWeaponIndex.AIR_ASSIST])
+function BattleUnit.SetAirAssistList(self, airAssistList)
+	self._airAssistList = airAssistList
+	self._airAssistQueue = ys.Battle.ManualWeaponQueue.New(self:GetManualWeaponParallel()[BattleConst.ManualWeaponIndex.AIR_ASSIST])
 
-	for iter_98_0, iter_98_1 in ipairs(arg_98_0._airAssistList) do
-		arg_98_0._airAssistQueue:AppendWeapon(iter_98_1)
+	for _, airAssist in ipairs(self._airAssistList) do
+		self._airAssistQueue:AppendWeapon(airAssist)
 	end
 end
 
-function BattleUnit.GetAirAssistList(arg_99_0)
-	return arg_99_0._airAssistList
+function BattleUnit.GetAirAssistList(self)
+	return self._airAssistList
 end
 
-function BattleUnit.GetAirAssistQueue(arg_100_0)
-	return arg_100_0._airAssistQueue
+function BattleUnit.GetAirAssistQueue(self)
+	return self._airAssistQueue
 end
 
-function BattleUnit.GetManualWeaponParallel(arg_101_0)
+function BattleUnit.GetManualWeaponParallel(self)
 	return {
 		1,
 		1,
@@ -989,28 +989,28 @@ function BattleUnit.configWeaponQueueParallel(self)
 	self._weaponQueue:ConfigParallel(manualWeaponParallel[BattleConst.ManualWeaponIndex.CALIBRATION], manualWeaponParallel[BattleConst.ManualWeaponIndex.TORPEDO])
 end
 
-function BattleUnit.ClearWeapon(arg_103_0)
-	arg_103_0._weaponQueue:ClearAllWeapon()
+function BattleUnit.ClearWeapon(self)
+	self._weaponQueue:ClearAllWeapon()
 
-	local var_103_0 = arg_103_0._airAssistList
+	local airAssistList = self._airAssistList
 
-	if var_103_0 then
-		for iter_103_0, iter_103_1 in ipairs(var_103_0) do
-			iter_103_1:Clear()
+	if airAssistList then
+		for _, airAssist in ipairs(airAssistList) do
+			airAssist:Clear()
 		end
 	end
 end
 
-function BattleUnit.GetSpeed(arg_104_0)
-	return arg_104_0._move:GetSpeed()
+function BattleUnit.GetSpeed(self)
+	return self._move:GetSpeed()
 end
 
-function BattleUnit.GetPosition(arg_105_0)
-	return arg_105_0._move:GetPos()
+function BattleUnit.GetPosition(self)
+	return self._move:GetPos()
 end
 
-function BattleUnit.GetBornPosition(arg_106_0)
-	return arg_106_0._bornPos
+function BattleUnit.GetBornPosition(self)
+	return self._bornPos
 end
 
 function BattleUnit.GetCLDZCenterPosition(self)
@@ -1062,144 +1062,144 @@ function BattleUnit.biasAimPosition(self, aimPosition)
 	return aimPosition
 end
 
-function BattleUnit.CancelFollowTeam(arg_110_0)
-	arg_110_0._move:CancelFormationCtrl()
+function BattleUnit.CancelFollowTeam(self)
+	self._move:CancelFormationCtrl()
 end
 
-function BattleUnit.UpdateFormationOffset(arg_111_0, arg_111_1)
-	arg_111_0._move:SetFormationCtrlInfo(Vector3(arg_111_1.x, arg_111_1.y, arg_111_1.z))
+function BattleUnit.UpdateFormationOffset(self, offset)
+	self._move:SetFormationCtrlInfo(Vector3(offset.x, offset.y, offset.z))
 end
 
-function BattleUnit.GetDistance(arg_112_0, arg_112_1)
-	local var_112_0 = arg_112_0._battleProxy.FrameIndex
+function BattleUnit.GetDistance(self, targetUnit)
+	local currentFrame = self._battleProxy.FrameIndex
 
-	if arg_112_0._frame ~= var_112_0 then
-		arg_112_0._distanceBackup = {}
-		arg_112_0._frame = var_112_0
+	if self._frame ~= currentFrame then
+		self._distanceBackup = {}
+		self._frame = currentFrame
 	end
 
-	local var_112_1 = arg_112_0._distanceBackup[arg_112_1]
+	local cachedDistance = self._distanceBackup[targetUnit]
 
-	if var_112_1 == nil then
-		var_112_1 = Vector3.Distance(arg_112_0:GetPosition(), arg_112_1:GetPosition())
-		arg_112_0._distanceBackup[arg_112_1] = var_112_1
+	if cachedDistance == nil then
+		cachedDistance = Vector3.Distance(self:GetPosition(), targetUnit:GetPosition())
+		self._distanceBackup[targetUnit] = cachedDistance
 
-		arg_112_1:backupDistance(arg_112_0, var_112_1)
+		targetUnit:backupDistance(self, cachedDistance)
 	end
 
-	return var_112_1
+	return cachedDistance
 end
 
-function BattleUnit.backupDistance(arg_113_0, arg_113_1, arg_113_2)
-	local var_113_0 = arg_113_0._battleProxy.FrameIndex
+function BattleUnit.backupDistance(self, otherUnit, dist)
+	local currentFrame = self._battleProxy.FrameIndex
 
-	if arg_113_0._frame ~= var_113_0 then
-		arg_113_0._distanceBackup = {}
-		arg_113_0._frame = var_113_0
+	if self._frame ~= currentFrame then
+		self._distanceBackup = {}
+		self._frame = currentFrame
 	end
 
-	arg_113_0._distanceBackup[arg_113_1] = arg_113_2
+	self._distanceBackup[otherUnit] = dist
 end
 
-function BattleUnit.GetDirection(arg_114_0)
-	return arg_114_0._dir
+function BattleUnit.GetDirection(self)
+	return self._dir
 end
 
-function BattleUnit.SetBornPosition(arg_115_0, arg_115_1)
-	arg_115_0._bornPos = arg_115_1
+function BattleUnit.SetBornPosition(self, bornPos)
+	self._bornPos = bornPos
 end
 
-function BattleUnit.SetPosition(arg_116_0, arg_116_1)
-	arg_116_0._move:SetPos(arg_116_1)
+function BattleUnit.SetPosition(self, pos)
+	self._move:SetPos(pos)
 end
 
-function BattleUnit.IsMoving(arg_117_0)
-	local var_117_0 = arg_117_0._move:GetSpeed()
+function BattleUnit.IsMoving(self)
+	local speed = self._move:GetSpeed()
 
-	return var_117_0.x ~= 0 or var_117_0.z ~= 0
+	return speed.x ~= 0 or speed.z ~= 0
 end
 
-function BattleUnit.SetUncontrollableSpeedWithYAngle(arg_118_0, arg_118_1, arg_118_2, arg_118_3)
-	local var_118_0 = math.deg2Rad * arg_118_1
-	local var_118_1 = Vector3(math.cos(var_118_0), 0, math.sin(var_118_0))
+function BattleUnit.SetUncontrollableSpeedWithYAngle(self, yAngle, speed, duration)
+	local radian = math.deg2Rad * yAngle
+	local dirVec = Vector3(math.cos(radian), 0, math.sin(radian))
 
-	arg_118_0:SetUncontrollableSpeed(var_118_1, arg_118_2, arg_118_3)
+	self:SetUncontrollableSpeed(dirVec, speed, duration)
 end
 
-function BattleUnit.SetUncontrollableSpeedWithDir(arg_119_0, arg_119_1, arg_119_2, arg_119_3)
-	local var_119_0 = math.sqrt(arg_119_1.x * arg_119_1.x + arg_119_1.z * arg_119_1.z)
+function BattleUnit.SetUncontrollableSpeedWithDir(self, dir, speed, duration)
+	local dirLen = math.sqrt(dir.x * dir.x + dir.z * dir.z)
 
-	arg_119_0:SetUncontrollableSpeed(arg_119_1 / var_119_0, arg_119_2, arg_119_3)
+	self:SetUncontrollableSpeed(dir / dirLen, speed, duration)
 end
 
-function BattleUnit.SetUncontrollableSpeed(arg_120_0, arg_120_1, arg_120_2, arg_120_3)
-	if not arg_120_2 or not arg_120_3 then
+function BattleUnit.SetUncontrollableSpeed(self, dir, speed, duration)
+	if not speed or not duration then
 		return
 	end
 
-	arg_120_0._move:SetForceMove(arg_120_1, arg_120_2, arg_120_3, arg_120_2 / arg_120_3)
+	self._move:SetForceMove(dir, speed, duration, speed / duration)
 end
 
-function BattleUnit.ClearUncontrollableSpeed(arg_121_0)
-	arg_121_0._move:ClearForceMove()
+function BattleUnit.ClearUncontrollableSpeed(self)
+	self._move:ClearForceMove()
 end
 
-function BattleUnit.SetAdditiveSpeed(arg_122_0, arg_122_1)
-	arg_122_0._move:UpdateAdditiveSpeed(arg_122_1)
+function BattleUnit.SetAdditiveSpeed(self, speedVec)
+	self._move:UpdateAdditiveSpeed(speedVec)
 end
 
-function BattleUnit.RemoveAdditiveSpeed(arg_123_0)
-	arg_123_0._move:RemoveAdditiveSpeed()
+function BattleUnit.RemoveAdditiveSpeed(self)
+	self._move:RemoveAdditiveSpeed()
 end
 
-function BattleUnit.Boost(arg_124_0, arg_124_1, arg_124_2, arg_124_3, arg_124_4, arg_124_5)
-	arg_124_0._move:SetForceMove(arg_124_1, arg_124_2, arg_124_3, arg_124_4, arg_124_5)
+function BattleUnit.Boost(self, dir, speed, acc, duration, friction)
+	self._move:SetForceMove(dir, speed, acc, duration, friction)
 end
 
-function BattleUnit.ActiveUnstoppable(arg_125_0, arg_125_1)
-	arg_125_0._move:ActiveUnstoppable(arg_125_1)
+function BattleUnit.ActiveUnstoppable(self, duration)
+	self._move:ActiveUnstoppable(duration)
 end
 
-function BattleUnit.SetImmuneCommonBulletCLD(arg_126_0)
-	arg_126_0._immuneCommonBulletCLD = true
+function BattleUnit.SetImmuneCommonBulletCLD(self)
+	self._immuneCommonBulletCLD = true
 end
 
-function BattleUnit.IsImmuneCommonBulletCLD(arg_127_0)
-	return arg_127_0._immuneCommonBulletCLD
+function BattleUnit.IsImmuneCommonBulletCLD(self)
+	return self._immuneCommonBulletCLD
 end
 
-function BattleUnit.SetWeaponPreCastBound(arg_128_0, arg_128_1)
-	arg_128_0._preCastBound = arg_128_1
+function BattleUnit.SetWeaponPreCastBound(self, bound)
+	self._preCastBound = bound
 
-	arg_128_0:UpdatePrecastMoveLimit()
+	self:UpdatePrecastMoveLimit()
 end
 
-function BattleUnit.EnterGCD(arg_129_0, arg_129_1, arg_129_2)
-	if arg_129_0._GCDTimerList[arg_129_2] ~= nil then
+function BattleUnit.EnterGCD(self, duration, gcdKey)
+	if self._GCDTimerList[gcdKey] ~= nil then
 		return
 	end
 
-	local function var_129_0()
-		arg_129_0:RemoveGCDTimer(arg_129_2)
+	local function onGCDEnd()
+		self:RemoveGCDTimer(gcdKey)
 	end
 
-	arg_129_0._weaponQueue:QueueEnterGCD(arg_129_2, arg_129_1)
+	self._weaponQueue:QueueEnterGCD(gcdKey, duration)
 
-	arg_129_0._GCDTimerList[arg_129_2] = pg.TimeMgr.GetInstance():AddBattleTimer("weaponGCD", 0, arg_129_1, var_129_0, true)
+	self._GCDTimerList[gcdKey] = pg.TimeMgr.GetInstance():AddBattleTimer("weaponGCD", 0, duration, onGCDEnd, true)
 
-	arg_129_0:UpdatePrecastMoveLimit()
+	self:UpdatePrecastMoveLimit()
 end
 
-function BattleUnit.RemoveGCDTimer(arg_131_0, arg_131_1)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_131_0._GCDTimerList[arg_131_1])
+function BattleUnit.RemoveGCDTimer(self, gcdKey)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._GCDTimerList[gcdKey])
 
-	arg_131_0._GCDTimerList[arg_131_1] = nil
+	self._GCDTimerList[gcdKey] = nil
 
-	arg_131_0:UpdatePrecastMoveLimit()
+	self:UpdatePrecastMoveLimit()
 end
 
-function BattleUnit.UpdatePrecastMoveLimit(arg_132_0)
-	arg_132_0:UpdateMoveLimit()
+function BattleUnit.UpdatePrecastMoveLimit(self)
+	self:UpdateMoveLimit()
 end
 
 -- 切换一次是否能移动的状态
@@ -1292,13 +1292,13 @@ function BattleUnit.SetBuffStack(self, buffId, buffLevel, stack)
 	end
 end
 
-function BattleUnit.UpdateBuff(arg_136_0, arg_136_1)
-	local var_136_0 = arg_136_0._buffList
+function BattleUnit.UpdateBuff(self, timeStamp)
+	local buffList = self._buffList
 
-	for iter_136_0, iter_136_1 in pairs(var_136_0) do
-		iter_136_1:Update(arg_136_0, arg_136_1)
+	for buffID, buff in pairs(buffList) do
+		buff:Update(self, timeStamp)
 
-		if not arg_136_0:IsAlive() then
+		if not self:IsAlive() then
 			break
 		end
 	end
@@ -1348,18 +1348,18 @@ function BattleUnit.RemoveBuff(self, buffID, ifStock)
 	})
 end
 
-function BattleUnit.ClearBuff(arg_139_0)
-	local var_139_0 = arg_139_0._buffList
+function BattleUnit.ClearBuff(self)
+	local buffList = self._buffList
 
-	for iter_139_0, iter_139_1 in pairs(var_139_0) do
-		iter_139_1:Clear()
+	for buffID, buff in pairs(buffList) do
+		buff:Clear()
 	end
 
-	local var_139_1 = arg_139_0._buffStockList
+	local buffStockList = self._buffStockList
 
-	for iter_139_2, iter_139_3 in pairs(var_139_1) do
-		for iter_139_4, iter_139_5 in pairs(iter_139_3) do
-			iter_139_5:Clear()
+	for stockID, stockBuffs in pairs(buffStockList) do
+		for _, stockBuff in pairs(stockBuffs) do
+			stockBuff:Clear()
 		end
 	end
 end
@@ -1374,8 +1374,8 @@ function BattleUnit.TriggerBuff(self, effectType, arg_list)
 	ys.Battle.BattleBuffUnit.Trigger(self, effectType, arg_list)
 end
 
-function BattleUnit.GetBuffList(arg_141_0)
-	return arg_141_0._buffList
+function BattleUnit.GetBuffList(self)
+	return self._buffList
 end
 
 function BattleUnit.GetBuff(self, buffID)
@@ -1384,183 +1384,184 @@ function BattleUnit.GetBuff(self, buffID)
 	return self._buffList[buffID]
 end
 
-function BattleUnit.DispatchSkillFloat(arg_143_0, arg_143_1, arg_143_2, arg_143_3)
-	local var_143_0 = {
-		coverHrzIcon = arg_143_3,
-		commander = arg_143_2,
-		skillName = arg_143_1
+function BattleUnit.DispatchSkillFloat(self, skillName, commander, coverHrzIcon)
+	local eventData = {
+		coverHrzIcon = coverHrzIcon,
+		commander = commander,
+		skillName = skillName
 	}
 
-	arg_143_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SKILL_FLOAT, var_143_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SKILL_FLOAT, eventData))
 end
 
-function BattleUnit.DispatchCutIn(arg_144_0, arg_144_1, arg_144_2)
-	local var_144_0 = {
-		caster = arg_144_0,
-		skill = arg_144_1
+function BattleUnit.DispatchCutIn(self, skill, commander)
+	local eventData = {
+		caster = self,
+		skill = skill
 	}
 
-	arg_144_0:DispatchEvent(ys.Event.New(BattleUnitEvent.CUT_INT, var_144_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.CUT_INT, eventData))
 end
 
-function BattleUnit.DispatchCastClock(arg_145_0, arg_145_1, arg_145_2, arg_145_3, arg_145_4, arg_145_5)
-	local var_145_0 = {
-		isActive = arg_145_1,
-		buffEffect = arg_145_2,
-		iconType = arg_145_3,
-		interrupt = arg_145_4,
-		reverse = arg_145_5
+function BattleUnit.DispatchCastClock(self, isActive, buffEffect, iconType, interrupt, reverse)
+	local eventData = {
+		isActive = isActive,
+		buffEffect = buffEffect,
+		iconType = iconType,
+		interrupt = interrupt,
+		reverse = reverse
 	}
 
-	arg_145_0:DispatchEvent(ys.Event.New(BattleUnitEvent.ADD_BUFF_CLOCK, var_145_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.ADD_BUFF_CLOCK, eventData))
 end
 
-function BattleUnit.SetAI(arg_146_0, arg_146_1)
-	local var_146_0 = BattleDataFunction.GetAITmpDataFromID(arg_146_1)
+function BattleUnit.SetAI(self, aiID)
+	local aiTmpData = BattleDataFunction.GetAITmpDataFromID(aiID)
 
-	arg_146_0._autoPilotAI = ys.Battle.AutoPilot.New(arg_146_0, var_146_0), arg_146_0._move:CancelFormationCtrl()
+	self._autoPilotAI = ys.Battle.AutoPilot.New(self, aiTmpData)
+	self._move:CancelFormationCtrl()
 end
 
-function BattleUnit.AddPhaseSwitcher(arg_147_0, arg_147_1)
-	arg_147_0._phaseSwitcher = arg_147_1
+function BattleUnit.AddPhaseSwitcher(self, phaseSwitcher)
+	self._phaseSwitcher = phaseSwitcher
 end
 
-function BattleUnit.GetPhaseSwitcher(arg_148_0)
-	return arg_148_0._phaseSwitcher
+function BattleUnit.GetPhaseSwitcher(self)
+	return self._phaseSwitcher
 end
 
-function BattleUnit.StateChange(arg_149_0, arg_149_1, arg_149_2)
-	arg_149_0._unitState:ChangeState(arg_149_1, arg_149_2)
+function BattleUnit.StateChange(self, stateName, args)
+	self._unitState:ChangeState(stateName, args)
 end
 
-function BattleUnit.UpdateAction(arg_150_0)
-	local var_150_0 = arg_150_0:GetSpeed().x * arg_150_0._IFF
+function BattleUnit.UpdateAction(self)
+	local speedX = self:GetSpeed().x * self._IFF
 
-	if arg_150_0._oxyState and arg_150_0._oxyState:GetCurrentDiveState() == BattleConst.OXY_STATE.DIVE then
-		if var_150_0 >= 0 then
-			arg_150_0._unitState:ChangeState(UnitState.STATE_DIVE)
+	if self._oxyState and self._oxyState:GetCurrentDiveState() == BattleConst.OXY_STATE.DIVE then
+		if speedX >= 0 then
+			self._unitState:ChangeState(UnitState.STATE_DIVE)
 		else
-			arg_150_0._unitState:ChangeState(UnitState.STATE_DIVELEFT)
+			self._unitState:ChangeState(UnitState.STATE_DIVELEFT)
 		end
-	elseif var_150_0 >= 0 then
-		arg_150_0._unitState:ChangeState(UnitState.STATE_MOVE)
+	elseif speedX >= 0 then
+		self._unitState:ChangeState(UnitState.STATE_MOVE)
 	else
-		arg_150_0._unitState:ChangeState(UnitState.STATE_MOVELEFT)
+		self._unitState:ChangeState(UnitState.STATE_MOVELEFT)
 	end
 end
 
-function BattleUnit.SetActionKeyOffset(arg_151_0, arg_151_1)
-	arg_151_0._actionKeyOffset = arg_151_1
+function BattleUnit.SetActionKeyOffset(self, offset)
+	self._actionKeyOffset = offset
 
-	arg_151_0._unitState:FreshActionKeyOffset()
+	self._unitState:FreshActionKeyOffset()
 end
 
-function BattleUnit.GetActionKeyOffset(arg_152_0)
-	return arg_152_0._actionKeyOffset
+function BattleUnit.GetActionKeyOffset(self)
+	return self._actionKeyOffset
 end
 
-function BattleUnit.GetCurrentState(arg_153_0)
-	return arg_153_0._unitState:GetCurrentStateName()
+function BattleUnit.GetCurrentState(self)
+	return self._unitState:GetCurrentStateName()
 end
 
-function BattleUnit.NeedWeaponCache(arg_154_0)
-	return arg_154_0._unitState:NeedWeaponCache()
+function BattleUnit.NeedWeaponCache(self)
+	return self._unitState:NeedWeaponCache()
 end
 
-function BattleUnit.CharacterActionTriggerCallback(arg_155_0)
-	arg_155_0._unitState:OnActionTrigger()
+function BattleUnit.CharacterActionTriggerCallback(self)
+	self._unitState:OnActionTrigger()
 end
 
-function BattleUnit.CharacterActionEndCallback(arg_156_0)
-	arg_156_0._unitState:OnActionEnd()
+function BattleUnit.CharacterActionEndCallback(self)
+	self._unitState:OnActionEnd()
 end
 
-function BattleUnit.CharacterActionStartCallback(arg_157_0)
+function BattleUnit.CharacterActionStartCallback(self)
 	return
 end
 
-function BattleUnit.DispatchChat(arg_158_0, arg_158_1, arg_158_2, arg_158_3)
-	if not arg_158_1 or #arg_158_1 == 0 then
+function BattleUnit.DispatchChat(self, content, duration, key)
+	if not content or #content == 0 then
 		return
 	end
 
-	local var_158_0 = {
-		content = HXSet.hxLan(arg_158_1),
-		duration = arg_158_2,
-		key = arg_158_3
+	local eventData = {
+		content = HXSet.hxLan(content),
+		duration = duration,
+		key = key
 	}
 
-	arg_158_0:DispatchEvent(ys.Event.New(BattleUnitEvent.POP_UP, var_158_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.POP_UP, eventData))
 end
 
-function BattleUnit.DispatchVoice(arg_159_0, arg_159_1)
-	local var_159_0 = arg_159_0:GetIntimacy()
-	local var_159_1, var_159_2, var_159_3 = ShipWordHelper.GetWordAndCV(arg_159_0:GetSkinID(), arg_159_1, 1, true, var_159_0)
+function BattleUnit.DispatchVoice(self, voiceKey)
+	local intimacy = self:GetIntimacy()
+	local _, word, cv = ShipWordHelper.GetWordAndCV(self:GetSkinID(), voiceKey, 1, true, intimacy)
 
-	if var_159_2 then
-		local var_159_4 = {
-			content = var_159_2,
-			key = arg_159_1
+	if word then
+		local eventData = {
+			content = word,
+			key = voiceKey
 		}
 
-		arg_159_0:DispatchEvent(ys.Event.New(BattleUnitEvent.VOICE, var_159_4))
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.VOICE, eventData))
 	end
 end
 
-function BattleUnit.GetHostileCldList(arg_160_0)
-	return arg_160_0._hostileCldList
+function BattleUnit.GetHostileCldList(self)
+	return self._hostileCldList
 end
 
-function BattleUnit.AppendHostileCld(arg_161_0, arg_161_1, arg_161_2)
-	arg_161_0._hostileCldList[arg_161_1] = arg_161_2
+function BattleUnit.AppendHostileCld(self, key, timer)
+	self._hostileCldList[key] = timer
 end
 
-function BattleUnit.RemoveHostileCld(arg_162_0, arg_162_1)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_162_0._hostileCldList[arg_162_1])
+function BattleUnit.RemoveHostileCld(self, key)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._hostileCldList[key])
 
-	arg_162_0._hostileCldList[arg_162_1] = nil
+	self._hostileCldList[key] = nil
 end
 
-function BattleUnit.GetExtraInfo(arg_163_0)
-	return arg_163_0._extraInfo
+function BattleUnit.GetExtraInfo(self)
+	return self._extraInfo
 end
 
-function BattleUnit.GetTemplate(arg_164_0)
+function BattleUnit.GetTemplate(self)
 	return nil
 end
 
-function BattleUnit.GetGroupID(arg_165_0)
+function BattleUnit.GetGroupID(self)
 	return nil
 end
 
-function BattleUnit.GetTemplateValue(arg_166_0, arg_166_1)
-	return arg_166_0:GetTemplate()[arg_166_1]
+function BattleUnit.GetTemplateValue(self, key)
+	return self:GetTemplate()[key]
 end
 
-function BattleUnit.GetUniqueID(arg_167_0)
-	return arg_167_0._uniqueID
+function BattleUnit.GetUniqueID(self)
+	return self._uniqueID
 end
 
-function BattleUnit.SetIFF(arg_168_0, arg_168_1)
-	arg_168_0._IFF = arg_168_1
+function BattleUnit.SetIFF(self, iff)
+	self._IFF = iff
 
-	if arg_168_1 == BattleConfig.FRIENDLY_CODE then
-		arg_168_0._dir = BattleConst.UnitDir.RIGHT
-	elseif arg_168_1 == BattleConfig.FOE_CODE then
-		arg_168_0._dir = BattleConst.UnitDir.LEFT
+	if iff == BattleConfig.FRIENDLY_CODE then
+		self._dir = BattleConst.UnitDir.RIGHT
+	elseif iff == BattleConfig.FOE_CODE then
+		self._dir = BattleConst.UnitDir.LEFT
 	end
 end
 
-function BattleUnit.GetIFF(arg_169_0)
-	return arg_169_0._IFF
+function BattleUnit.GetIFF(self)
+	return self._IFF
 end
 
-function BattleUnit.GetUnitType(arg_170_0)
-	return arg_170_0._type
+function BattleUnit.GetUnitType(self)
+	return self._type
 end
 
-function BattleUnit.GetHPRate(arg_171_0)
-	return arg_171_0._currentHPRate
+function BattleUnit.GetHPRate(self)
+	return self._currentHPRate
 end
 
 function BattleUnit.GetHP(self)
@@ -1571,72 +1572,72 @@ function BattleUnit.GetCurrentHP(self)
 	return self._currentHP
 end
 
-function BattleUnit.SetCurrentHP(arg_174_0, arg_174_1)
-	arg_174_0._currentHP = arg_174_1
-	arg_174_0._currentHPRate = arg_174_0._currentHP / arg_174_0:GetMaxHP()
-	arg_174_0._currentDMGRate = 1 - arg_174_0._currentHPRate
+function BattleUnit.SetCurrentHP(self, hp)
+	self._currentHP = hp
+	self._currentHPRate = self._currentHP / self:GetMaxHP()
+	self._currentDMGRate = 1 - self._currentHPRate
 
-	BattleAttr.SetCurrent(arg_174_0, "HPRate", arg_174_0._currentHPRate)
-	BattleAttr.SetCurrent(arg_174_0, "DMGRate", arg_174_0._currentDMGRate)
+	BattleAttr.SetCurrent(self, "HPRate", self._currentHPRate)
+	BattleAttr.SetCurrent(self, "DMGRate", self._currentDMGRate)
 end
 
-function BattleUnit.GetAttr(arg_175_0)
-	return BattleAttr.GetAttr(arg_175_0)
+function BattleUnit.GetAttr(self)
+	return BattleAttr.GetAttr(self)
 end
 
 function BattleUnit.GetAttrByName(self, attrName)
 	return BattleAttr.GetCurrent(self, attrName)
 end
 
-function BattleUnit.GetMaxHP(arg_177_0)
-	return arg_177_0:GetAttrByName("maxHP")
+function BattleUnit.GetMaxHP(self)
+	return self:GetAttrByName("maxHP")
 end
 
-function BattleUnit.GetReload(arg_178_0)
-	return arg_178_0:GetAttrByName("loadSpeed")
+function BattleUnit.GetReload(self)
+	return self:GetAttrByName("loadSpeed")
 end
 
-function BattleUnit.GetTorpedoPower(arg_179_0)
-	return arg_179_0:GetAttrByName("torpedoPower")
+function BattleUnit.GetTorpedoPower(self)
+	return self:GetAttrByName("torpedoPower")
 end
 
-function BattleUnit.CanDoAntiSub(arg_180_0)
-	return arg_180_0:GetAttrByName("antiSubPower") > 0
+function BattleUnit.CanDoAntiSub(self)
+	return self:GetAttrByName("antiSubPower") > 0
 end
 
-function BattleUnit.IsShowHPBar(arg_181_0)
+function BattleUnit.IsShowHPBar(self)
 	return false
 end
 
 -- 检测单位是否存活：检查一次当前HP是否大于0以及_aliveState标记
-function BattleUnit.IsAlive(arg_182_0)
-	local var_182_0 = arg_182_0:GetCurrentHP()
+function BattleUnit.IsAlive(self)
+	local currentHP = self:GetCurrentHP()
 
-	return arg_182_0._aliveState and var_182_0 > 0
+	return self._aliveState and currentHP > 0
 end
 
-function BattleUnit.SetMainFleetUnit(arg_183_0)
-	arg_183_0._isMainFleetUnit = true
+function BattleUnit.SetMainFleetUnit(self)
+	self._isMainFleetUnit = true
 
-	arg_183_0:SetMainUnitStatic(true)
+	self:SetMainUnitStatic(true)
 end
 
-function BattleUnit.IsMainFleetUnit(arg_184_0)
-	return arg_184_0._isMainFleetUnit
+function BattleUnit.IsMainFleetUnit(self)
+	return self._isMainFleetUnit
 end
 
-function BattleUnit.SetMainUnitStatic(arg_185_0, arg_185_1)
-	arg_185_0._isMainStatic = arg_185_1
+function BattleUnit.SetMainUnitStatic(self, isStatic)
+	self._isMainStatic = isStatic
 
-	arg_185_0._move:SetStaticState(arg_185_1)
+	self._move:SetStaticState(isStatic)
 end
 
-function BattleUnit.SetMainUnitIndex(arg_186_0, arg_186_1)
-	arg_186_0._mainUnitIndex = arg_186_1
+function BattleUnit.SetMainUnitIndex(self, index)
+	self._mainUnitIndex = index
 end
 
-function BattleUnit.GetMainUnitIndex(arg_187_0)
-	return arg_187_0._mainUnitIndex or 1
+function BattleUnit.GetMainUnitIndex(self)
+	return self._mainUnitIndex or 1
 end
 
 -- 判定单位能否移动: 通过看isStun/MoveCast(仅敌方)
@@ -1649,35 +1650,35 @@ function BattleUnit.IsMoveAble(self)
 	return not self._isMainStatic and (isMoveCast or not inCD) and not isStun
 end
 
-function BattleUnit.Reinforce(arg_189_0)
-	arg_189_0._isReinforcement = true
+function BattleUnit.Reinforce(self)
+	self._isReinforcement = true
 end
 
-function BattleUnit.IsReinforcement(arg_190_0)
-	return arg_190_0._isReinforcement
+function BattleUnit.IsReinforcement(self)
+	return self._isReinforcement
 end
 
-function BattleUnit.SetReinforceCastTime(arg_191_0, arg_191_1)
-	arg_191_0._reinforceCastTime = arg_191_1
+function BattleUnit.SetReinforceCastTime(self, castTime)
+	self._reinforceCastTime = castTime
 end
 
-function BattleUnit.GetReinforceCastTime(arg_192_0)
-	return arg_192_0._reinforceCastTime
+function BattleUnit.GetReinforceCastTime(self)
+	return self._reinforceCastTime
 end
 
-function BattleUnit.GetFleetVO(arg_193_0)
+function BattleUnit.GetFleetVO(self)
 	return
 end
 
-function BattleUnit.SetFormationIndex(arg_194_0, arg_194_1)
+function BattleUnit.SetFormationIndex(self, formationIndex)
 	return
 end
 
-function BattleUnit.SetMaster(arg_195_0)
+function BattleUnit.SetMaster(self)
 	return
 end
 
-function BattleUnit.GetMaster(arg_196_0)
+function BattleUnit.GetMaster(self)
 	return nil
 end
 
@@ -1685,97 +1686,97 @@ function BattleUnit.IsSpectre(self)
 	return
 end
 
-function BattleUnit.Clear(arg_198_0)
-	arg_198_0._aliveState = false
+function BattleUnit.Clear(self)
+	self._aliveState = false
 
-	for iter_198_0, iter_198_1 in pairs(arg_198_0._hostileCldList) do
-		arg_198_0:RemoveHostileCld(iter_198_0)
+	for key, _ in pairs(self._hostileCldList) do
+		self:RemoveHostileCld(key)
 	end
 
-	arg_198_0:ClearWeapon()
-	arg_198_0:ClearBuff()
+	self:ClearWeapon()
+	self:ClearBuff()
 
-	arg_198_0._distanceBackup = {}
+	self._distanceBackup = {}
 end
 
-function BattleUnit.Dispose(arg_199_0)
-	arg_199_0._exposedList = nil
-	arg_199_0._phaseSwitcher = nil
+function BattleUnit.Dispose(self)
+	self._exposedList = nil
+	self._phaseSwitcher = nil
 
-	arg_199_0._weaponQueue:Dispose()
+	self._weaponQueue:Dispose()
 
-	if arg_199_0._airAssistQueue then
-		arg_199_0._airAssistQueue:Clear()
+	if self._airAssistQueue then
+		self._airAssistQueue:Clear()
 
-		arg_199_0._airAssistQueue = nil
+		self._airAssistQueue = nil
 	end
 
-	arg_199_0._equipmentList = nil
-	arg_199_0._totalWeapon = nil
+	self._equipmentList = nil
+	self._totalWeapon = nil
 
-	local var_199_0 = arg_199_0._airAssistList
+	local airAssistList = self._airAssistList
 
-	if var_199_0 then
-		for iter_199_0, iter_199_1 in ipairs(var_199_0) do
-			iter_199_1:Dispose()
+	if airAssistList then
+		for _, airAssist in ipairs(airAssistList) do
+			airAssist:Dispose()
 		end
 	end
 
-	for iter_199_2, iter_199_3 in ipairs(arg_199_0._fleetAAList) do
-		iter_199_3:Dispose()
+	for _, faaWeapon in ipairs(self._fleetAAList) do
+		faaWeapon:Dispose()
 	end
 
-	for iter_199_4, iter_199_5 in ipairs(arg_199_0._fleetRangeAAList) do
-		iter_199_5:Dispose()
+	for _, fraaWeapon in ipairs(self._fleetRangeAAList) do
+		fraaWeapon:Dispose()
 	end
 
-	local var_199_1 = arg_199_0._buffList
+	local buffList = self._buffList
 
-	for iter_199_6, iter_199_7 in pairs(var_199_1) do
-		iter_199_7:Dispose()
+	for _, buff in pairs(buffList) do
+		buff:Dispose()
 	end
 
-	local var_199_2 = arg_199_0._buffStockList
+	local buffStockList = self._buffStockList
 
-	for iter_199_8, iter_199_9 in pairs(var_199_2) do
-		for iter_199_10, iter_199_11 in pairs(iter_199_9) do
-			iter_199_11:Clear()
+	for _, stockBuffs in pairs(buffStockList) do
+		for _, stockBuff in pairs(stockBuffs) do
+			stockBuff:Clear()
 		end
 	end
 
-	arg_199_0._fleetRangeAA = nil
-	arg_199_0._aimBias = nil
-	arg_199_0._buffList = nil
-	arg_199_0._buffStockList = nil
-	arg_199_0._cldZCenterCache = nil
-	arg_199_0._remoteBoundBone = nil
+	self._fleetRangeAA = nil
+	self._aimBias = nil
+	self._buffList = nil
+	self._buffStockList = nil
+	self._cldZCenterCache = nil
+	self._remoteBoundBone = nil
 
-	arg_199_0:RemoveSummonSickness()
-	ys.EventDispatcher.DetachEventDispatcher(arg_199_0)
+	self:RemoveSummonSickness()
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
-function BattleUnit.InitCldComponent(arg_200_0)
-	local var_200_0 = arg_200_0:GetTemplate().cld_box
-	local var_200_1 = arg_200_0:GetTemplate().cld_offset
-	local var_200_2 = var_200_1[1]
+function BattleUnit.InitCldComponent(self)
+	local cldBox = self:GetTemplate().cld_box
+	local cldOffset = self:GetTemplate().cld_offset
+	local offsetX = cldOffset[1]
 
-	if arg_200_0:GetDirection() == BattleConst.UnitDir.LEFT then
-		var_200_2 = var_200_2 * -1
+	if self:GetDirection() == BattleConst.UnitDir.LEFT then
+		offsetX = offsetX * -1
 	end
 
-	arg_200_0._cldComponent = ys.Battle.BattleCubeCldComponent.New(var_200_0[1], var_200_0[2], var_200_0[3], var_200_2, var_200_1[3] + var_200_0[3] / 2)
+	self._cldComponent = ys.Battle.BattleCubeCldComponent.New(cldBox[1], cldBox[2], cldBox[3], offsetX, cldOffset[3] + cldBox[3] / 2)
 end
 
-function BattleUnit.GetBoxSize(arg_201_0)
-	return arg_201_0._cldComponent:GetCldBoxSize()
+function BattleUnit.GetBoxSize(self)
+	return self._cldComponent:GetCldBoxSize()
 end
 
-function BattleUnit.GetCldBox(arg_202_0)
-	return arg_202_0._cldComponent:GetCldBox(arg_202_0:GetPosition())
+function BattleUnit.GetCldBox(self)
+	return self._cldComponent:GetCldBox(self:GetPosition())
 end
 
-function BattleUnit.GetCldData(arg_203_0)
-	return arg_203_0._cldComponent:GetCldData()
+function BattleUnit.GetCldData(self)
+	return self._cldComponent:GetCldData()
 end
 
 -- BattleBuffShiftCLDBox调用
@@ -1783,119 +1784,119 @@ function BattleUnit.ShiftCldComponent(self, cldBox, cldOffset)
 	self:updateCldComponet(cldBox, cldOffset)
 end
 
-function BattleUnit.ResetCldComponent(arg_205_0)
-	local var_205_0 = arg_205_0:GetTemplate().cld_box
-	local var_205_1 = arg_205_0:GetTemplate().cld_offset
+function BattleUnit.ResetCldComponent(self)
+	local cldBox = self:GetTemplate().cld_box
+	local cldOffset = self:GetTemplate().cld_offset
 
-	arg_205_0:updateCldComponet(var_205_0, var_205_1)
+	self:updateCldComponet(cldBox, cldOffset)
 end
 
-function BattleUnit.updateCldComponet(arg_206_0, arg_206_1, arg_206_2)
-	local var_206_0 = arg_206_2[1]
+function BattleUnit.updateCldComponet(self, cldBox, cldOffset)
+	local offsetX = cldOffset[1]
 
-	if arg_206_0:GetDirection() == BattleConst.UnitDir.LEFT then
-		var_206_0 = var_206_0 * -1
+	if self:GetDirection() == BattleConst.UnitDir.LEFT then
+		offsetX = offsetX * -1
 	end
 
-	arg_206_0._cldComponent:ResetOffset(var_206_0, arg_206_2[3] + arg_206_1[3] / 2)
-	arg_206_0._cldComponent:ResetSize(arg_206_1[1], arg_206_1[2], arg_206_1[3])
+	self._cldComponent:ResetOffset(offsetX, cldOffset[3] + cldBox[3] / 2)
+	self._cldComponent:ResetSize(cldBox[1], cldBox[2], cldBox[3])
 end
 
 -- TODO
-function BattleUnit.InitOxygen(arg_207_0)
-	arg_207_0._maxOxy = arg_207_0:GetAttrByName("oxyMax")
-	arg_207_0._currentOxy = arg_207_0:GetAttrByName("oxyMax")
-	arg_207_0._oxyRecovery = arg_207_0:GetAttrByName("oxyRecovery")
-	arg_207_0._oxyRecoveryBench = arg_207_0:GetAttrByName("oxyRecoveryBench")
-	arg_207_0._oxyRecoverySurface = arg_207_0:GetAttrByName("oxyRecoverySurface")
-	arg_207_0._oxyConsume = arg_207_0:GetAttrByName("oxyCost")
-	arg_207_0._oxyState = ys.Battle.OxyState.New(arg_207_0)
+function BattleUnit.InitOxygen(self)
+	self._maxOxy = self:GetAttrByName("oxyMax")
+	self._currentOxy = self:GetAttrByName("oxyMax")
+	self._oxyRecovery = self:GetAttrByName("oxyRecovery")
+	self._oxyRecoveryBench = self:GetAttrByName("oxyRecoveryBench")
+	self._oxyRecoverySurface = self:GetAttrByName("oxyRecoverySurface")
+	self._oxyConsume = self:GetAttrByName("oxyCost")
+	self._oxyState = ys.Battle.OxyState.New(self)
 
-	arg_207_0._oxyState:OnDiveState()
-	arg_207_0:ConfigBubbleFX()
+	self._oxyState:OnDiveState()
+	self:ConfigBubbleFX()
 
-	return arg_207_0._oxyState
+	return self._oxyState
 end
 -- TODO
-function BattleUnit.UpdateOxygen(arg_208_0, arg_208_1)
-	if arg_208_0._oxyState then
-		arg_208_0._lastOxyUpdateStamp = arg_208_0._lastOxyUpdateStamp or arg_208_1
+function BattleUnit.UpdateOxygen(self, timeStamp)
+	if self._oxyState then
+		self._lastOxyUpdateStamp = self._lastOxyUpdateStamp or timeStamp
 
-		arg_208_0._oxyState:UpdateOxygen()
+		self._oxyState:UpdateOxygen()
 
-		if arg_208_0._oxyState:GetNextBubbleStamp() and arg_208_1 > arg_208_0._oxyState:GetNextBubbleStamp() then
-			arg_208_0._oxyState:FlashBubbleStamp(arg_208_1)
-			arg_208_0:PlayFX(arg_208_0._bubbleFX, true)
+		if self._oxyState:GetNextBubbleStamp() and timeStamp > self._oxyState:GetNextBubbleStamp() then
+			self._oxyState:FlashBubbleStamp(timeStamp)
+			self:PlayFX(self._bubbleFX, true)
 		end
 
-		arg_208_0._lastOxyUpdateStamp = arg_208_1
+		self._lastOxyUpdateStamp = timeStamp
 
-		arg_208_0:updateSonarExposeTag()
+		self:updateSonarExposeTag()
 	end
 end
 
-function BattleUnit.OxyRecover(arg_209_0, arg_209_1)
-	local var_209_0
+function BattleUnit.OxyRecover(self, state)
+	local recoveryRate
 
-	if arg_209_1 == ys.Battle.OxyState.STATE_FREE_BENCH then
-		var_209_0 = arg_209_0._oxyRecoveryBench
-	elseif arg_209_1 == ys.Battle.OxyState.STATE_FREE_FLOAT then
-		var_209_0 = arg_209_0._oxyRecovery
+	if state == ys.Battle.OxyState.STATE_FREE_BENCH then
+		recoveryRate = self._oxyRecoveryBench
+	elseif state == ys.Battle.OxyState.STATE_FREE_FLOAT then
+		recoveryRate = self._oxyRecovery
 	else
-		var_209_0 = arg_209_0._oxyRecoverySurface
+		recoveryRate = self._oxyRecoverySurface
 	end
 
-	local var_209_1 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_209_0._lastOxyUpdateStamp
+	local deltaTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._lastOxyUpdateStamp
 
-	arg_209_0._currentOxy = math.min(arg_209_0._maxOxy, arg_209_0._currentOxy + var_209_0 * var_209_1)
+	self._currentOxy = math.min(self._maxOxy, self._currentOxy + recoveryRate * deltaTime)
 end
 
-function BattleUnit.OxyConsume(arg_210_0)
-	local var_210_0 = pg.TimeMgr.GetInstance():GetCombatTime() - arg_210_0._lastOxyUpdateStamp
+function BattleUnit.OxyConsume(self)
+	local deltaTime = pg.TimeMgr.GetInstance():GetCombatTime() - self._lastOxyUpdateStamp
 
-	arg_210_0._currentOxy = math.max(0, arg_210_0._currentOxy - arg_210_0._oxyConsume * var_210_0)
+	self._currentOxy = math.max(0, self._currentOxy - self._oxyConsume * deltaTime)
 end
 -- TODO
-function BattleUnit.ChangeOxygenState(arg_211_0, arg_211_1)
-	arg_211_0._oxyState:ChangeState(arg_211_1)
+function BattleUnit.ChangeOxygenState(self, state)
+	self._oxyState:ChangeState(state)
 end
 
-function BattleUnit.ChangeWeaponDiveState(arg_212_0)
-	for iter_212_0, iter_212_1 in ipairs(arg_212_0._autoWeaponList) do
-		iter_212_1:ChangeDiveState()
+function BattleUnit.ChangeWeaponDiveState(self)
+	for _, weapon in ipairs(self._autoWeaponList) do
+		weapon:ChangeDiveState()
 	end
 end
 
-function BattleUnit.GetOxygenProgress(arg_213_0)
-	return arg_213_0._currentOxy / arg_213_0._maxOxy
+function BattleUnit.GetOxygenProgress(self)
+	return self._currentOxy / self._maxOxy
 end
 
-function BattleUnit.GetCuurentOxygen(arg_214_0)
-	return arg_214_0._currentOxy or 0
+function BattleUnit.GetCuurentOxygen(self)
+	return self._currentOxy or 0
 end
 
-function BattleUnit.ConfigBubbleFX(arg_215_0)
+function BattleUnit.ConfigBubbleFX(self)
 	return
 end
 
-function BattleUnit.SetDiveInvisible(arg_216_0, arg_216_1)
-	arg_216_0._diveInvisible = arg_216_1
+function BattleUnit.SetDiveInvisible(self, invisible)
+	self._diveInvisible = invisible
 
-	arg_216_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_VISIBLE))
-	arg_216_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED))
-	arg_216_0:dispatchDetectedTrigger()
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_VISIBLE))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED))
+	self:dispatchDetectedTrigger()
 end
 
-function BattleUnit.GetDiveInvisible(arg_217_0)
-	return arg_217_0._diveInvisible
+function BattleUnit.GetDiveInvisible(self)
+	return self._diveInvisible
 end
 
-function BattleUnit.GetOxygenVisible(arg_218_0)
-	return arg_218_0._oxyState and arg_218_0._oxyState:GetBarVisible()
+function BattleUnit.GetOxygenVisible(self)
+	return self._oxyState and self._oxyState:GetBarVisible()
 end
 
-function BattleUnit.SetForceVisible(arg_219_0)
-	arg_219_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_FORCE_DETECTED))
+function BattleUnit.SetForceVisible(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_FORCE_DETECTED))
 end
 
 -- BattleIndieSonar.Detect调用
@@ -1918,84 +1919,84 @@ function BattleUnit.Detected(self, duration)
 	end
 end
 
-function BattleUnit.Undetected(arg_221_0)
-	arg_221_0._exposedToSnoar = false
+function BattleUnit.Undetected(self)
+	self._exposedToSnoar = false
 
-	arg_221_0:updateExposeTimeStamp(BattleConfig.SUB_EXPOSE_LASTING_DURATION)
+	self:updateExposeTimeStamp(BattleConfig.SUB_EXPOSE_LASTING_DURATION)
 end
 
-function BattleUnit.RemoveSonarExpose(arg_222_0)
-	arg_222_0._exposedToSnoar = false
-	arg_222_0._exposedOverTimeStamp = nil
+function BattleUnit.RemoveSonarExpose(self)
+	self._exposedToSnoar = false
+	self._exposedOverTimeStamp = nil
 end
 
-function BattleUnit.updateSonarExposeTag(arg_223_0)
-	if arg_223_0._exposedOverTimeStamp and not arg_223_0._exposedToSnoar and pg.TimeMgr.GetInstance():GetCombatTime() > arg_223_0._exposedOverTimeStamp then
-		arg_223_0._exposedOverTimeStamp = nil
+function BattleUnit.updateSonarExposeTag(self)
+	if self._exposedOverTimeStamp and not self._exposedToSnoar and pg.TimeMgr.GetInstance():GetCombatTime() > self._exposedOverTimeStamp then
+		self._exposedOverTimeStamp = nil
 
-		arg_223_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED, {
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.SUBMARINE_DETECTED, {
 			detected = false
 		}))
-		arg_223_0:dispatchDetectedTrigger()
+		self:dispatchDetectedTrigger()
 	end
 end
 
-function BattleUnit.updateExposeTimeStamp(arg_224_0, arg_224_1)
-	local var_224_0 = pg.TimeMgr.GetInstance():GetCombatTime() + arg_224_1
+function BattleUnit.updateExposeTimeStamp(self, duration)
+	local newStamp = pg.TimeMgr.GetInstance():GetCombatTime() + duration
 
-	arg_224_0._exposedOverTimeStamp = arg_224_0._exposedOverTimeStamp or 0
-	arg_224_0._exposedOverTimeStamp = var_224_0 < arg_224_0._exposedOverTimeStamp and arg_224_0._exposedOverTimeStamp or var_224_0
+	self._exposedOverTimeStamp = self._exposedOverTimeStamp or 0
+	self._exposedOverTimeStamp = newStamp < self._exposedOverTimeStamp and self._exposedOverTimeStamp or newStamp
 end
 
-function BattleUnit.IsRunMode(arg_225_0)
-	return arg_225_0._oxyState and arg_225_0._oxyState:GetRundMode()
+function BattleUnit.IsRunMode(self)
+	return self._oxyState and self._oxyState:GetRundMode()
 end
 
-function BattleUnit.GetDiveDetected(arg_226_0)
-	return arg_226_0:GetDiveInvisible() and (arg_226_0._exposedOverTimeStamp or arg_226_0._exposedToSnoar)
+function BattleUnit.GetDiveDetected(self)
+	return self:GetDiveInvisible() and (self._exposedOverTimeStamp or self._exposedToSnoar)
 end
 
-function BattleUnit.GetForceExpose(arg_227_0)
-	return arg_227_0._oxyState and arg_227_0._oxyState:GetForceExpose()
+function BattleUnit.GetForceExpose(self)
+	return self._oxyState and self._oxyState:GetForceExpose()
 end
 
-function BattleUnit.dispatchDetectedTrigger(arg_228_0)
-	if arg_228_0:GetDiveDetected() then
-		arg_228_0:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_DETECTED, {})
+function BattleUnit.dispatchDetectedTrigger(self)
+	if self:GetDiveDetected() then
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_DETECTED, {})
 	else
-		arg_228_0:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_UNDETECTED, {})
+		self:TriggerBuff(BattleConst.BuffEffectType.ON_SUB_UNDETECTED, {})
 	end
 end
 
-function BattleUnit.GetRaidDuration(arg_229_0)
-	return arg_229_0:GetAttrByName("oxyMax") / arg_229_0:GetAttrByName("oxyCost")
+function BattleUnit.GetRaidDuration(self)
+	return self:GetAttrByName("oxyMax") / self:GetAttrByName("oxyCost")
 end
 
-function BattleUnit.EnterRaidRange(arg_230_0)
-	if arg_230_0:GetPosition().x > arg_230_0._subRaidLine then
+function BattleUnit.EnterRaidRange(self)
+	if self:GetPosition().x > self._subRaidLine then
 		return true
 	else
 		return false
 	end
 end
 
-function BattleUnit.EnterRetreatRange(arg_231_0)
-	if arg_231_0:GetPosition().x < arg_231_0._subRetreatLine then
+function BattleUnit.EnterRetreatRange(self)
+	if self:GetPosition().x < self._subRetreatLine then
 		return true
 	else
 		return false
 	end
 end
 
-function BattleUnit.GetOxyState(arg_232_0)
-	return arg_232_0._oxyState
+function BattleUnit.GetOxyState(self)
+	return self._oxyState
 end
 
-function BattleUnit.GetCurrentOxyState(arg_233_0)
-	if not arg_233_0._oxyState then
+function BattleUnit.GetCurrentOxyState(self)
+	if not self._oxyState then
 		return BattleConst.OXY_STATE.FLOAT
 	else
-		return arg_233_0._oxyState:GetCurrentDiveState()
+		return self._oxyState:GetCurrentDiveState()
 	end
 end
 
@@ -2009,8 +2010,8 @@ function BattleUnit.InitAntiSubState(self, sonarRange, sonarFrequency)
 	return self._antiSubVigilanceState
 end
 
-function BattleUnit.GetAntiSubState(arg_235_0)
-	return arg_235_0._antiSubVigilanceState
+function BattleUnit.GetAntiSubState(self)
+	return self._antiSubVigilanceState
 end
 
 -- 根据是否是幽灵单位来设置隐身状态：如果是幽灵单位且不是可见幽灵单位，则设置为隐身(不可见),否则取消隐身
@@ -2050,36 +2051,36 @@ function BattleUnit.GetExposed(self)
 	end
 end
 
-function BattleUnit.AppendExposed(arg_240_0, arg_240_1)
-	if not arg_240_0._blindInvisible then
+function BattleUnit.AppendExposed(self, key)
+	if not self._blindInvisible then
 		return
 	end
 
-	local var_240_0 = arg_240_0._exposedList[arg_240_1]
+	local wasExposed = self._exposedList[key]
 
-	arg_240_0._exposedList[arg_240_1] = true
+	self._exposedList[key] = true
 
-	if not var_240_0 then
-		arg_240_0:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_EXPOSE))
+	if not wasExposed then
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_EXPOSE))
 	end
 end
 
-function BattleUnit.RemoveExposed(arg_241_0, arg_241_1)
-	if not arg_241_0._blindInvisible then
+function BattleUnit.RemoveExposed(self, key)
+	if not self._blindInvisible then
 		return
 	end
 
-	arg_241_0._exposedList[arg_241_1] = nil
+	self._exposedList[key] = nil
 
-	arg_241_0:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_EXPOSE))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.BLIND_EXPOSE))
 end
 
-function BattleUnit.SetWorldDeathMark(arg_242_0)
-	arg_242_0._worldDeathMark = true
+function BattleUnit.SetWorldDeathMark(self)
+	self._worldDeathMark = true
 end
 
-function BattleUnit.GetWorldDeathMark(arg_243_0)
-	return arg_243_0._worldDeathMark
+function BattleUnit.GetWorldDeathMark(self)
+	return self._worldDeathMark
 end
 
 --- 隐匿组件相关 ---
@@ -2098,114 +2099,114 @@ function BattleUnit.CloakOnFire(self, exposedValue)
 	end
 end
 
-function BattleUnit.CloakExpose(arg_246_0, arg_246_1)
-	if arg_246_0._cloak then
-		arg_246_0._cloak:AppendExpose(arg_246_1)
+function BattleUnit.CloakExpose(self, exposeValue)
+	if self._cloak then
+		self._cloak:AppendExpose(exposeValue)
 	end
 end
 
-function BattleUnit.StrikeExpose(arg_247_0)
-	if arg_247_0._cloak then
-		arg_247_0._cloak:AppendStrikeExpose()
+function BattleUnit.StrikeExpose(self)
+	if self._cloak then
+		self._cloak:AppendStrikeExpose()
 	end
 end
 
-function BattleUnit.BombardExpose(arg_248_0)
-	if arg_248_0._cloak then
-		arg_248_0._cloak:AppendBombardExpose()
+function BattleUnit.BombardExpose(self)
+	if self._cloak then
+		self._cloak:AppendBombardExpose()
 	end
 end
 
-function BattleUnit.UpdateCloak(arg_249_0, arg_249_1)
-	arg_249_0._cloak:Update(arg_249_1)
+function BattleUnit.UpdateCloak(self, timeStamp)
+	self._cloak:Update(timeStamp)
 end
 
-function BattleUnit.UpdateCloakConfig(arg_250_0)
-	if arg_250_0._cloak then
-		arg_250_0._cloak:UpdateCloakConfig()
-		arg_250_0:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_CONFIG))
+function BattleUnit.UpdateCloakConfig(self)
+	if self._cloak then
+		self._cloak:UpdateCloakConfig()
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_CONFIG))
 	end
 end
 
-function BattleUnit.DispatchCloakStateUpdate(arg_251_0)
-	if arg_251_0._cloak then
-		arg_251_0:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_STATE))
+function BattleUnit.DispatchCloakStateUpdate(self)
+	if self._cloak then
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.UPDATE_CLOAK_STATE))
 	end
 end
 
-function BattleUnit.GetCloak(arg_252_0)
-	return arg_252_0._cloak
+function BattleUnit.GetCloak(self)
+	return self._cloak
 end
 
-function BattleUnit.AttachAimBias(arg_253_0, arg_253_1)
-	arg_253_0._aimBias = arg_253_1
+function BattleUnit.AttachAimBias(self, aimBias)
+	self._aimBias = aimBias
 
-	arg_253_0:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_AIMBIAS))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.INIT_AIMBIAS))
 end
 
-function BattleUnit.DetachAimBias(arg_254_0)
-	arg_254_0:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_AIMBIAS))
-	arg_254_0._aimBias:RemoveCrew(arg_254_0)
+function BattleUnit.DetachAimBias(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.REMOVE_AIMBIAS))
+	self._aimBias:RemoveCrew(self)
 
-	arg_254_0._aimBias = nil
+	self._aimBias = nil
 end
 
-function BattleUnit.ExitSmokeArea(arg_255_0)
-	arg_255_0._aimBias:SmokeExitPause()
+function BattleUnit.ExitSmokeArea(self)
+	self._aimBias:SmokeExitPause()
 end
 
-function BattleUnit.UpdateAimBiasSkillState(arg_256_0)
-	if arg_256_0._aimBias and arg_256_0._aimBias:GetHost() == arg_256_0 then
-		arg_256_0._aimBias:UpdateSkillLock()
+function BattleUnit.UpdateAimBiasSkillState(self)
+	if self._aimBias and self._aimBias:GetHost() == self then
+		self._aimBias:UpdateSkillLock()
 	end
 end
 
-function BattleUnit.HostAimBias(arg_257_0)
-	if arg_257_0._aimBias then
-		arg_257_0:DispatchEvent(ys.Event.New(BattleUnitEvent.HOST_AIMBIAS))
+function BattleUnit.HostAimBias(self)
+	if self._aimBias then
+		self:DispatchEvent(ys.Event.New(BattleUnitEvent.HOST_AIMBIAS))
 	end
 end
 
-function BattleUnit.GetAimBias(arg_258_0)
-	return arg_258_0._aimBias
+function BattleUnit.GetAimBias(self)
+	return self._aimBias
 end
 
-function BattleUnit.SwitchSpine(arg_259_0, arg_259_1, arg_259_2)
-	arg_259_0:DispatchEvent(ys.Event.New(BattleUnitEvent.SWITCH_SPINE, {
-		skin = arg_259_1,
-		HPBarOffset = arg_259_2
+function BattleUnit.SwitchSpine(self, skin, HPBarOffset)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.SWITCH_SPINE, {
+		skin = skin,
+		HPBarOffset = HPBarOffset
 	}))
 end
 
-function BattleUnit.Freeze(arg_260_0)
-	for iter_260_0, iter_260_1 in ipairs(arg_260_0._totalWeapon) do
-		iter_260_1:StartJamming()
+function BattleUnit.Freeze(self)
+	for _, weapon in ipairs(self._totalWeapon) do
+		weapon:StartJamming()
 	end
 
-	if arg_260_0._airAssistList then
-		for iter_260_2, iter_260_3 in ipairs(arg_260_0._airAssistList) do
-			iter_260_3:StartJamming()
+	if self._airAssistList then
+		for _, airAssist in ipairs(self._airAssistList) do
+			airAssist:StartJamming()
 		end
 	end
 end
 
-function BattleUnit.ActiveFreeze(arg_261_0)
-	for iter_261_0, iter_261_1 in ipairs(arg_261_0._totalWeapon) do
-		iter_261_1:JammingEliminate()
+function BattleUnit.ActiveFreeze(self)
+	for _, weapon in ipairs(self._totalWeapon) do
+		weapon:JammingEliminate()
 	end
 
-	if arg_261_0._airAssistList then
-		for iter_261_2, iter_261_3 in ipairs(arg_261_0._airAssistList) do
-			iter_261_3:JammingEliminate()
+	if self._airAssistList then
+		for _, airAssist in ipairs(self._airAssistList) do
+			airAssist:JammingEliminate()
 		end
 	end
 end
 
-function BattleUnit.ActiveWeaponSectorView(arg_262_0, arg_262_1, arg_262_2)
-	local var_262_0 = {
-		weapon = arg_262_1,
-		isActive = arg_262_2
+function BattleUnit.ActiveWeaponSectorView(self, weapon, isActive)
+	local eventData = {
+		weapon = weapon,
+		isActive = isActive
 	}
 
-	arg_262_0:DispatchEvent(ys.Event.New(BattleUnitEvent.WEAPON_SECTOR, var_262_0))
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.WEAPON_SECTOR, eventData))
 end

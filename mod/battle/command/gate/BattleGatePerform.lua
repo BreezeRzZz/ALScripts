@@ -1,84 +1,95 @@
-local var_0_0 = class("BattleGatePerform")
+--- @class BattleGatePerform : 回忆/表演关Gate，支持memory模式和普通发送请求模式
+local BattleGatePerform = class("BattleGatePerform")
 
-ys.Battle.BattleGatePerform = var_0_0
-var_0_0.__name = "BattleGatePerform"
+ys.Battle.BattleGatePerform = BattleGatePerform
+BattleGatePerform.__name = "BattleGatePerform"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.stageId
-	local var_1_1 = pg.expedition_data_template[var_1_0].dungeon_id
-	local var_1_2 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_1).fleet_prefab or {}
-	local var_1_3 = {}
+--- 进入表演战斗
+--- @param self BattleGatePerform
+--- @param sendData table 发送数据
+function BattleGatePerform.Entrance(self, sendData)
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab or {}
+	local shipIdList = {}
 
-	if arg_1_0.mainFleetId then
-		local var_1_4 = getProxy(BayProxy)
-		local var_1_5 = getProxy(FleetProxy)
+	if self.mainFleetId then
+		local bayProxy = getProxy(BayProxy)
+		local fleetProxy = getProxy(FleetProxy)
 
-		if not arg_1_1.LegalFleet(arg_1_0.mainFleetId) then
+		if not sendData.LegalFleet(self.mainFleetId) then
 			return
 		end
 
-		local var_1_6 = var_1_5:getFleetById(arg_1_0.mainFleetId)
-		local var_1_7 = var_1_4:getSortShipsByFleet(var_1_6)
+		local fleet = fleetProxy:getFleetById(self.mainFleetId)
+		local sortShips = bayProxy:getSortShipsByFleet(fleet)
 
-		for iter_1_0, iter_1_1 in ipairs(var_1_7) do
-			var_1_3[#var_1_3 + 1] = iter_1_1.id
+		for _, ship in ipairs(sortShips) do
+			shipIdList[#shipIdList + 1] = ship.id
 		end
 	end
 
-	local var_1_8 = {
-		stageId = var_1_0,
+	local stageData = {
+		stageId = stageId,
 		system = SYSTEM_PERFORM,
-		memory = arg_1_0.memory,
-		exitCallback = arg_1_0.exitCallback,
-		prefabFleet = var_1_2,
-		mainFleetId = arg_1_0.mainFleetId
+		memory = self.memory,
+		exitCallback = self.exitCallback,
+		prefabFleet = fleetPrefab,
+		mainFleetId = self.mainFleetId
 	}
 
-	if arg_1_0.memory then
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_8)
+	if self.memory then
+		-- memory模式直接发送进入
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	else
-		local function var_1_9(arg_2_0)
-			arg_1_1:sendNotification(GAME.STORY_UPDATE, {
-				storyId = tostring(var_1_0)
+		-- 普通模式先发Story更新再发BeginStage
+		local function onSuccess(tokenData)
+			sendData:sendNotification(GAME.STORY_UPDATE, {
+				storyId = tostring(stageId)
 			})
 
-			var_1_8.token = arg_2_0.key
+			stageData.token = tokenData.key
 
-			arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_8)
+			sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 		end
 
-		local function var_1_10(arg_3_0)
-			arg_1_1:RequestFailStandardProcess(arg_3_0)
+		local function onFail(errData)
+			sendData:RequestFailStandardProcess(errData)
 		end
 
-		BeginStageCommand.SendRequest(SYSTEM_PERFORM, var_1_3, {
-			var_1_0
-		}, var_1_9, var_1_10)
+		BeginStageCommand.SendRequest(SYSTEM_PERFORM, shipIdList, {
+			stageId
+		}, onSuccess, onFail)
 	end
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	if arg_4_0.memory then
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, {
+--- 退出表演战斗
+--- @param self BattleGatePerform
+--- @param callback table 回调对象
+function BattleGatePerform.Exit(self, callback)
+	if self.memory then
+		-- memory模式直接结束
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, {
 			system = SYSTEM_PERFORM
 		})
 	else
-		local var_4_0 = arg_4_1.GeneralPackage(arg_4_0, {})
+		-- 普通模式需要发包结算
+		local generalPackage = callback.GeneralPackage(self, {})
 
-		local function var_4_1(arg_5_0)
-			print(arg_4_0.exitCallback)
-			arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, {
+		local function onSuccess(result)
+			print(self.exitCallback)
+			callback:sendNotification(GAME.FINISH_STAGE_DONE, {
 				system = SYSTEM_PERFORM,
-				exitCallback = arg_4_0.exitCallback
+				exitCallback = self.exitCallback
 			})
 		end
 
-		local function var_4_2(arg_6_0)
-			arg_4_1:RequestFailStandardProcess(arg_6_0)
+		local function onFail(errData)
+			callback:RequestFailStandardProcess(errData)
 		end
 
-		arg_4_1:SendRequest(var_4_0, var_4_1, var_4_2)
+		callback:SendRequest(generalPackage, onSuccess, onFail)
 	end
 end
 
-return var_0_0
+return BattleGatePerform

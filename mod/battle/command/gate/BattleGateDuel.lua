@@ -1,12 +1,16 @@
-local var_0_0 = class("BattleGateDuel")
+--- @class BattleGateDuel : 演习（竞技场）Gate
+local BattleGateDuel = class("BattleGateDuel")
 
-ys.Battle.BattleGateDuel = var_0_0
-var_0_0.__name = "BattleGateDuel"
+ys.Battle.BattleGateDuel = BattleGateDuel
+BattleGateDuel.__name = "BattleGateDuel"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.mainFleetId
+--- 进入演习战斗
+--- @param self BattleGateDuel
+--- @param sendData table 发送数据
+function BattleGateDuel.Entrance(self, sendData)
+	local mainFleetId = self.mainFleetId
 
-	if not arg_1_1.LegalFleet(arg_1_0.mainFleetId) then
+	if not sendData.LegalFleet(self.mainFleetId) then
 		return
 	end
 
@@ -16,153 +20,163 @@ function var_0_0.Entrance(arg_1_0, arg_1_1)
 		return
 	end
 
-	local var_1_1 = getProxy(PlayerProxy)
-	local var_1_2 = getProxy(BayProxy)
-	local var_1_3 = getProxy(FleetProxy)
-	local var_1_4
-	local var_1_5
-	local var_1_6 = arg_1_0.rivalId
-	local var_1_7 = getProxy(MilitaryExerciseProxy):getRivalById(var_1_6)
-	local var_1_8 = pg.battle_cost_template[SYSTEM_DUEL]
-	local var_1_9 = var_1_8.oil_cost > 0
-	local var_1_10 = {}
-	local var_1_11 = 0
-	local var_1_12 = 0
-	local var_1_13 = 0
-	local var_1_14 = 0
-	local var_1_15 = var_1_3:getFleetById(var_1_0)
-	local var_1_16 = var_1_2:getSortShipsByFleet(var_1_15)
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local fleetProxy = getProxy(FleetProxy)
+	local subFleet
+	local subShips
+	local rivalId = self.rivalId
+	local rivalData = getProxy(MilitaryExerciseProxy):getRivalById(rivalId)
+	local costTemplate = pg.battle_cost_template[SYSTEM_DUEL]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local shipIdList = {}
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local fleet = fleetProxy:getFleetById(mainFleetId)
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_16) do
-		var_1_10[#var_1_10 + 1] = iter_1_1.id
+	for _, ship in ipairs(sortShips) do
+		shipIdList[#shipIdList + 1] = ship.id
 	end
 
-	local var_1_17 = var_1_1:getData()
+	local playerData = playerProxy:getData()
 
-	if var_1_9 and var_1_14 > var_1_17.oil then
+	if hasOilCost and endOil > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_18 = 0
+	-- 计算对手总等级用于RivalLevelVertiry验校
+	local rivalTotalLevel = 0
 
-	for iter_1_2, iter_1_3 in ipairs(var_1_7.mainShips) do
-		var_1_18 = var_1_18 + iter_1_3.level
+	for _, mainShip in ipairs(rivalData.mainShips) do
+		rivalTotalLevel = rivalTotalLevel + mainShip.level
 	end
 
-	for iter_1_4, iter_1_5 in ipairs(var_1_7.vanguardShips) do
-		var_1_18 = var_1_18 + iter_1_5.level
+	for _, vanguardShip in ipairs(rivalData.vanguardShips) do
+		rivalTotalLevel = rivalTotalLevel + vanguardShip.level
 	end
 
-	RivalLevelVertiry = var_1_18
+	RivalLevelVertiry = rivalTotalLevel
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_19(arg_2_0)
-		if var_1_9 then
-			var_1_17:consume({
+	--- 请求成功回调
+	local function onSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_12
+				oil = startOil
 			})
 		end
 
-		if var_1_8.enter_energy_cost > 0 then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_16) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_2:updateShip(iter_2_1)
+			for _, ship in ipairs(sortShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		local var_2_1 = ys.Battle.BattleConfig.ARENA_LIST
-		local var_2_2 = var_2_1[math.random(#var_2_1)]
+		local arenaList = ys.Battle.BattleConfig.ARENA_LIST
+		local randomStage = arenaList[math.random(#arenaList)]
 
-		var_1_1:updatePlayer(var_1_17)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_3 = {
-			mainFleetId = var_1_0,
+		local stageData = {
+			mainFleetId = mainFleetId,
 			prefabFleet = {},
-			stageId = var_2_2,
+			stageId = randomStage,
 			system = SYSTEM_DUEL,
-			rivalId = var_1_6,
-			token = arg_2_0.key,
+			rivalId = rivalId,
+			token = tokenData.key,
 			mode = mode
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_3)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_20(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 请求失败回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_DUEL, var_1_10, {
-		var_1_6
-	}, var_1_19, var_1_20)
+	BeginStageCommand.SendRequest(SYSTEM_DUEL, shipIdList, {
+		rivalId
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = pg.battle_cost_template[SYSTEM_DUEL]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(BayProxy)
-	local var_4_3 = arg_4_0.statistics._battleScore
-	local var_4_4 = 0
-	local var_4_5 = {}
-	local var_4_6 = var_4_1:getFleetById(arg_4_0.mainFleetId)
-	local var_4_7 = var_4_2:getSortShipsByFleet(var_4_6)
-	local var_4_8 = var_4_6:getEndCost().oil
-	local var_4_9 = arg_4_1.GeneralPackage(arg_4_0, var_4_7)
+--- 退出演习战斗
+--- @param self BattleGateDuel
+--- @param callback table 回调对象
+function BattleGateDuel.Exit(self, callback)
+	local costTemplate = pg.battle_cost_template[SYSTEM_DUEL]
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local battleScore = self.statistics._battleScore
+	local oilUsed = 0
+	local shipList = {}
+	local fleet = fleetProxy:getFleetById(self.mainFleetId)
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
+	local endOilCost = fleet:getEndCost().oil
+	local generalPackage = callback.GeneralPackage(self, sortShips)
 
-	local function var_4_10(arg_5_0)
-		arg_4_1.addShipsExp(arg_5_0.ship_exp_list, arg_4_0.statistics, false)
+	--- 结算成功回调
+	local function onSuccess(result)
+		callback.addShipsExp(result.ship_exp_list, self.statistics, false)
 
-		arg_4_0.statistics.mvpShipID = arg_5_0.mvp
+		self.statistics.mvpShipID = result.mvp
 
-		local var_5_0, var_5_1 = arg_4_1:GeneralLoot(arg_5_0)
-		local var_5_2 = var_4_3 > ys.Battle.BattleConst.BattleScore.C
+		local drops, extraDrops = callback:GeneralLoot(result)
+		local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
 
-		arg_4_1.GeneralPlayerCosume(SYSTEM_DUEL, var_5_2, var_4_8, arg_5_0.player_exp, exFlag)
+		callback.GeneralPlayerCosume(SYSTEM_DUEL, isWin, endOilCost, result.player_exp, exFlag)
 		getProxy(MilitaryExerciseProxy):reduceExerciseCount()
 
-		local var_5_3 = {
+		local finishData = {
 			system = SYSTEM_DUEL,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
-			drops = var_5_0,
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
 			commanderExps = {},
-			result = arg_5_0.result,
-			extraDrops = var_5_1
+			result = result.result,
+			extraDrops = extraDrops
 		}
 
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_3)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 	end
 
-	arg_4_1:SendRequest(var_4_9, var_4_10)
+	callback:SendRequest(generalPackage, onSuccess)
 end
 
-function var_0_0.GetPreloadList(arg_6_0)
-	local var_6_0 = {}
-	local var_6_1
-	local var_6_2 = getProxy(FleetProxy)
-	local var_6_3 = getProxy(BayProxy)
-	local var_6_4 = var_6_2:getFleetById(arg_6_0.mainFleetId)
-	local var_6_5 = var_6_3:getShipsByFleet(var_6_4)
+--- 获取预加载资源列表
+--- @param self BattleGateDuel
+--- @return table shipResources, table skinResources
+function BattleGateDuel.GetPreloadList(self)
+	local shipList = {}
+	local skinList
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local mainFleet = fleetProxy:getFleetById(self.mainFleetId)
+	local mainShips = bayProxy:getShipsByFleet(mainFleet)
 
-	for iter_6_0, iter_6_1 in ipairs(var_6_5) do
-		table.insert(var_6_0, iter_6_1)
+	for _, ship in ipairs(mainShips) do
+		table.insert(shipList, ship)
 	end
 
-	local var_6_6 = getProxy(MilitaryExerciseProxy):getRivalById(arg_6_0.rivalId):getShips()
+	local rivalShips = getProxy(MilitaryExerciseProxy):getRivalById(self.rivalId):getShips()
 
-	for iter_6_2, iter_6_3 in ipairs(var_6_6) do
-		table.insert(var_6_0, iter_6_3)
+	for _, ship in ipairs(rivalShips) do
+		table.insert(shipList, ship)
 	end
 
-	local var_6_7, var_6_8 = ys.Battle.BattleResourceManager.GetInstance().GetPlayerShipResource(var_6_0, arg_6_0.system)
+	local shipResources, skinResources = ys.Battle.BattleResourceManager.GetInstance().GetPlayerShipResource(shipList, self.system)
 
-	return var_6_7, var_6_8
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateDuel

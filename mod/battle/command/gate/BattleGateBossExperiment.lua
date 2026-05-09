@@ -1,41 +1,51 @@
-local var_0_0 = class("BattleGateBossExperiment")
+--- @class BattleGateBossExperiment : Boss实验战斗Gate，复用ActBoss的预加载逻辑
+local BattleGateBossExperiment = class("BattleGateBossExperiment")
 
-ys.Battle.BattleGateBossExperiment = var_0_0
-var_0_0.__name = "BattleGateBossExperiment"
+ys.Battle.BattleGateBossExperiment = BattleGateBossExperiment
+BattleGateBossExperiment.__name = "BattleGateBossExperiment"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.actId
-	local var_1_1 = arg_1_0.mainFleetId
-	local var_1_2 = arg_1_0.stageId
-	local var_1_3 = pg.expedition_data_template[var_1_2].dungeon_id
-	local var_1_4 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_3).fleet_prefab
-	local var_1_5 = {
-		mainFleetId = var_1_1,
-		actId = var_1_0,
-		prefabFleet = var_1_4,
-		stageId = var_1_2,
+--- 进入Boss实验战斗
+--- @param self BattleGateBossExperiment
+--- @param sendData table 发送数据
+function BattleGateBossExperiment.Entrance(self, sendData)
+	local actId = self.actId
+	local mainFleetId = self.mainFleetId
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
+	local stageData = {
+		mainFleetId = mainFleetId,
+		actId = actId,
+		prefabFleet = fleetPrefab,
+		stageId = stageId,
 		system = SYSTEM_BOSS_EXPERIMENT
 	}
 
-	arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_5)
+	sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 end
 
-function var_0_0.Exit(arg_2_0, arg_2_1)
-	local var_2_0 = ys.Battle.BattleConst.BattleScore.S
-	local var_2_1 = {
+--- 退出Boss实验战斗，固定S评分
+--- @param self BattleGateBossExperiment
+--- @param callback table 回调对象
+function BattleGateBossExperiment.Exit(self, callback)
+	local score = ys.Battle.BattleConst.BattleScore.S
+	local result = {
 		system = SYSTEM_BOSS_EXPERIMENT,
-		statistics = arg_2_0.statistics,
-		score = var_2_0,
+		statistics = self.statistics,
+		score = score,
 		commanderExps = {}
 	}
 
-	arg_2_1:sendNotification(GAME.FINISH_STAGE_DONE, var_2_1)
+	callback:sendNotification(GAME.FINISH_STAGE_DONE, result)
 end
 
-function var_0_0.GetPreloadList(arg_3_0)
-	local var_3_0, var_3_1 = ys.Battle.BattleGateActBoss.GetPreloadList(arg_3_0)
+--- 获取预加载资源列表，复用ActBoss的逻辑
+--- @param self BattleGateBossExperiment
+--- @return table shipResources, table skinResources
+function BattleGateBossExperiment.GetPreloadList(self)
+	local shipResources, skinResources = ys.Battle.BattleGateActBoss.GetPreloadList(self)
 
-	return var_3_0, var_3_1
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateBossExperiment

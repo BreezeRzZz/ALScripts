@@ -1,158 +1,174 @@
-local var_0_0 = class("BattleGateBossRushEX")
+--- @class BattleGateBossRushEX : Boss Rush EX模式Gate
+local BattleGateBossRushEX = class("BattleGateBossRushEX")
 
-ys.Battle.BattleGateBossRushEX = var_0_0
-var_0_0.__name = "BattleGateBossRushEX"
+ys.Battle.BattleGateBossRushEX = BattleGateBossRushEX
+BattleGateBossRushEX.__name = "BattleGateBossRushEX"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = arg_1_0.actId
-	local var_1_1 = getProxy(PlayerProxy)
-	local var_1_2 = getProxy(FleetProxy)
-	local var_1_3 = getProxy(BayProxy)
-	local var_1_4 = pg.battle_cost_template[SYSTEM_BOSS_RUSH_EX]
-	local var_1_5 = var_1_4.oil_cost > 0
-	local var_1_6 = 0
-	local var_1_7 = 0
-	local var_1_8 = 0
-	local var_1_9 = 0
-	local var_1_10 = getProxy(ActivityProxy):getActivityById(var_1_0):GetSeriesData()
-	local var_1_11 = var_1_10:GetStaegLevel() + 1
-	local var_1_12 = var_1_10:GetExpeditionIds()[var_1_11]
-	local var_1_13 = var_1_10:GetMode()
-	local var_1_14, var_1_15 = var_1_10:GetStageFleets(var_1_13, var_1_11)
-	local var_1_16 = var_1_2:getActivityFleets()[var_1_0]
-	local var_1_17 = var_1_16[var_1_14]
-	local var_1_18 = var_1_16[var_1_15]
-	local var_1_19 = {}
-	local var_1_20 = var_1_3:getSortShipsByFleet(var_1_17)
+--- 进入Boss Rush EX战斗
+--- @param self BattleGateBossRushEX
+--- @param sendData table 发送数据
+function BattleGateBossRushEX.Entrance(self, sendData)
+	local actId = self.actId
+	local playerProxy = getProxy(PlayerProxy)
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_BOSS_RUSH_EX]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local seriesData = getProxy(ActivityProxy):getActivityById(actId):GetSeriesData()
+	local currentLevel = seriesData:GetStaegLevel() + 1
+	local expeditionId = seriesData:GetExpeditionIds()[currentLevel]
+	local mode = seriesData:GetMode()
+	local mainFleetId, subFleetId = seriesData:GetStageFleets(mode, currentLevel)
+	local activityFleets = fleetProxy:getActivityFleets()[actId]
+	local mainFleet = activityFleets[mainFleetId]
+	local subFleet = activityFleets[subFleetId]
+	local shipIdList = {}
+	local sortShips = bayProxy:getSortShipsByFleet(mainFleet)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_20) do
-		var_1_19[#var_1_19 + 1] = iter_1_1.id
+	for _, ship in ipairs(sortShips) do
+		shipIdList[#shipIdList + 1] = ship.id
 	end
 
-	local var_1_21 = var_1_1:getRawData()
+	local playerData = playerProxy:getRawData()
 
-	if var_1_5 and var_1_9 > var_1_21.oil then
+	if hasOilCost and endOil > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_22(arg_2_0)
-		if var_1_5 then
-			var_1_21:consume({
+	--- 请求成功回调
+	local function onSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_7
+				oil = startOil
 			})
 		end
 
-		if var_1_4.enter_energy_cost > 0 then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_20) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_3:updateShip(iter_2_1)
+			for _, ship in ipairs(sortShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		var_1_1:updatePlayer(var_1_21)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = {
+		local stageData = {
 			prefabFleet = {},
-			stageId = var_1_12,
+			stageId = expeditionId,
 			system = SYSTEM_BOSS_RUSH_EX,
-			actId = var_1_0,
-			token = arg_2_0.key
+			actId = actId,
+			token = tokenData.key
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_1)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_23(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 请求失败回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_BOSS_RUSH_EX, var_1_19, {
-		var_1_12
-	}, var_1_22, var_1_23)
+	BeginStageCommand.SendRequest(SYSTEM_BOSS_RUSH_EX, shipIdList, {
+		expeditionId
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = pg.battle_cost_template[SYSTEM_BOSS_RUSH_EX]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(BayProxy)
-	local var_4_3 = arg_4_0.statistics._battleScore
-	local var_4_4 = var_4_3 > ys.Battle.BattleConst.BattleScore.C
-	local var_4_5 = 0
-	local var_4_6 = {}
-	local var_4_7 = {}
+--- 退出Boss Rush EX，使用seriesAsync异步结算
+--- @param self BattleGateBossRushEX
+--- @param callback table 回调对象
+function BattleGateBossRushEX.Exit(self, callback)
+	local costTemplate = pg.battle_cost_template[SYSTEM_BOSS_RUSH_EX]
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local battleScore = self.statistics._battleScore
+	local isWin = battleScore > ys.Battle.BattleConst.BattleScore.C
+	local totalOil = 0
+	local shipList = {}
+	local commanderIdList = {}
 
+	-- 收集舰队数据
 	;(function()
-		local var_5_0 = arg_4_0.actId
-		local var_5_1 = getProxy(ActivityProxy):getActivityById(var_5_0):GetSeriesData()
-		local var_5_2 = var_5_1:GetStaegLevel() + 1
-		local var_5_3 = var_5_1:GetMode()
-		local var_5_4, var_5_5 = var_5_1:GetStageFleets(var_5_3, var_5_2)
-		local var_5_6 = var_4_1:getActivityFleets()[var_5_0]
-		local var_5_7 = var_5_6[var_5_4]
-		local var_5_8 = var_5_6[var_5_5]
+		local actId = self.actId
+		local seriesData = getProxy(ActivityProxy):getActivityById(actId):GetSeriesData()
+		local currentLevel = seriesData:GetStaegLevel() + 1
+		local mode = seriesData:GetMode()
+		local mainFleetId, subFleetId = seriesData:GetStageFleets(mode, currentLevel)
+		local activityFleets = fleetProxy:getActivityFleets()[actId]
+		local mainFleet = activityFleets[mainFleetId]
+		local subFleet = activityFleets[subFleetId]
 
-		local function var_5_9(arg_6_0)
-			table.insertto(var_4_7, _.values(arg_6_0.commanderIds))
-			table.insertto(var_4_6, var_4_2:getSortShipsByFleet(arg_6_0))
+		--- 处理单个舰队
+		local function processFleet(fleet)
+			table.insertto(commanderIdList, _.values(fleet.commanderIds))
+			table.insertto(shipList, bayProxy:getSortShipsByFleet(fleet))
 		end
 
-		var_5_9(var_5_7)
+		processFleet(mainFleet)
 
-		if arg_4_0.statistics.submarineAid then
-			var_5_9(var_5_8)
+		if self.statistics.submarineAid then
+			processFleet(subFleet)
 		end
 	end)()
 
-	local var_4_8 = arg_4_1.GeneralPackage(arg_4_0, var_4_6)
+	local generalPackage = callback.GeneralPackage(self, shipList)
 
-	var_4_8.commander_id_list = var_4_7
+	generalPackage.commander_id_list = commanderIdList
 
-	local function var_4_9(arg_7_0)
-		arg_4_0.statistics.mvpShipID = arg_7_0.mvp
+	--- 结算回调
+	local function onExitResult(serverResult)
+		self.statistics.mvpShipID = serverResult.mvp
 
-		local var_7_0 = {
+		local resultData = {
 			system = SYSTEM_BOSS_RUSH_EX,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
-			result = arg_7_0.result
+			statistics = self.statistics,
+			score = battleScore,
+			result = serverResult.result
 		}
-		local var_7_1 = arg_4_0.actId
-		local var_7_2 = getProxy(ActivityProxy):getActivityById(var_7_1)
+		local actId = self.actId
+		local activity = getProxy(ActivityProxy):getActivityById(actId)
 
-		var_7_2:GetSeriesData():PassStage(var_7_0)
-		getProxy(ActivityProxy):updateActivity(var_7_2)
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_7_0)
+		activity:GetSeriesData():PassStage(resultData)
+		getProxy(ActivityProxy):updateActivity(activity)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, resultData)
 	end
 
+	-- 胜利时发送请求，否则直接异步执行
 	seriesAsync({
-		function(arg_8_0)
-			if var_4_4 then
-				arg_4_1:SendRequest(var_4_8, function(arg_9_0)
-					arg_8_0(arg_9_0)
+		function(nextStep)
+			if isWin then
+				callback:SendRequest(generalPackage, function(resp)
+					nextStep(resp)
 				end)
 
 				return
 			end
 
-			arg_8_0({})
+			nextStep({})
 		end,
-		function(arg_10_0, arg_10_1)
-			var_4_9(arg_10_1)
+		function(_, serverResult)
+			onExitResult(serverResult)
 		end
 	})
 end
 
-function var_0_0.GetPreloadList(arg_11_0)
-	local var_11_0, var_11_1 = ys.Battle.BattleGateBossRush.GetPreloadList(arg_11_0)
+--- 获取预加载资源列表，复用BossRush的逻辑
+--- @param self BattleGateBossRushEX
+--- @return table shipResources, table skinResources
+function BattleGateBossRushEX.GetPreloadList(self)
+	local shipResources, skinResources = ys.Battle.BattleGateBossRush.GetPreloadList(self)
 
-	return var_11_0, var_11_1
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateBossRushEX

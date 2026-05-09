@@ -74,7 +74,7 @@ function BattleFleetBuffUnit.Stack(self, host)
 	self:setRemoveTime()
 end
 
-function BattleFleetBuffUnit.UpdateStack(arg_6_0, arg_6_1, arg_6_2)
+function BattleFleetBuffUnit.UpdateStack(self, stackChange, event)
 	return
 end
 

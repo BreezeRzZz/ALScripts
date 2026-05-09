@@ -1,5 +1,6 @@
 ys = ys or {}
--- TODO
+
+--- @class BattleAircraftUnit : 舰载机基类
 local ys = ys
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleConst = ys.Battle.BattleConst
@@ -16,6 +17,7 @@ BattleAircraftUnit.STATE_DESTORY = "Destory"
 -- BattleConfig.AircraftHeight = 10
 BattleAircraftUnit.HEIGHT = BattleConfig.AircraftHeight + 5
 
+--- @param UID number: 唯一ID
 function BattleAircraftUnit.Ctor(self, UID)
 	ys.EventDispatcher.AttachEventDispatcher(self)
 
@@ -33,6 +35,8 @@ function BattleAircraftUnit.Ctor(self, UID)
 end
 
 -- 被BattleDataProxy.doCreateAirUnit调用
+--- @param top number: 上边界
+--- @param bottom number: 下边界
 function BattleAircraftUnit.SetBound(self, top, bottom)
 	-- 从上层调用来看，一般top和bottom分别对应playerArea的上边界和下边界
 	-- 绝大多数图都是：top = 88, bottom = 20
@@ -51,6 +55,10 @@ function BattleAircraftUnit.SetBound(self, top, bottom)
 end
 
 -- 被BattleDataProxy.doCreateAirUnit调用
+--- @param cameraTop number: 摄像机顶部
+--- @param cameraBottom number: 摄像机底部
+--- @param cameraLeft number: 摄像机左边界
+--- @param cameraRight number: 摄像机右边界
 function BattleAircraftUnit.SetViewBoundData(self, cameraTop, cameraBottom, cameraLeft, cameraRight)
 	self._cameraTop = cameraTop + 3
 	self._cameraBottom = cameraBottom - 23
@@ -59,6 +67,7 @@ function BattleAircraftUnit.SetViewBoundData(self, cameraTop, cameraBottom, came
 end
 
 -- Aircraft的Update函数: 主要就是更新位置、更新速度和更新武器
+--- @param timeStamp number: 时间戳
 function BattleAircraftUnit.Update(self, timeStamp)
 	self._pos:Add(self._speed)
 	self:UpdateSpeed()
@@ -76,6 +85,7 @@ function BattleAircraftUnit.DeactiveCldBox(self)
 end
 
 -- BattleBuffDeactiveCLDBox.onAttach/onRemove调用
+--- @param isImmune boolean: 是否免疫碰撞
 function BattleAircraftUnit.SetCldBoxImmune(self, isImmune)
 	self._cldComponent:SetImmuneCLD(isImmune)
 end
@@ -110,14 +120,15 @@ function BattleAircraftUnit.EnterGCD(self)
 end
 
 -- 被BattleAircraftUnit.SetTemplate调用
+--- @return table: 武器列表
 function BattleAircraftUnit.CreateWeapon(self)
-	local var_12_0 = {}
+	local weaponList = {}
 
-	for iter_12_0, iter_12_1 in ipairs(self._tmpData.weapon_ID) do
-		var_12_0[iter_12_0] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(iter_12_1, self, iter_12_0, self._weaponPotential)
+	for index, weaponID in ipairs(self._tmpData.weapon_ID) do
+		weaponList[index] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(weaponID, self, index, self._weaponPotential)
 	end
 
-	return var_12_0
+	return weaponList
 end
 
 function BattleAircraftUnit.ShutdownWeapon(self)
@@ -135,48 +146,59 @@ function BattleAircraftUnit.UpdateWeapon(self)
 end
 
 -- BattleHiveUnit.SpawnAircraft或BattlePointAirStrikeUnit.DoAttack调用
+--- @param strikePoint Vector3: 攻击点
 function BattleAircraftUnit.SetStrikePoint(self, strikePoint)
 	self._strikePoint = strikePoint
 
 	self:SetPosition(Vector3(self._pos.x, self._pos.y, strikePoint.z))
 end
 
+--- @return Vector3: 攻击点
 function BattleAircraftUnit.GetStrikePoint(self)
 	return self._strikePoint
 end
 
+--- @return table: 武器列表
 function BattleAircraftUnit.GetWeapon(self)
 	return self._weapon
 end
 
+--- @return number: 当前血量
 function BattleAircraftUnit.GetCurrentHP(self)
 	return self._currentHP
 end
 
+--- @return number: 最大血量
 function BattleAircraftUnit.GetMaxHP(self)
 	return ys.Battle.BattleAttr.GetCurrent(self, "maxHP")
 end
 
+--- @return boolean: 是否未击破
 function BattleAircraftUnit.IsUndefeated(self)
 	return self._undefeated
 end
 
+--- @return boolean: 是否存活
 function BattleAircraftUnit.IsAlive(self)
 	return self._aliveState
 end
 
+--- @return boolean: 始终返回false
 function BattleAircraftUnit.IsCease(self)
 	return false
 end
 
+--- @return nil: 舰载机无氧气状态
 function BattleAircraftUnit.GetOxyState(self)
 	return nil
 end
 
+--- @return nil: 舰载机非Boss
 function BattleAircraftUnit.IsBoss(self)
 	return nil
 end
 
+--- 受到致死伤害时死亡
 function BattleAircraftUnit.HandleDamageToDeath(self)
 	self:UpdateHP(-self._currentHP, {
 		isMiss = false,
@@ -187,6 +209,9 @@ end
 
 -- 舰载机的耐久更新主逻辑
 -- 相比BattleUnit.UpdateHP，简单非常多
+--- @param dHP number: 血量变化
+--- @param extraInfo table: 额外信息
+--- @return number: 实际血量变化
 function BattleAircraftUnit.UpdateHP(self, dHP, extraInfo)
 	local isMiss = extraInfo.isMiss
 	local isCri = extraInfo.isCri
@@ -220,6 +245,7 @@ function BattleAircraftUnit.UpdateHP(self, dHP, extraInfo)
 	return dHP
 end
 
+--- 死亡处理
 function BattleAircraftUnit.onDead(self)
 	self._currentState = self.STATE_DESTORY
 	self._aliveState = false
@@ -258,12 +284,14 @@ function BattleAircraftUnit.UpdateSpeed(self)
 	end
 end
 
+--- 离开边界
 function BattleAircraftUnit.OutBound(self)
 	self._undefeated = true
 
 	self:onDead()
 end
 
+--- @return number: 模型大小（创建状态下随Y轴渐变）
 function BattleAircraftUnit.GetSize(self)
 	-- 创建状态下，随着Y轴位置的上升，大小逐渐变大
 	-- 是与y轴位置成正比的，当y轴位置达到HEIGHT时，大小为_scale
@@ -277,6 +305,7 @@ function BattleAircraftUnit.GetSize(self)
 end
 
 -- 被BattleDataFunction.CreateAircraftUnit调用
+--- @param tmpData table: 模板数据
 function BattleAircraftUnit.SetTemplate(self, tmpData)
 	self._tmpData = tmpData
 
@@ -295,6 +324,7 @@ function BattleAircraftUnit.SetTemplate(self, tmpData)
 end
 
 -- 被BattleDataFunction.CreateAircraftUnit调用
+--- @param weaponPotential number: 武器潜力值
 function BattleAircraftUnit.SetWeanponPotential(self, weaponPotential)
 	self._weaponPotential = weaponPotential
 end
@@ -314,6 +344,7 @@ end
 -- 一般来讲，mother是创建该舰载机的BattleHiveUnit/BattleSupportHiveUnit
 -- 而(Support)HiveUnit又是由BattleUnit创建的一种WeaponUnit
 -- 这里的mother实际上是WeaponUnit的宿主单位(即BattleUnit),因为BattleHiveUnit.SpawnAircraft传入的是其host作为mother参数
+--- @param mother BattleUnit: 母单位
 function BattleAircraftUnit.SetMotherUnit(self, mother)
 	self._motherUnit = mother
 
@@ -359,10 +390,12 @@ function BattleAircraftUnit.SetMotherUnit(self, mother)
 	end
 end
 
+--- @return table: 标签列表
 function BattleAircraftUnit.GetLabelTag(self)
 	return self._labelTagList
 end
 
+--- @param labelTag string: 标签
 function BattleAircraftUnit.AddLabelTag(self, labelTag)
 	table.insert(self._labelTagList, labelTag)
 
@@ -371,6 +404,8 @@ function BattleAircraftUnit.AddLabelTag(self, labelTag)
 	labelTagList[labelTag] = (labelTagList[labelTag] or 0) + 1
 end
 
+--- @param labelTags table: 标签列表
+--- @return boolean: 是否包含任一标签
 function BattleAircraftUnit.ContainsLabelTag(self, labelTags)
 	if self._labelTagList == nil then
 		return false
@@ -385,15 +420,18 @@ function BattleAircraftUnit.ContainsLabelTag(self, labelTags)
 	return false
 end
 
+--- @param IFF number: 阵营
 function BattleAircraftUnit.SetIFF(self, IFF)
 	self._IFF = IFF
 end
 
+--- @param pos Vector3: 位置
 function BattleAircraftUnit.SetPosition(self, pos)
 	self._pos:Set(pos.x, pos.y, pos.z)
 end
 
 -- 视界范围限制
+--- @return boolean: 是否超出视界
 function BattleAircraftUnit.IsOutViewBound(self)
 	local pos = self:GetPosition()
 	local x = pos.x
@@ -404,6 +442,8 @@ function BattleAircraftUnit.IsOutViewBound(self)
 	end
 end
 
+--- @param otherUnit BattleUnit: 另一个单位
+--- @return number: 距离
 function BattleAircraftUnit.GetDistance(self, otherUnit)
 	local frameIndex = self._battleProxy.FrameIndex
 
@@ -425,6 +465,8 @@ function BattleAircraftUnit.GetDistance(self, otherUnit)
 end
 
 -- 到本单位的距离缓存
+--- @param unit BattleUnit: 另一个单位
+--- @param distance number: 距离
 function BattleAircraftUnit.backupDistance(self, unit, distance)
 	local frameIndex = self._battleProxy.FrameIndex
 
@@ -436,10 +478,12 @@ function BattleAircraftUnit.backupDistance(self, unit, distance)
 	self._distanceBackup[unit] = distance
 end
 
+--- @return number: 皮肤/模型ID
 function BattleAircraftUnit.GetSkinID(self)
 	return self._modelID
 end
 
+--- @param skinID number: 皮肤ID
 function BattleAircraftUnit.SetSkinID(self, skinID)
 	self._skinID = skinID
 	self._modelID = BattleDataFunction.GetEquipSkin(self._skinID)
@@ -449,55 +493,69 @@ function BattleAircraftUnit.SetSkinID(self, skinID)
 	end
 end
 
+--- @param skinData table: 皮肤数据
 function BattleAircraftUnit.SetSkinData(self, skinData)
 	return
 end
 
 -- 注意舰载机的属性重载
+--- @param mother BattleUnit: 母单位
 function BattleAircraftUnit.SetAttr(self, mother)
 	ys.Battle.BattleAttr.SetAircraftAttFromMother(self, mother)
 end
 
+--- @return table: 属性表
 function BattleAircraftUnit.GetAttr(self)
 	return ys.Battle.BattleAttr.GetAttr(self)
 end
 
+--- @param attrType string: 属性类型
+--- @return any: 属性值
 function BattleAircraftUnit.GetAttrByName(self, attrType)
 	return ys.Battle.BattleAttr.GetCurrent(self, attrType)
 end
 
+--- @return BattleUnit: 母单位
 function BattleAircraftUnit.GetMotherUnit(self)
 	return self._motherUnit
 end
 
+--- @return number: 唯一ID
 function BattleAircraftUnit.GetUniqueID(self)
 	return self._uniqueID
 end
 
+--- @return number: 阵营
 function BattleAircraftUnit.GetIFF(self)
 	return self._IFF
 end
 
+--- @return string: 当前状态
 function BattleAircraftUnit.GetCurrentState(self)
 	return self._currentState
 end
 
+--- @return number: 速度值
 function BattleAircraftUnit.GetVelocity(self)
 	return self._velocity
 end
 
+--- @return Vector3: 速度向量
 function BattleAircraftUnit.GetSpeed(self)
 	return self._speed
 end
 
+--- @return Vector3: 位置
 function BattleAircraftUnit.GetPosition(self)
 	return self._pos
 end
 
+--- @return nil: 无出生位置
 function BattleAircraftUnit.GetBornPosition(self)
 	return nil
 end
 
+--- @return Vector3: 碰撞Z中心位置
 function BattleAircraftUnit.GetCLDZCenterPosition(self)
 	local boxSize = self:GetBoxSize()
 
@@ -505,6 +563,7 @@ function BattleAircraftUnit.GetCLDZCenterPosition(self)
 end
 
 -- 被瞄准点加上aim_offset
+--- @return Vector3: 被瞄准位置
 function BattleAircraftUnit.GetBeenAimedPosition(self)
 	local aim_offset = self:GetTemplate().aim_offset
 	local centerPosition = self:GetCLDZCenterPosition()
@@ -516,64 +575,79 @@ function BattleAircraftUnit.GetBeenAimedPosition(self)
 	return Vector3(centerPosition.x + aim_offset[1], centerPosition.y + aim_offset[2], centerPosition.z + aim_offset[3])
 end
 
+--- @return number: 方向
 function BattleAircraftUnit.GetDirection(self)
 	return self._dir
 end
 
+--- @return table: 模板数据
 function BattleAircraftUnit.GetTemplate(self)
 	return self._tmpData
 end
 
+--- @return number: 模板ID
 function BattleAircraftUnit.GetTemplateID(self)
 	return self._tmpData.id
 end
 
+--- @return number: 单位类型
 function BattleAircraftUnit.GetUnitType(self)
 	return self._type
 end
 
+--- @return number: 血量比例
 function BattleAircraftUnit.GetHPRate(self)
 	return self._currentHP / self:GetMaxHP()
 end
 
+--- @return Vector3: 碰撞箱大小
 function BattleAircraftUnit.GetBoxSize(self)
 	return self._cldComponent:GetCldBoxSize()
 end
 
+--- @return number: 速度倍率
 function BattleAircraftUnit.GetSpeedRatio(self)
 	return BattleVariable.GetSpeedRatio(self:GetSpeedExemptKey(), self._IFF)
 end
 
 -- speedExemptKey的格式统一为类型+UID
 -- 例如aircraft的就是"air_"..UID
+--- @return string: 速度豁免键
 function BattleAircraftUnit.GetSpeedExemptKey(self)
 	return self._speedExemptKey
 end
 
+--- @return boolean: 是否为己方飞机
 function BattleAircraftUnit.IsPlayerAircraft(self)
 	return self._isPlayerAircraft
 end
 
+--- @return boolean: 始终不显示血条
 function BattleAircraftUnit.IsShowHPBar(self)
 	return false
 end
 
+--- 设置为不可碰撞可见
 function BattleAircraftUnit.SetUnVisitable(self)
 	ys.Battle.BattleAttr.UnVisitable(self)
 end
 
+--- 设置为可碰撞可见
 function BattleAircraftUnit.SetVisitable(self)
 	ys.Battle.BattleAttr.Visitable(self)
 end
 
+--- @return boolean: 是否可碰撞可见
 function BattleAircraftUnit.IsVisitable(self)
 	return ys.Battle.BattleAttr.IsVisitable(self)
 end
 
+--- @param deadFX string: 死亡特效
 function BattleAircraftUnit.OverrideDeadFX(self, deadFX)
 	self._deadFX = deadFX
 end
 
+--- @return string: 死亡特效
 function BattleAircraftUnit.GetDeadFX(self)
 	return self._deadFX
 end
@@ -586,6 +660,8 @@ BattleAircraftUnit.AIRCRAFT_TRIGGER = {
 
 -- 舰载机单位的Buff触发
 -- 会传递到motherUnit触发
+--- @param effectType string: 效果类型
+--- @param args table: 参数
 function BattleAircraftUnit.TriggerBuff(self, effectType, args)
 	if table.contains(BattleAircraftUnit.AIRCRAFT_TRIGGER, effectType) and self._motherUnit and self._motherUnit:IsAlive() then
 		self._motherUnit:TriggerBuff(effectType, args)
@@ -593,6 +669,8 @@ function BattleAircraftUnit.TriggerBuff(self, effectType, args)
 end
 
 -- BattleHiveUnit.createMajorEmitter/SingleFire调用
+--- @param direction Vector3: 移动方向
+--- @param delay number: 延迟秒数
 function BattleAircraftUnit.AddCreateTimer(self, direction, delay)
 	self._currentState = self.STATE_CREATE
 	self._speedDir = direction
@@ -613,10 +691,12 @@ function BattleAircraftUnit.AddCreateTimer(self, direction, delay)
 	self._createTimer = pg.TimeMgr.GetInstance():AddBattleTimer("AddCreateTimer", 0, delay, onTimerEnds)
 end
 
+--- 销毁
 function BattleAircraftUnit.Dispose(self)
 	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
+--- 初始化碰撞组件
 function BattleAircraftUnit.InitCldComponent(self)
 	local cld_box = self:GetTemplate().cld_box
 	local cld_offset = self:GetTemplate().cld_offset
@@ -637,14 +717,17 @@ function BattleAircraftUnit.InitCldComponent(self)
 	self._cldComponent:SetCldData(cldData)
 end
 
+--- @return table: 碰撞箱
 function BattleAircraftUnit.GetCldBox(self)
 	return self._cldComponent:GetCldBox(self:GetPosition())
 end
 
+--- @return table: 碰撞数据
 function BattleAircraftUnit.GetCldData(self)
 	return self._cldComponent:GetCldData()
 end
 
+--- 舰载机不支持添加Buff
 function BattleAircraftUnit.AddBuff(self)
 	return
 end
@@ -661,6 +744,7 @@ function BattleAircraftUnit.CloakExpose(self)
 	return
 end
 
+--- @return nil: 无氧气状态
 function BattleAircraftUnit.GetCurrentOxyState(self)
 	return nil
 end

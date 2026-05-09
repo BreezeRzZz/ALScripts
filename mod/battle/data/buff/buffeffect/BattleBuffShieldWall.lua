@@ -60,7 +60,7 @@ function BattleBuffShieldWall.SetArgs(self, owner, buff)
 
 	if fxOffset then
 		function self._centerPosFun(pos)
-			local var_4_0
+			local _
 			local centerPos = arg_list.centerPosFun(pos):Add(fxOffset)
 
 			centerPos.x = centerPos.x * self._dir
@@ -80,7 +80,7 @@ function BattleBuffShieldWall.SetArgs(self, owner, buff)
 
 		if fxOffset then
 			function _centerPosFun(pos)
-				local var_5_0
+				local _
 
 				return (arg_list.centerPosFun(pos):Add(fxOffset))
 			end

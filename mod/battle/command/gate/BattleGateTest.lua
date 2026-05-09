@@ -1,76 +1,86 @@
-local var_0_0 = class("BattleGateTest")
+--- @class BattleGateTest : 测试模式Gate
+local BattleGateTest = class("BattleGateTest")
 
-ys.Battle.BattleGateTest = var_0_0
-var_0_0.__name = "BattleGateTest"
+ys.Battle.BattleGateTest = BattleGateTest
+BattleGateTest.__name = "BattleGateTest"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	if not arg_1_1.LegalFleet(arg_1_0.mainFleetId) then
+--- 进入测试战斗
+--- @param self BattleGateTest
+--- @param sendData table 发送数据
+function BattleGateTest.Entrance(self, sendData)
+	if not sendData.LegalFleet(self.mainFleetId) then
 		return
 	end
 
-	local var_1_0 = getProxy(BayProxy)
-	local var_1_1 = getProxy(FleetProxy)
-	local var_1_2 = {}
-	local var_1_3 = var_1_1:getFleetById(arg_1_0.mainFleetId)
-	local var_1_4 = var_1_0:getSortShipsByFleet(var_1_3)
+	local bayProxy = getProxy(BayProxy)
+	local fleetProxy = getProxy(FleetProxy)
+	local shipIdList = {}
+	local fleet = fleetProxy:getFleetById(self.mainFleetId)
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_4) do
-		var_1_2[#var_1_2 + 1] = iter_1_1.id
+	for _, ship in ipairs(sortShips) do
+		shipIdList[#shipIdList + 1] = ship.id
 	end
 
-	local var_1_5 = arg_1_0.mainFleetId
-	local var_1_6 = arg_1_0.stageId
-	local var_1_7 = pg.expedition_data_template[var_1_6].dungeon_id
+	local mainFleetId = self.mainFleetId
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
 
-	local function var_1_8(arg_2_0)
-		local var_2_0 = {
-			mainFleetId = var_1_5,
+	--- 发送请求成功的回调
+	local function onSuccess(tokenData)
+		local stageData = {
+			mainFleetId = mainFleetId,
 			prefabFleet = {},
-			stageId = var_1_6,
+			stageId = stageId,
 			system = SYSTEM_TEST,
-			token = arg_2_0.key
+			token = tokenData.key
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_0)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_9(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 发送请求失败的回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_TEST, var_1_2, {
-		var_1_6
-	}, var_1_8, var_1_9)
+	BeginStageCommand.SendRequest(SYSTEM_TEST, shipIdList, {
+		stageId
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
-	local var_4_0 = pg.battle_cost_template[SYSTEM_TEST]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(BayProxy)
-	local var_4_3 = arg_4_0.statistics._battleScore
-	local var_4_4 = 0
-	local var_4_5 = {}
-	local var_4_6 = var_4_1:getFleetById(arg_4_0.mainFleetId)
-	local var_4_7 = var_4_2:getSortShipsByFleet(var_4_6)
-	local var_4_8 = arg_4_1.GeneralPackage(arg_4_0, var_4_7)
+--- 退出测试战斗
+--- @param self BattleGateTest
+--- @param callback table 回调对象
+function BattleGateTest.Exit(self, callback)
+	local costTemplate = pg.battle_cost_template[SYSTEM_TEST]
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local battleScore = self.statistics._battleScore
+	local oilUsed = 0
+	local shipList = {}
+	local fleet = fleetProxy:getFleetById(self.mainFleetId)
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
+	local generalPackage = callback.GeneralPackage(self, sortShips)
 
-	local function var_4_9(arg_5_0)
-		arg_4_0.statistics.mvpShipID = -1
+	--- 结算成功的回调
+	local function onSuccess(result)
+		self.statistics.mvpShipID = -1
 
-		local var_5_0 = {
+		local finishData = {
 			system = SYSTEM_TEST,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
+			statistics = self.statistics,
+			score = battleScore,
 			drops = {},
 			commanderExps = {},
-			result = arg_5_0.result,
+			result = result.result,
 			extraDrops = {}
 		}
 
-		arg_4_1:sendNotification(GAME.FINISH_STAGE_DONE, var_5_0)
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 	end
 
-	arg_4_1:SendRequest(var_4_8, var_4_9)
+	callback:SendRequest(generalPackage, onSuccess)
 end
 
-return var_0_0
+return BattleGateTest

@@ -441,8 +441,6 @@ function BattleDataProxy.Clear(self)
 
 	self._fleetList = nil
 
-	self._fleetList = nil
-
 	for _, aidUnit in pairs(self._aidUnitList) do
 		aidUnit:Dispose()
 	end
@@ -564,8 +562,9 @@ function BattleDataProxy.InitUserAidData(self)
 	end
 end
 -- 潜艇的跨队支援还不太一样
-function BattleDataProxy.SetSubmarinAidData(arg_27_0)
-	arg_27_0:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):SetSubAidData(arg_27_0._battleInitData.TotalSubAmmo, arg_27_0._battleInitData.SubFlag)
+--- 设置潜艇跨队支援数据
+function BattleDataProxy.SetSubmarinAidData(self)
+	self:GetFleetByIFF(BattleConfig.FRIENDLY_CODE):SetSubAidData(self._battleInitData.TotalSubAmmo, self._battleInitData.SubFlag)
 end
 
 --- 天气 Weather 相关 ---
@@ -1382,7 +1381,6 @@ function BattleDataProxy.SpawnNPC(self, spawnData, caster)
 
 	local function initBuff(buffList)
 		for _, buff in ipairs(buffList) do
-			local var_64_0
 			local buffId
 			local buffLevel
 
@@ -1537,22 +1535,23 @@ function BattleDataProxy.SpawnSub(self, subUnitData, IFF)
 end
 
 -- 破交作战生成潜艇
-function BattleDataProxy.SpawnManualSub(self, arg_71_1, arg_71_2)
-	local var_71_0 = self:GetVanguardBornCoordinate(arg_71_2)
-	local var_71_1 = self:generatePlayerUnit(arg_71_1, arg_71_2, BuildVector3(var_71_0), self._commanderBuff)
+--- 破交作战生成潜艇
+function BattleDataProxy.SpawnManualSub(self, unitData, IFF)
+	local spawnPos = self:GetVanguardBornCoordinate(IFF)
+	local manualSubUnit = self:generatePlayerUnit(unitData, IFF, BuildVector3(spawnPos), self._commanderBuff)
 
-	self:GetFleetByIFF(arg_71_2):AddManualSubmarine(var_71_1)
-	self:setShipUnitBound(var_71_1)
-	self._cldSystem:InitShipCld(var_71_1)
+	self:GetFleetByIFF(IFF):AddManualSubmarine(manualSubUnit)
+	self:setShipUnitBound(manualSubUnit)
+	self._cldSystem:InitShipCld(manualSubUnit)
 
-	local var_71_2 = {
+	local addUnitArgs = {
 		type = BattleConst.UnitType.SUB_UNIT,
-		unit = var_71_1
+		unit = manualSubUnit
 	}
 
-	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, var_71_2))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UNIT, addUnitArgs))
 
-	return var_71_1
+	return manualSubUnit
 end
 
 -- 支援单位生成(包括潜艇支援和航空支援)
@@ -1581,167 +1580,169 @@ function BattleDataProxy.SpawnSupportUnit(self, supportUnitData, IFF)
 	return supportUnit
 end
 
-function BattleDataProxy.ShutdownPlayerUnit(arg_73_0, arg_73_1)
-	local var_73_0 = arg_73_0._unitList[arg_73_1]
-	local var_73_1 = var_73_0:GetIFF()
-	local var_73_2 = arg_73_0:GetFleetByIFF(var_73_1)
+--- 关闭玩家单位（从舰队中移除并派发事件）
+function BattleDataProxy.ShutdownPlayerUnit(self, unitID)
+	local unit = self._unitList[unitID]
+	local unitIFF = unit:GetIFF()
+	local fleet = self:GetFleetByIFF(unitIFF)
 
-	var_73_2:RemovePlayerUnit(var_73_0)
+	fleet:RemovePlayerUnit(unit)
 
-	local var_73_3 = {}
+	local antiAreaArgs = {}
 
-	if var_73_2:GetFleetAntiAirWeapon():GetRange() == 0 then
-		var_73_3.isShow = false
+	if fleet:GetFleetAntiAirWeapon():GetRange() == 0 then
+		antiAreaArgs.isShow = false
 	end
 
-	arg_73_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, var_73_3))
+	self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, antiAreaArgs))
 
-	local var_73_4 = {
-		unit = var_73_0
+	local shutDownArgs = {
+		unit = unit
 	}
 
-	arg_73_0:DispatchEvent(ys.Event.New(BattleEvent.SHUT_DOWN_PLAYER, var_73_4))
+	self:DispatchEvent(ys.Event.New(BattleEvent.SHUT_DOWN_PLAYER, shutDownArgs))
 end
 
-function BattleDataProxy.updateDeadList(arg_74_0)
-	local var_74_0 = #arg_74_0._deadUnitList
+function BattleDataProxy.updateDeadList(self)
+	local deadCount = #self._deadUnitList
 
-	while var_74_0 > 0 do
-		arg_74_0._deadUnitList[var_74_0]:Dispose()
+	while deadCount > 0 do
+		self._deadUnitList[deadCount]:Dispose()
 
-		arg_74_0._deadUnitList[var_74_0] = nil
-		var_74_0 = var_74_0 - 1
+		self._deadUnitList[deadCount] = nil
+		deadCount = deadCount - 1
 	end
 end
 
-function BattleDataProxy.KillUnit(arg_75_0, arg_75_1)
-	local var_75_0 = arg_75_0._unitList[arg_75_1]
+-- note: 击杀单位核心逻辑
+function BattleDataProxy.KillUnit(self, unitID)
+	local unit = self._unitList[unitID]
 
-	if var_75_0 == nil then
+	if unit == nil then
 		return
 	end
 
-	local var_75_1 = var_75_0:GetUnitType()
+	local unitType = unit:GetUnitType()
 
-	arg_75_0._cldSystem:DeleteShipCld(var_75_0)
-	var_75_0:Clear()
+	self._cldSystem:DeleteShipCld(unit)
+	unit:Clear()
 
-	arg_75_0._unitList[arg_75_1] = nil
+	self._unitList[unitID] = nil
 
-	if arg_75_0._freeShipList[arg_75_1] then
-		arg_75_0._freeShipList[arg_75_1] = nil
+	if self._freeShipList[unitID] then
+		self._freeShipList[unitID] = nil
 	end
 
-	local var_75_2 = var_75_0:GetIFF()
-	local var_75_3 = var_75_0:GetDeathReason()
+	local unitIFF = unit:GetIFF()
+	local deathReason = unit:GetDeathReason()
 
-	if var_75_0:GetAimBias() then
-		local var_75_4 = var_75_0:GetAimBias()
+	if unit:GetAimBias() then
+		local aimBias = unit:GetAimBias()
 
-		var_75_4:RemoveCrew(var_75_0)
+		aimBias:RemoveCrew(unit)
 
-		if var_75_4:GetCurrentState() == var_75_4.STATE_EXPIRE then
-			arg_75_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIM_BIAS, {
-				aimBias = var_75_0:GetAimBias()
+		if aimBias:GetCurrentState() == aimBias.STATE_EXPIRE then
+			self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIM_BIAS, {
+				aimBias = unit:GetAimBias()
 			}))
 		end
 	end
 
-	if var_75_0:IsSpectre() then
-		arg_75_0._spectreShipList[arg_75_1] = nil
-	elseif var_75_2 == BattleConfig.FOE_CODE then
-		arg_75_0._foeShipList[arg_75_1] = nil
+	if unit:IsSpectre() then
+		self._spectreShipList[unitID] = nil
+	elseif unitIFF == BattleConfig.FOE_CODE then
+		self._foeShipList[unitID] = nil
 
-		if var_75_1 == BattleConst.UnitType.ENEMY_UNIT or var_75_1 == BattleConst.UnitType.BOSS_UNIT then
-			if var_75_0:GetTeam() then
-				var_75_0:GetTeam():RemoveUnit(var_75_0)
+		if unitType == BattleConst.UnitType.ENEMY_UNIT or unitType == BattleConst.UnitType.BOSS_UNIT then
+			if unit:GetTeam() then
+				unit:GetTeam():RemoveUnit(unit)
 			end
 
-			local var_75_5 = var_75_0:GetTemplate().type
+			local shipType = unit:GetTemplate().type
 
-			if table.contains(ShipType.SubShipType, var_75_5) then
-				arg_75_0:UpdateHostileSubmarine(false)
+			if table.contains(ShipType.SubShipType, shipType) then
+				self:UpdateHostileSubmarine(false)
 			end
 
-			local var_75_6 = var_75_0:GetWaveIndex()
+			local waveIndex = unit:GetWaveIndex()
 
-			if var_75_6 and arg_75_0._waveSummonList[var_75_6] then
-				arg_75_0._waveSummonList[var_75_6][var_75_0] = nil
+			if waveIndex and self._waveSummonList[waveIndex] then
+				self._waveSummonList[waveIndex][unit] = nil
 			end
 		end
-	elseif var_75_2 == BattleConfig.FRIENDLY_CODE then
-		arg_75_0._friendlyShipList[arg_75_1] = nil
+	elseif unitIFF == BattleConfig.FRIENDLY_CODE then
+		self._friendlyShipList[unitID] = nil
 	end
 
-	local var_75_7 = {
-		UID = arg_75_1,
-		type = var_75_1,
-		deadReason = var_75_3,
-		unit = var_75_0
+	local removeArgs = {
+		UID = unitID,
+		type = unitType,
+		deadReason = deathReason,
+		unit = unit
 	}
 
-	arg_75_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_UNIT, var_75_7))
-	table.insert(arg_75_0._deadUnitList, var_75_0)
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_UNIT, removeArgs))
+	table.insert(self._deadUnitList, unit)
 end
 
-function BattleDataProxy.KillAllEnemy(arg_76_0)
-	for iter_76_0, iter_76_1 in pairs(arg_76_0._unitList) do
-		if iter_76_1:GetIFF() == BattleConfig.FOE_CODE and iter_76_1:IsAlive() and not iter_76_1:IsBoss() then
-			iter_76_1:DeadAction()
+function BattleDataProxy.KillAllEnemy(self)
+	for _, unit in pairs(self._unitList) do
+		if unit:GetIFF() == BattleConfig.FOE_CODE and unit:IsAlive() and not unit:IsBoss() then
+			unit:DeadAction()
 		end
 	end
 end
 
-function BattleDataProxy.KillSubmarineByIFF(arg_77_0, arg_77_1)
-	for iter_77_0, iter_77_1 in pairs(arg_77_0._unitList) do
-		if iter_77_1:GetIFF() == arg_77_1 and iter_77_1:IsAlive() and table.contains(ShipType.SubShipType, iter_77_1:GetTemplate().type) and not iter_77_1:IsBoss() then
-			iter_77_1:DeadAction()
+function BattleDataProxy.KillSubmarineByIFF(self, IFF)
+	for _, unit in pairs(self._unitList) do
+		if unit:GetIFF() == IFF and unit:IsAlive() and table.contains(ShipType.SubShipType, unit:GetTemplate().type) and not unit:IsBoss() then
+			unit:DeadAction()
 		end
 	end
 end
 
-function BattleDataProxy.KillAllAircraft(arg_78_0)
-	for iter_78_0, iter_78_1 in pairs(arg_78_0._aircraftList) do
-		iter_78_1:Clear()
+function BattleDataProxy.KillAllAircraft(self)
+	for aircraftID, aircraft in pairs(self._aircraftList) do
+		aircraft:Clear()
 
-		local var_78_0 = {
-			UID = iter_78_0
+		local removeArgs = {
+			UID = aircraftID
 		}
 
-		arg_78_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_78_0))
+		self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, removeArgs))
 
-		arg_78_0._aircraftList[iter_78_0] = nil
+		self._aircraftList[aircraftID] = nil
 	end
 end
 
-function BattleDataProxy.KillWaveSummonMonster(arg_79_0, arg_79_1)
-	local var_79_0 = arg_79_0._waveSummonList[arg_79_1]
+function BattleDataProxy.KillWaveSummonMonster(self, waveIndex)
+	local summonList = self._waveSummonList[waveIndex]
 
-	if var_79_0 then
-		for iter_79_0, iter_79_1 in pairs(var_79_0) do
-			local var_79_1 = iter_79_0:GetUniqueID()
+	if summonList then
+		for summonUnit, _ in pairs(summonList) do
+			local unitUID = summonUnit:GetUniqueID()
 
-			arg_79_0:KillUnit(var_79_1)
+			self:KillUnit(unitUID)
 		end
 	end
 
-	arg_79_0._waveSummonList[arg_79_1] = nil
+	self._waveSummonList[waveIndex] = nil
 end
 
-function BattleDataProxy.IsThereBoss(arg_80_0)
-	return arg_80_0:GetActiveBossCount() > 0
+function BattleDataProxy.IsThereBoss(self)
+	return self:GetActiveBossCount() > 0
 end
 
-function BattleDataProxy.GetActiveBossCount(arg_81_0)
-	local var_81_0 = 0
+function BattleDataProxy.GetActiveBossCount(self)
+	local count = 0
 
-	for iter_81_0, iter_81_1 in pairs(arg_81_0:GetUnitList()) do
-		if iter_81_1:IsBoss() and iter_81_1:IsAlive() then
-			var_81_0 = var_81_0 + 1
+	for _, unit in pairs(self:GetUnitList()) do
+		if unit:IsBoss() and unit:IsAlive() then
+			count = count + 1
 		end
 	end
 
-	return var_81_0
+	return count
 end
 
 -- note: 设置舰船可活动区域
@@ -1994,57 +1995,57 @@ function BattleDataProxy.ClearAirFighterTimer(self)
 	self._airFighterList = {}
 end
 
-function BattleDataProxy.KillAllAirStrike(arg_101_0)
-	for iter_101_0, iter_101_1 in pairs(arg_101_0._aircraftList) do
-		if iter_101_1.__name == ys.Battle.BattleAirFighterUnit.__name then
-			arg_101_0._cldSystem:DeleteAircraftCld(iter_101_1)
+function BattleDataProxy.KillAllAirStrike(self)
+	for aircraftID, aircraft in pairs(self._aircraftList) do
+		if aircraft.__name == ys.Battle.BattleAirFighterUnit.__name then
+			self._cldSystem:DeleteAircraftCld(aircraft)
 
-			iter_101_1._aliveState = false
-			arg_101_0._aircraftList[iter_101_0] = nil
-			arg_101_0._foeAircraftList[iter_101_0] = nil
+			aircraft._aliveState = false
+			self._aircraftList[aircraftID] = nil
+			self._foeAircraftList[aircraftID] = nil
 
-			local var_101_0 = {
-				UID = iter_101_0
+			local removeArgs = {
+				UID = aircraftID
 			}
 
-			arg_101_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_101_0))
+			self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, removeArgs))
 		end
 	end
 
-	local var_101_1 = true
+	local allCleared = true
 
-	for iter_101_2, iter_101_3 in pairs(arg_101_0._foeAircraftList) do
-		var_101_1 = false
+	for _, _ in pairs(self._foeAircraftList) do
+		allCleared = false
 
 		break
 	end
 
-	if var_101_1 then
-		arg_101_0:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
+	if allCleared then
+		self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
 			isShow = false
 		}))
 	end
 
-	for iter_101_4, iter_101_5 in ipairs(arg_101_0._airFighterList) do
-		iter_101_5.totalNumber = 0
+	for index, airFighterInfo in ipairs(self._airFighterList) do
+		airFighterInfo.totalNumber = 0
 
-		arg_101_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_FIGHTER_ICON, {
-			index = iter_101_4
+		self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_FIGHTER_ICON, {
+			index = index
 		}))
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(iter_101_5.timer)
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(airFighterInfo.timer)
 
-		iter_101_5.timer = nil
+		airFighterInfo.timer = nil
 	end
 
-	arg_101_0._airFighterList = {}
+	self._airFighterList = {}
 end
 
-function BattleDataProxy.GetAirFighterInfo(arg_102_0, arg_102_1)
-	return arg_102_0._airFighterList[arg_102_1]
+function BattleDataProxy.GetAirFighterInfo(self, index)
+	return self._airFighterList[index]
 end
 
-function BattleDataProxy.GetAirFighterList(arg_103_0)
-	return arg_103_0._airFighterList
+function BattleDataProxy.GetAirFighterList(self)
+	return self._airFighterList
 end
 
 -- 创建舰载机单位主逻辑
@@ -2126,35 +2127,35 @@ function BattleDataProxy.KillAircraft(self, aircraftID)
 	self._aircraftList[aircraftID] = nil
 	self._foeAircraftList[aircraftID] = nil
 
-	local var_107_2 = true
+	local allCleared = true
 
-	for iter_107_0, iter_107_1 in pairs(self._foeAircraftList) do
-		var_107_2 = false
+	for _, _ in pairs(self._foeAircraftList) do
+		allCleared = false
 
 		break
 	end
 
-	if var_107_2 then
+	if allCleared then
 		self:DispatchEvent(ys.Event.New(BattleEvent.ANTI_AIR_AREA, {
 			isShow = false
 		}))
 	end
 
-	local var_107_3 = {
+	local removeArgs = {
 		UID = aircraftID
 	}
 
-	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_107_3))
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, removeArgs))
 end
 
-function BattleDataProxy.GetAircraftList(arg_108_0)
-	return arg_108_0._aircraftList
+function BattleDataProxy.GetAircraftList(self)
+	return self._aircraftList
 end
 
-function BattleDataProxy.GenerateAircraftID(arg_109_0)
-	arg_109_0._aircraftCount = arg_109_0._aircraftCount + 1
+function BattleDataProxy.GenerateAircraftID(self)
+	self._aircraftCount = self._aircraftCount + 1
 
-	return arg_109_0._aircraftCount
+	return self._aircraftCount
 end
 -- 被BattleWeaponUnit.Spawn调用，实际构建子弹
 function BattleDataProxy.CreateBulletUnit(self, bulletID, host, weapon, targetPos)
@@ -2176,39 +2177,39 @@ function BattleDataProxy.CreateBulletUnit(self, bulletID, host, weapon, targetPo
 	return bullet
 end
 
-function BattleDataProxy.RemoveBulletUnit(arg_111_0, arg_111_1)
-	local var_111_0 = arg_111_0._bulletList[arg_111_1]
+function BattleDataProxy.RemoveBulletUnit(self, bulletID)
+	local bullet = self._bulletList[bulletID]
 
-	if var_111_0 == nil then
+	if bullet == nil then
 		return
 	end
 
-	var_111_0:DamageUnitListWriteback()
+	bullet:DamageUnitListWriteback()
 
-	if var_111_0:GetIsCld() then
-		arg_111_0._cldSystem:DeleteBulletCld(var_111_0)
+	if bullet:GetIsCld() then
+		self._cldSystem:DeleteBulletCld(bullet)
 	end
 
-	arg_111_0._bulletList[arg_111_1] = nil
+	self._bulletList[bulletID] = nil
 
-	local var_111_1 = {
-		UID = arg_111_1
+	local removeArgs = {
+		UID = bulletID
 	}
 
-	arg_111_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_BULLET, var_111_1))
-	var_111_0:Dispose()
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_BULLET, removeArgs))
+	bullet:Dispose()
 end
 
-function BattleDataProxy.GetBulletList(arg_112_0)
-	return arg_112_0._bulletList
+function BattleDataProxy.GetBulletList(self)
+	return self._bulletList
 end
 
-function BattleDataProxy.GenerateBulletID(arg_113_0)
-	local var_113_0 = arg_113_0._bulletCount + 1
+function BattleDataProxy.GenerateBulletID(self)
+	local newID = self._bulletCount + 1
 
-	arg_113_0._bulletCount = var_113_0
+	self._bulletCount = newID
 
-	return var_113_0
+	return newID
 end
 
 -- 消除子弹
@@ -2232,35 +2233,35 @@ function BattleDataProxy.CLSBullet(self, oppositeIFF, bombCLS)
 	end
 end
 
-function BattleDataProxy.CLSAircraft(arg_115_0, arg_115_1)
-	for iter_115_0, iter_115_1 in pairs(arg_115_0._aircraftList) do
-		if iter_115_1:GetIFF() == arg_115_1 then
-			iter_115_1:Clear()
+function BattleDataProxy.CLSAircraft(self, IFF)
+	for aircraftID, aircraft in pairs(self._aircraftList) do
+		if aircraft:GetIFF() == IFF then
+			aircraft:Clear()
 
-			local var_115_0 = {
-				UID = iter_115_0
+			local removeArgs = {
+				UID = aircraftID
 			}
 
-			arg_115_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, var_115_0))
+			self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AIR_CRAFT, removeArgs))
 
-			arg_115_0._aircraftList[iter_115_0] = nil
+			self._aircraftList[aircraftID] = nil
 		end
 	end
 end
 
-function BattleDataProxy.CLSMinion(arg_116_0)
-	for iter_116_0, iter_116_1 in pairs(arg_116_0._unitList) do
-		if iter_116_1:GetIFF() == BattleConfig.FOE_CODE and iter_116_1:IsAlive() and not iter_116_1:IsBoss() then
-			iter_116_1:SetDeathReason(BattleConst.UnitDeathReason.CLS)
-			iter_116_1:DeadAction()
+function BattleDataProxy.CLSMinion(self)
+	for _, unit in pairs(self._unitList) do
+		if unit:GetIFF() == BattleConfig.FOE_CODE and unit:IsAlive() and not unit:IsBoss() then
+			unit:SetDeathReason(BattleConst.UnitDeathReason.CLS)
+			unit:DeadAction()
 		end
 	end
 end
 
 function BattleDataProxy.CLSAOE(self)
-	for iter_117_0, iter_117_1 in pairs(self._AOEList) do
-		if iter_117_1:GetSource() == iter_117_1.SOURCE_BULLET_9 then
-			self:RemoveAreaOfEffect(iter_117_0)
+	for aoeID, aoe in pairs(self._AOEList) do
+		if aoe:GetSource() == aoe.SOURCE_BULLET_9 then
+			self:RemoveAreaOfEffect(aoeID)
 		end
 	end
 end
@@ -2283,23 +2284,24 @@ function BattleDataProxy.SpawnColumnArea(self, fieldType, ownerIFF, position, ra
 	return aoeData
 end
 
-function BattleDataProxy.SpawnCubeArea(arg_118_0, arg_118_1, arg_118_2, arg_118_3, arg_118_4, arg_118_5, arg_118_6, arg_118_7, arg_118_8, arg_118_9)
-	arg_118_8 = arg_118_8 or false
+--- 生成立方体AOE区域
+function BattleDataProxy.SpawnCubeArea(self, fieldType, ownerIFF, position, width, height, lifetime, cldFunc, friendly, endFunc)
+	friendly = friendly or false
 
-	local var_118_0 = arg_118_0:GenerateAreaID()
-	local var_118_1 = ys.Battle.BattleAOEData.New(var_118_0, arg_118_2, arg_118_7, arg_118_9)
-	local var_118_2 = Clone(arg_118_3)
+	local aoeID = self:GenerateAreaID()
+	local aoeData = ys.Battle.BattleAOEData.New(aoeID, ownerIFF, cldFunc, endFunc)
+	local pos = Clone(position)
 
-	var_118_1:SetPosition(var_118_2)
-	var_118_1:SetWidth(arg_118_4)
-	var_118_1:SetHeight(arg_118_5)
-	var_118_1:SetAreaType(BattleConst.AreaType.CUBE)
-	var_118_1:SetLifeTime(arg_118_6)
-	var_118_1:SetFieldType(arg_118_1)
-	var_118_1:SetOpponentAffected(not arg_118_7)
-	arg_118_0:CreateAreaOfEffect(var_118_1)
+	aoeData:SetPosition(pos)
+	aoeData:SetWidth(width)
+	aoeData:SetHeight(height)
+	aoeData:SetAreaType(BattleConst.AreaType.CUBE)
+	aoeData:SetLifeTime(lifetime)
+	aoeData:SetFieldType(fieldType)
+	aoeData:SetOpponentAffected(not friendly)
+	self:CreateAreaOfEffect(aoeData)
 
-	return var_118_1
+	return aoeData
 end
 
 function BattleDataProxy.SpawnLastingColumnArea(self, fieldType, ownerIFF, position, range, lifetime, areaCldFunc, exitCldFunc, friendly, fxID, endFunc, frequent)
@@ -2416,27 +2418,29 @@ function BattleDataProxy.SpawnTriggerColumnArea(self, effectField, iff, explodeP
 	return aoeData
 end
 
-function BattleDataProxy.CreateAreaOfEffect(arg_123_0, arg_123_1)
-	arg_123_0._AOEList[arg_123_1:GetUniqueID()] = arg_123_1
+--- 将AOE数据注册到AOE列表并初始化碰撞、启动计时器
+function BattleDataProxy.CreateAreaOfEffect(self, aoeData)
+	self._AOEList[aoeData:GetUniqueID()] = aoeData
 
-	arg_124_0._cldSystem:InitAOECld(arg_124_1)
-	arg_124_1:StartTimer()
+	self._cldSystem:InitAOECld(aoeData)
+	aoeData:StartTimer()
 end
 
-function BattleDataProxy.RemoveAreaOfEffect(arg_124_0, arg_124_1)
-	local var_124_0 = arg_124_0._AOEList[arg_124_1]
+--- 从AOE列表移除并清理
+function BattleDataProxy.RemoveAreaOfEffect(self, aoeID)
+	local aoeData = self._AOEList[aoeID]
 
-	if not var_125_0 then
+	if not aoeData then
 		return
 	end
 
-	var_125_0:Dispose()
+	aoeData:Dispose()
 
-	self._AOEList[arg_125_1] = nil
+	self._AOEList[aoeID] = nil
 
-	arg_124_0._cldSystem:DeleteAOECld(var_124_0)
-	arg_124_0:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AREA, {
-		id = arg_124_1
+	self._cldSystem:DeleteAOECld(aoeData)
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_AREA, {
+		id = aoeID
 	}))
 end
 
@@ -2482,16 +2486,16 @@ function BattleDataProxy.SpawnShelter(self, box, duration)
 	return ShelterData
 end
 
-function BattleDataProxy.RemoveShelter(self, arg_130_1)
-	local var_130_0 = self._shelterList[arg_130_1]
-	local var_130_1 = {
-		uid = arg_130_1
+function BattleDataProxy.RemoveShelter(self, shelterID)
+	local shelterData = self._shelterList[shelterID]
+	local removeArgs = {
+		uid = shelterID
 	}
 
-	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_SHELTER, var_130_1))
-	var_130_0:Deactive()
+	self:DispatchEvent(ys.Event.New(BattleEvent.REMOVE_SHELTER, removeArgs))
+	shelterData:Deactive()
 
-	self._shelterList[arg_131_1] = nil
+	self._shelterList[shelterID] = nil
 end
 
 function BattleDataProxy.GetWallList(self)
@@ -2510,144 +2514,146 @@ function BattleDataProxy.GernerateShelterID(self)
 	return self._shelterIndex
 end
 
-function BattleDataProxy.SpawnEnvironment(self, arg_134_1)
-	local var_134_0 = self:GernerateEnvironmentID()
-	local var_134_1 = ys.Battle.BattleEnvironmentUnit.New(var_134_0, BattleConfig.FOE_CODE)
+--- 生成环境效果（如灯塔）
+function BattleDataProxy.SpawnEnvironment(self, envTemplate)
+	local envID = self:GernerateEnvironmentID()
+	local envUnit = ys.Battle.BattleEnvironmentUnit.New(envID, BattleConfig.FOE_CODE)
 
-	var_135_1:SetTemplate(arg_135_1)
+	envUnit:SetTemplate(envTemplate)
 
-	local var_135_2 = var_135_1:GetBehaviours()
-	local var_135_3 = Vector3(arg_135_1.coordinate[1], arg_135_1.coordinate[2], arg_135_1.coordinate[3])
+	local behaviours = envUnit:GetBehaviours()
+	local position = Vector3(envTemplate.coordinate[1], envTemplate.coordinate[2], envTemplate.coordinate[3])
 
-	local function var_135_4(arg_136_0)
-		local var_136_0 = {}
+	local function areaCldFunc(args)
+		local collideList = {}
 
-		for iter_136_0, iter_136_1 in ipairs(arg_136_0) do
-			if iter_136_1.Active then
-				local var_136_1 = arg_135_0._unitList[iter_136_1.UID]
+		for _, collideUnit in ipairs(args) do
+			if collideUnit.Active then
+				local unit = self._unitList[collideUnit.UID]
 
-				if not var_136_1:IsSpectre() then
-					table.insert(var_136_0, var_136_1)
+				if not unit:IsSpectre() then
+					table.insert(collideList, unit)
 				end
 			end
 		end
 
-		var_135_1:UpdateFrequentlyCollide(var_136_0)
+		envUnit:UpdateFrequentlyCollide(collideList)
 	end
 
-	local function var_135_5()
+	local function exitCldFunc()
 		return
 	end
 
-	local function var_135_6()
+	local function endFunc()
 		return
 	end
 
-	local var_134_7 = arg_134_1.field_type or BattleConst.BulletField.SURFACE
-	local var_134_8 = arg_134_1.IFF or BattleConfig.FOE_CODE
-	local var_134_9 = 0
-	local var_134_10
+	local fieldType = envTemplate.field_type or BattleConst.BulletField.SURFACE
+	local ownerIFF = envTemplate.IFF or BattleConfig.FOE_CODE
+	local lifetime = 0
+	local aoeData
 
-	if #arg_135_1.cld_data == 1 then
-		local var_135_11 = arg_135_1.cld_data[1]
+	if #envTemplate.cld_data == 1 then
+		local cldWidth = envTemplate.cld_data[1]
 
-		var_135_10 = arg_135_0:SpawnLastingColumnArea(var_135_7, var_135_8, var_135_3, var_135_11, var_135_9, var_135_4, var_135_5, false, arg_135_1.prefab, var_135_6, true)
+		aoeData = self:SpawnLastingColumnArea(fieldType, ownerIFF, position, cldWidth, lifetime, areaCldFunc, exitCldFunc, false, envTemplate.prefab, endFunc, true)
 	else
-		local var_135_12 = arg_135_1.cld_data[1]
-		local var_135_13 = arg_135_1.cld_data[2]
+		local cldWidth = envTemplate.cld_data[1]
+		local cldHeight = envTemplate.cld_data[2]
 
-		var_135_10 = arg_135_0:SpawnLastingCubeArea(var_135_7, var_135_8, var_135_3, var_135_12, var_135_13, var_135_9, var_135_4, var_135_5, false, arg_135_1.prefab, var_135_6, true)
+		aoeData = self:SpawnLastingCubeArea(fieldType, ownerIFF, position, cldWidth, cldHeight, lifetime, areaCldFunc, exitCldFunc, false, envTemplate.prefab, endFunc, true)
 	end
 
-	var_135_1:SetAOEData(var_135_10)
+	envUnit:SetAOEData(aoeData)
 
-	arg_135_0._environmentList[var_135_0] = var_135_1
+	self._environmentList[envID] = envUnit
 
-	return var_135_1
+	return envUnit
 end
 
-function BattleDataProxy.RemoveEnvironment(arg_138_0, arg_138_1)
-	local var_138_0 = arg_138_0._environmentList[arg_138_1]
-	local var_138_1 = var_138_0:GetAOEData()
+function BattleDataProxy.RemoveEnvironment(self, envID)
+	local envUnit = self._environmentList[envID]
+	local aoeData = envUnit:GetAOEData()
 
-	arg_139_0:RemoveAreaOfEffect(var_139_1:GetUniqueID())
-	var_139_0:Dispose()
+	self:RemoveAreaOfEffect(aoeData:GetUniqueID())
+	envUnit:Dispose()
 
-	arg_139_0._environmentList[arg_139_1] = nil
+	self._environmentList[envID] = nil
 end
 
-function BattleDataProxy.DispatchWarning(arg_139_0, arg_139_1, arg_139_2)
-	arg_139_0:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_ENVIRONMENT_WARNING, {
-		isActive = arg_139_1
+function BattleDataProxy.DispatchWarning(self, isActive, _)
+	self:DispatchEvent(ys.Event.New(BattleEvent.UPDATE_ENVIRONMENT_WARNING, {
+		isActive = isActive
 	}))
 end
 
-function BattleDataProxy.GetEnvironmentList(arg_140_0)
-	return arg_140_0._environmentList
+function BattleDataProxy.GetEnvironmentList(self)
+	return self._environmentList
 end
 
-function BattleDataProxy.GernerateEnvironmentID(arg_141_0)
-	arg_141_0._environmentIndex = arg_141_0._environmentIndex + 1
+function BattleDataProxy.GernerateEnvironmentID(self)
+	self._environmentIndex = self._environmentIndex + 1
 
-	return arg_142_0._environmentIndex
+	return self._environmentIndex
 end
 
-function BattleDataProxy.SpawnEffect(arg_142_0, arg_142_1, arg_142_2, arg_142_3)
-	arg_142_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_EFFECT, {
-		FXID = arg_142_1,
-		position = arg_142_2,
-		localScale = arg_142_3
+function BattleDataProxy.SpawnEffect(self, fxID, position, localScale)
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_EFFECT, {
+		FXID = fxID,
+		position = position,
+		localScale = localScale
 	}))
 end
 
-function BattleDataProxy.SpawnUIFX(arg_143_0, arg_143_1, arg_143_2, arg_143_3, arg_143_4)
-	arg_143_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_UI_FX, {
-		FXID = arg_143_1,
-		position = arg_143_2,
-		localScale = arg_143_3
+function BattleDataProxy.SpawnUIFX(self, fxID, position, localScale, orderDiff)
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_UI_FX, {
+		FXID = fxID,
+		position = position,
+		localScale = localScale,
+		orderDiff = orderDiff
 	}))
 end
 
-function BattleDataProxy.SpawnCameraFX(arg_144_0, arg_144_1, arg_144_2, arg_144_3, arg_144_4)
-	arg_144_0:DispatchEvent(ys.Event.New(BattleEvent.ADD_CAMERA_FX, {
-		FXID = arg_144_1,
-		position = arg_144_2,
-		localScale = arg_144_3,
-		orderDiff = arg_144_4
+function BattleDataProxy.SpawnCameraFX(self, fxID, position, localScale, orderDiff)
+	self:DispatchEvent(ys.Event.New(BattleEvent.ADD_CAMERA_FX, {
+		FXID = fxID,
+		position = position,
+		localScale = localScale,
+		orderDiff = orderDiff
 	}))
 end
 
-function BattleDataProxy.GetFriendlyCode(arg_145_0)
-	return arg_145_0._friendlyCode
+function BattleDataProxy.GetFriendlyCode(self)
+	return self._friendlyCode
 end
 
-function BattleDataProxy.GetFoeCode(arg_146_0)
-	return arg_146_0._foeCode
+function BattleDataProxy.GetFoeCode(self)
+	return self._foeCode
 end
 
-function BattleDataProxy.GetOppoSideCode(arg_147_0)
-	if arg_147_0 == BattleConfig.FRIENDLY_CODE then
+function BattleDataProxy.GetOppoSideCode(sideCode)
+	if sideCode == BattleConfig.FRIENDLY_CODE then
 		return BattleConfig.FOE_CODE
-	elseif arg_147_0 == BattleConfig.FOE_CODE then
+	elseif sideCode == BattleConfig.FOE_CODE then
 		return BattleConfig.FRIENDLY_CODE
 	end
 end
 
-function BattleDataProxy.GetStatistics(arg_148_0)
-	return arg_148_0._statistics
+function BattleDataProxy.GetStatistics(self)
+	return self._statistics
 end
 
-function BattleDataProxy.BlockManualCast(arg_149_0, arg_149_1)
-	local var_149_0 = arg_149_1 and 1 or -1
+function BattleDataProxy.BlockManualCast(self, isBlocked)
+	local delta = isBlocked and 1 or -1
 
-	for iter_150_0, iter_150_1 in pairs(arg_150_0._fleetList) do
-		iter_150_1:SetWeaponBlock(var_150_0)
+	for _, fleet in pairs(self._fleetList) do
+		fleet:SetWeaponBlock(delta)
 	end
 end
 
-function BattleDataProxy.JamManualCast(arg_150_0, arg_150_1)
-	arg_150_0:DispatchEvent(ys.Event.New(BattleEvent.JAMMING, {
-		jammingFlag = arg_150_1
+function BattleDataProxy.JamManualCast(self, jammingFlag)
+	self:DispatchEvent(ys.Event.New(BattleEvent.JAMMING, {
+		jammingFlag = jammingFlag
 	}))
 end
 
@@ -2833,13 +2839,14 @@ function BattleDataProxy.ActiveFreezeUnit(self, unit)
 	end
 end
 
-function BattleDataProxy.GetFleetLegal(arg_162_0, arg_162_1, arg_162_2)
-	if arg_162_2 == SYSTEM_DUEL or arg_162_2 == SYSTEM_PERFORM or arg_162_2 == SYSTEM_SUB_ROUTINE or arg_162_2 == SYSTEM_CARDPUZZLE or arg_162_2 == SYSTEM_PROLOGUE or arg_162_2 == SYSTEM_DODGEM or arg_162_2 == SYSTEM_SIMULATION or arg_162_2 == SYSTEM_SUBMARINE_RUN or arg_162_2 == SYSTEM_SCENARIO_SUB_STRIKE or arg_162_2 == SYSTEM_DEBUG or arg_162_2 == SYSTEM_AIRFIGHT then
+-- 判断舰队是否合法（是否有前锋且旗舰存活）
+function BattleDataProxy.GetFleetLegal(self, IFF, battleType)
+	if battleType == SYSTEM_DUEL or battleType == SYSTEM_PERFORM or battleType == SYSTEM_SUB_ROUTINE or battleType == SYSTEM_CARDPUZZLE or battleType == SYSTEM_PROLOGUE or battleType == SYSTEM_DODGEM or battleType == SYSTEM_SIMULATION or battleType == SYSTEM_SUBMARINE_RUN or battleType == SYSTEM_SCENARIO_SUB_STRIKE or battleType == SYSTEM_DEBUG or battleType == SYSTEM_AIRFIGHT then
 		return true
 	else
-		local unitList = self:GetFleetByIFF(arg_162_1)
+		local fleet = self:GetFleetByIFF(IFF)
 
-		if #unitList:GetScoutList() == 0 or not unitList:GetFlagShip():IsAlive() then
+		if #fleet:GetScoutList() == 0 or not fleet:GetFlagShip():IsAlive() then
 			return false
 		else
 			return true
@@ -2857,8 +2864,8 @@ function BattleDataProxy.TriggerFinishBattle(self)
 		end
 	end
 
-	for iter_163_4, iter_163_5 in pairs(arg_163_0._minionShipList) do
-		iter_163_5:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
+	for _, minionUnit in pairs(self._minionShipList) do
+		minionUnit:TriggerBuff(BattleConst.BuffEffectType.ON_FINISH_GAME)
 	end
 end
 

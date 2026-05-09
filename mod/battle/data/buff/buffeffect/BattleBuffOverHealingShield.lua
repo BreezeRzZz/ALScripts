@@ -94,12 +94,12 @@ end
 
 function BattleBuffOverHealingShield.updateLabelTag(self, owner)
 	if #self._shieldList <= 0 then
-		for iter_6_0, iter_6_1 in ipairs(self._shieldLabel) do
-			owner:RemoveLabelTag(iter_6_1)
+		for _, tag in ipairs(self._shieldLabel) do
+			owner:RemoveLabelTag(tag)
 		end
 	elseif not owner:ContainsLabelTag(self._shieldLabel) then
-		for iter_6_2, iter_6_3 in ipairs(self._shieldLabel) do
-			owner:AddLabelTag(iter_6_3)
+		for _, tag in ipairs(self._shieldLabel) do
+			owner:AddLabelTag(tag)
 		end
 	end
 end

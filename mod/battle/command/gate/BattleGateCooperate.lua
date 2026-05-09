@@ -1,121 +1,130 @@
-local var_0_0 = class("BattleGateCooperate")
+--- @class BattleGateCooperate : 共斗（HP共享）模式Gate
+local BattleGateCooperate = class("BattleGateCooperate")
 
-ys.Battle.BattleGateCooperate = var_0_0
-var_0_0.__name = "BattleGateCooperate"
+ys.Battle.BattleGateCooperate = BattleGateCooperate
+BattleGateCooperate.__name = "BattleGateCooperate"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
+--- 进入共斗战斗
+--- @param self BattleGateCooperate
+--- @param sendData table 发送数据
+function BattleGateCooperate.Entrance(self, sendData)
 	if BeginStageCommand.DockOverload() then
 		return
 	end
 
-	local var_1_0 = arg_1_0.actId
-	local var_1_1 = getProxy(PlayerProxy)
-	local var_1_2 = getProxy(BayProxy)
-	local var_1_3 = getProxy(FleetProxy)
-	local var_1_4 = pg.battle_cost_template[SYSTEM_HP_SHARE_ACT_BOSS]
-	local var_1_5 = var_1_4.oil_cost > 0
-	local var_1_6 = {}
-	local var_1_7 = 0
-	local var_1_8 = 0
-	local var_1_9 = 0
-	local var_1_10 = 0
-	local var_1_11 = var_1_3:getActivityFleets()[var_1_0][Fleet.REGULAR_FLEET_ID]
+	local actId = self.actId
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local fleetProxy = getProxy(FleetProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_HP_SHARE_ACT_BOSS]
+	local hasOilCost = costTemplate.oil_cost > 0
+	local shipIdList = {}
+	local startGold = 0
+	local startOil = 0
+	local endGold = 0
+	local endOil = 0
+	local regularFleet = fleetProxy:getActivityFleets()[actId][Fleet.REGULAR_FLEET_ID]
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_11.ships) do
-		var_1_6[#var_1_6 + 1] = iter_1_1
+	for _, shipId in ipairs(regularFleet.ships) do
+		shipIdList[#shipIdList + 1] = shipId
 	end
 
-	local var_1_12 = var_1_11:getStartCost().oil
-	local var_1_13 = var_1_11:GetCostSum().oil
-	local var_1_14 = var_1_2:getSortShipsByFleet(var_1_11)
-	local var_1_15 = var_1_1:getData()
+	local startCost = regularFleet:getStartCost().oil
+	local costSum = regularFleet:GetCostSum().oil
+	local sortShips = bayProxy:getSortShipsByFleet(regularFleet)
+	local playerData = playerProxy:getData()
 
-	if var_1_5 and var_1_13 > var_1_15.oil then
+	if hasOilCost and costSum > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	local var_1_16 = arg_1_0.stageId
-	local var_1_17 = pg.expedition_data_template[var_1_16].dungeon_id
-	local var_1_18 = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(var_1_17).fleet_prefab
+	local stageId = self.stageId
+	local dungeonTemplateID = pg.expedition_data_template[stageId].dungeon_id
+	local fleetPrefab = ys.Battle.BattleDataFunction.GetDungeonTmpDataByID(dungeonTemplateID).fleet_prefab
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local var_1_19
+	local isExtraMode
 
 	if chapter:getPlayType() == ChapterConst.TypeExtra then
-		var_1_19 = true
+		isExtraMode = true
 	end
 
-	local function var_1_20(arg_2_0)
-		if var_1_5 then
-			var_1_15:consume({
+	--- 请求成功回调
+	local function onSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_12
+				oil = startCost
 			})
 		end
 
-		if var_1_4.enter_energy_cost > 0 and not var_1_19 then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 and not isExtraMode then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_14) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_2:updateShip(iter_2_1)
+			for _, ship in ipairs(sortShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		var_1_1:updatePlayer(var_1_15)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = Fleet.REGULAR_FLEET_ID
-		local var_2_2 = {
-			mainFleetId = var_2_1,
-			prefabFleet = var_1_18,
-			stageId = var_1_16,
-			actId = var_1_0,
+		local fleetId = Fleet.REGULAR_FLEET_ID
+		local stageData = {
+			mainFleetId = fleetId,
+			prefabFleet = fleetPrefab,
+			stageId = stageId,
+			actId = actId,
 			system = SYSTEM_HP_SHARE_ACT_BOSS,
-			token = arg_2_0.key
+			token = tokenData.key
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_2)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_21(arg_3_0)
-		arg_1_1:RequestFailStandardProcess(arg_3_0)
+	--- 请求失败回调
+	local function onFail(errData)
+		sendData:RequestFailStandardProcess(errData)
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_HP_SHARE_ACT_BOSS, var_1_6, {
-		var_1_16
-	}, var_1_20, var_1_21)
+	BeginStageCommand.SendRequest(SYSTEM_HP_SHARE_ACT_BOSS, shipIdList, {
+		stageId
+	}, onSuccess, onFail)
 end
 
-function var_0_0.Exit(arg_4_0, arg_4_1)
+--- 退出共斗战斗
+--- @param self BattleGateCooperate
+--- @param callback table 回调对象
+function BattleGateCooperate.Exit(self, callback)
 	if client.CheaterVertify() then
 		return
 	end
 
-	local var_4_0 = pg.battle_cost_template[SYSTEM_HP_SHARE_ACT_BOSS]
-	local var_4_1 = getProxy(FleetProxy)
-	local var_4_2 = getProxy(ChapterProxy)
-	local var_4_3 = ys.Battle.BattleConst.BattleScore.S
-	local var_4_4 = 0
-	local var_4_5 = 0
-	local var_4_6
-	local var_4_7 = var_4_1:getActivityFleets()[arg_4_0.actId][arg_4_0.mainFleetId]
-	local var_4_8 = bayProxy:getSortShipsByFleet(var_4_7)
-	local var_4_9 = var_4_7:getEndCost().oil
+	local costTemplate = pg.battle_cost_template[SYSTEM_HP_SHARE_ACT_BOSS]
+	local fleetProxy = getProxy(FleetProxy)
+	local chapterProxy = getProxy(ChapterProxy)
+	local score = ys.Battle.BattleConst.BattleScore.S
+	local goldTotal = 0
+	local extraGold = 0
+	local subOil
+	local mainFleet = fleetProxy:getActivityFleets()[self.actId][self.mainFleetId]
+	local mainShips = bayProxy:getSortShipsByFleet(mainFleet)
+	local totalOil = mainFleet:getEndCost().oil
 
-	if arg_4_0.statistics.submarineAid then
-		local var_4_10 = var_4_1:getActivityFleets()[arg_4_0.actId][Fleet.SUBMARINE_FLEET_ID]
+	if self.statistics.submarineAid then
+		local subFleet = fleetProxy:getActivityFleets()[self.actId][Fleet.SUBMARINE_FLEET_ID]
 
-		if var_4_10 then
-			local var_4_11 = bayProxy:getSortShipsByFleet(var_4_10)
+		if subFleet then
+			local subShips = bayProxy:getSortShipsByFleet(subFleet)
 
-			for iter_4_0, iter_4_1 in ipairs(var_4_11) do
-				if arg_4_0.statistics[iter_4_1.id] then
-					table.insert(var_4_8, iter_4_1)
+			for _, ship in ipairs(subShips) do
+				if self.statistics[ship.id] then
+					table.insert(mainShips, ship)
 
-					var_4_9 = var_4_9 + iter_4_1:getEndBattleExpend()
+					totalOil = totalOil + ship:getEndBattleExpend()
 				end
 			end
 		else
@@ -123,43 +132,44 @@ function var_0_0.Exit(arg_4_0, arg_4_1)
 		end
 	end
 
-	local var_4_12 = client.GeneralPackage(arg_4_0, var_4_8)
-	local var_4_13 = {}
+	local generalPackage = client.GeneralPackage(self, mainShips)
+	local enemyInfo = {}
 
-	for iter_4_2, iter_4_3 in ipairs(arg_4_0.statistics._enemyInfoList) do
-		table.insert(var_4_13, {
-			enemy_id = iter_4_3.id,
-			damage_taken = iter_4_3.damage,
-			total_hp = iter_4_3.totalHp
+	for _, enemy in ipairs(self.statistics._enemyInfoList) do
+		table.insert(enemyInfo, {
+			enemy_id = enemy.id,
+			damage_taken = enemy.damage,
+			total_hp = enemy.totalHp
 		})
 	end
 
-	var_4_12.enemy_info = var_4_13
+	generalPackage.enemy_info = enemyInfo
 
-	local function var_4_14(arg_5_0)
-		client.addShipsExp(arg_5_0.ship_exp_list, arg_4_0.statistics)
+	--- 结算成功回调
+	local function onSuccess(result)
+		client.addShipsExp(result.ship_exp_list, self.statistics)
 
-		arg_4_0.statistics.mvpShipID = arg_5_0.mvp
+		self.statistics.mvpShipID = result.mvp
 
-		local var_5_0, var_5_1 = client:GeneralLoot(arg_5_0)
-		local var_5_2 = var_4_3 > ys.Battle.BattleConst.BattleScore.C
+		local drops, extraDrops = client:GeneralLoot(result)
+		local isWin = score > ys.Battle.BattleConst.BattleScore.C
 
-		var_0_0.GeneralPlayerCosume(SYSTEM_HP_SHARE_ACT_BOSS, var_5_2, var_4_9, arg_5_0.player_exp)
+		BattleGateCooperate.GeneralPlayerCosume(SYSTEM_HP_SHARE_ACT_BOSS, isWin, totalOil, result.player_exp)
 
-		local var_5_3 = {
+		local finishData = {
 			system = SYSTEM_HP_SHARE_ACT_BOSS,
-			statistics = arg_4_0.statistics,
-			score = var_4_3,
-			drops = var_5_0,
+			statistics = self.statistics,
+			score = score,
+			drops = drops,
 			commanderExps = {},
-			result = arg_5_0.result,
-			extraDrops = var_5_1
+			result = result.result,
+			extraDrops = extraDrops
 		}
 
-		client:sendNotification(GAME.FINISH_STAGE_DONE, var_5_3)
+		client:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
 	end
 
-	client:SendRequest(var_4_12, var_4_14)
+	client:SendRequest(generalPackage, onSuccess)
 end
 
-return var_0_0
+return BattleGateCooperate

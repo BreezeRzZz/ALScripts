@@ -1,5 +1,5 @@
 ys = ys or {}
-
+-- 战斗状态机Facade，管理战斗整个生命周期的状态切换、Mediator/Command/Proxy的创建和销毁
 local ys = ys
 
 ys.Battle = ys.Battle or {}
@@ -81,6 +81,7 @@ bfConsts.DRATE = {
 bfConsts.SPEED_CONST = 0.02
 bfConsts.HP_CONST = 1.5
 
+--- @class BattleState : 战斗状态机Facade
 local BattleState = singletonClass("BattleState", ys.MVC.Facade)
 
 ys.Battle.BattleState = BattleState
@@ -90,48 +91,52 @@ BattleState.BATTLE_STATE_OPENING = "BATTLE_OPENING"
 BattleState.BATTLE_STATE_FIGHT = "BATTLE_FIGHT"
 BattleState.BATTLE_STATE_REPORT = "BATTLE_REPORT"
 
-function BattleState.Ctor(arg_1_0)
-	BattleState.super.Ctor(arg_1_0)
-	arg_1_0:ChangeState(BattleState.BATTLE_STATE_IDLE)
+function BattleState.Ctor(self)
+	BattleState.super.Ctor(self)
+	self:ChangeState(BattleState.BATTLE_STATE_IDLE)
 end
 
 function BattleState.GetCombatSkinKey()
 	return COMBAT_SKIN_KEY or "Standard"
 end
 
-function BattleState.IsAutoBotActive(arg_3_0)
-	local var_3_0 = AutoBotCommand.GetAutoBotMark(arg_3_0)
+--- 检查自律Bot是否激活
+function BattleState.IsAutoBotActive(self)
+	local botMark = AutoBotCommand.GetAutoBotMark(self)
 
-	return PlayerPrefs.GetInt("autoBotIsAcitve" .. var_3_0, 0) == 1 and AutoBotCommand.autoBotSatisfied()
+	return PlayerPrefs.GetInt("autoBotIsAcitve" .. botMark, 0) == 1 and AutoBotCommand.autoBotSatisfied()
 end
 
-function BattleState.IsAutoSubActive(arg_4_0)
-	local var_4_0 = AutoSubCommand.GetAutoSubMark(arg_4_0)
+--- 检查自律潜艇是否激活
+function BattleState.IsAutoSubActive(self)
+	local subMark = AutoSubCommand.GetAutoSubMark(self)
 
-	return PlayerPrefs.GetInt("autoSubIsAcitve" .. var_4_0, 0) == 1
+	return PlayerPrefs.GetInt("autoSubIsAcitve" .. subMark, 0) == 1
 end
 
-function BattleState.ChatUseable(arg_5_0)
-	local var_5_0 = PlayerPrefs.GetInt(HIDE_CHAT_FLAG)
-	local var_5_1 = not var_5_0 or var_5_0 ~= 1
-	local var_5_2 = arg_5_0:GetBattleType()
-	local var_5_3 = arg_5_0.IsAutoBotActive(var_5_2)
-	local var_5_4 = var_5_2 == SYSTEM_DUEL
-	local var_5_5 = var_5_2 == SYSTEM_CARDPUZZLE
+--- 检查聊天功能是否可用
+function BattleState.ChatUseable(self)
+	local hideChatFlag = PlayerPrefs.GetInt(HIDE_CHAT_FLAG)
+	local chatNotHidden = not hideChatFlag or hideChatFlag ~= 1
+	local battleType = self:GetBattleType()
+	local isAutoActive = self.IsAutoBotActive(battleType)
+	local isDuel = battleType == SYSTEM_DUEL
+	local isCardPuzzle = battleType == SYSTEM_CARDPUZZLE
 
-	return var_5_1 and (var_5_4 or var_5_3) and not var_5_5
+	return chatNotHidden and (isDuel or isAutoActive) and not isCardPuzzle
 end
 
-function BattleState.GetState(arg_6_0)
-	return arg_6_0._state
+function BattleState.GetState(self)
+	return self._state
 end
 
-function BattleState.GetBattleType(arg_7_0)
-	return arg_7_0._battleType
+function BattleState.GetBattleType(self)
+	return self._battleType
 end
 
-function BattleState.SetBattleUI(arg_8_0, arg_8_1)
-	arg_8_0._baseUI = arg_8_1
+--- 设置战斗UI根节点
+function BattleState.SetBattleUI(self, baseUI)
+	self._baseUI = baseUI
 end
 
 -- note: 被BattleMediator.register调用
@@ -166,64 +171,70 @@ function BattleState.EnterBattle(self, battleData, prePause)
 	end
 end
 
-function BattleState.GetSceneMediator(arg_10_0)
-	return arg_10_0._sceneMediator
+function BattleState.GetSceneMediator(self)
+	return self._sceneMediator
 end
 
-function BattleState.GetUIMediator(arg_11_0)
-	return arg_11_0._uiMediator
+function BattleState.GetUIMediator(self)
+	return self._uiMediator
 end
 
+--- 激活/关闭自律Bot并同步摇杆状态
 function BattleState.ActiveBot(self, active)
 	self._weaponCommand:ActiveBot(active, true)
 	self:EnableJoystick(not active)
 end
 
-function BattleState.EnableJoystick(arg_13_0, arg_13_1)
-	arg_13_0._uiMediator:EnableJoystick(arg_13_1)
+function BattleState.EnableJoystick(self, enable)
+	self._uiMediator:EnableJoystick(enable)
 end
 
-function BattleState.IsBotActive(arg_14_0)
-	return arg_14_0._weaponCommand:GetWeaponBot():IsActive()
+--- 检查武器Bot是否激活
+function BattleState.IsBotActive(self)
+	return self._weaponCommand:GetWeaponBot():IsActive()
 end
 
-function BattleState.Update(arg_15_0)
-	if not arg_15_0._isPause then
-		for iter_15_0, iter_15_1 in pairs(arg_15_0._mediatorList) do
-			iter_15_1:Update()
+--- 每帧Update，遍历所有Mediator调用Update或UpdatePause
+function BattleState.Update(self)
+	if not self._isPause then
+		for _, mediator in pairs(self._mediatorList) do
+			mediator:Update()
 		end
 	else
-		for iter_15_2, iter_15_3 in pairs(arg_15_0._mediatorList) do
-			iter_15_3:UpdatePause()
+		for _, mediator in pairs(self._mediatorList) do
+			mediator:UpdatePause()
 		end
 	end
 end
 
+--- 生成校验数据（空实现）
 function BattleState.GenerateVertifyData(self)
 	return
 end
 
+--- 战斗校验
 function BattleState.Vertify()
 	return true, -1
 end
 
+--- 切换战斗状态，根据目标状态执行不同的初始化逻辑
 function BattleState.ChangeState(self, state)
 	self._state = state
 
 	if state == BattleState.BATTLE_STATE_OPENING then
 		self._dataProxy:Start()
 
-		local var_18_0 = self._dataProxy._dungeonInfo.beginStoy
-		local var_18_1 = getProxy(ChapterProxy)
-		local var_18_2 = var_18_1 and var_18_1:GetContinuousData(SYSTEM_SCENARIO)
+		local beginStory = self._dataProxy._dungeonInfo.beginStoy
+		local chapterProxy = getProxy(ChapterProxy)
+		local continuousData = chapterProxy and chapterProxy:GetContinuousData(SYSTEM_SCENARIO)
 
-		if var_18_0 then
-			if var_18_2 then
-				pg.NewStoryMgr.GetInstance():ForceAutoPlay(var_18_0, function()
+		if beginStory then
+			if continuousData then
+				pg.NewStoryMgr.GetInstance():ForceAutoPlay(beginStory, function()
 					self._battleCommand:DoPrologue()
 				end)
 			else
-				pg.NewStoryMgr.GetInstance():Play(var_18_0, function()
+				pg.NewStoryMgr.GetInstance():Play(beginStory, function()
 					self._battleCommand:DoPrologue()
 				end)
 			end
@@ -242,14 +253,16 @@ function BattleState.ChangeState(self, state)
 	end
 end
 
-function BattleState.GetUI(arg_21_0)
-	return arg_21_0._baseUI
+function BattleState.GetUI(self)
+	return self._baseUI
 end
 
-function BattleState.ConfigBattleEndFunc(arg_22_0, arg_22_1)
-	arg_22_0._endFunc = arg_22_1
+--- 配置战斗结束后的回调函数
+function BattleState.ConfigBattleEndFunc(self, endFunc)
+	self._endFunc = endFunc
 end
 
+--- 战斗结束，评分B以上播放庆祝动画，否则直接结算
 function BattleState.BattleEnd(self)
 	self:disableCommon()
 	-- 大于等于B评分，庆祝胜利，否则直接结算
@@ -263,206 +276,224 @@ function BattleState.BattleEnd(self)
 	end
 end
 
-function BattleState.BattleTimeUp(arg_25_0)
-	arg_25_0:disableCommon()
-	arg_25_0:ActiveEscape()
-	arg_25_0:reportDelayTimer(function()
-		arg_25_0:DeactiveEscape()
-		arg_25_0:DoResult()
+--- 战斗超时，播放逃跑动画后进行结算
+function BattleState.BattleTimeUp(self)
+	self:disableCommon()
+	self:ActiveEscape()
+	self:reportDelayTimer(function()
+		self:DeactiveEscape()
+		self:DoResult()
 	end, ys.Battle.BattleConfig.EscapeDuration)
 end
 
-function BattleState.DoResult(arg_27_0)
-	arg_27_0._sceneMediator:PauseCharacterAction(true)
-	arg_27_0._dataProxy:BotPercentage(arg_27_0._weaponCommand:GetBotActiveDuration())
-	arg_27_0._dataProxy:HPRatioStatistics()
-	arg_27_0._endFunc(arg_27_0._dataProxy:GetStatistics())
+--- 执行战斗结算：暂停角色动画、计算Bot比例和HP统计、调用endFunc
+function BattleState.DoResult(self)
+	self._sceneMediator:PauseCharacterAction(true)
+	self._dataProxy:BotPercentage(self._weaponCommand:GetBotActiveDuration())
+	self._dataProxy:HPRatioStatistics()
+	self._endFunc(self._dataProxy:GetStatistics())
 end
 
-function BattleState.ExitBattle(arg_28_0)
+--- 退出战斗，清理所有Mediator/Command/Proxy和资源
+function BattleState.ExitBattle(self)
 	ys.Battle.BattleCameraUtil.GetInstance():Clear()
 
-	for iter_28_0, iter_28_1 in pairs(arg_28_0._mediatorList) do
-		arg_28_0:RemoveMediator(iter_28_1)
+	for _, mediator in pairs(self._mediatorList) do
+		self:RemoveMediator(mediator)
 	end
 
-	for iter_28_2, iter_28_3 in pairs(arg_28_0._commandList) do
-		arg_28_0:RemoveCommand(iter_28_3)
+	for _, command in pairs(self._commandList) do
+		self:RemoveCommand(command)
 	end
 
-	for iter_28_4, iter_28_5 in pairs(arg_28_0._proxyList) do
-		arg_28_0:RemoveProxy(iter_28_5)
+	for _, proxy in pairs(self._proxyList) do
+		self:RemoveProxy(proxy)
 	end
 
 	ys.Battle.BattleConfig.BASIC_TIME_SCALE = 1
 
-	arg_28_0:RemoveAllTimer()
+	self:RemoveAllTimer()
 	ys.Battle.BattleResourceManager.GetInstance():Clear()
 
-	arg_28_0._takeoverProcess = nil
+	self._takeoverProcess = nil
 
-	arg_28_0:ChangeState(BattleState.BATTLE_STATE_IDLE)
+	self:ChangeState(BattleState.BATTLE_STATE_IDLE)
 
-	arg_28_0._baseUI = nil
-	arg_28_0._endFunc = nil
-	arg_28_0._uiMediator = nil
-	arg_28_0._sceneMediator = nil
-	arg_28_0._battleCommand = nil
-	arg_28_0._weaponCommand = nil
+	self._baseUI = nil
+	self._endFunc = nil
+	self._uiMediator = nil
+	self._sceneMediator = nil
+	self._battleCommand = nil
+	self._weaponCommand = nil
 
 	removeSingletonInstance(ys.Battle.BattleDataProxy)
 
-	arg_28_0._dataProxy = nil
+	self._dataProxy = nil
 
 	ys.Battle.BattleVariable.Clear()
 	ys.Battle.BattleBulletFactory.DestroyFactory()
-	UpdateBeat:Remove(arg_28_0.Update, arg_28_0)
+	UpdateBeat:Remove(self.Update, self)
 	pg.EffectMgr.GetInstance():ClearBattleEffectMap()
 
-	arg_28_0._timeScale = nil
-	arg_28_0._timescalerCache = nil
+	self._timeScale = nil
+	self._timescalerCache = nil
 
 	gcAll(true)
 end
 
-function BattleState.Stop(arg_29_0, arg_29_1)
-	arg_29_0:disableCommon()
-	arg_29_0._baseUI:exitBattle(arg_29_1)
+--- 停止战斗
+function BattleState.Stop(self, callback)
+	self:disableCommon()
+	self._baseUI:exitBattle(callback)
 end
 
-function BattleState.disableCommon(arg_30_0)
-	arg_30_0._weaponCommand:ActiveBot(false)
-	arg_30_0:ScaleTimer()
+--- 禁用通用组件：关闭Bot、缩放计时器、重置相机、清理飞机等
+function BattleState.disableCommon(self)
+	self._weaponCommand:ActiveBot(false)
+	self:ScaleTimer()
 	ys.Battle.BattleCameraUtil.GetInstance():ResetFocus()
-	arg_30_0:ChangeState(BattleState.BATTLE_STATE_REPORT)
-	arg_30_0._dataProxy:ClearAirFighterTimer()
-	arg_30_0._dataProxy:KillAllAircraft()
-	arg_30_0._sceneMediator:AllBulletNeutralize()
+	self:ChangeState(BattleState.BATTLE_STATE_REPORT)
+	self._dataProxy:ClearAirFighterTimer()
+	self._dataProxy:KillAllAircraft()
+	self._sceneMediator:AllBulletNeutralize()
 	ys.Battle.BattleCameraUtil.GetInstance():StopShake()
 	ys.Battle.BattleCameraUtil.GetInstance():Deactive()
-	arg_30_0._uiMediator:DisableComponent()
-	arg_30_0:Deactive()
+	self._uiMediator:DisableComponent()
+	self:Deactive()
 end
 
-function BattleState.reportDelayTimer(arg_31_0, arg_31_1, arg_31_2)
-	local var_31_0
+--- 延迟结算定时器，在指定时长后执行回调
+function BattleState.reportDelayTimer(self, callbackFn, delay)
+	local timer
 
-	local function var_31_1()
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(var_31_0)
+	--- 定时器到期回调
+	local function onTimerComplete()
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 
-		var_31_0 = nil
+		timer = nil
 
-		arg_31_1()
+		callbackFn()
 	end
 
-	arg_31_0:RemoveAllTimer()
+	self:RemoveAllTimer()
 	pg.TimeMgr.GetInstance():ResumeBattleTimer()
 
-	var_31_0 = pg.TimeMgr.GetInstance():AddBattleTimer("reportDelay", -1, arg_31_2, var_31_1)
+	timer = pg.TimeMgr.GetInstance():AddBattleTimer("reportDelay", -1, delay, onTimerComplete)
 end
 
-function BattleState.SetTakeoverProcess(arg_33_0, arg_33_1)
-	assert(arg_33_0._takeoverProcess == nil, "已经有接管的战斗过程，暂时没有定义这种逻辑")
-	assert(arg_33_1.Pause ~= nil and type(arg_33_1.Pause) == "function", "SetTakeoverProcess附加过程，必须要有Pause函数")
-	assert(arg_33_1.Pause ~= nil and type(arg_33_1.Resume) == "function", "SetTakeoverProcess附加过程，必须要有Pause函数")
+--- 设置接管战斗过程（用于特殊流程接管）
+function BattleState.SetTakeoverProcess(self, process)
+	assert(self._takeoverProcess == nil, "已经有接管的战斗过程，暂时没有定义这种逻辑")
+	assert(process.Pause ~= nil and type(process.Pause) == "function", "SetTakeoverProcess附加过程，必须要有Pause函数")
+	assert(process.Pause ~= nil and type(process.Resume) == "function", "SetTakeoverProcess附加过程，必须要有Pause函数")
 
-	arg_33_0._takeoverProcess = arg_33_1
+	self._takeoverProcess = process
 
-	arg_33_0:_pause()
+	self:_pause()
 end
 
-function BattleState.ClearTakeoverProcess(arg_34_0)
-	assert(arg_34_0._takeoverProcess, "没有接管的战斗过程，暂时没有定义这种逻辑")
+--- 清除接管过程并恢复战斗
+function BattleState.ClearTakeoverProcess(self)
+	assert(self._takeoverProcess, "没有接管的战斗过程，暂时没有定义这种逻辑")
 
-	arg_34_0._takeoverProcess = nil
+	self._takeoverProcess = nil
 
-	arg_34_0:_resume()
+	self:_resume()
 end
 
-function BattleState.IsPause(arg_35_0)
-	return arg_35_0._isPause
+function BattleState.IsPause(self)
+	return self._isPause
 end
 
-function BattleState.Pause(arg_36_0)
-	local var_36_0 = arg_36_0._takeoverProcess
+--- 暂停战斗，优先使用接管过程的Pause方法
+function BattleState.Pause(self)
+	local takeover = self._takeoverProcess
 
-	if var_36_0 then
-		var_36_0.Pause()
+	if takeover then
+		takeover.Pause()
 	else
-		arg_36_0:_pause()
+		self:_pause()
 	end
 end
 
-function BattleState._pause(arg_37_0)
-	arg_37_0:Deactive()
-	arg_37_0._dataProxy:PausePuzzleComponent()
-	arg_37_0._sceneMediator:Pause()
+--- 内部暂停实现
+function BattleState._pause(self)
+	self:Deactive()
+	self._dataProxy:PausePuzzleComponent()
+	self._sceneMediator:Pause()
 
-	if arg_37_0._timeScale ~= 1 then
-		arg_37_0:CacheTimescaler(arg_37_0._timeScale)
-		arg_37_0:ScaleTimer(1)
+	if self._timeScale ~= 1 then
+		self:CacheTimescaler(self._timeScale)
+		self:ScaleTimer(1)
 	end
 
 	ys.Battle.BattleCameraUtil.GetInstance():PauseCameraTween()
 end
 
-function BattleState.Resume(arg_38_0)
-	if arg_38_0._state == BattleState.BATTLE_STATE_IDLE then
-		arg_38_0:ChangeState(BattleState.BATTLE_STATE_OPENING)
-		UpdateBeat:Add(arg_38_0.Update, arg_38_0)
-	elseif arg_38_0._state == BattleState.BATTLE_STATE_REPORT then
+--- 恢复战斗，根据当前状态决定处理方式
+function BattleState.Resume(self)
+	if self._state == BattleState.BATTLE_STATE_IDLE then
+		self:ChangeState(BattleState.BATTLE_STATE_OPENING)
+		UpdateBeat:Add(self.Update, self)
+	elseif self._state == BattleState.BATTLE_STATE_REPORT then
 		return
 	end
 
-	local var_38_0 = arg_38_0._takeoverProcess
+	local takeover = self._takeoverProcess
 
-	if var_38_0 then
-		var_38_0.Resume()
+	if takeover then
+		takeover.Resume()
 	else
-		arg_38_0:_resume()
+		self:_resume()
 	end
 end
 
-function BattleState._resume(arg_39_0)
-	arg_39_0._sceneMediator:Resume()
-	arg_39_0:Active()
-	arg_39_0._dataProxy:ResumePuzzleComponent()
+--- 内部恢复实现
+function BattleState._resume(self)
+	self._sceneMediator:Resume()
+	self:Active()
+	self._dataProxy:ResumePuzzleComponent()
 
-	if arg_39_0._timescalerCache then
-		arg_39_0:ScaleTimer(arg_39_0._timescalerCache)
-		arg_39_0:CacheTimescaler()
+	if self._timescalerCache then
+		self:ScaleTimer(self._timescalerCache)
+		self:CacheTimescaler()
 	end
 
 	ys.Battle.BattleCameraUtil.GetInstance():ResumeCameraTween()
 end
 
-function BattleState.ScaleTimer(arg_40_0, arg_40_1)
-	arg_40_1 = arg_40_1 or ys.Battle.BattleConfig.BASIC_TIME_SCALE
+--- 缩放战斗计时器
+function BattleState.ScaleTimer(self, scale)
+	scale = scale or ys.Battle.BattleConfig.BASIC_TIME_SCALE
 
-	pg.TimeMgr.GetInstance():ScaleBattleTimer(arg_40_1)
+	pg.TimeMgr.GetInstance():ScaleBattleTimer(scale)
 
-	arg_40_0._timeScale = arg_40_1
+	self._timeScale = scale
 end
 
-function BattleState.GetTimeScaleRate(arg_41_0)
-	return arg_41_0._timeScale or 1
+function BattleState.GetTimeScaleRate(self)
+	return self._timeScale or 1
 end
 
-function BattleState.CacheTimescaler(arg_42_0, arg_42_1)
-	arg_42_0._timescalerCache = arg_42_1
+--- 缓存时间缩放值（用于暂停后恢复）
+function BattleState.CacheTimescaler(self, scale)
+	self._timescalerCache = scale
 end
 
-function ys.Battle.PlayBattleSFX(arg_43_0)
-	if arg_43_0 ~= "" then
-		pg.CriMgr.GetInstance():PlaySoundEffect_V3("event:/" .. arg_43_0)
+--- 播放战斗音效
+function ys.Battle.PlayBattleSFX(sfxName)
+	if sfxName ~= "" then
+		pg.CriMgr.GetInstance():PlaySoundEffect_V3("event:/" .. sfxName)
 	end
 end
 
-function BattleState.OpenConsole(arg_44_0)
-	arg_44_0._uiMediator:InitDebugConsole()
-	arg_44_0._uiMediator:ActiveDebugConsole()
+--- 打开调试控制台
+function BattleState.OpenConsole(self)
+	self._uiMediator:InitDebugConsole()
+	self._uiMediator:ActiveDebugConsole()
 end
 
-function BattleState.ActiveReference(arg_45_0)
-	arg_45_0._controllerCommand = arg_45_0:AddCommand(ys.Battle.BattleControllerCommand.New())
+--- 激活参考Box
+function BattleState.ActiveReference(self)
+	self._controllerCommand = self:AddCommand(ys.Battle.BattleControllerCommand.New())
 end

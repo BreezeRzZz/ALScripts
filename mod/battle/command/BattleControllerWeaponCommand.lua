@@ -1,5 +1,5 @@
 ys = ys or {}
-
+-- 武器控制Command，管理自律武器Bot、摇杆Bot和相机焦点
 local ys = ys
 local BattleEvent = ys.Battle.BattleEvent
 
@@ -30,39 +30,40 @@ function BattleControllerWeaponCommand.ActiveBot(self, active, isPlayFocus)
 	self._joyStickAutoBot:SetActive(active)
 end
 
--- TODO
 -- 尝试自律召唤潜艇
 -- 被BattleSingleDungeonCommand.DoPrologue调用
-function BattleControllerWeaponCommand.TryAutoSub(arg_4_0)
-	local var_4_0 = arg_4_0:GetState():GetBattleType()
+function BattleControllerWeaponCommand.TryAutoSub(self)
+	local battleType = self:GetState():GetBattleType()
 
-	if ys.Battle.BattleState.IsAutoSubActive(var_4_0) then
-		local var_4_1 = arg_4_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)._submarineVO
+	if ys.Battle.BattleState.IsAutoSubActive(battleType) then
+		local submarineVO = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)._submarineVO
 
-		if var_4_1:GetUseable() and var_4_1:GetCount() > 0 then
-			arg_4_0._dataProxy:SubmarineStrike(ys.Battle.BattleConfig.FRIENDLY_CODE)
-			var_4_1:Cast()
+		if submarineVO:GetUseable() and submarineVO:GetCount() > 0 then
+			self._dataProxy:SubmarineStrike(ys.Battle.BattleConfig.FRIENDLY_CODE)
+			submarineVO:Cast()
 		end
 	end
 end
 
-function BattleControllerWeaponCommand.GetWeaponBot(arg_5_0)
-	return arg_5_0._manualWeaponAutoBot
+function BattleControllerWeaponCommand.GetWeaponBot(self)
+	return self._manualWeaponAutoBot
 end
 
-function BattleControllerWeaponCommand.GetBotActiveDuration(arg_6_0)
-	return arg_6_0._manualWeaponAutoBot:GetTotalActiveDuration()
+function BattleControllerWeaponCommand.GetBotActiveDuration(self)
+	return self._manualWeaponAutoBot:GetTotalActiveDuration()
 end
 
-function BattleControllerWeaponCommand.GetStickBot(arg_7_0)
-	return arg_7_0._joyStickAutoBot
+function BattleControllerWeaponCommand.GetStickBot(self)
+	return self._joyStickAutoBot
 end
 
-function BattleControllerWeaponCommand.InitBattleEvent(arg_8_0)
-	arg_8_0._dataProxy:RegisterEventListener(arg_8_0, BattleEvent.COMMON_DATA_INIT_FINISH, arg_8_0.onUnitInitFinish)
-	arg_8_0._dataProxy:RegisterEventListener(arg_8_0, BattleEvent.JAMMING, arg_8_0.onJamming)
+function BattleControllerWeaponCommand.InitBattleEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH, self.onUnitInitFinish)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.JAMMING, self.onJamming)
 end
 
+--- 每帧Update，由BattleState的UpdateBeat驱动
+--- @param timeStamp number 时间戳
 function BattleControllerWeaponCommand.Update(self, timeStamp)
 	if self._jammingFlag then
 		return
@@ -77,66 +78,69 @@ function BattleControllerWeaponCommand.Update(self, timeStamp)
 	end
 end
 
-function BattleControllerWeaponCommand.onJamming(arg_10_0, arg_10_1)
-	arg_10_0._jammingFlag = arg_10_1.Data.jammingFlag
+--- 干扰状态变化事件
+function BattleControllerWeaponCommand.onJamming(self, event)
+	self._jammingFlag = event.Data.jammingFlag
 end
 
-function BattleControllerWeaponCommand.onUnitInitFinish(arg_11_0, arg_11_1)
-	arg_11_0._fleetList = arg_11_0._dataProxy:GetFleetList()
+--- 单位初始化完成，创建武器Bot和摇杆Bot
+function BattleControllerWeaponCommand.onUnitInitFinish(self, event)
+	self._fleetList = self._dataProxy:GetFleetList()
 
-	local var_11_0 = arg_11_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+	local friendlyFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 
-	var_11_0:RegisterEventListener(arg_11_0, BattleEvent.REFRESH_FLEET_FORMATION, arg_11_0.onFleetFormationUpdate)
-	var_11_0:RegisterEventListener(arg_11_0, BattleEvent.OVERRIDE_AUTO_BOT, arg_11_0.onOverrideAutoBot)
+	friendlyFleet:RegisterEventListener(self, BattleEvent.REFRESH_FLEET_FORMATION, self.onFleetFormationUpdate)
+	friendlyFleet:RegisterEventListener(self, BattleEvent.OVERRIDE_AUTO_BOT, self.onOverrideAutoBot)
 
-	arg_11_0._manualWeaponAutoBot = ys.Battle.BattleManualWeaponAutoBot.New(var_11_0)
-	arg_11_0._joyStickAutoBot = ys.Battle.BattleJoyStickAutoBot.New(arg_11_0._dataProxy, var_11_0)
+	self._manualWeaponAutoBot = ys.Battle.BattleManualWeaponAutoBot.New(friendlyFleet)
+	self._joyStickAutoBot = ys.Battle.BattleJoyStickAutoBot.New(self._dataProxy, friendlyFleet)
 
-	if arg_11_0._dataProxy:GetInitData().battleType == SYSTEM_SCENARIO_SUB_STRIKE then
-		arg_11_0._joyStickAutoBot:SwitchStrategy(arg_11_0._joyStickAutoBot.IDLE)
+	if self._dataProxy:GetInitData().battleType == SYSTEM_SCENARIO_SUB_STRIKE then
+		self._joyStickAutoBot:SwitchStrategy(self._joyStickAutoBot.IDLE)
 	else
-		arg_11_0._joyStickAutoBot:SwitchStrategy(arg_11_0._joyStickAutoBot.RANDOM)
+		self._joyStickAutoBot:SwitchStrategy(self._joyStickAutoBot.RANDOM)
 	end
 
-	ys.Battle.BattleCameraUtil.GetInstance():RegisterEventListener(arg_11_0, BattleEvent.CAMERA_FOCUS, arg_11_0.onCameraFocus)
+	ys.Battle.BattleCameraUtil.GetInstance():RegisterEventListener(self, BattleEvent.CAMERA_FOCUS, self.onCameraFocus)
 end
 
-function BattleControllerWeaponCommand.onFleetFormationUpdate(arg_12_0, arg_12_1)
-	arg_12_0._joyStickAutoBot:FleetFormationUpdate()
+function BattleControllerWeaponCommand.onFleetFormationUpdate(self, event)
+	self._joyStickAutoBot:FleetFormationUpdate()
 end
 
-function BattleControllerWeaponCommand.onOverrideAutoBot(arg_13_0, arg_13_1)
-	arg_13_0._joyStickAutoBot:SwitchStrategy(ys.Battle.BattleJoyStickAutoBot.AUTO_PILOT)
+function BattleControllerWeaponCommand.onOverrideAutoBot(self, event)
+	self._joyStickAutoBot:SwitchStrategy(ys.Battle.BattleJoyStickAutoBot.AUTO_PILOT)
 end
 
-function BattleControllerWeaponCommand.onCameraFocus(arg_14_0, arg_14_1)
-	local var_14_0 = arg_14_1.Data
+--- 相机焦点变化，存在焦点单位时阻挡武器释放
+function BattleControllerWeaponCommand.onCameraFocus(self, event)
+	local eventData = event.Data
 
-	if var_14_0.unit ~= nil then
-		arg_14_0._focusBlockCast = true
+	if eventData.unit ~= nil then
+		self._focusBlockCast = true
 	else
-		local var_14_1 = var_14_0.duration + var_14_0.extraBulletTime
+		local totalDelay = eventData.duration + eventData.extraBulletTime
 
-		LeanTween.delayedCall(var_14_1, System.Action(function()
-			arg_14_0._focusBlockCast = false
+		LeanTween.delayedCall(totalDelay, System.Action(function()
+			self._focusBlockCast = false
 		end))
 	end
 end
 
-function BattleControllerWeaponCommand.Dispose(arg_16_0)
-	local var_16_0 = arg_16_0._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
+function BattleControllerWeaponCommand.Dispose(self)
+	local friendlyFleet = self._dataProxy:GetFleetByIFF(ys.Battle.BattleConfig.FRIENDLY_CODE)
 
-	var_16_0:UnregisterEventListener(arg_16_0, BattleEvent.REFRESH_FLEET_FORMATION)
-	var_16_0:UnregisterEventListener(arg_16_0, BattleEvent.OVERRIDE_AUTO_BOT)
-	arg_16_0._dataProxy:UnregisterEventListener(arg_16_0, BattleEvent.COMMON_DATA_INIT_FINISH)
-	ys.Battle.BattleCameraUtil.GetInstance():UnregisterEventListener(arg_16_0, BattleEvent.CAMERA_FOCUS)
-	arg_16_0._joyStickAutoBot:Dispose()
+	friendlyFleet:UnregisterEventListener(self, BattleEvent.REFRESH_FLEET_FORMATION)
+	friendlyFleet:UnregisterEventListener(self, BattleEvent.OVERRIDE_AUTO_BOT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.COMMON_DATA_INIT_FINISH)
+	ys.Battle.BattleCameraUtil.GetInstance():UnregisterEventListener(self, BattleEvent.CAMERA_FOCUS)
+	self._joyStickAutoBot:Dispose()
 
-	arg_16_0._joyStickAutoBot = nil
+	self._joyStickAutoBot = nil
 
-	arg_16_0._manualWeaponAutoBot:Dispose()
+	self._manualWeaponAutoBot:Dispose()
 
-	arg_16_0._manualWeaponAutoBot = nil
+	self._manualWeaponAutoBot = nil
 
-	BattleControllerWeaponCommand.super.Dispose(arg_16_0)
+	BattleControllerWeaponCommand.super.Dispose(self)
 end

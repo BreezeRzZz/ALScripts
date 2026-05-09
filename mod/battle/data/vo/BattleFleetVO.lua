@@ -1,5 +1,5 @@
 ys = ys or {}
--- TODO
+
 local ys = ys
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleEvent = ys.Battle.BattleEvent
@@ -13,6 +13,11 @@ local BattleFleetVO = class("BattleFleetVO")
 ys.Battle.BattleFleetVO = BattleFleetVO
 BattleFleetVO.__name = "BattleFleetVO"
 
+--- @class BattleFleetVO
+--- 舰队值对象，管理舰队所有单位、武器VO、阵型、Buff等
+
+--- 构造函数
+--- @param IFF number 敌我识别码
 function BattleFleetVO.Ctor(self, IFF)
 	ys.EventDispatcher.AttachEventDispatcher(self)
 	ys.EventListener.AttachEventListener(self)
@@ -91,6 +96,7 @@ function BattleFleetVO.UpdateAutoComponent(self, timeStamp)
 	end
 end
 
+--- 更新舰队Buff
 function BattleFleetVO.UpdateBuff(self, timeStamp)
 	local buffList = self._buffList
 
@@ -110,6 +116,8 @@ function BattleFleetVO.UpdateManualWeaponVO(self, timeStamp)
 	self._submarineShiftVO:Update(timeStamp)
 end
 
+--- 更新舰队受到的伤害
+--- @param damage table 伤害数据
 function BattleFleetVO.UpdateFleetDamage(self, damage)
 	local fleetDamageRatio = BattleFormulas.CalculateFleetDamage(damage)
 
@@ -118,6 +126,8 @@ function BattleFleetVO.UpdateFleetDamage(self, damage)
 	self:DispatchFleetDamageChange()
 end
 
+--- 更新舰队过量伤害（取消失效的伤害）
+--- @param ship BattleUnit 造成的伤害所属的舰船
 function BattleFleetVO.UpdateFleetOverDamage(self, ship)
 	local fleetDamageRatio = BattleFormulas.CalculateFleetOverDamage(self, ship)
 
@@ -126,16 +136,22 @@ function BattleFleetVO.UpdateFleetOverDamage(self, ship)
 	self:DispatchFleetDamageChange()
 end
 
+--- 分发舰队伤害变更事件
 function BattleFleetVO.DispatchFleetDamageChange(self)
 	self:DispatchEvent(ys.Event.New(BattleEvent.FLEET_DMG_CHANGE, {}))
 end
 
+--- 分发声呐扫描事件
+--- @param indieSonar BattleIndieSonar 独立声呐对象
 function BattleFleetVO.DispatchSonarScan(self, indieSonar)
 	self:DispatchEvent(ys.Event.New(BattleEvent.SONAR_SCAN, {
 		indieSonar = indieSonar
 	}))
 end
 
+--- 触发舰队所有单位的Buff
+--- @param effectType number BuffEffectType
+--- @param arg_list table Buff参数
 function BattleFleetVO.FleetBuffTrigger(self, effectType, arg_list)
 	for _, unit in ipairs(self._unitList) do
 		unit:TriggerBuff(effectType, arg_list)
@@ -143,6 +159,7 @@ function BattleFleetVO.FleetBuffTrigger(self, effectType, arg_list)
 end
 
 -- 模拟战使用(BattleSimulationCommand). 添加Buff 41(后排移动)
+--- @param buffID number Buff ID
 function BattleFleetVO.FreeMainUnit(self, buffID)
 	if self._mainUnitFree then
 		return
@@ -160,6 +177,8 @@ end
 
 -- 舰船/舰载机触底时，选择一个随机主力舰作为受伤害目标
 -- 被BattleDataProxy.HandleAircraftMissDamage/BattleDataProxy.HandleShipMissDamage调用
+--- @param attrList table 需要过滤的属性名列表（如immuneDirectHit）
+--- @return BattleUnit|nil 选中的受害单位
 function BattleFleetVO.RandomMainVictim(self, attrList)
 	attrList = attrList or {}
 
@@ -193,6 +212,9 @@ end
 -- 用于找出距离pos最近的指定类型舰船
 -- 被BattleDataProxy.HandleAircraftMissDamage/BattleDataProxy.HandleShipMissDamage调用
 -- 主要是用于对这个最近的单位添加额外暴露值
+--- @param pos Vector3 参考位置
+--- @param shipTypeList table 需要匹配的舰船类型列表
+--- @return BattleUnit|nil 最近的单位
 function BattleFleetVO.NearestUnitByType(self, pos, shipTypeList)
 	local minDistance = 999
 	local target
@@ -215,6 +237,8 @@ function BattleFleetVO.NearestUnitByType(self, pos, shipTypeList)
 	return target
 end
 
+--- 设置舰队移动速度来源函数
+--- @param motionSource function|nil 移动来源函数（nil则使用默认UI输入）
 function BattleFleetVO.SetMotionSource(self, motionSource)
 	if motionSource == nil then
 		-- 默认返回的是UI的X、Z轴输入
@@ -228,64 +252,87 @@ function BattleFleetVO.SetMotionSource(self, motionSource)
 	end
 end
 
-function BattleFleetVO.SetSubAidData(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_0._submarineVO = ys.Battle.BattleSubmarineAidVO.New()
+--- 设置潜艇支援数据
+--- @param totalCount number 总可用次数
+--- @param currentCount number 当前可用次数
+function BattleFleetVO.SetSubAidData(self, totalCount, currentCount)
+	self._submarineVO = ys.Battle.BattleSubmarineAidVO.New()
 
-	if arg_16_2 == BattleConst.SubAidFlag.AID_EMPTY or arg_16_2 == BattleConst.SubAidFlag.OIL_EMPTY then
-		arg_16_0._submarineVO:SetUseable(false)
+	if currentCount == BattleConst.SubAidFlag.AID_EMPTY or currentCount == BattleConst.SubAidFlag.OIL_EMPTY then
+		self._submarineVO:SetUseable(false)
 	else
-		arg_16_0._submarineVO:SetCount(arg_16_2)
-		arg_16_0._submarineVO:SetTotal(arg_16_1)
-		arg_16_0._submarineVO:SetUseable(true)
+		self._submarineVO:SetCount(currentCount)
+		self._submarineVO:SetTotal(totalCount)
+		self._submarineVO:SetUseable(true)
 	end
 end
 
-function BattleFleetVO.SetAutobotBound(arg_17_0, arg_17_1, arg_17_2, arg_17_3, arg_17_4)
-	arg_17_0._upperBound = arg_17_1
-	arg_17_0._lowerBound = arg_17_2
-	arg_17_0._leftBound = arg_17_3
-	arg_17_0._rightBound = arg_17_4
+--- 设置自律移动边界
+--- @param upperBound number 上边界 Y
+--- @param lowerBound number 下边界 Y
+--- @param leftBound number 左边界 X
+--- @param rightBound number 右边界 X
+function BattleFleetVO.SetAutobotBound(self, upperBound, lowerBound, leftBound, rightBound)
+	self._upperBound = upperBound
+	self._lowerBound = lowerBound
+	self._leftBound = leftBound
+	self._rightBound = rightBound
 end
 
-function BattleFleetVO.SetTotalBound(arg_18_0, arg_18_1, arg_18_2, arg_18_3, arg_18_4)
-	arg_18_0._totalUpperBound = arg_18_1
-	arg_18_0._totalLowerBound = arg_18_2
-	arg_18_0._totalLeftBound = arg_18_3
-	arg_18_0._totalRightBound = arg_18_4
+--- 设置总边界（包括后排）
+--- @param totalUpperBound number
+--- @param totalLowerBound number
+--- @param totalLeftBound number
+--- @param totalRightBound number
+function BattleFleetVO.SetTotalBound(self, totalUpperBound, totalLowerBound, totalLeftBound, totalRightBound)
+	self._totalUpperBound = totalUpperBound
+	self._totalLowerBound = totalLowerBound
+	self._totalLeftBound = totalLeftBound
+	self._totalRightBound = totalRightBound
 end
 
-function BattleFleetVO.SetUnitBound(arg_19_0, arg_19_1, arg_19_2)
-	arg_19_0._fleetUnitBound = ys.Battle.BattleFleetBound.New(arg_19_0._IFF)
+--- 设置舰队单位边界组件
+--- @param boundData1 any 边界配置数据1
+--- @param boundData2 any 边界配置数据2
+function BattleFleetVO.SetUnitBound(self, boundData1, boundData2)
+	self._fleetUnitBound = ys.Battle.BattleFleetBound.New(self._IFF)
 
-	arg_19_0._fleetUnitBound:ConfigAreaData(arg_19_1, arg_19_2)
-	arg_19_0._fleetUnitBound:SwtichCommon()
+	self._fleetUnitBound:ConfigAreaData(boundData1, boundData2)
+	self._fleetUnitBound:SwtichCommon()
 end
 
-function BattleFleetVO.SetChapterPlayType(arg_20_0, arg_20_1)
-	arg_20_0._chapterType = arg_20_1
+--- 设置章节游戏类型
+--- @param playType number 章节类型
+function BattleFleetVO.SetChapterPlayType(self, playType)
+	self._chapterType = playType
 end
 
-function BattleFleetVO.GetLeftBoundDistance(arg_21_0)
-	if arg_21_0._chapterType and arg_21_0._chapterType == 5 then
-		return math.abs(arg_21_0._motionVO:GetPos().x - arg_21_0._leftBound)
+--- 获取左边界距离（仅chapterType == 5时有效）
+--- @return number|nil
+function BattleFleetVO.GetLeftBoundDistance(self)
+	if self._chapterType and self._chapterType == 5 then
+		return math.abs(self._motionVO:GetPos().x - self._leftBound)
 	end
 end
 
-function BattleFleetVO.UpdateScoutUnitBound(arg_22_0)
-	local var_22_0, var_22_1, var_22_2, var_22_3, var_22_4, var_22_5 = arg_22_0._fleetUnitBound:GetBound()
+--- 更新前排单位边界
+--- 将从fleetUnitBound获取的边界值设置到每个前排单位和冻结的非主力单位
+function BattleFleetVO.UpdateScoutUnitBound(self)
+	local upperBound, lowerBound, leftBound, rightBound, extraBound1, extraBound2 = self._fleetUnitBound:GetBound()
 
-	for iter_22_0, iter_22_1 in ipairs(arg_22_0._scoutList) do
-		iter_22_1:SetBound(var_22_0, var_22_1, var_22_2, var_22_3, var_22_4, var_22_5)
+	for _, scout in ipairs(self._scoutList) do
+		scout:SetBound(upperBound, lowerBound, leftBound, rightBound, extraBound1, extraBound2)
 	end
 
-	for iter_22_2, iter_22_3 in pairs(arg_22_0._freezeList) do
-		if not iter_22_2:IsMainFleetUnit() then
-			iter_22_2:SetBound(var_22_0, var_22_1, var_22_2, var_22_3, var_22_4, var_22_5)
+	for unit, _ in pairs(self._freezeList) do
+		if not unit:IsMainFleetUnit() then
+			unit:SetBound(upperBound, lowerBound, leftBound, rightBound, extraBound1, extraBound2)
 		end
 	end
 end
 
 -- note: 计算潜艇攻击和撤退基准线
+--- @param battleType number 战斗类型
 function BattleFleetVO.CalcSubmarineBaseLine(self, battleType)
 	local subAttackBaseLine = (self._totalRightBound + self._totalLeftBound) * 0.5
 
@@ -301,15 +348,19 @@ function BattleFleetVO.CalcSubmarineBaseLine(self, battleType)
 	end
 end
 
-function BattleFleetVO.SetExposeLine(arg_24_0, arg_24_1, arg_24_2)
-	arg_24_0._visionLineX = arg_24_1
-	arg_24_0._exposeLineX = arg_24_2
+--- 设置暴露线
+--- @param visionLineX number 视野线X坐标
+--- @param exposeLineX number 暴露线X坐标
+function BattleFleetVO.SetExposeLine(self, visionLineX, exposeLineX)
+	self._visionLineX = visionLineX
+	self._exposeLineX = exposeLineX
 end
 
 --- @class BattleFleetVO
 --- @param unit BattleUnit
 --- @return nil
 --- BattleDataProxy.SpawnVanguard/BattleDataProxy.SpawnMain调用
+--- 将单位添加到舰队中
 function BattleFleetVO.AppendPlayerUnit(self, unit)
 	self._unitList[#self._unitList + 1] = unit
 	self._maxCount = self._maxCount + 1
@@ -330,90 +381,95 @@ function BattleFleetVO.AppendPlayerUnit(self, unit)
 	end
 end
 
-function BattleFleetVO.RemovePlayerUnit(arg_26_0, arg_26_1, arg_26_2)
-	arg_26_0._freezeList[arg_26_1] = nil
+--- 从舰队中移除单位
+--- @param unit BattleUnit 要移除的单位
+--- @param isFreeze boolean 是否为冻结移除（true则不清理武器缓存）
+function BattleFleetVO.RemovePlayerUnit(self, unit, isFreeze)
+	self._freezeList[unit] = nil
 
-	local var_26_0 = {}
+	local currentUnitList = {}
 
-	for iter_26_0, iter_26_1 in ipairs(arg_26_0._unitList) do
-		if iter_26_1 ~= arg_26_1 then
-			var_26_0[#var_26_0 + 1] = iter_26_0
+	for _, listUnit in ipairs(self._unitList) do
+		if listUnit ~= unit then
+			currentUnitList[#currentUnitList + 1] = listUnit
 		else
-			if not arg_26_2 then
-				iter_26_1:UnregisterEventListener(arg_26_0, BattleUnitEvent.UPDATE_HP)
-				iter_26_1:UnregisterEventListener(arg_26_0, BattleUnitEvent.UPDATE_CLOAK_STATE)
-				iter_26_1:DeactiveCldBox()
+			if not isFreeze then
+				listUnit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_HP)
+				listUnit:UnregisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE)
+				listUnit:DeactiveCldBox()
 			end
 
-			local var_26_1 = iter_26_1:GetChargeList()
+			local chargeList = listUnit:GetChargeList()
 
-			for iter_26_2, iter_26_3 in ipairs(var_26_1) do
-				if iter_26_3:IsAttacking() then
-					arg_26_0._chargeWeaponVO:CancelFocus()
-					arg_26_0._chargeWeaponVO:ResetFocus()
-					arg_26_0:CancelChargeWeapon()
+			for _, chargeWeapon in ipairs(chargeList) do
+				if chargeWeapon:IsAttacking() then
+					self._chargeWeaponVO:CancelFocus()
+					self._chargeWeaponVO:ResetFocus()
+					self:CancelChargeWeapon()
 				end
 
-				arg_26_0._chargeWeaponVO:RemoveWeapon(iter_26_3)
+				self._chargeWeaponVO:RemoveWeapon(chargeWeapon)
 
-				if not arg_26_2 then
-					iter_26_3:Clear()
+				if not isFreeze then
+					chargeWeapon:Clear()
 				end
 			end
 
-			arg_26_0._fleetAntiAir:RemoveCrewUnit(arg_26_1)
-			arg_26_0._fleetRangeAntiAir:RemoveCrewUnit(arg_26_1)
-			arg_26_0._fleetStaticSonar:RemoveCrewUnit(arg_26_1)
+			self._fleetAntiAir:RemoveCrewUnit(unit)
+			self._fleetRangeAntiAir:RemoveCrewUnit(unit)
+			self._fleetStaticSonar:RemoveCrewUnit(unit)
 
-			local var_26_2 = iter_26_1:GetTorpedoList()
+			local torpedoList = listUnit:GetTorpedoList()
 
-			for iter_26_4, iter_26_5 in ipairs(var_26_2) do
-				arg_26_0:RemoveManunalTorpedo(iter_26_5, arg_26_2)
+			for _, torpedo in ipairs(torpedoList) do
+				self:RemoveManunalTorpedo(torpedo, isFreeze)
 			end
 
-			local var_26_3 = iter_26_1:GetAirAssistList()
+			local airAssistList = listUnit:GetAirAssistList()
 
-			if var_26_3 then
-				for iter_26_6, iter_26_7 in ipairs(var_26_3) do
-					arg_26_0._airAssistVO:RemoveWeapon(iter_26_7)
+			if airAssistList then
+				for _, airAssist in ipairs(airAssistList) do
+					self._airAssistVO:RemoveWeapon(airAssist)
 				end
 			end
 		end
 	end
 
-	for iter_26_8, iter_26_9 in ipairs(arg_26_0._scoutList) do
-		if iter_26_9 == arg_26_1 then
-			if #arg_26_0._scoutList == 1 then
-				arg_26_0:CancelChargeWeapon()
+	for scoutIndex, scout in ipairs(self._scoutList) do
+		if scout == unit then
+			if #self._scoutList == 1 then
+				self:CancelChargeWeapon()
 			end
 
-			table.remove(arg_26_0._scoutList, iter_26_8)
+			table.remove(self._scoutList, scoutIndex)
 
 			break
 		end
 	end
 
-	local function var_26_4(arg_27_0)
-		for iter_27_0, iter_27_1 in ipairs(arg_27_0) do
-			if iter_27_1 == arg_26_1 then
-				table.remove(arg_27_0, iter_27_0)
+	--- 从指定列表中移除目标单位
+	local function removeUnitFromList(targetList)
+		for listIndex, listUnit in ipairs(targetList) do
+			if listUnit == unit then
+				table.remove(targetList, listIndex)
 
 				break
 			end
 		end
 	end
 
-	var_26_4(arg_26_0._mainList)
-	var_26_4(arg_26_0._cloakList)
-	var_26_4(arg_26_0._subList)
-	var_26_4(arg_26_0._manualSubList)
+	removeUnitFromList(self._mainList)
+	removeUnitFromList(self._cloakList)
+	removeUnitFromList(self._subList)
+	removeUnitFromList(self._manualSubList)
 
-	if not arg_26_0._manualSubUnit then
-		arg_26_0:refreshFleetFormation(var_26_0)
+	if not self._manualSubUnit then
+		self:refreshFleetFormation(currentUnitList)
 	end
 end
 
 -- BattleSkillOverrideAutoPilot.DoDataEffect调用
+--- @param aiID number AutoPilot AI ID
 function BattleFleetVO.OverrideJoyStickAutoBot(self, aiID)
 	self._autoBotAIID = aiID
 
@@ -422,168 +478,246 @@ function BattleFleetVO.OverrideJoyStickAutoBot(self, aiID)
 	self:DispatchEvent(overrideAutoBotEvent)
 end
 
-function BattleFleetVO.SnapShot(arg_29_0)
-	arg_29_0._totalDMGRatio = BattleFormulas.GetFleetTotalHP(arg_29_0)
-	arg_29_0._currentDMGRatio = arg_29_0._totalDMGRatio
+--- 快照当前舰队总耐久和当前耐久
+function BattleFleetVO.SnapShot(self)
+	self._totalDMGRatio = BattleFormulas.GetFleetTotalHP(self)
+	self._currentDMGRatio = self._totalDMGRatio
 end
 
-function BattleFleetVO.GetIFF(arg_30_0)
-	return arg_30_0._IFF
+--- 获取敌我识别码
+--- @return number
+function BattleFleetVO.GetIFF(self)
+	return self._IFF
 end
 
-function BattleFleetVO.GetMaxCount(arg_31_0)
-	return arg_31_0._maxCount
+--- 获取最大单位数
+--- @return number
+function BattleFleetVO.GetMaxCount(self)
+	return self._maxCount
 end
 
-function BattleFleetVO.GetFlagShip(arg_32_0)
-	return arg_32_0._flagShip
+--- 获取旗舰
+--- @return BattleUnit|nil
+function BattleFleetVO.GetFlagShip(self)
+	return self._flagShip
 end
 
-function BattleFleetVO.GetLeaderShip(arg_33_0)
-	return arg_33_0._scoutList[1]
+--- 获取前排领舰（前排第一位）
+--- @return BattleUnit|nil
+function BattleFleetVO.GetLeaderShip(self)
+	return self._scoutList[1]
 end
 
-function BattleFleetVO.GetUnitList(arg_34_0)
-	return arg_34_0._unitList
+--- 获取所有单位列表
+--- @return table
+function BattleFleetVO.GetUnitList(self)
+	return self._unitList
 end
 
-function BattleFleetVO.GetFreezeUnitList(arg_35_0)
-	return arg_35_0._freezeList
+--- 获取冻结单位列表
+--- @return table
+function BattleFleetVO.GetFreezeUnitList(self)
+	return self._freezeList
 end
 
-function BattleFleetVO.GetMainList(arg_36_0)
-	return arg_36_0._mainList
+--- 获取主力舰队列表（后排）
+--- @return table
+function BattleFleetVO.GetMainList(self)
+	return self._mainList
 end
 
-function BattleFleetVO.GetScoutList(arg_37_0)
-	return arg_37_0._scoutList
+--- 获取前锋列表（前排）
+--- @return table
+function BattleFleetVO.GetScoutList(self)
+	return self._scoutList
 end
 
-function BattleFleetVO.GetFreezeShipByID(arg_38_0, arg_38_1)
-	for iter_38_0, iter_38_1 in pairs(arg_38_0._freezeList) do
-		if arg_38_1 == iter_38_0:GetAttrByName("id") then
-			return iter_38_0
+--- 通过ID获取冻结的舰船
+--- @param shipID number
+--- @return BattleUnit|nil
+function BattleFleetVO.GetFreezeShipByID(self, shipID)
+	for unit, _ in pairs(self._freezeList) do
+		if shipID == unit:GetAttrByName("id") then
+			return unit
 		end
 	end
 end
 
-function BattleFleetVO.GetShipByID(arg_39_0, arg_39_1)
-	for iter_39_0, iter_39_1 in ipairs(arg_39_0._unitList) do
-		if arg_39_1 == iter_39_1:GetAttrByName("id") then
-			return iter_39_1
+--- 通过ID获取舰船
+--- @param shipID number
+--- @return BattleUnit|nil
+function BattleFleetVO.GetShipByID(self, shipID)
+	for _, unit in ipairs(self._unitList) do
+		if shipID == unit:GetAttrByName("id") then
+			return unit
 		end
 	end
 end
 
+--- 获取隐蔽单位列表
+--- @return table
 function BattleFleetVO.GetCloakList(self)
 	return self._cloakList
 end
 
+--- 获取手动潜艇待机区
+--- @return table
 function BattleFleetVO.GetSubBench(self)
 	return self._manualSubBench
 end
 
+--- 获取舰队单位边界
+--- @return BattleFleetBound
 function BattleFleetVO.GetUnitBound(self)
 	return self._fleetUnitBound
 end
 
+--- 获取舰队移动VO
+--- @return BattleFleetMotionVO
 function BattleFleetVO.GetMotion(self)
 	return self._motionVO
 end
 
+--- 获取移动参考单位
+--- @return BattleUnit|nil
 function BattleFleetVO.GetMotionReferenceUnit(self)
 	return self._motionReferenceUnit
 end
 
+--- 获取自律AI ID
+--- @return number|nil
 function BattleFleetVO.GetAutoBotAIID(self)
 	return self._autoBotAIID
 end
 
+--- 获取跨射武器VO
+--- @return BattleChargeWeaponVO
 function BattleFleetVO.GetChargeWeaponVO(self)
 	return self._chargeWeaponVO
 end
 
+--- 获取鱼雷武器VO
+--- @return BattleTorpedoWeaponVO
 function BattleFleetVO.GetTorpedoWeaponVO(self)
 	return self._torpedoWeaponVO
 end
 
+--- 获取空袭支援VO
+--- @return BattleAllInStrikeVO
 function BattleFleetVO.GetAirAssistVO(self)
 	return self._airAssistVO
 end
 
+--- 获取潜艇支援VO
+--- @return BattleSubmarineAidVO
 function BattleFleetVO.GetSubAidVO(self)
 	return self._submarineVO
 end
 
+--- 获取潜艇自由下潜VO
+--- @return BattleSubmarineFuncVO
 function BattleFleetVO.GetSubFreeDiveVO(self)
 	return self._submarineDiveVO
 end
 
+--- 获取潜艇自由上浮VO
+--- @return BattleSubmarineFuncVO
 function BattleFleetVO.GetSubFreeFloatVO(self)
 	return self._submarineFloatVO
 end
 
+--- 获取潜艇加速VO
+--- @return BattleSubmarineFuncVO
 function BattleFleetVO.GetSubBoostVO(self)
 	return self._submarineBoostVO
 end
 
+--- 获取潜艇特殊技能VO
+--- @return BattleSubmarineAidVO
 function BattleFleetVO.GetSubSpecialVO(self)
 	return self._submarineSpecialVO
 end
 
+--- 获取潜艇切换VO
+--- @return BattleSubmarineFuncVO
 function BattleFleetVO.GetSubShiftVO(self)
 	return self._submarineShiftVO
 end
 
+--- 获取近程防空炮
+--- @return BattleFleetAntiAirUnit
 function BattleFleetVO.GetFleetAntiAirWeapon(self)
 	return self._fleetAntiAir
 end
 
+--- 获取远程防空炮
+--- @return BattleFleetRangeAntiAirUnit
 function BattleFleetVO.GetFleetRangeAntiAirWeapon(self)
 	return self._fleetRangeAntiAir
 end
 
+--- 获取舰队速度
+--- @return number
 function BattleFleetVO.GetFleetVelocity(self)
 	return BattleFormulas.GetFleetVelocity(self._scoutList)
 end
 
+--- 获取舰队四边界
+--- @return number upperBound, number lowerBound, number leftBound, number rightBound
 function BattleFleetVO.GetFleetBound(self)
 	return self._upperBound, self._lowerBound, self._leftBound, self._rightBound
 end
 
+--- 获取舰队单位上下边界
+--- @return number totalUpperBound, number totalLowerBound
 function BattleFleetVO.GetFleetUnitBound(self)
 	return self._totalUpperBound, self._totalLowerBound
 end
 
+--- 获取舰队暴露线X坐标
+--- @return number
 function BattleFleetVO.GetFleetExposeLine(self)
 	return self._exposeLineX
 end
 
+--- 获取舰队视野线X坐标
+--- @return number
 function BattleFleetVO.GetFleetVisionLine(self)
 	return self._visionLineX
 end
 
 -- 被RandomStrategy.generateTargetPoint调用
+--- 获取领舰的AutoPilot偏好
+--- @return any
 function BattleFleetVO.GetLeaderPersonality(self)
 	return self._motionReferenceUnit:GetAutoPilotPreference()
 end
 
+--- 获取伤害比例结果（用于UI显示）
+--- @return string 格式化百分比, number 总耐久
 function BattleFleetVO.GetDamageRatioResult(self)
 	return string.format("%0.2f", self._currentDMGRatio / self._totalDMGRatio * 100), self._totalDMGRatio
 end
 
+--- 获取当前伤害比例
+--- @return number
 function BattleFleetVO.GetDamageRatio(self)
 	return self._currentDMGRatio / self._totalDMGRatio
 end
 
+--- 获取潜艇基准线
+--- @return number attackBaseLine, number retreatBaseLine
 function BattleFleetVO.GetSubmarineBaseLine(self)
 	return self._fixedSubRefLine or self._subAttackBaseLine, self._subRetreatBaseLine
 end
 
+--- 获取舰队静态声呐
+--- @return BattleFleetStaticSonar
 function BattleFleetVO.GetFleetSonar(self)
 	return self._fleetStaticSonar
 end
 
+--- 销毁舰队VO
 function BattleFleetVO.Dispose(self)
 	ys.EventDispatcher.DetachEventDispatcher(self)
 	ys.EventListener.DetachEventListener(self)
@@ -607,6 +741,7 @@ end
 
 -- 刷新前排舰队阵型/位置的主逻辑, 重要
 -- 在各种append/remove unit后调用
+--- @param currentUnitList table 当前单位索引排序列表(用于重建_unitList顺序)
 function BattleFleetVO.refreshFleetFormation(self, currentUnitList)
 	-- FORMATION_ID = 10001
 	-- 吐槽: formation_template可能是早期用于实现阵型的遗留产物, 类似已有的Clike游戏中的阵型系统
@@ -671,6 +806,7 @@ function BattleFleetVO.refreshFleetFormation(self, currentUnitList)
 	self:DispatchEvent(refreshFleetFormationEvent)
 end
 
+--- 初始化舰队所有VO和列表
 function BattleFleetVO.init(self)
 	self._chargeWeaponVO = ys.Battle.BattleChargeWeaponVO.New()
 	self._torpedoWeaponVO = ys.Battle.BattleTorpedoWeaponVO.New()
@@ -711,6 +847,8 @@ function BattleFleetVO.init(self)
 end
 
 -- 被BattleFleetVO.AppendPlayerUnit调用
+--- 将单位添加到前排列表，并关联其鱼雷/空袭武器
+--- @param unit BattleUnit
 function BattleFleetVO.appendScoutUnit(self, unit)
 	self._scoutList[#self._scoutList + 1] = unit
 
@@ -748,6 +886,8 @@ function BattleFleetVO.appendScoutUnit(self, unit)
 end
 
 -- 被BattleFleetVO.AppendPlayerUnit调用
+--- 将单位添加到主力舰队（后排）列表
+--- @param unit BattleUnit
 function BattleFleetVO.appendMainUnit(self, unit)
 	if #self._mainList == 0 then
 		self._flagShip = unit
@@ -790,13 +930,15 @@ function BattleFleetVO.appendMainUnit(self, unit)
 
 	local currentUnitList = {}
 
-	for _unit, _ in ipairs(self._unitList) do
-		table.insert(currentUnitList, _unit)
+	for _, _ in ipairs(self._unitList) do
+		table.insert(currentUnitList, _)
 	end
 
 	self:refreshFleetFormation(currentUnitList)
 end
 
+--- 将单位添加到潜艇列表
+--- @param unit BattleUnit
 function BattleFleetVO.appendSubUnit(self, unit)
 	self._subList[#self._subList + 1] = unit
 
@@ -850,10 +992,14 @@ function BattleFleetVO.SubWarcry(self)
 	subFlagShip:DispatchChat(words, 2.5, voiceName)
 end
 
+--- 设置武器禁用计数
+--- @param value number 变化量（正数增加禁用层数，负数为减少）
 function BattleFleetVO.SetWeaponBlock(self, value)
 	self._blockCast = self._blockCast + value
 end
 
+--- 获取武器是否被禁用
+--- @return boolean
 function BattleFleetVO.GetWeaponBlock(self)
 	return self._blockCast > 0
 end
@@ -924,6 +1070,8 @@ end
 
 -- 被BattleManualWeaponAutoBot.Update调用
 -- 即每帧都尝试自动释放
+--- @param isPlayFocus boolean 是否播放聚焦动画
+--- @return any|nil 发射结果
 function BattleFleetVO.QuickTagChrageWeapon(self, isPlayFocus)
 	if self:GetWeaponBlock() then
 		return
@@ -946,6 +1094,10 @@ function BattleFleetVO.QuickTagChrageWeapon(self, isPlayFocus)
 	return success
 end
 
+--- 发射跨射武器的核心逻辑
+--- @param weapon BattlePointHitWeaponUnit 跨射武器
+--- @param isPlayFocus boolean 是否播放聚焦动画
+--- @param targetPos Vector3 目标位置（仅空袭模式需要）
 function BattleFleetVO.fireChargeWeapon(self, weapon, isPlayFocus, targetPos)
 	local host = weapon:GetHost()
 
@@ -977,6 +1129,7 @@ function BattleFleetVO.fireChargeWeapon(self, weapon, isPlayFocus, targetPos)
 end
 
 -- 作为按下并松开空袭按钮时的回调
+--- @return boolean 是否成功释放
 function BattleFleetVO.UnleashAllInStrike(self)
 	if self:GetWeaponBlock() then
 		return
@@ -1042,6 +1195,7 @@ function BattleFleetVO.UnleashTorpedo(self)
 end
 
 -- 自律发射鱼雷
+--- @return any 鱼雷发射结果
 function BattleFleetVO.QuickCastTorpedo(self)
 	if self:GetWeaponBlock() then
 		return
@@ -1057,142 +1211,156 @@ function BattleFleetVO.QuickCastTorpedo(self)
 	return success
 end
 
-function BattleFleetVO.RemoveManunalTorpedo(arg_90_0, arg_90_1, arg_90_2)
-	if arg_90_1:IsAttacking() then
-		arg_90_0:CancelTorpedo()
+--- 移除手动鱼雷
+--- @param weapon BattleManualTorpedoUnit
+--- @param isFreeze boolean 是否为冻结移除
+function BattleFleetVO.RemoveManunalTorpedo(self, weapon, isFreeze)
+	if weapon:IsAttacking() then
+		self:CancelTorpedo()
 	end
 
-	arg_90_0._torpedoWeaponVO:RemoveWeapon(arg_90_1)
+	self._torpedoWeaponVO:RemoveWeapon(weapon)
 
-	if not arg_90_2 then
-		arg_90_1:Clear()
+	if not isFreeze then
+		weapon:Clear()
 	end
 end
 
-function BattleFleetVO.CoupleEncourage(arg_91_0)
-	local var_91_0 = {}
-	local var_91_1 = {}
+--- CP台词系统（大讲堂/特殊触摸等）
+function BattleFleetVO.CoupleEncourage(self)
+	local shipWordMap = {}
+	local chatList = {}
 
-	for iter_91_0, iter_91_1 in ipairs(arg_91_0._unitList) do
-		local var_91_2 = iter_91_1:GetIntimacy()
-		local var_91_3 = BattleDataFunction.GetWords(iter_91_1:GetSkinID(), "couple_encourage", var_91_2)
+	for _, unit in ipairs(self._unitList) do
+		local intimacy = unit:GetIntimacy()
+		local words = BattleDataFunction.GetWords(unit:GetSkinID(), "couple_encourage", intimacy)
 
-		if #var_91_3 > 0 then
-			var_91_0[iter_91_1] = var_91_3
+		if #words > 0 then
+			shipWordMap[unit] = words
 		end
 	end
 
-	local var_91_4 = BattleConst.CPChatType
-	local var_91_5 = BattleConst.CPChatTargetFunc
+	local CPChatType = BattleConst.CPChatType
+	local CPChatTargetFunc = BattleConst.CPChatTargetFunc
 
-	local function var_91_6(arg_92_0, arg_92_1)
-		local var_92_0 = {}
+	--- 根据类型和数据构建过滤条件
+	local function buildConditionFilter(filterType, filterData)
+		local conditionFilter = {}
 
-		if arg_92_0 == var_91_4.GROUP_ID then
-			var_92_0.groupIDList = arg_92_1
-		elseif arg_92_0 == var_91_4.SHIP_TYPE then
-			var_92_0.ship_type_list = arg_92_1
-		elseif arg_92_0 == var_91_4.RARE then
-			var_92_0.rarity = arg_92_1[1]
-		elseif arg_92_0 == var_91_4.NATIONALITY then
-			var_92_0.nationality = arg_92_1[1]
-		elseif arg_92_0 == var_91_4.ILLUSTRATOR then
-			var_92_0.illustrator = arg_92_1[1]
-		elseif arg_92_0 == var_91_4.TEAM then
-			var_92_0.teamIndex = arg_92_1[1]
+		if filterType == CPChatType.GROUP_ID then
+			conditionFilter.groupIDList = filterData
+		elseif filterType == CPChatType.SHIP_TYPE then
+			conditionFilter.ship_type_list = filterData
+		elseif filterType == CPChatType.RARE then
+			conditionFilter.rarity = filterData[1]
+		elseif filterType == CPChatType.NATIONALITY then
+			conditionFilter.nationality = filterData[1]
+		elseif filterType == CPChatType.ILLUSTRATOR then
+			conditionFilter.illustrator = filterData[1]
+		elseif filterType == CPChatType.TEAM then
+			conditionFilter.teamIndex = filterData[1]
 		end
 
-		return var_92_0
+		return conditionFilter
 	end
 
-	for iter_91_2, iter_91_3 in pairs(var_91_0) do
-		for iter_91_4, iter_91_5 in ipairs(iter_91_3) do
-			local var_91_7 = iter_91_5[1]
-			local var_91_8 = iter_91_5[2]
-			local var_91_9 = iter_91_5[4] or var_91_4.GROUP_ID
-			local var_91_10 = ys.Battle.BattleTargetChoise.TargetAllHelp(iter_91_2)
+	for cpUnit, wordList in pairs(shipWordMap) do
+		for linkIndex, wordEntry in ipairs(wordList) do
+			local targetType = wordEntry[1]
+			local targetCount = wordEntry[2]
+			local conditionData = wordEntry[4] or CPChatType.GROUP_ID
+			local totalTargets = ys.Battle.BattleTargetChoise.TargetAllHelp(cpUnit)
 
-			if type(var_91_9) == "table" then
-				for iter_91_6, iter_91_7 in ipairs(var_91_9) do
-					local var_91_11 = var_91_6(iter_91_7, var_91_7[iter_91_6])
+			if type(conditionData) == "table" then
+				for filterTypeIndex, filterTypeValue in ipairs(conditionData) do
+					local filterData = buildConditionFilter(filterTypeValue, wordEntry[filterTypeIndex])
 
-					var_91_10 = ys.Battle.BattleTargetChoise[var_91_5[iter_91_7]](iter_91_2, var_91_11, var_91_10)
+					totalTargets = ys.Battle.BattleTargetChoise[CPChatTargetFunc[filterTypeValue]](cpUnit, filterData, totalTargets)
 				end
-			elseif type(var_91_9) == "number" then
-				local var_91_12 = var_91_6(var_91_9, var_91_7)
+			elseif type(conditionData) == "number" then
+				local filterData = buildConditionFilter(conditionData, targetType)
 
-				var_91_10 = ys.Battle.BattleTargetChoise[var_91_5[var_91_9]](iter_91_2, var_91_12, var_91_10)
+				totalTargets = ys.Battle.BattleTargetChoise[CPChatTargetFunc[conditionData]](cpUnit, filterData, totalTargets)
 			end
 
-			if var_91_8 <= #var_91_10 then
-				local var_91_13 = {
-					cp = iter_91_2,
-					content = iter_91_5[3],
-					linkIndex = iter_91_4
+			if targetCount <= #totalTargets then
+				local chatEntry = {
+					cp = cpUnit,
+					content = wordEntry[3],
+					linkIndex = linkIndex
 				}
 
-				var_91_1[#var_91_1 + 1] = var_91_13
+				chatList[#chatList + 1] = chatEntry
 			end
 		end
 	end
 
-	if #var_91_1 > 0 then
-		local var_91_14 = var_91_1[math.random(#var_91_1)]
-		local var_91_15 = "link" .. var_91_14.linkIndex
+	if #chatList > 0 then
+		local selectedChat = chatList[math.random(#chatList)]
+		local voiceKey = "link" .. selectedChat.linkIndex
 
-		var_91_14.cp:DispatchVoice(var_91_15)
-		var_91_14.cp:DispatchChat(var_91_14.content, 3, var_91_15)
+		selectedChat.cp:DispatchVoice(voiceKey)
+		selectedChat.cp:DispatchChat(selectedChat.content, 3, voiceKey)
 	end
 end
 
-function BattleFleetVO.onUnitUpdateHP(arg_93_0, arg_93_1)
-	local var_93_0 = arg_93_1.Dispatcher
-	local var_93_1 = arg_93_1.Data.dHP
+--- 单位HP更新事件的回调
+--- @param event table 事件对象 {Dispatcher=..., Data={dHP=...}}
+function BattleFleetVO.onUnitUpdateHP(self, event)
+	local sourceUnit = event.Dispatcher
+	local dHP = event.Data.dHP
 
-	for iter_93_0, iter_93_1 in ipairs(arg_93_0._unitList) do
-		iter_93_1:TriggerBuff(BattleConst.BuffEffectType.ON_FRIENDLY_HP_RATIO_UPDATE, {
-			unit = var_93_0,
-			dHP = var_93_1
+	for _, unit in ipairs(self._unitList) do
+		unit:TriggerBuff(BattleConst.BuffEffectType.ON_FRIENDLY_HP_RATIO_UPDATE, {
+			unit = sourceUnit,
+			dHP = dHP
 		})
 
-		if iter_93_1 ~= var_93_0 then
-			iter_93_1:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_HP_RATIO_UPDATE, {
-				unit = var_93_0,
-				dHP = var_93_1
+		if unit ~= sourceUnit then
+			unit:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_HP_RATIO_UPDATE, {
+				unit = sourceUnit,
+				dHP = dHP
 			})
 		end
 	end
 end
 
-function BattleFleetVO.onUnitCloakUpdate(arg_94_0, arg_94_1)
-	local var_94_0 = arg_94_1.Dispatcher
-	local var_94_1 = BattleAttr.GetCurrent(var_94_0, "isCloak")
+--- 单位隐蔽状态更新事件的回调
+--- @param event table 事件对象 {Dispatcher=...}
+function BattleFleetVO.onUnitCloakUpdate(self, event)
+	local sourceUnit = event.Dispatcher
+	local isCloak = BattleAttr.GetCurrent(sourceUnit, "isCloak")
 
-	for iter_94_0, iter_94_1 in ipairs(arg_94_0._unitList) do
-		iter_94_1:TriggerBuff(BattleConst.BuffEffectType.ON_CLOAK_UPDATE, {
-			cloakState = var_94_1
+	for _, unit in ipairs(self._unitList) do
+		unit:TriggerBuff(BattleConst.BuffEffectType.ON_CLOAK_UPDATE, {
+			cloakState = isCloak
 		})
 
-		if iter_94_1 ~= var_94_0 then
-			iter_94_1:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_CLOAK_UPDATE, {
-				cloakState = var_94_1
+		if unit ~= sourceUnit then
+			unit:TriggerBuff(BattleConst.BuffEffectType.ON_TEAMMATE_CLOAK_UPDATE, {
+				cloakState = isCloak
 			})
 		end
 	end
 end
 
-function BattleFleetVO.SetSubUnitData(arg_95_0, arg_95_1)
-	arg_95_0._subUntiDataList = arg_95_1
+--- 设置潜艇单位数据列表
+--- @param subUnitDataList table
+function BattleFleetVO.SetSubUnitData(self, subUnitDataList)
+	self._subUntiDataList = subUnitDataList
 end
 
-function BattleFleetVO.GetSubUnitData(arg_96_0)
-	return arg_96_0._subUntiDataList
+--- 获取潜艇单位数据列表
+--- @return table
+function BattleFleetVO.GetSubUnitData(self)
+	return self._subUntiDataList
 end
 
 -- TODO
 -- 添加潜艇单位函数
 -- 被BattleDataProxy.SpawnSub调用
 -- template数据来自BattleDataFunction.GeneratePlayerSubmarinPhase
+--- @param subUnit BattleSubUnit
 function BattleFleetVO.AddSubMarine(self, subUnit)
 	subUnit:InitOxygen()
 
@@ -1216,171 +1384,186 @@ function BattleFleetVO.AddSubMarine(self, subUnit)
 	subUnit:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE, self.onUnitCloakUpdate)
 end
 
-function BattleFleetVO.AddManualSubmarine(arg_99_0, arg_99_1)
-	arg_99_0._unitList[#arg_99_0._unitList + 1] = arg_99_1
-	arg_99_0._manualSubList[#arg_99_0._manualSubList + 1] = arg_99_1
-	arg_99_0._manualSubBench[#arg_99_0._manualSubBench + 1] = arg_99_1
-	arg_99_0._maxCount = arg_99_0._maxCount + 1
+--- 添加手动操作的潜艇（破交作战等）
+--- @param subUnit BattleSubUnit
+function BattleFleetVO.AddManualSubmarine(self, subUnit)
+	self._unitList[#self._unitList + 1] = subUnit
+	self._manualSubList[#self._manualSubList + 1] = subUnit
+	self._manualSubBench[#self._manualSubBench + 1] = subUnit
+	self._maxCount = self._maxCount + 1
 
-	arg_99_1:InitOxygen()
-	arg_99_1:SetFleetVO(arg_99_0)
-	arg_99_1:SetMotion(arg_99_0._motionVO)
-	arg_99_1:RegisterEventListener(arg_99_0, BattleUnitEvent.UPDATE_HP, arg_99_0.onUnitUpdateHP)
-	arg_99_1:RegisterEventListener(arg_99_0, BattleUnitEvent.UPDATE_CLOAK_STATE, arg_99_0.onUnitCloakUpdate)
+	subUnit:InitOxygen()
+	subUnit:SetFleetVO(self)
+	subUnit:SetMotion(self._motionVO)
+	subUnit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUnitUpdateHP)
+	subUnit:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE, self.onUnitCloakUpdate)
 end
 
-function BattleFleetVO.GetSubList(arg_100_0)
-	return arg_100_0._subList
+--- 获取潜艇列表
+--- @return table
+function BattleFleetVO.GetSubList(self)
+	return self._subList
 end
 
-function BattleFleetVO.ShiftManualSub(arg_101_0)
-	local var_101_0
+--- 切换手动潜艇（将当前操作潜艇换到待机区，从待机区取出下一个）
+function BattleFleetVO.ShiftManualSub(self)
+	local previousPos
 
-	if arg_101_0._manualSubUnit then
-		local var_101_1 = arg_101_0._manualSubUnit:GetTorpedoList()
+	if self._manualSubUnit then
+		local manualTorpedoList = self._manualSubUnit:GetTorpedoList()
 
-		for iter_101_0, iter_101_1 in ipairs(var_101_1) do
-			if iter_101_1:IsAttacking() then
-				arg_101_0:CancelTorpedo()
+		for _, torpedo in ipairs(manualTorpedoList) do
+			if torpedo:IsAttacking() then
+				self:CancelTorpedo()
 			end
 
-			arg_101_0._torpedoWeaponVO:RemoveWeapon(iter_101_1)
+			self._torpedoWeaponVO:RemoveWeapon(torpedo)
 		end
 
-		if arg_101_0._manualSubUnit:IsAlive() then
-			table.insert(arg_101_0._manualSubBench, arg_101_0._manualSubUnit)
+		if self._manualSubUnit:IsAlive() then
+			table.insert(self._manualSubBench, self._manualSubUnit)
 		end
 
-		var_101_0 = arg_101_0._motionVO:GetPos():Clone()
+		previousPos = self._motionVO:GetPos():Clone()
 	else
-		var_101_0 = arg_101_0._manualSubList[1]:GetPosition():Clone()
+		previousPos = self._manualSubList[1]:GetPosition():Clone()
 	end
 
-	arg_101_0._manualSubUnit = table.remove(arg_101_0._manualSubBench, 1)
-	arg_101_0._scoutList[1] = arg_101_0._manualSubUnit
+	self._manualSubUnit = table.remove(self._manualSubBench, 1)
+	self._scoutList[1] = self._manualSubUnit
 
-	local var_101_2 = {}
+	local currentUnitList = {}
 
-	for iter_101_2, iter_101_3 in ipairs(arg_101_0._manualSubBench) do
-		for iter_101_4, iter_101_5 in ipairs(arg_101_0._unitList) do
-			if iter_101_5 == iter_101_3 then
-				table.insert(var_101_2, iter_101_4)
+	for _, benchUnit in ipairs(self._manualSubBench) do
+		for unitIndex, listUnit in ipairs(self._unitList) do
+			if listUnit == benchUnit then
+				table.insert(currentUnitList, unitIndex)
 
 				break
 			end
 		end
 	end
 
-	for iter_101_6, iter_101_7 in ipairs(arg_101_0._unitList) do
-		if iter_101_7 == arg_101_0._manualSubUnit then
-			table.insert(var_101_2, 1, iter_101_6)
+	for unitIndex, listUnit in ipairs(self._unitList) do
+		if listUnit == self._manualSubUnit then
+			table.insert(currentUnitList, 1, unitIndex)
 
 			break
 		end
 	end
 
-	arg_101_0:refreshFleetFormation(var_101_2)
-	arg_101_0._manualSubUnit:SetMainUnitStatic(false)
-	arg_101_0._manualSubUnit:SetPosition(var_101_0)
-	arg_101_0:UpdateMotion()
-	arg_101_0._submarineSpecialVO:SetUseable(false)
+	self:refreshFleetFormation(currentUnitList)
+	self._manualSubUnit:SetMainUnitStatic(false)
+	self._manualSubUnit:SetPosition(previousPos)
+	self:UpdateMotion()
+	self._submarineSpecialVO:SetUseable(false)
 
-	local var_101_3 = arg_101_0._manualSubUnit:GetBuffList()
+	local buffList = self._manualSubUnit:GetBuffList()
 
-	for iter_101_8, iter_101_9 in pairs(var_101_3) do
-		if iter_101_9:IsSubmarineSpecial() then
-			arg_101_0._submarineSpecialVO:SetCount(1)
-			arg_101_0._submarineSpecialVO:SetUseable(true)
+	for _, buff in pairs(buffList) do
+		if buff:IsSubmarineSpecial() then
+			self._submarineSpecialVO:SetCount(1)
+			self._submarineSpecialVO:SetUseable(true)
 
 			break
 		end
 	end
 
-	arg_101_0:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_DIVE)
-	arg_101_0._torpedoWeaponVO:Reset()
+	self:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_DIVE)
+	self._torpedoWeaponVO:Reset()
 
-	local var_101_4 = arg_101_0._manualSubUnit:GetTorpedoList()
+	local torpedoList = self._manualSubUnit:GetTorpedoList()
 
-	for iter_101_10, iter_101_11 in ipairs(var_101_4) do
-		if iter_101_11:GetCurrentState() ~= iter_101_11.STATE_OVER_HEAT then
-			arg_101_0._torpedoWeaponVO:AppendWeapon(iter_101_11)
+	for _, torpedo in ipairs(torpedoList) do
+		if torpedo:GetCurrentState() ~= torpedo.STATE_OVER_HEAT then
+			self._torpedoWeaponVO:AppendWeapon(torpedo)
 		end
 	end
 
-	for iter_101_12, iter_101_13 in ipairs(var_101_4) do
-		if iter_101_13:GetCurrentState() == iter_101_13.STATE_OVER_HEAT then
-			arg_101_0._torpedoWeaponVO:AppendWeapon(iter_101_13)
+	for _, torpedo in ipairs(torpedoList) do
+		if torpedo:GetCurrentState() == torpedo.STATE_OVER_HEAT then
+			self._torpedoWeaponVO:AppendWeapon(torpedo)
 		end
 	end
 
-	if BattleAttr.GetCurrent(arg_101_0._manualSubUnit, "oxyMax") <= 0 then
-		arg_101_0._submarineDiveVO:SetActive(false)
-		arg_101_0._submarineFloatVO:SetActive(false)
+	if BattleAttr.GetCurrent(self._manualSubUnit, "oxyMax") <= 0 then
+		self._submarineDiveVO:SetActive(false)
+		self._submarineFloatVO:SetActive(false)
 	else
-		arg_101_0._submarineDiveVO:SetActive(true)
-		arg_101_0._submarineFloatVO:SetActive(true)
+		self._submarineDiveVO:SetActive(true)
+		self._submarineFloatVO:SetActive(true)
 	end
 
-	for iter_101_14, iter_101_15 in ipairs(arg_101_0._manualSubBench) do
-		iter_101_15:SetPosition(BattleConfig.SUB_BENCH_POS[iter_101_14])
-		iter_101_15:SetMainUnitStatic(true)
-		iter_101_15:ChangeOxygenState(ys.Battle.OxyState.STATE_FREE_BENCH)
+	for benchIndex, benchUnit in ipairs(self._manualSubBench) do
+		benchUnit:SetPosition(BattleConfig.SUB_BENCH_POS[benchIndex])
+		benchUnit:SetMainUnitStatic(true)
+		benchUnit:ChangeOxygenState(ys.Battle.OxyState.STATE_FREE_BENCH)
 	end
 
-	arg_101_0._submarineShiftVO:ResetCurrent()
+	self._submarineShiftVO:ResetCurrent()
 
-	if #arg_101_0._manualSubBench == 0 then
-		arg_101_0._submarineShiftVO:SetActive(false)
+	if #self._manualSubBench == 0 then
+		self._submarineShiftVO:SetActive(false)
 	end
 end
 
-function BattleFleetVO.ChangeSubmarineState(arg_102_0, arg_102_1, arg_102_2)
-	if not arg_102_0._manualSubUnit then
+--- 改变潜艇状态
+--- @param state number 目标氧气状态
+--- @param resetCD boolean 是否重置CD
+function BattleFleetVO.ChangeSubmarineState(self, state, resetCD)
+	if not self._manualSubUnit then
 		return
 	end
 
-	arg_102_0._manualSubUnit:ChangeOxygenState(arg_102_1)
+	self._manualSubUnit:ChangeOxygenState(state)
 
-	if arg_102_2 then
-		for iter_102_0, iter_102_1 in ipairs(arg_102_0._submarineVOList) do
-			iter_102_1:ResetCurrent()
+	if resetCD then
+		for _, subVO in ipairs(self._submarineVOList) do
+			subVO:ResetCurrent()
 		end
 
-		local var_102_0 = arg_102_0._submarineShiftVO:GetMax() - arg_102_0._submarineShiftVO:GetCurrent()
+		local remainingCD = self._submarineShiftVO:GetMax() - self._submarineShiftVO:GetCurrent()
 
-		if arg_102_0._submarineShiftVO:IsOverLoad() and var_102_0 > BattleConfig.SR_CONFIG.DIVE_CD then
+		if self._submarineShiftVO:IsOverLoad() and remainingCD > BattleConfig.SR_CONFIG.DIVE_CD then
 			-- block empty
 		else
-			arg_102_0._submarineShiftVO:SetMax(BattleConfig.SR_CONFIG.DIVE_CD)
-			arg_102_0._submarineShiftVO:ResetCurrent()
+			self._submarineShiftVO:SetMax(BattleConfig.SR_CONFIG.DIVE_CD)
+			self._submarineShiftVO:ResetCurrent()
 		end
 	end
 
-	arg_102_0:DispatchEvent(ys.Event.New(BattleEvent.MANUAL_SUBMARINE_SHIFT, {
-		state = arg_102_1
+	self:DispatchEvent(ys.Event.New(BattleEvent.MANUAL_SUBMARINE_SHIFT, {
+		state = state
 	}))
 end
 
-function BattleFleetVO.SubmarinBoost(arg_103_0)
-	arg_103_0._manualSubUnit:Boost(Vector3.right, BattleConfig.SR_CONFIG.BOOST_SPEED, BattleConfig.SR_CONFIG.BOOST_DECAY, BattleConfig.SR_CONFIG.BOOST_DURATION, BattleConfig.SR_CONFIG.BOOST_DECAY_STAMP)
-	arg_103_0._submarineBoostVO:ResetCurrent()
+--- 潜艇爆发加速
+function BattleFleetVO.SubmarinBoost(self)
+	self._manualSubUnit:Boost(Vector3.right, BattleConfig.SR_CONFIG.BOOST_SPEED, BattleConfig.SR_CONFIG.BOOST_DECAY, BattleConfig.SR_CONFIG.BOOST_DURATION, BattleConfig.SR_CONFIG.BOOST_DECAY_STAMP)
+	self._submarineBoostVO:ResetCurrent()
 end
 
-function BattleFleetVO.UnleashSubmarineSpecial(arg_104_0)
-	if arg_104_0:GetWeaponBlock() then
+--- 释放潜艇特殊技能
+function BattleFleetVO.UnleashSubmarineSpecial(self)
+	if self:GetWeaponBlock() then
 		return
 	end
 
-	arg_104_0._submarineSpecialVO:Cast()
-	arg_104_0._manualSubUnit:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FREE_SPECIAL)
+	self._submarineSpecialVO:Cast()
+	self._manualSubUnit:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FREE_SPECIAL)
 end
 
 -- BattleFleetBuffFixSubRefLine
+--- 固定潜艇参考线（用于特殊活动的潜艇出击起点修正）
+--- @param refLine number 参考线X坐标
 function BattleFleetVO.FixSubRefLine(self, refLine)
 	self._fixedSubRefLine = refLine
 end
 
 -- BattleSkillSonar
+--- 添加独立声呐
+--- @param range number 声呐范围
+--- @param duration number 持续时间
 function BattleFleetVO.AppendIndieSonar(self, range, duration)
 	if not self._motionReferenceUnit then
 		return
@@ -1395,6 +1578,8 @@ function BattleFleetVO.AppendIndieSonar(self, range, duration)
 	indieSonar:Detect()
 end
 
+--- 移除独立声呐
+--- @param indieSonar BattleIndieSonar
 function BattleFleetVO.RemoveIndieSonar(self, indieSonar)
 	for sonar, _ in pairs(self._indieSonarList) do
 		if indieSonar == sonar then
@@ -1408,6 +1593,7 @@ end
 -- 添加FleetBuff
 -- FleetBuff是属于舰队的Buff，而不是属于某个Unit的Buff
 -- 被BattleSkillAddFleetBuff.DoDataEffect调用
+--- @param fleetBuff BattleFleetBuffUnit
 function BattleFleetVO.AttachFleetBuff(self, fleetBuff)
 	local fleetBuffID = fleetBuff:GetID()
 	local _fleetBuff = self:GetFleetBuff(fleetBuffID)
@@ -1421,6 +1607,8 @@ function BattleFleetVO.AttachFleetBuff(self, fleetBuff)
 	end
 end
 
+--- 移除舰队Buff
+--- @param fleetBuffID number Buff ID
 function BattleFleetVO.RemoveFleetBuff(self, fleetBuffID)
 	local fleetBuff = self:GetFleetBuff(fleetBuffID)
 
@@ -1429,10 +1617,15 @@ function BattleFleetVO.RemoveFleetBuff(self, fleetBuffID)
 	end
 end
 
+--- 获取舰队Buff
+--- @param fleetBuffID number
+--- @return BattleFleetBuffUnit|nil
 function BattleFleetVO.GetFleetBuff(self, fleetBuffID)
 	return self._buffList[fleetBuffID]
 end
 
+--- 获取所有舰队Buff列表
+--- @return table
 function BattleFleetVO.GetFleetBuffList(self)
 	return self._buffList
 end
@@ -1441,63 +1634,78 @@ end
 -- 与Unit的Attr是一个简单的表相比(只依靠BattleAttr做相关操作),FleetAttr则是一个组件(单独类)
 -- 一般来说, FleetAttr主要是为了实现这类一般需求: 队友做了XXX操作能够积累XXX(其实常规Buff靠tag应该也能做，但会很麻烦)...而这艘船可以根据积累的XXX/消耗XXX来触发一些效果
 -- 具体请看对应类代码. 可以对FleetAttr有更详细的了解(其实比BattleAttr是简化非常多的)
+--- 创建舰队属性组件
 function BattleFleetVO.AttachFleetAttr(self)
 	self._fleetAttr = ys.Battle.BattleFleetAttrComponent.New(self)
 end
 
+--- 获取舰队属性组件
+--- @return BattleFleetAttrComponent
 function BattleFleetVO.GetFleetAttr(self)
 	return self._fleetAttr
 end
 
-function BattleFleetVO.Jamming(arg_114_0, arg_114_1)
-	if arg_114_1 then
-		arg_114_0._chargeWeaponVO:StartJamming()
-		arg_114_0._torpedoWeaponVO:StartJamming()
-		arg_114_0._airAssistVO:StartJamming()
+--- 干扰控制（禁用全武器/恢复）
+--- @param isJamming boolean true为开始干扰，false为消除干扰
+function BattleFleetVO.Jamming(self, isJamming)
+	if isJamming then
+		self._chargeWeaponVO:StartJamming()
+		self._torpedoWeaponVO:StartJamming()
+		self._airAssistVO:StartJamming()
 	else
-		arg_114_0._chargeWeaponVO:JammingEliminate()
-		arg_114_0._torpedoWeaponVO:JammingEliminate()
-		arg_114_0._airAssistVO:JammingEliminate()
+		self._chargeWeaponVO:JammingEliminate()
+		self._torpedoWeaponVO:JammingEliminate()
+		self._airAssistVO:JammingEliminate()
 	end
 end
 
-function BattleFleetVO.Blinding(arg_115_0, arg_115_1)
-	arg_115_0:DispatchEvent(ys.Event.New(BattleEvent.FLEET_BLIND, {
-		isBlind = arg_115_1
+--- 致盲
+--- @param isBlind boolean
+function BattleFleetVO.Blinding(self, isBlind)
+	self:DispatchEvent(ys.Event.New(BattleEvent.FLEET_BLIND, {
+		isBlind = isBlind
 	}))
 end
 
 -- 被BattleBuffBlindedHorizon.onAttach调用
+--- 更新视野范围
 function BattleFleetVO.UpdateHorizon(self)
 	self:DispatchEvent(ys.Event.New(BattleEvent.FLEET_HORIZON_UPDATE, {}))
 end
 
 -- 对应触发ON_AUTOBOT和ON_MANUAL的buffEffect
+--- @param isAutoBotActive boolean 自律是否激活
 function BattleFleetVO.AutoBotUpdated(self, isAutoBotActive)
 	local effectType = isAutoBotActive and BattleConst.BuffEffectType.ON_AUTOBOT or BattleConst.BuffEffectType.ON_MANUAL
 
 	self:FleetBuffTrigger(effectType)
 end
 
-function BattleFleetVO.CloakFatalExpose(arg_118_0)
-	for iter_118_0, iter_118_1 in ipairs(arg_118_0._cloakList) do
-		iter_118_1:GetCloak():ForceToMax()
+--- 致命暴露（强制将隐蔽值设为最大）
+function BattleFleetVO.CloakFatalExpose(self)
+	for _, cloakUnit in ipairs(self._cloakList) do
+		cloakUnit:GetCloak():ForceToMax()
 	end
 end
 
-function BattleFleetVO.CloakInVision(arg_119_0, arg_119_1)
-	for iter_119_0, iter_119_1 in ipairs(arg_119_0._cloakList) do
-		iter_119_1:GetCloak():AppendExposeSpeed(arg_119_1)
+--- 在视野内时的暴露速度
+--- @param exposeSpeed number 暴露速度值
+function BattleFleetVO.CloakInVision(self, exposeSpeed)
+	for _, cloakUnit in ipairs(self._cloakList) do
+		cloakUnit:GetCloak():AppendExposeSpeed(exposeSpeed)
 	end
 end
 
-function BattleFleetVO.CloakOutVision(arg_120_0)
-	for iter_120_0, iter_120_1 in ipairs(arg_120_0._cloakList) do
-		iter_120_1:GetCloak():AppendExposeSpeed(0)
+--- 在视野外（暴露速度为0）
+function BattleFleetVO.CloakOutVision(self)
+	for _, cloakUnit in ipairs(self._cloakList) do
+		cloakUnit:GetCloak():AppendExposeSpeed(0)
 	end
 end
 
 -- BattleFleetVO.appendMainUnit调用. 给每个后排主力单位调用
+--- 初始化并附加隐蔽组件
+--- @param unit BattleUnit
 function BattleFleetVO.AttachCloak(self, unit)
 	if not unit:GetCloak() then
 		unit:InitCloak()
@@ -1506,7 +1714,7 @@ function BattleFleetVO.AttachCloak(self, unit)
 	end
 end
 
-
+--- 附加夜间隐蔽的瞄准偏移组件
 function BattleFleetVO.AttachNightCloak(self)
 	self._scoutAimBias = ys.Battle.BattleUnitAimBiasComponent.New()
 
@@ -1517,166 +1725,184 @@ function BattleFleetVO.AttachNightCloak(self)
 	}))
 end
 
-function BattleFleetVO.GetFleetBias(arg_123_0)
-	return arg_123_0._scoutAimBias
+--- 获取舰队瞄准偏移组件
+--- @return BattleUnitAimBiasComponent|nil
+function BattleFleetVO.GetFleetBias(self)
+	return self._scoutAimBias
 end
 
-function BattleFleetVO.FreezeUnit(arg_124_0, arg_124_1)
-	arg_124_0:RemovePlayerUnit(arg_124_1, true)
+--- 冻结单位（从舰队中移除但保留在freezeList中）
+--- @param unit BattleUnit
+function BattleFleetVO.FreezeUnit(self, unit)
+	self:RemovePlayerUnit(unit, true)
 
-	arg_124_0._freezeList[arg_124_1] = true
+	self._freezeList[unit] = true
 end
 
-function BattleFleetVO.ActiveFreezeUnit(arg_125_0, arg_125_1)
-	arg_125_0._freezeList[arg_125_1] = nil
-	arg_125_0._unitList[#arg_125_0._unitList + 1] = arg_125_1
-	arg_125_0._maxCount = arg_125_0._maxCount + 1
+--- 激活冻结的单位（从freezeList中移出，重新加入舰队）
+--- @param unit BattleUnit
+function BattleFleetVO.ActiveFreezeUnit(self, unit)
+	self._freezeList[unit] = nil
+	self._unitList[#self._unitList + 1] = unit
+	self._maxCount = self._maxCount + 1
 
-	if arg_125_1:IsMainFleetUnit() then
-		arg_125_0:appendFreezeMainUnit(arg_125_1)
+	if unit:IsMainFleetUnit() then
+		self:appendFreezeMainUnit(unit)
 	else
-		arg_125_0:activeFreezeScoutUnit(arg_125_1)
+		self:activeFreezeScoutUnit(unit)
 	end
 
-	arg_125_1:SetFleetVO(arg_125_0)
-	arg_125_1:SetMotion(arg_125_0._motionVO)
-	arg_125_1:RegisterEventListener(arg_125_0, BattleUnitEvent.UPDATE_HP, arg_125_0.onUnitUpdateHP)
-	arg_125_1:RegisterEventListener(arg_125_0, BattleUnitEvent.UPDATE_CLOAK_STATE, arg_125_0.onUnitCloakUpdate)
+	unit:SetFleetVO(self)
+	unit:SetMotion(self._motionVO)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_HP, self.onUnitUpdateHP)
+	unit:RegisterEventListener(self, BattleUnitEvent.UPDATE_CLOAK_STATE, self.onUnitCloakUpdate)
 end
 
-function BattleFleetVO.UndoFusion(arg_126_0)
-	for iter_126_0, iter_126_1 in pairs(arg_126_0._freezeList) do
-		arg_126_0._unitList[#arg_126_0._unitList + 1] = iter_126_0
-		arg_126_0._maxCount = arg_126_0._maxCount + 1
+--- 解除融合（将融合单位拆回原单位，并恢复其HP转移）
+function BattleFleetVO.UndoFusion(self)
+	for unit, _ in pairs(self._freezeList) do
+		self._unitList[#self._unitList + 1] = unit
+		self._maxCount = self._maxCount + 1
 
-		if iter_126_0:IsMainFleetUnit() then
-			arg_126_0:appendFreezeMainUnit(iter_126_0)
+		if unit:IsMainFleetUnit() then
+			self:appendFreezeMainUnit(unit)
 		else
-			arg_126_0:activeFreezeScoutUnit(iter_126_0)
+			self:activeFreezeScoutUnit(unit)
 		end
 	end
 
-	local var_126_0 = {}
+	local fusionSourceList = {}
 
-	for iter_126_2, iter_126_3 in ipairs(arg_126_0._unitList) do
-		local var_126_1 = iter_126_3:GetAttrByName("hpProvideRate")
+	for _, unit in ipairs(self._unitList) do
+		local hpProvideRate = unit:GetAttrByName("hpProvideRate")
 
-		if var_126_1 ~= 0 then
-			table.insert(var_126_0, iter_126_3)
+		if hpProvideRate ~= 0 then
+			table.insert(fusionSourceList, unit)
 
-			local var_126_2, var_126_3 = iter_126_3:GetHP()
-			local var_126_4 = var_126_3 - var_126_2
-			local var_126_5 = 0
+			local currentHP, maxHP = unit:GetHP()
+			local missingHP = maxHP - currentHP
 
-			for iter_126_4, iter_126_5 in pairs(var_126_1) do
-				local var_126_6 = arg_126_0:GetFreezeShipByID(iter_126_4)
+			for targetShipID, provideRate in pairs(hpProvideRate) do
+				local targetUnit = self:GetFreezeShipByID(targetShipID)
 
-				if not var_126_6 then
-					arg_126_0:GetShipByID(iter_126_4)
+				if not targetUnit then
+					self:GetShipByID(targetShipID)
 				end
 
-				local var_126_7 = math.floor(iter_126_5 * var_126_4)
+				local hpToTransfer = math.floor(provideRate * missingHP)
 
-				var_126_6:UpdateHP(var_126_7 * -1, {})
+				targetUnit:UpdateHP(hpToTransfer * -1, {})
 			end
 		end
 	end
 
-	for iter_126_6, iter_126_7 in ipairs(var_126_0) do
-		arg_126_0:RemovePlayerUnit(iter_126_7)
+	for _, unit in ipairs(fusionSourceList) do
+		self:RemovePlayerUnit(unit)
 	end
 end
 
-function BattleFleetVO.appendFreezeMainUnit(arg_127_0, arg_127_1)
-	arg_127_0._mainList[#arg_127_0._mainList + 1] = arg_127_1
+--- 添加冻结的主力单位（后排）
+--- @param unit BattleUnit
+function BattleFleetVO.appendFreezeMainUnit(self, unit)
+	self._mainList[#self._mainList + 1] = unit
 
-	arg_127_1:SetMainUnitIndex(#arg_127_0._mainList)
+	unit:SetMainUnitIndex(#self._mainList)
 
-	if ShipType.CloakShipType(arg_127_1:GetTemplate().type) then
-		table.insert(arg_127_0._cloakList, arg_127_1)
+	if ShipType.CloakShipType(unit:GetTemplate().type) then
+		table.insert(self._cloakList, unit)
 	end
 
-	local var_127_0 = arg_127_1:GetChargeList()
+	local chargeList = unit:GetChargeList()
 
-	for iter_127_0, iter_127_1 in ipairs(var_127_0) do
-		arg_127_0._chargeWeaponVO:AppendFreezeWeapon(iter_127_1)
+	for _, chargeWeapon in ipairs(chargeList) do
+		self._chargeWeaponVO:AppendFreezeWeapon(chargeWeapon)
 	end
 
-	local var_127_1 = arg_127_1:GetTorpedoList()
+	local manualTorpedoList = unit:GetTorpedoList()
 
-	for iter_127_2, iter_127_3 in ipairs(var_127_1) do
-		arg_127_0._torpedoWeaponVO:AppendFreezeWeapon(iter_127_3)
+	for _, torpedo in ipairs(manualTorpedoList) do
+		self._torpedoWeaponVO:AppendFreezeWeapon(torpedo)
 	end
 
-	if arg_127_1:GetAirAssistList() then
-		local var_127_2 = arg_127_1:GetAirAssistList()
+	if unit:GetAirAssistList() then
+		local airAssistList = unit:GetAirAssistList()
 
-		for iter_127_4, iter_127_5 in ipairs(var_127_2) do
-			arg_127_0._airAssistVO:AppendFreezeWeapon(iter_127_5)
+		for _, airAssist in ipairs(airAssistList) do
+			self._airAssistVO:AppendFreezeWeapon(airAssist)
 		end
 	end
 
-	arg_127_0._fleetAntiAir:AppendCrewUnit(arg_127_1)
-	arg_127_0._fleetRangeAntiAir:AppendCrewUnit(arg_127_1)
-	arg_127_0._fleetStaticSonar:AppendCrewUnit(arg_127_1)
+	self._fleetAntiAir:AppendCrewUnit(unit)
+	self._fleetRangeAntiAir:AppendCrewUnit(unit)
+	self._fleetStaticSonar:AppendCrewUnit(unit)
 
-	local var_127_3 = {}
+	local currentUnitList = {}
 
-	for iter_127_6, iter_127_7 in ipairs(arg_127_0._unitList) do
-		table.insert(var_127_3, iter_127_6)
+	for _, _ in ipairs(self._unitList) do
+		table.insert(currentUnitList, _)
 	end
 
-	arg_127_0:refreshFleetFormation(var_127_3)
+	self:refreshFleetFormation(currentUnitList)
 end
 
-function BattleFleetVO.activeFreezeScoutUnit(arg_128_0, arg_128_1)
-	arg_128_0._scoutList[#arg_128_0._scoutList + 1] = arg_128_1
+--- 激活冻结的前排单位
+--- @param unit BattleUnit
+function BattleFleetVO.activeFreezeScoutUnit(self, unit)
+	self._scoutList[#self._scoutList + 1] = unit
 
-	local var_128_0 = arg_128_1:GetTorpedoList()
+	local manualTorpedoList = unit:GetTorpedoList()
 
-	for iter_128_0, iter_128_1 in ipairs(var_128_0) do
-		arg_128_0._torpedoWeaponVO:AppendFreezeWeapon(iter_128_1)
+	for _, torpedo in ipairs(manualTorpedoList) do
+		self._torpedoWeaponVO:AppendFreezeWeapon(torpedo)
 	end
 
-	if arg_128_1:GetAirAssistList() then
-		local var_128_1 = arg_128_1:GetAirAssistList()
+	if unit:GetAirAssistList() then
+		local airAssistList = unit:GetAirAssistList()
 
-		for iter_128_2, iter_128_3 in ipairs(var_128_1) do
-			arg_128_0._airAssistVO:AppendFreezeWeapon(iter_128_3)
+		for _, airAssist in ipairs(airAssistList) do
+			self._airAssistVO:AppendFreezeWeapon(airAssist)
 		end
 	end
 
-	arg_128_0._fleetAntiAir:AppendCrewUnit(arg_128_1)
-	arg_128_0._fleetStaticSonar:AppendCrewUnit(arg_128_1)
+	self._fleetAntiAir:AppendCrewUnit(unit)
+	self._fleetStaticSonar:AppendCrewUnit(unit)
 
-	local var_128_2 = 1
-	local var_128_3 = #arg_128_0._unitList
-	local var_128_4 = {}
+	local posIndex = 1
+	local unitListLength = #self._unitList
+	local currentUnitList = {}
 
-	while var_128_2 < var_128_3 do
-		table.insert(var_128_4, var_128_2)
+	while posIndex < unitListLength do
+		table.insert(currentUnitList, posIndex)
 
-		var_128_2 = var_128_2 + 1
+		posIndex = posIndex + 1
 	end
 
-	table.insert(var_128_4, #arg_128_0._scoutList, var_128_2)
-	arg_128_0:refreshFleetFormation(var_128_4)
+	table.insert(currentUnitList, #self._scoutList, posIndex)
+	self:refreshFleetFormation(currentUnitList)
 end
 
-function BattleFleetVO.AttachCardPuzzleComponent(arg_129_0)
-	arg_129_0._cardPuzzleComponent = ys.Battle.BattleFleetCardPuzzleComponent.New(arg_129_0)
+--- 附加卡牌谜题组件
+--- @return BattleFleetCardPuzzleComponent
+function BattleFleetVO.AttachCardPuzzleComponent(self)
+	self._cardPuzzleComponent = ys.Battle.BattleFleetCardPuzzleComponent.New(self)
 
-	return arg_129_0._cardPuzzleComponent
+	return self._cardPuzzleComponent
 end
 
-function BattleFleetVO.GetCardPuzzleComponent(arg_130_0)
-	return arg_130_0._cardPuzzleComponent
+--- 获取卡牌谜题组件
+--- @return BattleFleetCardPuzzleComponent|nil
+function BattleFleetVO.GetCardPuzzleComponent(self)
+	return self._cardPuzzleComponent
 end
 
-function BattleFleetVO.AppendSupportUnit(arg_131_0, arg_131_1)
-	arg_131_0._supportList[#arg_131_0._supportList + 1] = arg_131_1
+--- 添加支援单位
+--- @param unit BattleSupportUnit
+function BattleFleetVO.AppendSupportUnit(self, unit)
+	self._supportList[#self._supportList + 1] = unit
 end
 
-function BattleFleetVO.GetSupportUnitList(arg_132_0)
-	return arg_132_0._supportList
+--- 获取支援单位列表
+--- @return table
+function BattleFleetVO.GetSupportUnitList(self)
+	return self._supportList
 end

@@ -15,31 +15,31 @@ function BattleConstPlayerUnit.setWeapon(self, weaponConfig)
 	self._proficiencyList = {}
 
 	-- 初始化武器熟练度列表
-	for iter_1_0 = 1, #defaultEquipList do
-		table.insert(self._proficiencyList, self._tmpData.equipment_proficiency[iter_1_0] or 1)
+	for equipIndex = 1, #defaultEquipList do
+		table.insert(self._proficiencyList, self._tmpData.equipment_proficiency[equipIndex] or 1)
 	end
 
 	local proficiencyList = self._proficiencyList
 	local preloadCount = self._tmpData.preload_count
 
-	for iter_1_1, iter_1_2 in ipairs(defaultEquipList) do
-		if iter_1_1 <= Ship.WEAPON_COUNT then
-			local proficiency = proficiencyList[iter_1_1]
-			local preloadWeaponCount = preloadCount[iter_1_1]
+	for equipIndex, defaultEquipID in ipairs(defaultEquipList) do
+		if equipIndex <= Ship.WEAPON_COUNT then
+			local proficiency = proficiencyList[equipIndex]
+			local preloadWeaponCount = preloadCount[equipIndex]
 
 			-- 内嵌函数：创建武器组
 			;(function(weaponID, label, skin)
-				local baseCount = baseList[iter_1_1]
+				local baseCount = baseList[equipIndex]
 
-				for iter_2_0 = 1, baseCount do
-					local weapon = self:AddWeapon(weaponID, label, skin, proficiency, iter_1_1)
+				for baseIndex = 1, baseCount do
+					local weapon = self:AddWeapon(weaponID, label, skin, proficiency, equipIndex)
 					local equipmentType = weapon:GetTemplateData().type
 
-					if iter_2_0 <= preloadWeaponCount and (equipmentType == EquipmentType.POINT_HIT_AND_LOCK or equipmentType == EquipmentType.MANUAL_TORPEDO or equipmentType == EquipmentType.DISPOSABLE_TORPEDO) then
+					if baseIndex <= preloadWeaponCount and (equipmentType == EquipmentType.POINT_HIT_AND_LOCK or equipmentType == EquipmentType.MANUAL_TORPEDO or equipmentType == EquipmentType.DISPOSABLE_TORPEDO) then
 						weapon:SetModifyInitialCD()
 					end
 				end
-			end)(weaponConfig[iter_1_1] or defaultEquipList[iter_1_1])
+			end)(weaponConfig[equipIndex] or defaultEquipID)
 		end
 	end
 
@@ -47,11 +47,11 @@ function BattleConstPlayerUnit.setWeapon(self, weaponConfig)
 	local defaultEquipCount = #defaultEquipList
 	local fixEquipList = self._tmpData.fix_equip_list
 
-	for iter_1_3, iter_1_4 in ipairs(fixEquipList) do
-		if iter_1_4 and iter_1_4 ~= -1 then
-			local fixProficiency = proficiencyList[iter_1_3 + defaultEquipCount] or 1
+	for fixIndex, fixEquipID in ipairs(fixEquipList) do
+		if fixEquipID and fixEquipID ~= -1 then
+			local fixProficiency = proficiencyList[fixIndex + defaultEquipCount] or 1
 
-			self:AddWeapon(iter_1_4, nil, nil, fixProficiency, iter_1_3 + defaultEquipCount)
+			self:AddWeapon(fixEquipID, nil, nil, fixProficiency, fixIndex + defaultEquipCount)
 		end
 	end
 end

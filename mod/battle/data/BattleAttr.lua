@@ -684,9 +684,13 @@ function BattleAttr.SetMinionAttr(minion)
 	BattleAttr.SetBaseAttr(minion)
 end
 
-function BattleAttr.IsWorldMapRewardAttrWarning(arg_41_0, arg_41_1)
-	for iter_41_0 = 1, 3 do
-		if arg_41_1[iter_41_0] / (arg_41_0[iter_41_0] ~= 0 and arg_41_0[iter_41_0] or 1) < pg.gameset.world_mapbuff_tips.key_value / 10000 then
+--- 检查大世界地图奖励属性是否触发警告
+--- @param enemyRewards table<number, number>: 敌人适应性奖励值
+--- @param fleetRewards table<number, number>: 舰队适应性奖励值
+--- @return boolean: 是否需要警告
+function BattleAttr.IsWorldMapRewardAttrWarning(enemyRewards, fleetRewards)
+	for i = 1, 3 do
+		if fleetRewards[i] / (enemyRewards[i] ~= 0 and enemyRewards[i] or 1) < pg.gameset.world_mapbuff_tips.key_value / 10000 then
 			return true
 		end
 	end
@@ -758,7 +762,7 @@ end
 -- 从模板设置舰载机属性
 -- 由于BattleAirFighterUnit是从BattleAircraftUnit继承的
 -- 所以BattleAirFighterUnit.SetTemplate -> BattleAircraftUnit.SetTemplate -> BattleAttr.SetAircraftAttFromTemp?
--- (这又会产生属性覆盖了...主要是耐久就总是不取整了) 
+-- (这又会产生属性覆盖了...主要是耐久就总是不取整了)
 function BattleAttr.SetAircraftAttFromTemp(aircraft)
 	aircraft._attr = aircraft._attr or {}
 
@@ -994,9 +998,13 @@ function BattleAttr.Increase(unit, attrType, number)
 	end
 end
 
-function BattleAttr.RatioIncrease(arg_58_0, arg_58_1, arg_58_2)
-	if arg_58_2 then
-		arg_58_0._attr[arg_58_1] = arg_58_0._attr[arg_58_1] + arg_58_0._baseAttr[arg_58_1] * arg_58_2 / 10000
+--- 按比例增加属性值
+--- @param host any: 属性宿主
+--- @param attrType string: 属性类型
+--- @param ratio number: 增加比例（基于baseAttr，单位为1/10000）
+function BattleAttr.RatioIncrease(host, attrType, ratio)
+	if ratio then
+		host._attr[attrType] = host._attr[attrType] + host._baseAttr[attrType] * ratio / 10000
 	end
 end
 

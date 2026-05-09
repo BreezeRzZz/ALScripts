@@ -12,62 +12,78 @@ local puzzle_ship_template = pg.puzzle_ship_template
 local puzzle_combat_template = pg.puzzle_combat_template
 local puzzle_card_affix = pg.puzzle_card_affix
 
-function BattleDataFunction.GetDungeonTmpDataByID(arg_1_0)
-	return require("GameCfg.dungeon." .. arg_1_0)
+--- 通过地图ID获取地图配置(lazy load)
+--- @param dungeonID number 地图ID
+--- @return table 地图配置
+function BattleDataFunction.GetDungeonTmpDataByID(dungeonID)
+	return require("GameCfg.dungeon." .. dungeonID)
 end
 
-function BattleDataFunction.ClearDungeonCfg(arg_2_0)
-	package.loaded["GameCfg.dungeon." .. arg_2_0] = nil
+--- 清除地图配置的缓存
+--- @param dungeonID number 地图ID
+function BattleDataFunction.ClearDungeonCfg(dungeonID)
+	package.loaded["GameCfg.dungeon." .. dungeonID] = nil
 end
 
-function BattleDataFunction.GetSkillTemplate(arg_3_0, arg_3_1)
-	arg_3_1 = arg_3_1 or 1
+--- 获取技能模板
+--- 利用ConvertedSkill的__index元方法实现lazy load
+--- @param skillID number 技能ID
+--- @param skillLevel number 技能等级(默认1)
+--- @return table 技能模板
+function BattleDataFunction.GetSkillTemplate(skillID, skillLevel)
+	skillLevel = skillLevel or 1
 
-	local var_3_0 = "skill_" .. arg_3_0
-	local var_3_1 = pg.ConvertedSkill[var_3_0]
-	local var_3_2 = var_3_1[arg_3_1] or var_3_1[0]
+	local skillIDString = "skill_" .. skillID
+	local levelDataTable = pg.ConvertedSkill[skillIDString]
+	local skillTemplate = levelDataTable[skillLevel] or levelDataTable[0]
 
-	var_3_2.name = getSkillName(arg_3_0)
+	skillTemplate.name = getSkillName(skillID)
 
-	return var_3_2
+	return skillTemplate
 end
 
+--- 将skillCfg转换为ConvertedSkill格式
+--- 使用__index元方法实现lazy转换
 function BattleDataFunction.ConvertSkillTemplate()
 	pg.ConvertedSkill = {}
 
 	setmetatable(pg.ConvertedSkill, {
-		__index = function(arg_5_0, arg_5_1)
-			local var_5_0 = arg_5_1
-			local var_5_1 = pg.skillCfg[arg_5_1]
+		__index = function(convertedSkillTable, skillIDString)
+			local skillIDKey = skillIDString
+			local rawSkillConfig = pg.skillCfg[skillIDString]
 
-			if var_5_1 then
-				local var_5_2 = {}
-				local var_5_3 = {}
+			if rawSkillConfig then
+				local levelDataTable = {}
+				local baseTemplate = {}
 
-				for iter_5_0, iter_5_1 in pairs(var_5_1) do
-					var_5_3[iter_5_0] = Clone(iter_5_1)
+				for key, value in pairs(rawSkillConfig) do
+					baseTemplate[key] = Clone(value)
 				end
 
-				var_5_2[0] = var_5_3
+				levelDataTable[0] = baseTemplate
 
-				for iter_5_2, iter_5_3 in ipairs(var_5_1) do
-					local var_5_4 = Clone(var_5_3)
+				for levelIndex, levelOverrideData in ipairs(rawSkillConfig) do
+					local levelFullData = Clone(baseTemplate)
 
-					for iter_5_4, iter_5_5 in pairs(iter_5_3) do
-						var_5_4[iter_5_4] = iter_5_5
+					for overrideKey, overrideValue in pairs(levelOverrideData) do
+						levelFullData[overrideKey] = overrideValue
 					end
 
-					var_5_2[iter_5_2] = var_5_4
+					levelDataTable[levelIndex] = levelFullData
 				end
 
-				pg.ConvertedSkill[var_5_0] = var_5_2
+				pg.ConvertedSkill[skillIDKey] = levelDataTable
 
-				return var_5_2
+				return levelDataTable
 			end
 		end
 	})
 end
 
+--- 获取Buff模板
+--- @param buffID number Buff ID
+--- @param buffLevel number Buff等级(默认1)
+--- @return table Buff模板
 function BattleDataFunction.GetBuffTemplate(buffID, buffLevel)
 	buffLevel = buffLevel or 1
 
@@ -77,6 +93,8 @@ function BattleDataFunction.GetBuffTemplate(buffID, buffLevel)
 	return levelDataTable[buffLevel] or levelDataTable[0]
 end
 
+--- 将buffCfg转换为ConvertedBuff格式
+--- 使用__index元方法实现lazy转换
 function BattleDataFunction.ConvertBuffTemplate()
 	pg.ConvertedBuff = {}
 
@@ -114,582 +132,665 @@ function BattleDataFunction.ConvertBuffTemplate()
 	})
 end
 
-function BattleDataFunction.GetBuffBulletRes(arg_9_0, arg_9_1, arg_9_2, arg_9_3, arg_9_4)
-	local var_9_0 = {}
-	local var_9_1 = {}
+--- 获取Buff所需的子弹/特效资源列表
+--- 递归遍历Buff及其引用的技能，收集所有需要的资源路径
+--- @param shipConfigID number 舰船配置ID
+--- @param equipSkillMap table 装备技能映射 {[skillID] = {level = N}}
+--- @param system any 战斗系统类型(用于SkillTranform)
+--- @param skinID number 皮肤ID(用于SkinAdapt)
+--- @param shipTransformUnit BattleUnit|nil 舰船变换单位(用于Remap)
+--- @return table 资源路径列表
+function BattleDataFunction.GetBuffBulletRes(shipConfigID, equipSkillMap, system, skinID, shipTransformUnit)
+	local resList = {}
+	local visitedBuffSet = {}
 
-	arg_9_1 = arg_9_1 or {}
+	equipSkillMap = equipSkillMap or {}
 
-	local var_9_2 = BattleDataFunction.GetPlayerShipModelFromID(arg_9_0)
+	local shipTemplate = BattleDataFunction.GetPlayerShipModelFromID(shipConfigID)
 
-	local function var_9_3(arg_10_0)
-		if not arg_9_4 then
-			return arg_10_0
+	--- 对技能ID进行重映射（变形/隐藏技能处理）
+	local function remapSkillID(skillID)
+		if not shipTransformUnit then
+			return skillID
 		end
 
-		if table.contains(var_9_2.hide_buff_list, arg_10_0) then
-			return arg_9_4:RemapHiddenSkillId(arg_10_0)
+		if table.contains(shipTemplate.hide_buff_list, skillID) then
+			return shipTransformUnit:RemapHiddenSkillId(skillID)
 		end
 
-		local var_10_0 = arg_9_4:RemapHiddenSkillId(arg_10_0)
+		local remapResult = shipTransformUnit:RemapHiddenSkillId(skillID)
 
-		if var_10_0 == arg_10_0 then
-			var_10_0 = arg_9_4:RemapSkillId(arg_10_0)
+		if remapResult == skillID then
+			remapResult = shipTransformUnit:RemapSkillId(skillID)
 		end
 
-		return var_10_0
+		return remapResult
 	end
 
-	local function var_9_4(arg_11_0)
-		for iter_11_0, iter_11_1 in ipairs(arg_11_0) do
-			local var_11_0
+	--- 处理技能ID列表，收集对应Buff的资源
+	local function processSkillIDList(skillIDList)
+		for _, skillID in ipairs(skillIDList) do
+			local skillLevel
 
-			if arg_9_1[iter_11_1] then
-				var_11_0 = arg_9_1[iter_11_1].level
+			if equipSkillMap[skillID] then
+				skillLevel = equipSkillMap[skillID].level
 			else
-				var_11_0 = 1
+				skillLevel = 1
 			end
 
-			iter_11_1 = var_9_3(iter_11_1)
+			skillID = remapSkillID(skillID)
 
-			local var_11_1 = BattleDataFuncion.SkillTranform(arg_9_2, iter_11_1)
-			local var_11_2 = BattleDataFuncion.GetResFromBuff(var_11_1, var_11_0, var_9_1, arg_9_3)
+			local transformedSkillID = BattleDataFunction.SkillTranform(system, skillID)
+			local skillResources = BattleDataFunction.GetResFromBuff(transformedSkillID, skillLevel, visitedBuffSet, skinID)
 
-			for iter_11_2, iter_11_3 in ipairs(var_11_2) do
-				var_9_0[#var_9_0 + 1] = iter_11_3
+			for _, resource in ipairs(skillResources) do
+				resList[#resList + 1] = resource
 			end
 		end
 	end
 
-	var_9_4(var_9_2.buff_list)
-	var_9_4(var_9_2.hide_buff_list)
+	processSkillIDList(shipTemplate.buff_list)
+	processSkillIDList(shipTemplate.hide_buff_list)
 
-	local var_9_5 = {}
+	local equipSkillIDs = {}
 
-	for iter_9_0, iter_9_1 in pairs(arg_9_1) do
-		table.insert(var_9_5, iter_9_0)
+	for equipSkillID, _ in pairs(equipSkillMap) do
+		table.insert(equipSkillIDs, equipSkillID)
 	end
 
-	var_9_4(var_9_5)
+	processSkillIDList(equipSkillIDs)
 
-	local var_9_6 = var_9_2.airassist_time
+	-- 空袭时刻技能资源
+	local airassistTimeList = shipTemplate.airassist_time
 
-	for iter_9_2, iter_9_3 in ipairs(var_9_6) do
-		local var_9_7 = BattleDataFuncion.GetResFromSkill(iter_9_3, 1, nil, arg_9_3)
+	for _, skillID in ipairs(airassistTimeList) do
+		local airAssistResources = BattleDataFunction.GetResFromSkill(skillID, 1, nil, skinID)
 
-		for iter_9_4, iter_9_5 in ipairs(var_9_7) do
-			var_9_0[#var_9_0 + 1] = iter_9_5
+		for _, resource in ipairs(airAssistResources) do
+			resList[#resList + 1] = resource
 		end
 	end
 
-	local var_9_8 = BattleDataFuncion.GetShipTransformDataTemplate(arg_9_0)
+	-- 舰船变换技能资源（如μ兵装等）
+	local shipTransformData = BattleDataFunction.GetShipTransformDataTemplate(shipConfigID)
 
-	if var_9_8 and var_9_8.skill_id ~= 0 and pg.transform_data_template[var_9_8.skill_id].skill_id ~= 0 then
-		local var_9_9 = pg.transform_data_template[var_9_8.skill_id].skill_id
-		local var_9_10
+	if shipTransformData and shipTransformData.skill_id ~= 0 and pg.transform_data_template[shipTransformData.skill_id].skill_id ~= 0 then
+		local transformSkillID = pg.transform_data_template[shipTransformData.skill_id].skill_id
+		local transformSkillLevel
 
-		if arg_9_1[var_9_9] then
-			var_9_10 = arg_9_1[var_9_9].level
+		if equipSkillMap[transformSkillID] then
+			transformSkillLevel = equipSkillMap[transformSkillID].level
 		else
-			var_9_10 = 1
+			transformSkillLevel = 1
 		end
 
-		local var_9_11 = BattleDataFuncion.GetResFromBuff(var_9_9, var_9_10, var_9_1, arg_9_3)
+		local transformSkillResources = BattleDataFunction.GetResFromBuff(transformSkillID, transformSkillLevel, visitedBuffSet, skinID)
 
-		for iter_9_6, iter_9_7 in ipairs(var_9_11) do
-			var_9_0[#var_9_0 + 1] = iter_9_7
+		for _, resource in ipairs(transformSkillResources) do
+			resList[#resList + 1] = resource
 		end
 	end
 
-	if BattleDataFuncion.GetShipMetaFromDataTemplate(arg_9_0) then
-		var_9_4(var_9_2.buff_list_display)
+	if BattleDataFunction.GetShipMetaFromDataTemplate(shipConfigID) then
+		processSkillIDList(shipTemplate.buff_list_display)
 	end
 
-	return var_9_0
+	return resList
 end
 
-function BattleDataFuncion.getWeaponResource(arg_12_0, arg_12_1)
-	local var_12_0 = var_0_0.Battle.BattleResourceManager.GetWeaponResource(arg_12_0)
+--- 获取武器资源并追加到目标列表
+--- @param weaponID number 武器ID
+--- @param resourceList table 资源列表(会被修改)
+function BattleDataFunction.getWeaponResource(weaponID, resourceList)
+	local weaponResources = ys.Battle.BattleResourceManager.GetWeaponResource(weaponID)
 
-	for iter_12_0, iter_12_1 in ipairs(var_12_0) do
-		arg_12_1[#arg_12_1 + 1] = iter_12_1
+	for _, resource in ipairs(weaponResources) do
+		resourceList[#resourceList + 1] = resource
 	end
 end
 
-function BattleDataFuncion.GetResFromBuff(arg_13_0, arg_13_1, arg_13_2, arg_13_3)
-	local var_13_0 = {}
-	local var_13_1 = arg_13_0 .. "_" .. arg_13_1
+--- 从Buff模板递归收集所有需要的资源
+--- @param buffID number Buff ID
+--- @param buffLevel number Buff等级
+--- @param visitedBuffSet table 已访问的Buff集合(防循环)
+--- @param skinAdaptID number 皮肤适配ID
+--- @return table 资源路径列表
+function BattleDataFunction.GetResFromBuff(buffID, buffLevel, visitedBuffSet, skinAdaptID)
+	local resList = {}
+	local visitedKey = buffID .. "_" .. buffLevel
 
-	if arg_13_2[var_13_1] then
-		return var_13_0
+	if visitedBuffSet[visitedKey] then
+		return resList
 	else
-		arg_13_2[var_13_1] = true
+		visitedBuffSet[visitedKey] = true
 	end
 
-	local var_13_2 = BattleDataFuncion.GetBuffTemplate(arg_13_0, arg_13_1)
+	local buffTemplate = BattleDataFunction.GetBuffTemplate(buffID, buffLevel)
 
-	if var_13_2.init_effect and var_13_2.init_effect ~= "" then
-		local var_13_3 = var_13_2.init_effect
+	if buffTemplate.init_effect and buffTemplate.init_effect ~= "" then
+		local initEffectFXID = buffTemplate.init_effect
 
-		if var_13_2.skin_adapt then
-			var_13_3 = BattleDataFuncion.SkinAdaptFXID(var_13_3, arg_13_3)
+		if buffTemplate.skin_adapt then
+			initEffectFXID = BattleDataFunction.SkinAdaptFXID(initEffectFXID, skinAdaptID)
 		end
 
-		var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_13_3)
+		resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(initEffectFXID)
 	end
 
-	if var_13_2.last_effect and var_13_2.last_effect ~= "" then
-		local var_13_4 = type(var_13_2.last_effect) == "table" and var_13_2.last_effect or {
-			var_13_2.last_effect
+	if buffTemplate.last_effect and buffTemplate.last_effect ~= "" then
+		local lastEffectFXList = type(buffTemplate.last_effect) == "table" and buffTemplate.last_effect or {
+			buffTemplate.last_effect
 		}
 
-		for iter_13_0, iter_13_1 in ipairs(var_13_4) do
-			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(iter_13_1)
+		for _, fxID in ipairs(lastEffectFXList) do
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(fxID)
 		end
 	end
 
-	if var_13_2.last_effect_stack_list then
-		for iter_13_2, iter_13_3 in pairs(var_13_2.last_effect_stack_list) do
-			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(iter_13_3)
+	if buffTemplate.last_effect_stack_list then
+		for _, fxID in pairs(buffTemplate.last_effect_stack_list) do
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(fxID)
 		end
 	end
 
-	for iter_13_4, iter_13_5 in ipairs(var_13_2.effect_list) do
-		local var_13_5 = iter_13_5.arg_list.skill_id
+	for _, effectItem in ipairs(buffTemplate.effect_list) do
+		local buffEffectSkillID = effectItem.arg_list.skill_id
 
-		if var_13_5 ~= nil then
-			local var_13_6 = BattleDataFuncion.GetResFromSkill(var_13_5, arg_13_1, arg_13_2, arg_13_3)
+		if buffEffectSkillID ~= nil then
+			local skillResources = BattleDataFunction.GetResFromSkill(buffEffectSkillID, buffLevel, visitedBuffSet, skinAdaptID)
 
-			for iter_13_6, iter_13_7 in ipairs(var_13_6) do
-				var_13_0[#var_13_0 + 1] = iter_13_7
+			for _, resource in ipairs(skillResources) do
+				resList[#resList + 1] = resource
 			end
 		end
 
-		local var_13_7 = iter_13_5.arg_list.skill_id_list
+		local buffEffectSkillIDList = effectItem.arg_list.skill_id_list
 
-		if var_13_7 ~= nil then
-			for iter_13_8, iter_13_9 in ipairs(var_13_7) do
-				local var_13_8 = BattleDataFuncion.GetResFromSkill(iter_13_9, arg_13_1, arg_13_2, arg_13_3)
+		if buffEffectSkillIDList ~= nil then
+			for _, skillID in ipairs(buffEffectSkillIDList) do
+				local skillIDListResources = BattleDataFunction.GetResFromSkill(skillID, buffLevel, visitedBuffSet, skinAdaptID)
 
-				for iter_13_10, iter_13_11 in ipairs(var_13_8) do
-					var_13_0[#var_13_0 + 1] = iter_13_11
+				for _, resource in ipairs(skillIDListResources) do
+					resList[#resList + 1] = resource
 				end
 			end
 		end
 
-		local var_13_9 = iter_13_5.arg_list.damage_attr_list
+		local damageAttrList = effectItem.arg_list.damage_attr_list
 
-		if var_13_9 ~= nil then
-			for iter_13_12, iter_13_13 in pairs(var_13_9) do
-				local var_13_10 = BattleDataFuncion.GetResFromSkill(iter_13_13, arg_13_1, arg_13_2, arg_13_3)
+		if damageAttrList ~= nil then
+			for _, damageAttrSkillID in pairs(damageAttrList) do
+				local damageAttrResources = BattleDataFunction.GetResFromSkill(damageAttrSkillID, buffLevel, visitedBuffSet, skinAdaptID)
 
-				for iter_13_14, iter_13_15 in ipairs(var_13_10) do
-					var_13_0[#var_13_0 + 1] = iter_13_15
+				for _, resource in ipairs(damageAttrResources) do
+					resList[#resList + 1] = resource
 				end
 			end
 		end
 
-		local var_13_11 = iter_13_5.arg_list.bullet_id
+		local bulletID = effectItem.arg_list.bullet_id
 
-		if var_13_11 then
-			local var_13_12 = var_0_0.Battle.BattleResourceManager.GetBulletResource(var_13_11)
+		if bulletID then
+			local bulletResources = ys.Battle.BattleResourceManager.GetBulletResource(bulletID)
 
-			for iter_13_16, iter_13_17 in ipairs(var_13_12) do
-				var_13_0[#var_13_0 + 1] = iter_13_17
+			for _, resource in ipairs(bulletResources) do
+				resList[#resList + 1] = resource
 			end
 		end
 
-		local var_13_13 = iter_13_5.arg_list.weapon_id
+		local weaponID = effectItem.arg_list.weapon_id
 
-		if var_13_13 then
-			BattleDataFuncion.getWeaponResource(var_13_13, var_13_0)
+		if weaponID then
+			BattleDataFunction.getWeaponResource(weaponID, resList)
 		end
 
-		local var_13_14 = iter_13_5.arg_list.aircraft_id_list
+		local aircraftIDList = effectItem.arg_list.aircraft_id_list
 
-		if var_13_14 then
-			for iter_13_18, iter_13_19 in ipairs(var_13_14) do
-				BattleDataFuncion.getWeaponResource(iter_13_19, var_13_0)
+		if aircraftIDList then
+			for _, aircraftID in ipairs(aircraftIDList) do
+				BattleDataFunction.getWeaponResource(aircraftID, resList)
 			end
 		end
 
-		local var_13_15 = iter_13_5.arg_list.skin_id
+		local skinID = effectItem.arg_list.skin_id
 
-		if var_13_15 then
-			local var_13_16 = var_0_0.Battle.BattleResourceManager.GetEquipSkinBulletRes(var_13_15)
+		if skinID then
+			local equipSkinBulletRes = ys.Battle.BattleResourceManager.GetEquipSkinBulletRes(skinID)
 
-			for iter_13_20, iter_13_21 in ipairs(var_13_16) do
-				var_13_0[#var_13_0 + 1] = iter_13_21
+			for _, resource in ipairs(equipSkinBulletRes) do
+				resList[#resList + 1] = resource
 			end
 		end
 
-		local var_13_17 = iter_13_5.arg_list.ship_skin_id
+		local shipSkinID = effectItem.arg_list.ship_skin_id
 
-		if var_13_17 then
-			local var_13_18 = BattleDataFuncion.GetPlayerShipSkinDataFromID(var_13_17)
+		if shipSkinID then
+			local shipSkinData = BattleDataFunction.GetPlayerShipSkinDataFromID(shipSkinID)
 
-			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetCharacterPath(var_13_18.prefab)
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetCharacterPath(shipSkinData.prefab)
 		end
 
-		local var_13_19 = iter_13_5.arg_list.buff_id
+		local buffIDInEffect = effectItem.arg_list.buff_id
 
-		if var_13_19 then
-			local var_13_20 = BattleDataFuncion.GetResFromBuff(var_13_19, arg_13_1, arg_13_2, arg_13_3)
+		if buffIDInEffect then
+			local buffIDInEffectResources = BattleDataFunction.GetResFromBuff(buffIDInEffect, buffLevel, visitedBuffSet, skinAdaptID)
 
-			for iter_13_22, iter_13_23 in ipairs(var_13_20) do
-				if type(iter_13_23) == "string" then
-					var_13_0[#var_13_0 + 1] = iter_13_23
-				elseif type(iter_13_23) == "table" then
-					for iter_13_24, iter_13_25 in ipairs(iter_13_23) do
-						var_13_0[#var_13_0 + 1] = iter_13_25
+			for _, resource in ipairs(buffIDInEffectResources) do
+				if type(resource) == "string" then
+					resList[#resList + 1] = resource
+				elseif type(resource) == "table" then
+					for _, innerResource in ipairs(resource) do
+						resList[#resList + 1] = innerResource
 					end
 				end
 			end
 		end
 
-		local var_13_21 = iter_13_5.arg_list.buff_skin_id
+		local buffSkinID = effectItem.arg_list.buff_skin_id
 
-		if var_13_21 then
-			local var_13_22 = BattleDataFuncion.GetResFromBuff(var_13_21, arg_13_1, arg_13_2, arg_13_3)
+		if buffSkinID then
+			local buffSkinIDResources = BattleDataFunction.GetResFromBuff(buffSkinID, buffLevel, visitedBuffSet, skinAdaptID)
 
-			for iter_13_26, iter_13_27 in ipairs(var_13_22) do
-				if type(iter_13_27) == "string" then
-					var_13_0[#var_13_0 + 1] = iter_13_27
-				elseif type(iter_13_27) == "table" then
-					for iter_13_28, iter_13_29 in ipairs(iter_13_27) do
-						var_13_0[#var_13_0 + 1] = iter_13_29
+			for _, resource in ipairs(buffSkinIDResources) do
+				if type(resource) == "string" then
+					resList[#resList + 1] = resource
+				elseif type(resource) == "table" then
+					for _, innerResource in ipairs(resource) do
+						resList[#resList + 1] = innerResource
 					end
 				end
 			end
 		end
 
-		local var_13_23 = iter_13_5.arg_list.effect
+		local effectFXID = effectItem.arg_list.effect
 
-		if var_13_23 then
-			var_13_0[#var_13_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_13_23)
+		if effectFXID then
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(effectFXID)
 		end
 	end
 
-	return var_13_0
+	return resList
 end
 
-function BattleDataFuncion.GetBuffListRes(arg_14_0, arg_14_1, arg_14_2)
-	local var_14_0 = {}
-	local var_14_1 = {}
+--- 获取Buff列表的资源
+--- @param buffInfoList table Buff信息列表 [{{id=..., level=...}, ...}]
+--- @param visitedBuffSet table 已访问的Buff集合
+--- @param skinID number 皮肤ID
+--- @return table 资源路径列表
+function BattleDataFunction.GetBuffListRes(buffInfoList, visitedBuffSet, skinID)
+	local resList = {}
+	local localVisitedBuffSet = {}
 
-	for iter_14_0, iter_14_1 in ipairs(arg_14_0) do
-		local var_14_2 = iter_14_1.id
-		local var_14_3 = iter_14_1.level
+	for _, buffInfo in ipairs(buffInfoList) do
+		local buffID = buffInfo.id
+		local buffLevel = buffInfo.level
 
-		for iter_14_2, iter_14_3 in ipairs(BattleDataFuncion.GetResFromBuff(var_14_2, var_14_3, var_14_1, arg_14_2)) do
-			var_14_0[#var_14_0 + 1] = iter_14_3
+		for _, resource in ipairs(BattleDataFunction.GetResFromBuff(buffID, buffLevel, localVisitedBuffSet, skinID)) do
+			resList[#resList + 1] = resource
 		end
 	end
 
-	return var_14_0
+	return resList
 end
 
-function BattleDataFuncion.GetResFromSkill(arg_15_0, arg_15_1, arg_15_2, arg_15_3)
-	arg_15_1 = arg_15_1 or 1
+--- 从技能模板收集所有需要的资源（立绘、特效、武器等）
+--- @param skillID number 技能ID
+--- @param skillLevel number 技能等级(默认1)
+--- @param visitedBuffSet table 已访问的Buff集合
+--- @param skinAdaptID number 皮肤适配ID
+--- @return table 资源路径列表
+function BattleDataFunction.GetResFromSkill(skillID, skillLevel, visitedBuffSet, skinAdaptID)
+	skillLevel = skillLevel or 1
 
-	local var_15_0 = {}
-	local var_15_1 = BattleDataFuncion.GetSkillTemplate(arg_15_0, arg_15_1)
+	local resList = {}
+	local skillTemplate = BattleDataFunction.GetSkillTemplate(skillID, skillLevel)
 
-	local function var_15_2(arg_16_0)
-		for iter_16_0, iter_16_1 in ipairs(arg_16_0) do
-			if iter_16_1.type == "BattleBuffShieldWall" then
-				print(iter_16_1.arg_list.effect)
+	--- 处理effect_list中的effect，递归收集资源
+	local function processEffectList(effectList)
+		for _, effectItem in ipairs(effectList) do
+			if effectItem.type == "BattleBuffShieldWall" then
+				print(effectItem.arg_list.effect)
 			end
 
-			if iter_16_1.type == var_0_0.Battle.BattleSkillGridmanFloat.__name then
-				table.insert(var_15_0, "UI/combatgridmanskillfloat")
+			if effectItem.type == ys.Battle.BattleSkillGridmanFloat.__name then
+				table.insert(resList, "UI/combatgridmanskillfloat")
 			end
 
-			if iter_16_1.type == var_0_0.Battle.BattleSkillFusion.__name then
-				local var_16_0 = iter_16_1.arg_list
-				local var_16_1 = var_0_0.Battle.BattleResourceManager.GetShipResource(var_16_0.fusion_id, var_16_0.ship_skin_id)
+			if effectItem.type == ys.Battle.BattleSkillFusion.__name then
+				local fusionArgList = effectItem.arg_list
+				local shipResources = ys.Battle.BattleResourceManager.GetShipResource(fusionArgList.fusion_id, fusionArgList.ship_skin_id)
 
-				for iter_16_2, iter_16_3 in ipairs(var_16_1) do
-					table.insert(var_15_0, iter_16_3)
+				for _, resource in ipairs(shipResources) do
+					table.insert(resList, resource)
 				end
 
-				local var_16_2 = var_16_0.weapon_id_list
+				local fusionWeaponIDList = fusionArgList.weapon_id_list
 
-				for iter_16_4, iter_16_5 in ipairs(var_16_2) do
-					BattleDataFuncion.getWeaponResource(iter_16_5, var_15_0)
+				for _, weaponID in ipairs(fusionWeaponIDList) do
+					BattleDataFunction.getWeaponResource(weaponID, resList)
 				end
 
-				local var_16_3 = var_16_0.buff_list
+				local fusionBuffList = fusionArgList.buff_list
 
-				for iter_16_6, iter_16_7 in ipairs(var_16_3) do
-					local var_16_4 = BattleDataFuncion.GetResFromBuff(iter_16_7, arg_15_1, arg_15_2)
+				for _, buffID in ipairs(fusionBuffList) do
+					local buffResources = BattleDataFunction.GetResFromBuff(buffID, skillLevel, visitedBuffSet)
 
-					for iter_16_8, iter_16_9 in ipairs(var_16_4) do
-						var_15_0[#var_15_0 + 1] = iter_16_9
+					for _, resource in ipairs(buffResources) do
+						resList[#resList + 1] = resource
 					end
 				end
 			end
 
-			local var_16_5 = iter_16_1.arg_list.weapon_id
+			local effectWeaponID = effectItem.arg_list.weapon_id
 
-			if var_16_5 ~= nil then
-				BattleDataFuncion.getWeaponResource(var_16_5, var_15_0)
+			if effectWeaponID ~= nil then
+				BattleDataFunction.getWeaponResource(effectWeaponID, resList)
 			end
 
-			local var_16_6 = iter_16_1.arg_list.buff_id
+			local effectBuffID = effectItem.arg_list.buff_id
 
-			if var_16_6 then
-				local var_16_7 = BattleDataFuncion.GetResFromBuff(var_16_6, arg_15_1, arg_15_2)
+			if effectBuffID then
+				local buffResources = BattleDataFunction.GetResFromBuff(effectBuffID, skillLevel, visitedBuffSet)
 
-				for iter_16_10, iter_16_11 in ipairs(var_16_7) do
-					var_15_0[#var_15_0 + 1] = iter_16_11
+				for _, resource in ipairs(buffResources) do
+					resList[#resList + 1] = resource
 				end
 			end
 
-			local var_16_8 = iter_16_1.arg_list.damage_buff_id
+			local damageBuffID = effectItem.arg_list.damage_buff_id
 
-			if var_16_8 then
-				local var_16_9 = iter_16_1.arg_list.damage_buff_lv or 1
-				local var_16_10 = BattleDataFuncion.GetResFromBuff(var_16_8, var_16_9, arg_15_2)
+			if damageBuffID then
+				local damageBuffLevel = effectItem.arg_list.damage_buff_lv or 1
+				local damageBuffResources = BattleDataFunction.GetResFromBuff(damageBuffID, damageBuffLevel, visitedBuffSet)
 
-				for iter_16_12, iter_16_13 in ipairs(var_16_10) do
-					var_15_0[#var_15_0 + 1] = iter_16_13
+				for _, resource in ipairs(damageBuffResources) do
+					resList[#resList + 1] = resource
 				end
 			end
 
-			local var_16_11 = iter_16_1.arg_list.effect
+			local effectFXID = effectItem.arg_list.effect
 
-			if var_16_11 then
-				var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_16_11)
+			if effectFXID then
+				resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(effectFXID)
 			end
 
-			local var_16_12 = iter_16_1.arg_list.finale_effect
+			local finaleEffectFXID = effectItem.arg_list.finale_effect
 
-			if var_16_12 then
-				var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetFXPath(var_16_12)
+			if finaleEffectFXID then
+				resList[#resList + 1] = ys.Battle.BattleResourceManager.GetFXPath(finaleEffectFXID)
 			end
 
-			local var_16_13 = iter_16_1.arg_list.spawnData
+			local spawnData = effectItem.arg_list.spawnData
 
-			if var_16_13 then
-				local var_16_14 = var_0_0.Battle.BattleResourceManager.GetMonsterRes(var_16_13)
+			if spawnData then
+				local monsterResources = ys.Battle.BattleResourceManager.GetMonsterRes(spawnData)
 
-				for iter_16_14, iter_16_15 in ipairs(var_16_14) do
-					var_15_0[#var_15_0 + 1] = iter_16_15
+				for _, resource in ipairs(monsterResources) do
+					resList[#resList + 1] = resource
 				end
 			end
 		end
 	end
 
-	if type(var_15_1.painting) == "string" then
-		var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetHrzIcon(var_15_1.painting)
-		var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetSquareIcon(var_15_1.painting)
+	if type(skillTemplate.painting) == "string" then
+		resList[#resList + 1] = ys.Battle.BattleResourceManager.GetHrzIcon(skillTemplate.painting)
+		resList[#resList + 1] = ys.Battle.BattleResourceManager.GetSquareIcon(skillTemplate.painting)
 	end
 
-	if type(var_15_1.castCV) == "table" then
-		var_0_0.Battle.BattleResourceManager.GetInstance():AddPreloadCV(var_15_1.castCV.skinID)
+	if type(skillTemplate.castCV) == "table" then
+		ys.Battle.BattleResourceManager.GetInstance():AddPreloadCV(skillTemplate.castCV.skinID)
 	end
 
-	if var_15_1.focus_duration then
-		if var_15_1.cutin_cover then
-			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_1.cutin_cover)
-		elseif var_15_1.cutin_cover_DAL then
-			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_1.cutin_cover_DAL)
-			var_15_0[#var_15_0 + 1] = "UI/SkillPaintingDAL"
-		elseif arg_15_3 then
-			local var_15_3 = BattleDataFuncion.GetPlayerShipSkinDataFromID(arg_15_3).painting
+	if skillTemplate.focus_duration then
+		if skillTemplate.cutin_cover then
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(skillTemplate.cutin_cover)
+		elseif skillTemplate.cutin_cover_DAL then
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(skillTemplate.cutin_cover_DAL)
+			resList[#resList + 1] = "UI/SkillPaintingDAL"
+		elseif skinAdaptID then
+			local paintingName = BattleDataFunction.GetPlayerShipSkinDataFromID(skinAdaptID).painting
 
-			var_15_0[#var_15_0 + 1] = var_0_0.Battle.BattleResourceManager.GetInstance().GetPaintingPath(var_15_3)
+			resList[#resList + 1] = ys.Battle.BattleResourceManager.GetInstance().GetPaintingPath(paintingName)
 		end
 	end
 
-	var_15_2(var_15_1.effect_list)
+	processEffectList(skillTemplate.effect_list)
 
-	for iter_15_0, iter_15_1 in ipairs(var_15_1) do
-		var_15_2(iter_15_1.effect_list)
+	for _, levelData in ipairs(skillTemplate) do
+		processEffectList(levelData.effect_list)
 	end
 
-	return var_15_0
+	return resList
 end
 
-function BattleDataFuncion.GetShipSkillTriggerCount(arg_17_0, arg_17_1)
-	local function var_17_0(arg_18_0)
-		local var_18_0 = 0
+--- 获取舰船技能触发次数统计
+--- 遍历舰船的技能和装备Buff，统计匹配trigger的次数
+--- @param unitDataTemplate table 单位数据模板
+--- @param triggerList table 需要匹配的trigger列表
+--- @return number 匹配的触发次数
+function BattleDataFunction.GetShipSkillTriggerCount(unitDataTemplate, triggerList)
+	--- 统计技能列表中匹配trigger的次数
+	local function countTriggerMatches(skillBuffList)
+		local matchCount = 0
 
-		for iter_18_0, iter_18_1 in pairs(arg_18_0) do
-			local var_18_1 = BattleDataFuncion.GetBuffTemplate(iter_18_1.id).effect_list
+		for _, buffInfo in pairs(skillBuffList) do
+			local effectList = BattleDataFunction.GetBuffTemplate(buffInfo.id).effect_list
 
-			for iter_18_2, iter_18_3 in ipairs(var_18_1) do
-				local var_18_2 = iter_18_3.trigger
+			for _, effectItem in ipairs(effectList) do
+				local triggerList_inEffect = effectItem.trigger
 
-				for iter_18_4, iter_18_5 in ipairs(var_18_2) do
-					if table.contains(arg_17_1, iter_18_5) then
-						var_18_0 = var_18_0 + 1
+				for _, triggerType in ipairs(triggerList_inEffect) do
+					if table.contains(triggerList, triggerType) then
+						matchCount = matchCount + 1
 					end
 				end
 			end
 		end
 
-		return var_18_0
+		return matchCount
 	end
 
-	local var_17_1 = 0
-	local var_17_2 = arg_17_0.skills or {}
-	local var_17_3 = var_17_1 + var_17_0(var_17_2)
-	local var_17_4 = BattleDataFuncion.GetEquipSkill(arg_17_0.equipment)
-	local var_17_5 = {}
+	local baseTriggerCount = 0
+	local skillList = unitDataTemplate.skills or {}
+	local totalTriggerCount = baseTriggerCount + countTriggerMatches(skillList)
+	local equipSkillInfoList = BattleDataFunction.GetEquipSkill(unitDataTemplate.equipment)
+	local equipBuffInfoList = {}
 
-	for iter_17_0, iter_17_1 in ipairs(var_17_4) do
-		table.insert(var_17_5, {
-			id = iter_17_1.buffID
+	for _, equipSkillInfo in ipairs(equipSkillInfoList) do
+		table.insert(equipBuffInfoList, {
+			id = equipSkillInfo.buffID
 		})
 	end
 
-	return var_17_3 + var_17_0(var_17_5)
+	return totalTriggerCount + countTriggerMatches(equipBuffInfoList)
 end
 
-function BattleDataFuncion.GetSongList(arg_19_0)
-	local var_19_0 = {
+--- 获取歌曲列表（Diva系统的BGM）
+--- @param buffMap table Buff映射表
+--- @return table {initList = {...}, otherList = {...}}
+function BattleDataFunction.GetSongList(buffMap)
+	local songData = {
 		initList = {},
 		otherList = {}
 	}
 
-	for iter_19_0, iter_19_1 in pairs(arg_19_0) do
-		local var_19_1 = BattleDataFuncion.GetBuffTemplate(iter_19_0, 1)
+	for buffID, _ in pairs(buffMap) do
+		local buffTemplate = BattleDataFunction.GetBuffTemplate(buffID, 1)
 
-		for iter_19_2, iter_19_3 in ipairs(var_19_1.effect_list) do
-			if iter_19_3.type == var_0_0.Battle.BattleBuffDiva.__name then
-				if table.contains(iter_19_3.trigger, "onInitGame") then
-					for iter_19_4, iter_19_5 in ipairs(iter_19_3.arg_list.bgm_list) do
-						var_19_0.initList[iter_19_5] = true
+		for _, effectItem in ipairs(buffTemplate.effect_list) do
+			if effectItem.type == ys.Battle.BattleBuffDiva.__name then
+				if table.contains(effectItem.trigger, "onInitGame") then
+					for _, bgmName in ipairs(effectItem.arg_list.bgm_list) do
+						songData.initList[bgmName] = true
 					end
 				end
 
-				if not table.contains(iter_19_3.trigger, "onInitGame") or #iter_19_3.trigger > 1 then
-					for iter_19_6, iter_19_7 in ipairs(iter_19_3.arg_list.bgm_list) do
-						var_19_0.otherList[iter_19_7] = true
+				if not table.contains(effectItem.trigger, "onInitGame") or #effectItem.trigger > 1 then
+					for _, bgmName in ipairs(effectItem.arg_list.bgm_list) do
+						songData.otherList[bgmName] = true
 					end
 				end
 			end
 		end
 	end
 
-	return var_19_0
+	return songData
 end
 
-function BattleDataFuncion.GetCardRes(arg_20_0)
-	local var_20_0 = {}
-	local var_20_1 = var_0_0.Battle.BattleCardPuzzleCard.GetCardEffectConfig(arg_20_0)
+--- 获取卡牌资源（卡牌谜题系统）
+--- @param cardID number 卡牌ID
+--- @return table 资源路径列表
+function BattleDataFunction.GetCardRes(cardID)
+	local resList = {}
+	local cardEffectConfig = ys.Battle.BattleCardPuzzleCard.GetCardEffectConfig(cardID)
 
-	for iter_20_0, iter_20_1 in ipairs(var_20_1.effect_list) do
-		local var_20_2 = BattleDataFuncion.GetCardFXRes(iter_20_1)
+	for _, effectItem in ipairs(cardEffectConfig.effect_list) do
+		local cardFXResources = BattleDataFunction.GetCardFXRes(effectItem)
 
-		for iter_20_2, iter_20_3 in ipairs(var_20_2) do
-			table.insert(var_20_0, iter_20_3)
+		for _, resource in ipairs(cardFXResources) do
+			table.insert(resList, resource)
 		end
 	end
 
-	for iter_20_4, iter_20_5 in pairs(var_20_1.effect_list) do
-		local var_20_3 = BattleDataFuncion.GetCardFXRes(iter_20_5)
+	for _, effectItem in pairs(cardEffectConfig.effect_list) do
+		local cardFXResources = BattleDataFunction.GetCardFXRes(effectItem)
 
-		for iter_20_6, iter_20_7 in ipairs(var_20_3) do
-			table.insert(var_20_0, iter_20_7)
+		for _, resource in ipairs(cardFXResources) do
+			table.insert(resList, resource)
 		end
 	end
 
-	return var_20_0
+	return resList
 end
 
-function BattleDataFuncion.GetCardFXRes(arg_21_0)
-	local var_21_0 = {}
+--- 获取卡牌特效资源
+--- @param effectItemList table 特效列表
+--- @return table 资源路径列表
+function BattleDataFunction.GetCardFXRes(effectItemList)
+	local resList = {}
 
-	for iter_21_0, iter_21_1 in ipairs(arg_21_0) do
-		if iter_21_1.type == "BattleCardPuzzleSkillCreateCard" then
-			local var_21_1 = BattleDataFuncion.GetCardRes(iter_21_1.arg_list.card_id)
+	for _, effectItem in ipairs(effectItemList) do
+		if effectItem.type == "BattleCardPuzzleSkillCreateCard" then
+			local cardResources = BattleDataFunction.GetCardRes(effectItem.arg_list.card_id)
 
-			for iter_21_2, iter_21_3 in ipairs(var_21_1) do
-				table.insert(var_21_0, iter_21_3)
+			for _, resource in ipairs(cardResources) do
+				table.insert(resList, resource)
 			end
-		elseif iter_21_1.type == "BattleCardPuzzleSkillFire" then
-			local var_21_2 = var_0_0.Battle.BattleResourceManager.GetWeaponResource(iter_21_1.arg_list.weapon_id)
+		elseif effectItem.type == "BattleCardPuzzleSkillFire" then
+			local weaponResources = ys.Battle.BattleResourceManager.GetWeaponResource(effectItem.arg_list.weapon_id)
 
-			for iter_21_4, iter_21_5 in ipairs(var_21_2) do
-				table.insert(var_21_0, iter_21_5)
+			for _, resource in ipairs(weaponResources) do
+				table.insert(resList, resource)
 			end
-		elseif iter_21_1.type == "BattleCardPuzzleSkillAddBuff" then
-			local var_21_3 = BattleDataFuncion.GetResFromBuff(iter_21_1.arg_list.buff_id, 1, {})
+		elseif effectItem.type == "BattleCardPuzzleSkillAddBuff" then
+			local buffResources = BattleDataFunction.GetResFromBuff(effectItem.arg_list.buff_id, 1, {})
 
-			for iter_21_6, iter_21_7 in ipairs(var_21_3) do
-				table.insert(var_21_0, iter_21_7)
+			for _, resource in ipairs(buffResources) do
+				table.insert(resList, resource)
 			end
 		end
 	end
 
-	return var_21_0
+	return resList
 end
 
-function BattleDataFuncion.NeedSkillPainting(arg_22_0)
-	local var_22_0 = false
+--- 判断技能是否需要切入立绘
+--- @param skillID number 技能ID
+--- @return boolean
+function BattleDataFunction.NeedSkillPainting(skillID)
+	local needPainting = false
 
-	if BattleDataFuncion.GetSkillTemplate(arg_22_0).focus_duration then
-		var_22_0 = true
+	if BattleDataFunction.GetSkillTemplate(skillID).focus_duration then
+		needPainting = true
 	end
 
-	return var_22_0
+	return needPainting
 end
 
-function BattleDataFuncion.SkinAdaptFXID(arg_23_0, arg_23_1)
-	return arg_23_0 .. "_" .. arg_23_1
+--- 皮肤适配特效ID
+--- @param fxID string 特效ID
+--- @param skinID number 皮肤ID
+--- @return string 适配后的特效ID
+function BattleDataFunction.SkinAdaptFXID(fxID, skinID)
+	return fxID .. "_" .. skinID
 end
 
-function BattleDataFuncion.GetFleetReload(arg_24_0)
-	return var_0_2.GetFleetReload(arg_24_0)
+--- 获取舰队装填值
+--- @param fleetVO BattleFleetVO
+--- @return number
+function BattleDataFunction.GetFleetReload(fleetVO)
+	return BattleFormulas.GetFleetReload(fleetVO)
 end
 
-function BattleDataFuncion.GetFleetTorpedoPower(arg_25_0)
-	return var_0_2.GetFleetTorpedoPower(arg_25_0)
+--- 获取舰队鱼雷总威力
+--- @param fleetVO BattleFleetVO
+--- @return number
+function BattleDataFunction.GetFleetTorpedoPower(fleetVO)
+	return BattleFormulas.GetFleetTorpedoPower(fleetVO)
 end
 
-function BattleDataFuncion.SortFleetList(arg_26_0, arg_26_1)
-	local var_26_0 = {}
+--- 按指定顺序重新排列舰队列表
+--- 用于refreshFleetFormation中根据索引列表重新排序unitList
+--- @param indexList table 目标索引顺序
+--- @param unitList table 单位列表
+--- @return table 排序后的单位列表
+function BattleDataFunction.SortFleetList(indexList, unitList)
+	local sortedUnitList = {}
 
-	for iter_26_0, iter_26_1 in ipairs(arg_26_0) do
-		var_26_0[#var_26_0 + 1] = arg_26_1[iter_26_1]
+	for newIndex, oldIndex in ipairs(indexList) do
+		sortedUnitList[#sortedUnitList + 1] = unitList[oldIndex]
 
-		var_26_0[iter_26_0]:SetFormationIndex(iter_26_0)
+		sortedUnitList[newIndex]:SetFormationIndex(newIndex)
 	end
 
-	return var_26_0
+	return sortedUnitList
 end
 
-function BattleDataFuncion.GetLimitAttributeRange(arg_27_0, arg_27_1)
-	if pg.battle_attribute_range[arg_27_0] then
-		return math.clamp(arg_27_1, pg.battle_attribute_range[arg_27_0].min / 10000, pg.battle_attribute_range[arg_27_0].max / 10000)
+--- 获取属性限制范围
+--- 从battle_attribute_range配置获取属性的最小/最大值限制
+--- @param attrName string 属性名
+--- @param attrValue number 属性值
+--- @return number 限制后的属性值
+function BattleDataFunction.GetLimitAttributeRange(attrName, attrValue)
+	if pg.battle_attribute_range[attrName] then
+		return math.clamp(attrValue, pg.battle_attribute_range[attrName].min / 10000, pg.battle_attribute_range[attrName].max / 10000)
 	end
 
-	return arg_27_1
+	return attrValue
 end
 
-function BattleDataFuncion.GetPuzzleCardDataTemplate(arg_28_0)
-	assert(var_0_4[arg_28_0] ~= nil, ">>puzzle_card_template<< 找不到卡牌配置：" .. arg_28_0)
+--- 获取卡牌谜题卡牌模板
+--- @param cardID number
+--- @return table
+function BattleDataFunction.GetPuzzleCardDataTemplate(cardID)
+	assert(puzzle_card_template[cardID] ~= nil, ">>puzzle_card_template<< 找不到卡牌配置：" .. cardID)
 
-	return var_0_4[arg_28_0]
+	return puzzle_card_template[cardID]
 end
 
-function BattleDataFuncion.GetPuzzleShipDataTemplate(arg_29_0)
-	assert(var_0_5[arg_29_0] ~= nil, ">>puzzle_ship_template<< 找不到卡牌舰船配置：" .. arg_29_0)
+--- 获取卡牌谜题舰船模板
+--- @param shipID number
+--- @return table
+function BattleDataFunction.GetPuzzleShipDataTemplate(shipID)
+	assert(puzzle_ship_template[shipID] ~= nil, ">>puzzle_ship_template<< 找不到卡牌舰船配置：" .. shipID)
 
-	return var_0_5[arg_29_0]
+	return puzzle_ship_template[shipID]
 end
 
-function BattleDataFuncion.GetPuzzleDungeonTemplate(arg_30_0)
-	assert(var_0_6[arg_30_0] ~= nil, ">>puzzle_combat_template<< 找不到卡牌关卡配置：" .. arg_30_0)
+--- 获取卡牌谜题关卡模板
+--- @param dungeonID number
+--- @return table
+function BattleDataFunction.GetPuzzleDungeonTemplate(dungeonID)
+	assert(puzzle_combat_template[dungeonID] ~= nil, ">>puzzle_combat_template<< 找不到卡牌关卡配置：" .. dungeonID)
 
-	return var_0_6[arg_30_0]
+	return puzzle_combat_template[dungeonID]
 end
 
-function BattleDataFuncion.GetPuzzleCardAffixDataTemplate(arg_31_0)
-	assert(var_0_7[arg_31_0] ~= nil, ">>puzzle_card_affix<< 找不到卡牌关卡配置：" .. arg_31_0)
+--- 获取卡牌谜题副属性模板
+--- @param affixID number
+--- @return table
+function BattleDataFunction.GetPuzzleCardAffixDataTemplate(affixID)
+	assert(puzzle_card_affix[affixID] ~= nil, ">>puzzle_card_affix<< 找不到卡牌关卡配置：" .. affixID)
 
-	return var_0_7[arg_31_0]
+	return puzzle_card_affix[affixID]
 end

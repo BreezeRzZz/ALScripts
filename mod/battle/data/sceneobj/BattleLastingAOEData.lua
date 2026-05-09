@@ -20,10 +20,10 @@ function BattleLastingAOEData.Ctor(self, areaUID, IFF, areaCldFunc, exitCldFunc,
 end
 
 function BattleLastingAOEData.Dispose(arg_2_0)
-	for iter_2_0, iter_2_1 in pairs(arg_2_0._handledList) do
-		arg_2_0._exitCldFunc(iter_2_0)
+	for key, _ in pairs(arg_2_0._handledList) do
+		arg_2_0._exitCldFunc(key)
 
-		arg_2_0._handledList[iter_2_0] = nil
+		arg_2_0._handledList[key] = nil
 	end
 
 	arg_2_0._exitCldFunc = nil
@@ -82,20 +82,20 @@ function BattleLastingAOEData.frequentlySettle(self)
 	self._cldComponent:GetCldData().func(self._cldObjList)
 end
 
-function BattleLastingAOEData.ForceExit(arg_5_0, arg_5_1)
-	local var_5_0
+function BattleLastingAOEData.ForceExit(self, uid)
+	local matchedKey
 
-	for iter_5_0, iter_5_1 in pairs(arg_5_0._handledList) do
-		if iter_5_0.UID == arg_5_1 then
-			var_5_0 = iter_5_0
+	for key, _ in pairs(self._handledList) do
+		if key.UID == uid then
+			matchedKey = key
 
 			break
 		end
 	end
 
-	if var_5_0 then
-		arg_5_0._exitCldFunc(var_5_0)
+	if matchedKey then
+		self._exitCldFunc(matchedKey)
 
-		arg_5_0._handledList[var_5_0] = nil
+		self._handledList[matchedKey] = nil
 	end
 end

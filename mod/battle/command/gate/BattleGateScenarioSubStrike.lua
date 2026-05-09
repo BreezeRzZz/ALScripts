@@ -1,57 +1,68 @@
-local var_0_0 = class("BattleGateScenarioSubStrike")
+--- @class BattleGateScenarioSubStrike : 关卡潜艇支援打击Gate
+local BattleGateScenarioSubStrike = class("BattleGateScenarioSubStrike")
 
-ys.Battle.BattleGateScenarioSubStrike = var_0_0
-var_0_0.__name = "BattleGateScenarioSubStrike"
+ys.Battle.BattleGateScenarioSubStrike = BattleGateScenarioSubStrike
+BattleGateScenarioSubStrike.__name = "BattleGateScenarioSubStrike"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = getProxy(ChapterProxy):getActiveChapter():getConfigMiscArg("submarine_support")
-	local var_1_1 = {
+--- 进入潜艇支援打击
+--- @param self BattleGateScenarioSubStrike
+--- @param sendData table 发送数据
+function BattleGateScenarioSubStrike.Entrance(self, sendData)
+	local stageId = getProxy(ChapterProxy):getActiveChapter():getConfigMiscArg("submarine_support")
+	local stageData = {
 		prefabFleet = {},
-		stageId = var_1_0,
+		stageId = stageId,
 		system = SYSTEM_SCENARIO_SUB_STRIKE
 	}
 
-	arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_1)
+	sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 end
 
-function var_0_0.Exit(arg_2_0, arg_2_1)
-	local var_2_0 = getProxy(ChapterProxy):getActiveChapter()
-	local var_2_1 = arg_2_0.statistics._battleScore >= ys.Battle.BattleConst.BattleScore.S
+--- 退出潜艇支援打击，写回关卡数据
+--- @param self BattleGateScenarioSubStrike
+--- @param callback table 回调对象
+function BattleGateScenarioSubStrike.Exit(self, callback)
+	local activeChapter = getProxy(ChapterProxy):getActiveChapter()
+	local isScoreGood = self.statistics._battleScore >= ys.Battle.BattleConst.BattleScore.S
 
-	var_2_0:writeBack(var_2_1, arg_2_0)
+	activeChapter:writeBack(isScoreGood, self)
 
-	local function var_2_2()
-		arg_2_1:sendNotification(GAME.FINISH_STAGE_DONE, {
-			statistics = arg_2_0.statistics,
-			score = arg_2_0.statistics._battleScore,
+	--- 发送结算通知的回调
+	local function afterChapterOp()
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, {
+			statistics = self.statistics,
+			score = self.statistics._battleScore,
 			system = SYSTEM_SCENARIO_SUB_STRIKE
 		})
 	end
 
-	arg_2_1:sendNotification(GAME.CHAPTER_OP, {
+	callback:sendNotification(GAME.CHAPTER_OP, {
 		type = ChapterConst.OPSubStrike,
-		arg1 = arg_2_0.statistics._battleScore,
-		callback = var_2_2
+		arg1 = self.statistics._battleScore,
+		callback = afterChapterOp
 	})
 end
 
-function var_0_0.GetPreloadList(arg_4_0)
-	local var_4_0 = {}
-	local var_4_1
-	local var_4_2 = getProxy(BayProxy)
-	local var_4_3 = getProxy(ChapterProxy)
-	local var_4_4 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_4_5 = var_4_3:getActiveChapter():getChapterSupportFleet():getTeamByName(TeamType.Submarine)
+--- 获取预加载资源列表
+--- @param self BattleGateScenarioSubStrike
+--- @return table shipResources, table skinResources
+function BattleGateScenarioSubStrike.GetPreloadList(self)
+	local shipList = {}
+	local skinList
+	local bayProxy = getProxy(BayProxy)
+	local chapterProxy = getProxy(ChapterProxy)
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local subShipIds = chapterProxy:getActiveChapter():getChapterSupportFleet():getTeamByName(TeamType.Submarine)
 
-	for iter_4_0, iter_4_1 in ipairs(var_4_5) do
-		local var_4_6 = var_4_2:getShipById(iter_4_1)
+	for _, shipId in ipairs(subShipIds) do
+		local shipVO = bayProxy:getShipById(shipId)
 
-		table.insert(var_4_0, var_4_6)
+		table.insert(shipList, shipVO)
 	end
 
-	local var_4_7, var_4_8 = var_4_4.GetPlayerShipResource(var_4_0, arg_4_0.system)
+	local shipResources, skinResources = resMgr.GetPlayerShipResource(shipList, self.system)
 
-	return var_4_7, var_4_8
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateScenarioSubStrike

@@ -1,71 +1,79 @@
-local var_0_0 = class("BattleGateDebug")
+--- @class BattleGateDebug : 调试模式Gate
+local BattleGateDebug = class("BattleGateDebug")
 
-ys.Battle.BattleGateDebug = var_0_0
-var_0_0.__name = "BattleGateDebug"
+ys.Battle.BattleGateDebug = BattleGateDebug
+BattleGateDebug.__name = "BattleGateDebug"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
-	local var_1_0 = getProxy(FleetProxy):getFleetById(1)
+--- 进入调试战斗
+--- @param self BattleGateDebug
+--- @param sendData table 发送数据
+function BattleGateDebug.Entrance(self, sendData)
+	local fleet = getProxy(FleetProxy):getFleetById(1)
 
-	if var_1_0 == nil or var_1_0:isEmpty() then
+	if fleet == nil or fleet:isEmpty() then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_fleetEmpty"))
 
 		return
 	end
 
-	local var_1_1 = PROLOGUE_DUNGEON
-	local var_1_2 = {
+	local dungeonID = PROLOGUE_DUNGEON
+	local stageData = {
 		mainFleetId = 1,
 		prefabFleet = {},
-		stageId = var_1_1,
+		stageId = dungeonID,
 		system = SYSTEM_DEBUG
 	}
 
-	arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_1_2)
+	sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 end
 
-function var_0_0.Exit()
+--- 退出调试战斗（空方法）
+function BattleGateDebug.Exit()
 	return
 end
 
-function var_0_0.GetPreloadList(arg_3_0)
-	local var_3_0 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_3_1 = getProxy(FleetProxy)
-	local var_3_2 = getProxy(BayProxy)
-	local var_3_3 = {}
-	local var_3_4 = var_3_1:getFleetById(arg_3_0.mainFleetId)
-	local var_3_5 = var_3_2:getShipsByFleet(var_3_4)
+--- 获取预加载资源列表，加载所有飞机资源
+--- @param self BattleGateDebug
+--- @return table shipResources, table skinResources
+function BattleGateDebug.GetPreloadList(self)
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local fleetProxy = getProxy(FleetProxy)
+	local bayProxy = getProxy(BayProxy)
+	local shipList = {}
+	local mainFleet = fleetProxy:getFleetById(self.mainFleetId)
+	local mainShips = bayProxy:getShipsByFleet(mainFleet)
 
-	for iter_3_0, iter_3_1 in ipairs(var_3_5) do
-		table.insert(var_3_3, iter_3_1)
+	for _, ship in ipairs(mainShips) do
+		table.insert(shipList, ship)
 	end
 
-	local var_3_6 = var_3_1:getFleetById(11)
-	local var_3_7 = var_3_6:getTeamByName(TeamType.Submarine)
+	local subFleet = fleetProxy:getFleetById(11)
+	local subTeam = subFleet:getTeamByName(TeamType.Submarine)
 
-	for iter_3_2, iter_3_3 in ipairs(var_3_7) do
-		local var_3_8 = var_3_2:getShipById(iter_3_3)
+	for _, shipId in ipairs(subTeam) do
+		local shipVO = bayProxy:getShipById(shipId)
 
-		table.insert(var_3_3, var_3_8)
+		table.insert(shipList, shipVO)
 	end
 
-	local var_3_9, var_3_10 = var_3_0.GetPlayerShipResource(var_3_3, arg_3_0.system)
-	local var_3_11 = var_3_0.GetCommanderBuffRes(var_3_6:buildBattleBuffList())
+	local shipResources, shipSkins = resMgr.GetPlayerShipResource(shipList, self.system)
+	local commanderBuffs = resMgr.GetCommanderBuffRes(subFleet:buildBattleBuffList())
 
-	for iter_3_4, iter_3_5 in ipairs(var_3_11) do
-		table.insert(var_3_9, iter_3_5)
+	for _, res in ipairs(commanderBuffs) do
+		table.insert(shipResources, res)
 	end
 
-	local var_3_12 = pg.aircraft_template.all
+	local allAircraft = pg.aircraft_template.all
 
-	for iter_3_6, iter_3_7 in ipairs(var_3_12) do
-		local var_3_13 = var_3_0.GetAircraftResource(iter_3_7, {})
+	for _, aircraftId in ipairs(allAircraft) do
+		local aircraftRes = resMgr.GetAircraftResource(aircraftId, {})
 
-		for iter_3_8, iter_3_9 in ipairs(var_3_13) do
-			table.insert(var_3_9, iter_3_9)
+		for _, res in ipairs(aircraftRes) do
+			table.insert(shipResources, res)
 		end
 	end
 
-	return var_3_9, var_3_10
+	return shipResources, shipSkins
 end
 
-return var_0_0
+return BattleGateDebug

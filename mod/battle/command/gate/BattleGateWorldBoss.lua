@@ -1,217 +1,231 @@
-local var_0_0 = class("BattleGateWorldBoss")
+--- @class BattleGateWorldBoss : 大世界Boss战斗Gate
+local BattleGateWorldBoss = class("BattleGateWorldBoss")
 
-ys.Battle.BattleGateWorldBoss = var_0_0
-var_0_0.__name = "BattleGateWorldBoss"
+ys.Battle.BattleGateWorldBoss = BattleGateWorldBoss
+BattleGateWorldBoss.__name = "BattleGateWorldBoss"
 
-function var_0_0.Entrance(arg_1_0, arg_1_1)
+--- 进入大世界Boss战斗
+--- @param self BattleGateWorldBoss
+--- @param sendData table BeginStageCommand实例
+function BattleGateWorldBoss.Entrance(self, sendData)
 	if BeginStageCommand.DockOverload() then
 		return
 	end
 
-	local var_1_0 = arg_1_0.actId
-	local var_1_1 = getProxy(PlayerProxy)
-	local var_1_2 = getProxy(BayProxy)
-	local var_1_3 = pg.battle_cost_template[SYSTEM_WORLD_BOSS]
-	local var_1_4 = true
-	local var_1_5 = {}
-	local var_1_6 = 0
-	local var_1_7 = 0
-	local var_1_8 = nowWorld()
-	local var_1_9 = var_1_8:GetBossProxy():GetFleet(arg_1_0.bossId)
-	local var_1_10 = var_1_9.ships
+	local actId = self.actId
+	local playerProxy = getProxy(PlayerProxy)
+	local bayProxy = getProxy(BayProxy)
+	local costTemplate = pg.battle_cost_template[SYSTEM_WORLD_BOSS]
+	local hasOilCost = true
+	local shipIdList = {}
+	local goldCost = 0
+	local oilCost = 0
+	local world = nowWorld()
+	local fleet = world:GetBossProxy():GetFleet(self.bossId)
+	local fleetShips = fleet.ships
 
-	for iter_1_0, iter_1_1 in ipairs(var_1_10) do
-		var_1_5[#var_1_5 + 1] = iter_1_1
+	for _, shipId in ipairs(fleetShips) do
+		shipIdList[#shipIdList + 1] = shipId
 	end
 
-	local var_1_11 = var_1_2:getSortShipsByFleet(var_1_9)
-	local var_1_12 = var_1_1:getData()
-	local var_1_13 = arg_1_0.bossId
-	local var_1_14 = arg_1_0.hpRate
-	local var_1_15 = var_1_8:GetBossProxy()
-	local var_1_16 = var_1_15:GetBossById(var_1_13)
-	local var_1_17 = var_1_16:GetStageID()
+	local sortShips = bayProxy:getSortShipsByFleet(fleet)
+	local playerData = playerProxy:getData()
+	local bossId = self.bossId
+	local hpRate = self.hpRate
+	local bossProxy = world:GetBossProxy()
+	local bossData = bossProxy:GetBossById(bossId)
+	local stageId = bossData:GetStageID()
 
-	if var_1_15:IsSelfBoss(var_1_16) and var_1_16:GetSelfFightCnt() > 0 then
-		var_1_7 = var_1_16:GetOilConsume()
+	if bossProxy:IsSelfBoss(bossData) and bossData:GetSelfFightCnt() > 0 then
+		oilCost = bossData:GetOilConsume()
 	end
 
-	if var_1_4 and var_1_7 > var_1_12.oil then
+	if hasOilCost and oilCost > playerData.oil then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("stage_beginStage_error_noResource"))
 
 		return
 	end
 
-	arg_1_1.ShipVertify()
+	sendData.ShipVertify()
 
-	local function var_1_18(arg_2_0)
-		if var_1_4 then
-			var_1_12:consume({
+	--- 服务器验证成功回调
+	local function onServerSuccess(tokenData)
+		if hasOilCost then
+			playerData:consume({
 				gold = 0,
-				oil = var_1_7
+				oil = oilCost
 			})
 		end
 
-		if var_1_3.enter_energy_cost > 0 then
-			local var_2_0 = pg.gameset.battle_consume_energy.key_value
+		if costTemplate.enter_energy_cost > 0 then
+			local energyCost = pg.gameset.battle_consume_energy.key_value
 
-			for iter_2_0, iter_2_1 in ipairs(var_1_11) do
-				iter_2_1:cosumeEnergy(var_2_0)
-				var_1_2:updateShip(iter_2_1)
+			for _, ship in ipairs(sortShips) do
+				ship:cosumeEnergy(energyCost)
+				bayProxy:updateShip(ship)
 			end
 		end
 
-		if var_1_15:IsSelfBoss(var_1_16) then
-			var_1_16:IncreaseFightCnt()
+		if bossProxy:IsSelfBoss(bossData) then
+			bossData:IncreaseFightCnt()
 		else
-			if WorldBossConst._IsCurrBoss(var_1_16) then
-				var_1_15:reducePt()
+			if WorldBossConst._IsCurrBoss(bossData) then
+				bossProxy:reducePt()
 			end
 
-			var_1_15:LockCacheBoss(var_1_13)
+			bossProxy:LockCacheBoss(bossId)
 		end
 
-		var_1_1:updatePlayer(var_1_12)
+		playerProxy:updatePlayer(playerData)
 
-		local var_2_1 = {
+		local stageData = {
 			prefabFleet = {},
-			bossId = var_1_13,
-			actId = var_1_0,
-			stageId = var_1_17,
+			bossId = bossId,
+			actId = actId,
+			stageId = stageId,
 			system = SYSTEM_WORLD_BOSS,
-			token = arg_2_0.key,
-			bossLevel = var_1_16:GetLevel(),
-			bossConfigId = var_1_16:GetConfigID(),
-			hpRate = var_1_14
+			token = tokenData.key,
+			bossLevel = bossData:GetLevel(),
+			bossConfigId = bossData:GetConfigID(),
+			hpRate = hpRate
 		}
 
-		arg_1_1:sendNotification(GAME.BEGIN_STAGE_DONE, var_2_1)
+		sendData:sendNotification(GAME.BEGIN_STAGE_DONE, stageData)
 	end
 
-	local function var_1_19(arg_3_0)
-		local function var_3_0()
-			var_1_15:UnlockCacheBoss()
-			var_1_15:RemoveCacheBoss(var_1_16.id)
+	--- 服务器验证失败回调，根据不同错误码处理Boss缓存解锁
+	local function onServerFail(errData)
+		--- 解锁并移除缓存的Boss
+		local function unlockBoss()
+			bossProxy:UnlockCacheBoss()
+			bossProxy:RemoveCacheBoss(bossData.id)
 			pg.m02:sendNotification(GAME.WORLD_BOSS_START_BATTLE_FIALED)
 		end
 
-		if arg_3_0.result == 1 then
+		if errData.result == 1 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("world_boss_none"))
-			var_3_0()
-		elseif arg_3_0.result == 3 then
+			unlockBoss()
+		elseif errData.result == 3 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("world_boss_none"))
-			var_3_0()
-		elseif arg_3_0.result == 6 then
+			unlockBoss()
+		elseif errData.result == 6 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("world_max_challenge_cnt"))
-			var_3_0()
-		elseif arg_3_0.result == 20 then
+			unlockBoss()
+		elseif errData.result == 20 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("world_boss_none"))
-			var_3_0()
-		elseif arg_3_0.result == 9997 then
+			unlockBoss()
+		elseif errData.result == 9997 then
 			pg.TipsMgr.GetInstance():ShowTips(i18n("world_boss_maintenance"))
-			var_3_0()
+			unlockBoss()
 		else
-			arg_1_1:RequestFailStandardProcess(arg_3_0)
-			pg.TipsMgr.GetInstance():ShowTips(ERROR_MESSAGE[arg_3_0.result] .. arg_3_0.result)
+			sendData:RequestFailStandardProcess(errData)
+			pg.TipsMgr.GetInstance():ShowTips(ERROR_MESSAGE[errData.result] .. errData.result)
 		end
 	end
 
-	BeginStageCommand.SendRequest(SYSTEM_WORLD_BOSS, var_1_5, {
-		var_1_13
-	}, var_1_18, var_1_19)
+	BeginStageCommand.SendRequest(SYSTEM_WORLD_BOSS, shipIdList, {
+		bossId
+	}, onServerSuccess, onServerFail)
 end
 
-function var_0_0.Exit(arg_5_0, arg_5_1)
-	if arg_5_1.CheaterVertify() then
+--- 退出大世界Boss，处理伤害排行和结算
+--- @param self BattleGateWorldBoss
+--- @param callback table 回调对象
+function BattleGateWorldBoss.Exit(self, callback)
+	if callback.CheaterVertify() then
 		return
 	end
 
-	local var_5_0 = pg.battle_cost_template[SYSTEM_WORLD_BOSS]
-	local var_5_1 = arg_5_0.statistics._battleScore
-	local var_5_2 = {}
-	local var_5_3 = nowWorld():GetBossProxy():GetFleet(arg_5_0.bossId)
-	local var_5_4 = getProxy(BayProxy):getSortShipsByFleet(var_5_3)
-	local var_5_5 = arg_5_1.GeneralPackage(arg_5_0, var_5_4)
-	local var_5_6 = 0
-	local var_5_7 = {}
+	local costTemplate = pg.battle_cost_template[SYSTEM_WORLD_BOSS]
+	local battleScore = self.statistics._battleScore
+	local extraParam = {}
+	local bossFleet = nowWorld():GetBossProxy():GetFleet(self.bossId)
+	local sortShips = getProxy(BayProxy):getSortShipsByFleet(bossFleet)
+	local generalPackage = callback.GeneralPackage(self, sortShips)
+	local maxEnemyDamage = 0
+	local enemyInfoList = {}
 
-	for iter_5_0, iter_5_1 in ipairs(arg_5_0.statistics._enemyInfoList) do
-		table.insert(var_5_7, {
-			enemy_id = iter_5_1.id,
-			damage_taken = iter_5_1.damage,
-			total_hp = iter_5_1.totalHp
+	for _, enemy in ipairs(self.statistics._enemyInfoList) do
+		table.insert(enemyInfoList, {
+			enemy_id = enemy.id,
+			damage_taken = enemy.damage,
+			total_hp = enemy.totalHp
 		})
 
-		if var_5_6 < iter_5_1.damage then
-			var_5_6 = iter_5_1.damage
+		if maxEnemyDamage < enemy.damage then
+			maxEnemyDamage = enemy.damage
 		end
 	end
 
-	var_5_5.enemy_info = var_5_7
+	generalPackage.enemy_info = enemyInfoList
 
-	local function var_5_8(arg_6_0)
-		local var_6_0, var_6_1 = arg_5_1:GeneralLoot(arg_6_0)
+	--- 结算成功回调
+	local function onFinishSuccess(serverResult)
+		local drops, extraDrops = callback:GeneralLoot(serverResult)
 
-		arg_5_1.addShipsExp(arg_6_0.ship_exp_list, arg_5_0.statistics, accumulate)
+		callback.addShipsExp(serverResult.ship_exp_list, self.statistics, accumulate)
 
-		local var_6_2 = nowWorld():GetBossProxy()
-		local var_6_3 = var_6_2:GetBossById(arg_5_0.bossId)
-		local var_6_4 = var_6_3:GetName()
+		local bossProxy = nowWorld():GetBossProxy()
+		local bossData = bossProxy:GetBossById(self.bossId)
+		local bossName = bossData:GetName()
 
-		var_6_2:ClearRank(var_6_3.id)
-		var_6_2:UpdateHighestDamage(var_5_6)
+		bossProxy:ClearRank(bossData.id)
+		bossProxy:UpdateHighestDamage(maxEnemyDamage)
 
-		arg_5_0.statistics.mvpShipID = arg_6_0.mvp
+		self.statistics.mvpShipID = serverResult.mvp
 
-		local var_6_5 = {
+		local finishData = {
 			system = SYSTEM_WORLD_BOSS,
-			statistics = arg_5_0.statistics,
-			score = var_5_1,
-			drops = var_6_0,
+			statistics = self.statistics,
+			score = battleScore,
+			drops = drops,
 			commanderExps = {},
-			result = arg_6_0.result,
-			extraDrops = var_6_1,
-			bossId = arg_5_0.bossId,
-			name = var_6_4
+			result = serverResult.result,
+			extraDrops = extraDrops,
+			bossId = self.bossId,
+			name = bossName
 		}
 
-		arg_5_1:sendNotification(GAME.FINISH_STAGE_DONE, var_6_5)
-		var_6_2:UnlockCacheBoss()
+		callback:sendNotification(GAME.FINISH_STAGE_DONE, finishData)
+		bossProxy:UnlockCacheBoss()
 	end
 
-	arg_5_1:SendRequest(var_5_5, var_5_8)
+	callback:SendRequest(generalPackage, onFinishSuccess)
 end
 
-function var_0_0.GetPreloadList(arg_7_0)
-	local var_7_0 = {}
-	local var_7_1
-	local var_7_2 = ys.Battle.BattleResourceManager.GetInstance()
-	local var_7_3 = nowWorld():GetBossProxy()
-	local var_7_4 = var_7_3:GetFleet(arg_7_0.bossId)
-	local var_7_5 = getProxy(BayProxy):getSortShipsByFleet(var_7_4)
+--- 获取预加载资源列表
+--- @param self BattleGateWorldBoss
+--- @return table shipResources, table skinResources
+function BattleGateWorldBoss.GetPreloadList(self)
+	local shipList = {}
+	local skinList
+	local resMgr = ys.Battle.BattleResourceManager.GetInstance()
+	local bossProxy = nowWorld():GetBossProxy()
+	local fleet = bossProxy:GetFleet(self.bossId)
+	local sortShips = getProxy(BayProxy):getSortShipsByFleet(fleet)
 
-	for iter_7_0, iter_7_1 in ipairs(var_7_5) do
-		table.insert(var_7_0, iter_7_1)
+	for _, ship in ipairs(sortShips) do
+		table.insert(shipList, ship)
 	end
 
-	local var_7_6, var_7_7 = var_7_2.GetPlayerShipResource(var_7_0, arg_7_0.system)
-	local var_7_8 = var_7_3:GetBossById(arg_7_0.bossId)
+	local shipResources, skinResources = resMgr.GetPlayerShipResource(shipList, self.system)
+	local bossData = bossProxy:GetBossById(self.bossId)
 
-	if var_7_8 and var_7_8:IsSelf() then
-		local var_7_9, var_7_10, var_7_11 = var_7_3.GetSupportValue()
+	if bossData and bossData:IsSelf() then
+		local hasSupport, supportLevel, supportBuffId = bossProxy.GetSupportValue()
 
-		if var_7_9 then
-			local var_7_12 = var_7_2.GetResFromBuffIDList({
-				var_7_11
+		if hasSupport then
+			local supportRes = resMgr.GetResFromBuffIDList({
+				supportBuffId
 			})
 
-			for iter_7_2, iter_7_3 in ipairs(var_7_12) do
-				table.insert(var_7_6, iter_7_3)
+			for _, res in ipairs(supportRes) do
+				table.insert(shipResources, res)
 			end
 		end
 	end
 
-	return var_7_6, var_7_7
+	return shipResources, skinResources
 end
 
-return var_0_0
+return BattleGateWorldBoss

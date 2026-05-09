@@ -16,90 +16,89 @@ BattleMap.LAYERS = {
 	"sea"
 }
 
-function BattleMap.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._go = GameObject.New("scenes")
-	arg_1_0.mapLayerCtrls = {}
-	arg_1_0.seaAnimList = {}
+--- @class BattleMap
+--- 构造函数，根据地图ID构建所有层的地图对象
+--- @param mapID number 地图ID
+function BattleMap.Ctor(self, mapID)
+	self._go = GameObject.New("scenes")
+	self.mapLayerCtrls = {}
+	self.seaAnimList = {}
 
-	local var_1_0 = pg.map_data[arg_1_1]
+	local mapConfig = pg.map_data[mapID]
 
-	assert(var_1_0, "找不到地图: " .. arg_1_1)
+	assert(mapConfig, "找不到地图: " .. mapID)
 
-	for iter_1_0, iter_1_1 in ipairs(BattleMap.LAYERS) do
-		local var_1_1 = GameObject.New(iter_1_1 .. "Layer")
+	for _, layerName in ipairs(BattleMap.LAYERS) do
+		local layerGO = GameObject.New(layerName .. "Layer")
 
-		setParent(var_1_1, arg_1_0._go, false)
+		setParent(layerGO, self._go, false)
 
-		if iter_1_1 ~= "sky" then
-			local var_1_2 = GetOrAddComponent(var_1_1, "MapLayerCtrl")
+		if layerName ~= "sky" then
+			local layerCtrl = GetOrAddComponent(layerGO, "MapLayerCtrl")
 
-			var_1_2.leftBorder = var_1_0.range_left
-			var_1_2.rightBorder = var_1_0.range_right
-			var_1_2.speedToLeft = var_1_0[iter_1_1 .. "_speed"] or 0
-			var_1_2.speedScaler = 1
-			var_1_2.mainCamera = pg.UIMgr.GetInstance().mainCameraComp
+			layerCtrl.leftBorder = mapConfig.range_left
+			layerCtrl.rightBorder = mapConfig.range_right
+			layerCtrl.speedToLeft = mapConfig[layerName .. "_speed"] or 0
+			layerCtrl.speedScaler = 1
+			layerCtrl.mainCamera = pg.UIMgr.GetInstance().mainCameraComp
 
-			table.insert(arg_1_0.mapLayerCtrls, var_1_2)
+			table.insert(self.mapLayerCtrls, layerCtrl)
 		end
 
-		local var_1_3 = arg_1_0.GetMapResNames(arg_1_1, iter_1_1)
-		local var_1_4 = string.split(var_1_0[iter_1_1 .. "_pos"], ";")
-		local var_1_5 = string.split(var_1_0[iter_1_1 .. "_scale"], ";")
+		local mapResNames = self.GetMapResNames(mapID, layerName)
+		local posConfigs = string.split(mapConfig[layerName .. "_pos"], ";")
+		local scaleConfigs = string.split(mapConfig[layerName .. "_scale"], ";")
 
-		for iter_1_2, iter_1_3 in ipairs(var_1_3) do
-			local var_1_6 = ys.Battle.BattleResourceManager.GetInstance():InstMap(iter_1_3)
+		for index, resName in ipairs(mapResNames) do
+			local mapObj = ys.Battle.BattleResourceManager.GetInstance():InstMap(resName)
 
-			tf(var_1_6).localScale = string2vector3(var_1_5[iter_1_2])
+			tf(mapObj).localScale = string2vector3(scaleConfigs[index])
 
-			setParent(var_1_6, var_1_1, false)
+			setParent(mapObj, layerGO, false)
 
-			tf(var_1_6).localPosition = string2vector3(var_1_4[iter_1_2])
+			tf(mapObj).localPosition = string2vector3(posConfigs[index])
 
-			local var_1_7 = var_1_6:GetComponent(typeof(SeaAnim))
+			local seaAnim = mapObj:GetComponent(typeof(SeaAnim))
 
-			if var_1_7 then
-				table.insert(arg_1_0.seaAnimList, var_1_7)
+			if seaAnim then
+				table.insert(self.seaAnimList, seaAnim)
 			end
 
-			local var_1_8 = var_1_6:GetComponent(typeof(Renderer))
+			local renderer = mapObj:GetComponent(typeof(Renderer))
 
-			if var_1_8 then
-				var_1_8.sortingOrder = -1500
+			if renderer then
+				renderer.sortingOrder = -1500
 			end
 		end
 
-		if iter_1_1 == "sea" then
-			arg_1_0._buffer = var_1_1.transform:Find("gelidai(Clone)")
+		-- 海面层特殊处理：获取缓冲区（gelidai）的渲染器
+		if layerName == "sea" then
+			self._buffer = layerGO.transform:Find("gelidai(Clone)")
 
-			if arg_1_0._buffer then
-				arg_1_0._bufferRenderer = arg_1_0._buffer:GetComponent("SpriteRenderer")
-				arg_1_0._bufferRenderer.color = Color.New(1, 1, 1, 0)
-				arg_1_0._bufferRenderer.sortingOrder = -1500
+			if self._buffer then
+				self._bufferRenderer = self._buffer:GetComponent("SpriteRenderer")
+				self._bufferRenderer.color = Color.New(1, 1, 1, 0)
+				self._bufferRenderer.sortingOrder = -1500
 			end
 		end
 	end
 
-	arg_1_0:UpdateSpeedScaler()
+	self:UpdateSpeedScaler()
 
-	return arg_1_0._go
+	return self._go
 end
 
---- @class BattleMap
---- @param countStart number
---- @param countEnd number
---- @param duration number
---- @param callback function
---- @return nil
---- 移动海面
---- - 从 countStart 移动到 countEnd
---- - 每隔 duration 秒移动1次/更新1次
---- - 上层一般传入duration为1帧的时间(0.0333秒)，表示每帧更新一次
-function BattleMap.ShiftSurface(self, countStart, countEnd, duration, callback)
+--- 平滑移动海面偏移量（从countStart到countEnd）
+--- @param countStart number 起始偏移
+--- @param countEnd number 目标偏移
+--- @param interval number 每次移动的间隔时间
+--- @param callback function|nil 移动完成回调
+function BattleMap.ShiftSurface(self, countStart, countEnd, interval, callback)
 	if self._shiftTimer then
 		return
 	end
 
-	local count = countStart
+	local currentOffset = countStart
 	local direction
 
 	if countEnd < countStart then
@@ -110,13 +109,14 @@ function BattleMap.ShiftSurface(self, countStart, countEnd, duration, callback)
 		return
 	end
 
-	local function updateFunc()
-		if (countEnd - count) * direction > 0 then
-			ys.Battle.BattleVariable.AppendMapFactor("seaSurfaceShift", count)
+	-- 定时器回调：逐步调整偏移量
+	local function shiftFunc()
+		if (countEnd - currentOffset) * direction > 0 then
+			ys.Battle.BattleVariable.AppendMapFactor("seaSurfaceShift", currentOffset)
 			self:updateSeaSpeed()
 			self:UpdateSpeedScaler()
 
-			count = count + direction
+			currentOffset = currentOffset + direction
 		else
 			pg.TimeMgr.GetInstance():RemoveBattleTimer(self._shiftTimer)
 
@@ -128,83 +128,103 @@ function BattleMap.ShiftSurface(self, countStart, countEnd, duration, callback)
 		end
 	end
 
-	self._shiftTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, duration, updateFunc, true)
+	self._shiftTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, interval, shiftFunc, true)
 end
 
-function BattleMap.UpdateSpeedScaler(arg_4_0)
-	arg_4_0:setSpeedScaler(ys.Battle.BattleVariable.MapSpeedRatio)
+--- 更新所有图层的速度缩放（跟随全局MapSpeedRatio）
+function BattleMap.UpdateSpeedScaler(self)
+	self:setSpeedScaler(ys.Battle.BattleVariable.MapSpeedRatio)
 end
 
-function BattleMap.UpdateBufferAlpha(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_1 * 0.1
+--- 更新缓冲区透明度（根据距离调整，实现渐隐效果）
+--- @param distance number 距离值
+function BattleMap.UpdateBufferAlpha(self, distance)
+	local alpha = distance * 0.1
 
-	arg_5_0._bufferRenderer.color = Color.New(1, 1, 1, var_5_0)
+	self._bufferRenderer.color = Color.New(1, 1, 1, alpha)
 end
 
-function BattleMap.SetExposeLine(arg_6_0, arg_6_1, arg_6_2, arg_6_3)
-	function instantiateLine(arg_7_0, arg_7_1)
-		local var_7_0 = ys.Battle.BattleResourceManager.GetInstance():InstMap(arg_7_1)
-		local var_7_1 = arg_6_0._go.transform:Find("seaLayer")
+--- 设置舰队隐身/暴露线（在seaLayer上实例化对应线条）
+--- @param iff number 敌我标识（影响线的朝向缩放）
+--- @param visionLine number|nil 视野线位置
+--- @param exposeLine number|nil 暴露线位置
+function BattleMap.SetExposeLine(self, iff, visionLine, exposeLine)
+	--- 实例化一条线并放置到正确位置
+	--- @param xOffset number X轴偏移（线的实际位置）
+	--- @param lineName string 线条资源名（如 "visionLine" / "exposeLine"）
+	function instantiateLine(xOffset, lineName)
+		local lineObj = ys.Battle.BattleResourceManager.GetInstance():InstMap(lineName)
+		local seaLayer = self._go.transform:Find("seaLayer")
 
-		setParent(var_7_0, var_7_1, false)
+		setParent(lineObj, seaLayer, false)
 
-		local var_7_2 = var_7_0:GetComponent("SpriteRenderer")
-		local var_7_3 = var_7_2.bounds.extents.max
+		local spriteRenderer = lineObj:GetComponent("SpriteRenderer")
+		local boundsMax = spriteRenderer.bounds.extents.max
 
-		var_7_2.sortingOrder = -1501
+		spriteRenderer.sortingOrder = -1501
 
-		local var_7_4 = tf(var_7_0).localScale
+		local localScale = tf(lineObj).localScale
 
-		tf(var_7_0).localScale = Vector3.New(arg_6_1 * var_7_4.x, var_7_4.y, var_7_4.z)
+		tf(lineObj).localScale = Vector3.New(iff * localScale.x, localScale.y, localScale.z)
 
-		local var_7_5 = tf(var_7_0).localPosition
-		local var_7_6 = var_7_2.bounds.extents.x * arg_6_1
+		local localPosition = tf(lineObj).localPosition
+		local halfWidth = spriteRenderer.bounds.extents.x * iff
 
-		tf(var_7_0).localPosition = Vector3.New(arg_7_0 - var_7_6, var_7_5.y, var_7_5.z)
-		var_7_2.enabled = true
+		tf(lineObj).localPosition = Vector3.New(xOffset - halfWidth, localPosition.y, localPosition.z)
+		spriteRenderer.enabled = true
 	end
 
-	instantiateLine(arg_6_2, "visionLine")
+	instantiateLine(visionLine, "visionLine")
 
-	if arg_6_3 then
-		instantiateLine(arg_6_3, "exposeLine")
-	end
-end
-
-function BattleMap.setSpeedScaler(arg_8_0, arg_8_1)
-	for iter_8_0, iter_8_1 in ipairs(arg_8_0.mapLayerCtrls) do
-		iter_8_1.speedScaler = arg_8_1
-	end
-end
-
-function BattleMap.updateSeaSpeed(arg_9_0)
-	local var_9_0 = ys.Battle.BattleVariable.MapSpeedRatio
-
-	for iter_9_0, iter_9_1 in ipairs(arg_9_0.seaAnimList) do
-		iter_9_1:AdjustAnimSpeed(var_9_0)
+	if exposeLine then
+		instantiateLine(exposeLine, "exposeLine")
 	end
 end
 
-function BattleMap.Dispose(arg_10_0)
-	if arg_10_0._shiftTimer then
-		pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_10_0._shiftTimer)
-	end
-
-	if arg_10_0._go then
-		Object.Destroy(arg_10_0._go)
-
-		arg_10_0._go = nil
-		arg_10_0._buffer = nil
-		arg_10_0._bufferRenderer = nil
+--- 设置所有图层的速度缩放
+--- @param speed number 速度缩放比例
+function BattleMap.setSpeedScaler(self, speed)
+	for _, layerCtrl in ipairs(self.mapLayerCtrls) do
+		layerCtrl.speedScaler = speed
 	end
 end
 
-function BattleMap.GetMapResNames(arg_11_0, arg_11_1)
-	local var_11_0 = pg.map_data[arg_11_0]
+--- 更新海面动画速度
+function BattleMap.updateSeaSpeed(self)
+	local speedRatio = ys.Battle.BattleVariable.MapSpeedRatio
 
-	return string.split(var_11_0[arg_11_1 .. "_shot"], ";")
+	for _, seaAnim in ipairs(self.seaAnimList) do
+		seaAnim:AdjustAnimSpeed(speedRatio)
+	end
 end
 
-function BattleMap.setActive(arg_12_0, arg_12_1)
-	SetActive(arg_12_0._go, arg_12_1)
+--- 销毁地图，清理所有对象和定时器
+function BattleMap.Dispose(self)
+	if self._shiftTimer then
+		pg.TimeMgr.GetInstance():RemoveBattleTimer(self._shiftTimer)
+	end
+
+	if self._go then
+		Object.Destroy(self._go)
+
+		self._go = nil
+		self._buffer = nil
+		self._bufferRenderer = nil
+	end
+end
+
+--- 获取指定地图层级的资源名称列表
+--- @param mapID number 地图ID
+--- @param layerName string 层级名称（"close"/"mid"/"long"/"sky"/"sea"）
+--- @return table 资源名列表
+function BattleMap.GetMapResNames(self, mapID, layerName)
+	local mapConfig = pg.map_data[mapID]
+
+	return string.split(mapConfig[layerName .. "_shot"], ";")
+end
+
+--- 设置地图可见性
+--- @param active boolean
+function BattleMap.setActive(self, active)
+	SetActive(self._go, active)
 end

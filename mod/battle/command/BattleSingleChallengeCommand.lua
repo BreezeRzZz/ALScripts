@@ -72,8 +72,8 @@ function BattleSingleChallengeCommand.initWaveModule(self)
 	end
 
 	-- AOE区域生成回调
-	local function spawnAreaFunc(arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
-		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, arg_8_0, arg_8_1, arg_8_2, arg_8_3, arg_8_4)
+	local function spawnAreaFunc(x, y, z, width, height)
+		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, x, y, z, width, height)
 	end
 
 	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)

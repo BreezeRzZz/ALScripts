@@ -13,6 +13,8 @@ local BattleSkillEffect = ys.Battle.BattleSkillEffect
 -- 这是所有SkillEffect的基类，其他SkillEffect都继承自它
 -- SkillEffect之于Skill，就像BuffEffect之于BuffUnit一样，都是Skill/Unit的效果组成部分
 -- 只不过两套体系的作用方式不一样. 相对来说Buff更复杂(有多种Trigger, 有持续时间). Skill简单很多(没有Trigger, 瞬发)
+--- @param tempData table: 技能效果模板数据
+--- @param level number: 技能等级
 function BattleSkillEffect.Ctor(self, tempData, level)
 	self._tempData = tempData
 	self._type = self._tempData.type
@@ -26,6 +28,7 @@ function BattleSkillEffect.Ctor(self, tempData, level)
 	self._level = level
 end
 
+--- @param commander BattleUnit: 指挥者
 function BattleSkillEffect.SetCommander(self, commander)
 	self._commander = commander
 end
@@ -36,6 +39,9 @@ end
 	-- (skill没有各种onXXX的Trigger)
 -- 这也是根据两边数据结构本来的字段名称推测的
 -- 被BattleSkillUnit.Cast调用
+--- @param caster BattleUnit: 施法者
+--- @param targetList table: 目标列表
+--- @param attachData table: 附加数据
 function BattleSkillEffect.Effect(self, caster, targetList, attachData)
 	if targetList and #targetList > 0 then
 		for _, target in ipairs(targetList) do
@@ -47,14 +53,19 @@ function BattleSkillEffect.Effect(self, caster, targetList, attachData)
 	end
 end
 
+--- @return boolean: 是否为终曲效果
 function BattleSkillEffect.IsFinaleEffect(self)
 	return false
 end
 
+--- @param callback function: 终曲回调
 function BattleSkillEffect.SetFinaleCallback(self, callback)
 	self._finaleCallback = callback
 end
 
+--- 播放动画特效
+--- @param caster BattleUnit: 施法者
+--- @param target BattleUnit: 目标
 function BattleSkillEffect.AniEffect(self, caster, target)
 	local targetPos = target:GetPosition()
 	local casterPos = caster:GetPosition()
@@ -98,6 +109,10 @@ function BattleSkillEffect.AniEffect(self, caster, target)
 	end
 end
 
+--- 数据效果（支持延迟）
+--- @param caster BattleUnit: 施法者
+--- @param target BattleUnit: 目标
+--- @param attachData table: 附加数据
 function BattleSkillEffect.DataEffect(self, caster, target, attachData)
 	if self._delay > 0 then
 		local timer
@@ -127,30 +142,34 @@ function BattleSkillEffect.DoDataEffect(self, caster, target, attachData)
 	return
 end
 
+--- 无目标时的数据效果（支持延迟）
+--- @param caster BattleUnit: 施法者
+--- @param attachData table: 附加数据
 function BattleSkillEffect.DataEffectWithoutTarget(self, caster, attachData)
 	if self._delay > 0 then
-		local var_12_0
-		local var_12_1 = self._timerIndex + 1
+		local timer
+		local newTimerIndex = self._timerIndex + 1
 
-		self._timerIndex = var_12_1
+		self._timerIndex = newTimerIndex
 
-		local function var_12_2()
+		local function delayEffectFunc()
 			if caster and caster:IsAlive() then
 				self:DoDataEffectWithoutTarget(caster, attachData)
 			end
 
-			pg.TimeMgr.GetInstance():RemoveBattleTimer(var_12_0)
+			pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
 
-			self._timerList[var_12_1] = nil
+			self._timerList[newTimerIndex] = nil
 		end
 
-		var_12_0 = pg.TimeMgr.GetInstance():AddBattleTimer("BattleSkill", -1, self._delay, var_12_2, true)
-		self._timerList[var_12_1] = var_12_0
+		timer = pg.TimeMgr.GetInstance():AddBattleTimer("BattleSkill", -1, self._delay, delayEffectFunc, true)
+		self._timerList[newTimerIndex] = timer
 	else
 		self:DoDataEffectWithoutTarget(caster, attachData)
 	end
 end
 
+--- 子类重写此方法以实现无目标时的具体效果
 function BattleSkillEffect.DoDataEffectWithoutTarget(self, caster, attachData)
 	return
 end
@@ -158,6 +177,9 @@ end
 -- 被BattleSkillUnit.Cast调用
 -- 用于获取目标列表
 -- 因此可知，BattleSkillFire等的Target选取，无视了各种武器索敌逻辑(索敌范围等)
+--- @param caster BattleUnit: 施法者
+--- @param skill BattleSkillUnit: 所属技能
+--- @return table: 目标列表
 function BattleSkillEffect.GetTarget(self, caster, skill)
 	if type(self._targetChoise) == "string" then
 		if self._targetChoise == "TargetSameToLastEffect" then
@@ -177,10 +199,12 @@ function BattleSkillEffect.GetTarget(self, caster, skill)
 	end
 end
 
+--- 中断效果
 function BattleSkillEffect.Interrupt(self)
 	return
 end
 
+--- 清理：移除所有计时器
 function BattleSkillEffect.Clear(self)
 	for i, timer in pairs(self._timerList) do
 		pg.TimeMgr.GetInstance():RemoveBattleTimer(timer)
@@ -192,6 +216,9 @@ function BattleSkillEffect.Clear(self)
 end
 
 -- BattleSkillPlayCameraFX/BattleSkillPlayFX.DoDataEffect调用
+--- @param caster BattleUnit: 施法者
+--- @param target BattleUnit: 目标
+--- @return Vector3|nil: 计算出的坐标
 function BattleSkillEffect.calcCorrdinate(self, caster, target)
 	local corrdinate
 
@@ -242,6 +269,7 @@ function BattleSkillEffect.calcCorrdinate(self, caster, target)
 	return corrdinate
 end
 
+--- @return number: 伤害总和
 function BattleSkillEffect.GetDamageSum(self)
 	return 0
 end

@@ -25,27 +25,37 @@ MoveComponent._upBorder = 0
 MoveComponent._downBorder = 0
 MoveComponent._IFF = 0
 
+--- 构造函数
 function MoveComponent.Ctor(self)
 	return
 end
 
+--- 获取当前位置
+--- @return Vector3: 位置
 function MoveComponent.GetPos(self)
 	return self._pos
 end
 
+--- 设置位置
+--- @param pos Vector3: 新位置
 function MoveComponent.SetPos(self, pos)
 	self._pos = pos
 end
 
+--- 每帧更新：计算最终速度
 function MoveComponent.Update(self)
 	self._speed = self:GetFinalSpeed()
 end
 
+--- 通过碰撞组件修正速度
+--- @param cldComponent BattleCldComponent: 碰撞组件
 function MoveComponent.FixSpeed(self, cldComponent)
 	assert(cldComponent.FixSpeed ~= nil and type(cldComponent.FixSpeed) == "function", " MoveComponent.FixSpeed 速度修正出错")
 	cldComponent:FixSpeed(self._speed)
 end
 
+--- 按速度倍率移动
+--- @param speedRatio number: 速度倍率（默认1）
 function MoveComponent.Move(self, speedRatio)
 	speedRatio = speedRatio or 1
 	self._pos.x = self._pos.x + self._speed.x * speedRatio
@@ -53,15 +63,25 @@ function MoveComponent.Move(self, speedRatio)
 	self._pos.z = self._pos.z + self._speed.z * speedRatio
 end
 
+--- 获取当前速度
+--- @return Vector3: 速度
 function MoveComponent.GetSpeed(self)
 	return self._speed
 end
 
+--- 设置阵营区域范围
+--- @param leftCorpsBound number: 左边界
+--- @param rightCorpsBound number: 右边界
 function MoveComponent.SetCorpsArea(self, leftCorpsBound, rightCorpsBound)
 	self._leftCorpsBound = leftCorpsBound
 	self._rightCorpsBound = rightCorpsBound
 end
 
+--- 设置地图边界
+--- @param leftBorder number: 左边界
+--- @param rightBorder number: 右边界
+--- @param upBorder number: 上边界
+--- @param downBorder number: 下边界
 function MoveComponent.SetBorder(self, leftBorder, rightBorder, upBorder, downBorder)
 	self._leftBorder = leftBorder
 	self._rightBorder = rightBorder
@@ -69,6 +89,8 @@ function MoveComponent.SetBorder(self, leftBorder, rightBorder, upBorder, downBo
 	self._downBorder = downBorder
 end
 
+--- 获取最终速度（综合初始速度、附加力、边界限制）
+--- @return Vector3: 最终速度
 function MoveComponent.GetFinalSpeed(self)
 	local initialSpeed = self:getInitialSpeed()
 
@@ -81,62 +103,73 @@ end
 
 -- 限制舰队在阵营区域内移动
 -- MoveComponent.getInitialSpeed调用
-function MoveComponent.CorpsAreaLimit(self, arg_11_1)
+--- @param initialSpeed Vector3: 初始速度
+--- @return Vector3: 限制后的速度
+function MoveComponent.CorpsAreaLimit(self, initialSpeed)
 	if self._immuneAreaLimit then
-		return arg_11_1
+		return initialSpeed
 	end
 
-	local var_11_0 = self._pos.x
-	local var_11_1 = self._corpsLimitSpeed
+	local currentX = self._pos.x
+	local limitSpeed = self._corpsLimitSpeed
 
-	if var_11_0 < self._leftCorpsBound then
-		var_11_1 = math.max(var_11_1, 0.1)
+	if currentX < self._leftCorpsBound then
+		limitSpeed = math.max(limitSpeed, 0.1)
 
-		if arg_11_1.x < 0 then
-			var_11_1 = math.min(10, var_11_1 * 1.04)
+		if initialSpeed.x < 0 then
+			limitSpeed = math.min(10, limitSpeed * 1.04)
 		end
-	elseif var_11_0 > self._rightCorpsBound then
-		var_11_1 = math.min(var_11_1, -0.1)
+	elseif currentX > self._rightCorpsBound then
+		limitSpeed = math.min(limitSpeed, -0.1)
 
-		if arg_11_1.x > 0 then
-			var_11_1 = math.max(-10, var_11_1 * 1.04)
+		if initialSpeed.x > 0 then
+			limitSpeed = math.max(-10, limitSpeed * 1.04)
 		end
 	else
-		var_11_1 = var_11_1 < 0.1 and var_11_1 > -0.1 and 0 or var_11_1 * 0.8
+		limitSpeed = limitSpeed < 0.1 and limitSpeed > -0.1 and 0 or limitSpeed * 0.8
 	end
 
-	self._corpsLimitSpeed = var_11_1
-	arg_11_1.x = arg_11_1.x + self._corpsLimitSpeed
+	self._corpsLimitSpeed = limitSpeed
+	initialSpeed.x = initialSpeed.x + self._corpsLimitSpeed
 
-	return arg_11_1
+	return initialSpeed
 end
 
-function MoveComponent.BorderLimit(self, arg_12_1)
+--- 地图边界限制
+--- @param speed Vector3: 当前速度
+--- @return Vector3: 限制后的速度
+function MoveComponent.BorderLimit(self, speed)
 	if self._immuneMaxAreaLimit then
-		return arg_12_1
+		return speed
 	end
 
-	local var_12_0 = self._pos
+	local currentPos = self._pos
 
-	if arg_12_1.x < 0 and var_12_0.x <= self._leftBorder or arg_12_1.x > 0 and var_12_0.x >= self._rightBorder then
-		arg_12_1.x = 0
+	if speed.x < 0 and currentPos.x <= self._leftBorder or speed.x > 0 and currentPos.x >= self._rightBorder then
+		speed.x = 0
 	end
 
-	if arg_12_1.z < 0 and var_12_0.z <= self._downBorder or arg_12_1.z > 0 and var_12_0.z >= self._upBorder then
-		arg_12_1.z = 0
+	if speed.z < 0 and currentPos.z <= self._downBorder or speed.z > 0 and currentPos.z >= self._upBorder then
+		speed.z = 0
 	end
 
-	return arg_12_1
+	return speed
 end
 
-function MoveComponent.ImmuneAreaLimit(self, arg_13_1)
-	self._immuneAreaLimit = arg_13_1
+--- 设置是否免疫区域限制
+--- @param isImmune boolean: 是否免疫
+function MoveComponent.ImmuneAreaLimit(self, isImmune)
+	self._immuneAreaLimit = isImmune
 end
 
-function MoveComponent.ImmuneMaxAreaLimit(self, arg_14_1)
-	self._immuneMaxAreaLimit = arg_14_1
+--- 设置是否免疫最大区域限制
+--- @param isImmune boolean: 是否免疫
+function MoveComponent.ImmuneMaxAreaLimit(self, isImmune)
+	self._immuneMaxAreaLimit = isImmune
 end
 
+--- 获取初始速度（根据移动模式选择不同速度来源）
+--- @return Vector3: 初始速度
 function MoveComponent.getInitialSpeed(self)
 	if self._isForceMove and not self._unstoppable then
 		local forceSpeed = self._forceSpeed
@@ -163,31 +196,39 @@ function MoveComponent.getInitialSpeed(self)
 	return self._autoMoveAi()
 end
 
-function MoveComponent.SetForceMove(self, arg_16_1, arg_16_2, arg_16_3, arg_16_4, arg_16_5)
+--- 设置强制移动
+--- @param direction Vector3: 移动方向
+--- @param speed number: 移动速度
+--- @param reduceSpeed number: 减速值
+--- @param lastTime number: 持续时间
+--- @param decayValve number: 衰减阈值
+function MoveComponent.SetForceMove(self, direction, speed, reduceSpeed, lastTime, decayValve)
 	self._isForceMove = true
-	arg_16_1 = arg_16_1.normalized
-	self._forceSpeed = arg_16_1 * arg_16_2
-	self._forceReduce = arg_16_1 * arg_16_3
-	self._forceLastTime = arg_16_4
-	self._decayValve = arg_16_5 or 0
+	direction = direction.normalized
+	self._forceSpeed = direction * speed
+	self._forceReduce = direction * reduceSpeed
+	self._forceLastTime = lastTime
+	self._decayValve = decayValve or 0
 end
 
+--- 更新强制移动（每帧衰减）
 function MoveComponent.UpdateForceMove(self)
-	local var_17_0 = self._forceLastTime
+	local remainingTime = self._forceLastTime
 
-	if var_17_0 <= 0 then
+	if remainingTime <= 0 then
 		self:ClearForceMove()
 
 		return
 	end
 
-	self._forceLastTime = var_17_0 - 1
+	self._forceLastTime = remainingTime - 1
 
-	if var_17_0 < self._decayValve then
+	if remainingTime < self._decayValve then
 		self._forceSpeed:Sub(self._forceReduce)
 	end
 end
 
+--- 清除强制移动
 function MoveComponent.ClearForceMove(self)
 	self._isForceMove = false
 	self._forceSpeed = nil
@@ -195,63 +236,85 @@ function MoveComponent.ClearForceMove(self)
 	self._forceLastTime = nil
 end
 
-function MoveComponent.SetMoveProcess(self, arg_19_1)
-	self._moveProcess = arg_19_1
+--- 设置自定义移动进程函数
+--- @param moveProcess function: 移动进程函数
+function MoveComponent.SetMoveProcess(self, moveProcess)
+	self._moveProcess = moveProcess
 end
 
-function MoveComponent.SetStaticState(self, arg_20_1)
-	self._staticState = arg_20_1
+--- 设置静止状态
+--- @param isStatic boolean: 是否静止
+function MoveComponent.SetStaticState(self, isStatic)
+	self._staticState = isStatic
 end
 
 -- 被AutoPilot.Ctor调用
-function MoveComponent.SetAutoMoveAI(self, arg_21_1, arg_21_2)
+--- @param autoPilot AutoPilot: 自动驾驶组件
+--- @param unit BattleUnit: 单位
+function MoveComponent.SetAutoMoveAI(self, autoPilot, unit)
 	function self._autoMoveAi()
-		return arg_21_1:GetDirection():Mul(arg_21_2:GetAttrByName("velocity"))
+		return autoPilot:GetDirection():Mul(unit:GetAttrByName("velocity"))
 	end
 end
 
-function MoveComponent.SetFormationCtrlInfo(self, arg_23_1)
+--- 设置编队控制信息
+--- @param formationCtrl table: 编队控制数据
+function MoveComponent.SetFormationCtrlInfo(self, formationCtrl)
 	function self._manuallyMove()
-		return self:UpdateFleetInfo(arg_23_1)
+		return self:UpdateFleetInfo(formationCtrl)
 	end
 end
 
+--- 取消编队控制
 function MoveComponent.CancelFormationCtrl(self)
 	self._manuallyMove = nil
 end
 
-function MoveComponent.SetMotionVO(self, arg_26_1)
-	self._fleetMotionVO = arg_26_1
+--- 设置舰队运动VO
+--- @param motionVO table: 运动视图对象
+function MoveComponent.SetMotionVO(self, motionVO)
+	self._fleetMotionVO = motionVO
 end
 
-function MoveComponent.UpdateFleetInfo(self, arg_27_1)
-	local var_27_0 = self._fleetMotionVO
-	local var_27_1 = var_27_0:GetSpeed()
+--- 更新舰队位置信息（编队控制模式下）
+--- @param formationDir Vector3: 编队方向向量
+--- @return Vector3: 更新后的速度
+function MoveComponent.UpdateFleetInfo(self, formationDir)
+	local motionVO = self._fleetMotionVO
+	local motionSpeed = motionVO:GetSpeed()
 
-	if arg_27_1:EqualZero() then
-		return var_27_1
+	if formationDir:EqualZero() then
+		return motionSpeed
 	end
 
-	local var_27_2 = var_27_0:GetPos()
+	local motionPos = motionVO:GetPos()
 
-	return (var_27_0:GetDirAngle() * arg_27_1):Add(var_27_2):Sub(self._pos):Div(25):Add(var_27_1)
+	return (motionVO:GetDirAngle() * formationDir):Add(motionPos):Sub(self._pos):Div(25):Add(motionSpeed)
 end
 
-function MoveComponent.AdditiveForce(self, arg_28_1)
-	arg_28_1.x = arg_28_1.x + self._additiveSpeed.x
-	arg_28_1.z = arg_28_1.z + self._additiveSpeed.z
+--- 施加附加力到速度上
+--- @param speed Vector3: 基础速度
+--- @return Vector3: 施加附加力后的速度
+function MoveComponent.AdditiveForce(self, speed)
+	speed.x = speed.x + self._additiveSpeed.x
+	speed.z = speed.z + self._additiveSpeed.z
 
-	return arg_28_1
+	return speed
 end
 
-function MoveComponent.UpdateAdditiveSpeed(self, arg_29_1)
-	self._additiveSpeed = arg_29_1
+--- 更新附加速度
+--- @param additiveSpeed Vector3: 新的附加速度
+function MoveComponent.UpdateAdditiveSpeed(self, additiveSpeed)
+	self._additiveSpeed = additiveSpeed
 end
 
+--- 移除附加速度
 function MoveComponent.RemoveAdditiveSpeed(self)
 	self._additiveSpeed = Vector3.zero
 end
 
-function MoveComponent.ActiveUnstoppable(self, arg_31_1)
-	self._unstoppable = arg_31_1
+--- 设置是否不可阻挡
+--- @param unstoppable boolean: 是否不可阻挡
+function MoveComponent.ActiveUnstoppable(self, unstoppable)
+	self._unstoppable = unstoppable
 end

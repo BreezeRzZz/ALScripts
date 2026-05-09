@@ -9,47 +9,68 @@ ys.Battle.BattlePlayerWeaponVO.__name = "BattlePlayerWeaponVO"
 
 local BattlePlayerWeaponVO = ys.Battle.BattlePlayerWeaponVO
 
-function BattlePlayerWeaponVO.Ctor(arg_1_0, arg_1_1)
-	ys.EventDispatcher.AttachEventDispatcher(arg_1_0)
+--- @class BattlePlayerWeaponVO
+--- @field _GCD number 全局冷却时间(GCD)
+--- @field _weaponList table 武器列表
+--- @field _readyList table 就绪武器列表
+--- @field _overHeatList table 过热武器列表
+--- @field _chargingList table 冷却中武器列表
+--- @field _current number 当前冷却进度
+--- @field _max number 最大冷却值
+--- @field _count number 就绪武器数量
+--- @field _total number 武器总数
+--- @field _focus boolean 是否正在聚焦
+--- @field _focusTimer any 聚焦定时器
+--- @field _isOverLoad boolean 是否处于过载状态
+--- @field _reloadStartTime number 装填开始时间
+--- @field _jammingStarTime number 干扰开始时间
 
-	arg_1_0._GCD = arg_1_1
+--- 构造函数
+--- @param GCD number 全局冷却时间
+function BattlePlayerWeaponVO.Ctor(self, GCD)
+	ys.EventDispatcher.AttachEventDispatcher(self)
 
-	arg_1_0:Reset()
+	self._GCD = GCD
+
+	self:Reset()
 end
 
-function BattlePlayerWeaponVO.Reset(arg_2_0)
-	arg_2_0._isOverLoad = false
-	arg_2_0._current = arg_2_0._GCD
-	arg_2_0._max = arg_2_0._GCD
-	arg_2_0._count = 0
-	arg_2_0._total = 0
-	arg_2_0._weaponList = {}
-	arg_2_0._overHeatList = {}
-	arg_2_0._readyList = {}
-	arg_2_0._chargingList = {}
+--- 重置所有状态
+function BattlePlayerWeaponVO.Reset(self)
+	self._isOverLoad = false
+	self._current = self._GCD
+	self._max = self._GCD
+	self._count = 0
+	self._total = 0
+	self._weaponList = {}
+	self._overHeatList = {}
+	self._readyList = {}
+	self._chargingList = {}
 end
 
-function BattlePlayerWeaponVO.Update(arg_3_0, arg_3_1)
-	if arg_3_0._current < arg_3_0._max then
-		local var_3_0 = arg_3_1 - arg_3_0._reloadStartTime
+--- 每帧更新冷却进度和过载状态
+--- @param timeStamp number 当前时间戳
+function BattlePlayerWeaponVO.Update(self, timeStamp)
+	if self._current < self._max then
+		local elapsed = timeStamp - self._reloadStartTime
 
-		if var_3_0 >= arg_3_0._max then
-			arg_3_0._current = arg_3_0._max
-			arg_3_0._reloadStartTime = nil
+		if elapsed >= self._max then
+			self._current = self._max
+			self._reloadStartTime = nil
 
-			for iter_3_0, iter_3_1 in ipairs(arg_3_0._chargingList) do
-				iter_3_1:UpdateReload()
+			for _, weapon in ipairs(self._chargingList) do
+				weapon:UpdateReload()
 			end
 
-			arg_3_0:DispatchOverLoadChange()
+			self:DispatchOverLoadChange()
 		else
-			arg_3_0._current = var_3_0
+			self._current = elapsed
 		end
 	end
 end
 
---- @param character BattleUnit
---- @param afterFocusFunc function
+--- @param character BattleUnit 聚焦目标角色
+--- @param afterFocusFunc function 聚焦完成后的回调
 --- @return nil
 --- 将镜头聚焦到指定角色的相关函数
 --- - FocusCharacter: 镜头聚焦
@@ -77,250 +98,306 @@ function BattlePlayerWeaponVO.PlayFocus(self, character, afterFocusFunc)
 	self._focusTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", -1, BattleConfig.CAST_CAM_ZOOM_IN_DURATION, onFocusCompleteFunc, true)
 end
 
-function BattlePlayerWeaponVO.PlayCutIn(arg_6_0, arg_6_1, arg_6_2)
-	ys.Battle.BattleCameraUtil.GetInstance():CutInPainting(arg_6_1, arg_6_2)
+--- 切入立绘
+--- @param character BattleUnit 角色
+--- @param duration number 切入持续时间
+function BattlePlayerWeaponVO.PlayCutIn(self, character, duration)
+	ys.Battle.BattleCameraUtil.GetInstance():CutInPainting(character, duration)
 end
 
-function BattlePlayerWeaponVO.ResetFocus(arg_7_0)
+function BattlePlayerWeaponVO.ResetFocus(self)
 	return
 end
 
-function BattlePlayerWeaponVO.CancelFocus(arg_8_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_8_0._focusTimer)
+--- 取消聚焦
+function BattlePlayerWeaponVO.CancelFocus(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 
-	arg_8_0._focusTimer = nil
+	self._focusTimer = nil
 end
 
-function BattlePlayerWeaponVO.GetWeaponList(arg_9_0)
-	return arg_9_0._weaponList
+--- 获取武器列表
+--- @return table
+function BattlePlayerWeaponVO.GetWeaponList(self)
+	return self._weaponList
 end
 
-function BattlePlayerWeaponVO.AppendWeapon(arg_10_0, arg_10_1)
-	arg_10_0._weaponList[#arg_10_0._weaponList + 1] = arg_10_1
+--- 追加武器到列表
+--- 新追加的武器会直接进入就绪状态，并更新冷却条
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.AppendWeapon(self, weapon)
+	self._weaponList[#self._weaponList + 1] = weapon
 
-	if arg_10_1:GetCurrentState() == arg_10_1.STATE_READY then
-		arg_10_0._count = arg_10_0._count + 1
+	if weapon:GetCurrentState() == weapon.STATE_READY then
+		self._count = self._count + 1
 	end
 
-	arg_10_0._total = arg_10_0._total + 1
+	self._total = self._total + 1
 
-	arg_10_0:DispatchTotalChange()
+	self:DispatchTotalChange()
 
-	arg_10_0._current = arg_10_0._max
+	self._current = self._max
 
-	arg_10_0:DispatchOverLoadChange()
+	self:DispatchOverLoadChange()
 
-	arg_10_0._readyList[#arg_10_0._readyList + 1] = arg_10_1
+	self._readyList[#self._readyList + 1] = weapon
 end
 
-function BattlePlayerWeaponVO.AppendFreezeWeapon(arg_11_0, arg_11_1)
-	arg_11_0._weaponList[#arg_11_0._weaponList + 1] = arg_11_1
-	arg_11_0._total = arg_11_0._total + 1
+--- 追加被冻结(freeze)的武器（即之前被移除后又恢复的武器）
+--- 保持武器原有的状态并更新冷却条
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.AppendFreezeWeapon(self, weapon)
+	self._weaponList[#self._weaponList + 1] = weapon
+	self._total = self._total + 1
 
-	arg_11_0:DispatchTotalChange()
+	self:DispatchTotalChange()
 
-	if arg_11_1:GetCurrentState() == arg_11_1.STATE_READY then
-		arg_11_0._count = arg_11_0._count + 1
+	if weapon:GetCurrentState() == weapon.STATE_READY then
+		self._count = self._count + 1
 
-		table.insert(arg_11_0._readyList, arg_11_1)
-	elseif arg_11_1:GetCDStartTimeStamp() then
-		table.insert(arg_11_0._chargingList, arg_11_1)
+		table.insert(self._readyList, weapon)
+	elseif weapon:GetCDStartTimeStamp() then
+		table.insert(self._chargingList, weapon)
 	else
-		table.insert(arg_11_0._overHeatList, arg_11_1)
+		table.insert(self._overHeatList, weapon)
 	end
 
-	arg_11_0:resetCurrent()
-	arg_11_0:refreshCD()
-	arg_11_0:RefreshReloadingBar()
-	arg_11_0:DispatchOverLoadChange()
+	self:resetCurrent()
+	self:refreshCD()
+	self:RefreshReloadingBar()
+	self:DispatchOverLoadChange()
 end
 
-function BattlePlayerWeaponVO.RemoveWeapon(arg_12_0, arg_12_1)
-	local var_12_0 = arg_12_0.deleteElementFromArray(arg_12_1, arg_12_0._weaponList)
+--- 移除武器
+--- @param weapon BattleBaseWeaponUnit
+--- @return number 被移除武器在weaponList中的索引
+function BattlePlayerWeaponVO.RemoveWeapon(self, weapon)
+	local index = self.deleteElementFromArray(weapon, self._weaponList)
 
-	arg_12_0._total = arg_12_0._total - 1
+	self._total = self._total - 1
 
-	if arg_12_1:GetCurrentState() ~= arg_12_1.STATE_OVER_HEAT then
-		arg_12_0._count = arg_12_0._count - 1
+	if weapon:GetCurrentState() ~= weapon.STATE_OVER_HEAT then
+		self._count = self._count - 1
 
-		if arg_12_0._count < 0 then
-			arg_12_0._count = 0
+		if self._count < 0 then
+			self._count = 0
 		end
 
-		local var_12_1 = arg_12_0.deleteElementFromArray(arg_12_1, arg_12_0._readyList)
+		local readyIndex = self.deleteElementFromArray(weapon, self._readyList)
 
-		arg_12_0:DispatchOverLoadChange()
-		arg_12_0:DispatchTotalChange(var_12_1)
+		self:DispatchOverLoadChange()
+		self:DispatchTotalChange(readyIndex)
 	else
-		if arg_12_0.deleteElementFromArray(arg_12_1, arg_12_0._chargingList) == -1 then
-			arg_12_0.deleteElementFromArray(arg_12_1, arg_12_0._overHeatList)
+		if self.deleteElementFromArray(weapon, self._chargingList) == -1 then
+			self.deleteElementFromArray(weapon, self._overHeatList)
 		end
 
-		arg_12_0:DispatchOverLoadChange()
-		arg_12_0:DispatchTotalChange()
+		self:DispatchOverLoadChange()
+		self:DispatchTotalChange()
 	end
 
-	arg_12_0:refreshCD()
+	self:refreshCD()
 
-	return var_12_0
+	return index
 end
 
-function BattlePlayerWeaponVO.refreshCD(arg_13_0)
-	local var_13_0 = #arg_13_0._readyList
-	local var_13_1 = #arg_13_0._chargingList
+--- 刷新冷却时间
+--- 根据readyList和chargingList的状态重新计算_max和_current
+function BattlePlayerWeaponVO.refreshCD(self)
+	local readyCount = #self._readyList
+	local chargingCount = #self._chargingList
 
-	if var_13_0 ~= 0 then
-		arg_13_0._current = 1
-		arg_13_0._max = 1
-	elseif var_13_0 + var_13_1 == 0 then
-		arg_13_0._current = 1
-		arg_13_0._max = 1
+	if readyCount ~= 0 then
+		self._current = 1
+		self._max = 1
+	elseif readyCount + chargingCount == 0 then
+		self._current = 1
+		self._max = 1
 	else
-		local var_13_2 = arg_13_0:GetNextTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()
+		local timeRemaining = self:GetNextTimeStamp() - pg.TimeMgr.GetInstance():GetCombatTime()
 
-		if arg_13_0._current >= arg_13_0._GCD then
-			arg_13_0._max = var_13_2
+		if self._current >= self._GCD then
+			self._max = timeRemaining
 		else
-			local var_13_3 = math.max(arg_13_0._max, arg_13_0._GCD)
+			local previousMax = math.max(self._max, self._GCD)
 
-			arg_13_0._max = math.max(var_13_3 - arg_13_0._current, var_13_2)
+			self._max = math.max(previousMax - self._current, timeRemaining)
 		end
 
-		arg_13_0:resetCurrent()
+		self:resetCurrent()
 	end
 end
 
-function BattlePlayerWeaponVO.RefreshReloadingBar(arg_14_0)
-	if not arg_14_0._reloadStartTime or #arg_14_0._readyList ~= 0 or arg_14_0._max == arg_14_0._GCD then
+--- 刷新装填进度条
+--- 当reloadStartTime变更为jammingStarTime时，重新计算_max和_current以保持进度比例
+function BattlePlayerWeaponVO.RefreshReloadingBar(self)
+	if not self._reloadStartTime or #self._readyList ~= 0 or self._max == self._GCD then
 		return
 	end
 
-	local var_14_0 = arg_14_0:GetNextTimeStamp()
-	local var_14_1 = arg_14_0._current / arg_14_0._max
+	local nextTimeStamp = self:GetNextTimeStamp()
+	local ratio = self._current / self._max
 
-	arg_14_0._max = var_14_0 - arg_14_0._reloadStartTime
-	arg_14_0._current = var_14_1 * arg_14_0._max
+	self._max = nextTimeStamp - self._reloadStartTime
+	self._current = ratio * self._max
 end
 
-function BattlePlayerWeaponVO.resetCurrent(arg_15_0)
-	arg_15_0._current = 0
-	arg_15_0._reloadStartTime = arg_15_0._jammingStarTime or pg.TimeMgr.GetInstance():GetCombatTime()
+--- 重置当前冷却时间
+--- 将_current设为0，_reloadStartTime设为当前时间或干扰开始时间
+function BattlePlayerWeaponVO.resetCurrent(self)
+	self._current = 0
+	self._reloadStartTime = self._jammingStarTime or pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function BattlePlayerWeaponVO.SetMax(arg_16_0, arg_16_1)
-	arg_16_0._max = arg_16_1
+--- 设置最大冷却值
+--- @param max number
+function BattlePlayerWeaponVO.SetMax(self, max)
+	self._max = max
 end
 
-function BattlePlayerWeaponVO.GetMax(arg_17_0)
-	return arg_17_0._max
+--- 获取最大冷却值
+--- @return number
+function BattlePlayerWeaponVO.GetMax(self)
+	return self._max
 end
 
-function BattlePlayerWeaponVO.GetCurrent(arg_18_0)
-	return arg_18_0._current
+--- 获取当前冷却进度
+--- @return number
+function BattlePlayerWeaponVO.GetCurrent(self)
+	return self._current
 end
 
-function BattlePlayerWeaponVO.IsOverLoad(arg_19_0)
-	return arg_19_0._current < arg_19_0._max or arg_19_0._count < 1
+--- 是否处于过载状态（冷却未完成 或 无可使用武器）
+--- @return boolean
+function BattlePlayerWeaponVO.IsOverLoad(self)
+	return self._current < self._max or self._count < 1
 end
 
-function BattlePlayerWeaponVO.SetTotal(arg_20_0, arg_20_1)
-	arg_20_0._total = arg_20_1
+--- 设置武器总数
+--- @param total number
+function BattlePlayerWeaponVO.SetTotal(self, total)
+	self._total = total
 end
 
-function BattlePlayerWeaponVO.GetTotal(arg_21_0)
-	return arg_21_0._total
+--- 获取武器总数
+--- @return number
+function BattlePlayerWeaponVO.GetTotal(self)
+	return self._total
 end
 
-function BattlePlayerWeaponVO.SetCount(arg_22_0, arg_22_1)
-	arg_22_0._count = arg_22_1
+--- 设置就绪武器数量
+--- @param count number
+function BattlePlayerWeaponVO.SetCount(self, count)
+	self._count = count
 end
 
-function BattlePlayerWeaponVO.GetCount(arg_23_0)
-	return arg_23_0._count
+--- 获取就绪武器数量
+--- @return number
+function BattlePlayerWeaponVO.GetCount(self)
+	return self._count
 end
 
-function BattlePlayerWeaponVO.GetNextTimeStamp(arg_24_0)
-	local var_24_0
+--- 获取下一个武器完成冷却的时间戳
+--- 遍历chargingList中找到最早完成冷却的武器
+--- @return number 时间戳
+--- @return BattleBaseWeaponUnit 最早完成冷却的武器
+function BattlePlayerWeaponVO.GetNextTimeStamp(self)
+	local earliestWeapon
+	local earliestTimeStamp
 
-	if #arg_24_0._chargingList > 0 then
-		var_24_0 = arg_24_0._chargingList[1]
-		tiemStampB = var_24_0:GetReloadFinishTimeStamp()
+	if #self._chargingList > 0 then
+		earliestWeapon = self._chargingList[1]
+		earliestTimeStamp = earliestWeapon:GetReloadFinishTimeStamp()
 
-		for iter_24_0, iter_24_1 in ipairs(arg_24_0._chargingList) do
-			local var_24_1 = iter_24_1:GetReloadFinishTimeStamp()
+		for _, weapon in ipairs(self._chargingList) do
+			local finishTimeStamp = weapon:GetReloadFinishTimeStamp()
 
-			tiemStampB = var_24_0:GetReloadFinishTimeStamp()
-
-			if var_24_1 < tiemStampB then
-				var_24_0 = iter_24_1
-				tiemStampB = var_24_1
+			if finishTimeStamp < earliestTimeStamp then
+				earliestWeapon = weapon
+				earliestTimeStamp = finishTimeStamp
 			end
 		end
 	end
 
-	return tiemStampB, var_24_0
+	return earliestTimeStamp, earliestWeapon
 end
 
-function BattlePlayerWeaponVO.GetCurrentWeapon(arg_25_0)
-	return arg_25_0._readyList[1]
+--- 获取当前就绪的第一个武器
+--- @return BattleBaseWeaponUnit|nil
+function BattlePlayerWeaponVO.GetCurrentWeapon(self)
+	return self._readyList[1]
 end
 
-function BattlePlayerWeaponVO.GetHeadWeapon(arg_26_0)
-	return arg_26_0:GetCurrentWeapon() or arg_26_0._chargingList[1] or arg_26_0._overHeatList[1]
+--- 获取队列头部武器（优先级：就绪 > 冷却中 > 过热）
+--- @return BattleBaseWeaponUnit|nil
+function BattlePlayerWeaponVO.GetHeadWeapon(self)
+	return self:GetCurrentWeapon() or self._chargingList[1] or self._overHeatList[1]
 end
 
-function BattlePlayerWeaponVO.GetCurrentWeaponIconIndex(arg_27_0)
+--- 获取当前武器图标索引
+--- @return number 始终返回0（默认图标）
+function BattlePlayerWeaponVO.GetCurrentWeaponIconIndex(self)
 	return 0
 end
 
-function BattlePlayerWeaponVO.Plus(arg_28_0, arg_28_1)
-	local var_28_0 = arg_28_0._count
+--- 武器完成冷却，从chargingList移到readyList
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.Plus(self, weapon)
+	local oldCount = self._count
 
-	arg_28_0._count = arg_28_0._count + 1
+	self._count = self._count + 1
 
-	arg_28_0:DispatchCountChange()
-	arg_28_0.deleteElementFromArray(arg_28_1, arg_28_0._chargingList)
+	self:DispatchCountChange()
+	self.deleteElementFromArray(weapon, self._chargingList)
 
-	arg_28_0._readyList[#arg_28_0._readyList + 1] = arg_28_1
+	self._readyList[#self._readyList + 1] = weapon
 
-	local var_28_1 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
+	local weaponCountPlusEvent = ys.Event.New(ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
 
-	arg_28_0:DispatchEvent(var_28_1)
-	arg_28_0:DispatchOverLoadChange(var_28_0)
+	self:DispatchEvent(weaponCountPlusEvent)
+	self:DispatchOverLoadChange(oldCount)
 end
 
-function BattlePlayerWeaponVO.Deduct(arg_29_0, arg_29_1)
-	arg_29_0:readyToOverheat(arg_29_1)
+--- 武器发射后扣减就绪数量
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.Deduct(self, weapon)
+	self:readyToOverheat(weapon)
 
-	if #arg_29_0._readyList ~= 0 then
-		arg_29_0._max = arg_29_0._GCD
+	if #self._readyList ~= 0 then
+		self._max = self._GCD
 
-		arg_29_0:resetCurrent()
-	elseif #arg_29_0._chargingList ~= 0 then
-		local var_29_0 = arg_29_0:GetNextTimeStamp()
+		self:resetCurrent()
+	elseif #self._chargingList ~= 0 then
+		local nextTimeStamp = self:GetNextTimeStamp()
 
-		arg_29_0._max = math.max(arg_29_0._GCD, var_29_0 - pg.TimeMgr.GetInstance():GetCombatTime())
+		self._max = math.max(self._GCD, nextTimeStamp - pg.TimeMgr.GetInstance():GetCombatTime())
 
-		arg_29_0:resetCurrent()
-	elseif arg_29_1:GetType() == ys.Battle.BattleConst.EquipmentType.DISPOSABLE_TORPEDO then
+		self:resetCurrent()
+	elseif weapon:GetType() == ys.Battle.BattleConst.EquipmentType.DISPOSABLE_TORPEDO then
+		-- 一次性鱼雷发射后不需要更新冷却条
 		-- block empty
 	else
-		arg_29_0._current = 0
+		self._current = 0
 	end
 
-	arg_29_0:DispatchOverLoadChange(nil, true)
+	self:DispatchOverLoadChange(nil, true)
 end
 
-function BattlePlayerWeaponVO.InitialDeduct(arg_30_0, arg_30_1)
-	arg_30_0:readyToOverheat(arg_30_1)
-	arg_30_0:DispatchOverLoadChange()
+--- 初始扣减（进入战斗时直接扣减）
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.InitialDeduct(self, weapon)
+	self:readyToOverheat(weapon)
+	self:DispatchOverLoadChange()
 end
 
+--- 武器开始充能/装填，从overHeatList移到chargingList
+--- @param weapon BattleBaseWeaponUnit
 function BattlePlayerWeaponVO.Charge(self, weapon)
 	self.deleteElementFromArray(weapon, self._overHeatList)
 
 	self._chargingList[#self._chargingList + 1] = weapon
 
+	-- 按完成冷却时间排序，最早完成的在前
 	table.sort(self._chargingList, function(weapon1, weapon2)
 		return weapon1:GetReloadFinishTimeStamp() < weapon2:GetReloadFinishTimeStamp()
 	end)
@@ -336,146 +413,170 @@ function BattlePlayerWeaponVO.Charge(self, weapon)
 	self:DispatchCountChange()
 end
 
-function BattlePlayerWeaponVO.ReloadBoost(arg_33_0, arg_33_1, arg_33_2)
-	local var_33_0, var_33_1 = arg_33_0:GetNextTimeStamp()
+--- 装填加速
+--- @param weapon BattleBaseWeaponUnit 要加速的武器
+--- @param boostRate number 加速倍率
+function BattlePlayerWeaponVO.ReloadBoost(self, weapon, boostRate)
+	local oldTimeStamp, oldWeapon = self:GetNextTimeStamp()
 
-	arg_33_1:ReloadBoost(arg_33_2)
+	weapon:ReloadBoost(boostRate)
 
-	local var_33_2, var_33_3 = arg_33_0:GetNextTimeStamp()
+	local newTimeStamp, newWeapon = self:GetNextTimeStamp()
 
-	if var_33_1 ~= arg_33_1 and var_33_3 ~= arg_33_1 then
+	if oldWeapon ~= weapon and newWeapon ~= weapon then
+		-- 加速的武器不是下一个冷却完成的，无需更新
 		-- block empty
-	elseif var_33_1 == arg_33_1 and var_33_3 == arg_33_1 then
-		arg_33_0:RefreshReloadingBar()
-	elseif var_33_1 ~= var_33_3 then
-		arg_33_0:RefreshReloadingBar()
+	elseif oldWeapon == weapon and newWeapon == weapon then
+		self:RefreshReloadingBar()
+	elseif oldWeapon ~= newWeapon then
+		self:RefreshReloadingBar()
 	end
 end
 
-function BattlePlayerWeaponVO.InstantCoolDown(arg_34_0, arg_34_1)
-	arg_34_0.deleteElementFromArray(arg_34_1, arg_34_0._overHeatList)
+--- 立即完成冷却
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.InstantCoolDown(self, weapon)
+	self.deleteElementFromArray(weapon, self._overHeatList)
 
-	if arg_34_0._current >= arg_34_0._GCD then
-		arg_34_0._current = arg_34_0._max
-		arg_34_0._reloadStartTime = nil
+	if self._current >= self._GCD then
+		self._current = self._max
+		self._reloadStartTime = nil
 	else
-		arg_34_0._max = arg_34_0._GCD - arg_34_0._current
+		self._max = self._GCD - self._current
 
-		arg_34_0:resetCurrent()
+		self:resetCurrent()
 	end
 
-	arg_34_0:Plus(arg_34_1)
+	self:Plus(weapon)
 end
 
-function BattlePlayerWeaponVO.DispatchBlink(arg_35_0, arg_35_1)
-	local var_35_0 = {
-		value = arg_35_1
+--- 分发按钮闪烁事件
+--- @param callback function 可选的回调
+function BattlePlayerWeaponVO.DispatchBlink(self, callback)
+	local blinkData = {
+		value = callback
 	}
-	local var_35_1 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_BUTTON_BLINK, var_35_0)
+	local blinkEvent = ys.Event.New(ys.Battle.BattleEvent.WEAPON_BUTTON_BLINK, blinkData)
 
-	arg_35_0:DispatchEvent(var_35_1)
+	self:DispatchEvent(blinkEvent)
 end
 
-function BattlePlayerWeaponVO.DispatchTotalChange(arg_36_0, arg_36_1)
-	local var_36_0 = ys.Event.New(ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, {
-		index = arg_36_1
+--- 分发武器总数变更事件
+--- @param index number 变更涉及的武器索引
+function BattlePlayerWeaponVO.DispatchTotalChange(self, index)
+	local totalChangeEvent = ys.Event.New(ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, {
+		index = index
 	})
 
-	arg_36_0:DispatchEvent(var_36_0)
+	self:DispatchEvent(totalChangeEvent)
 end
 
-function BattlePlayerWeaponVO.DispatchOverLoadChange(arg_37_0, arg_37_1, arg_37_2)
-	local var_37_0 = ys.Event.New(ys.Battle.BattleEvent.OVER_LOAD_CHANGE, {
-		preCast = arg_37_1,
-		postCast = arg_37_2
+--- 分发过载状态变更事件
+--- @param preCast number 发射前就绪数量
+--- @param postCast boolean 是否为发射后（post-cast）
+function BattlePlayerWeaponVO.DispatchOverLoadChange(self, preCast, postCast)
+	local overLoadChangeEvent = ys.Event.New(ys.Battle.BattleEvent.OVER_LOAD_CHANGE, {
+		preCast = preCast,
+		postCast = postCast
 	})
 
-	arg_37_0:DispatchEvent(var_37_0)
+	self:DispatchEvent(overLoadChangeEvent)
 end
 
-function BattlePlayerWeaponVO.DispatchCountChange(arg_38_0)
-	local var_38_0 = ys.Event.New(ys.Battle.BattleEvent.COUNT_CHANGE)
+--- 分发就绪数量变更事件
+function BattlePlayerWeaponVO.DispatchCountChange(self)
+	local countChangeEvent = ys.Event.New(ys.Battle.BattleEvent.COUNT_CHANGE)
 
-	arg_38_0:DispatchEvent(var_38_0)
+	self:DispatchEvent(countChangeEvent)
 end
 
-function BattlePlayerWeaponVO.DispatchInitSubIcon(arg_39_0)
-	local var_39_0 = ys.Event.New(ys.Battle.BattleEvent.INIT_SUB_ICON)
+--- 分发潜艇图标初始化事件
+function BattlePlayerWeaponVO.DispatchInitSubIcon(self)
+	local initSubIconEvent = ys.Event.New(ys.Battle.BattleEvent.INIT_SUB_ICON)
 
-	arg_39_0:DispatchEvent(var_39_0)
+	self:DispatchEvent(initSubIconEvent)
 end
 
-function BattlePlayerWeaponVO.StartJamming(arg_40_0)
-	arg_40_0._jammingStarTime = pg.TimeMgr.GetInstance():GetCombatTime()
+--- 开始干扰（如敌方干扰效果），记录干扰开始时间
+function BattlePlayerWeaponVO.StartJamming(self)
+	self._jammingStarTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-	for iter_40_0, iter_40_1 in ipairs(arg_40_0._chargingList) do
-		iter_40_1:StartJamming()
+	for _, weapon in ipairs(self._chargingList) do
+		weapon:StartJamming()
 	end
 end
 
-function BattlePlayerWeaponVO.JammingEliminate(arg_41_0)
-	for iter_41_0, iter_41_1 in ipairs(arg_41_0._chargingList) do
-		iter_41_1:JammingEliminate()
+--- 干扰消除，恢复正常的冷却计时
+function BattlePlayerWeaponVO.JammingEliminate(self)
+	for _, weapon in ipairs(self._chargingList) do
+		weapon:JammingEliminate()
 	end
 
-	if arg_41_0._reloadStartTime then
-		local var_41_0 = pg.TimeMgr.GetInstance():GetCombatTime()
+	if self._reloadStartTime then
+		local currentTime = pg.TimeMgr.GetInstance():GetCombatTime()
 
-		if #arg_41_0._readyList ~= 0 then
-			arg_41_0._max = arg_41_0._GCD
+		if #self._readyList ~= 0 then
+			self._max = self._GCD
 		else
-			arg_41_0._max = arg_41_0:GetNextTimeStamp() - var_41_0 + arg_41_0._current
+			self._max = self:GetNextTimeStamp() - currentTime + self._current
 		end
 
-		arg_41_0._reloadStartTime = arg_41_0._reloadStartTime + (var_41_0 - arg_41_0._jammingStarTime)
+		self._reloadStartTime = self._reloadStartTime + (currentTime - self._jammingStarTime)
 	end
 
-	arg_41_0._jammingStarTime = nil
+	self._jammingStarTime = nil
 end
 
-function BattlePlayerWeaponVO.Dispose(arg_42_0)
-	pg.TimeMgr.GetInstance():RemoveBattleTimer(arg_42_0._focusTimer)
+--- 销毁
+function BattlePlayerWeaponVO.Dispose(self)
+	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._focusTimer)
 
-	arg_42_0._focusTimer = nil
+	self._focusTimer = nil
 
-	ys.EventDispatcher.DetachEventDispatcher(arg_42_0)
+	ys.EventDispatcher.DetachEventDispatcher(self)
 end
 
-function BattlePlayerWeaponVO.readyToOverheat(arg_43_0, arg_43_1)
-	arg_43_0.deleteElementFromArray(arg_43_1, arg_43_0._readyList)
+--- 将就绪武器移入过热列表
+--- @param weapon BattleBaseWeaponUnit
+function BattlePlayerWeaponVO.readyToOverheat(self, weapon)
+	self.deleteElementFromArray(weapon, self._readyList)
 
-	arg_43_0._overHeatList[#arg_43_0._overHeatList + 1] = arg_43_1
-	arg_43_0._count = arg_43_0._count - 1
+	self._overHeatList[#self._overHeatList + 1] = weapon
+	self._count = self._count - 1
 
-	if arg_43_0._count < 0 then
-		arg_43_0._count = 0
+	if self._count < 0 then
+		self._count = 0
 	end
 
-	arg_43_0:DispatchCountChange()
+	self:DispatchCountChange()
 end
 
-function BattlePlayerWeaponVO.deleteElementFromArray(arg_44_0, arg_44_1)
-	local var_44_0
+--- 从数组中删除指定元素（不保留空洞，紧凑排列）
+--- @param element any 要删除的元素
+--- @param array table 目标数组
+--- @return number 被删除元素的原索引，-1表示未找到
+function BattlePlayerWeaponVO.deleteElementFromArray(self, element, array)
+	local elementIndex
 
-	for iter_44_0, iter_44_1 in ipairs(arg_44_1) do
-		if arg_44_0 == iter_44_1 then
-			var_44_0 = iter_44_0
+	for index, item in ipairs(array) do
+		if element == item then
+			elementIndex = index
 
 			break
 		end
 	end
 
-	if var_44_0 == nil then
+	if elementIndex == nil then
 		return -1
 	end
 
-	for iter_44_2 = var_44_0, #arg_44_1 do
-		if arg_44_1[iter_44_2 + 1] ~= nil then
-			arg_44_1[iter_44_2] = arg_44_1[iter_44_2 + 1]
+	for i = elementIndex, #array do
+		if array[i + 1] ~= nil then
+			array[i] = array[i + 1]
 		else
-			arg_44_1[iter_44_2] = nil
+			array[i] = nil
 		end
 	end
 
-	return var_44_0
+	return elementIndex
 end

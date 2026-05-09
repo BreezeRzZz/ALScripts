@@ -26,70 +26,82 @@ BattleAirFighterUnit.STRIKE_STATE_FREE = 5
 BattleAirFighterUnit.STRIKE_STATE_BACKWARD = 6
 BattleAirFighterUnit.STRIKE_STATE_RECYCLE = 7
 
-function BattleAirFighterUnit.Ctor(arg_1_0, arg_1_1)
-	BattleAirFighterUnit.super.Ctor(arg_1_0, arg_1_1)
+--- 构造函数：初始化方向、类型、Y轴抖动等
+--- @param uid number: 单位唯一ID
+function BattleAirFighterUnit.Ctor(self, uid)
+	BattleAirFighterUnit.super.Ctor(self, uid)
 
-	arg_1_0._dir = ys.Battle.BattleConst.UnitDir.LEFT
-	arg_1_0._type = ys.Battle.BattleConst.UnitType.AIRFIGHTER_UNIT
+	self._dir = ys.Battle.BattleConst.UnitDir.LEFT
+	self._type = ys.Battle.BattleConst.UnitType.AIRFIGHTER_UNIT
 
-	arg_1_0:changeState(BattleAirFighterUnit.STRIKE_STATE_FLY)
-	arg_1_0:calcYShakeMin()
-	arg_1_0:calcYShakeMax()
+	self:changeState(BattleAirFighterUnit.STRIKE_STATE_FLY)
+	self:calcYShakeMin()
+	self:calcYShakeMax()
 
-	arg_1_0._speedDir = Vector3(1, 0, 0)
-	arg_1_0._backwardWeaponID = {}
+	self._speedDir = Vector3(1, 0, 0)
+	self._backwardWeaponID = {}
 end
 
-function BattleAirFighterUnit.Update(arg_2_0, arg_2_1)
-	arg_2_0:UpdateSpeed()
-	arg_2_0:updateStrike()
+--- 每帧更新：更新速度和攻击阶段
+--- @param timeStamp number: 时间戳
+function BattleAirFighterUnit.Update(self, timeStamp)
+	self:UpdateSpeed()
+	self:updateStrike()
 end
 
-function BattleAirFighterUnit.UpdateWeapon(arg_3_0)
-	for iter_3_0, iter_3_1 in ipairs(arg_3_0:GetWeapon()) do
-		local var_3_0 = iter_3_1:GetWeaponId()
-		local var_3_1 = table.contains(arg_3_0._backwardWeaponID, var_3_0)
-		local var_3_2 = iter_3_1:GetCurrentState()
+--- 更新武器：检查是否有后向武器触发后退状态
+function BattleAirFighterUnit.UpdateWeapon(self)
+	for index, weapon in ipairs(self:GetWeapon()) do
+		local weaponID = weapon:GetWeaponId()
+		local isBackwardWeapon = table.contains(self._backwardWeaponID, weaponID)
+		local previousState = weapon:GetCurrentState()
 
-		iter_3_1:Update()
+		weapon:Update()
 
-		local var_3_3 = iter_3_1:GetCurrentState()
+		local currentState = weapon:GetCurrentState()
 
-		if var_3_1 and var_3_2 == iter_3_1.STATE_READY and (var_3_3 == iter_3_1.STATE_ATTACK or var_3_3 == iter_3_1.STATE_OVER_HEAT) then
-			arg_3_0:changeState(BattleAirFighterUnit.STRIKE_STATE_BACKWARD)
+		if isBackwardWeapon and previousState == weapon.STATE_READY and (currentState == weapon.STATE_ATTACK or currentState == weapon.STATE_OVER_HEAT) then
+			self:changeState(BattleAirFighterUnit.STRIKE_STATE_BACKWARD)
 		end
 	end
 end
 
-function BattleAirFighterUnit.CreateWeapon(arg_4_0)
-	local var_4_0 = {}
+--- 创建武器列表（包含回旋武器）
+--- @return table: 武器列表
+function BattleAirFighterUnit.CreateWeapon(self)
+	local weaponList = {}
 
-	if type(arg_4_0._weaponTemplateID) == "table" then
-		for iter_4_0, iter_4_1 in ipairs(arg_4_0._weaponTemplateID) do
-			var_4_0[iter_4_0] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(iter_4_1, arg_4_0, iter_4_0)
+	if type(self._weaponTemplateID) == "table" then
+		for index, weaponID in ipairs(self._weaponTemplateID) do
+			weaponList[index] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(weaponID, self, index)
 		end
 	else
-		var_4_0[1] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(arg_4_0._weaponTemplateID, arg_4_0, 1)
+		weaponList[1] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(self._weaponTemplateID, self, 1)
 	end
 
-	if arg_4_0._backwardWeaponID then
-		for iter_4_2, iter_4_3 in ipairs(arg_4_0._backwardWeaponID) do
-			var_4_0[iter_4_2] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(iter_4_3, arg_4_0, iter_4_2)
+	if self._backwardWeaponID then
+		for index, weaponID in ipairs(self._backwardWeaponID) do
+			weaponList[index] = ys.Battle.BattleDataFunction.CreateAirFighterWeaponUnit(weaponID, self, index)
 		end
 	end
 
-	return var_4_0
+	return weaponList
 end
 
-function BattleAirFighterUnit.SetWeaponTemplateID(arg_5_0, arg_5_1)
-	arg_5_0._weaponTemplateID = arg_5_1
+--- 设置武器模板ID
+--- @param weaponTemplateID table|number: 武器模板ID或ID列表
+function BattleAirFighterUnit.SetWeaponTemplateID(self, weaponTemplateID)
+	self._weaponTemplateID = weaponTemplateID
 end
 
-function BattleAirFighterUnit.SetBackwardWeaponID(arg_6_0, arg_6_1)
-	arg_6_0._backwardWeaponID = arg_6_1
+--- 设置回旋武器ID
+--- @param backwardWeaponID table: 回旋武器ID列表
+function BattleAirFighterUnit.SetBackwardWeaponID(self, backwardWeaponID)
+	self._backwardWeaponID = backwardWeaponID
 end
 
 -- 被BattleDataFunction.CreateAirFighterUnit调用
+--- @param tmpData table: 模板数据
 function BattleAirFighterUnit.SetTemplate(self, tmpData)
 	self:SetAttr(tmpData)
 	-- 注意这里调用了父类的SetTemplate(即BattleAircraftUnit.SetTemplate)
@@ -97,270 +109,314 @@ function BattleAirFighterUnit.SetTemplate(self, tmpData)
 end
 
 -- 被BattleAirFighterUnit.SetTemplate调用
+--- @param tmpData table: 模板数据
 function BattleAirFighterUnit.SetAttr(self, tmpData)
 	ys.Battle.BattleAttr.SetAirFighterAttr(self, tmpData)
 	self:SetIFF(-1)
 end
 
-function BattleAirFighterUnit.UpdateSpeed(arg_9_0)
-	arg_9_0._speed:Copy(arg_9_0._speedDir)
-	arg_9_0._speed:Mul(arg_9_0._velocity * arg_9_0:GetSpeedRatio())
+--- 更新速度：速度 = 方向 * 速率 * 速度倍率
+function BattleAirFighterUnit.UpdateSpeed(self)
+	self._speed:Copy(self._speedDir)
+	self._speed:Mul(self._velocity * self:GetSpeedRatio())
 end
 
-function BattleAirFighterUnit.Free(arg_10_0)
-	arg_10_0._undefeated = true
+--- 自由飞行结束（未击破但离场）
+function BattleAirFighterUnit.Free(self)
+	self._undefeated = true
 
-	arg_10_0:LiveCallBack()
+	self:LiveCallBack()
 
-	arg_10_0._aliveState = false
+	self._aliveState = false
 end
 
-function BattleAirFighterUnit.recycle(arg_11_0)
-	arg_11_0:LiveCallBack()
+--- 回收（返回母舰）
+function BattleAirFighterUnit.recycle(self)
+	self:LiveCallBack()
 
-	arg_11_0._aliveState = false
+	self._aliveState = false
 end
 
-function BattleAirFighterUnit.onDead(arg_12_0)
-	arg_12_0._currentState = arg_12_0.STATE_DESTORY
+--- 被击毁
+function BattleAirFighterUnit.onDead(self)
+	self._currentState = self.STATE_DESTORY
 
-	arg_12_0:DeadCallBack()
+	self:DeadCallBack()
 
-	arg_12_0._aliveState = false
+	self._aliveState = false
 end
 
-function BattleAirFighterUnit.GetPosition(arg_13_0)
-	return arg_13_0._viewPos
+--- 获取视觉位置
+--- @return Vector3: 视觉位置
+function BattleAirFighterUnit.GetPosition(self)
+	return self._viewPos
 end
 
-function BattleAirFighterUnit.SetFormationIndex(arg_14_0, arg_14_1)
-	arg_14_0._formationIndex = arg_14_1
-	arg_14_0._flyStateScale = 12 / (arg_14_1 + 3) + 1
+--- 设置编队索引（影响缩放和飞行间距）
+--- @param formationIndex number: 编队索引
+function BattleAirFighterUnit.SetFormationIndex(self, formationIndex)
+	self._formationIndex = formationIndex
+	self._flyStateScale = 12 / (formationIndex + 3) + 1
 
-	arg_14_0:DispatchStrikeStateChange()
+	self:DispatchStrikeStateChange()
 end
 
-function BattleAirFighterUnit.GetFormationIndex(arg_15_0)
-	return arg_15_0._formationIndex
+--- 获取编队索引
+--- @return number: 编队索引
+function BattleAirFighterUnit.GetFormationIndex(self)
+	return self._formationIndex
 end
 
-function BattleAirFighterUnit.SetFormationOffset(arg_16_0, arg_16_1)
-	arg_16_0._formationOffset = Vector3(arg_16_1.x, arg_16_1.y, arg_16_1.z)
-	arg_16_0._formationOffsetOppo = Vector3(arg_16_1.x * -1, arg_16_1.y, arg_16_1.z)
+--- 设置编队偏移量
+--- @param offset Vector3: 编队偏移
+function BattleAirFighterUnit.SetFormationOffset(self, offset)
+	self._formationOffset = Vector3(offset.x, offset.y, offset.z)
+	self._formationOffsetOppo = Vector3(offset.x * -1, offset.y, offset.z)
 end
 
-function BattleAirFighterUnit.SetDeadCallBack(arg_17_0, arg_17_1)
-	arg_17_0._deadCallBack = arg_17_1
+--- 设置死亡回调
+--- @param callback function: 死亡回调函数
+function BattleAirFighterUnit.SetDeadCallBack(self, callback)
+	self._deadCallBack = callback
 end
 
-function BattleAirFighterUnit.DeadCallBack(arg_18_0)
-	arg_18_0._deadCallBack()
+--- 执行死亡回调
+function BattleAirFighterUnit.DeadCallBack(self)
+	self._deadCallBack()
 end
 
-function BattleAirFighterUnit.SetLiveCallBack(arg_19_0, arg_19_1)
-	arg_19_0._liveCallBack = arg_19_1
+--- 设置存活回调（回收/离场时调用）
+--- @param callback function: 存活回调函数
+function BattleAirFighterUnit.SetLiveCallBack(self, callback)
+	self._liveCallBack = callback
 end
 
-function BattleAirFighterUnit.LiveCallBack(arg_20_0)
-	arg_20_0._liveCallBack()
+--- 执行存活回调
+function BattleAirFighterUnit.LiveCallBack(self)
+	self._liveCallBack()
 end
 
-function BattleAirFighterUnit.getYShake(arg_21_0)
-	local var_21_0 = arg_21_0._YShakeCurrent or 0
+--- 获取Y轴抖动偏移值
+--- @return number: Y轴抖动值
+function BattleAirFighterUnit.getYShake(self)
+	local yShakeCurrent = self._YShakeCurrent or 0
 
-	arg_21_0._YShakeDir = arg_21_0._YShakeDir or 1
+	self._YShakeDir = self._YShakeDir or 1
 
-	local var_21_1 = var_21_0 + (0.04 * math.random() + 0.01) * arg_21_0._YShakeDir
+	local newYShake = yShakeCurrent + (0.04 * math.random() + 0.01) * self._YShakeDir
 
-	if var_21_1 > arg_21_0._YShakeMax then
-		arg_21_0._YShakeDir = -1
+	if newYShake > self._YShakeMax then
+		self._YShakeDir = -1
 
-		arg_21_0:calcYShakeMin()
-	elseif var_21_1 < arg_21_0._YShakeMin then
-		arg_21_0._YShakeDir = 1
+		self:calcYShakeMin()
+	elseif newYShake < self._YShakeMin then
+		self._YShakeDir = 1
 
-		arg_21_0:calcYShakeMax()
+		self:calcYShakeMax()
 	end
 
-	arg_21_0._YShakeCurrent = var_21_1
+	self._YShakeCurrent = newYShake
 
-	return var_21_1
+	return newYShake
 end
 
-function BattleAirFighterUnit.calcYShakeMin(arg_22_0)
-	arg_22_0._YShakeMin = -0.5 - math.random()
+--- 计算Y轴抖动最小值
+function BattleAirFighterUnit.calcYShakeMin(self)
+	self._YShakeMin = -0.5 - math.random()
 end
 
-function BattleAirFighterUnit.calcYShakeMax(arg_23_0)
-	arg_23_0._YShakeMax = 0.5 + math.random()
+--- 计算Y轴抖动最大值
+function BattleAirFighterUnit.calcYShakeMax(self)
+	self._YShakeMax = 0.5 + math.random()
 end
 
-function BattleAirFighterUnit.DispatchStrikeStateChange(arg_24_0)
-	arg_24_0:DispatchEvent(ys.Event.New(BattleUnitEvent.AIR_STRIKE_STATE_CHANGE, {}))
+--- 派发攻击阶段变化事件
+function BattleAirFighterUnit.DispatchStrikeStateChange(self)
+	self:DispatchEvent(ys.Event.New(BattleUnitEvent.AIR_STRIKE_STATE_CHANGE, {}))
 end
 
-function BattleAirFighterUnit.GetStrikeState(arg_25_0)
-	return arg_25_0._strikeState
+--- 获取当前攻击阶段
+--- @return number: 攻击阶段
+function BattleAirFighterUnit.GetStrikeState(self)
+	return self._strikeState
 end
 
-function BattleAirFighterUnit.GetSize(arg_26_0)
-	return arg_26_0._scale
+--- 获取模型缩放
+--- @return number: 缩放值
+function BattleAirFighterUnit.GetSize(self)
+	return self._scale
 end
 
-function BattleAirFighterUnit.changeState(arg_27_0, arg_27_1)
-	if arg_27_0._strikeState == arg_27_1 then
+--- 切换攻击阶段状态机
+--- @param newState number: 新的攻击阶段
+function BattleAirFighterUnit.changeState(self, newState)
+	if self._strikeState == newState then
 		return
 	end
 
-	arg_27_0._strikeState = arg_27_1
+	self._strikeState = newState
 
-	if arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_FLY then
-		arg_27_0:changeToFlyState()
+	if newState == BattleAirFighterUnit.STRIKE_STATE_FLY then
+		self:changeToFlyState()
 
-		arg_27_0.updateStrike = BattleAirFighterUnit._updatePosFly
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_BACK then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updatePosBack
+		self.updateStrike = BattleAirFighterUnit._updatePosFly
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_BACK then
+		self.updateStrike = BattleAirFighterUnit._updatePosBack
 
-		arg_27_0:changeToBackState()
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_DOWN then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updatePosDown
+		self:changeToBackState()
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_DOWN then
+		self.updateStrike = BattleAirFighterUnit._updatePosDown
 
-		arg_27_0:changeToDownState()
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_ATTACK then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updatePosAttack
+		self:changeToDownState()
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_ATTACK then
+		self.updateStrike = BattleAirFighterUnit._updatePosAttack
 
-		arg_27_0:changeToAttackState()
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_UP then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updatePosUp
+		self:changeToAttackState()
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_UP then
+		self.updateStrike = BattleAirFighterUnit._updatePosUp
 
-		arg_27_0:changeToUpState()
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_BACKWARD then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updateBackward
+		self:changeToUpState()
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_BACKWARD then
+		self.updateStrike = BattleAirFighterUnit._updateBackward
 
-		arg_27_0:changeToBackwardState()
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_FREE then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updateFree
-	elseif arg_27_1 == BattleAirFighterUnit.STRIKE_STATE_RECYCLE then
-		arg_27_0.updateStrike = BattleAirFighterUnit._updateRecycle
+		self:changeToBackwardState()
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_FREE then
+		self.updateStrike = BattleAirFighterUnit._updateFree
+	elseif newState == BattleAirFighterUnit.STRIKE_STATE_RECYCLE then
+		self.updateStrike = BattleAirFighterUnit._updateRecycle
 	end
 
-	arg_27_0:DispatchStrikeStateChange()
+	self:DispatchStrikeStateChange()
 end
 
-function BattleAirFighterUnit.changeToFlyState(arg_28_0)
-	arg_28_0._pos = ys.Battle.BattleCameraUtil.GetInstance():GetS2WPoint(BattleAirFighterUnit.AIRFIGHTER_ENTER_POINT)
-	arg_28_0._viewPos = arg_28_0._pos
+--- 切换到飞行状态：设置入口位置并播放音效
+function BattleAirFighterUnit.changeToFlyState(self)
+	self._pos = ys.Battle.BattleCameraUtil.GetInstance():GetS2WPoint(BattleAirFighterUnit.AIRFIGHTER_ENTER_POINT)
+	self._viewPos = self._pos
 
 	ys.Battle.PlayBattleSFX("battle/plane")
 end
 
-function BattleAirFighterUnit._updatePosFly(arg_29_0)
-	arg_29_0._pos:Add(BattleAirFighterUnit.SPEED_FLY)
+--- 飞行阶段位置更新
+function BattleAirFighterUnit._updatePosFly(self)
+	self._pos:Add(BattleAirFighterUnit.SPEED_FLY)
 
-	arg_29_0._viewPos = Vector3(arg_29_0._formationOffset.x * arg_29_0._flyStateScale, (arg_29_0._formationOffset.z / 1.7 + arg_29_0:getYShake()) * arg_29_0._flyStateScale, 0):Add(arg_29_0._pos)
+	self._viewPos = Vector3(self._formationOffset.x * self._flyStateScale, (self._formationOffset.z / 1.7 + self:getYShake()) * self._flyStateScale, 0):Add(self._pos)
 
-	if arg_29_0._pos.x > BattleAirFighterUnit.BACK_X then
-		arg_29_0:changeState(BattleAirFighterUnit.STRIKE_STATE_BACK)
+	if self._pos.x > BattleAirFighterUnit.BACK_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_BACK)
 	end
 end
 
-function BattleAirFighterUnit.changeToBackState(arg_30_0)
-	local var_30_0
-	local var_30_1 = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetMotion()
+--- 切换到后退阶段：计算目标Z轴位置（跟随友方舰队）
+function BattleAirFighterUnit.changeToBackState(self)
+	local targetZ
+	local friendlyMotion = ys.Battle.BattleDataProxy.GetInstance():GetFleetByIFF(BattleConfig.FRIENDLY_CODE):GetMotion()
 
-	if var_30_1 then
-		var_30_0 = var_30_1:GetPos().z
+	if friendlyMotion then
+		targetZ = friendlyMotion:GetPos().z
 	else
-		var_30_0 = 45
+		targetZ = 45
 	end
 
-	arg_30_0._pos = Vector3(arg_30_0._pos.x, 15, var_30_0)
+	self._pos = Vector3(self._pos.x, 15, targetZ)
 end
 
-function BattleAirFighterUnit._updatePosBack(arg_31_0)
-	arg_31_0._pos:Sub(arg_31_0._speed)
-	arg_31_0._viewPos:Copy(arg_31_0._pos)
-	arg_31_0._viewPos:Sub(arg_31_0._formationOffset)
+--- 后退阶段位置更新
+function BattleAirFighterUnit._updatePosBack(self)
+	self._pos:Sub(self._speed)
+	self._viewPos:Copy(self._pos)
+	self._viewPos:Sub(self._formationOffset)
 
-	if arg_31_0._pos.x < BattleAirFighterUnit.DOWN_X then
-		arg_31_0:changeState(BattleAirFighterUnit.STRIKE_STATE_DOWN)
-	end
-end
-
-function BattleAirFighterUnit.changeToDownState(arg_32_0)
-	arg_32_0._ySpeed = 0.5
-
-	arg_32_0:SetVisitable()
-end
-
-function BattleAirFighterUnit._updatePosDown(arg_33_0)
-	arg_33_0._pos:Sub(arg_33_0._speed)
-
-	arg_33_0._pos.y = math.max(BattleAirFighterUnit.HEIGHT, arg_33_0._pos.y - arg_33_0._ySpeed)
-	arg_33_0._viewPos = arg_33_0._pos + arg_33_0._formationOffsetOppo
-	arg_33_0._ySpeed = math.max(0.02, arg_33_0._ySpeed - 0.005)
-
-	if arg_33_0._pos.x < BattleAirFighterUnit.ATTACK_X then
-		arg_33_0:changeState(BattleAirFighterUnit.STRIKE_STATE_ATTACK)
+	if self._pos.x < BattleAirFighterUnit.DOWN_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_DOWN)
 	end
 end
 
-function BattleAirFighterUnit.changeToAttackState(arg_34_0)
+--- 切换到下降阶段：启用碰撞可见
+function BattleAirFighterUnit.changeToDownState(self)
+	self._ySpeed = 0.5
+
+	self:SetVisitable()
+end
+
+--- 下降阶段位置更新
+function BattleAirFighterUnit._updatePosDown(self)
+	self._pos:Sub(self._speed)
+
+	self._pos.y = math.max(BattleAirFighterUnit.HEIGHT, self._pos.y - self._ySpeed)
+	self._viewPos = self._pos + self._formationOffsetOppo
+	self._ySpeed = math.max(0.02, self._ySpeed - 0.005)
+
+	if self._pos.x < BattleAirFighterUnit.ATTACK_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_ATTACK)
+	end
+end
+
+--- 切换到攻击阶段：播放攻击音效
+function BattleAirFighterUnit.changeToAttackState(self)
 	ys.Battle.PlayBattleSFX("battle/air-atk")
 end
 
-function BattleAirFighterUnit._updatePosAttack(arg_35_0)
-	arg_35_0._pos:Sub(arg_35_0._speed)
+--- 攻击阶段位置更新：更新武器并添加Y轴抖动
+function BattleAirFighterUnit._updatePosAttack(self)
+	self._pos:Sub(self._speed)
 
-	arg_35_0._pos.y = math.max(BattleAirFighterUnit.HEIGHT, arg_35_0._pos.y - 0.04)
+	self._pos.y = math.max(BattleAirFighterUnit.HEIGHT, self._pos.y - 0.04)
 
-	local var_35_0 = arg_35_0._formationOffsetOppo
+	local offsetWithShake = self._formationOffsetOppo
 
-	var_35_0.y = arg_35_0:getYShake()
-	arg_35_0._viewPos = arg_35_0._pos + var_35_0
+	offsetWithShake.y = self:getYShake()
+	self._viewPos = self._pos + offsetWithShake
 
-	arg_35_0:UpdateWeapon()
+	self:UpdateWeapon()
 
-	if arg_35_0._pos.x < BattleAirFighterUnit.UP_X then
-		arg_35_0:changeState(BattleAirFighterUnit.STRIKE_STATE_UP)
+	if self._pos.x < BattleAirFighterUnit.UP_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_UP)
 	end
 end
 
-function BattleAirFighterUnit.changeToUpState(arg_36_0)
-	arg_36_0._ySpeed = 0.1
+--- 切换到上升阶段：设置初始上升速度
+function BattleAirFighterUnit.changeToUpState(self)
+	self._ySpeed = 0.1
 end
 
-function BattleAirFighterUnit._updatePosUp(arg_37_0)
-	arg_37_0._pos:Sub(arg_37_0._speed)
+--- 上升阶段位置更新
+function BattleAirFighterUnit._updatePosUp(self)
+	self._pos:Sub(self._speed)
 
-	arg_37_0._pos.y = arg_37_0._pos.y + arg_37_0._ySpeed
-	arg_37_0._ySpeed = math.min(0.7, arg_37_0._ySpeed + 0.02)
-	arg_37_0._viewPos = arg_37_0._pos + arg_37_0._formationOffsetOppo
+	self._pos.y = self._pos.y + self._ySpeed
+	self._ySpeed = math.min(0.7, self._ySpeed + 0.02)
+	self._viewPos = self._pos + self._formationOffsetOppo
 
-	if arg_37_0._pos.x < BattleAirFighterUnit.FREE_X then
-		arg_37_0:changeState(BattleAirFighterUnit.STRIKE_STATE_FREE)
+	if self._pos.x < BattleAirFighterUnit.FREE_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_FREE)
 	end
 end
 
-function BattleAirFighterUnit._updateFree(arg_38_0)
-	arg_38_0:Free()
+--- 自由飞行阶段：标记为未击破并离场
+function BattleAirFighterUnit._updateFree(self)
+	self:Free()
 end
 
-function BattleAirFighterUnit.changeToBackwardState(arg_39_0)
+--- 切换到后撤阶段
+function BattleAirFighterUnit.changeToBackwardState(self)
 	return
 end
 
-function BattleAirFighterUnit._updateBackward(arg_40_0)
-	arg_40_0._pos:Add(arg_40_0._speed)
+--- 后撤阶段位置更新：向回飞行
+function BattleAirFighterUnit._updateBackward(self)
+	self._pos:Add(self._speed)
 
-	arg_40_0._pos.y = math.max(BattleAirFighterUnit.HEIGHT, arg_40_0._pos.y - 0.04)
-	arg_40_0._viewPos = arg_40_0._pos + arg_40_0._formationOffsetOppo
+	self._pos.y = math.max(BattleAirFighterUnit.HEIGHT, self._pos.y - 0.04)
+	self._viewPos = self._pos + self._formationOffsetOppo
 
-	if arg_40_0._pos.x > BattleAirFighterUnit.DOWN_X then
-		arg_40_0:changeState(BattleAirFighterUnit.STRIKE_STATE_RECYCLE)
+	if self._pos.x > BattleAirFighterUnit.DOWN_X then
+		self:changeState(BattleAirFighterUnit.STRIKE_STATE_RECYCLE)
 	end
 end
 
-function BattleAirFighterUnit._updateRecycle(arg_41_0)
-	arg_41_0:recycle()
+--- 回收阶段：调用回收逻辑
+function BattleAirFighterUnit._updateRecycle(self)
+	self:recycle()
 end

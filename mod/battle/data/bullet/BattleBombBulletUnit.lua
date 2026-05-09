@@ -117,12 +117,12 @@ function BattleBombBulletUnit.SetExplodePosition(self, pos)
 	self._explodePos.y = BattleConfig.BombDetonateHeight
 end
 
-function BattleBombBulletUnit.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
-	BattleBombBulletUnit.super.SetShiftInfo(arg_9_0, arg_9_1, arg_9_2)
+function BattleBombBulletUnit.SetShiftInfo(self, offsetX, offsetZ)
+	BattleBombBulletUnit.super.SetShiftInfo(self, offsetX, offsetZ)
 
-	if arg_9_0:GetTemplate().extra_param.currentdrop then
-		arg_9_0._explodePos.x = arg_9_0._explodePos.x + arg_9_0._offsetX
-		arg_9_0._explodePos.z = arg_9_0._explodePos.z + arg_9_0._offsetZ
+	if self:GetTemplate().extra_param.currentdrop then
+		self._explodePos.x = self._explodePos.x + self._offsetX
+		self._explodePos.z = self._explodePos.z + self._offsetZ
 	end
 end
 

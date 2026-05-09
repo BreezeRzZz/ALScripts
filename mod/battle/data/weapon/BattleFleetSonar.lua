@@ -18,179 +18,207 @@ BattleFleetSonar.STATE_OVER_HEAT = "OVER_HEAT"
 BattleFleetSonar.STATE_READY = "READY"
 BattleFleetSonar.STATE_DETECTING = "DETECTING"
 
-function BattleFleetSonar.Ctor(arg_1_0, arg_1_1)
-	arg_1_0:init()
+--- 构造函数：初始化并关联舰队VO
+--- @param fleetVO BattleFleetVO: 所属舰队
+function BattleFleetSonar.Ctor(self, fleetVO)
+	self:init()
 
-	arg_1_0._fleetVO = arg_1_1
+	self._fleetVO = fleetVO
 end
 
-function BattleFleetSonar.Dispose(arg_2_0)
-	arg_2_0._detectedList = nil
-	arg_2_0._crewUnitList = nil
-	arg_2_0._host = nil
+--- 清理
+function BattleFleetSonar.Dispose(self)
+	self._detectedList = nil
+	self._crewUnitList = nil
+	self._host = nil
 end
 
-function BattleFleetSonar.init(arg_3_0)
-	arg_3_0._crewUnitList = {}
-	arg_3_0._detectedList = {}
+--- 初始化内部数据
+function BattleFleetSonar.init(self)
+	self._crewUnitList = {}
+	self._detectedList = {}
 end
 
-function BattleFleetSonar.AppendCrewUnit(arg_4_0, arg_4_1)
-	arg_4_0._crewUnitList[arg_4_1:GetUniqueID()] = arg_4_1
+--- 添加声呐操作员单位
+--- @param crewUnit BattleUnit: 操作员单位
+function BattleFleetSonar.AppendCrewUnit(self, crewUnit)
+	self._crewUnitList[crewUnit:GetUniqueID()] = crewUnit
 
-	arg_4_0:flush()
+	self:flush()
 
-	arg_4_0._currentState = BattleFleetSonar.STATE_READY
+	self._currentState = BattleFleetSonar.STATE_READY
 end
 
-function BattleFleetSonar.RemoveCrewUnit(arg_5_0, arg_5_1)
-	local var_5_0 = arg_5_1:GetUniqueID()
+--- 移除声呐操作员单位
+--- @param crewUnit BattleUnit: 操作员单位
+function BattleFleetSonar.RemoveCrewUnit(self, crewUnit)
+	local unitID = crewUnit:GetUniqueID()
 
-	if arg_5_0._crewUnitList[var_5_0] then
-		arg_5_0._crewUnitList[var_5_0] = nil
+	if self._crewUnitList[unitID] then
+		self._crewUnitList[unitID] = nil
 
-		arg_5_0:flush()
+		self:flush()
 	end
 end
 
-function BattleFleetSonar.SwitchHost(arg_6_0, arg_6_1)
-	arg_6_0._host = arg_6_1
+--- 切换声呐宿主
+--- @param host BattleUnit: 新宿主
+function BattleFleetSonar.SwitchHost(self, host)
+	self._host = host
 end
 
-function BattleFleetSonar.GetRange(arg_7_0)
-	return arg_7_0._range
+--- 获取声呐范围
+--- @return number: 声呐范围
+function BattleFleetSonar.GetRange(self)
+	return self._range
 end
 
-function BattleFleetSonar.flush(arg_8_0)
-	arg_8_0._range, arg_8_0._interval, arg_8_0._duration = 0, 0, 0
+--- 刷新声呐参数：根据操作员属性计算范围、间隔、持续时间
+function BattleFleetSonar.flush(self)
+	self._range, self._interval, self._duration = 0, 0, 0
 
-	local var_8_0 = 0
-	local var_8_1 = 0
-	local var_8_2 = 0
-	local var_8_3 = 0
+	local operatorCount = 0
+	local maxRange = 0
+	local totalInterval = 0
+	local maxDuration = 0
 
-	for iter_8_0, iter_8_1 in pairs(arg_8_0._crewUnitList) do
-		local var_8_4 = iter_8_1:GetAttrByName("sonarRange")
+	for _, operatorUnit in pairs(self._crewUnitList) do
+		local sonarRange = operatorUnit:GetAttrByName("sonarRange")
 
-		if var_8_4 > 0 then
-			var_8_0 = var_8_0 + 1
+		if sonarRange > 0 then
+			operatorCount = operatorCount + 1
 
-			local var_8_5 = iter_8_1:GetAttrByName("sonarInterval")
-			local var_8_6 = iter_8_1:GetAttrByName("sonarDuration")
+			local sonarInterval = operatorUnit:GetAttrByName("sonarInterval")
+			local sonarDuration = operatorUnit:GetAttrByName("sonarDuration")
 
-			var_8_1 = math.max(var_8_1, var_8_4)
-			var_8_2 = var_8_5 + var_8_2
-			var_8_3 = math.max(var_8_3, var_8_6)
+			maxRange = math.max(maxRange, sonarRange)
+			totalInterval = sonarInterval + totalInterval
+			maxDuration = math.max(maxDuration, sonarDuration)
 		end
 	end
 
-	if var_8_0 > 0 then
-		arg_8_0._range = var_8_1
-		arg_8_0._interval = var_8_2 / var_8_0 * (1 - (var_8_0 - 1) * BattleConfig.SONAR_INTERVAL_K)
-		arg_8_0._duration = var_8_3 * (1 + (var_8_0 - 1) * BattleConfig.SONAR_DURATION_K)
+	if operatorCount > 0 then
+		self._range = maxRange
+		self._interval = totalInterval / operatorCount * (1 - (operatorCount - 1) * BattleConfig.SONAR_INTERVAL_K)
+		self._duration = maxDuration * (1 + (operatorCount - 1) * BattleConfig.SONAR_DURATION_K)
 	else
-		arg_8_0:Undetect()
+		self:Undetect()
 
-		arg_8_0._currentState = BattleFleetSonar.STATE_DISABLE
+		self._currentState = BattleFleetSonar.STATE_DISABLE
 	end
 end
 
-function BattleFleetSonar.Update(arg_9_0, arg_9_1)
-	if arg_9_0._currentState == BattleFleetSonar.STATE_DISABLE then
+--- 每帧更新：根据状态驱动声呐扫描周期
+--- @param timeStamp number: 当前时间戳
+function BattleFleetSonar.Update(self, timeStamp)
+	if self._currentState == BattleFleetSonar.STATE_DISABLE then
 		-- block empty
-	elseif arg_9_0._currentState == BattleFleetSonar.STATE_READY then
-		arg_9_0:Detect()
-	elseif arg_9_0._currentState == BattleFleetSonar.STATE_OVER_HEAT then
-		if arg_9_1 > arg_9_0._interval + arg_9_0._overheatStartTime then
-			arg_9_0:Ready()
+	elseif self._currentState == BattleFleetSonar.STATE_READY then
+		self:Detect()
+	elseif self._currentState == BattleFleetSonar.STATE_OVER_HEAT then
+		if timeStamp > self._interval + self._overheatStartTime then
+			self:Ready()
 		end
-	elseif arg_9_0._currentState == BattleFleetSonar.STATE_DETECTING then
-		if arg_9_1 > arg_9_0._snoarStartTime + arg_9_0._duration then
-			arg_9_0:Overheat()
+	elseif self._currentState == BattleFleetSonar.STATE_DETECTING then
+		if timeStamp > self._snoarStartTime + self._duration then
+			self:Overheat()
 		else
-			arg_9_0:updateDetectedList()
+			self:updateDetectedList()
 		end
 	end
 end
 
-function BattleFleetSonar.Detect(arg_10_0)
-	arg_10_0._snoarStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
-	arg_10_0._currentState = BattleFleetSonar.STATE_DETECTING
+--- 开始声呐探测：筛选目标并标记为已探测
+function BattleFleetSonar.Detect(self)
+	self._snoarStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._currentState = BattleFleetSonar.STATE_DETECTING
 
-	local var_10_0 = arg_10_0:FilterTarget()
+	local detectedTargets = self:FilterTarget()
 
-	for iter_10_0, iter_10_1 in ipairs(var_10_0) do
-		iter_10_1:Detected(10)
+	for _, target in ipairs(detectedTargets) do
+		target:Detected(10)
 	end
 
-	arg_10_0._detectedList = var_10_0
+	self._detectedList = detectedTargets
 
-	arg_10_0._fleetVO:DispatchSonarScan()
+	self._fleetVO:DispatchSonarScan()
 end
 
-function BattleFleetSonar.Undetect(arg_11_0)
-	arg_11_0._snoarStartTime = nil
-	arg_11_0._currentState = BattleFleetSonar.STATE_OVER_HEAT
+--- 取消探测：进入过热状态并取消所有已探测标记
+function BattleFleetSonar.Undetect(self)
+	self._snoarStartTime = nil
+	self._currentState = BattleFleetSonar.STATE_OVER_HEAT
 
-	local var_11_0 = arg_11_0._detectedList
+	local detectedList = self._detectedList
 
-	for iter_11_0, iter_11_1 in ipairs(var_11_0) do
-		if iter_11_1:IsAlive() then
-			iter_11_1:Undetected()
+	for _, target in ipairs(detectedList) do
+		if target:IsAlive() then
+			target:Undetected()
 		end
 	end
 
-	arg_11_0._detectedList = {}
+	self._detectedList = {}
 end
 
-function BattleFleetSonar.updateDetectedList(arg_12_0)
-	local var_12_0 = arg_12_0:FilterTarget()
-	local var_12_1 = #arg_12_0._detectedList
+--- 更新已探测列表：移除死亡或离开范围的单位
+function BattleFleetSonar.updateDetectedList(self)
+	local currentTargets = self:FilterTarget()
+	local idx = #self._detectedList
 
-	while var_12_1 > 0 do
-		local var_12_2 = arg_12_0._detectedList[var_12_1]
+	while idx > 0 do
+		local detectedUnit = self._detectedList[idx]
 
-		if not var_12_2:IsAlive() then
-			table.remove(arg_12_0._detectedList, var_12_1)
-		elseif not table.contains(var_12_0, var_12_2) then
-			var_12_2:Undetected()
-			table.remove(arg_12_0._detectedList, var_12_1)
+		if not detectedUnit:IsAlive() then
+			table.remove(self._detectedList, idx)
+		elseif not table.contains(currentTargets, detectedUnit) then
+			detectedUnit:Undetected()
+			table.remove(self._detectedList, idx)
 		end
 
-		var_12_1 = var_12_1 - 1
+		idx = idx - 1
 	end
 end
 
-function BattleFleetSonar.Overheat(arg_13_0)
-	arg_13_0:Undetect()
+--- 进入过热状态
+function BattleFleetSonar.Overheat(self)
+	self:Undetect()
 
-	arg_13_0._overheatStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
+	self._overheatStartTime = pg.TimeMgr.GetInstance():GetCombatTime()
 end
 
-function BattleFleetSonar.Ready(arg_14_0)
-	arg_14_0._overheatStartTime = nil
-	arg_14_0._currentState = BattleFleetSonar.STATE_READY
+--- 恢复到就绪状态
+function BattleFleetSonar.Ready(self)
+	self._overheatStartTime = nil
+	self._currentState = BattleFleetSonar.STATE_READY
 end
 
-function BattleFleetSonar.FilterTarget(arg_15_0)
-	local var_15_0 = BattleTargetChoise.LegalTarget(arg_15_0._host)
-	local var_15_1 = BattleTargetChoise.TargetDiveState(arg_15_0._host, {
+--- 筛选目标：合法目标 + 潜水状态 + 范围过滤
+--- @return table: 符合条件的目标列表
+function BattleFleetSonar.FilterTarget(self)
+	local legalTargets = BattleTargetChoise.LegalTarget(self._host)
+	local diveTargets = BattleTargetChoise.TargetDiveState(self._host, {
 		diveState = BattleConst.OXY_STATE.DIVE
-	}, var_15_0)
+	}, legalTargets)
 
-	return (arg_15_0:FilterRange(var_15_1))
+	return (self:FilterRange(diveTargets))
 end
 
-function BattleFleetSonar.FilterRange(arg_16_0, arg_16_1)
-	for iter_16_0 = #arg_16_1, 1, -1 do
-		if arg_16_0:isOutOfRange(arg_16_1[iter_16_0]) then
-			table.remove(arg_16_1, iter_16_0)
+--- 按范围过滤目标
+--- @param targetList table: 候选目标列表
+--- @return table: 在范围内的目标列表
+function BattleFleetSonar.FilterRange(self, targetList)
+	for i = #targetList, 1, -1 do
+		if self:isOutOfRange(targetList[i]) then
+			table.remove(targetList, i)
 		end
 	end
 
-	return arg_16_1
+	return targetList
 end
 
-function BattleFleetSonar.isOutOfRange(arg_17_0, arg_17_1)
-	return arg_17_0._host:GetDistance(arg_17_1) > arg_17_0._range
+--- 判断目标是否超出范围
+--- @param target BattleUnit: 目标
+--- @return boolean: 是否超出范围
+function BattleFleetSonar.isOutOfRange(self, target)
+	return self._host:GetDistance(target) > self._range
 end

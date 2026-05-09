@@ -231,12 +231,12 @@ end
 function BattleSpawnWave.reinforceTimer(self, time)
 	self:clearReinforceTimer()
 
-	local function var_14_0()
+	local function reinforceCallback()
 		self:doReinforce()
 		self:clearReinforceTimer()
 	end
 
-	self._reinforceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, time, var_14_0, true)
+	self._reinforceTimer = pg.TimeMgr.GetInstance():AddBattleTimer("", 1, time, reinforceCallback, true)
 end
 
 function BattleSpawnWave.clearReinforceTimer(self)

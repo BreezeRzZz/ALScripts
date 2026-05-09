@@ -76,33 +76,33 @@ function BattlePlayerUnit.GetShipName(self)
 	return self._shipName or self._tmpData.name
 end
 
-function BattlePlayerUnit.SetShipName(arg_11_0, arg_11_1)
-	arg_11_0._shipName = arg_11_1
+function BattlePlayerUnit.SetShipName(self, shipName)
+	self._shipName = shipName
 end
 
-function BattlePlayerUnit.SetTemplate(arg_12_0, arg_12_1, arg_12_2, arg_12_3)
-	BattlePlayerUnit.super.SetTemplate(arg_12_0, arg_12_1)
+function BattlePlayerUnit.SetTemplate(self, templateID, attr, level)
+	BattlePlayerUnit.super.SetTemplate(self, templateID)
 	-- ship_data_statistics
-	arg_12_0._tmpData = BattleDataFunction.GetPlayerShipTmpDataFromID(arg_12_0._tmpID)
+	self._tmpData = BattleDataFunction.GetPlayerShipTmpDataFromID(self._tmpID)
 
-	arg_12_0:configWeaponQueueParallel()
-	arg_12_0:overrideWeaponInfo()
-	arg_12_0:overrideSkin(arg_12_0._skinId, true)
-	arg_12_0:InitCldComponent()
+	self:configWeaponQueueParallel()
+	self:overrideWeaponInfo()
+	self:overrideSkin(self._skinId, true)
+	self:InitCldComponent()
 
-	arg_12_2.armorType = arg_12_0._tmpData.armor_type
-	arg_12_2.scale = arg_12_0._tmpData.scale
+	attr.armorType = self._tmpData.armor_type
+	attr.scale = self._tmpData.scale
 
-	arg_12_0:setAttrFromOutBattle(arg_12_2, arg_12_3)
-	BattleAttr.InitDOTAttr(arg_12_0._attr, arg_12_0._tmpData)
+	self:setAttrFromOutBattle(attr, level)
+	BattleAttr.InitDOTAttr(self._attr, self._tmpData)
 
-	arg_12_0._personality = BattleDataFunction.GetShipPersonality(2)
+	self._personality = BattleDataFunction.GetShipPersonality(2)
 
-	for iter_12_0, iter_12_1 in ipairs(arg_12_0._tmpData.tag_list) do
-		arg_12_0:AddLabelTag(iter_12_1)
+	for _, tag in ipairs(self._tmpData.tag_list) do
+		self:AddLabelTag(tag)
 	end
 
-	arg_12_0:setStandardLabelTag()
+	self:setStandardLabelTag()
 end
 -- TODO
 function BattlePlayerUnit.overrideSkin(self, skinID, needPainting)
@@ -124,345 +124,345 @@ function BattlePlayerUnit.overrideSkin(self, skinID, needPainting)
 	end)
 end
 
-function BattlePlayerUnit.overrideWeaponInfo(arg_15_0, arg_15_1, arg_15_2)
-	if arg_15_0._overrideBaseInfo then
-		arg_15_0._tmpData.base_list = arg_15_0._overrideBaseInfo
+function BattlePlayerUnit.overrideWeaponInfo(self, baseInfo, preloadInfo)
+	if self._overrideBaseInfo then
+		self._tmpData.base_list = self._overrideBaseInfo
 	end
 
-	if arg_15_0._overridePreloadInfo then
-		arg_15_0._tmpData.preload_count = arg_15_0._overridePreloadInfo
+	if self._overridePreloadInfo then
+		self._tmpData.preload_count = self._overridePreloadInfo
 	end
 end
 
-function BattlePlayerUnit.SetWeaponInfo(arg_16_0, arg_16_1, arg_16_2)
-	arg_16_0._overrideBaseInfo = arg_16_1
-	arg_16_0._overridePreloadInfo = arg_16_2
+function BattlePlayerUnit.SetWeaponInfo(self, baseInfo, preloadInfo)
+	self._overrideBaseInfo = baseInfo
+	self._overridePreloadInfo = preloadInfo
 end
 
-function BattlePlayerUnit.SetRarity(arg_17_0, arg_17_1)
-	arg_17_0._rarity = arg_17_1
+function BattlePlayerUnit.SetRarity(self, rarity)
+	self._rarity = rarity
 end
 
-function BattlePlayerUnit.SetIntimacy(arg_18_0, arg_18_1)
-	arg_18_0._intimacy = arg_18_1
+function BattlePlayerUnit.SetIntimacy(self, intimacy)
+	self._intimacy = intimacy
 end
 
-function BattlePlayerUnit.setWeapon(arg_19_0, arg_19_1)
-	local var_19_0 = arg_19_0._tmpData.default_equip_list
-	local var_19_1 = arg_19_0._tmpData.base_list
-	local var_19_2 = arg_19_0._proficiencyList
-	local var_19_3 = arg_19_0._tmpData.preload_count
+function BattlePlayerUnit.setWeapon(self, equipmentList)
+	local defaultEquipList = self._tmpData.default_equip_list
+	local baseList = self._tmpData.base_list
+	local proficiencyList = self._proficiencyList
+	local preloadCount = self._tmpData.preload_count
 
-	for iter_19_0, iter_19_1 in ipairs(arg_19_1) do
-		if iter_19_1 and iter_19_1.skin and iter_19_1.skin ~= 0 and Equipment.IsOrbitSkin(iter_19_1.skin) then
-			arg_19_0._orbitSkinIDList = arg_19_0._orbitSkinIDList or {}
+	for equipIndex, equipData in ipairs(equipmentList) do
+		if equipData and equipData.skin and equipData.skin ~= 0 and Equipment.IsOrbitSkin(equipData.skin) then
+			self._orbitSkinIDList = self._orbitSkinIDList or {}
 
-			table.insert(arg_19_0._orbitSkinIDList, iter_19_1.skin)
+			table.insert(self._orbitSkinIDList, equipData.skin)
 		end
 
-		if iter_19_0 <= Ship.WEAPON_COUNT then
-			local var_19_4 = var_19_2[iter_19_0]
-			local var_19_5 = var_19_3[iter_19_0]
+		if equipIndex <= Ship.WEAPON_COUNT then
+			local proficiency = proficiencyList[equipIndex]
+			local preloadCountSlot = preloadCount[equipIndex]
 
-			local function var_19_6(arg_20_0, arg_20_1, arg_20_2)
-				local var_20_0 = var_19_1[iter_19_0]
+			local function createWeaponFn(weaponID, label, skinID)
+				local baseCount = baseList[equipIndex]
 
-				for iter_20_0 = 1, var_20_0 do
-					local var_20_1 = arg_19_0:AddWeapon(arg_20_0, arg_20_1, arg_20_2, var_19_4, iter_19_0)
-					local var_20_2 = var_20_1:GetTemplateData().type
+				for mountIndex = 1, baseCount do
+					local weapon = self:AddWeapon(weaponID, label, skinID, proficiency, equipIndex)
+					local weaponType = weapon:GetTemplateData().type
 
-					if iter_20_0 <= var_19_5 and (var_20_2 == EquipmentType.POINT_HIT_AND_LOCK or var_20_2 == EquipmentType.MANUAL_MISSILE or var_20_2 == EquipmentType.MANUAL_METEOR or var_20_2 == EquipmentType.MANUAL_TORPEDO or var_20_2 == EquipmentType.DISPOSABLE_TORPEDO) then
-						var_20_1:SetModifyInitialCD()
+					if mountIndex <= preloadCountSlot and (weaponType == EquipmentType.POINT_HIT_AND_LOCK or weaponType == EquipmentType.MANUAL_MISSILE or weaponType == EquipmentType.MANUAL_METEOR or weaponType == EquipmentType.MANUAL_TORPEDO or weaponType == EquipmentType.DISPOSABLE_TORPEDO) then
+						weapon:SetModifyInitialCD()
 					end
 
-					if iter_19_1.equipment then
-						var_20_1:SetSrcEquipmentID(iter_19_1.equipment.id)
+					if equipData.equipment then
+						weapon:SetSrcEquipmentID(equipData.equipment.id)
 					end
 				end
 			end
 
-			if iter_19_1.equipment and #iter_19_1.equipment.weapon_id > 0 then
-				local var_19_7 = iter_19_1.equipment.weapon_id
+			if equipData.equipment and #equipData.equipment.weapon_id > 0 then
+				local weaponIDs = equipData.equipment.weapon_id
 
-				for iter_19_2, iter_19_3 in ipairs(var_19_7) do
-					local var_19_8 = BattleDataFunction.GetWeaponPropertyDataFromID(iter_19_3).type
-					local var_19_9 = BattleConfig.EQUIPMENT_ACTIVE_LIMITED_BY_TYPE[var_19_8]
+				for _, weaponIDItem in ipairs(weaponIDs) do
+					local weaponType = BattleDataFunction.GetWeaponPropertyDataFromID(weaponIDItem).type
+					local shipTypeLimit = BattleConfig.EQUIPMENT_ACTIVE_LIMITED_BY_TYPE[weaponType]
 
-					if (not var_19_9 or table.contains(var_19_9, arg_19_0._tmpData.type)) and iter_19_3 and iter_19_3 ~= -1 then
-						var_19_6(iter_19_3, iter_19_1.equipment.label, iter_19_1.skin)
+					if (not shipTypeLimit or table.contains(shipTypeLimit, self._tmpData.type)) and weaponIDItem and weaponIDItem ~= -1 then
+						createWeaponFn(weaponIDItem, equipData.equipment.label, equipData.skin)
 					end
 				end
 			else
-				local var_19_10 = var_19_0[iter_19_0]
-				local var_19_11 = BattleDataFunction.GetWeaponDataFromID(var_19_10)
+				local defaultWeaponID = defaultEquipList[equipIndex]
+				local weaponData = BattleDataFunction.GetWeaponDataFromID(defaultWeaponID)
 
-				var_19_6(var_19_10, var_19_11.label)
+				createWeaponFn(defaultWeaponID, weaponData.label)
 			end
 		end
 	end
 
-	local var_19_12 = #var_19_0
-	local var_19_13 = arg_19_0._tmpData.fix_equip_list
+	local defaultEquipCount = #defaultEquipList
+	local fixEquipList = self._tmpData.fix_equip_list
 
-	for iter_19_4, iter_19_5 in ipairs(var_19_13) do
-		if iter_19_5 and iter_19_5 ~= -1 then
-			local var_19_14 = var_19_2[iter_19_4 + var_19_12] or 1
+	for fixEquipIndex, fixEquipID in ipairs(fixEquipList) do
+		if fixEquipID and fixEquipID ~= -1 then
+			local fixProficiency = proficiencyList[fixEquipIndex + defaultEquipCount] or 1
 
-			arg_19_0:AddWeapon(iter_19_5, nil, nil, var_19_14, iter_19_4 + var_19_12):SetFixedFlag()
+			self:AddWeapon(fixEquipID, nil, nil, fixProficiency, fixEquipIndex + defaultEquipCount):SetFixedFlag()
 		end
 	end
 
-	if arg_19_0:CanDoAntiSub() then
-		local var_19_15 = {}
+	if self:CanDoAntiSub() then
+		local antiSubWeapons = {}
 
-		for iter_19_6 = Ship.WEAPON_COUNT + 1, #arg_19_1 do
-			local var_19_16 = arg_19_1[iter_19_6]
+		for slotIndex = Ship.WEAPON_COUNT + 1, #equipmentList do
+			local antiSubEquip = equipmentList[slotIndex]
 
-			if var_19_16 and var_19_16.equipment and #var_19_16.equipment.weapon_id > 0 then
-				var_19_15[#var_19_15 + 1] = var_19_16.equipment.weapon_id[1]
+			if antiSubEquip and antiSubEquip.equipment and #antiSubEquip.equipment.weapon_id > 0 then
+				antiSubWeapons[#antiSubWeapons + 1] = antiSubEquip.equipment.weapon_id[1]
 			end
 		end
 
-		for iter_19_7, iter_19_8 in ipairs(arg_19_0._tmpData.depth_charge_list) do
-			var_19_15[#var_19_15 + 1] = iter_19_8
+		for _, depthChargeID in ipairs(self._tmpData.depth_charge_list) do
+			antiSubWeapons[#antiSubWeapons + 1] = depthChargeID
 		end
 
-		local var_19_17 = 20
-		local var_19_18 = 1
+		local antiSubWeaponCount = 20
+		local antiSubIndex = 1
 
-		for iter_19_9, iter_19_10 in ipairs(var_19_15) do
-			local var_19_19 = BattleDataFunction.CreateWeaponUnit(iter_19_10, arg_19_0, var_19_18, var_19_17)
+		for _, weaponIDItem in ipairs(antiSubWeapons) do
+			local weapon = BattleDataFunction.CreateWeaponUnit(weaponIDItem, self, antiSubIndex, antiSubWeaponCount)
 
-			arg_19_0:AddAutoWeapon(var_19_19)
+			self:AddAutoWeapon(weapon)
 		end
 	end
 end
 
-function BattlePlayerUnit.SetPriorityWeaponSkin(arg_21_0, arg_21_1)
-	if not arg_21_0._priorityWeaponSkinID then
-		arg_21_0._priorityWeaponSkinID = arg_21_1
+function BattlePlayerUnit.SetPriorityWeaponSkin(self, skinID)
+	if not self._priorityWeaponSkinID then
+		self._priorityWeaponSkinID = skinID
 	end
 end
 
-function BattlePlayerUnit.GetPriorityWeaponSkin(arg_22_0)
-	return arg_22_0._priorityWeaponSkinID
+function BattlePlayerUnit.GetPriorityWeaponSkin(self)
+	return self._priorityWeaponSkinID
 end
 -- TODO
-function BattlePlayerUnit.AddWeapon(arg_23_0, arg_23_1, arg_23_2, arg_23_3, arg_23_4, arg_23_5, arg_23_6)
-	local var_23_0 = BattleDataFunction.CreateWeaponUnit(arg_23_1, arg_23_0, arg_23_4, arg_23_5)
+function BattlePlayerUnit.AddWeapon(self, weaponID, label, skinID, proficiency, equipmentIndex, param6)
+	local weapon = BattleDataFunction.CreateWeaponUnit(weaponID, self, proficiency, equipmentIndex)
 
-	arg_23_0._totalWeapon[#arg_23_0._totalWeapon + 1] = var_23_0
+	self._totalWeapon[#self._totalWeapon + 1] = weapon
 
-	if arg_23_2 then
-		var_23_0:SetEquipmentLabel(arg_23_2)
+	if label then
+		weapon:SetEquipmentLabel(label)
 	end
 
-	local var_23_1 = var_23_0:GetTemplateData().type
+	local weaponType = weapon:GetTemplateData().type
 
-	if var_23_1 == EquipmentType.POINT_HIT_AND_LOCK or var_23_1 == EquipmentType.MANUAL_METEOR or var_23_1 == EquipmentType.MANUAL_MISSILE or var_23_1 == EquipmentType.POINT_AIR_STRIKE then
-		arg_23_0._chargeList[#arg_23_0._chargeList + 1] = var_23_0
+	if weaponType == EquipmentType.POINT_HIT_AND_LOCK or weaponType == EquipmentType.MANUAL_METEOR or weaponType == EquipmentType.MANUAL_MISSILE or weaponType == EquipmentType.POINT_AIR_STRIKE then
+		self._chargeList[#self._chargeList + 1] = weapon
 
-		arg_23_0._weaponQueue:AppendChargeWeapon(var_23_0)
-	elseif var_23_1 == EquipmentType.MANUAL_TORPEDO or var_23_1 == EquipmentType.DISPOSABLE_TORPEDO or var_23_1 == EquipmentType.MANUAL_AAMISSILE then
-		arg_23_0._manualTorpedoList[#arg_23_0._manualTorpedoList + 1] = var_23_0
+		self._weaponQueue:AppendChargeWeapon(weapon)
+	elseif weaponType == EquipmentType.MANUAL_TORPEDO or weaponType == EquipmentType.DISPOSABLE_TORPEDO or weaponType == EquipmentType.MANUAL_AAMISSILE then
+		self._manualTorpedoList[#self._manualTorpedoList + 1] = weapon
 
-		arg_23_0._weaponQueue:AppendManualTorpedo(var_23_0)
-	elseif var_23_1 == EquipmentType.STRIKE_AIRCRAFT then
+		self._weaponQueue:AppendManualTorpedo(weapon)
+	elseif weaponType == EquipmentType.STRIKE_AIRCRAFT then
 		-- block empty
-	elseif var_23_1 == EquipmentType.FLEET_ANTI_AIR then
-		arg_23_0:AddFleetAntiAirWeapon(var_23_0)
-	elseif var_23_1 == EquipmentType.FLEET_RANGE_ANTI_AIR then
-		arg_23_0:AddFleetRangeAntiAirWeapon(var_23_0)
+	elseif weaponType == EquipmentType.FLEET_ANTI_AIR then
+		self:AddFleetAntiAirWeapon(weapon)
+	elseif weaponType == EquipmentType.FLEET_RANGE_ANTI_AIR then
+		self:AddFleetRangeAntiAirWeapon(weapon)
 	else
-		arg_23_0:AddAutoWeapon(var_23_0)
+		self:AddAutoWeapon(weapon)
 	end
 
-	if var_23_1 == EquipmentType.STRIKE_AIRCRAFT then
-		arg_23_0._hiveList[#arg_23_0._hiveList + 1] = var_23_0
+	if weaponType == EquipmentType.STRIKE_AIRCRAFT then
+		self._hiveList[#self._hiveList + 1] = weapon
 	end
 
-	if var_23_1 == EquipmentType.ANTI_AIR then
-		arg_23_0._AAList[#arg_23_0._AAList + 1] = var_23_0
+	if weaponType == EquipmentType.ANTI_AIR then
+		self._AAList[#self._AAList + 1] = weapon
 	end
 
-	if arg_23_3 and arg_23_3 ~= 0 then
-		var_23_0:SetSkinData(arg_23_3)
-		arg_23_0:SetPriorityWeaponSkin(arg_23_3)
+	if skinID and skinID ~= 0 then
+		weapon:SetSkinData(skinID)
+		self:SetPriorityWeaponSkin(skinID)
 	end
 
-	return var_23_0
+	return weapon
 end
 
 -- BattleBuffShiftWeapon.removeWeapon调用
-function BattlePlayerUnit.RemoveWeapon(arg_24_0, arg_24_1)
-	local var_24_0 = BattleDataFunction.GetWeaponPropertyDataFromID(arg_24_1).type
-	local var_24_1
+function BattlePlayerUnit.RemoveWeapon(self, weaponID)
+	local weaponType = BattleDataFunction.GetWeaponPropertyDataFromID(weaponID).type
+	local removedWeapon
 
-	if var_24_0 == EquipmentType.STRIKE_AIRCRAFT then
-		for iter_24_0, iter_24_1 in ipairs(arg_24_0._hiveList) do
-			if iter_24_1:GetWeaponId() == arg_24_1 then
-				var_24_1 = iter_24_1
+	if weaponType == EquipmentType.STRIKE_AIRCRAFT then
+		for _, hiveWeapon in ipairs(self._hiveList) do
+			if hiveWeapon:GetWeaponId() == weaponID then
+				removedWeapon = hiveWeapon
 
-				table.remove(arg_24_0._hiveList, iter_24_0)
+				table.remove(self._hiveList, _)
 
 				break
 			end
 		end
-	elseif var_24_0 == EquipmentType.POINT_HIT_AND_LOCK or var_24_0 == EquipmentType.MANUAL_METEOR or var_24_0 == EquipmentType.MANUAL_MISSILE then
+	elseif weaponType == EquipmentType.POINT_HIT_AND_LOCK or weaponType == EquipmentType.MANUAL_METEOR or weaponType == EquipmentType.MANUAL_MISSILE then
 		-- block empty
-	elseif var_24_0 == EquipmentType.MANUAL_TORPEDO then
-		for iter_24_2, iter_24_3 in ipairs(arg_24_0._manualTorpedoList) do
-			if iter_24_3:GetWeaponId() == arg_24_1 then
-				var_24_1 = iter_24_3
+	elseif weaponType == EquipmentType.MANUAL_TORPEDO then
+		for _, torpedoWeapon in ipairs(self._manualTorpedoList) do
+			if torpedoWeapon:GetWeaponId() == weaponID then
+				removedWeapon = torpedoWeapon
 
-				table.remove(arg_24_0._manualTorpedoList, iter_24_2)
-				arg_24_0._weaponQueue:RemoveManualTorpedo(iter_24_3)
+				table.remove(self._manualTorpedoList, _)
+				self._weaponQueue:RemoveManualTorpedo(torpedoWeapon)
 
 				break
 			end
 		end
-	elseif var_24_0 == EquipmentType.FLEET_ANTI_AIR then
-		for iter_24_4, iter_24_5 in ipairs(arg_24_0._fleetAAList) do
-			if iter_24_5:GetWeaponId() == arg_24_1 then
-				arg_24_0:RemoveFleetAntiAirWeapon(iter_24_5)
+	elseif weaponType == EquipmentType.FLEET_ANTI_AIR then
+		for _, faaWeapon in ipairs(self._fleetAAList) do
+			if faaWeapon:GetWeaponId() == weaponID then
+				self:RemoveFleetAntiAirWeapon(faaWeapon)
 
 				break
 			end
 		end
 	else
-		for iter_24_6, iter_24_7 in ipairs(arg_24_0._autoWeaponList) do
-			if iter_24_7:GetWeaponId() == arg_24_1 then
-				var_24_1 = iter_24_7
+		for _, autoWeapon in ipairs(self._autoWeaponList) do
+			if autoWeapon:GetWeaponId() == weaponID then
+				removedWeapon = autoWeapon
 
-				var_24_1:Clear()
-				arg_24_0:RemoveAutoWeapon(var_24_1)
-
-				break
-			end
-		end
-	end
-
-	if var_24_1 then
-		for iter_24_8, iter_24_9 in ipairs(arg_24_0._totalWeapon) do
-			if iter_24_9 == var_24_1 then
-				table.remove(arg_24_0._totalWeapon, iter_24_8)
+				removedWeapon:Clear()
+				self:RemoveAutoWeapon(removedWeapon)
 
 				break
 			end
 		end
 	end
 
-	return var_24_1
+	if removedWeapon then
+		for _, totalWeapon in ipairs(self._totalWeapon) do
+			if totalWeapon == removedWeapon then
+				table.remove(self._totalWeapon, _)
+
+				break
+			end
+		end
+	end
+
+	return removedWeapon
 end
 
-function BattlePlayerUnit.RemoveWeaponByLabel(arg_25_0, arg_25_1)
-	local var_25_0
+function BattlePlayerUnit.RemoveWeaponByLabel(self, labels)
+	local removedWeapon
 
-	for iter_25_0, iter_25_1 in ipairs(arg_25_0._totalWeapon) do
-		local var_25_1 = true
+	for _, weapon in ipairs(self._totalWeapon) do
+		local allMatch = true
 
-		for iter_25_2, iter_25_3 in ipairs(arg_25_1) do
-			local var_25_2 = iter_25_1:GetEquipmentLabel()
+		for _, labelItem in ipairs(labels) do
+			local equipmentLabel = weapon:GetEquipmentLabel()
 
-			var_25_1 = var_25_1 and table.contains(var_25_2, iter_25_3)
+			allMatch = allMatch and table.contains(equipmentLabel, labelItem)
 		end
 
-		if var_25_1 then
-			var_25_0 = iter_25_1
+		if allMatch then
+			removedWeapon = weapon
 
-			table.remove(arg_25_0._totalWeapon, iter_25_0)
+			table.remove(self._totalWeapon, _)
 		end
 	end
 
-	if not var_25_0 then
+	if not removedWeapon then
 		return
 	end
 
-	local var_25_3 = var_25_0:GetType()
+	local weaponType = removedWeapon:GetType()
 
-	if var_25_3 == EquipmentType.STRIKE_AIRCRAFT then
-		for iter_25_4, iter_25_5 in ipairs(arg_25_0._hiveList) do
-			if var_25_0 == iter_25_5 then
-				table.remove(arg_25_0._hiveList, iter_25_4)
+	if weaponType == EquipmentType.STRIKE_AIRCRAFT then
+		for _, hiveWeapon in ipairs(self._hiveList) do
+			if removedWeapon == hiveWeapon then
+				table.remove(self._hiveList, _)
 
 				break
 			end
 		end
-	elseif var_25_3 == EquipmentType.POINT_HIT_AND_LOCK or var_25_3 == EquipmentType.MANUAL_METEOR or var_25_3 == EquipmentType.MANUAL_MISSILE then
+	elseif weaponType == EquipmentType.POINT_HIT_AND_LOCK or weaponType == EquipmentType.MANUAL_METEOR or weaponType == EquipmentType.MANUAL_MISSILE then
 		-- block empty
-	elseif var_25_3 == EquipmentType.MANUAL_TORPEDO then
-		for iter_25_6, iter_25_7 in ipairs(arg_25_0._manualTorpedoList) do
-			if var_25_0 == iter_25_7 then
-				table.remove(arg_25_0._manualTorpedoList, iter_25_6)
-				arg_25_0._weaponQueue:RemoveManualTorpedo(iter_25_7)
+	elseif weaponType == EquipmentType.MANUAL_TORPEDO then
+		for _, torpedoWeapon in ipairs(self._manualTorpedoList) do
+			if removedWeapon == torpedoWeapon then
+				table.remove(self._manualTorpedoList, _)
+				self._weaponQueue:RemoveManualTorpedo(torpedoWeapon)
 
 				break
 			end
 		end
-	elseif var_25_3 == EquipmentType.FLEET_ANTI_AIR then
-		for iter_25_8, iter_25_9 in ipairs(arg_25_0._fleetAAList) do
-			if var_25_0 == iter_25_9 then
-				arg_25_0:RemoveFleetAntiAirWeapon(iter_25_9)
+	elseif weaponType == EquipmentType.FLEET_ANTI_AIR then
+		for _, faaWeapon in ipairs(self._fleetAAList) do
+			if removedWeapon == faaWeapon then
+				self:RemoveFleetAntiAirWeapon(faaWeapon)
 
 				break
 			end
 		end
-	elseif var_25_3 == EquipmentType.INTERCEPT_AIRCRAFT then
-		for iter_25_10, iter_25_11 in ipairs(arg_25_0._autoWeaponList) do
-			if var_25_0 == iter_25_11 then
-				arg_25_0:RemoveAutoWeapon(var_25_0)
+	elseif weaponType == EquipmentType.INTERCEPT_AIRCRAFT then
+		for _, autoWeapon in ipairs(self._autoWeaponList) do
+			if removedWeapon == autoWeapon then
+				self:RemoveAutoWeapon(removedWeapon)
 
 				break
 			end
 		end
 	else
-		for iter_25_12, iter_25_13 in ipairs(arg_25_0._autoWeaponList) do
-			if var_25_0 == iter_25_13 then
-				arg_25_0:RemoveAutoWeapon(var_25_0)
+		for _, autoWeapon in ipairs(self._autoWeaponList) do
+			if removedWeapon == autoWeapon then
+				self:RemoveAutoWeapon(removedWeapon)
 
 				break
 			end
 		end
 	end
 
-	return var_25_0
+	return removedWeapon
 end
 
-function BattlePlayerUnit.AddFleetAntiAirWeapon(arg_26_0, arg_26_1)
-	arg_26_0._fleetAAList[#arg_26_0._fleetAAList + 1] = arg_26_1
+function BattlePlayerUnit.AddFleetAntiAirWeapon(self, weapon)
+	self._fleetAAList[#self._fleetAAList + 1] = weapon
 
-	if arg_26_0._fleet and arg_26_0._fleet:GetFleetAntiAirWeapon() then
-		arg_26_0._fleet:GetFleetAntiAirWeapon():FlushCrewUnit(arg_26_0)
+	if self._fleet and self._fleet:GetFleetAntiAirWeapon() then
+		self._fleet:GetFleetAntiAirWeapon():FlushCrewUnit(self)
 	end
 end
 
-function BattlePlayerUnit.RemoveFleetAntiAirWeapon(arg_27_0, arg_27_1)
-	for iter_27_0, iter_27_1 in ipairs(arg_27_0._fleetAAList) do
-		if iter_27_1 == arg_27_1 then
-			table.remove(arg_27_0._fleetAAList, iter_27_0)
+function BattlePlayerUnit.RemoveFleetAntiAirWeapon(self, weapon)
+	for index, faaWeapon in ipairs(self._fleetAAList) do
+		if faaWeapon == weapon then
+			table.remove(self._fleetAAList, index)
 
 			return
 		end
 	end
 
-	arg_27_0._fleet:GetFleetAntiAirWeapon():FlushCrewUnit(arg_27_0)
+	self._fleet:GetFleetAntiAirWeapon():FlushCrewUnit(self)
 end
 
-function BattlePlayerUnit.AddFleetRangeAntiAirWeapon(arg_28_0, arg_28_1)
-	arg_28_0._fleetRangeAAList[#arg_28_0._fleetRangeAAList + 1] = arg_28_1
+function BattlePlayerUnit.AddFleetRangeAntiAirWeapon(self, weapon)
+	self._fleetRangeAAList[#self._fleetRangeAAList + 1] = weapon
 end
 
-function BattlePlayerUnit.RemoveFleetRangeAntiAirWeapon(arg_29_0, arg_29_1)
-	for iter_29_0, iter_29_1 in ipairs(arg_29_0._fleetRangeAAList) do
-		if iter_29_1 == arg_29_1 then
-			table.remove(arg_29_0._fleetRangeAAList, iter_29_0)
+function BattlePlayerUnit.RemoveFleetRangeAntiAirWeapon(self, weapon)
+	for index, fraaWeapon in ipairs(self._fleetRangeAAList) do
+		if fraaWeapon == weapon then
+			table.remove(self._fleetRangeAAList, index)
 
 			return
 		end
 	end
 end
 
-function BattlePlayerUnit.ShiftWeapon(arg_30_0, arg_30_1)
+function BattlePlayerUnit.ShiftWeapon(self, weaponIDs)
 	return
 end
 
@@ -496,38 +496,38 @@ function BattlePlayerUnit.LeaderSetting(self)
 	end
 end
 
-function BattlePlayerUnit.UpdateHP(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4)
-	local var_34_0 = BattlePlayerUnit.super.UpdateHP(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4)
+function BattlePlayerUnit.UpdateHP(self, dHP, extraInfo, arg3, arg4)
+	local superDHP = BattlePlayerUnit.super.UpdateHP(self, dHP, extraInfo, arg3, arg4)
 
-	if arg_34_0._warningValue and arg_34_0._currentHP < arg_34_0._warningValue and not isHeal then
-		arg_34_0._warningValue = nil
+	if self._warningValue and self._currentHP < self._warningValue and not isHeal then
+		self._warningValue = nil
 
-		local var_34_1 = arg_34_0:GetIntimacy()
-		local var_34_2 = "hp_warning"
-		local var_34_3 = BattleDataFunction.GetWords(arg_34_0:GetSkinID(), var_34_2, var_34_1)
+		local intimacy = self:GetIntimacy()
+		local voiceKey = "hp_warning"
+		local shipWord = BattleDataFunction.GetWords(self:GetSkinID(), voiceKey, intimacy)
 
-		arg_34_0:DispatchVoice(var_34_2)
-		arg_34_0:DispatchChat(var_34_3, 2.5, var_34_2)
+		self:DispatchVoice(voiceKey)
+		self:DispatchChat(shipWord, 2.5, voiceKey)
 	end
 
-	if arg_34_0._mainUnitWarningValue and arg_34_0._currentHP < arg_34_0._mainUnitWarningValue and arg_34_0._currentHP > 0 and not isHeal then
-		arg_34_0._mainUnitWarningValue = nil
+	if self._mainUnitWarningValue and self._currentHP < self._mainUnitWarningValue and self._currentHP > 0 and not isHeal then
+		self._mainUnitWarningValue = nil
 
-		pg.TipsMgr.GetInstance():ShowTips(i18n("battle_main_emergent", arg_34_0:GetShipName()))
+		pg.TipsMgr.GetInstance():ShowTips(i18n("battle_main_emergent", self:GetShipName()))
 	end
 
-	return var_34_0
+	return superDHP
 end
 
-function BattlePlayerUnit.SetMainFleetUnit(arg_35_0)
-	BattlePlayerUnit.super.SetMainFleetUnit(arg_35_0)
+function BattlePlayerUnit.SetMainFleetUnit(self)
+	BattlePlayerUnit.super.SetMainFleetUnit(self)
 
-	if arg_35_0._IFF == BattleConfig.FRIENDLY_CODE then
-		arg_35_0._mainUnitWarningValue = BattleConfig.WARNING_HP_RATE_MAIN * arg_35_0:GetMaxHP()
+	if self._IFF == BattleConfig.FRIENDLY_CODE then
+		self._mainUnitWarningValue = BattleConfig.WARNING_HP_RATE_MAIN * self:GetMaxHP()
 	end
 end
 
-function BattlePlayerUnit.UpdatePrecastMoveLimit(arg_36_0)
+function BattlePlayerUnit.UpdatePrecastMoveLimit(self)
 	return
 end
 -- TODO
@@ -548,49 +548,49 @@ function BattlePlayerUnit.setStandardLabelTag(self)
 	end
 end
 
-function BattlePlayerUnit.ConfigBubbleFX(arg_38_0)
-	arg_38_0._bubbleFX = BattleConfig.PLAYER_SUB_BUBBLE_FX
+function BattlePlayerUnit.ConfigBubbleFX(self)
+	self._bubbleFX = BattleConfig.PLAYER_SUB_BUBBLE_FX
 
-	arg_38_0._oxyState:SetBubbleTemplate(BattleConfig.PLAYER_SUB_BUBBLE_INIT, BattleConfig.PLAYER_SUB_BUBBLE_INTERVAL)
+	self._oxyState:SetBubbleTemplate(BattleConfig.PLAYER_SUB_BUBBLE_INIT, BattleConfig.PLAYER_SUB_BUBBLE_INTERVAL)
 end
 
-function BattlePlayerUnit.OxyConsume(arg_39_0)
-	BattlePlayerUnit.super.OxyConsume(arg_39_0)
+function BattlePlayerUnit.OxyConsume(self)
+	BattlePlayerUnit.super.OxyConsume(self)
 
-	if arg_39_0._currentOxy <= 0 then
-		arg_39_0._fleet:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_FLOAT, true)
+	if self._currentOxy <= 0 then
+		self._fleet:ChangeSubmarineState(ys.Battle.OxyState.STATE_FREE_FLOAT, true)
 	end
 end
 
-function BattlePlayerUnit.SetFormationIndex(arg_40_0, arg_40_1)
-	arg_40_0._formationIndex = arg_40_1
+function BattlePlayerUnit.SetFormationIndex(self, formationIndex)
+	self._formationIndex = formationIndex
 end
 
-function BattlePlayerUnit.setAttrFromOutBattle(arg_41_0, arg_41_1, arg_41_2)
-	BattleAttr.SetPlayerAttrFromOutBattle(arg_41_0, arg_41_1, arg_41_2)
+function BattlePlayerUnit.setAttrFromOutBattle(self, attr, level)
+	BattleAttr.SetPlayerAttrFromOutBattle(self, attr, level)
 end
 
-function BattlePlayerUnit.SetFleetVO(arg_42_0, arg_42_1)
-	arg_42_0._fleet = arg_42_1
-	arg_42_0._subRaidLine, arg_42_0._subRetreatLine = arg_42_0._fleet:GetSubmarineBaseLine()
+function BattlePlayerUnit.SetFleetVO(self, fleet)
+	self._fleet = fleet
+	self._subRaidLine, self._subRetreatLine = self._fleet:GetSubmarineBaseLine()
 end
 
-function BattlePlayerUnit.GetTemplate(arg_43_0)
-	return arg_43_0._tmpData
+function BattlePlayerUnit.GetTemplate(self)
+	return self._tmpData
 end
 
-function BattlePlayerUnit.GetGroupID(arg_44_0)
-	local var_44_0 = arg_44_0:GetTemplateID()
+function BattlePlayerUnit.GetGroupID(self)
+	local templateID = self:GetTemplateID()
 
-	return BattleDataFunction.GetPlayerShipModelFromID(var_44_0).group_type
+	return BattleDataFunction.GetPlayerShipModelFromID(templateID).group_type
 end
 
-function BattlePlayerUnit.GetRarity(arg_45_0)
-	return arg_45_0._rarity or arg_45_0._tmpData.rarity
+function BattlePlayerUnit.GetRarity(self)
+	return self._rarity or self._tmpData.rarity
 end
 
-function BattlePlayerUnit.GetIntimacy(arg_46_0)
-	return arg_46_0._intimacy or 0
+function BattlePlayerUnit.GetIntimacy(self)
+	return self._intimacy or 0
 end
 
 -- 被BattleFleetVO.GetLeaderPersonality调用
@@ -600,21 +600,21 @@ function BattlePlayerUnit.GetAutoPilotPreference(self)
 	return self._personality
 end
 
-function BattlePlayerUnit.GetFleetVO(arg_48_0)
-	return arg_48_0._fleet
+function BattlePlayerUnit.GetFleetVO(self)
+	return self._fleet
 end
 
-function BattlePlayerUnit.InitCldComponent(arg_49_0)
-	BattlePlayerUnit.super.InitCldComponent(arg_49_0)
+function BattlePlayerUnit.InitCldComponent(self)
+	BattlePlayerUnit.super.InitCldComponent(self)
 
-	local var_49_0 = {
+	local cldData = {
 		type = BattleConst.CldType.SHIP,
-		IFF = arg_49_0:GetIFF(),
-		UID = arg_49_0:GetUniqueID(),
+		IFF = self:GetIFF(),
+		UID = self:GetUniqueID(),
 		Mass = BattleConst.CldMass.L2
 	}
 
-	arg_49_0._cldComponent:SetCldData(var_49_0)
+	self._cldComponent:SetCldData(cldData)
 end
 
 function BattlePlayerUnit.AddPointAirStrike(self, strikeWeaponID, coolDownDuration, initOverheat)

@@ -5,7 +5,6 @@ local BattleWeaponButton = class("BattleWeaponButton")
 
 ys.Battle.BattleWeaponButton = BattleWeaponButton
 BattleWeaponButton.__name = "BattleWeaponButton"
--- 武器与对应的Icon索引的映射表
 BattleWeaponButton.ICON_BY_INDEX = {
 	"cannon",
 	"torpedo",
@@ -21,14 +20,19 @@ BattleWeaponButton.ICON_BY_INDEX = {
 	"pointairstrike"
 }
 
--- 在BattleSkillView.InitBtns中初始化
+--- 构造函数，初始化事件触发器
+--- @class BattleWeaponButton
 function BattleWeaponButton.Ctor(self)
 	ys.EventListener.AttachEventListener(self)
 
 	self.eventTriggers = {}
 end
 
--- 配置按键回调
+--- 配置按钮回调函数
+--- @param downFunc function 按下回调
+--- @param upFunc function 抬起回调
+--- @param cancelFunc function 取消回调（手指滑出）
+--- @param emptyFunc function 空槽点击回调
 function BattleWeaponButton.ConfigCallback(self, downFunc, upFunc, cancelFunc, emptyFunc)
 	self._downFunc = downFunc
 	self._upFunc = upFunc
@@ -36,362 +40,413 @@ function BattleWeaponButton.ConfigCallback(self, downFunc, upFunc, cancelFunc, e
 	self._emptyFunc = emptyFunc
 end
 
-function BattleWeaponButton.SetActive(arg_3_0, arg_3_1)
-	SetActive(arg_3_0._skin, arg_3_1)
+--- 设置按钮可见性
+--- @param visible boolean
+function BattleWeaponButton.SetActive(self, visible)
+	SetActive(self._skin, visible)
 end
 
-function BattleWeaponButton.SetJam(arg_4_0, arg_4_1)
-	SetActive(arg_4_0._jam, arg_4_1)
-	SetActive(arg_4_0._icon, not arg_4_1)
-	SetActive(arg_4_0._progress, not arg_4_1)
+--- 设置干扰（Jam）状态
+--- @param isJam boolean 是否处于干扰状态
+function BattleWeaponButton.SetJam(self, isJam)
+	SetActive(self._jam, isJam)
+	SetActive(self._icon, not isJam)
+	SetActive(self._progress, not isJam)
 end
 
-function BattleWeaponButton.SwitchIcon(arg_5_0, arg_5_1, arg_5_2)
-	arg_5_0._iconIndex = arg_5_1
+--- 切换武器图标（根据图标索引加载对应sprite）
+--- @param iconIndex number 图标索引，对应ICON_BY_INDEX表
+--- @param skinKey string 皮肤键，默认从BattleState获取
+function BattleWeaponButton.SwitchIcon(self, iconIndex, skinKey)
+	self._iconIndex = iconIndex
 
-	local var_5_0 = BattleWeaponButton.ICON_BY_INDEX[arg_5_1]
-	local var_5_1 = arg_5_2 or ys.Battle.BattleState.GetCombatSkinKey()
+	local iconName = BattleWeaponButton.ICON_BY_INDEX[iconIndex]
+	local finalSkinKey = skinKey or ys.Battle.BattleState.GetCombatSkinKey()
 
-	if var_5_1 ~= "Standard" then
-		var_5_1 = ""
+	-- 非Standard皮肤使用空字符串作为资源路径前缀
+	if finalSkinKey ~= "Standard" then
+		finalSkinKey = ""
 	end
 
-	setImageSprite(arg_5_0._unfill, LoadSprite("ui/CombatUI" .. var_5_1 .. "_atlas", "weapon_unfill_" .. var_5_0))
-	setImageSprite(arg_5_0._filled, LoadSprite("ui/CombatUI" .. var_5_1 .. "_atlas", "filled_combined_" .. var_5_0))
+	setImageSprite(self._unfill, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "weapon_unfill_" .. iconName))
+	setImageSprite(self._filled, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "filled_combined_" .. iconName))
 end
 
-function BattleWeaponButton.SwitchIconEffect(arg_6_0, arg_6_1, arg_6_2)
-	local var_6_0 = BattleWeaponButton.ICON_BY_INDEX[arg_6_1]
-	local var_6_1 = arg_6_2 or ys.Battle.BattleState.GetCombatSkinKey()
+--- 切换图标特效（填充特效和干扰图标）
+--- @param iconIndex number 图标索引
+--- @param skinKey string|nil 皮肤键
+function BattleWeaponButton.SwitchIconEffect(self, iconIndex, skinKey)
+	local iconName = BattleWeaponButton.ICON_BY_INDEX[iconIndex]
+	local finalSkinKey = skinKey or ys.Battle.BattleState.GetCombatSkinKey()
 
-	if var_6_1 ~= "Standard" then
-		var_6_1 = ""
+	if finalSkinKey ~= "Standard" then
+		finalSkinKey = ""
 	end
 
-	setImageSprite(arg_6_0._filledEffect, LoadSprite("ui/CombatUI" .. var_6_1 .. "_atlas", "filled_effect_" .. var_6_0), true)
-	setImageSprite(arg_6_0._jam, LoadSprite("ui/CombatUI" .. var_6_1 .. "_atlas", "skill_jam_" .. var_6_0), true)
+	setImageSprite(self._filledEffect, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "filled_effect_" .. iconName), true)
+	setImageSprite(self._jam, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "skill_jam_" .. iconName), true)
 end
 
-function BattleWeaponButton.ConfigSkin(arg_7_0, arg_7_1)
-	arg_7_0._skin = arg_7_1
-	arg_7_0._btn = arg_7_1:Find("ActCtl")
-	arg_7_0._block = arg_7_1:Find("ActCtl/block").gameObject
-	arg_7_0._progress = arg_7_1:Find("ActCtl/skill_progress")
-	arg_7_0._progressBar = arg_7_0._progress:GetComponent(typeof(Image))
-	arg_7_0._icon = arg_7_1:Find("ActCtl/skill_icon")
-	arg_7_0._filled = arg_7_0._icon:Find("filled")
-	arg_7_0._unfill = arg_7_0._icon:Find("unfill")
-	arg_7_0._count = arg_7_1:Find("ActCtl/Count")
-	arg_7_0._text = arg_7_0._count:Find("CountText")
-	arg_7_0._selected = arg_7_1:Find("ActCtl/selected")
-	arg_7_0._unSelect = arg_7_1:Find("ActCtl/unselect")
-	arg_7_0._filledEffect = arg_7_1:Find("ActCtl/filledEffect")
-	arg_7_0._jam = arg_7_1:Find("ActCtl/jam")
-	arg_7_0._countTxt = arg_7_0._text:GetComponent(typeof(Text))
+--- 配置皮肤及子节点引用
+--- @param skin Transform 按钮皮肤根Transform
+function BattleWeaponButton.ConfigSkin(self, skin)
+	self._skin = skin
+	self._btn = skin:Find("ActCtl")
+	self._block = skin:Find("ActCtl/block").gameObject
+	self._progress = skin:Find("ActCtl/skill_progress")
+	self._progressBar = self._progress:GetComponent(typeof(Image))
+	self._icon = skin:Find("ActCtl/skill_icon")
+	self._filled = self._icon:Find("filled")
+	self._unfill = self._icon:Find("unfill")
+	self._count = skin:Find("ActCtl/Count")
+	self._text = self._count:Find("CountText")
+	self._selected = skin:Find("ActCtl/selected")
+	self._unSelect = skin:Find("ActCtl/unselect")
+	self._filledEffect = skin:Find("ActCtl/filledEffect")
+	self._jam = skin:Find("ActCtl/jam")
+	self._countTxt = self._text:GetComponent(typeof(Text))
 
-	arg_7_1.gameObject:SetActive(true)
-	arg_7_0._block:SetActive(false)
-	arg_7_0._progress.gameObject:SetActive(true)
+	skin.gameObject:SetActive(true)
+	self._block:SetActive(false)
+	self._progress.gameObject:SetActive(true)
 
-	local var_7_0 = arg_7_0._filledEffect.gameObject
+	-- 配置填充特效结束回调
+	local filledEffectGO = self._filledEffect.gameObject
 
-	var_7_0:SetActive(false)
-	var_7_0:GetComponent("DftAniEvent"):SetEndEvent(function(arg_8_0)
-		SetActive(arg_7_0._filledEffect, false)
+	filledEffectGO:SetActive(false)
+	filledEffectGO:GetComponent("DftAniEvent"):SetEndEvent(function(event)
+		SetActive(self._filledEffect, false)
 	end)
 
-	arg_7_0._animtor = arg_7_1:GetComponent(typeof(Animator))
-	arg_7_0._bgEff = arg_7_1:Find("ActCtl/bg_eff")
-	arg_7_0._gizmos1 = arg_7_1:Find("ActCtl/gizmos_1")
-	arg_7_0._gizmosXue = arg_7_1:Find("ActCtl/gizmos_xue")
+	self._animtor = skin:GetComponent(typeof(Animator))
+	self._bgEff = skin:Find("ActCtl/bg_eff")
+	self._gizmos1 = skin:Find("ActCtl/gizmos_1")
+	self._gizmosXue = skin:Find("ActCtl/gizmos_xue")
 end
 
-function BattleWeaponButton.GetSkin(arg_9_0)
-	return arg_9_0._skin
+--- 获取按钮皮肤根Transform
+--- @return Transform
+function BattleWeaponButton.GetSkin(self)
+	return self._skin
 end
 
--- 被BattleSkillView.EnableWeaponButton调用
-function BattleWeaponButton.Enabled(arg_10_0, arg_10_1)
-	local var_10_0 = GetComponent(arg_10_0._btn, "EventTriggerListener")
-	local var_10_1 = GetComponent(arg_10_0._block, "EventTriggerListener")
+--- 启用/禁用按钮交互
+--- @param enable boolean
+function BattleWeaponButton.Enabled(self, enable)
+	local btnListener = GetComponent(self._btn, "EventTriggerListener")
+	local blockListener = GetComponent(self._block, "EventTriggerListener")
 
-	arg_10_0.eventTriggers[var_10_0] = true
-	arg_10_0.eventTriggers[var_10_1] = true
-	var_10_0.enabled = arg_10_1
-	var_10_1.enabled = arg_10_1
+	self.eventTriggers[btnListener] = true
+	self.eventTriggers[blockListener] = true
+	btnListener.enabled = enable
+	blockListener.enabled = enable
 end
 
-function BattleWeaponButton.Disable(arg_11_0)
-	if arg_11_0._cancelFunc then
-		arg_11_0._cancelFunc()
+--- 禁用按钮交互并触发取消回调
+function BattleWeaponButton.Disable(self)
+	if self._cancelFunc then
+		self._cancelFunc()
 	end
 
-	arg_11_0:OnUnSelect()
+	self:OnUnSelect()
 
-	local var_11_0 = GetComponent(arg_11_0._btn, "EventTriggerListener")
-	local var_11_1 = GetComponent(arg_11_0._block, "EventTriggerListener")
+	local btnListener = GetComponent(self._btn, "EventTriggerListener")
+	local blockListener = GetComponent(self._block, "EventTriggerListener")
 
-	var_11_0.enabled = false
-	var_11_1.enabled = false
+	btnListener.enabled = false
+	blockListener.enabled = false
 end
 
-function BattleWeaponButton.OnSelected(arg_12_0)
-	SetActive(arg_12_0._unSelect, false)
-	SetActive(arg_12_0._selected, true)
+--- 选中状态（按下时），显示选中高亮
+function BattleWeaponButton.OnSelected(self)
+	SetActive(self._unSelect, false)
+	SetActive(self._selected, true)
 end
 
-function BattleWeaponButton.OnUnSelect(arg_13_0)
-	SetActive(arg_13_0._selected, false)
-	SetActive(arg_13_0._unSelect, true)
+--- 取消选中状态，显示未选中
+function BattleWeaponButton.OnUnSelect(self)
+	SetActive(self._selected, false)
+	SetActive(self._unSelect, true)
 end
 
-function BattleWeaponButton.OnFilled(arg_14_0)
-	SetActive(arg_14_0._filled, true)
-	SetActive(arg_14_0._unfill, false)
+--- 填充完成状态，显示填充图标
+function BattleWeaponButton.OnFilled(self)
+	SetActive(self._filled, true)
+	SetActive(self._unfill, false)
 end
 
-function BattleWeaponButton.OnUnfill(arg_15_0)
-	SetActive(arg_15_0._filled, false)
-	SetActive(arg_15_0._unfill, true)
+--- 未填充状态，显示空图标
+function BattleWeaponButton.OnUnfill(self)
+	SetActive(self._filled, false)
+	SetActive(self._unfill, true)
 end
 
-function BattleWeaponButton.OnfilledEffect(arg_16_0)
-	SetActive(arg_16_0._filledEffect, true)
+--- 播放填充完成特效
+function BattleWeaponButton.OnfilledEffect(self)
+	SetActive(self._filledEffect, true)
 end
 
-function BattleWeaponButton.OnOverLoadChange(arg_17_0, arg_17_1)
-	if arg_17_0._progressInfo:IsOverLoad() then
-		arg_17_0._block:SetActive(true)
-		arg_17_0:OnUnfill()
+--- 过载状态变化事件处理
+--- @param event BattleEvent|nil 事件对象，包含预装填状态
+function BattleWeaponButton.OnOverLoadChange(self, event)
+	if self._progressInfo:IsOverLoad() then
+		self._block:SetActive(true)
+		self:OnUnfill()
 	else
-		arg_17_0._block:SetActive(false)
-		arg_17_0:OnFilled()
+		self._block:SetActive(false)
+		self:OnFilled()
 
-		if arg_17_1 and arg_17_1.Data then
-			local var_17_0 = arg_17_1.Data.preCast
+		-- 根据预装填状态播放不同动画
+		if event and event.Data then
+			local preCast = event.Data.preCast
 
-			if var_17_0 then
-				if var_17_0 == 0 then
-					quickCheckAndPlayAnimator(arg_17_0._skin, "weapon_button_progress_filled")
-				elseif var_17_0 > 0 then
-					quickCheckAndPlayAnimator(arg_17_0._skin, "weapon_button_progress_charge")
+			if preCast then
+				if preCast == 0 then
+					quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_filled")
+				elseif preCast > 0 then
+					quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_charge")
 				end
 			end
 		end
 	end
 
-	if arg_17_1 and arg_17_1.Data and arg_17_1.Data.postCast then
-		quickCheckAndPlayAnimator(arg_17_0._skin, "weapon_button_progress_use")
+	if event and event.Data and event.Data.postCast then
+		quickCheckAndPlayAnimator(self._skin, "weapon_button_progress_use")
 	end
 
-	if arg_17_0._progressInfo:GetTotal() > 0 then
-		arg_17_0:updateProgressBar()
-	end
-end
-
-function BattleWeaponButton.SetProgressActive(arg_18_0, arg_18_1)
-	arg_18_0._progress.gameObject:SetActive(arg_18_1)
-end
-
-function BattleWeaponButton.SetTextActive(arg_19_0, arg_19_1)
-	SetActive(arg_19_0._count, arg_19_1)
-end
-
-function BattleWeaponButton.SetProgressInfo(arg_20_0, arg_20_1)
-	arg_20_0._progressInfo = arg_20_1
-
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, arg_20_0.OnTotalChange)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS, arg_20_0.OnfilledEffect)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.OVER_LOAD_CHANGE, arg_20_0.OnOverLoadChange)
-	arg_20_0._progressInfo:RegisterEventListener(arg_20_0, ys.Battle.BattleEvent.COUNT_CHANGE, arg_20_0.OnCountChange)
-	arg_20_0:OnTotalChange()
-	arg_20_0:OnOverLoadChange()
-end
-
-function BattleWeaponButton.OnCountChange(arg_21_0)
-	local var_21_0 = arg_21_0._progressInfo:GetCount()
-	local var_21_1 = arg_21_0._progressInfo:GetTotal()
-
-	arg_21_0._countTxt.text = string.format("%d/%d", var_21_0, var_21_1)
-
-	local var_21_2 = arg_21_0._progressInfo:GetCurrentWeaponIconIndex()
-
-	if var_21_2 ~= arg_21_0._iconIndex then
-		arg_21_0:SwitchIcon(var_21_2)
-		arg_21_0:SwitchIconEffect(var_21_2)
-	end
-
-	if arg_21_0._gizmos1 then
-		SetActive(arg_21_0._gizmos1, var_21_0 > 0)
-		SetActive(arg_21_0._gizmosXue, var_21_0 == var_21_1)
+	if self._progressInfo:GetTotal() > 0 then
+		self:updateProgressBar()
 	end
 end
 
-function BattleWeaponButton.OnTotalChange(arg_22_0, arg_22_1)
-	if arg_22_0._progressInfo:GetTotal() <= 0 then
-		arg_22_0._block:SetActive(true)
+--- 设置进度条可见性
+--- @param active boolean
+function BattleWeaponButton.SetProgressActive(self, active)
+	self._progress.gameObject:SetActive(active)
+end
 
-		arg_22_0._progressBar.fillAmount = 0
+--- 设置弹药数量文本可见性
+--- @param active boolean
+function BattleWeaponButton.SetTextActive(self, active)
+	SetActive(self._count, active)
+end
 
-		if arg_22_0._bgEff then
-			arg_22_0._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 0
+--- 设置进度信息对象并注册事件
+--- @param progressInfo WeaponProgressInfo 武器进度信息
+function BattleWeaponButton.SetProgressInfo(self, progressInfo)
+	self._progressInfo = progressInfo
+
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE, self.OnTotalChange)
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS, self.OnfilledEffect)
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.OVER_LOAD_CHANGE, self.OnOverLoadChange)
+	self._progressInfo:RegisterEventListener(self, ys.Battle.BattleEvent.COUNT_CHANGE, self.OnCountChange)
+	self:OnTotalChange()
+	self:OnOverLoadChange()
+end
+
+--- 弹药数量变化事件处理，更新UI图标和计数
+function BattleWeaponButton.OnCountChange(self)
+	local count = self._progressInfo:GetCount()
+	local total = self._progressInfo:GetTotal()
+
+	self._countTxt.text = string.format("%d/%d", count, total)
+
+	-- 如果弹药类型切换，更新图标
+	local currentIconIndex = self._progressInfo:GetCurrentWeaponIconIndex()
+
+	if currentIconIndex ~= self._iconIndex then
+		self:SwitchIcon(currentIconIndex)
+		self:SwitchIconEffect(currentIconIndex)
+	end
+
+	-- 更新小装饰状态
+	if self._gizmos1 then
+		SetActive(self._gizmos1, count > 0)
+		SetActive(self._gizmosXue, count == total)
+	end
+end
+
+--- 武器总数变化事件处理
+--- @param event BattleEvent|nil
+function BattleWeaponButton.OnTotalChange(self, event)
+	if self._progressInfo:GetTotal() <= 0 then
+		-- 没有可用武器，显示为禁用状态
+		self._block:SetActive(true)
+
+		self._progressBar.fillAmount = 0
+
+		if self._bgEff then
+			self._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 0
 		end
 
-		arg_22_0._text:GetComponent(typeof(Text)).text = "0/0"
+		self._text:GetComponent(typeof(Text)).text = "0/0"
 
-		arg_22_0:SetControllerActive(false)
-		arg_22_0:OnUnfill()
-		arg_22_0:OnUnSelect()
+		self:SetControllerActive(false)
+		self:OnUnfill()
+		self:OnUnSelect()
 	else
-		arg_22_0:OnCountChange()
-		arg_22_0:SetControllerActive(true)
+		self:OnCountChange()
+		self:SetControllerActive(true)
 
-		if arg_22_1 then
-			local var_22_0 = arg_22_1.Data.index
+		-- 如果切换为第一个武器索引，取消选中
+		if event then
+			local index = event.Data.index
 
-			if var_22_0 and var_22_0 == 1 then
-				arg_22_0:OnUnSelect()
+			if index and index == 1 then
+				self:OnUnSelect()
 			end
 		end
 	end
 end
 
-function BattleWeaponButton.SetControllerActive(arg_23_0, arg_23_1)
-	if arg_23_0._isActive == arg_23_1 then
+--- 设置控制器激活状态（注册/移除按钮事件）
+--- @param active boolean 是否可交互
+function BattleWeaponButton.SetControllerActive(self, active)
+	if self._isActive == active then
 		return
 	end
 
-	arg_23_0._isActive = arg_23_1
+	self._isActive = active
 
-	local var_23_0 = GetComponent(arg_23_0._btn, "EventTriggerListener")
-	local var_23_1 = GetComponent(arg_23_0._block, "EventTriggerListener")
+	local btnListener = GetComponent(self._btn, "EventTriggerListener")
+	local blockListener = GetComponent(self._block, "EventTriggerListener")
 
-	if arg_23_1 then
-		local var_23_2
+	if active then
+		-- 可交互状态：注册按下/抬起/取消事件
+		local isPressed
 
-		if arg_23_0._downFunc ~= nil then
-			var_23_0:AddPointDownFunc(function()
-				var_23_2 = true
+		if self._downFunc ~= nil then
+			btnListener:AddPointDownFunc(function()
+				isPressed = true
 
-				arg_23_0._downFunc()
-				arg_23_0:OnSelected()
+				self._downFunc()
+				self:OnSelected()
 			end)
 		end
 
-		if arg_23_0._upFunc ~= nil then
-			var_23_0:AddPointUpFunc(function()
-				if var_23_2 then
-					var_23_2 = false
+		if self._upFunc ~= nil then
+			btnListener:AddPointUpFunc(function()
+				if isPressed then
+					isPressed = false
 
-					arg_23_0._upFunc()
-					arg_23_0:OnUnSelect()
+					self._upFunc()
+					self:OnUnSelect()
 				end
 			end)
 		end
 
-		if arg_23_0._cancelFunc ~= nil then
-			var_23_0:AddPointExitFunc(function()
-				if var_23_2 then
-					var_23_2 = false
+		if self._cancelFunc ~= nil then
+			btnListener:AddPointExitFunc(function()
+				if isPressed then
+					isPressed = false
 
-					arg_23_0._cancelFunc()
-					arg_23_0:OnUnSelect()
+					self._cancelFunc()
+					self:OnUnSelect()
 				end
 			end)
 		end
 
-		var_23_1:RemovePointDownFunc()
+		blockListener:RemovePointDownFunc()
 	else
-		var_23_1:AddPointDownFunc(arg_23_0._emptyFunc)
-		var_23_0:RemovePointDownFunc()
-		var_23_0:RemovePointUpFunc()
-		var_23_0:RemovePointExitFunc()
+		-- 禁用状态：遮挡块捕获点击，触发空槽回调
+		blockListener:AddPointDownFunc(self._emptyFunc)
+		btnListener:RemovePointDownFunc()
+		btnListener:RemovePointUpFunc()
+		btnListener:RemovePointExitFunc()
 	end
 end
 
-function BattleWeaponButton.InitialAnima(arg_27_0, arg_27_1)
-	SetActive(arg_27_0._btn, false)
+--- 按钮初始入场动画
+--- @param delay number 动画延迟时间（秒）
+function BattleWeaponButton.InitialAnima(self, delay)
+	SetActive(self._btn, false)
 
-	arg_27_0._leanID = LeanTween.delayedCall(arg_27_1, System.Action(function()
-		arg_27_0._skin:GetComponent("Animator").enabled = true
-		arg_27_0._leanID = nil
+	self._leanID = LeanTween.delayedCall(delay, System.Action(function()
+		self._skin:GetComponent("Animator").enabled = true
+		self._leanID = nil
 	end))
 end
 
-function BattleWeaponButton.Update(arg_29_0)
-	local var_29_0 = arg_29_0._progressInfo:GetCurrent()
-	local var_29_1 = arg_29_0._progressInfo:GetMax()
+--- 每帧更新进度条
+function BattleWeaponButton.Update(self)
+	local current = self._progressInfo:GetCurrent()
+	local maxVal = self._progressInfo:GetMax()
 
-	if arg_29_0._progressInfo:GetTotal() > 0 and var_29_0 < var_29_1 then
-		arg_29_0:updateProgressBar()
+	if self._progressInfo:GetTotal() > 0 and current < maxVal then
+		self:updateProgressBar()
 	end
 end
 
-function BattleWeaponButton.SetToCombatUIPreview(arg_30_0, arg_30_1)
-	if arg_30_1 then
-		SetActive(arg_30_0._filled, true)
-		SetActive(arg_30_0._unfill, false)
+--- 设置战斗UI预览模式（显示为满状态或空状态）
+--- @param active boolean true时显示满状态，false时显示空状态
+function BattleWeaponButton.SetToCombatUIPreview(self, active)
+	if active then
+		SetActive(self._filled, true)
+		SetActive(self._unfill, false)
 
-		arg_30_0._progressBar.fillAmount = 1
+		self._progressBar.fillAmount = 1
 
-		if arg_30_0._bgEff then
-			arg_30_0._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 1
+		if self._bgEff then
+			self._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 1
 		end
 
-		arg_30_0._countTxt.text = "1/1"
+		self._countTxt.text = "1/1"
 
-		if arg_30_0._gizmos1 then
-			SetActive(arg_30_0._gizmos1, true)
-			SetActive(arg_30_0._gizmosXue, true)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, true)
+			SetActive(self._gizmosXue, true)
 		end
 	else
-		SetActive(arg_30_0._unfill, true)
-		SetActive(arg_30_0._filled, false)
+		SetActive(self._unfill, true)
+		SetActive(self._filled, false)
 
-		arg_30_0._progressBar.fillAmount = 0
+		self._progressBar.fillAmount = 0
 
-		if arg_30_0._bgEff then
-			arg_30_0._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 0
+		if self._bgEff then
+			self._skin:Find("ActCtl/bg_eff"):GetComponent(typeof(CanvasGroup)).alpha = 0
 		end
 
-		arg_30_0._countTxt.text = "0/0"
+		self._countTxt.text = "0/0"
 
-		if arg_30_0._gizmos1 then
-			SetActive(arg_30_0._gizmos1, false)
-			SetActive(arg_30_0._gizmosXue, false)
+		if self._gizmos1 then
+			SetActive(self._gizmos1, false)
+			SetActive(self._gizmosXue, false)
 		end
 	end
 end
 
-function BattleWeaponButton.updateProgressBar(arg_31_0)
-	local var_31_0 = arg_31_0._progressInfo:GetCurrent() / arg_31_0._progressInfo:GetMax()
+--- 更新进度条填充比例
+function BattleWeaponButton.updateProgressBar(self)
+	local fillAmount = self._progressInfo:GetCurrent() / self._progressInfo:GetMax()
 
-	arg_31_0._progressBar.fillAmount = var_31_0
+	self._progressBar.fillAmount = fillAmount
 
-	if arg_31_0._bgEff then
-		if arg_31_0._progressInfo.GetCount and arg_31_0._progressInfo:GetCount() > 0 then
-			arg_31_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
+	-- 有弹药时背景特效完全不透明，否则跟随进度条比例
+	if self._bgEff then
+		if self._progressInfo.GetCount and self._progressInfo:GetCount() > 0 then
+			self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = 1
 		else
-			arg_31_0._bgEff:GetComponent(typeof(CanvasGroup)).alpha = var_31_0
+			self._bgEff:GetComponent(typeof(CanvasGroup)).alpha = fillAmount
 		end
 	end
 end
 
-function BattleWeaponButton.Dispose(arg_32_0)
-	if arg_32_0.eventTriggers then
-		for iter_32_0, iter_32_1 in pairs(arg_32_0.eventTriggers) do
-			ClearEventTrigger(iter_32_0)
+--- 销毁按钮，清理事件和引用
+function BattleWeaponButton.Dispose(self)
+	if self.eventTriggers then
+		for listener, _ in pairs(self.eventTriggers) do
+			ClearEventTrigger(listener)
 		end
 
-		arg_32_0.eventTriggers = nil
+		self.eventTriggers = nil
 	end
 
-	arg_32_0._progress = nil
-	arg_32_0._progressBar = nil
+	self._progress = nil
+	self._progressBar = nil
 
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.OVER_LOAD_CHANGE)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
-	arg_32_0._progressInfo:UnregisterEventListener(arg_32_0, ys.Battle.BattleEvent.COUNT_CHANGE)
-	ys.EventListener.DetachEventListener(arg_32_0)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.OVER_LOAD_CHANGE)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.WEAPON_TOTAL_CHANGE)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.WEAPON_COUNT_PLUS)
+	self._progressInfo:UnregisterEventListener(self, ys.Battle.BattleEvent.COUNT_CHANGE)
+	ys.EventListener.DetachEventListener(self)
 end

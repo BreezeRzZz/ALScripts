@@ -29,10 +29,10 @@ function BattleMissileUnit.SetTemplateData(self, tempData)
 	BattleMissileUnit.super.SetTemplateData(self, tempData)
 	self:ResetVelocity(0)
 
-	local var_2_0 = self:GetTemplate().extra_param
+	local extraParam = self:GetTemplate().extra_param
 
-	self._gravity = var_2_0.gravity or ys.Battle.BattleConfig.GRAVITY
-	self._targetType = var_2_0.aimType or BattleMissileUnit.TYPE_TARGET
+	self._gravity = extraParam.gravity or ys.Battle.BattleConfig.GRAVITY
+	self._targetType = extraParam.aimType or BattleMissileUnit.TYPE_TARGET
 end
 
 function BattleMissileUnit.GetPierceCount(self)

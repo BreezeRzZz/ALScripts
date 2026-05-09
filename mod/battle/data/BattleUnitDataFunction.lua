@@ -8,7 +8,7 @@ local ship_data_statistics = pg.ship_data_statistics
 local ship_data_template = pg.ship_data_template
 local ship_skin_template = pg.ship_skin_template
 local enemy_data_statistics = pg.enemy_data_statistics
-local weapon_property = pg.weapon_propertyp
+local weapon_property = pg.weapon_property
 local formation_template = pg.formation_template
 local auto_pilot_template = pg.auto_pilot_template
 local aircraft_template = pg.aircraft_template
@@ -38,7 +38,23 @@ ys.Battle.BattleDataFunction = ys.Battle.BattleDataFunction or {}
 
 local BattleDataFunction = ys.Battle.BattleDataFunction
 
--- 被BattleDataProxy.generatePlayerUnit调用
+--- 创建战斗单位的主要工厂函数
+--- 根据unitType创建不同类型的战斗单位，并设置装备、皮肤等信息
+--- 被BattleDataProxy.generatePlayerUnit调用
+--- @param uid number 单位唯一ID
+--- @param unitType number 单位类型 (UnitType)
+--- @param IFF number 敌我识别 (FRIENDLY_CODE/FOE_CODE)
+--- @param monsterTemplateID number 敌方/模板ID
+--- @param skinId number 皮肤ID
+--- @param equipmentList table 装备列表
+--- @param templateData table 模板数据
+--- @param extraInfo table 额外信息
+--- @param proficiencyList table 熟练度列表
+--- @param baseInfo table 基础信息
+--- @param preloadInfo table 预载信息
+--- @param overrideLevel number 覆盖等级
+--- @param owner BattleUnit 拥有者(如Minion的Master)
+--- @return BattleUnit
 function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemplateID, skinId, equipmentList, templateData, extraInfo, proficiencyList, baseInfo, preloadInfo, overrideLevel, owner)
 	local unit
 	local weaponCount
@@ -141,9 +157,12 @@ function BattleDataFunction.CreateBattleUnitData(uid, unitType, IFF, monsterTemp
 	return unit
 end
 
--- 初始化单位Buff
--- unitData.skills的来源是BattleMediator.GenBattleData里的skills字段
--- 被BattleDataProxy.generatePlayerUnit调用
+--- 初始化单位Buff
+--- unitData.skills的来源是BattleMediator.GenBattleData里的skills字段
+--- 被BattleDataProxy.generatePlayerUnit调用
+--- @param unitData table 单位数据(含skills字段)
+--- @param owner BattleUnit Buff的拥有者
+--- @param battleType any 战斗类型(未在函数内使用，仅为接口一致保留)
 function BattleDataFunction.InitUnitSkill(unitData, owner, battleType)
 	local skills = unitData.skills or {}
 
@@ -154,8 +173,12 @@ function BattleDataFunction.InitUnitSkill(unitData, owner, battleType)
 	end
 end
 
--- 初始化装备的Buff
--- 被BattleDataFunction.InitEquipSkill调用
+--- 初始化装备的Buff
+--- 从equip_data_statistics的skill_id/hidden_skill_id字段提取Buff信息
+--- 被BattleDataFunction.InitEquipSkill调用
+--- @param equipmentInfoList table 装备信息列表
+--- @param playerUnit BattleUnit|nil 玩家单位(用于SkillTranform)
+--- @return table Buff信息列表 [{{buffID=..., buffLV=...}, ...}]
 function BattleDataFunction.GetEquipSkill(equipmentInfoList, playerUnit)
 	-- WEAPON_COUNT = 3
 	local WEAPON_COUNT = Ship.WEAPON_COUNT
@@ -165,15 +188,14 @@ function BattleDataFunction.GetEquipSkill(equipmentInfoList, playerUnit)
 		local equipID = equipmentInfo.id
 
 		if equipID then
-			local var_3_3
 			-- 实际是从equip_data_statistics里拿数据
 			local equipTempData = BattleDataFunction.GetWeaponDataFromID(equipID)
 
 			if equipTempData then
-				for _, buffID in ipairs(equipTempData.skill_id) do
+				for _, skillIDPair in ipairs(equipTempData.skill_id) do
 					-- 进行battleType转换
-					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, buffID[1]) or buffID[1]
-					local buffLV = buffID[2] or 1
+					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, skillIDPair[1]) or skillIDPair[1]
+					local buffLV = skillIDPair[2] or 1
 					local buffInfo = {
 						buffID = actualBuffID,
 						buffLV = buffLV
@@ -182,9 +204,9 @@ function BattleDataFunction.GetEquipSkill(equipmentInfoList, playerUnit)
 					table.insert(buffInfoList, buffInfo)
 				end
 
-				for _, buffID in ipairs(equipTempData.hidden_skill_id) do
-					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, buffID[1]) or buffID[1]
-					local buffLV = buffID[2] or 1
+				for _, skillIDPair in ipairs(equipTempData.hidden_skill_id) do
+					local actualBuffID = playerUnit and BattleDataFunction.SkillTranform(playerUnit, skillIDPair[1]) or skillIDPair[1]
+					local buffLV = skillIDPair[2] or 1
 					local buffInfo = {
 						buffID = actualBuffID,
 						buffLV = buffLV
@@ -199,7 +221,10 @@ function BattleDataFunction.GetEquipSkill(equipmentInfoList, playerUnit)
 	return buffInfoList
 end
 
--- 在BattleDataProxy的各个SpawnXXX和generatePlayerUnit里调用, 用于根据天气等环境因素给单位添加Buff
+--- 在BattleDataProxy的各个SpawnXXX和generatePlayerUnit里调用
+--- 用于根据天气等环境因素给单位添加Buff（夜间隐蔽、瞄准偏移等）
+--- @param unit BattleUnit
+--- @param weather table 天气列表
 function BattleDataFunction.AttachWeather(unit, weather)
 	if table.contains(weather, BattleConst.WEATHER.NIGHT) then
 		local unitShipType = unit:GetTemplate().type
@@ -244,7 +269,9 @@ function BattleDataFunction.AttachWeather(unit, weather)
 	end
 end
 
--- 被BattleBuffSmokeAimBias.onAttach调用
+--- 被BattleBuffSmokeAimBias.onAttach调用
+--- 给单位附加烟雾中的瞄准偏移组件
+--- @param unit BattleUnit
 function BattleDataFunction.AttachSmoke(unit)
 	local unitType = unit:GetUnitType()
 	-- 这里只对敌方单位生效
@@ -263,7 +290,7 @@ function BattleDataFunction.AttachSmoke(unit)
 
 			aimBiasComponent:ConfigRangeFormula(ys.Battle.BattleFormulas.CalculateMaxAimBiasRangeMonster, ys.Battle.BattleFormulas.CalculateBiasDecayMonsterInSmoke)
 			-- 这个shipType变量是何意味...忘改了吗?
-			if table.contains(ShipType.SubShipType, shipType) then
+			if table.contains(ShipType.SubShipType, unitType) then
 				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_SUB)
 			else
 				aimBiasComponent:ConfigMinRange(BattleConfig.AIM_BIAS_MIN_RANGE_MONSTER)
@@ -276,7 +303,10 @@ function BattleDataFunction.AttachSmoke(unit)
 	end
 end
 
--- BattleDataProxy.generatePlayerUnit调用, 初始化装备Buff
+--- BattleDataProxy.generatePlayerUnit调用, 初始化装备Buff
+--- @param equipment table 装备列表
+--- @param playerUnit BattleUnit 玩家单位
+--- @param battleType any 战斗类型
 function BattleDataFunction.InitEquipSkill(equipment, playerUnit, battleType)
 	local equipBuffInfoList = BattleDataFunction.GetEquipSkill(equipment, battleType)
 	-- 将记载了buffID和buffLV的buffInfo转换为真正的BuffUnit并添加到单位身上
@@ -287,12 +317,15 @@ function BattleDataFunction.InitEquipSkill(equipment, playerUnit, battleType)
 	end
 end
 
--- BattleDataProxy.generatePlayerUnit调用
--- 添加指挥喵提供的Buff
+--- BattleDataProxy.generatePlayerUnit调用
+--- 添加指挥喵提供的Buff
+--- @param commanderBuffInfoList table 指挥喵Buff信息列表
+--- @param playerUnit BattleUnit 玩家单位
+--- @param battleType any 战斗类型
 function BattleDataFunction.InitCommanderSkill(commanderBuffInfoList, playerUnit, battleType)
 	commanderBuffInfoList = commanderBuffInfoList or {}
 
-	local battleType = ys.Battle.BattleState.GetInstance():GetBattleType()
+	local currentBattleType = ys.Battle.BattleState.GetInstance():GetBattleType()
 
 	for _, buffInfo in pairs(commanderBuffInfoList) do
 		-- limit是battleType的限制. 即这个Buff不能在这些battleType里生效
@@ -301,7 +334,7 @@ function BattleDataFunction.InitCommanderSkill(commanderBuffInfoList, playerUnit
 
 		if limit then
 			for _, limitBattleType in ipairs(limit) do
-				if battleType == limitBattleType then
+				if currentBattleType == limitBattleType then
 					isLimited = true
 
 					break
@@ -318,9 +351,15 @@ function BattleDataFunction.InitCommanderSkill(commanderBuffInfoList, playerUnit
 	end
 end
 
--- 创建武器主要逻辑
--- 非常重要
--- 一般是在对应的BattleUnit(如PlayerUnit)中调用。此外, BattleSkillFire、BattlePointAirStrikeUnit等也会调用
+--- 创建武器主要逻辑
+--- 非常重要
+--- 一般是在对应的BattleUnit(如PlayerUnit)中调用。此外, BattleSkillFire、BattlePointAirStrikeUnit等也会调用
+--- @param weaponId number 武器ID
+--- @param host BattleUnit 宿主单位
+--- @param potential number 潜能系数
+--- @param index number 装备索引(默认为-1)
+--- @param weapon_type number 武器类型覆盖(可选)
+--- @return BattleWeaponUnit
 function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, weapon_type)
 	index = index or -1
 
@@ -403,8 +442,13 @@ function BattleDataFunction.CreateWeaponUnit(weaponId, host, potential, index, w
 	return weapon
 end
 
--- 创建舰载机主要逻辑
--- 被BattleDataProxy.CreateAircraft调用
+--- 创建舰载机主要逻辑
+--- 被BattleDataProxy.CreateAircraft调用
+--- @param aircraftUID number 飞机UID
+--- @param aircraftId number 飞机模板ID
+--- @param mother BattleUnit 母舰单位
+--- @param potential number 潜能系数
+--- @return BattleAircraftUnit
 function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, potential)
 	local aircraft
 	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(aircraftId)
@@ -435,7 +479,10 @@ function BattleDataFunction.CreateAircraftUnit(aircraftUID, aircraftId, mother, 
 	return aircraft
 end
 
--- 被BattleFleetVO.appendScoutUnit/appendMainUnit调用
+--- 被BattleFleetVO.appendScoutUnit/appendMainUnit调用
+--- 根据ship_data_template的airassist_time字段创建AllInStrike列表
+--- @param unit BattleUnit
+--- @return table BattleAllInStrike列表
 function BattleDataFunction.CreateAllInStrike(unit)
 	local templateID = unit:GetTemplateID()
 	-- ship_data_template
@@ -453,6 +500,9 @@ function BattleDataFunction.CreateAllInStrike(unit)
 	return airAssistList
 end
 
+--- 扩展AllInStrike列表（追加一个额外的空袭）
+--- 被BattleBuffExpandAllInStrike.onAttach调用
+--- @param unit BattleUnit
 function BattleDataFunction.ExpandAllinStrike(unit)
 	local templateID = unit:GetTemplateID()
 	local airassist_time = BattleDataFunction.GetPlayerShipModelFromID(templateID).airassist_time
@@ -472,8 +522,11 @@ function BattleDataFunction.ExpandAllinStrike(unit)
 	end
 end
 
--- 用于将模板数据转换为飞机单位
--- 被BattleDataProxy.CreateAirFighter调用
+--- 用于将模板数据转换为飞机单位
+--- 被BattleDataProxy.CreateAirFighter调用
+--- @param aircraftUID number 飞机UID
+--- @param tmpData table 模板数据({templateID=..., weaponID=..., backwardWeaponID=...})
+--- @return BattleAirFighterUnit
 function BattleDataFunction.CreateAirFighterUnit(aircraftUID, tmpData)
 	-- aircraft_template
 	local aircraftTemplate = BattleDataFunction.GetAircraftTmpDataFromID(tmpData.templateID)
@@ -488,200 +541,306 @@ function BattleDataFunction.CreateAirFighterUnit(aircraftUID, tmpData)
 	return airFighter
 end
 
-function BattleDataFunction.GetPlayerShipTmpDataFromID(arg_13_0)
-	assert(ship_data_statistics[arg_13_0] ~= nil, ">>ship_data_statistics<< 找不到玩家船只配置：id = " .. arg_13_0)
+--- 获取玩家舰船临时数据(ship_data_statistics)，会返回Clone副本
+--- @param shipID number
+--- @return table
+function BattleDataFunction.GetPlayerShipTmpDataFromID(shipID)
+	assert(ship_data_statistics[shipID] ~= nil, ">>ship_data_statistics<< 找不到玩家船只配置：id = " .. shipID)
 
-	return Clone(ship_data_statistics[arg_13_0])
+	return Clone(ship_data_statistics[shipID])
 end
 
-function BattleDataFunction.GetPlayerShipModelFromID(arg_14_0)
-	assert(ship_data_template[arg_14_0] ~= nil, ">>ship_data_template<< 找不到玩家船只模组配置：id = " .. arg_14_0)
+--- 获取玩家舰船模板数据(ship_data_template)
+--- @param shipID number
+--- @return table
+function BattleDataFunction.GetPlayerShipModelFromID(shipID)
+	assert(ship_data_template[shipID] ~= nil, ">>ship_data_template<< 找不到玩家船只模组配置：id = " .. shipID)
 
-	return ship_data_template[arg_14_0]
+	return ship_data_template[shipID]
 end
 
-function BattleDataFunction.GetPlayerShipSkinDataFromID(arg_15_0)
-	assert(ship_skin_template[arg_15_0] ~= nil, ">>ship_skin_template<< 找不到舰娘皮肤配置：id = " .. arg_15_0)
+--- 获取舰娘皮肤配置(ship_skin_template)
+--- @param skinID number
+--- @return table
+function BattleDataFunction.GetPlayerShipSkinDataFromID(skinID)
+	assert(ship_skin_template[skinID] ~= nil, ">>ship_skin_template<< 找不到舰娘皮肤配置：id = " .. skinID)
 
-	return ship_skin_template[arg_15_0]
+	return ship_skin_template[skinID]
 end
 
-function BattleDataFunction.GetShipTypeTmp(arg_16_0)
-	assert(ship_data_by_type[arg_16_0] ~= nil, ">>ship_data_by_type<< 找不到舰船类型配置：id = " .. arg_16_0)
+--- 获取舰船类型配置(ship_data_by_type)
+--- @param shipTypeID number
+--- @return table
+function BattleDataFunction.GetShipTypeTmp(shipTypeID)
+	assert(ship_data_by_type[shipTypeID] ~= nil, ">>ship_data_by_type<< 找不到舰船类型配置：id = " .. shipTypeID)
 
-	return ship_data_by_type[arg_16_0]
+	return ship_data_by_type[shipTypeID]
 end
 
-function BattleDataFunction.GetMonsterTmpDataFromID(arg_17_0)
-	assert(enemy_data_statistics[arg_17_0] ~= nil, ">>enemy_data_statistics<< 找不到敌方船只配置：id = " .. arg_17_0)
+--- 获取敌方船只配置(enemy_data_statistics)
+--- @param enemyID number
+--- @return table
+function BattleDataFunction.GetMonsterTmpDataFromID(enemyID)
+	assert(enemy_data_statistics[enemyID] ~= nil, ">>enemy_data_statistics<< 找不到敌方船只配置：id = " .. enemyID)
 
-	return enemy_data_statistics[arg_17_0]
+	return enemy_data_statistics[enemyID]
 end
 
-function BattleDataFunction.GetAircraftTmpDataFromID(arg_18_0)
-	assert(aircraft_template[arg_18_0] ~= nil, ">>aircraft_template<< 找不到飞机配置：id = " .. arg_18_0)
+--- 获取飞机配置(aircraft_template)
+--- @param aircraftID number
+--- @return table
+function BattleDataFunction.GetAircraftTmpDataFromID(aircraftID)
+	assert(aircraft_template[aircraftID] ~= nil, ">>aircraft_template<< 找不到飞机配置：id = " .. aircraftID)
 
-	return aircraft_template[arg_18_0]
+	return aircraft_template[aircraftID]
 end
 
-function BattleDataFunction.GetWeaponDataFromID(arg_19_0)
-	if arg_19_0 ~= Equipment.EQUIPMENT_STATE_EMPTY and arg_19_0 ~= Equipment.EQUIPMENT_STATE_LOCK then
-		assert(equip_data_statistics[arg_19_0] ~= nil, ">>equip_data_statistics<< 找不到武器类装备配置：id = " .. arg_19_0)
+--- 获取武器装备配置(equip_data_statistics)
+--- @param equipmentID number
+--- @return table
+function BattleDataFunction.GetWeaponDataFromID(equipmentID)
+	if equipmentID ~= Equipment.EQUIPMENT_STATE_EMPTY and equipmentID ~= Equipment.EQUIPMENT_STATE_LOCK then
+		assert(equip_data_statistics[equipmentID] ~= nil, ">>equip_data_statistics<< 找不到武器类装备配置：id = " .. equipmentID)
 	end
 
-	return equip_data_statistics[arg_19_0]
+	return equip_data_statistics[equipmentID]
 end
 
-function BattleDataFunction.GetEquipDataTemplate(arg_20_0)
-	assert(equip_data_template[arg_20_0] ~= nil, ">>equip_data_template<< 找不到武器装备模板：id = " .. arg_20_0)
+--- 获取装备模板配置(equip_data_template)
+--- @param templateID number
+--- @return table
+function BattleDataFunction.GetEquipDataTemplate(templateID)
+	assert(equip_data_template[templateID] ~= nil, ">>equip_data_template<< 找不到武器装备模板：id = " .. templateID)
 
-	return equip_data_template[arg_20_0]
+	return equip_data_template[templateID]
 end
 
-function BattleDataFunction.GetSpWeaponDataFromID(arg_21_0)
-	assert(spweapon_data_statistics[arg_21_0] ~= nil, ">>spweapon_data_statistics<< 找不到特殊兵装配置：id = " .. arg_21_0)
+--- 获取特殊兵装配置(spweapon_data_statistics)
+--- @param spWeaponID number
+--- @return table
+function BattleDataFunction.GetSpWeaponDataFromID(spWeaponID)
+	assert(spweapon_data_statistics[spWeaponID] ~= nil, ">>spweapon_data_statistics<< 找不到特殊兵装配置：id = " .. spWeaponID)
 
-	return spweapon_data_statistics[arg_21_0]
+	return spweapon_data_statistics[spWeaponID]
 end
 
+--- 获取武器行为配置(weapon_property)
+--- @param weaponId number
+--- @return table
 function BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
 	assert(weapon_property[weaponId] ~= nil, ">>weapon_property<< 找不到武器行为配置：id = " .. weaponId)
 
 	return weapon_property[weaponId]
 end
 
-function BattleDataFunction.GetFormationTmpDataFromID(arg_23_0)
-	assert(formation_template[arg_23_0] ~= nil, ">>formation_template<<找不到阵型配置：id = " .. arg_23_0)
+--- 获取阵型配置(formation_template)
+--- @param formationID number
+--- @return table
+function BattleDataFunction.GetFormationTmpDataFromID(formationID)
+	assert(formation_template[formationID] ~= nil, ">>formation_template<<找不到阵型配置：id = " .. formationID)
 
-	return formation_template[arg_23_0]
+	return formation_template[formationID]
 end
 
-function BattleDataFunction.GetAITmpDataFromID(arg_24_0)
-	assert(auto_pilot_template[arg_24_0] ~= nil, ">>auto_pilot_template<< 找不到移动ai配置：id = " .. arg_24_0)
+--- 获取移动AI配置(auto_pilot_template)
+--- @param aiID number
+--- @return table
+function BattleDataFunction.GetAITmpDataFromID(aiID)
+	assert(auto_pilot_template[aiID] ~= nil, ">>auto_pilot_template<< 找不到移动ai配置：id = " .. aiID)
 
-	return auto_pilot_template[arg_24_0]
+	return auto_pilot_template[aiID]
 end
 
-function BattleDataFunction.GetShipPersonality(arg_25_0)
-	assert(ship_data_personality[arg_25_0] ~= nil, ">>shipPersonality<< 找不到性格配置：id = " .. arg_25_0)
+--- 获取舰船性格配置(ship_data_personality)
+--- @param personalityID number
+--- @return table
+function BattleDataFunction.GetShipPersonality(personalityID)
+	assert(ship_data_personality[personalityID] ~= nil, ">>shipPersonality<< 找不到性格配置：id = " .. personalityID)
 
-	return ship_data_personality[arg_25_0]
+	return ship_data_personality[personalityID]
 end
 
-function BattleDataFunction.GetEnemyTypeDataByType(arg_26_0)
-	assert(enemy_data_by_type[arg_26_0] ~= nil, ">>enemy_data_by_type<< 找不到怪物类型：type = " .. arg_26_0)
+--- 获取敌方类型数据(enemy_data_by_type)
+--- @param enemyType number
+--- @return table
+function BattleDataFunction.GetEnemyTypeDataByType(enemyType)
+	assert(enemy_data_by_type[enemyType] ~= nil, ">>enemy_data_by_type<< 找不到怪物类型：type = " .. enemyType)
 
-	return enemy_data_by_type[arg_26_0]
+	return enemy_data_by_type[enemyType]
 end
 
--- 演习场，根据舰种不同获得不同的Buff
--- 从ship_data_by_type的arena_buff字段获得
-function BattleDataFunction.GetArenaBuffByShipType(arg_27_0)
-	return BattleDataFunction.GetShipTypeTmp(arg_27_0).arena_buff
+--- 演习场，根据舰种不同获得不同的Buff
+--- 从ship_data_by_type的arena_buff字段获得
+--- @param shipType number 舰船类型
+--- @return table arena_buff数据
+function BattleDataFunction.GetArenaBuffByShipType(shipType)
+	return BattleDataFunction.GetShipTypeTmp(shipType).arena_buff
 end
 
-function BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(arg_28_0, arg_28_1)
-	if arg_28_0 == SYSTEM_DUEL then
-		assert(ship_level[arg_28_1] ~= nil, ">>ship_level<< 找不到等级配置：level = " .. arg_28_1)
+--- 获取玩家单位演习耐久额外修正
+--- 演习中根据舰船等级获得额外的耐久倍率和加成
+--- @param battleType any 战斗类型
+--- @param level number 舰船等级
+--- @return number durability_ratio 耐久倍率
+--- @return number durability_add 耐久加成
+function BattleDataFunction.GetPlayerUnitDurabilityExtraAddition(battleType, level)
+	if battleType == SYSTEM_DUEL then
+		assert(ship_level[level] ~= nil, ">>ship_level<< 找不到等级配置：level = " .. level)
 
-		return ship_level[arg_28_1].arena_durability_ratio, ship_level[arg_28_1].arena_durability_add
+		return ship_level[level].arena_durability_ratio, ship_level[level].arena_durability_add
 	else
 		return 1, 0
 	end
 end
 
-function BattleDataFunction.GetSkillDataTemplate(arg_29_0)
-	return skill_data_template[arg_29_0]
+--- 获取技能数据模板(skill_data_template)
+--- @param skillDataID number
+--- @return table|nil
+function BattleDataFunction.GetSkillDataTemplate(skillDataID)
+	return skill_data_template[skillDataID]
 end
 
-function BattleDataFunction.GetShipTransformDataTemplate(arg_30_0)
-	local var_30_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_30_0)
+--- 获取舰船变换数据模板(ship_data_trans)
+--- 用于μ兵装/改造等系统
+--- @param shipID number
+--- @return table|nil
+function BattleDataFunction.GetShipTransformDataTemplate(shipID)
+	local shipModel = BattleDataFunction.GetPlayerShipModelFromID(shipID)
 
-	return ship_data_trans[var_30_0.group_type]
+	return ship_data_trans[shipModel.group_type]
 end
 
-function BattleDataFunction.GetShipMetaFromDataTemplate(arg_31_0)
-	local var_31_0 = BattleDataFunction.GetPlayerShipModelFromID(arg_31_0)
+--- 获取舰船meta强化数据模板(ship_strengthen_meta)
+--- @param shipID number
+--- @return table|nil
+function BattleDataFunction.GetShipMetaFromDataTemplate(shipID)
+	local shipModel = BattleDataFunction.GetPlayerShipModelFromID(shipID)
 
-	return ship_strengthen_meta[var_31_0.group_type]
+	return ship_strengthen_meta[shipModel.group_type]
 end
 
-function BattleDataFunction.GetEquipSkinDataFromID(arg_32_0)
-	assert(equip_skin_template[arg_32_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_32_0)
+--- 获取装备皮肤数据(equip_skin_template)
+--- @param skinID number
+--- @return table
+function BattleDataFunction.GetEquipSkinDataFromID(skinID)
+	assert(equip_skin_template[skinID] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. skinID)
 
-	return equip_skin_template[arg_32_0]
+	return equip_skin_template[skinID]
 end
 
-function BattleDataFunction.GetEquipSkin(arg_33_0)
-	assert(equip_skin_template[arg_33_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_33_0)
+--- 获取装备皮肤相关的子弹/特效名
+--- @param skinID number
+--- @return string bullet_name
+--- @return string derivate_bullet
+--- @return string derivate_torpedo
+--- @return string derivate_boom
+--- @return string fire_fx_name
+--- @return string hit_fx_name
+function BattleDataFunction.GetEquipSkin(skinID)
+	assert(equip_skin_template[skinID] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. skinID)
 
-	local var_33_0 = equip_skin_template[arg_33_0]
+	local equipSkinData = equip_skin_template[skinID]
 
-	return var_33_0.bullet_name, var_33_0.derivate_bullet, var_33_0.derivate_torpedo, var_33_0.derivate_boom, var_33_0.fire_fx_name, var_33_0.hit_fx_name
+	return equipSkinData.bullet_name, equipSkinData.derivate_bullet, equipSkinData.derivate_torpedo, equipSkinData.derivate_boom, equipSkinData.fire_fx_name, equipSkinData.hit_fx_name
 end
 
-function BattleDataFunction.GetEquipSkinSFX(arg_34_0)
-	assert(equip_skin_template[arg_34_0] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. arg_34_0)
+--- 获取装备皮肤的命中/未命中音效
+--- @param skinID number
+--- @return string hit_sfx
+--- @return string miss_sfx
+function BattleDataFunction.GetEquipSkinSFX(skinID)
+	assert(equip_skin_template[skinID] ~= nil, ">>equip_skin_template<< 找不到装备皮肤配置：id = " .. skinID)
 
-	local var_34_0 = equip_skin_template[arg_34_0]
+	local equipSkinData = equip_skin_template[skinID]
 
-	return var_34_0.hit_sfx, var_34_0.miss_sfx
+	return equipSkinData.hit_sfx, equipSkinData.miss_sfx
 end
 
-function BattleDataFunction.GetSpecificGuildBossEnemyList(arg_35_0, arg_35_1)
-	local var_35_0 = guild_boss_event[arg_35_0].expedition_id
-	local var_35_1 = {}
+--- 获取大舰队boss的特定敌人列表
+--- @param guildEventID number 大舰队事件ID
+--- @param formationID number 阵型ID
+--- @return table 敌人列表
+function BattleDataFunction.GetSpecificGuildBossEnemyList(guildEventID, formationID)
+	local expeditionID = guild_boss_event[guildEventID].expedition_id
+	local enemyList = {}
 
-	if var_35_0[1] == arg_35_1 then
-		var_35_1 = var_35_0[2]
+	if expeditionID[1] == formationID then
+		enemyList = expeditionID[2]
 	end
 
-	return var_35_1
+	return enemyList
 end
 
-function BattleDataFunction.GetSpecificEnemyList(arg_36_0, arg_36_1)
-	local var_36_0 = activity_template[arg_36_0]
-	local var_36_1 = activity_event_worldboss[var_36_0.config_id].ex_expedition_enemy
-	local var_36_2
+--- 获取特定活动的敌人列表
+--- @param activityID number 活动ID
+--- @param formationID number 阵型ID
+--- @return table|nil 敌人子列表
+function BattleDataFunction.GetSpecificEnemyList(activityID, formationID)
+	local activityData = activity_template[activityID]
+	local expeditionEnemyList = activity_event_worldboss[activityData.config_id].ex_expedition_enemy
+	local enemySubList
 
-	for iter_36_0, iter_36_1 in ipairs(var_36_1) do
-		if iter_36_1[1] == arg_36_1 then
-			var_36_2 = iter_36_1[2]
+	for _, enemyEntry in ipairs(expeditionEnemyList) do
+		if enemyEntry[1] == formationID then
+			enemySubList = enemyEntry[2]
 
 			break
 		end
 	end
 
-	return var_36_2
+	return enemySubList
 end
 
-function BattleDataFunction.GetMetaBossTemplate(arg_37_0)
-	return world_joint_boss_template[arg_37_0]
+--- 获取Meta Boss模板(world_joint_boss_template)
+--- @param bossID number
+--- @return table
+function BattleDataFunction.GetMetaBossTemplate(bossID)
+	return world_joint_boss_template[bossID]
 end
 
-function BattleDataFunction.GetMetaBossLevelTemplate(arg_38_0, arg_38_1)
-	local var_38_0 = BattleDataFunction.GetMetaBossTemplate(arg_38_0).boss_level_id + (arg_38_1 - 1)
+--- 获取Meta Boss等级模板
+--- boss_level_id + (level - 1) = 实际world_boss_level的id
+--- @param bossID number Boss ID
+--- @param level number Boss等级
+--- @return table
+function BattleDataFunction.GetMetaBossLevelTemplate(bossID, level)
+	local bossLevelID = BattleDataFunction.GetMetaBossTemplate(bossID).boss_level_id + (level - 1)
 
-	return world_boss_level[var_38_0]
+	return world_boss_level[bossLevelID]
 end
 
-function BattleDataFunction.GetSpecificWorldJointEnemyList(arg_39_0, arg_39_1, arg_39_2)
-	local var_39_0 = BattleDataFunction.GetMetaBossLevelTemplate(arg_39_1, arg_39_2)
+--- 获取特定世界联合boss的敌人列表
+--- @param _ any (未使用)
+--- @param bossID number
+--- @param level number
+--- @return table 敌人ID列表
+function BattleDataFunction.GetSpecificWorldJointEnemyList(_, bossID, level)
+	local bossLevelTemplate = BattleDataFunction.GetMetaBossLevelTemplate(bossID, level)
 
 	return {
-		var_39_0.enemy_id
+		bossLevelTemplate.enemy_id
 	}
 end
 
-function BattleDataFunction.IncreaseAttributes(arg_40_0, arg_40_1, arg_40_2)
-	for iter_40_0, iter_40_1 in ipairs(arg_40_2) do
-		if iter_40_1[arg_40_1] ~= nil and type(iter_40_1[arg_40_1]) == "number" then
-			arg_40_0 = arg_40_0 + iter_40_1[arg_40_1]
+--- 根据属性列表增加属性值
+--- 遍历attrList中每个元素，若存在attrName字段且为数值，则累加到baseValue
+--- @param baseValue number 基础值(会被修改)
+--- @param attrName string 属性名
+--- @param attrList table 属性列表
+function BattleDataFunction.IncreaseAttributes(baseValue, attrName, attrList)
+	for _, attrEntry in ipairs(attrList) do
+		if attrEntry[attrName] ~= nil and type(attrEntry[attrName]) == "number" then
+			baseValue = baseValue + attrEntry[attrName]
 		end
 	end
 end
 
--- 舰载机创建的武器
+--- 舰载机创建的武器
+--- @param weaponId number 武器ID
+--- @param aircraft BattleAircraftUnit 飞机单位
+--- @param index number 装备索引
+--- @param potential number 潜能系数
+--- @return BattleWeaponUnit
 function BattleDataFunction.CreateAirFighterWeaponUnit(weaponId, aircraft, index, potential)
 	local weapon
 	local weaponTemplate = BattleDataFunction.GetWeaponPropertyDataFromID(weaponId)
@@ -719,14 +878,22 @@ function BattleDataFunction.CreateAirFighterWeaponUnit(weaponId, aircraft, index
 	return weapon
 end
 
-function BattleDataFunction.GetWords(arg_42_0, arg_42_1, arg_42_2)
-	local var_42_0, var_42_1, var_42_2 = ShipWordHelper.GetWordAndCV(arg_42_0, arg_42_1, 1, true, arg_42_2)
+--- 获取舰船台词文本
+--- @param skinID number 皮肤ID
+--- @param wordKey string 台词类型名
+--- @param intimacy number 好感度
+--- @return table 台词数据
+function BattleDataFunction.GetWords(skinID, wordKey, intimacy)
+	local _, _, words = ShipWordHelper.GetWordAndCV(skinID, wordKey, 1, true, intimacy)
 
-	return var_42_2
+	return words
 end
 
--- 对Buff ID，根据实际的system进行转换
--- 被BattleMediator.GenBattleData调用
+--- 对Buff ID，根据实际的system进行转换
+--- 被BattleMediator.GenBattleData调用
+--- @param system any 战斗系统/类型
+--- @param buffID number 原始Buff ID
+--- @return number 转换后的Buff ID
 function BattleDataFunction.SkillTranform(system, buffID)
 	-- 从skill_data_template的system_transform字段获得转换后的Buff ID
 	local skillDataTmp = BattleDataFunction.GetSkillDataTemplate(buffID)
@@ -744,8 +911,10 @@ function BattleDataFunction.SkillTranform(system, buffID)
 	end
 end
 
--- 从ship_data_template的hide_buff_list字段生成隐藏Buff列表
--- 被BattleMediator.GenBattleData调用
+--- 从ship_data_template的hide_buff_list字段生成隐藏Buff列表
+--- 被BattleMediator.GenBattleData调用
+--- @param configId number 舰船配置ID
+--- @return table {[buffID] = {level = 1, id = buffID}, ...}
 function BattleDataFunction.GenerateHiddenBuff(configId)
 	local hide_buff_list = BattleDataFunction.GetPlayerShipModelFromID(configId).hide_buff_list
 	local hideBuffList = {}
@@ -761,11 +930,20 @@ function BattleDataFunction.GenerateHiddenBuff(configId)
 	return hideBuffList
 end
 
-function BattleDataFunction.GetDivingFilter(arg_45_0)
-	return map_data[arg_45_0].diving_filter
+--- 获取地图潜水过滤器配置
+--- @param mapID number
+--- @return table
+function BattleDataFunction.GetDivingFilter(mapID)
+	return map_data[mapID].diving_filter
 end
 
--- Important: 潜艇PhaseList生成
+--- Important: 潜艇PhaseList生成
+--- @param subAttackBaseLine number 攻击基准线X
+--- @param subRetreatBaseLine number 撤退基准线X
+--- @param raidDist number 突袭距离
+--- @param raidDuration function 突袭持续时间(函数)
+--- @param oxyAtkDuration number 氧气攻击持续时间
+--- @return table Phase列表
 function BattleDataFunction.GeneratePlayerSubmarinPhase(subAttackBaseLine, subRetreatBaseLine, raidDist, raidDuration, oxyAtkDuration)
 	local subAttackLine = subAttackBaseLine - raidDist
 
@@ -809,14 +987,18 @@ function BattleDataFunction.GeneratePlayerSubmarinPhase(subAttackBaseLine, subRe
 	}
 end
 
-function BattleDataFunction.GetEnvironmentBehaviour(arg_47_0)
-	assert(battle_environment_behaviour_template[arg_47_0] ~= nil, ">>battle_environment_behaviour_template<< 找不到环境行为配置：id = " .. arg_47_0)
+--- 获取环境行为配置(battle_environment_behaviour_template)
+--- @param envID number
+--- @return table
+function BattleDataFunction.GetEnvironmentBehaviour(envID)
+	assert(battle_environment_behaviour_template[envID] ~= nil, ">>battle_environment_behaviour_template<< 找不到环境行为配置：id = " .. envID)
 
-	return battle_environment_behaviour_template[arg_47_0]
+	return battle_environment_behaviour_template[envID]
 end
 
--- 添加驱逐舰的满破加成
--- 被BattleDataProxy.generatePlayerUnit调用
+--- 添加驱逐舰的满破加成
+--- 被BattleDataProxy.generatePlayerUnit调用
+--- @param playerUnit BattleUnit
 function BattleDataFunction.AttachUltimateBonus(playerUnit)
 	local shipID = playerUnit:GetTemplateID()
 
@@ -840,6 +1022,9 @@ function BattleDataFunction.AttachUltimateBonus(playerUnit)
 	end
 end
 
+--- 设备加成提升（辅助舰种满破加成）
+--- 将设备属性值乘以AuxBoostValue后直接加到基础属性上
+--- @param playerUnit BattleUnit
 function BattleDataFunction.AuxBoost(playerUnit)
 	local equipmentList = playerUnit:GetEquipment()
 
@@ -872,10 +1057,13 @@ function BattleDataFunction.AuxBoost(playerUnit)
 	end
 end
 
-function BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(arg_50_0)
-	for iter_50_0, iter_50_1 in pairs(strategy_data_template) do
-		if iter_50_1.buff_id == arg_50_0 then
-			return iter_50_1
+--- 通过战斗Buff ID获取SLG策略Buff
+--- @param buffID number
+--- @return table|nil
+function BattleDataFunction.GetSLGStrategyBuffByCombatBuffID(buffID)
+	for _, strategyData in pairs(strategy_data_template) do
+		if strategyData.buff_id == buffID then
+			return strategyData
 		end
 	end
 end

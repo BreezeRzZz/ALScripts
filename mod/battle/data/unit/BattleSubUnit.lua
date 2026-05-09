@@ -39,24 +39,24 @@ function BattleSubUnit.setWeapon(self, equipmentList)
 	local torpedoAmmoTotal = 0
 
 	-- 统计所有装备提供的鱼雷弹药总量
-	for iter_2_0, iter_2_1 in ipairs(equipmentList) do
-		if iter_2_0 > Ship.WEAPON_COUNT and iter_2_1 then
-			torpedoAmmoTotal = torpedoAmmoTotal + iter_2_1.torpedoAmmo
+	for equipIndex, equipment in ipairs(equipmentList) do
+		if equipIndex > Ship.WEAPON_COUNT and equipment then
+			torpedoAmmoTotal = torpedoAmmoTotal + equipment.torpedoAmmo
 		end
 	end
 
 	-- 收集需要一次性创建的鱼雷武器
 	local torpedoWeaponList = {}
 
-	for iter_2_2, iter_2_3 in ipairs(equipmentList) do
-		if iter_2_3 and iter_2_3.skin and iter_2_3.skin ~= 0 and Equipment.IsOrbitSkin(iter_2_3.skin) then
+	for equipIndex, equipInfo in ipairs(equipmentList) do
+		if equipInfo and equipInfo.skin and equipInfo.skin ~= 0 and Equipment.IsOrbitSkin(equipInfo.skin) then
 			self._orbitSkinIDList = self._orbitSkinIDList or {}
 
-			table.insert(self._orbitSkinIDList, iter_2_3.skin)
+			table.insert(self._orbitSkinIDList, equipInfo.skin)
 		end
 
-		if iter_2_2 <= Ship.WEAPON_COUNT then
-			local proficiency = proficiencyList[iter_2_2]
+		if equipIndex <= Ship.WEAPON_COUNT then
+			local proficiency = proficiencyList[equipIndex]
 
 			-- 内嵌函数：处理武器创建，返回鱼雷弹药数(如果是鱼雷)或false
 			local function processWeapon(weaponID, label, skin)
@@ -66,41 +66,41 @@ function BattleSubUnit.setWeapon(self, equipmentList)
 				if weaponProperty.type == BattleConst.EquipmentType.TORPEDO then
 					return weaponProperty.torpedo_ammo
 				else
-					local baseCount = baseList[iter_2_2]
+					local baseCount = baseList[equipIndex]
 
-					for iter_3_0 = 1, baseCount do
-						self:AddWeapon(weaponID, label, skin, proficiency, iter_2_2)
+					for baseIndex = 1, baseCount do
+						self:AddWeapon(weaponID, label, skin, proficiency, equipIndex)
 					end
 
 					return false
 				end
 			end
 
-			if iter_2_3.equipment then
-				local weaponIDs = iter_2_3.equipment.weapon_id
+			if equipInfo.equipment then
+				local weaponIDs = equipInfo.equipment.weapon_id
 
-				for iter_2_4, iter_2_5 in ipairs(weaponIDs) do
-					if iter_2_5 and iter_2_5 ~= -1 then
-						local ammo = processWeapon(iter_2_5, iter_2_3.equipment.label, iter_2_3.skin)
+				for _, weaponID in ipairs(weaponIDs) do
+					if weaponID and weaponID ~= -1 then
+						local ammo = processWeapon(weaponID, equipInfo.equipment.label, equipInfo.skin)
 
 						if ammo then
 							table.insert(torpedoWeaponList, {
-								id = iter_2_5,
+								id = weaponID,
 								ammo = ammo,
-								index = iter_2_2
+								index = equipIndex
 							})
 						end
 					end
 				end
 			else
-				local defaultWeaponID = defaultEquipList[iter_2_2]
+				local defaultWeaponID = defaultEquipList[equipIndex]
 				local ammo = processWeapon(defaultWeaponID)
 
 				if ammo then
 					table.insert(torpedoWeaponList, {
 						id = defaultWeaponID,
 						ammo = ammo,
-						index = iter_2_2
+						index = equipIndex
 					})
 				end
 			end
@@ -127,20 +127,20 @@ function BattleSubUnit.setWeapon(self, equipmentList)
 	repeat
 		local remainingAmmo = 0
 
-		for iter_2_6, iter_2_7 in ipairs(torpedoWeaponList) do
+		for _, torpedoInfo in ipairs(torpedoWeaponList) do
 			-- 当前武器弹药不足时，从总额外弹药中补充
-			if iter_2_7.ammo <= 0 and torpedoAmmoTotal > 0 then
-				iter_2_7.ammo = iter_2_7.ammo + 1
+			if torpedoInfo.ammo <= 0 and torpedoAmmoTotal > 0 then
+				torpedoInfo.ammo = torpedoInfo.ammo + 1
 				torpedoAmmoTotal = torpedoAmmoTotal - 1
 			end
 
-			if iter_2_7.ammo > 0 then
-				addTorpedo(iter_2_7.id, iter_2_7.index)
+			if torpedoInfo.ammo > 0 then
+				addTorpedo(torpedoInfo.id, torpedoInfo.index)
 
-				iter_2_7.ammo = iter_2_7.ammo - 1
+				torpedoInfo.ammo = torpedoInfo.ammo - 1
 			end
 
-			remainingAmmo = remainingAmmo + iter_2_7.ammo
+			remainingAmmo = remainingAmmo + torpedoInfo.ammo
 		end
 	until remainingAmmo == 0 and torpedoAmmoTotal == 0
 end

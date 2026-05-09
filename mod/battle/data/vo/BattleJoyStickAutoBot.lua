@@ -42,11 +42,11 @@ function BattleJoyStickAutoBot.SetActive(self, active)
 	self._active = active
 
 	if active then
-		local function var_4_0()
+		local function motionFunc()
 			return self._strategy:Output()
 		end
 
-		self._fleetVO:SetMotionSource(var_4_0)
+		self._fleetVO:SetMotionSource(motionFunc)
 	else
 		self._fleetVO:SetMotionSource()
 	end

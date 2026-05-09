@@ -1,8 +1,9 @@
-local var_0_0 = class("BattleFacadeGate")
+--- @class BattleFacadeGate : 战斗门面命令映射，根据系统类型选择对应的Command类
+local BattleFacadeGate = class("BattleFacadeGate")
 
-ys.Battle.BattleFacadeGate = var_0_0
-var_0_0.__name = "BattleFacadeGate"
-var_0_0.CommandGates = {
+ys.Battle.BattleFacadeGate = BattleFacadeGate
+BattleFacadeGate.__name = "BattleFacadeGate"
+BattleFacadeGate.CommandGates = {
 	[SYSTEM_DUEL] = ys.Battle.BattleDuelArenaCommand,
 	[SYSTEM_CHALLENGE] = ys.Battle.BattleSingleChallengeCommand,
 	[SYSTEM_DODGEM] = ys.Battle.BattleDodgemCommand,
@@ -19,4 +20,4 @@ var_0_0.CommandGates = {
 	[SYSTEM_SCENARIO_SUB_STRIKE] = ys.Battle.BattleScenarioSubStrikeCommand
 }
 
-return var_0_0
+return BattleFacadeGate

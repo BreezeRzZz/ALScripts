@@ -1,5 +1,7 @@
 ys = ys or {}
--- TODO
+
+--- @class OxyState : 潜艇氧气状态机
+--- 管理潜艇的下潜、上浮、突袭、撤退等状态
 local ys = ys
 local BattleConfig = ys.Battle.BattleConfig
 local BattleConst = ys.Battle.BattleConst
@@ -19,68 +21,85 @@ OxyState.STATE_FREE_FLOAT = "STATE_FREE_FLOAT"
 OxyState.STATE_FREE_BENCH = "STATE_FREE_BENCH"
 OxyState.STATE_DEEP_MINE = "STATE_DEEP_MINE"
 
-function OxyState.Ctor(arg_1_0, arg_1_1)
-	arg_1_0._target = arg_1_1
-	arg_1_0._idleState = ys.Battle.IdleOxyState.New()
-	arg_1_0._diveState = ys.Battle.DiveOxyState.New()
-	arg_1_0._floatState = ys.Battle.FloatOxyState.New()
-	arg_1_0._raidState = ys.Battle.RaidOxyState.New()
-	arg_1_0._retreatState = ys.Battle.RetreatOxyState.New()
-	arg_1_0._freeDiveState = ys.Battle.FreeDiveOxyState.New()
-	arg_1_0._freeFloatState = ys.Battle.FreeFloatOxyState.New()
-	arg_1_0._freeBenchState = ys.Battle.FreeBenchOxyState.New()
-	arg_1_0._deepMineState = ys.Battle.DeepMineOxyState.New()
+--- 构造函数：创建所有子状态，添加初始氧气Buff，初始化为Idle
+--- @param target BattleUnit: 状态机所属的单位
+function OxyState.Ctor(self, target)
+	self._target = target
+	self._idleState = ys.Battle.IdleOxyState.New()
+	self._diveState = ys.Battle.DiveOxyState.New()
+	self._floatState = ys.Battle.FloatOxyState.New()
+	self._raidState = ys.Battle.RaidOxyState.New()
+	self._retreatState = ys.Battle.RetreatOxyState.New()
+	self._freeDiveState = ys.Battle.FreeDiveOxyState.New()
+	self._freeFloatState = ys.Battle.FreeFloatOxyState.New()
+	self._freeBenchState = ys.Battle.FreeBenchOxyState.New()
+	self._deepMineState = ys.Battle.DeepMineOxyState.New()
 
-	local var_1_0 = ys.Battle.BattleBuffUnit.New(8520)
+	local initBuff = ys.Battle.BattleBuffUnit.New(8520)
 
-	arg_1_0._target:AddBuff(var_1_0)
+	self._target:AddBuff(initBuff)
 	-- 初始状态为Idle
-	arg_1_0:OnIdleState()
+	self:OnIdleState()
 end
 
-function OxyState.SetRecycle(arg_2_0, arg_2_1)
-	arg_2_0._recycle = arg_2_1
+--- 设置回收标记
+--- @param recycle any: 回收标记
+function OxyState.SetRecycle(self, recycle)
+	self._recycle = recycle
 end
 
-function OxyState.SetBubbleTemplate(arg_3_0, arg_3_1, arg_3_2)
-	arg_3_0._bubbleInitial = arg_3_1 or 0
-	arg_3_0._bubbleInterval = arg_3_2 or 0
-	arg_3_0._bubbleTimpStamp = nil
+--- 设置气泡模板和间隔
+--- @param bubbleInitial number: 气泡初始X坐标
+--- @param bubbleInterval number: 气泡间隔
+function OxyState.SetBubbleTemplate(self, bubbleInitial, bubbleInterval)
+	self._bubbleInitial = bubbleInitial or 0
+	self._bubbleInterval = bubbleInterval or 0
+	self._bubbleTimpStamp = nil
 end
 
-function OxyState.UpdateOxygen(arg_4_0)
-	arg_4_0._currentState:DoUpdateOxy(arg_4_0)
+--- 更新氧气（委托给当前状态）
+function OxyState.UpdateOxygen(self)
+	self._currentState:DoUpdateOxy(self)
 end
 
-function OxyState.GetNextBubbleStamp(arg_5_0)
-	if arg_5_0._currentState:GetBubbleFlag() then
-		if arg_5_0._target:GetPosition().x < arg_5_0._bubbleInitial and arg_5_0._bubbleTimpStamp == nil then
-			arg_5_0._bubbleTimpStamp = 0
+--- 获取下一个气泡时间戳
+--- @return number|nil: 气泡时间戳
+function OxyState.GetNextBubbleStamp(self)
+	if self._currentState:GetBubbleFlag() then
+		if self._target:GetPosition().x < self._bubbleInitial and self._bubbleTimpStamp == nil then
+			self._bubbleTimpStamp = 0
 		end
 
-		return arg_5_0._bubbleTimpStamp
+		return self._bubbleTimpStamp
 	else
 		return nil
 	end
 end
 
-function OxyState.SetForceExpose(arg_6_0, arg_6_1)
-	arg_6_0._forceExpose = arg_6_1
+--- 设置强制暴露
+--- @param isForceExpose boolean: 是否强制暴露
+function OxyState.SetForceExpose(self, isForceExpose)
+	self._forceExpose = isForceExpose
 
-	arg_6_0._target:SetForceVisible()
+	self._target:SetForceVisible()
 end
 
-function OxyState.GetForceExpose(arg_7_0)
-	return arg_7_0._forceExpose
+--- 获取强制暴露状态
+--- @return boolean: 是否强制暴露
+function OxyState.GetForceExpose(self)
+	return self._forceExpose
 end
 
-function OxyState.FlashBubbleStamp(arg_8_0, arg_8_1)
-	arg_8_0._bubbleTimpStamp = arg_8_1 + arg_8_0._bubbleInterval
+--- 刷新气泡时间戳
+--- @param currentTime number: 当前时间
+function OxyState.FlashBubbleStamp(self, currentTime)
+	self._bubbleTimpStamp = currentTime + self._bubbleInterval
 end
 
--- TODO
--- 潜艇状态切换
-function OxyState.ChangeState(self, newState, arg_9_2)
+--- 潜艇状态切换
+--- @param newState string: 新状态
+--- @param _ any: 未使用参数
+function OxyState.ChangeState(self, newState, _)
 	if newState == OxyState.STATE_IDLE then
 		self:OnIdleState()
 	elseif newState == OxyState.STATE_DIVE then
@@ -106,59 +125,66 @@ function OxyState.ChangeState(self, newState, arg_9_2)
 	self._target:GetCldData().Surface = self._currentState:GetDiveState()
 end
 
-function OxyState.OxyConsume(arg_10_0)
-	arg_10_0._target:OxyConsume()
+--- 氧气消耗
+function OxyState.OxyConsume(self)
+	self._target:OxyConsume()
 end
 
-function OxyState.OxyRecover(arg_11_0, arg_11_1)
-	arg_11_0._target:OxyRecover(arg_11_1)
+--- 氧气恢复
+--- @param recoverAmount number: 恢复量
+function OxyState.OxyRecover(self, recoverAmount)
+	self._target:OxyRecover(recoverAmount)
 end
 
-function OxyState.OnIdleState(arg_12_0)
-	arg_12_0._currentState = arg_12_0._idleState
+--- 进入待机状态
+function OxyState.OnIdleState(self)
+	self._currentState = self._idleState
 end
 
-function OxyState.OnDiveState(arg_13_0)
-	local var_13_0 = arg_13_0._currentState:UpdateDive()
-	local var_13_1 = arg_13_0._currentState
+--- 进入潜水状态：切换碰撞数据，设置AI，触发Buff
+function OxyState.OnDiveState(self)
+	local wasDiving = self._currentState:UpdateDive()
+	local originalState = self._currentState
 
-	arg_13_0._currentState = arg_13_0._diveState
+	self._currentState = self._diveState
 
-	arg_13_0._currentState:UpdateCldData(arg_13_0._target, var_13_1)
-	arg_13_0._target:ChangeWeaponDiveState()
-	arg_13_0._target:SetCrash(false)
-	arg_13_0._target:SetAI(BattleConfig.SUB_DEFAULT_ENGAGE_AI)
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetCrash(false)
+	self._target:SetAI(BattleConfig.SUB_DEFAULT_ENGAGE_AI)
 
-	if var_13_0 then
-		arg_13_0._target:SetDiveInvisible(true)
+	if wasDiving then
+		self._target:SetDiveInvisible(true)
 	end
 
-	arg_13_0._target:StateChange(ys.Battle.UnitState.STATE_DIVE)
-	arg_13_0._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_DIVE, {})
-	arg_13_0._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
-	arg_13_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
+	self._target:StateChange(ys.Battle.UnitState.STATE_DIVE)
+	self._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_DIVE, {})
+	self._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnFloatState(arg_14_0)
-	local var_14_0 = arg_14_0._currentState
+--- 进入上浮状态：取消隐身，播放特效，触发Buff
+function OxyState.OnFloatState(self)
+	local originalState = self._currentState
 
-	arg_14_0._currentState = arg_14_0._floatState
+	self._currentState = self._floatState
 
-	arg_14_0._currentState:UpdateCldData(arg_14_0._target, var_14_0)
-	arg_14_0._target:ChangeWeaponDiveState()
-	arg_14_0._target:SetDiveInvisible(false)
-	arg_14_0._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
-	arg_14_0._target:RemoveSonarExpose()
-	arg_14_0._target:PlayFX("qianting_chushui", false)
-	arg_14_0._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FLOAT, {})
-	arg_14_0._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
-	arg_14_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetDiveInvisible(false)
+	self._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
+	self._target:RemoveSonarExpose()
+	self._target:PlayFX("qianting_chushui", false)
+	self._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FLOAT, {})
+	self._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
 end
 
 -- 潜艇攻击阶段
 -- 一般来讲，是从Idle切换而来
+--- @param self OxyState
 function OxyState.OnRaidState(self)
-	local var_15_0 = self._currentState:UpdateDive()
+	local wasDiving = self._currentState:UpdateDive()
 	local originalState = self._currentState
 
 	self._currentState = self._raidState
@@ -166,7 +192,7 @@ function OxyState.OnRaidState(self)
 	self._currentState:UpdateCldData(self._target, originalState)
 	self._target:ChangeWeaponDiveState()
 
-	if var_15_0 then
+	if wasDiving then
 		self._target:SetDiveInvisible(true)
 	end
 
@@ -178,7 +204,9 @@ function OxyState.OnRaidState(self)
 	-- Buff 314
 	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
 end
--- TODO
+
+--- 进入撤退状态
+--- @param self OxyState
 function OxyState.OnRetreatState(self)
 	local originalState = self._currentState
 
@@ -193,90 +221,110 @@ function OxyState.OnRetreatState(self)
 	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnFreeDiveState(arg_17_0)
-	local var_17_0 = arg_17_0._currentState
+--- 进入自由潜水状态（无消耗下潜）
+function OxyState.OnFreeDiveState(self)
+	local originalState = self._currentState
 
-	arg_17_0._currentState = arg_17_0._freeDiveState
+	self._currentState = self._freeDiveState
 
-	arg_17_0._currentState:UpdateCldData(arg_17_0._target, var_17_0)
-	arg_17_0._target:ChangeWeaponDiveState()
-	arg_17_0._target:SetCrash(false)
-	arg_17_0._target:SetDiveInvisible(true)
-	arg_17_0._target:StateChange(ys.Battle.UnitState.STATE_DIVE)
-	arg_17_0._target:PlayFX("qianting_rushui", false)
-	arg_17_0._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_DIVE, {})
-	arg_17_0._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
-	arg_17_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetCrash(false)
+	self._target:SetDiveInvisible(true)
+	self._target:StateChange(ys.Battle.UnitState.STATE_DIVE)
+	self._target:PlayFX("qianting_rushui", false)
+	self._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_DIVE, {})
+	self._target:RemoveBuff(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF)
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnFreeFloatState(arg_18_0)
-	local var_18_0 = arg_18_0._currentState
+--- 进入自由上浮状态
+function OxyState.OnFreeFloatState(self)
+	local originalState = self._currentState
 
-	arg_18_0._currentState = arg_18_0._freeFloatState
+	self._currentState = self._freeFloatState
 
-	arg_18_0._currentState:UpdateCldData(arg_18_0._target, var_18_0)
-	arg_18_0._target:ChangeWeaponDiveState()
-	arg_18_0._target:SetDiveInvisible(false)
-	arg_18_0._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
-	arg_18_0._target:PlayFX("qianting_chushui", false)
-	arg_18_0._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FLOAT, {})
-	arg_18_0._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
-	arg_18_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetDiveInvisible(false)
+	self._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
+	self._target:PlayFX("qianting_chushui", false)
+	self._target:TriggerBuff(BattleConst.BuffEffectType.ON_SUBMARINE_FLOAT, {})
+	self._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnFreeBenchState(arg_19_0)
-	local var_19_0 = arg_19_0._currentState
+--- 进入自由停驻状态
+function OxyState.OnFreeBenchState(self)
+	local originalState = self._currentState
 
-	arg_19_0._currentState = arg_19_0._freeBenchState
+	self._currentState = self._freeBenchState
 
-	arg_19_0._currentState:UpdateCldData(arg_19_0._target, var_19_0)
-	arg_19_0._target:ChangeWeaponDiveState()
-	arg_19_0._target:SetDiveInvisible(false)
-	arg_19_0._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
-	arg_19_0._target:PlayFX("qianting_chushui", false)
-	arg_19_0._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
-	arg_19_0._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetDiveInvisible(false)
+	self._target:StateChange(ys.Battle.UnitState.STATE_MOVE)
+	self._target:PlayFX("qianting_chushui", false)
+	self._target:RemoveBuff(BattleConfig.SUB_DIVE_IMMUNE_IGNITE_BUFF)
+	self._target:AddBuff(ys.Battle.BattleBuffUnit.New(BattleConfig.SUB_FLOAT_DISIMMUNE_IGNITE_BUFF))
 end
 
-function OxyState.OnDeepMineState(arg_20_0)
-	local var_20_0 = arg_20_0._currentState
+--- 进入深潜采矿状态
+function OxyState.OnDeepMineState(self)
+	local originalState = self._currentState
 
-	arg_20_0._currentState = arg_20_0._deepMineState
+	self._currentState = self._deepMineState
 
-	arg_20_0._currentState:UpdateCldData(arg_20_0._target, var_20_0)
-	arg_20_0._target:SetDiveInvisible(false)
-	arg_20_0._target:ChangeWeaponDiveState()
-	arg_20_0._target:SetAI(20005)
+	self._currentState:UpdateCldData(self._target, originalState)
+	self._target:SetDiveInvisible(false)
+	self._target:ChangeWeaponDiveState()
+	self._target:SetAI(20005)
 end
 
-function OxyState.GetRecycle(arg_21_0)
+--- 获取回收标记
+--- @return boolean: 回收标记
+function OxyState.GetRecycle(self)
 	return false
 end
 
-function OxyState.GetTarget(arg_22_0)
-	return arg_22_0._target
+--- 获取目标单位
+--- @return BattleUnit: 目标单位
+function OxyState.GetTarget(self)
+	return self._target
 end
 
-function OxyState.GetCurrentState(arg_23_0)
-	return arg_23_0._currentState
+--- 获取当前子状态
+--- @return table: 当前状态实例
+function OxyState.GetCurrentState(self)
+	return self._currentState
 end
 
-function OxyState.GetCurrentStateName(arg_24_0)
-	return arg_24_0._currentState.__name
+--- 获取当前状态名
+--- @return string: 状态名
+function OxyState.GetCurrentStateName(self)
+	return self._currentState.__name
 end
 
-function OxyState.GetWeaponType(arg_25_0)
-	return arg_25_0._currentState:GetWeaponUseableList()
+--- 获取可用武器类型列表
+--- @return table: 武器类型列表
+function OxyState.GetWeaponType(self)
+	return self._currentState:GetWeaponUseableList()
 end
 
-function OxyState.GetBarVisible(arg_26_0)
-	return arg_26_0._currentState:GetBarVisible()
+--- 获取进度条可见性
+--- @return boolean: 是否可见
+function OxyState.GetBarVisible(self)
+	return self._currentState:GetBarVisible()
 end
 
-function OxyState.GetRundMode(arg_27_0)
-	return arg_27_0._currentState:RunMode()
+--- 获取运行模式
+--- @return any: 运行模式
+function OxyState.GetRundMode(self)
+	return self._currentState:RunMode()
 end
 
-function OxyState.GetCurrentDiveState(arg_28_0)
-	return arg_28_0._currentState:GetDiveState()
+--- 获取当前潜水状态
+--- @return number: 潜水状态码
+function OxyState.GetCurrentDiveState(self)
+	return self._currentState:GetDiveState()
 end

@@ -3,6 +3,7 @@ ys = ys or {}
 local ys = ys
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleEvent = ys.Battle.BattleEvent
+--- @class BattleSingleDungeonCommand : 单个Dungeon战斗Command，管理战斗生命周期
 local BattleSingleDungeonCommand = class("BattleSingleDungeonCommand", ys.MVC.Command)
 
 ys.Battle.BattleSingleDungeonCommand = BattleSingleDungeonCommand
@@ -120,172 +121,185 @@ function BattleSingleDungeonCommand.initWaveModule(self)
 		self._state:BattleEnd()
 	end
 
-	local function spawnAreaFunc(arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
-		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, arg_16_0, arg_16_1, arg_16_2, arg_16_3, arg_16_4)
+	--- 区域生成回调（水面AOE区域）
+	local function spawnAreaFunc(areaID, arg1, arg2, arg3, arg4)
+		self._dataProxy:SpawnCubeArea(ys.Battle.BattleConst.AOEField.SURFACE, -1, areaID, arg1, arg2, arg3, arg4)
 	end
 
 	self._waveUpdater = ys.Battle.BattleWaveUpdater.New(spawnFunc, airFighterFunc, clearFunc, spawnAreaFunc)
 end
 
-function BattleSingleDungeonCommand.InitProtocol(arg_17_0)
+function BattleSingleDungeonCommand.InitProtocol(self)
 	return
 end
 
-function BattleSingleDungeonCommand.AddEvent(arg_18_0)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, BattleEvent.ADD_UNIT, arg_18_0.onAddUnit)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, BattleEvent.REMOVE_UNIT, arg_18_0.onRemoveUnit)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, BattleEvent.STAGE_DATA_INIT_FINISH, arg_18_0.onInitBattle)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, BattleEvent.SHUT_DOWN_PLAYER, arg_18_0.onPlayerShutDown)
-	arg_18_0._dataProxy:RegisterEventListener(arg_18_0, BattleEvent.UPDATE_COUNT_DOWN, arg_18_0.onUpdateCountDown)
+--- 注册战斗事件监听
+function BattleSingleDungeonCommand.AddEvent(self)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.ADD_UNIT, self.onAddUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.REMOVE_UNIT, self.onRemoveUnit)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH, self.onInitBattle)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER, self.onPlayerShutDown)
+	self._dataProxy:RegisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN, self.onUpdateCountDown)
 end
 
-function BattleSingleDungeonCommand.RemoveEvent(arg_19_0)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, BattleEvent.ADD_UNIT)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, BattleEvent.REMOVE_UNIT)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, BattleEvent.STAGE_DATA_INIT_FINISH)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, BattleEvent.SHUT_DOWN_PLAYER)
-	arg_19_0._dataProxy:UnregisterEventListener(arg_19_0, BattleEvent.UPDATE_COUNT_DOWN)
+--- 移除战斗事件监听
+function BattleSingleDungeonCommand.RemoveEvent(self)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.ADD_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.REMOVE_UNIT)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.STAGE_DATA_INIT_FINISH)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.SHUT_DOWN_PLAYER)
+	self._dataProxy:UnregisterEventListener(self, BattleEvent.UPDATE_COUNT_DOWN)
 end
 
-function BattleSingleDungeonCommand.onAddUnit(arg_20_0, arg_20_1)
-	local var_20_0 = arg_20_1.Data.type
-	local var_20_1 = arg_20_1.Data.unit
+--- 新增单位事件，区分敌我类型加入波次管理
+function BattleSingleDungeonCommand.onAddUnit(self, event)
+	local unitType = event.Data.type
+	local unit = event.Data.unit
 
-	arg_20_0:RegisterUnitEvent(var_20_1)
+	self:RegisterUnitEvent(unit)
 
-	arg_20_0._unitDataList[var_20_1:GetUniqueID()] = var_20_1
+	self._unitDataList[unit:GetUniqueID()] = unit
 
-	if var_20_0 == ys.Battle.BattleConst.UnitType.ENEMY_UNIT or var_20_0 == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
-		arg_20_0._waveUpdater:AddMonster(var_20_1)
+	if unitType == ys.Battle.BattleConst.UnitType.ENEMY_UNIT or unitType == ys.Battle.BattleConst.UnitType.BOSS_UNIT then
+		self._waveUpdater:AddMonster(unit)
 	end
 end
 
-function BattleSingleDungeonCommand.RegisterUnitEvent(arg_21_0, arg_21_1)
-	local var_21_0 = arg_21_1:GetUnitType()
+--- 为单位注册死亡等事件监听
+function BattleSingleDungeonCommand.RegisterUnitEvent(self, unit)
+	local unitType = unit:GetUnitType()
 
-	if var_21_0 ~= ys.Battle.BattleConst.UnitType.MINION_UNIT then
-		arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.WILL_DIE, arg_21_0.onWillDie)
+	if unitType ~= ys.Battle.BattleConst.UnitType.MINION_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.WILL_DIE, self.onWillDie)
 	end
 
-	arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.DYING, arg_21_0.onUnitDying)
+	unit:RegisterEventListener(self, BattleUnitEvent.DYING, self.onUnitDying)
 
-	if var_21_0 == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_21_1:RegisterEventListener(arg_21_0, BattleUnitEvent.SHUT_DOWN_PLAYER, arg_21_0.onShutDownPlayer)
-	end
-end
-
-function BattleSingleDungeonCommand.UnregisterUnitEvent(arg_22_0, arg_22_1)
-	arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.WILL_DIE)
-	arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.DYING)
-
-	if arg_22_1:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
-		arg_22_1:UnregisterEventListener(arg_22_0, BattleUnitEvent.SHUT_DOWN_PLAYER)
+	if unitType == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:RegisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER, self.onShutDownPlayer)
 	end
 end
 
-function BattleSingleDungeonCommand.onRemoveUnit(arg_23_0, arg_23_1)
-	local var_23_0 = arg_23_1.Data.UID
+--- 移除单位的事件监听
+function BattleSingleDungeonCommand.UnregisterUnitEvent(self, unit)
+	unit:UnregisterEventListener(self, BattleUnitEvent.WILL_DIE)
+	unit:UnregisterEventListener(self, BattleUnitEvent.DYING)
 
-	arg_23_0._waveUpdater:RemoveMonster(var_23_0)
+	if unit:GetUnitType() == ys.Battle.BattleConst.UnitType.PLAYER_UNIT then
+		unit:UnregisterEventListener(self, BattleUnitEvent.SHUT_DOWN_PLAYER)
+	end
+end
 
-	local var_23_1 = arg_23_0._unitDataList[var_23_0]
+--- 移除单位事件，从波次管理和单位列表中移除
+function BattleSingleDungeonCommand.onRemoveUnit(self, event)
+	local uid = event.Data.UID
 
-	if var_23_1 == nil then
+	self._waveUpdater:RemoveMonster(uid)
+
+	local unit = self._unitDataList[uid]
+
+	if unit == nil then
 		return
 	end
 
-	arg_23_0:UnregisterUnitEvent(var_23_1)
+	self:UnregisterUnitEvent(unit)
 
-	arg_23_0._unitDataList[var_23_0] = nil
+	self._unitDataList[uid] = nil
 end
 
-function BattleSingleDungeonCommand.onPlayerShutDown(arg_24_0, arg_24_1)
-	if arg_24_0._state:GetState() ~= arg_24_0._state.BATTLE_STATE_FIGHT then
+--- 玩家单位停机事件，旗舰死亡或前排全灭则战斗结束
+function BattleSingleDungeonCommand.onPlayerShutDown(self, event)
+	if self._state:GetState() ~= self._state.BATTLE_STATE_FIGHT then
 		return
 	end
 
-	if arg_24_1.Data.unit == arg_24_0._userFleet:GetFlagShip() and arg_24_0._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and arg_24_0._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
-		arg_24_0._dataProxy:TriggerFinishBattle()
-		arg_24_0:CalcStatistic()
-		arg_24_0._state:BattleEnd()
+	if event.Data.unit == self._userFleet:GetFlagShip() and self._dataProxy:GetInitData().battleType ~= SYSTEM_PROLOGUE and self._dataProxy:GetInitData().battleType ~= SYSTEM_PERFORM then
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self._state:BattleEnd()
 
 		return
 	end
 
-	if #arg_24_0._userFleet:GetScoutList() == 0 then
-		arg_24_0._dataProxy:TriggerFinishBattle()
-		arg_24_0:CalcStatistic()
-		arg_24_0._state:BattleEnd()
+	if #self._userFleet:GetScoutList() == 0 then
+		self._dataProxy:TriggerFinishBattle()
+		self:CalcStatistic()
+		self._state:BattleEnd()
 	end
 end
 
-function BattleSingleDungeonCommand.onUpdateCountDown(arg_25_0, arg_25_1)
-	if arg_25_0._dataProxy:GetCountDown() <= 0 then
-		arg_25_0._dataProxy:EnemyEscape()
-		arg_25_0:CalcStatistic()
-		arg_25_0._state:BattleTimeUp()
+--- 倒计时更新，倒计时归零时触发敌人逃跑和超时结算
+function BattleSingleDungeonCommand.onUpdateCountDown(self, event)
+	if self._dataProxy:GetCountDown() <= 0 then
+		self._dataProxy:EnemyEscape()
+		self:CalcStatistic()
+		self._state:BattleTimeUp()
 	end
 end
 
-function BattleSingleDungeonCommand.onUnitDying(arg_26_0, arg_26_1)
-	local var_26_0 = arg_26_1.Dispatcher:GetUniqueID()
+--- 单位正在死亡事件，通知DataProxy击杀该单位
+function BattleSingleDungeonCommand.onUnitDying(self, event)
+	local uid = event.Dispatcher:GetUniqueID()
 
-	arg_26_0._dataProxy:KillUnit(var_26_0)
+	self._dataProxy:KillUnit(uid)
 end
 
--- note: 单位死亡时的回调函数，涉及结算BP、分数、以及Boss死亡后是否结束战斗等逻辑
-function BattleSingleDungeonCommand.onWillDie(arg_27_0, arg_27_1)
-	local var_27_0 = arg_27_1.Dispatcher
-	local var_27_1 = ys.Battle.BattleConst.UnitDeathReason
-	local var_27_2 = var_27_0:GetDeathReason()
+-- note: 单位死亡前的回调函数，涉及结算BP、分数、以及Boss死亡后是否结束战斗等逻辑
+function BattleSingleDungeonCommand.onWillDie(self, event)
+	local unit = event.Dispatcher
+	local deathReason = ys.Battle.BattleConst.UnitDeathReason
+	local reason = unit:GetDeathReason()
 
-	if var_27_2 == var_27_1.LEAVE then
-		if var_27_0:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
-			arg_27_0._dataProxy:CalcBPWhenPlayerLeave(var_27_0)
+	if reason == deathReason.LEAVE then
+		if unit:GetIFF() == ys.Battle.BattleConfig.FRIENDLY_CODE then
+			self._dataProxy:CalcBPWhenPlayerLeave(unit)
 		end
-	elseif var_27_2 == var_27_1.DESTRUCT then
-		arg_27_0._dataProxy:CalcBattleScoreWhenDead(var_27_0)
+	elseif reason == deathReason.DESTRUCT then
+		self._dataProxy:CalcBattleScoreWhenDead(unit)
 
-		if var_27_0:IsBoss() then
-			arg_27_0._dataProxy:AddScoreWhenBossDestruct()
+		if unit:IsBoss() then
+			self._dataProxy:AddScoreWhenBossDestruct()
 		end
 	else
-		arg_27_0._dataProxy:CalcBattleScoreWhenDead(var_27_0)
+		self._dataProxy:CalcBattleScoreWhenDead(unit)
 	end
 
-	local var_27_3 = arg_27_0._dataProxy:IsThereBoss()
+	local hasBoss = self._dataProxy:IsThereBoss()
 
-	if var_27_0:IsBoss() and not var_27_3 then
-		arg_27_0._dataProxy:KillAllEnemy()
+	if unit:IsBoss() and not hasBoss then
+		self._dataProxy:KillAllEnemy()
 	end
 end
 
-function BattleSingleDungeonCommand.onShutDownPlayer(arg_28_0, arg_28_1)
-	local var_28_0 = arg_28_1.Dispatcher:GetUniqueID()
+--- 玩家单位被停机，通知DataProxy处理
+function BattleSingleDungeonCommand.onShutDownPlayer(self, event)
+	local uid = event.Dispatcher:GetUniqueID()
 
-	arg_28_0._dataProxy:ShutdownPlayerUnit(var_28_0)
+	self._dataProxy:ShutdownPlayerUnit(uid)
 end
 
-function BattleSingleDungeonCommand.GetMaxRestHPRateBossRate(arg_29_0)
-	local var_29_0 = arg_29_0._waveUpdater:GetAllBossWave()
+--- 获取所有Boss波次中存活Boss的最大剩余HP比例
+function BattleSingleDungeonCommand.GetMaxRestHPRateBossRate(self)
+	local allBossWave = self._waveUpdater:GetAllBossWave()
 
-	for iter_29_0, iter_29_1 in ipairs(var_29_0) do
-		if iter_29_1:GetState() == iter_29_1.STATE_DEACTIVE then
+	for _, bossWave in ipairs(allBossWave) do
+		if bossWave:GetState() == bossWave.STATE_DEACTIVE then
 			return 10000
 		end
 	end
 
-	local var_29_1 = 0
+	local maxHPRate = 0
 
-	for iter_29_2, iter_29_3 in pairs(arg_29_0._dataProxy:GetUnitList()) do
-		if iter_29_3:IsBoss() and iter_29_3:IsAlive() then
-			var_29_1 = math.max(var_29_1, iter_29_3:GetHPRate())
+	for _, unit in pairs(self._dataProxy:GetUnitList()) do
+		if unit:IsBoss() and unit:IsAlive() then
+			maxHPRate = math.max(maxHPRate, unit:GetHPRate())
 		end
 	end
 
-	return var_29_1 * 10000
+	return maxHPRate * 10000
 end
 
+--- 计算单个Dungeon的结算统计
 function BattleSingleDungeonCommand.CalcStatistic(self)
 	self._dataProxy:CalcSingleDungeonScoreAtEnd(self._userFleet)
 

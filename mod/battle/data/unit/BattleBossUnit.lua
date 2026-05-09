@@ -46,10 +46,13 @@ end
 
 --- @class BattleBossUnit
 --- @param dHP number: 血量变化值
+--- @param extraInfo table: 额外信息
+--- @param isAbsorb boolean: 是否吸收
+--- @param isReflect boolean: 是否反射
 --- @return number: 实际生效的血量变化值
 --- Boss单位的血量更新：在父类逻辑基础上，受伤时通知所有自动武器更新装甲
-function BattleBossUnit.UpdateHP(self, dHP, arg_4_2, arg_4_3, arg_4_4)
-	local dHPResult = BattleBossUnit.super.UpdateHP(self, dHP, arg_4_2, arg_4_3, arg_4_4) or 0
+function BattleBossUnit.UpdateHP(self, dHP, extraInfo, isAbsorb, isReflect)
+	local dHPResult = BattleBossUnit.super.UpdateHP(self, dHP, extraInfo, isAbsorb, isReflect) or 0
 
 	if dHPResult < 0 then
 		for _, weapon in ipairs(self._autoWeaponList) do

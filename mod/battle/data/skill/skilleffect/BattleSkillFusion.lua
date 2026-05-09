@@ -16,6 +16,8 @@ BattleSkillFusion.FREEZE_POS = {
 
 -- 此类SkillEffect进行机甲合体
 -- 目前只有Skill 108414用到(宝多六花专武)
+--- @param tempData table: 技能效果模板数据
+--- @param level number: 技能等级
 function BattleSkillFusion.Ctor(self, tempData, level)
 	BattleSkillFusion.super.Ctor(self, tempData, level)
 
@@ -48,14 +50,20 @@ function BattleSkillFusion.Ctor(self, tempData, level)
 	self._duration = self._tempData.arg_list.duration
 end
 
+--- @param caster BattleUnit: 施法者
+--- @param target BattleUnit: 目标
 function BattleSkillFusion.DoDataEffect(self, caster, target)
 	self:doFusion(caster)
 end
 
+--- @param caster BattleUnit: 施法者
+--- @param target BattleUnit: 目标
 function BattleSkillFusion.DoDataEffectWithoutTarget(self, caster, target)
 	self:doFusion(caster)
 end
 
+--- 执行融合逻辑
+--- @param caster BattleUnit: 施法者
 function BattleSkillFusion.doFusion(self, caster)
 	local candidateList1 = BattleTargetChoise.TargetAllHelp(caster)
 	local candidateList2 = BattleTargetChoise.TargetShipTag(caster, {
@@ -125,7 +133,6 @@ function BattleSkillFusion.doFusion(self, caster)
 	local function onFusionTimerEnds()
 		local fusionCurrentHP, fusionMaxHP = fusionUnit:GetHP()
 		local fusionHPLost = fusionMaxHP - fusionCurrentHP
-		local var_5_3 = 0
 		local fusionPos = fusionUnit:GetPosition()
 		local fusionHPProvideRate = fusionUnit:GetAttrByName("hpProvideRate")
 
@@ -160,6 +167,7 @@ function BattleSkillFusion.doFusion(self, caster)
 	self._fusionTimer = pg.TimeMgr.GetInstance():AddBattleTimer("fusionSkillTimer", 0, self._duration, onFusionTimerEnds, true)
 end
 
+--- 清理：移除融合计时器
 function BattleSkillFusion.Clear(self)
 	pg.TimeMgr.GetInstance():RemoveBattleTimer(self._fusionTimer)
 	BattleSkillFusion.super.Clear(self)

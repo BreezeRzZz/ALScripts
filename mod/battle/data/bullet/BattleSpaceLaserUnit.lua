@@ -82,38 +82,38 @@ function BattleSpaceLaserUnit.DoTrack(bullet)
 
 	disVector:SetNormalize()
 
-	local var_7_5 = disVector.x * speedNormal.x + disVector.z * speedNormal.z
-	local var_7_6 = disVector.z * speedNormal.x - disVector.x * speedNormal.z
-	local var_7_7 = _bullet:GetSpeedRatio()
-	local var_7_8 = math.cos(_bullet._cosAngularSpeed * var_7_7)
-	local var_7_9 = math.sin(_bullet._sinAngularSpeed * var_7_7)
-	local var_7_10 = var_7_5
-	local var_7_11 = var_7_6
+	local dotProduct = disVector.x * speedNormal.x + disVector.z * speedNormal.z
+	local crossProduct = disVector.z * speedNormal.x - disVector.x * speedNormal.z
+	local speedRatio = _bullet:GetSpeedRatio()
+	local cosAngle = math.cos(_bullet._cosAngularSpeed * speedRatio)
+	local sinAngle = math.sin(_bullet._sinAngularSpeed * speedRatio)
+	local dotClamped = dotProduct
+	local crossClamped = crossProduct
 
-	if var_7_5 < var_7_8 then
-		var_7_10 = var_7_8
-		var_7_11 = var_7_9 * (var_7_11 > 0 and 1 or -1)
+	if dotProduct < cosAngle then
+		dotClamped = cosAngle
+		crossClamped = sinAngle * (crossClamped > 0 and 1 or -1)
 	end
 
-	local var_7_12 = speedNormal.x * var_7_10 - speedNormal.z * var_7_11
-	local var_7_13 = speedNormal.z * var_7_10 + speedNormal.x * var_7_11
-	local var_7_14 = math.min(bullet._convertedVelocity, distance)
+	local newSpeedX = speedNormal.x * dotClamped - speedNormal.z * crossClamped
+	local newSpeedZ = speedNormal.z * dotClamped + speedNormal.x * crossClamped
+	local maxSpeed = math.min(bullet._convertedVelocity, distance)
 
-	_bullet._speed:Set(var_7_12, 0, var_7_13)
-	_bullet._speed:Mul(var_7_14)
-	bullet._speedNormal:Set(var_7_12, 0, var_7_13)
+	_bullet._speed:Set(newSpeedX, 0, newSpeedZ)
+	_bullet._speed:Mul(maxSpeed)
+	bullet._speedNormal:Set(newSpeedX, 0, newSpeedZ)
 	bullet._speedNormal:SetNormalize()
 
-	bullet._yAngle = math.rad2Deg * math.atan2(var_7_12, var_7_13)
+	bullet._yAngle = math.rad2Deg * math.atan2(newSpeedX, newSpeedZ)
 end
 
 function BattleSpaceLaserUnit.InitSpeed(self, ...)
 	BattleSpaceLaserUnit.super.InitSpeed(self, ...)
 
 	if self:IsTracker() then
-		local var_8_0 = math.deg2Rad * self._yAngle
+		local radAngle = math.deg2Rad * self._yAngle
 
-		self._speedNormal = Vector3(math.cos(var_8_0), 0, math.sin(var_8_0))
+		self._speedNormal = Vector3(math.cos(radAngle), 0, math.sin(radAngle))
 		self.updateSpeed = self.DoTrack
 	elseif self:IsCircle() and self:IsAlert() then
 		self._centripetalSpeed = self._centripetalSpeed * self.alertSpeedRatio

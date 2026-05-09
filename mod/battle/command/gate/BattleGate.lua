@@ -1,8 +1,9 @@
-local var_0_0 = class("BattleGate")
+--- @class BattleGate : 战斗入口门面，根据系统类型映射对应的Gate类
+local BattleGate = class("BattleGate")
 
-ys.Battle.BattleGate = var_0_0
-var_0_0.__name = "BattleGate"
-var_0_0.Gates = {
+ys.Battle.BattleGate = BattleGate
+BattleGate.__name = "BattleGate"
+BattleGate.Gates = {
 	[SYSTEM_PROLOGUE] = ys.Battle.BattleGatePrologue,
 	[SYSTEM_PERFORM] = ys.Battle.BattleGatePerform,
 	[SYSTEM_SIMULATION] = ys.Battle.BattleGateSimulation,
@@ -35,4 +36,4 @@ var_0_0.Gates = {
 	[SYSTEM_BOSS_SINGLE_VARIABLE] = ys.Battle.BattleGateBossSingleVariable
 }
 
-return var_0_0
+return BattleGate
