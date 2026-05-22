@@ -833,12 +833,14 @@ function Equipment.GetEquipComposeCfgStatic(arg_79_0)
 	end
 end
 
-function Equipment.IsMatchKey(arg_80_0, arg_80_1)
-	local var_80_0 = {
-		arg_80_0:getConfig("name")
+function Equipment.IsMatchKey(self, key)
+	local equipName = pg.equip_data_statistics[self.configId].name
+	local nameList = {
+		self:getConfig("name"),
+		equipName
 	}
 
-	return EquipmentTools.IsMatchKey(var_80_0, arg_80_1)
+	return EquipmentTools.IsMatchKey(nameList, key)
 end
 
 return Equipment

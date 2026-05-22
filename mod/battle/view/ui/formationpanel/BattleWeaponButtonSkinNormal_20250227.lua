@@ -53,8 +53,9 @@ function BattleWeaponButtonSkinNormal_20250227.OnCountChange(self)
 end
 
 --- 设置战斗UI预览模式
-function BattleWeaponButtonSkinNormal_20250227.SetToCombatUIPreview(self, isActive)
-	if isActive then
+--- @param mode CombatUIPreviewer.WeaponButtonPreviewMode 预览模式
+function BattleWeaponButtonSkinNormal_20250227.SetToCombatUIPreview(self, mode)
+	if mode ~= CombatUIPreviewer.WeaponButtonPreviewMode.UNFILLED then
 		SetActive(self._filled, true)
 		SetActive(self._unfill, false)
 

@@ -150,6 +150,7 @@ function BattleEffectComponent.DoWhenAddBuff(self, event)
 
 	self:addInitFX(buffID)
 	self:addLastFX(buffID)
+	self:updateLastFXStackText(buffID)
 end
 
 --- Buff堆叠事件处理
@@ -192,6 +193,8 @@ function BattleEffectComponent.DoWhenStackBuff(self, event)
 			end
 		end
 	end
+
+	self:updateLastFXStackText(buffID)
 end
 
 --- Buff移除事件：清理所有持续特效和闪烁
@@ -299,6 +302,48 @@ function BattleEffectComponent.addLastFX(self, buffID)
 		table.insert(effectList, newEffect)
 
 		self._buffLastEffects[buffID] = effectList
+	end
+end
+
+--- 更新持续特效中的堆叠文本显示
+--- 读取 buff 模板中的 last_effect_stack_text 配置
+--- 在已生成的 last_effect 上更新文本为 "X堆叠数"
+--- @param buffID number Buff ID
+function BattleEffectComponent.updateLastFXStackText(self, buffID)
+	local stackTextConfig = ys.Battle.BattleDataFunction.GetBuffTemplate(buffID).last_effect_stack_text
+
+	if type(stackTextConfig) ~= "table" then
+		return
+	end
+
+	local nodeName = stackTextConfig.node
+
+	if type(nodeName) ~= "string" or nodeName == "" then
+		return
+	end
+
+	local buff = self._owner:GetUnitData():GetBuff(buffID)
+
+	if not buff then
+		return
+	end
+
+	local stackCount = buff:GetStack() or 1
+	local stackText = "X" .. stackCount
+	local effectList = self._buffLastEffects[buffID]
+
+	if not effectList then
+		return
+	end
+
+	for _, effectObj in ipairs(effectList) do
+		if effectObj then
+			local textNode = effectObj.transform:Find(nodeName)
+
+			if textNode then
+				setText(textNode, stackText)
+			end
+		end
 	end
 end
 

@@ -70,6 +70,8 @@ function BattleWeaponButton.SwitchIcon(self, iconIndex, skinKey)
 
 	setImageSprite(self._unfill, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "weapon_unfill_" .. iconName))
 	setImageSprite(self._filled, LoadSprite("ui/CombatUI" .. finalSkinKey .. "_atlas", "filled_combined_" .. iconName))
+
+	return finalSkinKey, iconName
 end
 
 --- 切换图标特效（填充特效和干扰图标）
@@ -378,9 +380,9 @@ function BattleWeaponButton.Update(self)
 end
 
 --- 设置战斗UI预览模式（显示为满状态或空状态）
---- @param active boolean true时显示满状态，false时显示空状态
-function BattleWeaponButton.SetToCombatUIPreview(self, active)
-	if active then
+--- @param mode CombatUIPreviewer.WeaponButtonPreviewMode 预览模式
+function BattleWeaponButton.SetToCombatUIPreview(self, mode)
+	if mode ~= CombatUIPreviewer.WeaponButtonPreviewMode.UNFILLED then
 		SetActive(self._filled, true)
 		SetActive(self._unfill, false)
 

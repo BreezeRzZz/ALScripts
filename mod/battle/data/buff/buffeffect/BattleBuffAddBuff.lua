@@ -13,11 +13,10 @@ function BattleBuffAddBuff.Ctor(self, effectData)
 end
 
 function BattleBuffAddBuff.SetArgs(self, owner, buff)
-	self._level = buff:GetLv()
-
 	local arg_list = self._tempData.arg_list
 
 	self._buff_id = arg_list.buff_id
+	self._level = arg_list.buff_level or buff:GetLv()
 	self._target = arg_list.target or "TargetSelf"
 	self._time = arg_list.time or 0
 	self._rant = arg_list.rant or 10000
