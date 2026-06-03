@@ -85,6 +85,12 @@ function BaseVO.getConfig(self, key)
 
 	assert(configTable ~= nil, "Config missed, type -" .. self.__cname .. " configId: " .. tostring(self.configId))
 
+	if key == "name" then
+		return HXSet.hxLan(configTable[key])
+	elseif key == "desc" then
+		return HXSet.hxLan(configTable[key])
+	end
+
 	return configTable[key]
 end
 

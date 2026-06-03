@@ -278,10 +278,18 @@ function BattleSkillView.generateCommonButton(self, index)
 end
 
 --- 生成潜艇功能按钮（不带进度条文本，无图标）
+--- 支持皮肤特化按钮类
 --- @param index number 按钮索引
 --- @return BattleSubmarineFuncButton
 function BattleSkillView.generateSubmarineFuncButton(self, index)
-	local btn = ys.Battle.BattleSubmarineFuncButton.New()
+	local skinKey = ys.Battle.BattleState.GetCombatSkinKey()
+	local btn
+
+	if ys.Battle["BattleSubmarineFuncButton" .. skinKey] then
+		btn = ys.Battle["BattleSubmarineFuncButton" .. skinKey].New()
+	else
+		btn = ys.Battle.BattleSubmarineFuncButton.New()
+	end
 
 	self._progressSkin = self._progressSkin or self._ui._tf:Find("Weapon_button_progress")
 
@@ -296,10 +304,18 @@ function BattleSkillView.generateSubmarineFuncButton(self, index)
 end
 
 --- 生成潜艇按钮（带一次性皮肤）
+--- 支持皮肤特化按钮类
 --- @param index number 按钮索引
 --- @return BattleSubmarineButton
 function BattleSkillView.generateSubmarineButton(self, index)
-	local btn = ys.Battle.BattleSubmarineButton.New()
+	local skinKey = ys.Battle.BattleState.GetCombatSkinKey()
+	local btn
+
+	if ys.Battle["BattleSubmarineButton" .. skinKey] then
+		btn = ys.Battle["BattleSubmarineButton" .. skinKey].New()
+	else
+		btn = ys.Battle.BattleSubmarineButton.New()
+	end
 
 	self._disposableSkin = self._disposableSkin or self._ui._tf:Find("Weapon_button")
 
