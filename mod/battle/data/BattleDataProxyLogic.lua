@@ -221,15 +221,16 @@ function BattleDataProxy.HandleMeteoDamage(self, bullet, candidateList)
 	end
 end
 
--- DOT、防空伤害等使用，不需要子弹. 此外, 也不需要经过伤害计算公式, 直接对目标造成伤害
--- 如下面的各种ShipMissDamage和AircraftMissDamage也是DirectDamage
+--- 直接对目标造成伤害，不需要子弹和伤害公式
+--- 如下面的各种ShipMissDamage和AircraftMissDamage也是DirectDamage
 --- @param self BattleDataProxy
---- @param target BattleUnit: 目标
---- @param damage number: 伤害值
---- @param caster BattleUnit: 施法者（可为nil）
---- @param damageReason number: 伤害原因
---- @param isReflect boolean: 是否为反射伤害
-function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect)
+--- @param target BattleUnit 目标
+--- @param damage number 伤害值
+--- @param caster BattleUnit 施法者（可为nil）
+--- @param damageReason number 伤害原因
+--- @param isReflect boolean 是否为反射伤害
+--- @param ignoreInvincible boolean 是否忽略无敌
+function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect, ignoreInvincible)
 	local srcID
 
 	if caster then
@@ -242,7 +243,8 @@ function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damage
 		isHeal = false,
 		damageReason = damageReason,
 		srcID = srcID,
-		isReflect = isReflect
+		isReflect = isReflect,
+		ignoreInvincible = ignoreInvincible
 	}
 	local targetID = target:GetAttrByName("id")
 	local targetDHP = target:UpdateHP(damage * -1, extraInfo)

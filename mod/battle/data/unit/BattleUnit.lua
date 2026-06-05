@@ -309,6 +309,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 	local incorrupt = extraInfo.incorrupt
 	local isReflect = extraInfo.isReflect
 	local isSpectreBullet = extraInfo.spectreBullet
+	local ignoreInvincible = extraInfo.ignoreInvincible
 	local preShieldHP
 	local damageInfo
 	-- 表示这次更新是来自于受到了伤害
@@ -348,7 +349,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 			self:TriggerBuff(BattleConst.BuffEffectType.ON_SHIELD_ABSORB, damageInfo)
 		end
 
-		if BattleAttr.IsInvincible(self) then
+		if BattleAttr.IsInvincible(self) and not ignoreInvincible then
 			return 0
 		end
 	-- 表示这次更新是来自于治疗

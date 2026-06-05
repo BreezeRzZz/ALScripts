@@ -13,15 +13,15 @@ function ys.Battle.BattleSkillDamage.Ctor(self, template, level)
 	self._number = self._tempData.arg_list.number or 0
 	self._currentHPRate = self._tempData.arg_list.current_hp_rate or 0
 	self._maxHPRate = self._tempData.arg_list.rate or 0
+	self._ignoreInvincible = self._tempData.arg_list.ignoreInvincible or false
 	self._proxy = ys.Battle.BattleDataProxy.GetInstance()
 end
 
 function ys.Battle.BattleSkillDamage.DoDataEffect(self, caster, target)
 	local currentHP, maxHP = target:GetHP()
 	local damage = math.floor(maxHP * self._maxHPRate) + math.floor(currentHP * self._currentHPRate) + self._number
+	self._proxy:HandleDirectDamage(target, damage, caster, self._ignoreInvincible or nil, false, self._ignoreInvincible)
 
-	self._proxy:HandleDirectDamage(target, damage, caster)
-	-- 不太清楚, 待定
 	if not target:IsAlive() then
 		ys.Battle.BattleAttr.Spirit(target)
 		ys.Battle.BattleAttr.AppendInvincible(target)
