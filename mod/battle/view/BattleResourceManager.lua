@@ -219,7 +219,12 @@ end
 --- 销毁/回收对象——优先通过 _ob2Pool 反向查找其所属的 Pool 进行回收
 --- @param obj GameObject 要销毁的对象
 function BattleResourceManager.DestroyOb(self, obj)
+	if obj == nil or IsNil(obj) then
+		return
+	end
+
 	local pool = self._ob2Pool[obj]
+	self._ob2Pool[obj] = nil
 
 	if pool then
 		pool:Recycle(obj)

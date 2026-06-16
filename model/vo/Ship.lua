@@ -300,7 +300,7 @@ end
 --- - 但实际的好感度表现是0～200（除以100），且誓约后上限为200
 --- - 这样是为了保留更高的精度(0.01)，因为单次获得的好感度基本都是小于1的
 function Ship.getIntimacy(self)
-	return self.intimacy
+	return self.intimacy or 0
 end
 
 --- @class Ship
