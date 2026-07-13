@@ -343,6 +343,12 @@ end
 
 --- 停止战斗
 function BattleState.Stop(self, callback)
+	if self:GetBattleType() == SYSTEM_TEST then
+		InDebugBattleLoop = nil
+
+		pg.TipsMgr.GetInstance():ShowTips("interrupt")
+	end
+
 	self:disableCommon()
 	self._baseUI:exitBattle(callback)
 end

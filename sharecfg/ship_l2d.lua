@@ -166714,7 +166714,7 @@ end)()
 				{
 					2,
 					{
-						"touch_idle6"
+						"touch_idle26"
 					},
 					0
 				}
@@ -167707,7 +167707,8 @@ end)()
 				{
 					2,
 					{
-						"TouchDrag32"
+						"TouchDrag32",
+						"TouchIdle13"
 					},
 					0
 				}

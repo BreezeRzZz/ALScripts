@@ -822,6 +822,7 @@ function BattleResultMediator.handleNotification(arg_30_0, arg_30_1)
 				actId = var_30_3,
 				seriesData = var_30_4,
 				win = var_30_5,
+				OnClose = var_30_1.callback,
 				isAutoFight = arg_30_0.contextData.isAutoFight
 			}
 		}), true)

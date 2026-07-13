@@ -288,7 +288,7 @@ function ChapterProxy.buildRemasterMaps(arg_17_0)
 
 	local var_17_0 = {}
 
-	_.each(pg.re_map_template.all, function(arg_18_0)
+	_.each(BossRushChapterRemasterHelper.GetAllNonActivityIds(), function(arg_18_0)
 		local var_18_0 = pg.re_map_template[arg_18_0]
 
 		_.each(var_18_0.config_data, function(arg_19_0)
@@ -310,7 +310,7 @@ function ChapterProxy.buildRemasterMaps(arg_17_0)
 end
 
 function ChapterProxy.IsChapterInRemaster(arg_20_0, arg_20_1)
-	return _.detect(pg.re_map_template.all, function(arg_21_0)
+	return _.detect(BossRushChapterRemasterHelper.GetAllNonActivityIds(), function(arg_21_0)
 		local var_21_0 = pg.re_map_template[arg_21_0]
 
 		return _.any(var_21_0.config_data, function(arg_22_0)
@@ -1166,8 +1166,12 @@ function ChapterProxy.updateRemasterTicketsNum(arg_103_0, arg_103_1)
 	arg_103_0.remasterTickets = arg_103_1
 end
 
-function ChapterProxy.resetDailyCount(arg_104_0)
-	arg_104_0.remasterDailyCount = 0
+function ChapterProxy.getRemasterTicketCost(arg_104_0)
+	return 5
+end
+
+function ChapterProxy.resetDailyCount(arg_105_0)
+	arg_105_0.remasterDailyCount = 0
 end
 
 function ChapterProxy.updateDailyCount(arg_105_0)
@@ -1259,29 +1263,33 @@ function ChapterProxy.FinishAutoFight(arg_111_0, arg_111_1)
 			getProxy(SettingsProxy):RestoreFrameRate()
 		end
 
-		arg_111_0.facade:sendNotification(PlayerResUI.CHANGE_TOUCH_ABLE, true)
+		arg_112_0.facade:sendNotification(PlayerResUI.CHANGE_TOUCH_ABLE, true)
 	end
 
-	local var_111_0 = arg_111_0:GetExtendChapter(arg_111_1)
+	local var_112_0 = arg_112_0:GetExtendChapter(arg_112_1)
 
-	arg_111_0:RemoveExtendChapter(arg_111_1)
+	arg_112_0:RemoveExtendChapter(arg_112_1)
 
-	return var_111_0
+	return var_112_0
 end
 
 function ChapterProxy.buildRemasterInfo(arg_112_0)
 	arg_112_0.remasterInfo = {}
 
-	for iter_112_0, iter_112_1 in ipairs(pg.re_map_template.all) do
-		for iter_112_2, iter_112_3 in ipairs(pg.re_map_template[iter_112_1].drop_gain) do
-			if #iter_112_3 > 0 then
-				local var_112_0, var_112_1, var_112_2, var_112_3 = unpack(iter_112_3)
+	for iter_113_0, iter_113_1 in ipairs(pg.re_map_template.all) do
+		local var_113_0 = pg.re_map_template[iter_113_1]
+		local var_113_1 = var_113_0.activity_id or 0
 
-				arg_112_0.remasterInfo[var_112_0] = defaultValue(arg_112_0.remasterInfo[var_112_0], {})
-				arg_112_0.remasterInfo[var_112_0][iter_112_2] = {
+		for iter_113_2, iter_113_3 in ipairs(var_113_0.drop_gain) do
+			if #iter_113_3 > 0 then
+				local var_113_2, var_113_3, var_113_4, var_113_5 = unpack(iter_113_3)
+
+				arg_113_0.remasterInfo[var_113_1] = defaultValue(arg_113_0.remasterInfo[var_113_1], {})
+				arg_113_0.remasterInfo[var_113_1][var_113_2] = defaultValue(arg_113_0.remasterInfo[var_113_1][var_113_2], {})
+				arg_113_0.remasterInfo[var_113_1][var_113_2][iter_113_2] = {
 					count = 0,
 					receive = false,
-					max = var_112_3
+					max = var_113_5
 				}
 			end
 		end
@@ -1292,7 +1300,7 @@ function ChapterProxy.checkRemasterInfomation(arg_113_0)
 	if not arg_113_0.checkRemaster then
 		arg_113_0.checkRemaster = true
 
-		arg_113_0:sendNotification(GAME.CHAPTER_REMASTER_INFO_REQUEST)
+		arg_114_0:sendNotification(GAME.CHAPTER_REMASTER_INFO_REQUEST)
 	end
 end
 
@@ -1301,12 +1309,12 @@ function ChapterProxy.addRemasterPassCount(arg_114_0, arg_114_1)
 		return
 	end
 
-	local var_114_0
+	local var_116_1
 
-	for iter_114_0, iter_114_1 in pairs(arg_114_0.remasterInfo[arg_114_1]) do
-		if iter_114_1.count < iter_114_1.max then
-			iter_114_1.count = iter_114_1.count + 1
-			var_114_0 = true
+	for iter_116_0, iter_116_1 in pairs(var_116_0) do
+		if iter_116_1.count < iter_116_1.max then
+			iter_116_1.count = iter_116_1.count + 1
+			var_116_1 = true
 		end
 	end
 
@@ -1318,12 +1326,12 @@ end
 function ChapterProxy.markRemasterPassReceive(arg_115_0, arg_115_1, arg_115_2)
 	local var_115_0 = arg_115_0.remasterInfo[arg_115_1][arg_115_2]
 
-	if not arg_115_0.remasterInfo[arg_115_1][arg_115_2] then
+	if not var_117_0 then
 		return
 	end
 
-	if not var_115_0.receive then
-		var_115_0.receive = true
+	if not var_117_0.receive then
+		var_117_0.receive = true
 
 		arg_115_0:sendNotification(ChapterProxy.CHAPTER_REMASTER_INFO_UPDATED)
 	end
@@ -1344,7 +1352,7 @@ end
 function ChapterProxy.AddActBossRewards(arg_117_0, arg_117_1)
 	arg_117_0.actBossItems = arg_117_0.actBossItems or {}
 
-	table.insertto(arg_117_0.actBossItems, arg_117_1)
+	table.insertto(arg_119_0.actBossItems, arg_119_1)
 end
 
 function ChapterProxy.PopActBossRewards(arg_118_0)
@@ -1372,17 +1380,31 @@ end
 function ChapterProxy.WriteBackOnExitBattleResult(arg_121_0)
 	local var_121_0 = arg_121_0:getActiveChapter()
 
-	if var_121_0 then
-		if var_121_0:existOni() then
-			var_121_0:clearSubmarineFleet()
-			arg_121_0:updateChapter(var_121_0)
-		elseif var_121_0:isPlayingWithBombEnemy() then
-			var_121_0.fleets = {
-				var_121_0.fleet
-			}
-			var_121_0.findex = 1
+	table.insertto(arg_121_0.bossSingleItems, arg_121_1)
+end
 
-			arg_121_0:updateChapter(var_121_0)
+function var_0_0.PopBossSingleRewards(arg_122_0)
+	local var_122_0 = arg_122_0.bossSingleItems or {}
+
+	arg_122_0.bossSingleItems = nil
+
+	return var_122_0
+end
+
+function var_0_0.WriteBackOnExitBattleResult(arg_123_0)
+	local var_123_0 = arg_123_0:getActiveChapter()
+
+	if var_123_0 then
+		if var_123_0:existOni() then
+			var_123_0:clearSubmarineFleet()
+			arg_123_0:updateChapter(var_123_0)
+		elseif var_123_0:isPlayingWithBombEnemy() then
+			var_123_0.fleets = {
+				var_123_0.fleet
+			}
+			var_123_0.findex = 1
+
+			arg_123_0:updateChapter(var_123_0)
 		end
 	end
 end
@@ -1398,29 +1420,29 @@ function ChapterProxy.InitContinuousTime(arg_123_0, arg_123_1, arg_123_2)
 		battleTime = arg_123_2
 	})
 
-	arg_123_0.continuousData[arg_123_1] = var_123_0
+	arg_125_0.continuousData[arg_125_1] = var_125_0
 end
 
 function ChapterProxy.StopContinuousOperation(arg_124_0, arg_124_1, arg_124_2)
 	local var_124_0 = arg_124_0:GetContinuousData(arg_124_1)
 
-	if not var_124_0 or not var_124_0:IsActive() then
+	if not var_126_0 or not var_126_0:IsActive() then
 		return
 	end
 
-	if arg_124_2 == ChapterConst.AUTOFIGHT_STOP_REASON.MANUAL and arg_124_1 == SYSTEM_SCENARIO then
+	if arg_126_2 == ChapterConst.AUTOFIGHT_STOP_REASON.MANUAL and arg_126_1 == SYSTEM_SCENARIO then
 		pg.TipsMgr.GetInstance():ShowTips(i18n("multiple_sorties_stop"))
 	end
 
-	var_124_0:Stop(arg_124_2)
+	var_126_0:Stop(arg_126_2)
 end
 
 function ChapterProxy.PopContinuousData(arg_125_0, arg_125_1)
 	local var_125_0 = arg_125_0.continuousData[arg_125_1]
 
-	arg_125_0.continuousData[arg_125_1] = nil
+	arg_127_0.continuousData[arg_127_1] = nil
 
-	return var_125_0
+	return var_127_0
 end
 
 function ChapterProxy.SetLastFleetIndex(arg_126_0, arg_126_1, arg_126_2)
@@ -1428,7 +1450,7 @@ function ChapterProxy.SetLastFleetIndex(arg_126_0, arg_126_1, arg_126_2)
 		return
 	end
 
-	arg_126_0.lastFleetIndex = arg_126_1
+	arg_128_0.lastFleetIndex = arg_128_1
 end
 
 function ChapterProxy.GetLastFleetIndex(arg_127_0)
@@ -1438,31 +1460,31 @@ end
 function ChapterProxy.RemoveEliteFleetCommander(arg_128_0, arg_128_1)
 	local var_128_0 = {}
 
-	for iter_128_0, iter_128_1 in ipairs(arg_128_1) do
-		var_128_0[iter_128_1] = true
+	for iter_130_0, iter_130_1 in ipairs(arg_130_1) do
+		var_130_0[iter_130_1] = true
 	end
 
-	local var_128_1 = {}
+	local var_130_1 = {}
 
-	for iter_128_2, iter_128_3 in pairs(arg_128_0.mapEliteFleetCache) do
-		for iter_128_4, iter_128_5 in pairs(iter_128_3) do
-			for iter_128_6, iter_128_7 in ipairs(iter_128_5) do
-				for iter_128_8, iter_128_9 in ipairs(iter_128_7[TeamType.FormCommander]) do
-					if var_128_0[iter_128_9] then
-						iter_128_7[TeamType.FormCommander][iter_128_8] = 0
-						var_128_1[iter_128_2] = true
+	for iter_130_2, iter_130_3 in pairs(arg_130_0.mapEliteFleetCache) do
+		for iter_130_4, iter_130_5 in pairs(iter_130_3) do
+			for iter_130_6, iter_130_7 in ipairs(iter_130_5) do
+				for iter_130_8, iter_130_9 in ipairs(iter_130_7[TeamType.FormCommander]) do
+					if var_130_0[iter_130_9] then
+						iter_130_7[TeamType.FormCommander][iter_130_8] = 0
+						var_130_1[iter_130_2] = true
 					end
 				end
 			end
 		end
 	end
 
-	for iter_128_10, iter_128_11 in pairs(arg_128_0.data) do
-		local var_128_2 = iter_128_11:getConfig("formation")
+	for iter_130_10, iter_130_11 in pairs(arg_130_0.data) do
+		local var_130_2 = iter_130_11:getConfig("formation")
 
-		if var_128_1[var_128_2] then
-			iter_128_11:setEliteFleetList(Clone(arg_128_0.mapEliteFleetCache[var_128_2]))
-			arg_128_0:updateChapter(iter_128_11)
+		if var_130_1[var_130_2] then
+			iter_130_11:setEliteFleetList(Clone(arg_130_0.mapEliteFleetCache[var_130_2]))
+			arg_130_0:updateChapter(iter_130_11)
 		end
 	end
 end

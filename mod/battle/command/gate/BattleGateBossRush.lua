@@ -178,14 +178,8 @@ function BattleGateBossRush.GetPreloadList(self)
 	local bayProxy = getProxy(BayProxy)
 	local seriesData = getProxy(ActivityProxy):getActivityById(self.actId):GetSeriesData()
 	local currentLevel = seriesData:GetStaegLevel() + 1
-	local fleetIds = seriesData:GetFleetIds()
-	local mainFleetId = fleetIds[currentLevel]
-	local subFleetId = fleetIds[#fleetIds]
-
-	if seriesData:GetMode() == BossRushSeriesData.MODE.SINGLE then
-		mainFleetId = fleetIds[1]
-	end
-
+	local mode = seriesData:GetMode()
+	local mainFleetId, subFleetId = seriesData:GetStageFleets(mode, currentLevel)
 	local activityFleets = fleetProxy:getActivityFleets()[self.actId]
 	local mainFleet = activityFleets[mainFleetId]
 	local subFleet = activityFleets[subFleetId]
