@@ -230,7 +230,8 @@ end
 --- @param damageReason number 伤害原因
 --- @param isReflect boolean 是否为反射伤害
 --- @param ignoreInvincible boolean 是否忽略无敌
-function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect, ignoreInvincible)
+--- @param ignoreShield boolean 是否忽略护盾
+function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damageReason, isReflect, ignoreInvincible, ignoreShield)
 	local srcID
 
 	if caster then
@@ -244,7 +245,8 @@ function BattleDataProxy.HandleDirectDamage(self, target, damage, caster, damage
 		damageReason = damageReason,
 		srcID = srcID,
 		isReflect = isReflect,
-		ignoreInvincible = ignoreInvincible
+		ignoreInvincible = ignoreInvincible,
+		ignoreShield = ignoreShield
 	}
 	local targetID = target:GetAttrByName("id")
 	local targetDHP = target:UpdateHP(damage * -1, extraInfo)

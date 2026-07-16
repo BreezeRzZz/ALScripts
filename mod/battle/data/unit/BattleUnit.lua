@@ -310,6 +310,7 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 	local isReflect = extraInfo.isReflect
 	local isSpectreBullet = extraInfo.spectreBullet
 	local ignoreInvincible = extraInfo.ignoreInvincible
+	local ignoreShield = extraInfo.ignoreShield
 	local preShieldHP
 	local damageInfo
 	-- 表示这次更新是来自于受到了伤害
@@ -322,7 +323,8 @@ function BattleUnit.UpdateHP(self, dHP, extraInfo)
 			damageSrc = extraInfo.srcID,
 			damageAttr = attr,
 			damageReason = damageReason,
-			isReflect = isReflect
+			isReflect = isReflect,
+			ignoreShield = ignoreShield
 		}
 
 		if not isShare then

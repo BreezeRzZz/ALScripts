@@ -103,7 +103,17 @@ function BattlePlayerCharacterFactory.MakeAimBiasBar(self, character)
 end
 
 --- @class BattlePlayerCharacterFactory
---- @param character BattlePlayerCharacter: 角色视觉对象
+--- @param character BattlePlayerCharacter 角色视觉对象
+--- @return nil
+--- 创建护盾条UI（RecoilShield 专用）。从血条下查找 shieldBar 节点并绑定。
+function BattlePlayerCharacterFactory.MakeShieldBar(self, character)
+	local shieldBarTF = character._HPBarTf:Find("shieldBar")
+
+	character:AddShieldBar(shieldBarTF)
+end
+
+--- @class BattlePlayerCharacterFactory
+--- @param character BattlePlayerCharacter 角色视觉对象
 --- @return nil
 --- 创建蓄力区域UI（某些技能需要蓄力/CD时显示）。旋转60度适配战场透视角度。
 function BattlePlayerCharacterFactory.MakeChargeArea(self, character)

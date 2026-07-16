@@ -1,6 +1,7 @@
 ys = ys or {}
 
 local ys = ys
+local BattleBuffEvent = ys.Battle.BattleBuffEvent
 local BattleUnitEvent = ys.Battle.BattleUnitEvent
 local BattleConst = ys.Battle.BattleConst
 local BattleConfig = ys.Battle.BattleConfig
@@ -420,6 +421,7 @@ function BattleCharacter.AddUnitEvent(self)
 	self._unitData:RegisterEventListener(self, BattleUnitEvent.HOST_AIMBIAS, self.onHostAimBias)
 	self._unitData:RegisterEventListener(self, BattleUnitEvent.REMOVE_AIMBIAS, self.onRemoveAimBias)
 	self._unitData:RegisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE, self.onChangeSize)
+	self._unitData:RegisterEventListener(self, BattleBuffEvent.BUFF_EFFECT_RECOIL_SHIELD, self.onRecoilShield)
 	self._unitData:RegisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON, self.onNewWeapon)
 	self._unitData:RegisterEventListener(self, BattleUnitEvent.HIDE_WAVE_FX, self.RemoveWaveFX)
 	self._unitData:RegisterEventListener(self, BattleUnitEvent.ADD_BUFF_CLOCK, self.onAddBuffClock)
@@ -466,6 +468,7 @@ function BattleCharacter.RemoveUnitEvent(self)
 	self._unitData:UnregisterEventListener(self, BattleUnitEvent.ADD_BUFF_CLOCK)
 	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SWITCH_SPINE)
 	self._unitData:UnregisterEventListener(self, BattleUnitEvent.SWITCH_SHADER)
+	self._unitData:UnregisterEventListener(self, BattleBuffEvent.BUFF_EFFECT_RECOIL_SHIELD)
 	self._unitData:UnregisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_CHNAGE_SIZE)
 	self._unitData:UnregisterEventListener(self, ys.Battle.BattleBuffEvent.BUFF_EFFECT_NEW_WEAPON)
 
@@ -810,8 +813,8 @@ function BattleCharacter.updateComponentVisible(self)
 		self._aimBiarBar:SetActive(isVisible)
 	end
 
-	if arg_55_0._shieldBar then
-		arg_55_0._shieldBar:SetActive(var_55_0)
+	if self._shieldBar then
+		self._shieldBar:SetActive(isVisible)
 	end
 end
 
@@ -1145,6 +1148,12 @@ function BattleCharacter.Dispose(self)
 		self._aimBiarBar:Dispose()
 
 		self._aimBiarBar = nil
+	end
+
+	if self._shieldBar then
+		self._shieldBar:Dispose()
+
+		self._shieldBar = nil
 	end
 
 	if self._buffClock then
@@ -1654,6 +1663,57 @@ function BattleCharacter.UpdateAimBiasBar(self)
 	if self._aimBiarBar then
 		self._aimBiarBar:UpdateAimBiasProgress()
 	end
+end
+
+--- 创建护盾条UI组件（RecoilShield专用）
+--- @param self BattleCharacter
+--- @param shieldBarTF Transform shieldBar节点
+function BattleCharacter.AddShieldBar(self, shieldBarTF)
+	self._shieldBarTF = shieldBarTF
+	self._shieldBar = ys.Battle.BattleRecoilShieldBar.New(self._shieldBarTF)
+
+	self:configShieldBuffBar()
+	self._shieldBar:UpdateRecoilShieldProgress()
+end
+
+--- 更新护盾条进度
+--- @param self BattleCharacter
+function BattleCharacter.UpdateShieldBar(self)
+	if self._shieldBar then
+		self._shieldBar:UpdateRecoilShieldProgress()
+	end
+end
+
+--- BUFF_EFFECT_RECOIL_SHIELD 事件回调：创建或刷新护盾条
+--- @param self BattleCharacter
+--- @param event BattleEvent
+function BattleCharacter.onRecoilShield(self, event)
+	if not self._shieldBar then
+		self._factory:MakeShieldBar(self)
+	else
+		self:configShieldBuffBar()
+	end
+end
+
+--- 遍历 Buff 列表找到 BattleBuffRecoilShield，并绑定到护盾条
+--- @param self BattleCharacter
+function BattleCharacter.configShieldBuffBar(self)
+	local buffList = self._unitData:GetBuffList()
+	local recoilShieldBuff
+
+	for _, buff in pairs(buffList) do
+		local effectList = buff:GetEffectList()
+
+		for _, effect in ipairs(effectList) do
+			if effect.__name == ys.Battle.BattleBuffRecoilShield.__name then
+				recoilShieldBuff = effect
+
+				break
+			end
+		end
+	end
+
+	self._shieldBar:ConfigShieldBuff(recoilShieldBuff)
 end
 
 --- 更新Buff时钟
