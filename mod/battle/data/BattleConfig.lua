@@ -441,13 +441,14 @@ BattleConfig.EQUIPMENT_ACTIVE_LIMITED_BY_TYPE = {
 }
 BattleConfig.TRIGGER_PRIORITY = {
 	[ys.Battle.BattleConst.BuffEffectType.ON_TAKE_DAMAGE] = {
-		BattleBuffHPLink = 15,
-		BattleBuffCount = 30,
+		BattleBuffRecordShield = 20,
+		BattleBuffBarrier = 20,
 		BattleBuffShield = 20,
 		BattleBuffLockHealth = 10,
 		BattleBuffOverHealingShield = 20,
-		BattleBuffRecordShield = 20,
-		BattleBuffBarrier = 20,
+		BattleBuffRecoilShield = 19,
+		BattleBuffCount = 30,
+		BattleBuffHPLink = 15,
 		BattleBuffCastSkillDamageCount = 25
 	}
 }

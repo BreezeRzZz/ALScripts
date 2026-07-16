@@ -809,6 +809,10 @@ function BattleCharacter.updateComponentVisible(self)
 	if self._aimBiarBar then
 		self._aimBiarBar:SetActive(isVisible)
 	end
+
+	if arg_55_0._shieldBar then
+		arg_55_0._shieldBar:SetActive(var_55_0)
+	end
 end
 
 --- 更新潜入隐身时的UI组件可见性（仅控制HP条和特效挂载点）
