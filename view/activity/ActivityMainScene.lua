@@ -48,21 +48,6 @@ end
 local var_0_1
 
 function var_0_0.init(arg_5_0)
-	local var_5_0 = arg_5_0._tf:GetComponent(typeof(ItemList)).prefabItem:ToTable()
-
-	for iter_5_0, iter_5_1 in ipairs({
-		"btnBack",
-		"pageContainer",
-		"permanentFinshMask",
-		"tabs",
-		"tab",
-		"entranceContent",
-		"entranceTpl",
-		"lockAll"
-	}) do
-		arg_5_0[iter_5_1] = var_5_0[iter_5_0].transform
-	end
-
 	arg_5_0.entranceList = UIItemList.New(arg_5_0.entranceContent, arg_5_0.entranceTpl)
 	arg_5_0.windowList = {}
 	arg_5_0.awardWindow = AwardWindow.New(arg_5_0._tf, arg_5_0.event)
@@ -445,8 +430,8 @@ function var_0_0.HideWindow(arg_48_0, arg_48_1)
 	arg_48_0.windowList[var_48_0]:Hide()
 end
 
-function var_0_0.ShowAwardWindow(arg_49_0, arg_49_1, arg_49_2, arg_49_3)
-	arg_49_0.awardWindow:ExecuteAction("Flush", arg_49_1, arg_49_2, arg_49_3)
+function var_0_0.ShowAwardWindow(arg_49_0, arg_49_1, arg_49_2, arg_49_3, arg_49_4)
+	arg_49_0.awardWindow:ExecuteAction("Flush", arg_49_1, arg_49_2, arg_49_3, arg_49_4)
 end
 
 function var_0_0.OnChargeSuccess(arg_50_0, arg_50_1)

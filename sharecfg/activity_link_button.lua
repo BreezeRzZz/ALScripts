@@ -34,11 +34,9 @@ pg.activity_link_button.all = {
 	113,
 	114,
 	115,
-	117,
 	116,
 	121,
-	122,
-	131
+	122
 }
 pg.activity_link_button.get_id_list_by_name = {
 	event_Atelier = {
@@ -70,15 +68,12 @@ pg.activity_link_button.get_id_list_by_name = {
 	event_core = {
 		109,
 		114,
-		117,
-		116,
-		122
+		116
 	},
 	event_core_2 = {
 		110,
 		113,
-		115,
-		131
+		115
 	},
 	event_dreamland = {
 		103
@@ -107,7 +102,8 @@ pg.activity_link_button.get_id_list_by_name = {
 	},
 	event_minigame = {
 		20,
-		108
+		108,
+		122
 	},
 	event_old_act = {
 		13
@@ -179,7 +175,7 @@ pg.base.activity_link_button = {}
 		order = 1,
 		time = {
 			"default",
-			50651
+			51101
 		}
 	}
 	pg.base.activity_link_button[11] = {
@@ -471,7 +467,7 @@ pg.base.activity_link_button = {}
 		}
 	}
 	pg.base.activity_link_button[109] = {
-		param = "DreamTourCoreActivityUI",
+		param = "StarsCityCoreActivityUI",
 		name = "event_core",
 		type = 16,
 		text_pic = "text_event_core",
@@ -481,11 +477,11 @@ pg.base.activity_link_button = {}
 		order = 1,
 		time = {
 			"default",
-			50652
+			51101
 		}
 	}
 	pg.base.activity_link_button[110] = {
-		param = "AnniversaryNineCoreActivityUI",
+		param = "RapidSeasideCoreActivityUI",
 		name = "event_core_2",
 		type = 16,
 		text_pic = "text_event_core3",
@@ -495,7 +491,7 @@ pg.base.activity_link_button = {}
 		order = 2,
 		time = {
 			"default",
-			50611
+			51090
 		}
 	}
 	pg.base.activity_link_button[111] = {
@@ -568,20 +564,6 @@ pg.base.activity_link_button = {}
 			50630
 		}
 	}
-	pg.base.activity_link_button[117] = {
-		param = "GeZiURCoreActivityUI",
-		name = "event_core",
-		type = 16,
-		text_pic = "text_event_core3",
-		id = 117,
-		group_id = 1,
-		pic = "event_core3",
-		order = 1,
-		time = {
-			"default",
-			50608
-		}
-	}
 	pg.base.activity_link_button[116] = {
 		param = "HolidayCoreActivityUI",
 		name = "event_core",
@@ -612,30 +594,16 @@ pg.base.activity_link_button = {}
 	}
 	pg.base.activity_link_button[122] = {
 		param = "NieRAutomataCoreActivityUI",
-		name = "event_core",
+		name = "event_minigame",
 		type = 16,
 		text_pic = "text_event_core3",
 		id = 122,
 		group_id = 1,
-		pic = "event_core3",
+		pic = "event_minigame",
 		order = 1,
 		time = {
 			"default",
 			50841
-		}
-	}
-	pg.base.activity_link_button[131] = {
-		param = "AuctionGameCoreActivityUI",
-		name = "event_core_2",
-		type = 16,
-		text_pic = "text_event_auction",
-		id = 131,
-		group_id = 1,
-		pic = "event_auction",
-		order = 1,
-		time = {
-			"default",
-			970002
 		}
 	}
 end)()

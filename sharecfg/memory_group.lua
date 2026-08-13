@@ -277,8 +277,13 @@ pg.memory_group.all = {
 	366,
 	367,
 	368,
+	372,
+	371,
 	369,
 	370,
+	373,
+	374,
+	375,
 	501,
 	502,
 	503,
@@ -400,6 +405,7 @@ pg.memory_group.all = {
 	621,
 	622,
 	623,
+	625,
 	624,
 	1000,
 	1001,
@@ -535,7 +541,10 @@ pg.base.memory_group = {}
 			3803,
 			4581,
 			4582,
-			4583
+			4583,
+			5371,
+			5372,
+			5373
 		}
 	}
 	pg.base.memory_group[99] = {
@@ -7365,6 +7374,51 @@ end)()
 			5221
 		}
 	}
+	pg.base.memory_group[372] = {
+		ship_group = 0,
+		group_id = "",
+		type = 2,
+		link_event = 51088,
+		title = "有客自来",
+		auto_unlock = "",
+		subtype = 1,
+		id = 372,
+		icon = "title_event",
+		memories = {
+			5301,
+			5302,
+			5303,
+			5304,
+			5305,
+			5306,
+			5307
+		}
+	}
+	pg.base.memory_group[371] = {
+		ship_group = 0,
+		group_id = "",
+		type = 2,
+		link_event = 51071,
+		title = "怪谈纪实：逃离白夜山庄！",
+		auto_unlock = "",
+		subtype = 2,
+		id = 371,
+		icon = "title_event",
+		memories = {
+			5271,
+			5272,
+			5273,
+			5274,
+			5275,
+			5276,
+			5277,
+			5278,
+			5279,
+			5280,
+			5281,
+			5282
+		}
+	}
 	pg.base.memory_group[369] = {
 		ship_group = 0,
 		group_id = "",
@@ -7401,6 +7455,114 @@ end)()
 			5261,
 			5262,
 			5263
+		}
+	}
+	pg.base.memory_group[373] = {
+		ship_group = 0,
+		group_id = "",
+		type = 2,
+		link_event = 970000,
+		title = "特别竞拍时刻",
+		auto_unlock = "",
+		subtype = 3,
+		id = 373,
+		icon = "title_event",
+		memories = {
+			5311
+		}
+	}
+	pg.base.memory_group[374] = {
+		ship_group = 0,
+		group_id = "",
+		type = 2,
+		link_event = 51101,
+		title = "沉溺于星光之城",
+		auto_unlock = "",
+		subtype = 1,
+		id = 374,
+		icon = "title_event",
+		memories = {
+			5321,
+			5322,
+			5323,
+			5324,
+			5325,
+			5326,
+			5327,
+			5328,
+			5329,
+			5330,
+			5331,
+			5332,
+			5333,
+			5334,
+			5335,
+			5336,
+			5337,
+			5338,
+			5339,
+			5340,
+			5341,
+			5342,
+			5343,
+			5344,
+			5345,
+			5346,
+			5347,
+			5348,
+			5349,
+			5350,
+			5351,
+			5352,
+			5353,
+			5354,
+			5355,
+			5356,
+			5357,
+			5358,
+			5359,
+			5360,
+			5361,
+			5362,
+			5363,
+			5364,
+			5365,
+			5366
+		}
+	}
+	pg.base.memory_group[375] = {
+		ship_group = 0,
+		group_id = "",
+		type = 2,
+		link_event = 51113,
+		title = "滨海极速：夏日狂飙",
+		auto_unlock = "",
+		subtype = 3,
+		id = 375,
+		icon = "title_event",
+		memories = {
+			5381,
+			5382,
+			5383,
+			5384,
+			5385,
+			5386,
+			5387,
+			5388,
+			5389,
+			5390,
+			5391,
+			5392,
+			5393,
+			5394,
+			5395,
+			5396,
+			5397,
+			5398,
+			5399,
+			5400,
+			5401,
+			5402
 		}
 	}
 	pg.base.memory_group[501] = {
@@ -7854,6 +8016,8 @@ end)()
 			10000
 		}
 	}
+end)()
+;(function()
 	pg.base.memory_group[522] = {
 		ship_group = 10802,
 		subtype = 0,
@@ -7964,8 +8128,6 @@ end)()
 			10000
 		}
 	}
-end)()
-;(function()
 	pg.base.memory_group[527] = {
 		ship_group = 10212,
 		subtype = 0,
@@ -10056,6 +10218,8 @@ end)()
 			10000
 		}
 	}
+end)()
+;(function()
 	pg.base.memory_group[623] = {
 		ship_group = 60508,
 		subtype = 0,
@@ -10073,6 +10237,28 @@ end)()
 			5235,
 			5236,
 			5237
+		},
+		group_id = {
+			10000
+		}
+	}
+	pg.base.memory_group[625] = {
+		ship_group = 10234,
+		subtype = 0,
+		auto_unlock = "",
+		type = 3,
+		link_event = 0,
+		icon = "title_chara_shengtafei",
+		title = "我们的第八大不可思议",
+		id = 625,
+		memories = {
+			5291,
+			5292,
+			5293,
+			5294,
+			5295,
+			5296,
+			5297
 		},
 		group_id = {
 			10000
@@ -10221,8 +10407,6 @@ end)()
 			20081
 		}
 	}
-end)()
-;(function()
 	pg.base.memory_group[1003] = {
 		ship_group = 0,
 		group_id = "",

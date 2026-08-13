@@ -17432,6 +17432,38 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.item_data_statistics[21063] = {
+		open_directly = 0,
+		name = "结晶：{namecode:567}",
+		display = "{namecode:567}的专用性能提升装置，可在「META研究室」-「能量激活」中使用。",
+		type = 4,
+		display_effect = "",
+		id = 21063,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_undefined",
+		link_id = 0,
+		icon = "Props/21063",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
 	_G.pg.base.item_data_statistics[21101] = {
 		open_directly = 0,
 		name = "结晶化热强钢",
@@ -30927,6 +30959,258 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.item_data_statistics[30386] = {
+		open_directly = 1,
+		name = "外观装备箱(怪谈病区)",
+		display = "可以获得一件随机的怪谈病区风格外观装备",
+		type = 11,
+		display_effect = "",
+		id = 30386,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "Props/appearanceboxguaitanbingqu",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "30383",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				9,
+				4402,
+				1
+			},
+			{
+				9,
+				4403,
+				1
+			},
+			{
+				9,
+				4404,
+				1
+			},
+			{
+				9,
+				4405,
+				1
+			},
+			{
+				9,
+				4406,
+				1
+			},
+			{
+				9,
+				4407,
+				1
+			},
+			{
+				9,
+				4408,
+				1
+			},
+			{
+				9,
+				4409,
+				1
+			},
+			{
+				9,
+				4410,
+				1
+			},
+			{
+				9,
+				4411,
+				1
+			},
+			{
+				9,
+				4412,
+				1
+			},
+			{
+				9,
+				4413,
+				1
+			},
+			{
+				9,
+				4414,
+				1
+			},
+			{
+				9,
+				4415,
+				1
+			},
+			{
+				9,
+				4416,
+				1
+			},
+			{
+				9,
+				4417,
+				1
+			},
+			{
+				9,
+				4418,
+				1
+			},
+			{
+				9,
+				4419,
+				1
+			}
+		},
+		price = {
+			1,
+			7000
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[30387] = {
+		open_directly = 1,
+		name = "外观装备箱(滨海极速)",
+		display = "可以获得一件随机的滨海极速风格外观装备",
+		type = 11,
+		display_effect = "",
+		id = 30387,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "Props/appearanceboxbinhaijisu",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "30384",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				9,
+				4420,
+				1
+			},
+			{
+				9,
+				4421,
+				1
+			},
+			{
+				9,
+				4422,
+				1
+			},
+			{
+				9,
+				4423,
+				1
+			},
+			{
+				9,
+				4424,
+				1
+			},
+			{
+				9,
+				4425,
+				1
+			},
+			{
+				9,
+				4426,
+				1
+			},
+			{
+				9,
+				4427,
+				1
+			},
+			{
+				9,
+				4428,
+				1
+			},
+			{
+				9,
+				4429,
+				1
+			},
+			{
+				9,
+				4430,
+				1
+			},
+			{
+				9,
+				4431,
+				1
+			},
+			{
+				9,
+				4432,
+				1
+			},
+			{
+				9,
+				4433,
+				1
+			},
+			{
+				9,
+				4434,
+				1
+			},
+			{
+				9,
+				4435,
+				1
+			},
+			{
+				9,
+				4436,
+				1
+			},
+			{
+				9,
+				4437,
+				1
+			}
+		},
+		price = {
+			1,
+			7000
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
 	_G.pg.base.item_data_statistics[30401] = {
 		open_directly = 1,
 		name = "外观装备箱(世界巡游)",
@@ -32790,6 +33074,59 @@ end)()
 			{
 				9,
 				2124,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[30436] = {
+		open_directly = 1,
+		name = "外观装备箱(世界巡游)",
+		display = "可以随机获得一件本次世界巡游限定外观装备",
+		type = 11,
+		display_effect = "",
+		id = 30436,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 1,
+		icon = "Props/appearanceboxshijiexunyou",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "111230",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				9,
+				2125,
+				1
+			},
+			{
+				9,
+				2126,
+				1
+			},
+			{
+				9,
+				2127,
+				1
+			},
+			{
+				9,
+				2128,
 				1
 			}
 		},
@@ -47546,6 +47883,434 @@ end)()
 			{
 				9,
 				4401,
+				1
+			}
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[30570] = {
+		open_directly = 0,
+		name = "定向外观装备箱(怪谈病区)",
+		display = "使用后可从「怪谈病区」主题外观装备中任意选择一种获得1个",
+		type = 13,
+		display_effect = "",
+		id = 30570,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop_appointed",
+		link_id = 0,
+		icon = "Props/appearanceboxguaitanbingquzixuan",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				9,
+				4402,
+				1
+			},
+			{
+				9,
+				4403,
+				1
+			},
+			{
+				9,
+				4404,
+				1
+			},
+			{
+				9,
+				4405,
+				1
+			},
+			{
+				9,
+				4406,
+				1
+			},
+			{
+				9,
+				4407,
+				1
+			},
+			{
+				9,
+				4408,
+				1
+			},
+			{
+				9,
+				4409,
+				1
+			},
+			{
+				9,
+				4410,
+				1
+			},
+			{
+				9,
+				4411,
+				1
+			},
+			{
+				9,
+				4412,
+				1
+			},
+			{
+				9,
+				4413,
+				1
+			},
+			{
+				9,
+				4414,
+				1
+			},
+			{
+				9,
+				4415,
+				1
+			},
+			{
+				9,
+				4416,
+				1
+			},
+			{
+				9,
+				4417,
+				1
+			},
+			{
+				9,
+				4418,
+				1
+			},
+			{
+				9,
+				4419,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				9,
+				4402,
+				1
+			},
+			{
+				9,
+				4403,
+				1
+			},
+			{
+				9,
+				4404,
+				1
+			},
+			{
+				9,
+				4405,
+				1
+			},
+			{
+				9,
+				4406,
+				1
+			},
+			{
+				9,
+				4407,
+				1
+			},
+			{
+				9,
+				4408,
+				1
+			},
+			{
+				9,
+				4409,
+				1
+			},
+			{
+				9,
+				4410,
+				1
+			},
+			{
+				9,
+				4411,
+				1
+			},
+			{
+				9,
+				4412,
+				1
+			},
+			{
+				9,
+				4413,
+				1
+			},
+			{
+				9,
+				4414,
+				1
+			},
+			{
+				9,
+				4415,
+				1
+			},
+			{
+				9,
+				4416,
+				1
+			},
+			{
+				9,
+				4417,
+				1
+			},
+			{
+				9,
+				4418,
+				1
+			},
+			{
+				9,
+				4419,
+				1
+			}
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[30571] = {
+		open_directly = 0,
+		name = "定向外观装备箱(滨海极速)",
+		display = "使用后可从「滨海极速」主题外观装备中任意选择一种获得1个",
+		type = 13,
+		display_effect = "",
+		id = 30571,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop_appointed",
+		link_id = 0,
+		icon = "Props/appearanceboxbinhaijisuzixuan",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				9,
+				4420,
+				1
+			},
+			{
+				9,
+				4421,
+				1
+			},
+			{
+				9,
+				4422,
+				1
+			},
+			{
+				9,
+				4423,
+				1
+			},
+			{
+				9,
+				4424,
+				1
+			},
+			{
+				9,
+				4425,
+				1
+			},
+			{
+				9,
+				4426,
+				1
+			},
+			{
+				9,
+				4427,
+				1
+			},
+			{
+				9,
+				4428,
+				1
+			},
+			{
+				9,
+				4429,
+				1
+			},
+			{
+				9,
+				4430,
+				1
+			},
+			{
+				9,
+				4431,
+				1
+			},
+			{
+				9,
+				4432,
+				1
+			},
+			{
+				9,
+				4433,
+				1
+			},
+			{
+				9,
+				4434,
+				1
+			},
+			{
+				9,
+				4435,
+				1
+			},
+			{
+				9,
+				4436,
+				1
+			},
+			{
+				9,
+				4437,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				9,
+				4420,
+				1
+			},
+			{
+				9,
+				4421,
+				1
+			},
+			{
+				9,
+				4422,
+				1
+			},
+			{
+				9,
+				4423,
+				1
+			},
+			{
+				9,
+				4424,
+				1
+			},
+			{
+				9,
+				4425,
+				1
+			},
+			{
+				9,
+				4426,
+				1
+			},
+			{
+				9,
+				4427,
+				1
+			},
+			{
+				9,
+				4428,
+				1
+			},
+			{
+				9,
+				4429,
+				1
+			},
+			{
+				9,
+				4430,
+				1
+			},
+			{
+				9,
+				4431,
+				1
+			},
+			{
+				9,
+				4432,
+				1
+			},
+			{
+				9,
+				4433,
+				1
+			},
+			{
+				9,
+				4434,
+				1
+			},
+			{
+				9,
+				4435,
+				1
+			},
+			{
+				9,
+				4436,
+				1
+			},
+			{
+				9,
+				4437,
 				1
 			}
 		},
@@ -94577,7 +95342,7 @@ end)()
 	_G.pg.base.item_data_statistics[42082] = {
 		open_directly = 0,
 		name = "蓝图：{namecode:313}",
-		display = "重樱驱逐「{namecode:313}」的设计蓝图。\n<color=#92fc63>获得「{namecode:313}」后，可在「开发船坞」中用于增强「{namecode:313}」的能力。</color>",
+		display = "重樱轻巡「{namecode:313}」的设计蓝图。\n<color=#92fc63>获得「{namecode:313}」后，可在「开发船坞」中用于增强「{namecode:313}」的能力。</color>",
 		type = 12,
 		display_effect = "",
 		id = 42082,
@@ -114793,7 +115558,7 @@ end)()
 		display_effect = "",
 		id = 59856,
 		other_resource_cost = "[]",
-		replace_item = 0,
+		replace_item = 59859,
 		usage = "usage_undefined",
 		link_id = 0,
 		icon = "Props/59856",
@@ -114877,6 +115642,72 @@ end)()
 		price = {},
 		index = {},
 		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[59859] = {
+		open_directly = 0,
+		name = "必要的准备（纪念版）",
+		display = "参与活动「律动储物间」的纪念品",
+		type = 1,
+		display_effect = "",
+		id = 59859,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_undefined",
+		link_id = 0,
+		icon = "Props/59859",
+		order = 0,
+		rarity = 3,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[59860] = {
+		open_directly = 0,
+		name = "女仆长的坚守",
+		display = "「为主人清除障碍正是女仆的职责」——用于完成贝尔法斯特近代化改造",
+		type = 7,
+		display_effect = "",
+		id = 59860,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_undefined",
+		link_id = 0,
+		icon = "Props/maidsteadfast",
+		order = 0,
+		rarity = 4,
+		max_num = 1,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {},
+		index = {},
+		shiptrans_id = {
+			202994
+		},
 		combination_display = {},
 		limit = {}
 	}
@@ -137148,6 +137979,726 @@ end)()
 end)()
 
 (function()
+	_G.pg.base.item_data_statistics[68324] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(唇齿之间)",
+		display = "购买后可获得<color=#92fc63FF>华丽</color>换装<color=#92fc63FF>唇齿之间</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68324,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88150",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68327,
+				1
+			},
+			{
+				2,
+				68330,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68325] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(纯白天使的全身检查)",
+		display = "购买后可获得<color=#92fc63FF>普利茅斯</color>换装<color=#92fc63FF>纯白天使的全身检查</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68325,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88151",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68328,
+				1
+			},
+			{
+				2,
+				68331,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68326] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(真我的显影)",
+		display = "购买后可获得<color=#92fc63FF>冈依沙瓦</color>换装<color=#92fc63FF>真我的显影</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68326,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88152",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68329,
+				1
+			},
+			{
+				2,
+				68332,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68327] = {
+		open_directly = 0,
+		name = "换装抵扣券(唇齿之间)",
+		display = "持有此道具时，购买<color=#92fc63FF>华丽</color>换装<color=#92fc63FF>唇齿之间</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68327,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71381
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68328] = {
+		open_directly = 0,
+		name = "换装抵扣券(纯白天使的全身检查)",
+		display = "持有此道具时，购买<color=#92fc63FF>普利茅斯</color>换装<color=#92fc63FF>纯白天使的全身检查</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68328,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71384
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68329] = {
+		open_directly = 0,
+		name = "换装抵扣券(真我的显影)",
+		display = "持有此道具时，购买<color=#92fc63FF>冈依沙瓦</color>换装<color=#92fc63FF>真我的显影</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68329,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71386
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68330] = {
+		open_directly = 0,
+		name = "换装体验券(唇齿之间)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>华丽</color>换装<color=#92fc63FF>唇齿之间</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68330,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90512
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68331] = {
+		open_directly = 0,
+		name = "换装体验券(纯白天使的全身检查)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>普利茅斯</color>换装<color=#92fc63FF>纯白天使的全身检查</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68331,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90513
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68332] = {
+		open_directly = 0,
+		name = "换装体验券(真我的显影)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>冈依沙瓦</color>换装<color=#92fc63FF>真我的显影</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年7月29日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68332,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90514
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68333] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(只为你献上的应援)",
+		display = "购买后可获得<color=#92fc63FF>{namecode:84}</color>换装<color=#92fc63FF>只为你献上的应援</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68333,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88242",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68336,
+				1
+			},
+			{
+				2,
+				68339,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68334] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(全速！盛夏逐光企划)",
+		display = "购买后可获得<color=#92fc63FF>本宁顿</color>换装<color=#92fc63FF>全速！盛夏逐光企划</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68334,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88243",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68337,
+				1
+			},
+			{
+				2,
+				68340,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68335] = {
+		open_directly = 1,
+		name = "换装抵扣礼包(慵懒的领航员小姐)",
+		display = "购买后可获得<color=#92fc63FF>不挠</color>换装<color=#92fc63FF>慵懒的领航员小姐</color>的钻石抵扣券等道具",
+		type = 17,
+		display_effect = "",
+		id = 68335,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "ChargeIcon/skin_ticket_package",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "88244",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				68338,
+				1
+			},
+			{
+				2,
+				68341,
+				1
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68336] = {
+		open_directly = 0,
+		name = "换装抵扣券(只为你献上的应援)",
+		display = "持有此道具时，购买<color=#92fc63FF>{namecode:84}</color>换装<color=#92fc63FF>只为你献上的应援</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68336,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71394
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68337] = {
+		open_directly = 0,
+		name = "换装抵扣券(全速！盛夏逐光企划)",
+		display = "持有此道具时，购买<color=#92fc63FF>本宁顿</color>换装<color=#92fc63FF>全速！盛夏逐光企划</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68337,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71387
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68338] = {
+		open_directly = 0,
+		name = "换装抵扣券(慵懒的领航员小姐)",
+		display = "持有此道具时，购买<color=#92fc63FF>不挠</color>换装<color=#92fc63FF>慵懒的领航员小姐</color>时可消耗此道具，并抵扣300钻石\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失，并自动转化为300钻石</color>",
+		type = 1,
+		display_effect = "",
+		id = 68338,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_shop_discount",
+		link_id = 0,
+		icon = "Props/limit_skin_300",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			14,
+			300
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			{
+				71393
+			},
+			300
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68339] = {
+		open_directly = 0,
+		name = "换装体验券(只为你献上的应援)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>{namecode:84}</color>换装<color=#92fc63FF>只为你献上的应援</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68339,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90518
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68340] = {
+		open_directly = 0,
+		name = "换装体验券(全速！盛夏逐光企划)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>本宁顿</color>换装<color=#92fc63FF>全速！盛夏逐光企划</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68340,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90519
+		},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[68341] = {
+		open_directly = 0,
+		name = "换装体验券(慵懒的领航员小姐)",
+		display = "使用后可前往换装体验兑换界面，界面内可以选择兑换<color=#92fc63FF>不挠</color>换装<color=#92fc63FF>慵懒的领航员小姐</color>的2天换装体验资格\n<color=#ff5c5c>道具有效期：自获得后～2026年8月19日 23:59，过期后此道具将消失</color>",
+		type = 1,
+		display_effect = "",
+		id = 68341,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_skin_exp",
+		link_id = 0,
+		icon = "Props/limit_skinticket",
+		order = 1,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 1,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {},
+		price = {
+			1,
+			0
+		},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		usage_arg = {
+			90520
+		},
+		limit = {}
+	}
+end)()
+
+(function()
 	_G.pg.base.item_data_statistics[68306] = {
 		open_directly = 1,
 		name = "换装抵扣礼包(布偶熊里面的是……？)",
@@ -141242,6 +142793,74 @@ end)()
 			{
 				2,
 				42076,
+				2
+			},
+			{
+				2,
+				15008,
+				50
+			},
+			{
+				2,
+				20001,
+				20
+			},
+			{
+				2,
+				15003,
+				10
+			},
+			{
+				1,
+				6,
+				100
+			}
+		},
+		price = {},
+		index = {},
+		shiptrans_id = {},
+		combination_display = {},
+		limit = {}
+	}
+end)()
+
+(function()
+	_G.pg.base.item_data_statistics[81237] = {
+		open_directly = 1,
+		name = "滨海极速福袋",
+		display = "购买礼包可获得随机换装*1，钻石*2026，心智单元*50，心智魔方*20，高级定向蓝图·九期*2，快速完成工具*10，家具币*100",
+		type = 17,
+		display_effect = "",
+		id = 81237,
+		other_resource_cost = "[]",
+		replace_item = 0,
+		usage = "usage_drop",
+		link_id = 0,
+		icon = "Props/fudai37",
+		order = 0,
+		rarity = 4,
+		max_num = 0,
+		time_limit = 0,
+		virtual_type = 0,
+		other_item_cost = "[]",
+		usage_arg = "998577",
+		is_world = 0,
+		compose_number = 0,
+		target_id = 0,
+		display_icon = {
+			{
+				2,
+				86229,
+				1
+			},
+			{
+				1,
+				14,
+				2026
+			},
+			{
+				2,
+				42086,
 				2
 			},
 			{

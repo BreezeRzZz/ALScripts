@@ -115,7 +115,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -137,7 +138,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -280,7 +282,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -302,7 +305,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -445,7 +449,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -467,7 +472,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -610,7 +616,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -632,7 +639,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -775,7 +783,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -797,7 +806,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -940,7 +950,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -962,7 +973,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1105,7 +1117,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1127,7 +1140,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1270,7 +1284,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1292,7 +1307,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1435,7 +1451,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1457,7 +1474,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1600,7 +1618,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1622,7 +1641,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1765,7 +1785,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1787,7 +1808,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,
@@ -1930,7 +1952,8 @@ pg.base.month_shop_template = {}
 			10097,
 			10098,
 			10099,
-			10100
+			10100,
+			10101
 		},
 		blueprint_shop_goods = {
 			11004,
@@ -1952,7 +1975,8 @@ pg.base.month_shop_template = {}
 			11031,
 			11033,
 			11034,
-			11035
+			11035,
+			11037
 		},
 		blueprint_shop_limit_goods = {
 			11009,

@@ -1173,6 +1173,34 @@ pg.expedition_activity_template.all = {
 	2041113,
 	2041213,
 	2044013,
+	2049101,
+	2049201,
+	2049202,
+	2049301,
+	2049302,
+	2049303,
+	2049401,
+	2049402,
+	2049403,
+	2049404,
+	2049501,
+	2049502,
+	2049503,
+	2049504,
+	2049505,
+	2050013,
+	2050113,
+	2050213,
+	2051013,
+	2051113,
+	2051213,
+	2052013,
+	2052113,
+	2052213,
+	2053013,
+	2053113,
+	2053213,
+	2054013,
 	3000013,
 	3000113,
 	3000213,
@@ -11442,6 +11470,252 @@ end)()
 			}
 		}
 	}
+	pg.base.expedition_activity_template[2049101] = {
+		id = 2049101,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049201] = {
+		id = 2049201,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049202] = {
+		id = 2049202,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049301] = {
+		id = 2049301,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049302] = {
+		id = 2049302,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049303] = {
+		id = 2049303,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049401] = {
+		id = 2049401,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049402] = {
+		id = 2049402,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049403] = {
+		id = 2049403,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049404] = {
+		id = 2049404,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049501] = {
+		id = 2049501,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049502] = {
+		id = 2049502,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049503] = {
+		id = 2049503,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049504] = {
+		id = 2049504,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2049505] = {
+		id = 2049505,
+		bonus_rate = 0,
+		pt_drop_display = "",
+		bonus_time = 0
+	}
+	pg.base.expedition_activity_template[2050013] = {
+		id = 2050013,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				30
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2050113] = {
+		id = 2050113,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				40
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2050213] = {
+		id = 2050213,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				50
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2051013] = {
+		id = 2051013,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				60
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2051113] = {
+		id = 2051113,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				70
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2051213] = {
+		id = 2051213,
+		bonus_rate = 3,
+		bonus_time = 1,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				80
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2052013] = {
+		id = 2052013,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				90
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2052113] = {
+		id = 2052113,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				100
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2052213] = {
+		id = 2052213,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51101,
+				741,
+				110
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2053013] = {
+		id = 2053013,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				120
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2053113] = {
+		id = 2053113,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				150
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2053213] = {
+		id = 2053213,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				180
+			}
+		}
+	}
+	pg.base.expedition_activity_template[2054013] = {
+		id = 2054013,
+		bonus_rate = 0,
+		bonus_time = 0,
+		pt_drop_display = {
+			{
+				51102,
+				741,
+				800
+			}
+		}
+	}
 	pg.base.expedition_activity_template[3000013] = {
 		id = 3000013,
 		bonus_rate = 0,
@@ -11454,6 +11728,8 @@ end)()
 		pt_drop_display = "",
 		bonus_time = 1
 	}
+end)()
+;(function()
 	pg.base.expedition_activity_template[3000213] = {
 		id = 3000213,
 		bonus_rate = 0,

@@ -143,7 +143,7 @@ function PrintTable(arg_13_0)
 			if type(iter_14_1) == "table" then
 				table.insert(var_14_0, string.format("%s[%s] = %s", arg_14_1 .. "  ", iter_14_0, var_13_1(iter_14_1, arg_14_1 .. "  ")))
 			else
-				table.insert(var_14_0, string.format("%s[%s] = %s", arg_14_1 .. "  ", iter_14_0, iter_14_1))
+				table.insert(var_14_0, string.format("%s[%s] = %s", arg_14_1 .. "  ", iter_14_0, tostring(iter_14_1)))
 			end
 		end
 
@@ -229,7 +229,7 @@ function errorMsg(...)
 end
 
 function BuildVector3(arg_21_0)
-	return Vector3(arg_21_0[1], arg_21_0[2], arg_21_0[3])
+	return Vector3(arg_21_0[1] or 0, arg_21_0[2] or 0, arg_21_0[3] or 0)
 end
 
 function ShowFuncInfo(arg_22_0)

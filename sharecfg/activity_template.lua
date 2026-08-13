@@ -1190,9 +1190,40 @@ pg.activity_template.all = {
 	51046,
 	51047,
 	51050,
+	51085,
+	51086,
+	51087,
+	51088,
+	51089,
+	51090,
 	51061,
 	51062,
 	51063,
+	51070,
+	51071,
+	51072,
+	51073,
+	51074,
+	51076,
+	51077,
+	51078,
+	51079,
+	51101,
+	51102,
+	51103,
+	51104,
+	51105,
+	51106,
+	51107,
+	51108,
+	51109,
+	51110,
+	51111,
+	51112,
+	51113,
+	51114,
+	51115,
+	51117,
 	7011,
 	7012,
 	7013,
@@ -1212,6 +1243,7 @@ pg.activity_template.all = {
 	7027,
 	7028,
 	7029,
+	7030,
 	7101,
 	7102,
 	7104,
@@ -1389,6 +1421,7 @@ pg.activity_template.all = {
 	6021,
 	6022,
 	6023,
+	6042,
 	100001,
 	100002,
 	100003,
@@ -1418,6 +1451,11 @@ pg.activity_template.all = {
 	990019,
 	990020,
 	990021,
+	990022,
+	990023,
+	990024,
+	990025,
+	990026,
 	999901
 }
 pg.activity_template.get_id_list_by_type = {
@@ -1487,7 +1525,9 @@ pg.activity_template.get_id_list_by_type = {
 		50828,
 		50614,
 		50658,
-		51037
+		51037,
+		51070,
+		51103
 	},
 	{
 		8064,
@@ -1667,7 +1707,9 @@ pg.activity_template.get_id_list_by_type = {
 		50606,
 		50651,
 		51033,
-		51034
+		51034,
+		51101,
+		51102
 	},
 	[13] = {
 		710,
@@ -1863,6 +1905,13 @@ pg.activity_template.get_id_list_by_type = {
 		51015,
 		51035,
 		51046,
+		51089,
+		51074,
+		51078,
+		51105,
+		51110,
+		51112,
+		51113,
 		1103,
 		1104,
 		1105,
@@ -1936,7 +1985,8 @@ pg.activity_template.get_id_list_by_type = {
 		50829,
 		50611,
 		50655,
-		51032
+		51032,
+		51104
 	},
 	[15] = {
 		6027,
@@ -2008,7 +2058,9 @@ pg.activity_template.get_id_list_by_type = {
 		50599,
 		50625,
 		50654,
-		51039
+		51039,
+		51076,
+		51106
 	},
 	[17] = {
 		21,
@@ -2147,6 +2199,7 @@ pg.activity_template.get_id_list_by_type = {
 		51005,
 		51011,
 		51041,
+		51088,
 		51063,
 		7506,
 		6000,
@@ -2169,6 +2222,7 @@ pg.activity_template.get_id_list_by_type = {
 		6020,
 		6021,
 		6023,
+		6042,
 		970002,
 		990021
 	},
@@ -2278,7 +2332,9 @@ pg.activity_template.get_id_list_by_type = {
 		50824,
 		50601,
 		50653,
-		51036
+		51036,
+		51077,
+		51108
 	},
 	[29] = {
 		5201,
@@ -2353,7 +2409,8 @@ pg.activity_template.get_id_list_by_type = {
 		50432,
 		50468,
 		50600,
-		51038
+		51038,
+		51107
 	},
 	[38] = {
 		117
@@ -2382,7 +2439,8 @@ pg.activity_template.get_id_list_by_type = {
 	},
 	[51] = {
 		4933,
-		5460
+		5460,
+		51111
 	},
 	[52] = {
 		4915,
@@ -2409,7 +2467,8 @@ pg.activity_template.get_id_list_by_type = {
 		7026,
 		7027,
 		7028,
-		7029
+		7029,
+		7030
 	},
 	[55] = {
 		5010,
@@ -2461,6 +2520,8 @@ pg.activity_template.get_id_list_by_type = {
 		50811,
 		50812,
 		50617,
+		51090,
+		51115,
 		100002
 	},
 	[58] = {
@@ -2495,7 +2556,8 @@ pg.activity_template.get_id_list_by_type = {
 		50322,
 		50472,
 		51004,
-		51042
+		51042,
+		51087
 	},
 	[59] = {
 		368
@@ -2574,7 +2636,8 @@ pg.activity_template.get_id_list_by_type = {
 		50069,
 		50101,
 		50263,
-		51002
+		51002,
+		51085
 	},
 	[70] = {
 		5246,
@@ -2699,6 +2762,8 @@ pg.activity_template.get_id_list_by_type = {
 		51013,
 		51031,
 		51062,
+		51073,
+		51109,
 		1110,
 		6006,
 		6010,
@@ -2829,7 +2894,8 @@ pg.activity_template.get_id_list_by_type = {
 		50321,
 		50470,
 		51003,
-		51040
+		51040,
+		51086
 	},
 	[88] = {
 		50043
@@ -2859,13 +2925,15 @@ pg.activity_template.get_id_list_by_type = {
 		5888,
 		50013,
 		50351,
-		50521
+		50521,
+		51071
 	},
 	[94] = {
 		5403,
 		5889,
 		50014,
-		50352
+		50352,
+		51072
 	},
 	[100] = {
 		5561,
@@ -2892,7 +2960,9 @@ pg.activity_template.get_id_list_by_type = {
 		50066,
 		50155,
 		50249,
-		50844
+		50844,
+		51079,
+		51117
 	},
 	[104] = {
 		4963
@@ -2937,7 +3007,8 @@ pg.activity_template.get_id_list_by_type = {
 		50375
 	},
 	[113] = {
-		5322
+		5322,
+		51114
 	},
 	[114] = {
 		5335
@@ -3029,6 +3100,7 @@ pg.activity_template.get_id_list_by_type = {
 	[800] = {
 		990009,
 		990020,
+		990026,
 		999901
 	},
 	[801] = {
@@ -3044,22 +3116,26 @@ pg.activity_template.get_id_list_by_type = {
 		990001,
 		990005,
 		990011,
-		990016
+		990016,
+		990022
 	},
 	[5002] = {
 		990002,
 		990006,
-		990017
+		990017,
+		990023
 	},
 	[5003] = {
 		990003,
 		990007,
-		990018
+		990018,
+		990024
 	},
 	[5004] = {
 		990004,
 		990008,
-		990019
+		990019,
+		990025
 	}
 }
 pg.base = pg.base or {}
@@ -48478,6 +48554,329 @@ end)()
 			}
 		}
 	}
+	pg.base.activity_template[51085] = {
+		mark = 20260806,
+		id = 51085,
+		title_res_tag = "Georgia_catchup",
+		type = 69,
+		login_pop = 0,
+		config_id = 36,
+		is_show = 45,
+		page_core = "",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		page_info = {
+			class_name = "EelTecCatchupPage",
+			ui_name = "EelTecCatchupPage"
+		},
+		config_client = {
+			itemid = 42062
+		}
+	}
+	pg.base.activity_template[51086] = {
+		mark = 20260806,
+		title_res_tag = "StarsCityCoreActivityUI_subtitle_1",
+		type = 87,
+		login_pop = 0,
+		config_id = 40,
+		is_show = 4,
+		config_client = "",
+		id = 51086,
+		page_core = "StarsCityCoreActivityUI",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		page_info = {
+			class_name = "EssexFramePage",
+			ui_name = "EssexFramePage"
+		}
+	}
+	pg.base.activity_template[51087] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 58,
+		login_pop = 0,
+		config_id = 42,
+		is_show = 0,
+		config_client = "",
+		id = 51087,
+		page_core = "",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51088] = {
+		mark = 20260806,
+		id = 51088,
+		title_res_tag = "StarsCityCoreActivityUI_subtitle_2",
+		type = 18,
+		login_pop = 0,
+		config_id = 3,
+		is_show = 5,
+		page_core = "StarsCityCoreActivityUI",
+		config_data = {
+			{
+				27351,
+				27352,
+				27353,
+				27354,
+				27355,
+				27356,
+				27357,
+				27358,
+				27359,
+				27360,
+				27361,
+				27362,
+				27363,
+				27364
+			}
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "StarsCityOmenPage",
+			ui_name = "StarsCityOmenPage",
+			sub_ui = {
+				"StarsCityOmenTaskWindow"
+			}
+		},
+		config_client = {
+			task_id = 27365,
+			subType = 1,
+			is_clickOnce = true,
+			default_bgm = "battle-deepecho",
+			default_background = "star_level_bg_581",
+			storys = {
+				471,
+				472,
+				473,
+				474,
+				475,
+				476,
+				477
+			},
+			unlock_task = {
+				{
+					27351,
+					27352
+				},
+				{
+					27353,
+					27354
+				},
+				{
+					27355,
+					27356
+				},
+				{
+					27357,
+					27358
+				},
+				{
+					27359,
+					27360
+				},
+				{
+					27361,
+					27362
+				},
+				{
+					27363,
+					27364
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51089] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51089,
+		page_core = "",
+		config_data = {
+			27365
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51090] = {
+		mark = 20260806,
+		title_res_tag = "RapidSeasideCoreActivityUI_subtitle_1",
+		type = 57,
+		login_pop = 0,
+		config_id = 77,
+		is_show = 6,
+		config_data = "0",
+		id = 51090,
+		page_core = "RapidSeasideCoreActivityUI",
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "RapidSeasideMusicGamePage",
+			ui_name = "RapidSeasideMusicGamePage"
+		},
+		config_client = {
+			first_sfx = "qiyuanxiademimi"
+		}
+	}
 	pg.base.activity_template[51061] = {
 		mark = 20260709,
 		title_res_tag = "",
@@ -48611,6 +49010,1121 @@ end)()
 		},
 		config_client = {
 			link_act = 51062
+		}
+	}
+	pg.base.activity_template[51070] = {
+		mark = 20260723,
+		time = "stop",
+		page_info = "",
+		type = 1,
+		login_pop = 0,
+		config_id = 4,
+		is_show = 0,
+		title_res_tag = "",
+		config_client = "",
+		id = 51070,
+		page_core = "",
+		config_data = {}
+	}
+	pg.base.activity_template[51071] = {
+		mark = 20260723,
+		title_res_tag = "EscapeManorCoreActivity_subtitle_1",
+		time = "stop",
+		type = 93,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 1,
+		id = 51071,
+		page_core = "EscapeManorCoreActivityUI",
+		config_data = {
+			6001,
+			6002,
+			6003,
+			6004,
+			6005
+		},
+		page_info = {
+			class_name = "EscapeManorMainPage",
+			ui_name = "EscapeManorMainPage"
+		},
+		config_client = {
+			scene = "BossRushEscapeManorScene",
+			shopItemID = 71384,
+			entrance_bg = "activitybanner/temp10",
+			openStory = "GUAITANJISHI1",
+			task_id = 27329,
+			mediator = "BossRushEscapeManorMediator",
+			PTID = 736,
+			tasks = {
+				27329
+			},
+			storys = {
+				177,
+				178,
+				179,
+				180,
+				181,
+				182,
+				183,
+				184,
+				185,
+				186,
+				187
+			},
+			storybg = {},
+			levelbg = {},
+			storybgm = {
+				{
+					1,
+					"theme-hospitalnight-mystic"
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51072] = {
+		mark = 20260723,
+		time = "stop",
+		page_info = "",
+		type = 94,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_data = "0",
+		config_client = "",
+		title_res_tag = "",
+		id = 51072,
+		page_core = ""
+	}
+	pg.base.activity_template[51073] = {
+		mark = 20260723,
+		id = 51073,
+		title_res_tag = "EscapeManorCoreActivity_subtitle_2",
+		type = 74,
+		login_pop = 0,
+		config_id = 51073,
+		is_show = 2,
+		page_core = "EscapeManorCoreActivityUI",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					7,
+					23
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					12
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		page_info = {
+			class_name = "EscapeManorPtPage",
+			ui_name = "EscapeManorPtPage"
+		},
+		config_client = {
+			highValueItemSort = {
+				11,
+				19,
+				23,
+				29,
+				33,
+				37
+			}
+		}
+	}
+end)()
+;(function()
+	pg.base.activity_template[51074] = {
+		mark = 20260723,
+		time = "stop",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		title_res_tag = "",
+		config_client = "",
+		id = 51074,
+		page_core = "",
+		config_data = {
+			27323,
+			27324,
+			27325,
+			27326,
+			27327,
+			27328,
+			27329,
+			27330,
+			27331,
+			27332,
+			27333
+		}
+	}
+	pg.base.activity_template[51076] = {
+		mark = 20260723,
+		title_res_tag = "",
+		page_info = "",
+		type = 16,
+		login_pop = 0,
+		config_id = 736,
+		is_show = 0,
+		config_data = "100",
+		config_client = "",
+		id = 51076,
+		page_core = "",
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					7,
+					23
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					12
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51077] = {
+		mark = 20260723,
+		time = "stop",
+		page_info = "",
+		type = 27,
+		login_pop = 0,
+		config_id = 1,
+		is_show = 0,
+		title_res_tag = "",
+		config_client = "",
+		id = 51077,
+		page_core = "",
+		config_data = {
+			{
+				31920,
+				100
+			}
+		}
+	}
+	pg.base.activity_template[51078] = {
+		mark = 20260723,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51078,
+		page_core = "",
+		config_data = {
+			21988,
+			21989,
+			21990,
+			21991,
+			21992,
+			21993,
+			21994,
+			21995,
+			21996
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					7,
+					23
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					12
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51079] = {
+		mark = 20260723,
+		title_res_tag = "EscapeManorCoreActivity_subtitle_3",
+		time = "stop",
+		type = 103,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 3,
+		id = 51079,
+		page_core = "EscapeManorCoreActivityUI",
+		config_data = {},
+		page_info = {
+			class_name = "EscapeManorCollectPage",
+			ui_name = "EscapeManorCollectPage",
+			sub_ui = {
+				"EscapeManorCollectMsgBox"
+			}
+		},
+		config_client = {
+			furniture_theme_link = {
+				2,
+				{
+					"scene court yard",
+					{}
+				}
+			},
+			equipskin_box_link = {
+				drop_type = 2,
+				drop_id = 30386,
+				list = {
+					{
+						2,
+						{
+							"scene shop",
+							{
+								warp = "shopstreet"
+							}
+						},
+						"军需商店兑换"
+					}
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51101] = {
+		mark = 20260813,
+		id = 51101,
+		title_res_tag = "StarsCityCoreActivityUI_subtitle_4",
+		type = 12,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 1,
+		page_core = "StarsCityCoreActivityUI",
+		config_data = {
+			2050001,
+			2050002,
+			2050003,
+			2050021,
+			2050022,
+			2050023
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "StarsCityMainPage",
+			ui_name = "StarsCityMainPage"
+		},
+		config_client = {
+			fightLinkActID = 51101,
+			entrance_bg = "activitybanner/temp10",
+			shopItemID = 71387,
+			task_id = 27392,
+			buildLinkActID = 51103,
+			PTID = 741
+		}
+	}
+	pg.base.activity_template[51102] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 12,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		id = 51102,
+		page_core = "",
+		config_data = {
+			2050004,
+			2050005,
+			2050006,
+			2050024,
+			2050025,
+			2050026,
+			2050041,
+			2050051,
+			2050052
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		config_client = {
+			entrance_bg = "activitybanner/temp10",
+			task_id = 27392
+		}
+	}
+	pg.base.activity_template[51103] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 1,
+		login_pop = 0,
+		config_id = 4,
+		is_show = 0,
+		config_client = "",
+		id = 51103,
+		page_core = "",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51104] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 14,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		id = 51104,
+		page_core = "",
+		config_data = {
+			4131,
+			4132,
+			4133,
+			4134,
+			4135,
+			4136,
+			4137,
+			4138,
+			4139,
+			4140,
+			4141,
+			4142,
+			4143,
+			4144,
+			4145,
+			4146,
+			4147,
+			4148,
+			4149,
+			4150,
+			4151,
+			4152,
+			4153,
+			4154,
+			4155,
+			4156
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		config_client = {
+			"commonbg/bg_pt_lumei",
+			{
+				1,
+				1,
+				1,
+				1
+			},
+			shop_title = "StarsCityCoreActivityUI_subtitle_4",
+			painting = "kelaite_pt",
+			use_secretary = false,
+			pt_id = 741
+		}
+	}
+	pg.base.activity_template[51105] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51105,
+		page_core = "",
+		config_data = {
+			27371,
+			27372,
+			27373,
+			27374,
+			27375,
+			27376,
+			27377,
+			27378,
+			27379,
+			27380,
+			27381,
+			27382,
+			27383,
+			27384,
+			27385,
+			27386,
+			27387,
+			27388,
+			27389,
+			27390,
+			27391,
+			27392
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51106] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 16,
+		login_pop = 0,
+		config_id = 741,
+		is_show = 0,
+		config_data = "100",
+		config_client = "",
+		id = 51106,
+		page_core = "",
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					7
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51107] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 36,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51107,
+		page_core = "",
+		config_data = {
+			2055002,
+			5000,
+			50,
+			0.36,
+			0.6,
+			10
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					7
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51108] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 27,
+		login_pop = 0,
+		config_id = 1,
+		is_show = 0,
+		config_client = "",
+		id = 51108,
+		page_core = "",
+		config_data = {
+			{
+				31919,
+				100
+			}
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					26
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51109] = {
+		mark = 20260813,
+		id = 51109,
+		title_res_tag = "StarsCityCoreActivityUI_subtitle_5",
+		type = 74,
+		login_pop = 0,
+		config_id = 51109,
+		is_show = 2,
+		page_core = "StarsCityCoreActivityUI",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		page_info = {
+			class_name = "StarsCityPtPage",
+			ui_name = "StarsCityPtPage"
+		},
+		config_client = {
+			shopLinkActID = 51104,
+			highValueItemSort = {
+				23,
+				30,
+				36,
+				40
+			}
+		}
+	}
+	pg.base.activity_template[51110] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51110,
+		page_core = "",
+		config_data = {
+			25701,
+			25702,
+			25703,
+			25704,
+			25705,
+			25706,
+			25707,
+			25708,
+			25709,
+			25710
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51111] = {
+		mark = 20260813,
+		id = 51111,
+		title_res_tag = "RapidSeasideCoreActivityUI_subtitle_2",
+		type = 51,
+		login_pop = 0,
+		config_id = 9,
+		is_show = 2,
+		page_core = "RapidSeasideCoreActivityUI",
+		config_data = {
+			51112
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "RapidSeasideMonopolyPage",
+			ui_name = "RapidSeasideMonopolyPage"
+		},
+		config_client = {
+			is_showMedal = true,
+			medal_group_id = 51113,
+			link_act = 51114
+		}
+	}
+	pg.base.activity_template[51112] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51112,
+		page_core = "",
+		config_data = {
+			27393
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51113] = {
+		mark = 20260813,
+		title_res_tag = "",
+		page_info = "",
+		type = 13,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 51113,
+		page_core = "",
+		config_data = {
+			25711,
+			25712,
+			25713,
+			25714,
+			25715,
+			25716,
+			25717,
+			25718
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					3
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		}
+	}
+	pg.base.activity_template[51114] = {
+		mark = 20260813,
+		time = "always",
+		page_info = "",
+		type = 113,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		title_res_tag = "",
+		config_client = "",
+		id = 51114,
+		page_core = "",
+		config_data = {}
+	}
+	pg.base.activity_template[51115] = {
+		mark = 20260813,
+		title_res_tag = "RapidSeasideCoreActivityUI_subtitle_3",
+		type = 57,
+		login_pop = 0,
+		config_id = 78,
+		is_show = 3,
+		config_client = "",
+		id = 51115,
+		page_core = "RapidSeasideCoreActivityUI",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "RapidSeasideGamePage",
+			ui_name = "RapidSeasideGamePage"
+		}
+	}
+	pg.base.activity_template[51117] = {
+		mark = 20260813,
+		id = 51117,
+		title_res_tag = "StarsCityCoreActivityUI_subtitle_6",
+		type = 103,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 6,
+		page_core = "StarsCityCoreActivityUI",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					27
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		},
+		page_info = {
+			class_name = "StarsCityCollectPage",
+			ui_name = "StarsCityCollectPage",
+			sub_ui = {
+				"StarsCityCollectMsgBox"
+			}
+		},
+		config_client = {
+			furniture_theme_link = {
+				2,
+				{
+					"scene court yard",
+					{}
+				}
+			},
+			medal_link = {
+				2,
+				{
+					"scene task"
+				}
+			},
+			equipskin_box_link = {
+				drop_type = 2,
+				drop_id = 30387,
+				list = {
+					{
+						2,
+						{
+							"scene shop",
+							{
+								warp = "shopstreet"
+							}
+						},
+						"军需商店兑换"
+					}
+				}
+			}
 		}
 	}
 	pg.base.activity_template[7011] = {
@@ -49275,8 +50789,6 @@ end)()
 			ui_name = "CrusingDisplayActPage20"
 		}
 	}
-end)()
-;(function()
 	pg.base.activity_template[7021] = {
 		mark = 20250123,
 		title_res_tag = "CrusingDisplayAct",
@@ -49754,6 +51266,59 @@ end)()
 			ui_name = "CrusingDisplayActPage29"
 		}
 	}
+	pg.base.activity_template[7030] = {
+		mark = 20260730,
+		title_res_tag = "CrusingDisplayAct",
+		type = 54,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 14,
+		config_client = "",
+		id = 7030,
+		page_core = "",
+		config_data = {
+			290,
+			291,
+			292,
+			293,
+			294,
+			295,
+			296,
+			297,
+			298
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					1
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					30
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		page_info = {
+			class_name = "CrusingDisplayActPage2",
+			ui_name = "CrusingDisplayActPage30"
+		}
+	}
 	pg.base.activity_template[7101] = {
 		mark = 20230511,
 		title_res_tag = "survey",
@@ -49895,7 +51460,9 @@ end)()
 			12045,
 			12046,
 			12047,
-			12048
+			12048,
+			12049,
+			12050
 		},
 		config_client = {
 			"commonbg/meta_shop_bg",
@@ -54567,6 +56134,8 @@ end)()
 			no_maintenance = true
 		}
 	}
+end)()
+;(function()
 	pg.base.activity_template[8118] = {
 		mark = 20260417,
 		title_res_tag = "",
@@ -56822,8 +58391,6 @@ end)()
 			{}
 		}
 	}
-end)()
-;(function()
 	pg.base.activity_template[2002] = {
 		mark = 20180327,
 		time = "stop",
@@ -58302,6 +59869,8 @@ end)()
 			}
 		}
 	}
+end)()
+;(function()
 	pg.base.activity_template[6006] = {
 		mark = 20211028,
 		title_res_tag = "mengfeisipifu_permanent",
@@ -59247,6 +60816,54 @@ end)()
 			ui_name = "ChuChunSkinPermanentPage"
 		}
 	}
+	pg.base.activity_template[6042] = {
+		mark = 20260813,
+		title_res_tag = "LeMarsReSkin_permanent",
+		time = "stop",
+		type = 18,
+		login_pop = 0,
+		config_id = 3,
+		is_show = 10,
+		config_client = "",
+		id = 6042,
+		page_core = "",
+		config_data = {
+			{
+				35291
+			},
+			{
+				35292
+			},
+			{
+				35293
+			},
+			{
+				35294
+			},
+			{
+				35295
+			},
+			{
+				35296
+			},
+			{
+				35297
+			},
+			{
+				35298
+			},
+			{
+				35299
+			},
+			{
+				35300
+			}
+		},
+		page_info = {
+			class_name = "LeMarsReSkinPage",
+			ui_name = "LeMarsReSkinPage"
+		}
+	}
 	pg.base.activity_template[100001] = {
 		mark = 20190530,
 		time = "stop",
@@ -59831,8 +61448,6 @@ end)()
 			}
 		}
 	}
-end)()
-;(function()
 	pg.base.activity_template[990005] = {
 		mark = 20260205,
 		title_res_tag = "",
@@ -60488,6 +62103,242 @@ end)()
 					2026,
 					6,
 					18
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[990022] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 5001,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 990022,
+		page_core = "",
+		config_data = {
+			5
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					11,
+					5
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[990023] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 5002,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 990023,
+		page_core = "",
+		config_data = {
+			100046,
+			100047,
+			100048,
+			100049,
+			100050,
+			100051,
+			100052,
+			100053,
+			100054,
+			100055,
+			100056,
+			100057,
+			100058,
+			100059,
+			100060
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					11,
+					5
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[990024] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 5003,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 990024,
+		page_core = "",
+		config_data = {
+			1001,
+			1002,
+			1003,
+			1004,
+			1005,
+			1006,
+			1007,
+			1008
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					11,
+					5
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[990025] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 5004,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 990025,
+		page_core = "",
+		config_data = {
+			9900001,
+			9900002,
+			9900003,
+			9900004,
+			9900005,
+			9900006,
+			9900007,
+			9900008
+		},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					11,
+					5
+				},
+				{
+					12,
+					0,
+					0
+				}
+			}
+		}
+	}
+	pg.base.activity_template[990026] = {
+		mark = 20260806,
+		title_res_tag = "",
+		page_info = "",
+		type = 800,
+		login_pop = 0,
+		config_id = 0,
+		is_show = 0,
+		config_client = "",
+		id = 990026,
+		page_core = "",
+		config_data = {},
+		time = {
+			"timer",
+			{
+				{
+					2026,
+					8,
+					6
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					11,
+					5
 				},
 				{
 					12,

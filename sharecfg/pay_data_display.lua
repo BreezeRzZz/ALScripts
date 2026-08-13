@@ -118,6 +118,7 @@ pg.pay_data_display.all = {
 	9017,
 	9018,
 	9019,
+	9020,
 	1000,
 	1001,
 	1002,
@@ -147,6 +148,7 @@ pg.pay_data_display.all = {
 	1026,
 	1027,
 	1028,
+	1029,
 	1302,
 	2001,
 	2002,
@@ -14097,6 +14099,140 @@ end)()
 			}
 		}
 	}
+	pg.base.pay_data_display[9020] = {
+		limit_group = 0,
+		name = "滨海极速福袋",
+		descrip_extra = "*福袋将发送到邮箱，请注意查收。\n*重复获得已拥有的换装时，则自动置换成等价的钻石。",
+		type = 1,
+		second_text = "大量奖励",
+		type_order = 2,
+		subject = "滨海极速福袋",
+		first_text = "随机换装和大量钻石",
+		limit_arg = 1,
+		tip = "",
+		money = 198,
+		tip_open = 0,
+		tag = 2,
+		id = 9020,
+		gem = 0,
+		name_display = "滨海极速福袋",
+		package_sort_id = 0,
+		limit_type = 2,
+		akashi_pick = 1,
+		extra_service = 3,
+		package_tag = "",
+		picture = "fudai37",
+		show_group = "",
+		skin_inquire_relation = 86229,
+		package_tag_open = 0,
+		id_str = "com.bilibili.blhx.zuanshi219",
+		first_pay_double = 0,
+		extra_gem = 0,
+		descrip = "可获得一件角色换装，2026钻，和大量其他奖励",
+		airijp_id = "com.yostarjp.azurlane.diamond207",
+		extra_service_item = {
+			{
+				2,
+				86229,
+				1
+			},
+			{
+				1,
+				14,
+				2026
+			},
+			{
+				2,
+				42086,
+				2
+			},
+			{
+				2,
+				15008,
+				50
+			},
+			{
+				2,
+				20001,
+				20
+			},
+			{
+				2,
+				15003,
+				10
+			},
+			{
+				1,
+				6,
+				100
+			}
+		},
+		time = {
+			{
+				{
+					2026,
+					8,
+					13
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					8,
+					26
+				},
+				{
+					23,
+					59,
+					59
+				}
+			}
+		},
+		display = {
+			{
+				2,
+				42086,
+				2
+			},
+			{
+				2,
+				15008,
+				50
+			},
+			{
+				2,
+				20001,
+				20
+			}
+		},
+		sub_display = {},
+		ignorePlatform = {},
+		limit_args = {},
+		drop_item = {
+			{
+				2,
+				81237,
+				1
+			}
+		},
+		first_icon = {
+			{
+				2,
+				86229,
+				1
+			},
+			{
+				1,
+				14,
+				2026
+			}
+		}
+	}
 	pg.base.pay_data_display[1000] = {
 		limit_group = 0,
 		name = "特许巡游凭证",
@@ -16556,6 +16692,91 @@ end)()
 		},
 		sub_display = {
 			7029,
+			1500
+		},
+		ignorePlatform = {},
+		limit_args = {},
+		drop_item = {}
+	}
+	pg.base.pay_data_display[1029] = {
+		limit_group = 0,
+		name = "特许巡游凭证(2026.8)",
+		descrip_extra = "*需要通过任务达成对应巡游进度后才可获取",
+		type = 0,
+		second_text = "",
+		type_order = 6,
+		subject = "特许巡游凭证",
+		first_text = "",
+		first_icon = "",
+		limit_arg = 1,
+		money = 68,
+		tip = "",
+		tag = 2,
+		tip_open = 0,
+		gem = 0,
+		id = 1029,
+		name_display = "特许巡游凭证",
+		limit_type = 2,
+		package_sort_id = 0,
+		akashi_pick = 1,
+		package_tag = "",
+		picture = "battlepass_1",
+		extra_service = 4,
+		skin_inquire_relation = 0,
+		show_group = "",
+		id_str = "com.bilibili.blhx.battlepass31",
+		first_pay_double = 0,
+		extra_gem = 0,
+		descrip = "可获得1500巡游点数，同时解锁特许巡游奖励·昆西限定换装和其他奖励",
+		package_tag_open = 0,
+		airijp_id = "com.yostarjp.azurlane.seasonpass30",
+		extra_service_item = {
+			{
+				1,
+				4030,
+				1500
+			},
+			{
+				8,
+				65118,
+				1
+			}
+		},
+		time = {
+			{
+				{
+					2026,
+					8,
+					1
+				},
+				{
+					0,
+					0,
+					0
+				}
+			},
+			{
+				{
+					2026,
+					9,
+					30
+				},
+				{
+					22,
+					59,
+					59
+				}
+			}
+		},
+		display = {
+			{
+				8,
+				59599,
+				1500
+			}
+		},
+		sub_display = {
+			7030,
 			1500
 		},
 		ignorePlatform = {},
@@ -21380,6 +21601,8 @@ end)()
 			}
 		}
 	}
+end)()
+;(function()
 	pg.base.pay_data_display[2055] = {
 		limit_group = 5,
 		name = "最高方案研发礼包(五期)标准版",
@@ -21506,8 +21729,6 @@ end)()
 			}
 		}
 	}
-end)()
-;(function()
 	pg.base.pay_data_display[2057] = {
 		limit_group = 106,
 		name = "忍者之城主题礼包",

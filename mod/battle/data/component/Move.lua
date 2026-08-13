@@ -179,11 +179,7 @@ function MoveComponent.getInitialSpeed(self)
 		return forceSpeed
 	end
 
-	if self._moveProcess then
-		return self._moveProcess()
-	end
-
-	if self._staticState then
+	if self._staticState and not self._unstoppable then
 		return Vector3.zero
 	end
 
@@ -234,12 +230,6 @@ function MoveComponent.ClearForceMove(self)
 	self._forceSpeed = nil
 	self._forceReduce = nil
 	self._forceLastTime = nil
-end
-
---- 设置自定义移动进程函数
---- @param moveProcess function: 移动进程函数
-function MoveComponent.SetMoveProcess(self, moveProcess)
-	self._moveProcess = moveProcess
 end
 
 --- 设置静止状态

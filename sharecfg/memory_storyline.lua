@@ -98,7 +98,9 @@ pg.memory_storyline.all = {
 	93,
 	94,
 	95,
-	96
+	96,
+	97,
+	98
 }
 pg.base = pg.base or {}
 pg.base.memory_storyline = {}
@@ -2561,9 +2563,59 @@ pg.base.memory_storyline = {}
 		}
 	}
 	pg.base.memory_storyline[96] = {
+		description = "有些人总是要来，有些事总要面对。不管怎么说，上门即是客。不请自来的客人——表明你的来意吧。",
+		name = "有客自来 ",
+		world_id = "",
+		memory_lock = 0,
+		column = 60,
+		bgm = "story-richang-light",
+		row = 0,
+		chapter = 5,
+		id = 96,
+		icon = "InterludeOne_3",
+		sort = 1,
+		memory_id = {
+			1,
+			372
+		},
+		shipnation = {
+			7,
+			1,
+			2,
+			4,
+			5
+		},
+		link_event = {
+			97
+		}
+	}
+	pg.base.memory_storyline[97] = {
+		description = "「千语千相，惑面迷心。游者在此团聚，美梦在此升腾。误入歧路的旅人，欢迎来到——星光城」",
+		name = "沉溺于星光之城 ",
+		world_id = "",
+		memory_lock = 0,
+		column = 61,
+		bgm = "theme-richard-white",
+		row = 0,
+		chapter = 5,
+		id = 97,
+		icon = "InterludeOne_4",
+		sort = 1,
+		memory_id = {
+			1,
+			374
+		},
+		shipnation = {
+			1
+		},
+		link_event = {
+			98
+		}
+	}
+	pg.base.memory_storyline[98] = {
 		description = "敬请期待",
 		name = "敬请期待",
-		column = 60,
+		column = 62,
 		memory_id = "",
 		link_event = "",
 		shipnation = 0,
@@ -2572,7 +2624,7 @@ pg.base.memory_storyline = {}
 		row = 0,
 		chapter = 0,
 		memory_lock = 1,
-		id = 96,
+		id = 98,
 		icon = "",
 		sort = 0
 	}

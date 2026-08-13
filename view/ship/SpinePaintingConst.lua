@@ -1841,6 +1841,87 @@ var_0_0.ship_drag_datas = {
 			type = var_0_0.drag_type_normal,
 			config_client = {}
 		}
+	},
+	huali_2 = {
+		multiple_face = {},
+		hit_area = {
+			"drag"
+		},
+		drag_data = {
+			type = var_0_0.drag_type_normal,
+			config_client = {
+				{
+					change_idle = "ex",
+					click = false,
+					action = "drag",
+					idle = "normal",
+					is_default = true
+				},
+				{
+					change_idle = "normal",
+					click = false,
+					action = "drag_ex",
+					idle = "ex",
+					is_default = false
+				}
+			}
+		}
+	},
+	weikesibao_2 = {
+		multiple_face = {},
+		hit_area = {
+			"drag",
+			"drag_ex"
+		},
+		drag_data = {
+			type = var_0_0.drag_type_normal,
+			config_client = {
+				{
+					change_idle = "ex",
+					click = false,
+					idle = "normal",
+					action = "drag",
+					is_default = true,
+					hit = "drag"
+				},
+				{
+					change_idle = "normal",
+					click = false,
+					idle = "ex",
+					action = "drag_ex",
+					is_default = false,
+					hit = "drag_ex"
+				}
+			}
+		}
+	},
+	weikesibao_3 = {
+		multiple_face = {},
+		hit_area = {
+			"drag",
+			"drag_ex"
+		},
+		drag_data = {
+			type = var_0_0.drag_type_normal,
+			config_client = {
+				{
+					change_idle = "ex",
+					click = false,
+					idle = "normal",
+					action = "drag",
+					is_default = true,
+					hit = "drag"
+				},
+				{
+					change_idle = "normal",
+					click = false,
+					idle = "ex",
+					action = "drag_ex",
+					is_default = false,
+					hit = "drag_ex"
+				}
+			}
+		}
 	}
 }
 var_0_0.ship_effect_action_able = {

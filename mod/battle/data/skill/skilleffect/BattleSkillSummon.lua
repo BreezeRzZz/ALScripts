@@ -2,6 +2,7 @@ ys = ys or {}
 
 local ys = ys
 local BattleConst = ys.Battle.BattleConst
+local BattleFormulas = ys.Battle.BattleFormulas
 
 ys.Battle.BattleSkillSummon = class("BattleSkillSummon", ys.Battle.BattleSkillEffect)
 ys.Battle.BattleSkillSummon.__name = "BattleSkillSummon"
@@ -38,6 +39,17 @@ function BattleSkillSummon.DoSummon(self, caster, attachData)
 		unit = battleDataProxy:SpawnMonster(self._spawnData, waveIndex, BattleConst.UnitType.ENEMY_UNIT, casterIFF)
 
 		unit:SetMaster(caster)
+
+		if self._spawnData.relativeCorrdinate then
+			local casterPos = caster:GetPosition()
+			local relativePos = BattleFormulas.RandomPos(self._spawnData.relativeCorrdinate)
+
+			relativePos.x = relativePos.x + casterPos.x
+			relativePos.y = relativePos.y + casterPos.y
+			relativePos.z = relativePos.z + casterPos.z
+
+			unit:SetPosition(relativePos)
+		end
 	end
 
 	if self._spawnData.damageSrcWarp then

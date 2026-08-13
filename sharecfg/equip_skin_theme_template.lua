@@ -88,6 +88,8 @@ pg.equip_skin_theme_template.all = {
 	84,
 	85,
 	86,
+	87,
+	88,
 	101,
 	102,
 	103,
@@ -97,6 +99,7 @@ pg.equip_skin_theme_template.all = {
 	107,
 	108,
 	109,
+	110,
 	199
 }
 pg.base = pg.base or {}
@@ -2031,6 +2034,54 @@ pg.base.equip_skin_theme_template = {}
 			1538
 		}
 	}
+	pg.base.equip_skin_theme_template[87] = {
+		id = 87,
+		name = "怪谈病区",
+		ids = {
+			4402,
+			4403,
+			4404,
+			4405,
+			4406,
+			4407,
+			4408,
+			4409,
+			4410,
+			4411,
+			4412,
+			4413,
+			4414,
+			4415,
+			4416,
+			4417,
+			4418,
+			4419
+		}
+	}
+	pg.base.equip_skin_theme_template[88] = {
+		id = 88,
+		name = "滨海极速",
+		ids = {
+			4420,
+			4421,
+			4422,
+			4423,
+			4424,
+			4425,
+			4426,
+			4427,
+			4428,
+			4429,
+			4430,
+			4431,
+			4432,
+			4433,
+			4434,
+			4435,
+			4436,
+			4437
+		}
+	}
 	pg.base.equip_skin_theme_template[101] = {
 		id = 101,
 		name = "星辰无垠",
@@ -2205,6 +2256,16 @@ pg.base.equip_skin_theme_template = {}
 			2124
 		}
 	}
+	pg.base.equip_skin_theme_template[110] = {
+		id = 110,
+		name = "时代剪影",
+		ids = {
+			2125,
+			2126,
+			2127,
+			2128
+		}
+	}
 	pg.base.equip_skin_theme_template[199] = {
 		id = 199,
 		name = "其他",
@@ -2297,7 +2358,8 @@ pg.base.equip_skin_theme_template = {}
 			3080,
 			3081,
 			3082,
-			3083
+			3083,
+			3084
 		}
 	}
 end)()

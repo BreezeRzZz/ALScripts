@@ -2072,4 +2072,28 @@ end)()
 		code = 514,
 		actor_name = "星谷美绪"
 	}
+	pg.base.voice_actor_CN[515] = {
+		code = 515,
+		actor_name = "井料爱良"
+	}
+	pg.base.voice_actor_CN[516] = {
+		code = 516,
+		actor_name = "福积沙耶"
+	}
+	pg.base.voice_actor_CN[517] = {
+		code = 517,
+		actor_name = "天城莎莉"
+	}
+	pg.base.voice_actor_CN[518] = {
+		code = 518,
+		actor_name = "伊藤舞音"
+	}
+	pg.base.voice_actor_CN[519] = {
+		code = 519,
+		actor_name = "春濑夏美"
+	}
+	pg.base.voice_actor_CN[520] = {
+		code = 520,
+		actor_name = "船户百合绘"
+	}
 end)()

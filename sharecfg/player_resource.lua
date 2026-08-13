@@ -544,6 +544,19 @@ pg.player_resource.all = {
 	732,
 	733,
 	734,
+	735,
+	736,
+	737,
+	738,
+	739,
+	740,
+	741,
+	742,
+	743,
+	744,
+	745,
+	746,
+	747,
 	950,
 	951,
 	952,
@@ -636,6 +649,7 @@ pg.player_resource.all = {
 	4027,
 	4028,
 	4029,
+	4030,
 	4186,
 	4276,
 	4599,
@@ -755,6 +769,9 @@ pg.player_resource.get_id_list_by_name = {
 	Battlepass_29 = {
 		4029
 	},
+	Battlepass_30 = {
+		4030
+	},
 	Battlepass_9 = {
 		4009
 	},
@@ -827,6 +844,15 @@ pg.player_resource.get_id_list_by_name = {
 	activity_xunzhang2 = {
 		460
 	},
+	activity_xunzhang20 = {
+		735
+	},
+	activity_xunzhang21 = {
+		742
+	},
+	activity_xunzhang22 = {
+		743
+	},
 	activity_xunzhang3 = {
 		477
 	},
@@ -892,6 +918,9 @@ pg.player_resource.get_id_list_by_name = {
 	},
 	battlepass_8 = {
 		4008
+	},
+	benningdun_pt = {
+		741
 	},
 	bili_pt = {
 		129
@@ -1193,6 +1222,9 @@ pg.player_resource.get_id_list_by_name = {
 	hololive_pt = {
 		138
 	},
+	huali_pt = {
+		736
+	},
 	huiguang_pt1 = {
 		410
 	},
@@ -1268,8 +1300,26 @@ pg.player_resource.get_id_list_by_name = {
 	limit_skinticket107 = {
 		734
 	},
+	limit_skinticket108 = {
+		737
+	},
+	limit_skinticket109 = {
+		738
+	},
 	limit_skinticket11 = {
 		468
+	},
+	limit_skinticket110 = {
+		739
+	},
+	limit_skinticket111 = {
+		744
+	},
+	limit_skinticket112 = {
+		745
+	},
+	limit_skinticket113 = {
+		746
 	},
 	limit_skinticket12 = {
 		469
@@ -1870,6 +1920,12 @@ pg.player_resource.get_id_list_by_name = {
 	},
 	skinTicket121 = {
 		731
+	},
+	skinTicket122 = {
+		740
+	},
+	skinTicket123 = {
+		747
 	},
 	skinTicket13 = {
 		184
@@ -5389,6 +5445,71 @@ end)()
 		name = "limit_skinticket107",
 		itemid = 68323
 	}
+	pg.base.player_resource[735] = {
+		id = 735,
+		name = "activity_xunzhang20",
+		itemid = 66052
+	}
+	pg.base.player_resource[736] = {
+		id = 736,
+		name = "huali_pt",
+		itemid = 66061
+	}
+	pg.base.player_resource[737] = {
+		id = 737,
+		name = "limit_skinticket108",
+		itemid = 68330
+	}
+	pg.base.player_resource[738] = {
+		id = 738,
+		name = "limit_skinticket109",
+		itemid = 68331
+	}
+	pg.base.player_resource[739] = {
+		id = 739,
+		name = "limit_skinticket110",
+		itemid = 68332
+	}
+	pg.base.player_resource[740] = {
+		id = 740,
+		name = "skinTicket122",
+		itemid = 66062
+	}
+	pg.base.player_resource[741] = {
+		id = 741,
+		name = "benningdun_pt",
+		itemid = 66064
+	}
+	pg.base.player_resource[742] = {
+		id = 742,
+		name = "activity_xunzhang21",
+		itemid = 66065
+	}
+	pg.base.player_resource[743] = {
+		id = 743,
+		name = "activity_xunzhang22",
+		itemid = 66074
+	}
+	pg.base.player_resource[744] = {
+		id = 744,
+		name = "limit_skinticket111",
+		itemid = 68339
+	}
+	pg.base.player_resource[745] = {
+		id = 745,
+		name = "limit_skinticket112",
+		itemid = 68340
+	}
+	pg.base.player_resource[746] = {
+		id = 746,
+		name = "limit_skinticket113",
+		itemid = 68341
+	}
+	pg.base.player_resource[747] = {
+		id = 747,
+		name = "skinTicket123",
+		itemid = 66082
+	}
 	pg.base.player_resource[950] = {
 		id = 950,
 		name = "yisegefuke_pt1",
@@ -5619,6 +5740,8 @@ end)()
 		name = "synchronize_yilishabai",
 		itemid = 21910
 	}
+end)()
+;(function()
 	pg.base.player_resource[3012] = {
 		id = 3012,
 		name = "synchronize_aerjiliya",
@@ -5684,8 +5807,6 @@ end)()
 		name = "synchronize_bulisituoer",
 		itemid = 21923
 	}
-end)()
-;(function()
 	pg.base.player_resource[3106] = {
 		id = 3106,
 		name = "twhongran_pt",
@@ -5850,6 +5971,11 @@ end)()
 		id = 4029,
 		name = "Battlepass_29",
 		itemid = 65117
+	}
+	pg.base.player_resource[4030] = {
+		id = 4030,
+		name = "Battlepass_30",
+		itemid = 65118
 	}
 	pg.base.player_resource[4186] = {
 		id = 4186,

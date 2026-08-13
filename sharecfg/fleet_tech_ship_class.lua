@@ -84,6 +84,7 @@ pg.fleet_tech_ship_class.all = {
 	20304,
 	20305,
 	20306,
+	20307,
 	20401,
 	20402,
 	20403,
@@ -361,6 +362,7 @@ pg.fleet_tech_ship_class.all = {
 	970210,
 	970211,
 	970212,
+	970213,
 	970301,
 	970302,
 	970303,
@@ -473,7 +475,9 @@ pg.base.fleet_tech_ship_class = {}
 			10143,
 			10155,
 			19905,
-			10110
+			10110,
+			10157,
+			10158
 		}
 	}
 	pg.base.fleet_tech_ship_class[10105] = {
@@ -526,7 +530,8 @@ pg.base.fleet_tech_ship_class = {}
 			10144,
 			10148,
 			10149,
-			10151
+			10151,
+			10156
 		}
 	}
 	pg.base.fleet_tech_ship_class[10109] = {
@@ -571,7 +576,8 @@ pg.base.fleet_tech_ship_class = {}
 			10225,
 			10231,
 			10234,
-			10235
+			10235,
+			10236
 		}
 	}
 	pg.base.fleet_tech_ship_class[10203] = {
@@ -970,6 +976,7 @@ pg.base.fleet_tech_ship_class = {}
 			10714,
 			10716,
 			10717,
+			10720,
 			10738
 		}
 	}
@@ -1103,6 +1110,7 @@ pg.base.fleet_tech_ship_class = {}
 		ships = {
 			20113,
 			20114,
+			20115,
 			20139
 		}
 	}
@@ -1329,7 +1337,8 @@ pg.base.fleet_tech_ship_class = {}
 		t_level_1 = 1,
 		t_level = 7,
 		ships = {
-			20223
+			20223,
+			20237
 		}
 	}
 	pg.base.fleet_tech_ship_class[20210] = {
@@ -1437,6 +1446,17 @@ pg.base.fleet_tech_ship_class = {}
 		t_level = 9,
 		ships = {
 			29904
+		}
+	}
+	pg.base.fleet_tech_ship_class[20307] = {
+		shiptype = 3,
+		name = "萨里级",
+		nation = 2,
+		id = 20307,
+		t_level_1 = 59,
+		t_level = 7,
+		ships = {
+			20314
 		}
 	}
 	pg.base.fleet_tech_ship_class[20401] = {
@@ -1650,6 +1670,8 @@ pg.base.fleet_tech_ship_class = {}
 			20706
 		}
 	}
+end)()
+;(function()
 	pg.base.fleet_tech_ship_class[20703] = {
 		shiptype = 7,
 		name = "皇家方舟",
@@ -1661,8 +1683,6 @@ pg.base.fleet_tech_ship_class = {}
 			20702
 		}
 	}
-end)()
-;(function()
 	pg.base.fleet_tech_ship_class[20704] = {
 		shiptype = 7,
 		name = "鹰",
@@ -2879,6 +2899,8 @@ end)()
 			40505
 		}
 	}
+end)()
+;(function()
 	pg.base.fleet_tech_ship_class[40506] = {
 		shiptype = 5,
 		name = "梅克伦堡",
@@ -2890,8 +2912,6 @@ end)()
 			49910
 		}
 	}
-end)()
-;(function()
 	pg.base.fleet_tech_ship_class[40601] = {
 		shiptype = 6,
 		name = "威悉",
@@ -4033,6 +4053,8 @@ end)()
 			80702
 		}
 	}
+end)()
+;(function()
 	pg.base.fleet_tech_ship_class[80801] = {
 		shiptype = 8,
 		name = "絮库夫",
@@ -4044,8 +4066,6 @@ end)()
 			80801
 		}
 	}
-end)()
-;(function()
 	pg.base.fleet_tech_ship_class[81801] = {
 		shiptype = 18,
 		name = "布雷斯特",
@@ -4692,6 +4712,17 @@ end)()
 		t_level = 3,
 		ships = {
 			970212
+		}
+	}
+	pg.base.fleet_tech_ship_class[970213] = {
+		shiptype = 2,
+		name = "纽伦堡·META",
+		nation = 97,
+		id = 970213,
+		t_level_1 = 23,
+		t_level = 3,
+		ships = {
+			970213
 		}
 	}
 	pg.base.fleet_tech_ship_class[970301] = {

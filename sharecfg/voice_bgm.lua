@@ -82,9 +82,9 @@ pg.base.voice_bgm = {}
 		bgm = "main"
 	}
 	pg.base.voice_bgm.LoginScene = {
-		default_bgm = "nier-ruinscity-a-1",
+		default_bgm = "login",
 		special_bgm = "",
-		bgm = "nier-ruinscity-a-1"
+		bgm = "login"
 	}
 	pg.base.voice_bgm.NewMainScene = {
 		default_bgm = "main",
@@ -1560,6 +1560,11 @@ end)()
 		special_bgm = "",
 		bgm = "votefes-up"
 	}
+	pg.base.voice_bgm.MonopolyCar2026Scene = {
+		default_bgm = "votefes-up",
+		special_bgm = "",
+		bgm = "votefes-up"
+	}
 	pg.base.voice_bgm.JamaicaSkinRePage = {
 		default_bgm = "level",
 		special_bgm = "",
@@ -1700,13 +1705,13 @@ end)()
 		special_bgm = "",
 		bgm = "story-richang-11"
 	}
+end)()
+;(function()
 	pg.base.voice_bgm.YidaliV3FrameRePage = {
 		default_bgm = "story-italy",
 		special_bgm = "",
 		bgm = "story-italy"
 	}
-end)()
-;(function()
 	pg.base.voice_bgm.Yidaliv3LoginRePage = {
 		default_bgm = "battle-boss-italy",
 		special_bgm = "",
@@ -2202,13 +2207,13 @@ end)()
 		special_bgm = "",
 		bgm = "story-villaisland-light"
 	}
+end)()
+;(function()
 	pg.base.voice_bgm.HolidayVillaHotSpringScene = {
 		default_bgm = "theme-warmwinter-daily",
 		special_bgm = "",
 		bgm = "theme-warmwinter-daily"
 	}
-end)()
-;(function()
 	pg.base.voice_bgm.UrExTrafalgarPage = {
 		default_bgm = "story-royalnavy-serious",
 		special_bgm = "",
@@ -2704,13 +2709,13 @@ end)()
 		special_bgm = "",
 		bgm = "story-date-light"
 	}
+end)()
+;(function()
 	pg.base.voice_bgm.HelenaUrExchangePage = {
 		default_bgm = "theme-fushun-adventure",
 		special_bgm = "",
 		bgm = "theme-fushun-adventure"
 	}
-end)()
-;(function()
 	pg.base.voice_bgm.WinterFestival2025SkinMagazinePage = {
 		default_bgm = "story-fantasyland-summer",
 		special_bgm = "",
@@ -3156,6 +3161,41 @@ end)()
 		special_bgm = "",
 		bgm = "story-room-nakhimov"
 	}
+	pg.base.voice_bgm.EelTecCatchupPage = {
+		default_bgm = "theme-designshipVI",
+		special_bgm = "",
+		bgm = "theme-designshipVI"
+	}
+	pg.base.voice_bgm.EssexFramePage = {
+		default_bgm = "theme-designfleet-VII",
+		special_bgm = "",
+		bgm = "theme-designfleet-VII"
+	}
+	pg.base.voice_bgm.StarsCityOmenPage = {
+		default_bgm = "story-nonightcity",
+		special_bgm = "",
+		bgm = "story-nonightcity"
+	}
+	pg.base.voice_bgm.RapidSeasideMusicGamePage = {
+		default_bgm = "story-game-rhythm",
+		special_bgm = "",
+		bgm = "story-game-rhythm"
+	}
+	pg.base.voice_bgm.EscapeManorMainPage = {
+		default_bgm = "story-hospitalnight-outshow",
+		special_bgm = "",
+		bgm = "story-hospitalnight-outshow"
+	}
+	pg.base.voice_bgm.EscapeManorPtPage = {
+		default_bgm = "story-hospitalnight-outshow",
+		special_bgm = "",
+		bgm = "story-hospitalnight-outshow"
+	}
+	pg.base.voice_bgm.EscapeManorCollectPage = {
+		default_bgm = "story-hospitalnight-outshow",
+		special_bgm = "",
+		bgm = "story-hospitalnight-outshow"
+	}
 	pg.base.voice_bgm.NieRAutomataKillPage = {
 		default_bgm = "nier-ruinscity-b-1",
 		special_bgm = "",
@@ -3171,6 +3211,8 @@ end)()
 		special_bgm = "",
 		bgm = "nier-ruinscity-a-2"
 	}
+end)()
+;(function()
 	pg.base.voice_bgm.NieRAutomataStagePage = {
 		default_bgm = "nier-ruinscity-b-2",
 		special_bgm = "",
@@ -3195,5 +3237,55 @@ end)()
 		default_bgm = "story-room-pit",
 		special_bgm = "",
 		bgm = "story-room-pit"
+	}
+	pg.base.voice_bgm.BossRushEscapeManorScene = {
+		default_bgm = "theme-hospitalnight-mystic",
+		special_bgm = "",
+		bgm = "theme-hospitalnight-mystic"
+	}
+	pg.base.voice_bgm.StarsCityMainPage = {
+		default_bgm = "battle-starcity-rhythm",
+		special_bgm = "",
+		bgm = "battle-starcity-rhythm"
+	}
+	pg.base.voice_bgm.StarsCityCollectPage = {
+		default_bgm = "theme-commander-ally",
+		special_bgm = "",
+		bgm = "theme-commander-ally"
+	}
+	pg.base.voice_bgm.StarsCityPtPage = {
+		default_bgm = "theme-richard-white",
+		special_bgm = "",
+		bgm = "theme-richard-white"
+	}
+	pg.base.voice_bgm.RapidSeasideGamePage = {
+		default_bgm = "level",
+		special_bgm = "",
+		bgm = "level"
+	}
+	pg.base.voice_bgm.RapidSeasideMonopolyPage = {
+		default_bgm = "story-cardrive-stand",
+		special_bgm = "",
+		bgm = "story-cardrive-stand"
+	}
+	pg.base.voice_bgm.MonopolyCar2026UI = {
+		default_bgm = "story-cardrive-racing",
+		special_bgm = "",
+		bgm = "story-cardrive-racing"
+	}
+	pg.base.voice_bgm.LeMarsSkinPage = {
+		default_bgm = "story-richang-light",
+		special_bgm = "",
+		bgm = "story-richang-light"
+	}
+	pg.base.voice_bgm.MedalAlbumRapidSeasidePage = {
+		default_bgm = "story-cardrive-racing",
+		special_bgm = "",
+		bgm = "story-cardrive-racing"
+	}
+	pg.base.voice_bgm.MedalAlbumStarsCityPage = {
+		default_bgm = "battle-starcity-rhythm",
+		special_bgm = "",
+		bgm = "battle-starcity-rhythm"
 	}
 end)()
